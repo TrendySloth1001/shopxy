@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/theme/app_typography.dart';
 
 class AppTheme {
@@ -144,8 +146,8 @@ class AppTheme {
       cardTheme: CardThemeData(
         color: cardColor,
         elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+        shape: AppShapes.squircle(
+          AppSizes.radiusLg,
           side: BorderSide(color: cardBorder),
         ),
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -161,9 +163,7 @@ class AppTheme {
           backgroundColor: elevatedBtnBg,
           foregroundColor: elevatedBtnFg,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
+          shape: AppShapes.squircle(AppSizes.radiusButton),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -171,8 +171,9 @@ class AppTheme {
           foregroundColor: scheme.onSurface,
           side: BorderSide(color: scheme.outline),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+          shape: AppShapes.squircle(
+            AppSizes.radiusButton,
+            side: BorderSide(color: scheme.outline),
           ),
         ),
       ),
@@ -182,6 +183,7 @@ class AppTheme {
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: fabBg,
         foregroundColor: fabFg,
+        shape: AppShapes.squircle(AppSizes.radiusLg),
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: scaffoldBg,
@@ -194,15 +196,15 @@ class AppTheme {
         filled: true,
         fillColor: inputFill,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: AppShapes.squircleRadius(AppSizes.radiusInput),
           borderSide: BorderSide(color: inputBorder),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: AppShapes.squircleRadius(AppSizes.radiusInput),
           borderSide: BorderSide(color: inputBorder),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: AppShapes.squircleRadius(AppSizes.radiusInput),
           borderSide: BorderSide(color: inputFocusBorder, width: 1.4),
         ),
       ),
@@ -211,18 +213,16 @@ class AppTheme {
         contentTextStyle: textTheme.bodyMedium?.copyWith(
           color: scheme.onInverseSurface,
         ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: AppShapes.squircle(AppSizes.radiusMd),
         behavior: SnackBarBehavior.floating,
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: cardColor,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: AppShapes.squircle(AppSizes.radiusDialog),
       ),
       bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: cardColor,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
+        shape: AppShapes.squircleTop(AppSizes.bottomSheetRadius),
       ),
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: ButtonStyle(

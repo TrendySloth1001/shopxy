@@ -4,6 +4,7 @@ import 'package:shopxy/features/products/domain/entities/product.dart';
 import 'package:shopxy/features/stock/presentation/providers/stock_provider.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
+import 'package:shopxy/shared/theme/app_shapes.dart';
 
 class StockBottomSheet extends StatefulWidget {
   const StockBottomSheet({
@@ -96,9 +97,9 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
               child: Container(
                 width: 40,
                 height: 4,
-                decoration: BoxDecoration(
+                decoration: ShapeDecoration(
                   color: theme.colorScheme.outlineVariant,
-                  borderRadius: BorderRadius.circular(2),
+                  shape: AppShapes.squircle(2),
                 ),
               ),
             ),

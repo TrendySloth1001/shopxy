@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shopxy/features/products/domain/entities/product.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
+import 'package:shopxy/shared/theme/app_shapes.dart';
 
 class ProductListTile extends StatelessWidget {
   const ProductListTile({
@@ -34,11 +35,13 @@ class ProductListTile extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.only(bottom: AppSizes.sm),
         padding: const EdgeInsets.all(AppSizes.md),
-        decoration: BoxDecoration(
+        decoration: ShapeDecoration(
           color: theme.cardTheme.color,
-          borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-          border: Border.all(
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+          shape: AppShapes.squircle(
+            AppSizes.radiusMd,
+            side: BorderSide(
+              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+            ),
           ),
         ),
         child: Row(
@@ -47,13 +50,15 @@ class ProductListTile extends StatelessWidget {
             Container(
               width: AppSizes.productThumbSize,
               height: AppSizes.productThumbSize,
-              decoration: BoxDecoration(
+              decoration: ShapeDecoration(
                 color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(AppSizes.radiusSm),
+                shape: AppShapes.squircle(AppSizes.radiusSm),
               ),
               child: product.imageUrl != null
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(AppSizes.radiusSm),
+                  ? ClipPath(
+                      clipper: ShapeBorderClipper(
+                        shape: AppShapes.squircle(AppSizes.radiusSm),
+                      ),
                       child: Image.network(
                         product.imageUrl!,
                         fit: BoxFit.cover,
@@ -112,9 +117,9 @@ class ProductListTile extends StatelessWidget {
                     horizontal: AppSizes.sm,
                     vertical: 2,
                   ),
-                  decoration: BoxDecoration(
+                  decoration: ShapeDecoration(
                     color: stockColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(AppSizes.radiusSm),
+                    shape: AppShapes.squircle(AppSizes.radiusSm),
                   ),
                   child: Text(
                     stockLabel,

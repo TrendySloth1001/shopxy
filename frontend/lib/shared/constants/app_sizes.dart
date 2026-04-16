@@ -15,6 +15,9 @@ class AppSizes {
   static const double radiusMd = 12;
   static const double radiusLg = 16;
   static const double radiusXl = 20;
+  static const double radiusButton = 14;
+  static const double radiusInput = 14;
+  static const double radiusDialog = 20;
   static const double radiusFull = 100;
 
   // Icon sizes

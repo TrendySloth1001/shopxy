@@ -27,6 +27,7 @@ class AppStrings {
   static const String noProductsHint = 'Tap + to add your first product';
   static const String deleteProductConfirm = 'Delete this product?';
   static const String productDeleted = 'Product deleted';
+  static const String scanLabel = 'Scan label';
 
   // Product fields
   static const String productName = 'Product Name';
@@ -68,6 +69,15 @@ class AppStrings {
   static const String generateQr = 'Generate QR Code';
   static const String shareQr = 'Share QR';
   static const String productNotFound = 'Product not found for this code';
+  static const String productNotFoundTitle = 'Product not found';
+  static const String productNotFoundHint = 'Add it now with the scanned code';
+  static const String scanAgain = 'Scan again';
+  static const String scanHint = 'Point camera at QR or barcode';
+
+  // OCR
+  static const String ocrApplied = 'Applied scan results';
+  static const String ocrNoDetails = 'No product details found';
+  static const String ocrFailed = 'Could not read product details';
 
   // Actions
   static const String save = 'Save';

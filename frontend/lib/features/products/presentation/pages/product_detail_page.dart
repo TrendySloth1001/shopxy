@@ -10,6 +10,7 @@ import 'package:shopxy/features/stock/presentation/widgets/stock_bottom_sheet.da
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/constants/app_units.dart';
+import 'package:shopxy/shared/theme/app_shapes.dart';
 
 class ProductDetailPage extends StatefulWidget {
   const ProductDetailPage({super.key, required this.productId});
@@ -54,11 +55,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppSizes.bottomSheetRadius),
-        ),
-      ),
+      shape: AppShapes.squircleTop(AppSizes.bottomSheetRadius),
       builder: (_) => StockBottomSheet(
         product: _product!,
         initialType: type,
@@ -80,9 +77,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             children: [
               Container(
                 padding: const EdgeInsets.all(AppSizes.lg),
-                decoration: BoxDecoration(
+                decoration: ShapeDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+                  shape: AppShapes.squircle(AppSizes.radiusMd),
                 ),
                 child: QrImageView(
                   data: code,
@@ -212,11 +209,13 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             // Product header
             Container(
               padding: const EdgeInsets.all(AppSizes.xl),
-              decoration: BoxDecoration(
+              decoration: ShapeDecoration(
                 color: theme.cardTheme.color,
-                borderRadius: BorderRadius.circular(AppSizes.radiusLg),
-                border: Border.all(
-                  color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+                shape: AppShapes.squircle(
+                  AppSizes.radiusLg,
+                  side: BorderSide(
+                    color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+                  ),
                 ),
               ),
               child: Column(
@@ -227,9 +226,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                       Container(
                         width: 60,
                         height: 60,
-                        decoration: BoxDecoration(
+                        decoration: ShapeDecoration(
                           color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
-                          borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+                          shape: AppShapes.squircle(AppSizes.radiusMd),
                         ),
                         child: Icon(
                           Icons.inventory_2_outlined,
@@ -279,10 +278,12 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             // Stock status card
             Container(
               padding: const EdgeInsets.all(AppSizes.lg),
-              decoration: BoxDecoration(
+              decoration: ShapeDecoration(
                 color: stockColor.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-                border: Border.all(color: stockColor.withValues(alpha: 0.2)),
+                shape: AppShapes.squircle(
+                  AppSizes.radiusMd,
+                  side: BorderSide(color: stockColor.withValues(alpha: 0.2)),
+                ),
               ),
               child: Row(
                 children: [
@@ -410,11 +411,13 @@ class _DetailSection extends StatelessWidget {
         const SizedBox(height: AppSizes.md),
         Container(
           padding: const EdgeInsets.all(AppSizes.lg),
-          decoration: BoxDecoration(
+          decoration: ShapeDecoration(
             color: theme.cardTheme.color,
-            borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-            border: Border.all(
-              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+            shape: AppShapes.squircle(
+              AppSizes.radiusMd,
+              side: BorderSide(
+                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+              ),
             ),
           ),
           child: Column(

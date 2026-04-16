@@ -45,18 +45,33 @@ export class ProductsService {
         { barcode: { contains: options.search, mode: 'insensitive' } },
       ];
     }
+    const orderBy = { [options.sortBy]: options.sortOrder } as Record<
+      string,
+      'asc' | 'desc'
+    >;
+
     if (options.lowStock) {
-      const lowStockIds = await prisma.$queryRaw<{ id: number }[]>`
-        SELECT id FROM products
-        WHERE is_active = true AND stock_quantity <= low_stock_threshold
-      `;
-      where.id = { in: lowStockIds.map((record) => record.id) };
+      where.isActive = true;
+      const products = await prisma.product.findMany({
+        where,
+        orderBy,
+        include: { category: true },
+      });
+
+      const filtered = products.filter((product) =>
+        isLowStock(product.stockQuantity, product.lowStockThreshold)
+      );
+
+      return {
+        products: filtered.slice(options.skip, options.skip + options.limit),
+        total: filtered.length,
+      };
     }
 
     const [products, total] = await Promise.all([
       prisma.product.findMany({
         where,
-        orderBy: { [options.sortBy]: options.sortOrder },
+        orderBy,
         skip: options.skip,
         take: options.limit,
         include: { category: true },
@@ -115,6 +130,22 @@ export class ProductsService {
   deleteProduct(id: number) {
     return prisma.product.delete({ where: { id } });
   }
+}
+
+function toNumber(value: unknown): number {
+  if (value == null) return 0;
+  if (typeof value === 'number') return value;
+  if (typeof value === 'bigint') return Number(value);
+  if (typeof (value as { toNumber?: () => number }).toNumber === 'function') {
+    return (value as { toNumber: () => number }).toNumber();
+  }
+  return Number(value);
+}
+
+function isLowStock(quantity: unknown, threshold: unknown): boolean {
+  const qty = toNumber(quantity);
+  const limit = toNumber(threshold);
+  return qty > 0 && qty <= limit;
 }
 
 export const productsService = new ProductsService();

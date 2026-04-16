@@ -5,6 +5,7 @@ import 'package:shopxy/features/categories/presentation/providers/categories_pro
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
+import 'package:shopxy/shared/theme/app_shapes.dart';
 
 class CategoriesPage extends StatefulWidget {
   const CategoriesPage({super.key});
@@ -137,24 +138,24 @@ class _CategoriesPageState extends State<CategoriesPage> {
                       final cat = provider.categories[index];
                       return Container(
                         margin: const EdgeInsets.only(bottom: AppSizes.sm),
-                        decoration: BoxDecoration(
+                        decoration: ShapeDecoration(
                           color: theme.cardTheme.color,
-                          borderRadius:
-                              BorderRadius.circular(AppSizes.radiusMd),
-                          border: Border.all(
-                            color: theme.colorScheme.outlineVariant
-                                .withValues(alpha: 0.3),
+                          shape: AppShapes.squircle(
+                            AppSizes.radiusMd,
+                            side: BorderSide(
+                              color: theme.colorScheme.outlineVariant
+                                  .withValues(alpha: 0.3),
+                            ),
                           ),
                         ),
                         child: ListTile(
                           leading: Container(
                             width: 40,
                             height: 40,
-                            decoration: BoxDecoration(
+                            decoration: ShapeDecoration(
                               color: theme.colorScheme.tertiaryContainer
                                   .withValues(alpha: 0.5),
-                              borderRadius:
-                                  BorderRadius.circular(AppSizes.radiusSm),
+                              shape: AppShapes.squircle(AppSizes.radiusSm),
                             ),
                             child: Icon(
                               Icons.category_rounded,
@@ -184,10 +185,9 @@ class _CategoriesPageState extends State<CategoriesPage> {
                                     horizontal: AppSizes.sm,
                                     vertical: 2,
                                   ),
-                                  decoration: BoxDecoration(
+                                  decoration: ShapeDecoration(
                                     color: theme.colorScheme.surfaceContainerHighest,
-                                    borderRadius:
-                                        BorderRadius.circular(AppSizes.radiusFull),
+                                    shape: AppShapes.squircle(AppSizes.radiusFull),
                                   ),
                                   child: Text(
                                     '${cat.productCount}',

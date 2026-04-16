@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
+import 'package:shopxy/shared/theme/app_shapes.dart';
 
 class StatCard extends StatelessWidget {
   const StatCard({
@@ -26,11 +27,13 @@ class StatCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(AppSizes.lg),
-        decoration: BoxDecoration(
+        decoration: ShapeDecoration(
           color: theme.cardTheme.color,
-          borderRadius: BorderRadius.circular(AppSizes.radiusLg),
-          border: Border.all(
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+          shape: AppShapes.squircle(
+            AppSizes.radiusLg,
+            side: BorderSide(
+              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+            ),
           ),
         ),
         child: Column(
@@ -38,9 +41,9 @@ class StatCard extends StatelessWidget {
           children: [
             Container(
               padding: const EdgeInsets.all(AppSizes.sm),
-              decoration: BoxDecoration(
+              decoration: ShapeDecoration(
                 color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(AppSizes.radiusSm),
+                shape: AppShapes.squircle(AppSizes.radiusSm),
               ),
               child: Icon(icon, size: AppSizes.iconMd, color: color),
             ),

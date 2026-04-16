@@ -43,6 +43,8 @@ dependencies:
   shimmer: ^3.0.0
   cached_network_image: ^3.4.1
   flutter_slidable: ^4.0.3
+  google_mlkit_text_recognition: ^0.15.0
+  image_picker: ^1.1.2
 
 dev_dependencies:
   flutter_test:

@@ -6,6 +6,7 @@ import 'package:shopxy/features/stock/domain/entities/stock_transaction.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/widgets/stat_card.dart';
+import 'package:shopxy/shared/theme/app_shapes.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -107,14 +108,14 @@ class _DashboardPageState extends State<DashboardPage> {
                       // Stock value card
                       Container(
                         padding: const EdgeInsets.all(AppSizes.xl),
-                        decoration: BoxDecoration(
+                        decoration: ShapeDecoration(
                           gradient: LinearGradient(
                             colors: [
                               theme.colorScheme.primary,
                               theme.colorScheme.primary.withValues(alpha: 0.8),
                             ],
                           ),
-                          borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+                          shape: AppShapes.squircle(AppSizes.radiusLg),
                         ),
                         child: Row(
                           children: [
@@ -143,10 +144,9 @@ class _DashboardPageState extends State<DashboardPage> {
                             ),
                             Container(
                               padding: const EdgeInsets.all(AppSizes.md),
-                              decoration: BoxDecoration(
+                              decoration: ShapeDecoration(
                                 color: Colors.white.withValues(alpha: 0.2),
-                                borderRadius:
-                                    BorderRadius.circular(AppSizes.radiusMd),
+                                shape: AppShapes.squircle(AppSizes.radiusMd),
                               ),
                               child: Icon(
                                 Icons.account_balance_wallet_rounded,
@@ -215,20 +215,22 @@ class _TransactionTile extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: AppSizes.sm),
       child: Container(
         padding: const EdgeInsets.all(AppSizes.md),
-        decoration: BoxDecoration(
+        decoration: ShapeDecoration(
           color: theme.cardTheme.color,
-          borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-          border: Border.all(
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+          shape: AppShapes.squircle(
+            AppSizes.radiusMd,
+            side: BorderSide(
+              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+            ),
           ),
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(AppSizes.sm),
-              decoration: BoxDecoration(
+              decoration: ShapeDecoration(
                 color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(AppSizes.radiusSm),
+                shape: AppShapes.squircle(AppSizes.radiusSm),
               ),
               child: Icon(icon, size: AppSizes.iconMd, color: color),
             ),
