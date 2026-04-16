@@ -23,12 +23,14 @@ class CategoryDto {
     String? imageUrl,
     int? sortOrder,
   }) {
-    return {
+    final data = <String, dynamic>{
       'name': name,
-      if (description != null) 'description': description,
-      if (imageUrl != null) 'imageUrl': imageUrl,
-      if (sortOrder != null) 'sortOrder': sortOrder,
+      'description': description,
+      'imageUrl': imageUrl,
+      'sortOrder': sortOrder,
     };
+    data.removeWhere((_, value) => value == null);
+    return data;
   }
 
   static Map<String, dynamic> toUpdateJson({
@@ -38,12 +40,14 @@ class CategoryDto {
     int? sortOrder,
     bool? isActive,
   }) {
-    return {
-      if (name != null) 'name': name,
-      if (description != null) 'description': description,
-      if (imageUrl != null) 'imageUrl': imageUrl,
-      if (sortOrder != null) 'sortOrder': sortOrder,
-      if (isActive != null) 'isActive': isActive,
+    final data = <String, dynamic>{
+      'name': name,
+      'description': description,
+      'imageUrl': imageUrl,
+      'sortOrder': sortOrder,
+      'isActive': isActive,
     };
+    data.removeWhere((_, value) => value == null);
+    return data;
   }
 }

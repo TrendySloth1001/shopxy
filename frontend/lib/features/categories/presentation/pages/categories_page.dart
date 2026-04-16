@@ -17,9 +17,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(
-      () => context.read<CategoriesProvider>().loadCategories(),
-    );
+    context.read<CategoriesProvider>().loadCategories();
   }
 
   void _showAddEditDialog([Category? category]) {

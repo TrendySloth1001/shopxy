@@ -30,12 +30,14 @@ class StockTransactionDto {
     double? unitPrice,
     String? note,
   }) {
-    return {
+    final data = <String, dynamic>{
       'productId': productId,
       'type': type,
       'quantity': quantity,
-      if (unitPrice != null) 'unitPrice': unitPrice,
-      if (note != null && note.isNotEmpty) 'note': note,
+      'unitPrice': unitPrice,
+      'note': (note != null && note.isNotEmpty) ? note : null,
     };
+    data.removeWhere((_, value) => value == null);
+    return data;
   }
 }

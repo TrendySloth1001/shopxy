@@ -57,7 +57,7 @@ class ProductListTile extends StatelessWidget {
                       child: Image.network(
                         product.imageUrl!,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Icon(
+                        errorBuilder: (context, error, stackTrace) => Icon(
                           Icons.inventory_2_outlined,
                           color: theme.colorScheme.primary,
                           size: AppSizes.iconLg,

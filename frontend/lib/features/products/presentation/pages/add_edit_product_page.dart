@@ -55,7 +55,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     _selectedUnit = p?.unit ?? 'PCS';
     _selectedCategoryId = p?.categoryId;
 
-    Future.microtask(() => context.read<CategoriesProvider>().loadCategories());
+    context.read<CategoriesProvider>().loadCategories();
   }
 
   @override

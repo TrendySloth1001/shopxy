@@ -24,9 +24,7 @@ class _ProductsPageState extends State<ProductsPage> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(
-      () => context.read<ProductsProvider>().loadProducts(),
-    );
+    context.read<ProductsProvider>().loadProducts();
   }
 
   @override

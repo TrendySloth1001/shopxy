@@ -18,9 +18,7 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(
-      () => context.read<DashboardProvider>().loadStats(),
-    );
+    context.read<DashboardProvider>().loadStats();
   }
 
   @override

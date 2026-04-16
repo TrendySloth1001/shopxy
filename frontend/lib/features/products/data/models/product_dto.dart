@@ -50,22 +50,26 @@ class ProductDto {
     String? unit,
     int? categoryId,
   }) {
-    return {
+    final data = <String, dynamic>{
       'name': name,
-      if (description != null && description.isNotEmpty) 'description': description,
+      'description': (description != null && description.isNotEmpty)
+          ? description
+          : null,
       'sku': sku,
-      if (barcode != null && barcode.isNotEmpty) 'barcode': barcode,
-      if (hsnCode != null && hsnCode.isNotEmpty) 'hsnCode': hsnCode,
-      if (imageUrl != null && imageUrl.isNotEmpty) 'imageUrl': imageUrl,
+      'barcode': (barcode != null && barcode.isNotEmpty) ? barcode : null,
+      'hsnCode': (hsnCode != null && hsnCode.isNotEmpty) ? hsnCode : null,
+      'imageUrl': (imageUrl != null && imageUrl.isNotEmpty) ? imageUrl : null,
       'mrp': mrp,
       'sellingPrice': sellingPrice,
       'purchasePrice': purchasePrice,
-      if (taxPercent != null) 'taxPercent': taxPercent,
-      if (stockQuantity != null) 'stockQuantity': stockQuantity,
-      if (lowStockThreshold != null) 'lowStockThreshold': lowStockThreshold,
-      if (unit != null) 'unit': unit,
-      if (categoryId != null) 'categoryId': categoryId,
+      'taxPercent': taxPercent,
+      'stockQuantity': stockQuantity,
+      'lowStockThreshold': lowStockThreshold,
+      'unit': unit,
+      'categoryId': categoryId,
     };
+    data.removeWhere((_, value) => value == null);
+    return data;
   }
 
   static Map<String, dynamic> toUpdateJson({
@@ -84,21 +88,23 @@ class ProductDto {
     int? categoryId,
     bool? isActive,
   }) {
-    return {
-      if (name != null) 'name': name,
-      if (description != null) 'description': description,
-      if (sku != null) 'sku': sku,
-      if (barcode != null) 'barcode': barcode,
-      if (hsnCode != null) 'hsnCode': hsnCode,
-      if (imageUrl != null) 'imageUrl': imageUrl,
-      if (mrp != null) 'mrp': mrp,
-      if (sellingPrice != null) 'sellingPrice': sellingPrice,
-      if (purchasePrice != null) 'purchasePrice': purchasePrice,
-      if (taxPercent != null) 'taxPercent': taxPercent,
-      if (lowStockThreshold != null) 'lowStockThreshold': lowStockThreshold,
-      if (unit != null) 'unit': unit,
-      if (categoryId != null) 'categoryId': categoryId,
-      if (isActive != null) 'isActive': isActive,
+    final data = <String, dynamic>{
+      'name': name,
+      'description': description,
+      'sku': sku,
+      'barcode': barcode,
+      'hsnCode': hsnCode,
+      'imageUrl': imageUrl,
+      'mrp': mrp,
+      'sellingPrice': sellingPrice,
+      'purchasePrice': purchasePrice,
+      'taxPercent': taxPercent,
+      'lowStockThreshold': lowStockThreshold,
+      'unit': unit,
+      'categoryId': categoryId,
+      'isActive': isActive,
     };
+    data.removeWhere((_, value) => value == null);
+    return data;
   }
 }
