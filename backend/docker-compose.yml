@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16
+    container_name: shopxy-postgres
+    environment:
+      POSTGRES_USER: shopxy
+      POSTGRES_PASSWORD: shopxy
+      POSTGRES_DB: shopxy
+    ports:
+      - "5433:5432"
+    volumes:
+      - shopxy_db:/var/lib/postgresql/data
+
+volumes:
+  shopxy_db:
