@@ -1,33 +1,44 @@
 import 'package:flutter/material.dart';
+import 'package:figma_squircle/figma_squircle.dart';
 
 class AppShapes {
   AppShapes._();
 
-  static ContinuousRectangleBorder squircle(
+  static SmoothRectangleBorder squircle(
     double radius, {
     BorderSide? side,
   }) {
-    return ContinuousRectangleBorder(
-      borderRadius: BorderRadius.circular(radius),
+    return SmoothRectangleBorder(
+      borderRadius: SmoothBorderRadius(
+        cornerRadius: radius,
+        cornerSmoothing: 1.0, // iOS style continuous curves
+      ),
       side: side ?? BorderSide.none,
     );
   }
 
-  static ContinuousRectangleBorder squircleTop(
+  static SmoothRectangleBorder squircleTop(
     double radius, {
     BorderSide? side,
   }) {
-    return ContinuousRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(radius)),
+    return SmoothRectangleBorder(
+      borderRadius: SmoothBorderRadius.vertical(
+        top: SmoothRadius(cornerRadius: radius, cornerSmoothing: 1.0),
+      ),
       side: side ?? BorderSide.none,
     );
   }
 
-  static BorderRadius squircleRadius(double radius) {
-    return BorderRadius.circular(radius);
+  static SmoothBorderRadius squircleRadius(double radius) {
+    return SmoothBorderRadius(
+      cornerRadius: radius,
+      cornerSmoothing: 1.0,
+    );
   }
 
-  static BorderRadius squircleTopRadius(double radius) {
-    return BorderRadius.vertical(top: Radius.circular(radius));
+  static SmoothBorderRadius squircleTopRadius(double radius) {
+    return SmoothBorderRadius.vertical(
+      top: SmoothRadius(cornerRadius: radius, cornerSmoothing: 1.0),
+    );
   }
 }
