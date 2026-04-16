@@ -20,14 +20,20 @@ export function errorHandler(
   }
 
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
-    if (err.code === 'P2002') {
-      res.status(409).json({ error: 'Email already exists' });
-      return;
-    }
-
-    if (err.code === 'P2025') {
-      res.status(404).json({ error: 'User not found' });
-      return;
+    switch (err.code) {
+      case 'P2002': {
+        const target = (err.meta?.target as string[]) ?? [];
+        res.status(409).json({
+          error: `Duplicate value for: ${target.join(', ')}`,
+        });
+        return;
+      }
+      case 'P2025':
+        res.status(404).json({ error: 'Record not found' });
+        return;
+      case 'P2003':
+        res.status(400).json({ error: 'Related record not found' });
+        return;
     }
   }
 

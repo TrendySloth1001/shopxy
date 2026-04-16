@@ -1,7 +1,11 @@
 import express from 'express';
-import prisma from '../db/prisma';
-import usersRouter from '../../modules/users/users.routes';
-import { errorHandler } from '../../shared/http/errorHandler';
+import prisma from '../db/prisma.js';
+import usersRouter from '../../modules/users/users.routes.js';
+import categoriesRouter from '../../modules/categories/categories.routes.js';
+import productsRouter from '../../modules/products/products.routes.js';
+import stockRouter from '../../modules/stock/stock.routes.js';
+import dashboardRouter from '../../modules/dashboard/dashboard.routes.js';
+import { errorHandler } from '../../shared/http/errorHandler.js';
 
 const app = express();
 
@@ -11,7 +15,12 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
+// Module routes
 app.use('/users', usersRouter);
+app.use('/categories', categoriesRouter);
+app.use('/products', productsRouter);
+app.use('/stock', stockRouter);
+app.use('/dashboard', dashboardRouter);
 
 app.use(errorHandler);
 
