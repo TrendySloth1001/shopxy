@@ -2,7 +2,16 @@ import 'package:shopxy/features/categories/data/models/category_dto.dart';
 import 'package:shopxy/features/products/domain/entities/product.dart';
 
 class ProductDto {
+  static ProductImage _imageFromJson(Map<String, dynamic> json) => ProductImage(
+        id: json['id'] as int,
+        productId: json['productId'] as int,
+        url: json['url'] as String,
+        sortOrder: json['sortOrder'] as int? ?? 0,
+        createdAt: DateTime.parse(json['createdAt'] as String),
+      );
+
   static Product fromJson(Map<String, dynamic> json) {
+    final imagesJson = json['images'] as List<dynamic>?;
     return Product(
       id: json['id'] as int,
       name: json['name'] as String,
@@ -10,7 +19,6 @@ class ProductDto {
       sku: json['sku'] as String,
       barcode: json['barcode'] as String?,
       hsnCode: json['hsnCode'] as String?,
-      imageUrl: json['imageUrl'] as String?,
       mrp: _toDouble(json['mrp']),
       sellingPrice: _toDouble(json['sellingPrice']),
       purchasePrice: _toDouble(json['purchasePrice']),
@@ -25,6 +33,7 @@ class ProductDto {
       isActive: json['isActive'] as bool? ?? true,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
+      images: imagesJson?.map((e) => _imageFromJson(e as Map<String, dynamic>)).toList() ?? [],
     );
   }
 
@@ -40,7 +49,7 @@ class ProductDto {
     required String sku,
     String? barcode,
     String? hsnCode,
-    String? imageUrl,
+    List<String>? imageUrls,
     required double mrp,
     required double sellingPrice,
     required double purchasePrice,
@@ -52,13 +61,11 @@ class ProductDto {
   }) {
     final data = <String, dynamic>{
       'name': name,
-      'description': (description != null && description.isNotEmpty)
-          ? description
-          : null,
+      'description': (description != null && description.isNotEmpty) ? description : null,
       'sku': sku,
       'barcode': (barcode != null && barcode.isNotEmpty) ? barcode : null,
       'hsnCode': (hsnCode != null && hsnCode.isNotEmpty) ? hsnCode : null,
-      'imageUrl': (imageUrl != null && imageUrl.isNotEmpty) ? imageUrl : null,
+      'imageUrls': (imageUrls != null && imageUrls.isNotEmpty) ? imageUrls : null,
       'mrp': mrp,
       'sellingPrice': sellingPrice,
       'purchasePrice': purchasePrice,
@@ -78,7 +85,6 @@ class ProductDto {
     String? sku,
     String? barcode,
     String? hsnCode,
-    String? imageUrl,
     double? mrp,
     double? sellingPrice,
     double? purchasePrice,
@@ -94,7 +100,6 @@ class ProductDto {
       'sku': sku,
       'barcode': barcode,
       'hsnCode': hsnCode,
-      'imageUrl': imageUrl,
       'mrp': mrp,
       'sellingPrice': sellingPrice,
       'purchasePrice': purchasePrice,

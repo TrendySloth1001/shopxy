@@ -6,6 +6,8 @@ import 'package:shopxy/features/products/data/datasources/products_remote_data_s
 import 'package:shopxy/features/products/domain/entities/product.dart';
 import 'package:shopxy/features/products/presentation/pages/add_edit_product_page.dart';
 import 'package:shopxy/features/products/presentation/providers/products_provider.dart';
+import 'package:shopxy/features/stock/data/datasources/stock_remote_data_source.dart';
+import 'package:shopxy/features/stock/domain/entities/stock_transaction.dart';
 import 'package:shopxy/features/stock/presentation/widgets/stock_bottom_sheet.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
@@ -23,11 +25,18 @@ class ProductDetailPage extends StatefulWidget {
 class _ProductDetailPageState extends State<ProductDetailPage> {
   Product? _product;
   bool _isLoading = true;
+  bool _isSupplierHistoryLoading = true;
+  String? _supplierHistoryError;
+  List<StockTransaction> _stockInTransactions = const [];
 
   @override
   void initState() {
     super.initState();
-    _loadProduct();
+    _refreshAll();
+  }
+
+  Future<void> _refreshAll() async {
+    await Future.wait([_loadProduct(), _loadSupplierHistory()]);
   }
 
   Future<void> _loadProduct() async {
@@ -39,15 +48,49 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     if (mounted) setState(() => _isLoading = false);
   }
 
+  Future<void> _loadSupplierHistory() async {
+    setState(() {
+      _isSupplierHistoryLoading = true;
+      _supplierHistoryError = null;
+    });
+
+    try {
+      final ds = context.read<StockRemoteDataSource>();
+      final transactions = await ds.getTransactions(
+        productId: widget.productId,
+        type: 'STOCK_IN',
+        limit: 100,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _stockInTransactions = transactions;
+        _isSupplierHistoryLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _supplierHistoryError = e.toString();
+        _isSupplierHistoryLoading = false;
+      });
+    }
+  }
+
   void _openEdit() async {
     if (_product == null) return;
     final updated = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(
-        builder: (_) => AddEditProductPage(product: _product),
-      ),
+      MaterialPageRoute(builder: (_) => AddEditProductPage(product: _product)),
     );
-    if (updated == true) _loadProduct();
+    if (updated == true) {
+      _refreshAll();
+    }
   }
 
   void _openStockSheet(String type) {
@@ -56,11 +99,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       context: context,
       isScrollControlled: true,
       shape: AppShapes.squircleTop(AppSizes.bottomSheetRadius),
-      builder: (_) => StockBottomSheet(
-        product: _product!,
-        initialType: type,
-      ),
-    ).then((_) => _loadProduct());
+      builder: (_) => StockBottomSheet(product: _product!, initialType: type),
+    ).then((_) => _refreshAll());
   }
 
   void _showQrDialog() {
@@ -172,8 +212,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     final stockColor = p.isOutOfStock
         ? theme.colorScheme.error
         : p.isLowStock
-            ? const Color(0xFFF59E0B)
-            : const Color(0xFF1F8A5B);
+        ? const Color(0xFFF59E0B)
+        : const Color(0xFF1F8A5B);
 
     return Scaffold(
       appBar: AppBar(
@@ -202,7 +242,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: _loadProduct,
+        onRefresh: _refreshAll,
         child: ListView(
           padding: const EdgeInsets.all(AppSizes.lg),
           children: [
@@ -214,7 +254,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 shape: AppShapes.squircle(
                   AppSizes.radiusLg,
                   side: BorderSide(
-                    color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+                    color: theme.colorScheme.outlineVariant.withValues(
+                      alpha: 0.3,
+                    ),
                   ),
                 ),
               ),
@@ -227,7 +269,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         width: 60,
                         height: 60,
                         decoration: ShapeDecoration(
-                          color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+                          color: theme.colorScheme.primaryContainer.withValues(
+                            alpha: 0.3,
+                          ),
                           shape: AppShapes.squircle(AppSizes.radiusMd),
                         ),
                         child: Icon(
@@ -291,8 +335,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     p.isOutOfStock
                         ? Icons.error_outline_rounded
                         : p.isLowStock
-                            ? Icons.warning_amber_rounded
-                            : Icons.check_circle_outline_rounded,
+                        ? Icons.warning_amber_rounded
+                        : Icons.check_circle_outline_rounded,
                     color: stockColor,
                   ),
                   const SizedBox(width: AppSizes.md),
@@ -332,7 +376,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFF1F8A5B),
                       side: const BorderSide(color: Color(0xFF1F8A5B)),
-                      padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppSizes.md,
+                      ),
                     ),
                   ),
                 ),
@@ -345,7 +391,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: theme.colorScheme.error,
                       side: BorderSide(color: theme.colorScheme.error),
-                      padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppSizes.md,
+                      ),
                     ),
                   ),
                 ),
@@ -358,11 +406,25 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               title: 'Pricing',
               rows: [
                 _DetailRow(AppStrings.mrp, currencyFormat.format(p.mrp)),
-                _DetailRow(AppStrings.sellingPrice, currencyFormat.format(p.sellingPrice)),
-                _DetailRow(AppStrings.purchasePrice, currencyFormat.format(p.purchasePrice)),
+                _DetailRow(
+                  AppStrings.sellingPrice,
+                  currencyFormat.format(p.sellingPrice),
+                ),
+                _DetailRow(
+                  AppStrings.purchasePrice,
+                  currencyFormat.format(p.purchasePrice),
+                ),
                 _DetailRow(AppStrings.taxPercent, '${p.taxPercent}%'),
                 _DetailRow('Profit Margin', '${p.margin.toStringAsFixed(1)}%'),
               ],
+            ),
+            const SizedBox(height: AppSizes.lg),
+
+            _SupplierPriceHistorySection(
+              transactions: _stockInTransactions,
+              isLoading: _isSupplierHistoryLoading,
+              errorMessage: _supplierHistoryError,
+              currencyFormat: currencyFormat,
             ),
             const SizedBox(height: AppSizes.lg),
 
@@ -370,10 +432,15 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             _DetailSection(
               title: 'Details',
               rows: [
-                if (p.barcode != null) _DetailRow(AppStrings.barcode, p.barcode!),
-                if (p.hsnCode != null) _DetailRow(AppStrings.hsnCode, p.hsnCode!),
+                if (p.barcode != null)
+                  _DetailRow(AppStrings.barcode, p.barcode!),
+                if (p.hsnCode != null)
+                  _DetailRow(AppStrings.hsnCode, p.hsnCode!),
                 _DetailRow(AppStrings.unit, AppUnits.label(p.unit)),
-                _DetailRow('Created', DateFormat('dd MMM yyyy').format(p.createdAt.toLocal())),
+                _DetailRow(
+                  'Created',
+                  DateFormat('dd MMM yyyy').format(p.createdAt.toLocal()),
+                ),
               ],
             ),
             const SizedBox(height: AppSizes.huge),
@@ -387,6 +454,312 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     return qty.truncateToDouble() == qty
         ? qty.toInt().toString()
         : qty.toStringAsFixed(2);
+  }
+}
+
+class _SupplierPriceHistorySection extends StatelessWidget {
+  const _SupplierPriceHistorySection({
+    required this.transactions,
+    required this.isLoading,
+    required this.errorMessage,
+    required this.currencyFormat,
+  });
+
+  final List<StockTransaction> transactions;
+  final bool isLoading;
+  final String? errorMessage;
+  final NumberFormat currencyFormat;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final suppliers = _groupBySupplier(transactions);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          AppStrings.supplierPriceHistory,
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: theme.colorScheme.primary,
+          ),
+        ),
+        const SizedBox(height: AppSizes.md),
+        Container(
+          padding: const EdgeInsets.all(AppSizes.lg),
+          decoration: ShapeDecoration(
+            color: theme.cardTheme.color,
+            shape: AppShapes.squircle(
+              AppSizes.radiusMd,
+              side: BorderSide(
+                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+              ),
+            ),
+          ),
+          child: _buildContent(context, suppliers),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildContent(
+    BuildContext context,
+    List<MapEntry<String, List<StockTransaction>>> suppliers,
+  ) {
+    final theme = Theme.of(context);
+
+    if (isLoading) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: AppSizes.lg),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (errorMessage != null) {
+      return Text(
+        AppStrings.error,
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: theme.colorScheme.error,
+        ),
+      );
+    }
+
+    if (suppliers.isEmpty) {
+      return Text(
+        AppStrings.noSupplierHistory,
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      );
+    }
+
+    return Column(
+      children: suppliers.map((entry) {
+        final isLast = entry == suppliers.last;
+        return Padding(
+          padding: EdgeInsets.only(bottom: isLast ? 0 : AppSizes.lg),
+          child: _SupplierHistoryTile(
+            supplierName: entry.key,
+            transactions: entry.value,
+            currencyFormat: currencyFormat,
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  List<MapEntry<String, List<StockTransaction>>> _groupBySupplier(
+    List<StockTransaction> source,
+  ) {
+    final grouped = <String, List<StockTransaction>>{};
+
+    for (final tx in source) {
+      // Prefer vendorName, fall back to supplierName, skip if both null
+      final key = tx.displaySupplier?.trim();
+      if (key == null || key.isEmpty) continue;
+      grouped.putIfAbsent(key, () => []).add(tx);
+    }
+
+    final entries = grouped.entries.toList();
+    entries.sort((a, b) => b.value.first.createdAt.compareTo(a.value.first.createdAt));
+    return entries;
+  }
+}
+
+class _SupplierHistoryTile extends StatelessWidget {
+  const _SupplierHistoryTile({
+    required this.supplierName,
+    required this.transactions,
+    required this.currencyFormat,
+  });
+
+  final String supplierName;
+  final List<StockTransaction> transactions;
+  final NumberFormat currencyFormat;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final sorted = [...transactions]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+    final priceValues = sorted
+        .where((t) => t.unitPrice != null)
+        .map((t) => t.unitPrice!)
+        .toList();
+    final latestPrice = priceValues.isNotEmpty ? priceValues.first : null;
+    final averagePrice = priceValues.isEmpty
+        ? null
+        : priceValues.reduce((s, p) => s + p) / priceValues.length;
+    final totalQty = transactions.fold<double>(0, (s, t) => s + t.quantity);
+    final lastStockIn = sorted.first.createdAt;
+    final lastPolicy = _policyLabel(sorted.first.purchasePriceMode);
+    final isVendor = sorted.first.vendorId != null;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSizes.md),
+      decoration: ShapeDecoration(
+        color: theme.colorScheme.surfaceContainerLowest,
+        shape: AppShapes.squircle(
+          AppSizes.radiusMd,
+          side: BorderSide(
+            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  supplierName.isEmpty ? AppStrings.unknownSupplier : supplierName,
+                  style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                ),
+              ),
+              if (isVendor)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSizes.sm,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.secondaryContainer,
+                    borderRadius: BorderRadius.circular(AppSizes.radiusSm),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.business_rounded,
+                        size: 11,
+                        color: theme.colorScheme.onSecondaryContainer,
+                      ),
+                      const SizedBox(width: 3),
+                      Text(
+                        AppStrings.vendor,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onSecondaryContainer,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: AppSizes.sm),
+          _SupplierMetricRow(
+            label: AppStrings.latestPrice,
+            value: latestPrice == null ? '-' : currencyFormat.format(latestPrice),
+          ),
+          _SupplierMetricRow(
+            label: AppStrings.averagePrice,
+            value: averagePrice == null ? '-' : currencyFormat.format(averagePrice),
+          ),
+          _SupplierMetricRow(
+            label: AppStrings.totalQuantityBought,
+            value: '${totalQty % 1 == 0 ? totalQty.toInt() : totalQty.toStringAsFixed(2)} (${transactions.length} ${AppStrings.transactions})',
+          ),
+          _SupplierMetricRow(
+            label: AppStrings.lastStockIn,
+            value: DateFormat('dd MMM yyyy, hh:mm a').format(lastStockIn.toLocal()),
+          ),
+          _SupplierMetricRow(label: AppStrings.policy, value: lastPolicy),
+          const SizedBox(height: AppSizes.sm),
+          Text(
+            AppStrings.recentBuys,
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: AppSizes.xs),
+          ...sorted.take(5).map((tx) {
+            final date = DateFormat('dd MMM yyyy').format(tx.createdAt.toLocal());
+            final qty = tx.quantity % 1 == 0
+                ? tx.quantity.toInt().toString()
+                : tx.quantity.toStringAsFixed(2);
+            final price = tx.unitPrice == null ? '-' : currencyFormat.format(tx.unitPrice);
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 3),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      date,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    'Qty: $qty',
+                    style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(width: AppSizes.md),
+                  Text(
+                    price,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  String _policyLabel(String? mode) {
+    if (mode == 'WEIGHTED_AVERAGE') {
+      return AppStrings.weightedAverage;
+    }
+    if (mode == 'USE_LATEST') {
+      return AppStrings.useLatestPrice;
+    }
+    if (mode == 'KEEP_CURRENT') {
+      return AppStrings.keepCurrentPrice;
+    }
+    return '-';
+  }
+}
+
+class _SupplierMetricRow extends StatelessWidget {
+  const _SupplierMetricRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          Text(
+            value,
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
