@@ -1,6 +1,9 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
-import { STOCK_TRANSACTION_TYPES } from '../../shared/constants/index.js';
+import {
+  STOCK_TRANSACTION_TYPES,
+  PURCHASE_PRICE_MODES,
+} from '../../shared/constants/index.js';
 import { parsePagination, paginatedResponse } from '../../shared/http/pagination.js';
 import { stockService } from './stock.service.js';
 
@@ -9,7 +12,16 @@ const createTransactionSchema = z.object({
   type: z.enum(STOCK_TRANSACTION_TYPES),
   quantity: z.number().positive(),
   unitPrice: z.number().nonnegative().optional(),
+  supplierName: z.string().trim().min(1).max(120).optional(),
+  vendorId: z.number().int().positive().optional(),
+  purchasePriceMode: z.enum(PURCHASE_PRICE_MODES).optional(),
   note: z.string().max(500).optional(),
+});
+
+const listSuppliersQuerySchema = z.object({
+  q: z.string().trim().max(120).optional(),
+  productId: z.coerce.number().int().positive().optional(),
+  limit: z.coerce.number().int().min(1).max(50).optional(),
 });
 
 export class StockController {
@@ -51,6 +63,18 @@ export class StockController {
     });
 
     res.json(paginatedResponse(transactions, total, { page, limit, skip }));
+  }
+
+  async listSuppliers(req: Request, res: Response): Promise<void> {
+    const query = listSuppliersQuerySchema.parse(req.query);
+
+    const { vendors, freeTextSuppliers } = await stockService.listSuppliers({
+      query: query.q,
+      productId: query.productId,
+      limit: query.limit ?? 12,
+    });
+
+    res.json({ vendors, freeTextSuppliers });
   }
 }
 

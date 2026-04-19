@@ -11,5 +11,19 @@ services:
     volumes:
       - shopxy_db:/var/lib/postgresql/data
 
+  minio:
+    image: minio/minio:latest
+    container_name: shopxy-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: shopxy
+      MINIO_ROOT_PASSWORD: shopxy123
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # Web console — open http://localhost:9001
+    volumes:
+      - shopxy_minio:/data
+
 volumes:
   shopxy_db:
+  shopxy_minio:

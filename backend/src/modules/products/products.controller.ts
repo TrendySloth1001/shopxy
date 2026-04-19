@@ -10,7 +10,7 @@ const createProductSchema = z.object({
   sku: z.string().min(1).max(50),
   barcode: z.string().max(50).optional(),
   hsnCode: z.string().max(20).optional(),
-  imageUrl: z.string().url().optional(),
+  imageUrls: z.array(z.string().url()).max(10).optional(),
   mrp: z.number().positive(),
   sellingPrice: z.number().positive(),
   purchasePrice: z.number().nonnegative(),
@@ -28,7 +28,6 @@ const updateProductSchema = z
     sku: z.string().min(1).max(50).optional(),
     barcode: z.string().max(50).nullable().optional(),
     hsnCode: z.string().max(20).nullable().optional(),
-    imageUrl: z.string().url().nullable().optional(),
     mrp: z.number().positive().optional(),
     sellingPrice: z.number().positive().optional(),
     purchasePrice: z.number().nonnegative().optional(),
@@ -38,9 +37,16 @@ const updateProductSchema = z
     categoryId: z.number().int().positive().nullable().optional(),
     isActive: z.boolean().optional(),
   })
-  .refine((d) => Object.keys(d).length > 0, {
-    message: 'At least one field is required',
-  });
+  .refine((d) => Object.keys(d).length > 0, { message: 'At least one field is required' });
+
+const addImageSchema = z.object({
+  url: z.string().url(),
+  sortOrder: z.number().int().nonnegative().optional(),
+});
+
+const reorderImagesSchema = z.object({
+  orderedIds: z.array(z.number().int().positive()).min(1),
+});
 
 function parseId(raw: string): number | null {
   const id = Number(raw);
@@ -96,26 +102,17 @@ export class ProductsController {
 
   async getById(req: Request, res: Response): Promise<void> {
     const id = parseId(req.params.id);
-    if (!id) {
-      res.status(400).json({ error: 'Invalid id' });
-      return;
-    }
+    if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
 
     const product = await productsService.getProductById(id);
-    if (!product) {
-      res.status(404).json({ error: 'Product not found' });
-      return;
-    }
+    if (!product) { res.status(404).json({ error: 'Product not found' }); return; }
 
     res.json(product);
   }
 
   async update(req: Request, res: Response): Promise<void> {
     const id = parseId(req.params.id);
-    if (!id) {
-      res.status(400).json({ error: 'Invalid id' });
-      return;
-    }
+    if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
 
     const payload = updateProductSchema.parse(req.body);
     const product = await productsService.updateProduct(id, payload);
@@ -124,13 +121,40 @@ export class ProductsController {
 
   async delete(req: Request, res: Response): Promise<void> {
     const id = parseId(req.params.id);
-    if (!id) {
-      res.status(400).json({ error: 'Invalid id' });
-      return;
-    }
+    if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
 
     await productsService.deleteProduct(id);
     res.status(204).send();
+  }
+
+  // ── Image management ──────────────────────────────────────────────
+
+  async addImage(req: Request, res: Response): Promise<void> {
+    const id = parseId(req.params.id);
+    if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
+
+    const { url, sortOrder } = addImageSchema.parse(req.body);
+    const image = await productsService.addImage(id, url, sortOrder);
+    res.status(201).json(image);
+  }
+
+  async deleteImage(req: Request, res: Response): Promise<void> {
+    const productId = parseId(req.params.id);
+    const imageId = parseId(req.params.imageId);
+    if (!productId || !imageId) { res.status(400).json({ error: 'Invalid id' }); return; }
+
+    const result = await productsService.deleteImage(productId, imageId);
+    if ('error' in result) { res.status(404).json({ error: result.error }); return; }
+    res.status(204).send();
+  }
+
+  async reorderImages(req: Request, res: Response): Promise<void> {
+    const id = parseId(req.params.id);
+    if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
+
+    const { orderedIds } = reorderImagesSchema.parse(req.body);
+    const images = await productsService.reorderImages(id, orderedIds);
+    res.json(images);
   }
 }
 

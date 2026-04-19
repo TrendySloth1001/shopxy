@@ -11,4 +11,9 @@ router.get('/:id', asyncHandler(productsController.getById.bind(productsControll
 router.patch('/:id', asyncHandler(productsController.update.bind(productsController)));
 router.delete('/:id', asyncHandler(productsController.delete.bind(productsController)));
 
+// Product images
+router.post('/:id/images', asyncHandler(productsController.addImage.bind(productsController)));
+router.delete('/:id/images/:imageId', asyncHandler(productsController.deleteImage.bind(productsController)));
+router.patch('/:id/images/reorder', asyncHandler(productsController.reorderImages.bind(productsController)));
+
 export default router;
