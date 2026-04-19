@@ -152,7 +152,8 @@ class _QrScannerPageState extends State<QrScannerPage> {
               ),
               const SizedBox(height: AppSizes.sm),
               OutlinedButton(
-                onPressed: () => Navigator.pop(ctx, _MissingProductAction.retry),
+                onPressed: () =>
+                    Navigator.pop(ctx, _MissingProductAction.retry),
                 child: const Text(AppStrings.scanAgain),
               ),
               const SizedBox(height: AppSizes.xl),
@@ -175,10 +176,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
       ),
       body: Stack(
         children: [
-          MobileScanner(
-            controller: _controller,
-            onDetect: _onDetect,
-          ),
+          MobileScanner(controller: _controller, onDetect: _onDetect),
           // Scan overlay
           Center(
             child: Container(
@@ -208,9 +206,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
                   shape: AppShapes.squircle(AppSizes.radiusFull),
                 ),
                 child: Text(
-                  _isProcessing
-                      ? AppStrings.loading
-                      : AppStrings.scanHint,
+                  _isProcessing ? AppStrings.loading : AppStrings.scanHint,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: Colors.white,
                   ),

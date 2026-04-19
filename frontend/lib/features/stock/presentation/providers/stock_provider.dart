@@ -35,6 +35,9 @@ class StockProvider extends ChangeNotifier {
     required String type,
     required double quantity,
     double? unitPrice,
+    String? supplierName,
+    int? vendorId,
+    String? purchasePriceMode,
     String? note,
   }) async {
     final data = StockTransactionDto.toCreateJson(
@@ -42,6 +45,9 @@ class StockProvider extends ChangeNotifier {
       type: type,
       quantity: quantity,
       unitPrice: unitPrice,
+      supplierName: supplierName,
+      vendorId: vendorId,
+      purchasePriceMode: purchasePriceMode,
       note: note,
     );
     final transaction = await _dataSource.createTransaction(data);

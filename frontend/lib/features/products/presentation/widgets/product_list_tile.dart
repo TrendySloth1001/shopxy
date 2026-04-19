@@ -5,11 +5,7 @@ import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 
 class ProductListTile extends StatelessWidget {
-  const ProductListTile({
-    super.key,
-    required this.product,
-    this.onTap,
-  });
+  const ProductListTile({super.key, required this.product, this.onTap});
 
   final Product product;
   final VoidCallback? onTap;
@@ -21,14 +17,14 @@ class ProductListTile extends StatelessWidget {
     final stockColor = product.isOutOfStock
         ? theme.colorScheme.error
         : product.isLowStock
-            ? const Color(0xFFF59E0B)
-            : const Color(0xFF1F8A5B);
+        ? const Color(0xFFF59E0B)
+        : const Color(0xFF1F8A5B);
 
     final stockLabel = product.isOutOfStock
         ? AppStrings.outOfStock
         : product.isLowStock
-            ? AppStrings.lowStock
-            : '${_formatQty(product.stockQuantity)} ${product.unit}';
+        ? AppStrings.lowStock
+        : '${_formatQty(product.stockQuantity)} ${product.unit}';
 
     return GestureDetector(
       onTap: onTap,
@@ -51,16 +47,18 @@ class ProductListTile extends StatelessWidget {
               width: AppSizes.productThumbSize,
               height: AppSizes.productThumbSize,
               decoration: ShapeDecoration(
-                color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+                color: theme.colorScheme.primaryContainer.withValues(
+                  alpha: 0.3,
+                ),
                 shape: AppShapes.squircle(AppSizes.radiusSm),
               ),
-              child: product.imageUrl != null
+              child: product.primaryImageUrl != null
                   ? ClipPath(
                       clipper: ShapeBorderClipper(
                         shape: AppShapes.squircle(AppSizes.radiusSm),
                       ),
                       child: Image.network(
-                        product.imageUrl!,
+                        product.primaryImageUrl!,
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) => Icon(
                           Icons.inventory_2_outlined,

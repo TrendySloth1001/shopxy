@@ -24,7 +24,10 @@ class _ProductsPageState extends State<ProductsPage> {
   @override
   void initState() {
     super.initState();
-    context.read<ProductsProvider>().loadProducts();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<ProductsProvider>().loadProducts();
+    });
   }
 
   @override
@@ -67,6 +70,16 @@ class _ProductsPageState extends State<ProductsPage> {
     );
   }
 
+  void _scheduleLoadMore() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final provider = context.read<ProductsProvider>();
+      if (!provider.isLoading && provider.hasMore) {
+        provider.loadProducts(loadMore: true);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<ProductsProvider>();
@@ -94,7 +107,10 @@ class _ProductsPageState extends State<ProductsPage> {
               controller: _searchController,
               onChanged: (value) => provider.setSearch(value),
               trailing: IconButton(
-                icon: const Icon(Icons.qr_code_scanner_rounded, size: AppSizes.iconMd),
+                icon: const Icon(
+                  Icons.qr_code_scanner_rounded,
+                  size: AppSizes.iconMd,
+                ),
                 onPressed: _openScanner,
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
@@ -105,42 +121,41 @@ class _ProductsPageState extends State<ProductsPage> {
             child: provider.isLoading && provider.products.isEmpty
                 ? const Center(child: CircularProgressIndicator())
                 : provider.products.isEmpty
-                    ? EmptyState(
-                        icon: Icons.inventory_2_outlined,
-                        title: AppStrings.noProducts,
-                        subtitle: AppStrings.noProductsHint,
-                      )
-                    : RefreshIndicator(
-                        onRefresh: () => provider.loadProducts(),
-                        child: ListView.builder(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSizes.lg,
-                            vertical: AppSizes.sm,
-                          ),
-                          itemCount: provider.products.length +
-                              (provider.hasMore ? 1 : 0),
-                          itemBuilder: (context, index) {
-                            if (index >= provider.products.length) {
-                              provider.loadProducts(loadMore: true);
-                              return const Padding(
-                                padding: EdgeInsets.all(AppSizes.lg),
-                                child: Center(
-                                  child: CircularProgressIndicator(),
-                                ),
-                              );
-                            }
-                            final product = provider.products[index];
-                            return ProductListTile(
-                              product: product,
-                              onTap: () => _openProductDetail(product),
-                            );
-                          },
-                        ),
+                ? EmptyState(
+                    icon: Icons.inventory_2_outlined,
+                    title: AppStrings.noProducts,
+                    subtitle: AppStrings.noProductsHint,
+                  )
+                : RefreshIndicator(
+                    onRefresh: () => provider.loadProducts(),
+                    child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSizes.lg,
+                        vertical: AppSizes.sm,
                       ),
+                      itemCount:
+                          provider.products.length + (provider.hasMore ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        if (index >= provider.products.length) {
+                          _scheduleLoadMore();
+                          return const Padding(
+                            padding: EdgeInsets.all(AppSizes.lg),
+                            child: Center(child: CircularProgressIndicator()),
+                          );
+                        }
+                        final product = provider.products[index];
+                        return ProductListTile(
+                          product: product,
+                          onTap: () => _openProductDetail(product),
+                        );
+                      },
+                    ),
+                  ),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'products_fab',
         onPressed: _openAddProduct,
         child: const Icon(Icons.add_rounded),
       ),

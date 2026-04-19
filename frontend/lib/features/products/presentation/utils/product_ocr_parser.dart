@@ -25,22 +25,33 @@ class ProductOcrParser {
 
       sku ??= _extractLabeledValue(
         line,
-        RegExp(r'(sku|item\s*code|item\s*no|code)[:#\s-]*([A-Za-z0-9-]+)', caseSensitive: false),
+        RegExp(
+          r'(sku|item\s*code|item\s*no|code)[:#\s-]*([A-Za-z0-9-]+)',
+          caseSensitive: false,
+        ),
       );
       hsnCode ??= _extractLabeledValue(
         line,
-        RegExp(r'(hsn|hsn\s*code)[:#\s-]*([A-Za-z0-9-]+)', caseSensitive: false),
+        RegExp(
+          r'(hsn|hsn\s*code)[:#\s-]*([A-Za-z0-9-]+)',
+          caseSensitive: false,
+        ),
       );
       barcode ??= _extractLabeledValue(
         line,
-        RegExp(r'(barcode|bar\s*code|ean|upc)[:#\s-]*([0-9-]{8,})', caseSensitive: false),
+        RegExp(
+          r'(barcode|bar\s*code|ean|upc)[:#\s-]*([0-9-]{8,})',
+          caseSensitive: false,
+        ),
       );
 
       if (lower.contains('mrp')) {
         mrp ??= _extractNumber(line);
       } else if (lower.contains('selling') || lower.contains('sale')) {
         sellingPrice ??= _extractNumber(line);
-      } else if (lower.contains('purchase') || lower.contains('cost') || lower.contains('buy')) {
+      } else if (lower.contains('purchase') ||
+          lower.contains('cost') ||
+          lower.contains('buy')) {
         purchasePrice ??= _extractNumber(line);
       }
 
