@@ -1,0 +1,27 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "backend:build",
+			"type": "shell",
+			"command": "npm --prefix backend run build",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "frontend:analyze",
+			"type": "shell",
+			"command": "cd frontend && flutter pub get && flutter analyze",
+			"group": "test"
+		},
+		{
+			"label": "frontend:build-android-debug",
+			"type": "shell",
+			"command": "cd frontend && flutter build apk --debug",
+			"isBackground": false,
+			"group": "build"
+		}
+	]
+}

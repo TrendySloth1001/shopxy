@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
+import 'package:shopxy/shared/theme/app_shapes.dart';
 
 class AppSearchBar extends StatelessWidget {
   const AppSearchBar({
@@ -21,11 +22,13 @@ class AppSearchBar extends StatelessWidget {
 
     return Container(
       height: 48,
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: theme.cardTheme.color,
-        borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-        border: Border.all(
-          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+        shape: AppShapes.squircle(
+          AppSizes.radiusMd,
+          side: BorderSide(
+            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+          ),
         ),
       ),
       child: Row(

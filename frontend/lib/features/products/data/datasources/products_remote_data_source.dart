@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:io';
+import 'package:http/http.dart' as http;
 import 'package:shopxy/core/network/api_client.dart';
 import 'package:shopxy/features/products/data/models/product_dto.dart';
 import 'package:shopxy/features/products/domain/entities/product.dart';
@@ -73,5 +75,25 @@ class ProductsRemoteDataSource {
 
   Future<void> deleteProduct(int id) async {
     await _client.delete('/products/$id');
+  }
+
+  Future<void> addImage(int productId, String url) async {
+    await _client.post('/products/$productId/images', body: {'url': url});
+  }
+
+  Future<void> deleteImage(int productId, int imageId) async {
+    await _client.delete('/products/$productId/images/$imageId');
+  }
+
+  /// Uploads [file] to MinIO via the backend and returns the stored URL.
+  Future<String> uploadImage(File file) async {
+    final streamed = await _client.multipart(
+      '/upload',
+      file: await http.MultipartFile.fromPath('file', file.path),
+    );
+    final body = await streamed.stream.bytesToString();
+    if (streamed.statusCode != 201) throw Exception('Upload failed: $body');
+    final json = jsonDecode(body) as Map<String, dynamic>;
+    return json['url'] as String;
   }
 }

@@ -6,19 +6,13 @@ export class DashboardService {
       totalProducts,
       activeProducts,
       totalCategories,
-      lowStockProducts,
       outOfStockProducts,
       recentTransactions,
+      activeStockRows,
     ] = await Promise.all([
       prisma.product.count(),
       prisma.product.count({ where: { isActive: true } }),
       prisma.category.count({ where: { isActive: true } }),
-      prisma.$queryRaw<[{ count: bigint }]>`
-        SELECT COUNT(*) as count FROM products
-        WHERE is_active = true
-          AND stock_quantity <= low_stock_threshold
-          AND stock_quantity > 0
-      `,
       prisma.product.count({
         where: { isActive: true, stockQuantity: { lte: 0 } },
       }),
@@ -27,25 +21,50 @@ export class DashboardService {
         take: 10,
         include: { product: { select: { id: true, name: true, sku: true, unit: true } } },
       }),
+      prisma.product.findMany({
+        where: { isActive: true },
+        select: {
+          stockQuantity: true,
+          lowStockThreshold: true,
+          purchasePrice: true,
+        },
+      }),
     ]);
 
-    const stockValueResult = await prisma.$queryRaw<[{ total: string | null }]>`
-      SELECT COALESCE(SUM(stock_quantity * purchase_price), 0)::text as total
-      FROM products WHERE is_active = true
-    `;
+    const lowStockCount = activeStockRows.reduce((count, row) => {
+      return count + (isLowStock(row.stockQuantity, row.lowStockThreshold) ? 1 : 0);
+    }, 0);
 
-    const totalStockValue = parseFloat(stockValueResult[0]?.total ?? '0');
+    const totalStockValue = activeStockRows.reduce((total, row) => {
+      return total + toNumber(row.stockQuantity) * toNumber(row.purchasePrice);
+    }, 0);
 
     return {
       totalProducts,
       activeProducts,
       totalCategories,
-      lowStockCount: Number(lowStockProducts[0]?.count ?? 0),
+      lowStockCount,
       outOfStockCount: outOfStockProducts,
       totalStockValue,
       recentTransactions,
     };
   }
+}
+
+function toNumber(value: unknown): number {
+  if (value == null) return 0;
+  if (typeof value === 'number') return value;
+  if (typeof value === 'bigint') return Number(value);
+  if (typeof (value as { toNumber?: () => number }).toNumber === 'function') {
+    return (value as { toNumber: () => number }).toNumber();
+  }
+  return Number(value);
+}
+
+function isLowStock(quantity: unknown, threshold: unknown): boolean {
+  const qty = toNumber(quantity);
+  const limit = toNumber(threshold);
+  return qty > 0 && qty <= limit;
 }
 
 export const dashboardService = new DashboardService();
