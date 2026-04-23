@@ -7,12 +7,18 @@ const challanItemSchema = z.object({
   quantity: z.number().positive(),
 });
 
-const createChallanSchema = z.object({
-  partyName: z.string().min(1),
-  partyPhone: z.string().optional(),
-  note: z.string().optional(),
-  items: z.array(challanItemSchema).min(1),
-});
+const createChallanSchema = z
+  .object({
+    partyId: z.number().int().positive().optional(),
+    partyName: z.string().min(1).optional(),
+    partyPhone: z.string().optional(),
+    note: z.string().optional(),
+    items: z.array(challanItemSchema).min(1),
+  })
+  .refine((d) => d.partyId !== undefined || (d.partyName && d.partyName.length > 0), {
+    message: 'Either partyId or partyName is required',
+    path: ['partyName'],
+  });
 
 const convertSchema = z.object({
   customerName: z.string().optional(),

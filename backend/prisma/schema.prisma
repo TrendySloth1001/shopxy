@@ -138,6 +138,25 @@ model Vendor {
   @@map("vendors")
 }
 
+model Party {
+  id          Int       @id @default(autoincrement())
+  name        String
+  contactName String?   @map("contact_name")
+  phone       String?
+  email       String?
+  address     String?
+  gstin       String?
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  challans    Challan[]
+  invoices    Invoice[]
+
+  @@index([name])
+  @@index([isActive])
+  @@map("parties")
+}
+
 model Invoice {
   id            Int           @id @default(autoincrement())
   invoiceNo     String        @unique @map("invoice_no")
@@ -145,6 +164,8 @@ model Invoice {
   status        String        @default("DRAFT")
   vendorId      Int?          @map("vendor_id")
   vendor        Vendor?       @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+  partyId       Int?          @map("party_id")
+  party         Party?        @relation(fields: [partyId], references: [id], onDelete: SetNull)
   customerName  String?       @map("customer_name")
   customerPhone String?       @map("customer_phone")
   customerGstin String?       @map("customer_gstin")
@@ -163,6 +184,7 @@ model Invoice {
   @@index([status])
   @@index([invoiceDate])
   @@index([vendorId])
+  @@index([partyId])
   @@map("invoices")
 }
 
@@ -170,6 +192,8 @@ model Challan {
   id         Int           @id @default(autoincrement())
   challanNo  String        @unique @map("challan_no")
   status     String        @default("PENDING")
+  partyId    Int?          @map("party_id")
+  party      Party?        @relation(fields: [partyId], references: [id], onDelete: SetNull)
   partyName  String        @map("party_name")
   partyPhone String?       @map("party_phone")
   note       String?
@@ -181,6 +205,7 @@ model Challan {
 
   @@index([status])
   @@index([createdAt])
+  @@index([partyId])
   @@map("challans")
 }
 

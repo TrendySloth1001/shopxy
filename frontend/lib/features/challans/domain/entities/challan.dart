@@ -35,6 +35,7 @@ class Challan {
     required this.id,
     required this.challanNo,
     required this.status,
+    this.partyId,
     required this.partyName,
     this.partyPhone,
     this.note,
@@ -48,6 +49,7 @@ class Challan {
   final int id;
   final String challanNo;
   final String status;
+  final int? partyId;
   final String partyName;
   final String? partyPhone;
   final String? note;

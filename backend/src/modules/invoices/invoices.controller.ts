@@ -14,6 +14,7 @@ const itemSchema = z.object({
 const createInvoiceSchema = z.object({
   type: z.enum(['SALE', 'PURCHASE']),
   vendorId: z.number().int().positive().optional(),
+  partyId: z.number().int().positive().optional(),
   customerName: z.string().max(200).optional(),
   customerPhone: z.string().max(20).optional(),
   customerGstin: z.string().max(20).optional(),
@@ -48,12 +49,14 @@ export class InvoicesController {
     const type = req.query.type as string | undefined;
     const status = req.query.status as string | undefined;
     const vendorId = req.query.vendorId ? Number(req.query.vendorId) : undefined;
+    const partyId = req.query.partyId ? Number(req.query.partyId) : undefined;
     const search = (req.query.search as string) || '';
 
     const { invoices, total } = await invoicesService.listInvoices({
       type,
       status,
       vendorId,
+      partyId,
       search,
       page,
       limit,

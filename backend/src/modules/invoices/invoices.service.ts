@@ -16,6 +16,7 @@ export class InvoicesService {
   async createInvoice(data: {
     type: InvoiceType;
     vendorId?: number;
+    partyId?: number;
     customerName?: string;
     customerPhone?: string;
     customerGstin?: string;
@@ -26,6 +27,24 @@ export class InvoicesService {
   }) {
     if (data.items.length === 0) {
       return { error: 'Invoice must have at least one item' as const };
+    }
+
+    let partyId: number | null = null;
+    let customerName = data.customerName ?? null;
+    let customerPhone = data.customerPhone ?? null;
+    let customerGstin = data.customerGstin ?? null;
+
+    if (data.partyId) {
+      const party = await prisma.party.findUnique({
+        where: { id: data.partyId },
+        select: { id: true, name: true, phone: true, gstin: true, isActive: true },
+      });
+      if (!party) return { error: 'Party not found' as const };
+      if (!party.isActive) return { error: 'Party is inactive' as const };
+      partyId = party.id;
+      customerName = customerName ?? party.name;
+      customerPhone = customerPhone ?? party.phone ?? null;
+      customerGstin = customerGstin ?? party.gstin ?? null;
     }
 
     // Resolve products for snapshots
@@ -78,9 +97,10 @@ export class InvoicesService {
         invoiceNo,
         type: data.type,
         vendorId: data.vendorId ?? null,
-        customerName: data.customerName ?? null,
-        customerPhone: data.customerPhone ?? null,
-        customerGstin: data.customerGstin ?? null,
+        partyId,
+        customerName,
+        customerPhone,
+        customerGstin,
         subtotal: this.round2(subtotal),
         taxAmount: this.round2(taxAmount),
         discount: headerDiscount,
@@ -89,7 +109,7 @@ export class InvoicesService {
         invoiceDate: data.invoiceDate ? new Date(data.invoiceDate) : new Date(),
         items: { create: itemsData },
       },
-      include: { items: true, vendor: true },
+      include: { items: true, vendor: true, party: true },
     });
 
     return { invoice };
@@ -99,6 +119,7 @@ export class InvoicesService {
     type?: string;
     status?: string;
     vendorId?: number;
+    partyId?: number;
     search: string;
     page: number;
     limit: number;
@@ -108,6 +129,7 @@ export class InvoicesService {
     if (options.type) where.type = options.type;
     if (options.status) where.status = options.status;
     if (options.vendorId) where.vendorId = options.vendorId;
+    if (options.partyId) where.partyId = options.partyId;
     if (options.search) {
       where.OR = [
         { invoiceNo: { contains: options.search, mode: 'insensitive' } },
@@ -136,6 +158,7 @@ export class InvoicesService {
           invoiceDate: true,
           createdAt: true,
           vendor: { select: { id: true, name: true } },
+          party: { select: { id: true, name: true } },
           _count: { select: { items: true } },
         },
       }),
@@ -150,6 +173,7 @@ export class InvoicesService {
       where: { id },
       include: {
         vendor: true,
+        party: true,
         items: {
           orderBy: { id: 'asc' },
         },
@@ -169,7 +193,7 @@ export class InvoicesService {
     const updated = await prisma.invoice.update({
       where: { id },
       data: { status },
-      include: { vendor: true, items: true },
+      include: { vendor: true, party: true, items: true },
     });
     return { invoice: updated };
   }
@@ -187,7 +211,7 @@ export class InvoicesService {
   async generatePdf(id: number): Promise<Buffer | { error: string }> {
     const invoice = await prisma.invoice.findUnique({
       where: { id },
-      include: { vendor: true, items: { orderBy: { id: 'asc' } } },
+      include: { vendor: true, party: true, items: { orderBy: { id: 'asc' } } },
     });
 
     if (!invoice) return { error: 'Invoice not found' };
@@ -228,11 +252,17 @@ export class InvoicesService {
       // Party info
       let y = 125;
       if (invoice.type === 'SALE') {
-        if (invoice.customerName) {
+        const displayName = invoice.party?.name ?? invoice.customerName;
+        const displayPhone = invoice.customerPhone ?? invoice.party?.phone;
+        const displayGstin = invoice.customerGstin ?? invoice.party?.gstin;
+        const displayAddress = invoice.party?.address;
+        if (displayName) {
           doc.fontSize(9).font('Helvetica-Bold').text('Bill To:', 40, y);
-          doc.font('Helvetica').text(invoice.customerName, 40, y + 12);
-          if (invoice.customerPhone) doc.text(`Phone: ${invoice.customerPhone}`, 40, y + 24);
-          if (invoice.customerGstin) doc.text(`GSTIN: ${invoice.customerGstin}`, 40, y + 36);
+          doc.font('Helvetica').text(displayName, 40, y + 12);
+          let lineY = y + 24;
+          if (displayPhone) { doc.text(`Phone: ${displayPhone}`, 40, lineY); lineY += 12; }
+          if (displayGstin) { doc.text(`GSTIN: ${displayGstin}`, 40, lineY); lineY += 12; }
+          if (displayAddress) { doc.text(displayAddress, 40, lineY, { width: 300 }); }
         }
       } else {
         if (invoice.vendor) {

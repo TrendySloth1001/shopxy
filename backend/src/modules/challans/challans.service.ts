@@ -21,7 +21,8 @@ async function nextInvoiceNo(type: 'SALE' | 'PURCHASE'): Promise<string> {
 
 export class ChallansService {
   async createChallan(data: {
-    partyName: string;
+    partyId?: number;
+    partyName?: string;
     partyPhone?: string;
     note?: string;
     items: { productId: number; quantity: number }[];
@@ -29,6 +30,24 @@ export class ChallansService {
     if (data.items.length === 0) {
       return { error: 'Challan must have at least one item' as const };
     }
+
+    let partyId: number | null = null;
+    let partyName = data.partyName?.trim() ?? '';
+    let partyPhone = data.partyPhone ?? null;
+
+    if (data.partyId) {
+      const party = await prisma.party.findUnique({
+        where: { id: data.partyId },
+        select: { id: true, name: true, phone: true, isActive: true },
+      });
+      if (!party) return { error: 'Party not found' as const };
+      if (!party.isActive) return { error: 'Party is inactive' as const };
+      partyId = party.id;
+      partyName = party.name;
+      partyPhone = party.phone ?? partyPhone;
+    }
+
+    if (!partyName) return { error: 'Party name is required' as const };
 
     const productIds = [...new Set(data.items.map((i) => i.productId))];
     const products = await prisma.product.findMany({
@@ -48,8 +67,9 @@ export class ChallansService {
     const challan = await prisma.challan.create({
       data: {
         challanNo,
-        partyName: data.partyName,
-        partyPhone: data.partyPhone ?? null,
+        partyId,
+        partyName,
+        partyPhone,
         note: data.note ?? null,
         items: {
           create: data.items.map((item) => {
@@ -64,7 +84,7 @@ export class ChallansService {
           }),
         },
       },
-      include: { items: true },
+      include: { items: true, party: true },
     });
 
     return { challan };
@@ -97,8 +117,10 @@ export class ChallansService {
           id: true,
           challanNo: true,
           status: true,
+          partyId: true,
           partyName: true,
           partyPhone: true,
+          party: { select: { id: true, name: true, phone: true } },
           invoiceId: true,
           createdAt: true,
           _count: { select: { items: true } },
@@ -115,6 +137,7 @@ export class ChallansService {
       where: { id },
       include: {
         items: { orderBy: { id: 'asc' } },
+        party: true,
         invoice: { select: { id: true, invoiceNo: true, status: true } },
       },
     });
@@ -136,7 +159,7 @@ export class ChallansService {
   ) {
     const challan = await prisma.challan.findUnique({
       where: { id },
-      include: { items: true },
+      include: { items: true, party: true },
     });
 
     if (!challan) return { error: 'Challan not found' as const };
@@ -190,9 +213,10 @@ export class ChallansService {
           invoiceNo,
           type: 'SALE',
           status: 'DRAFT',
+          partyId: challan.partyId,
           customerName: data?.customerName ?? challan.partyName,
-          customerPhone: challan.partyPhone ?? null,
-          customerGstin: data?.customerGstin ?? null,
+          customerPhone: challan.partyPhone ?? challan.party?.phone ?? null,
+          customerGstin: data?.customerGstin ?? challan.party?.gstin ?? null,
           subtotal: round2(subtotal),
           taxAmount: round2(taxAmount),
           discount: headerDiscount,
@@ -200,7 +224,7 @@ export class ChallansService {
           note: data?.note ?? challan.note ?? null,
           items: { create: itemsData },
         },
-        include: { items: true },
+        include: { items: true, party: true },
       });
 
       await tx.challan.update({

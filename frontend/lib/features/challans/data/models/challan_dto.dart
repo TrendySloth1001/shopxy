@@ -27,6 +27,7 @@ class ChallanDto {
       id: j['id'] as int,
       challanNo: j['challanNo'] as String,
       status: j['status'] as String,
+      partyId: j['partyId'] as int?,
       partyName: j['partyName'] as String,
       partyPhone: j['partyPhone'] as String?,
       note: j['note'] as String?,
@@ -39,13 +40,15 @@ class ChallanDto {
   }
 
   static Map<String, dynamic> toCreateJson({
-    required String partyName,
+    int? partyId,
+    String? partyName,
     String? partyPhone,
     String? note,
     required List<ChallanItemDraft> items,
   }) =>
       {
-        'partyName': partyName,
+        if (partyId != null) 'partyId': partyId,
+        if (partyName != null && partyName.isNotEmpty) 'partyName': partyName,
         if (partyPhone != null && partyPhone.isNotEmpty) 'partyPhone': partyPhone,
         if (note != null && note.isNotEmpty) 'note': note,
         'items': items

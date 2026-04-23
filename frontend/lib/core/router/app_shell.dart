@@ -5,6 +5,7 @@ import 'package:shopxy/features/categories/presentation/pages/categories_page.da
 import 'package:shopxy/features/challans/presentation/pages/challans_page.dart';
 import 'package:shopxy/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:shopxy/features/invoices/presentation/pages/invoices_page.dart';
+import 'package:shopxy/features/parties/presentation/pages/parties_page.dart';
 import 'package:shopxy/features/products/presentation/pages/products_page.dart';
 import 'package:shopxy/features/vendors/presentation/pages/vendors_page.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
@@ -128,10 +129,20 @@ class _MorePage extends StatelessWidget {
             icon: Icons.business_rounded,
             iconColor: theme.colorScheme.secondary,
             title: AppStrings.navVendors,
-            subtitle: 'Manage suppliers and vendors',
+            subtitle: 'Suppliers you buy from',
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const VendorsPage()),
+            ),
+          ),
+          _MoreTile(
+            icon: Icons.groups_rounded,
+            iconColor: Colors.teal,
+            title: AppStrings.navParties,
+            subtitle: 'Customers you sell to',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const PartiesPage()),
             ),
           ),
           _MoreTile(

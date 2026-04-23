@@ -84,6 +84,21 @@ class AppStrings {
   static const String address = 'Address';
   static const String vendor = 'Vendor';
 
+  // Parties
+  static const String navParties = 'Parties';
+  static const String addParty = 'Add Party';
+  static const String editParty = 'Edit Party';
+  static const String deleteParty = 'Delete Party';
+  static const String deletePartyConfirm =
+      'Are you sure you want to delete this party?';
+  static const String partyDeleted = 'Party deleted successfully';
+  static const String searchParties = 'Search parties...';
+  static const String noParties = 'No parties found';
+  static const String noPartiesHint = 'Tap + to add your first party';
+  static const String party = 'Party';
+  static const String selectParty = 'Select party';
+  static const String newParty = 'New party';
+
   // Invoices
   static const String createInvoice = 'Create Invoice';
   static const String invoiceType = 'Invoice Type';
