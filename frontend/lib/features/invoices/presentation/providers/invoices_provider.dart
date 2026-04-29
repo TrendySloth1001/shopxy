@@ -56,6 +56,7 @@ class InvoicesProvider extends ChangeNotifier {
   Future<Invoice> createInvoice({
     required String type,
     int? vendorId,
+    int? partyId,
     String? customerName,
     String? customerPhone,
     String? customerGstin,
@@ -66,6 +67,7 @@ class InvoicesProvider extends ChangeNotifier {
     final invoice = await _ds.createInvoice(
       type: type,
       vendorId: vendorId,
+      partyId: partyId,
       customerName: customerName,
       customerPhone: customerPhone,
       customerGstin: customerGstin,

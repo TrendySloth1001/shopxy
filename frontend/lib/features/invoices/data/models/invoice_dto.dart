@@ -62,6 +62,7 @@ class InvoiceDto {
   static Map<String, dynamic> toCreateJson({
     required String type,
     int? vendorId,
+    int? partyId,
     String? customerName,
     String? customerPhone,
     String? customerGstin,
@@ -71,6 +72,7 @@ class InvoiceDto {
   }) {
     final payload = <String, dynamic>{'type': type, 'items': items};
     if (vendorId != null) payload['vendorId'] = vendorId;
+    if (partyId != null) payload['partyId'] = partyId;
     if (customerName != null && customerName.isNotEmpty) {
       payload['customerName'] = customerName;
     }

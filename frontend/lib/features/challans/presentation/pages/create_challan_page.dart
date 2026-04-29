@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/features/challans/domain/entities/challan.dart';
 import 'package:shopxy/features/challans/presentation/providers/challans_provider.dart';
+import 'package:shopxy/features/parties/domain/entities/party.dart';
+import 'package:shopxy/features/parties/presentation/widgets/party_picker.dart';
 import 'package:shopxy/features/products/data/datasources/products_remote_data_source.dart';
 import 'package:shopxy/features/products/domain/entities/product.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
@@ -25,6 +27,7 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
   List<Product> _searchResults = [];
   bool _isSearching = false;
   bool _isSaving = false;
+  Party? _selectedParty;
 
   @override
   void dispose() {
@@ -69,6 +72,25 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
     setState(() => _searchResults = []);
   }
 
+  Future<void> _pickParty() async {
+    final picked = await showPartyPicker(context);
+    if (picked != null && mounted) {
+      setState(() {
+        _selectedParty = picked;
+        _partyName.text = picked.name;
+        _partyPhone.text = picked.phone ?? '';
+      });
+    }
+  }
+
+  void _clearParty() {
+    setState(() {
+      _selectedParty = null;
+      _partyName.clear();
+      _partyPhone.clear();
+    });
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     if (_items.isEmpty) {
@@ -81,8 +103,11 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
     try {
       final provider = context.read<ChallansProvider>();
       await provider.createChallan(
-        partyName: _partyName.text.trim(),
-        partyPhone: _partyPhone.text.trim().isNotEmpty ? _partyPhone.text.trim() : null,
+        partyId: _selectedParty?.id,
+        partyName: _selectedParty == null ? _partyName.text.trim() : null,
+        partyPhone: _selectedParty == null && _partyPhone.text.trim().isNotEmpty
+            ? _partyPhone.text.trim()
+            : null,
         note: _note.text.trim().isNotEmpty ? _note.text.trim() : null,
         items: _items,
       );
@@ -124,19 +149,34 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
             // ── Party info ────────────────────────────────────────────
             _SectionHeader(title: AppStrings.challanPartyInfo),
             const SizedBox(height: AppSizes.md),
-            TextFormField(
-              controller: _partyName,
-              decoration: const InputDecoration(labelText: AppStrings.partyName),
-              validator: (v) =>
-                  v == null || v.trim().isEmpty ? AppStrings.fieldRequired : null,
-              textCapitalization: TextCapitalization.words,
-            ),
-            const SizedBox(height: AppSizes.md),
-            TextFormField(
-              controller: _partyPhone,
-              decoration: const InputDecoration(labelText: AppStrings.phone),
-              keyboardType: TextInputType.phone,
-            ),
+            if (_selectedParty != null)
+              _SelectedPartyCard(
+                party: _selectedParty!,
+                onChange: _pickParty,
+                onClear: _clearParty,
+              )
+            else ...[
+              OutlinedButton.icon(
+                onPressed: _pickParty,
+                icon: const Icon(Icons.person_search_rounded),
+                label: const Text(AppStrings.selectParty),
+              ),
+              const SizedBox(height: AppSizes.md),
+              TextFormField(
+                controller: _partyName,
+                decoration: const InputDecoration(labelText: AppStrings.partyName),
+                validator: (v) => _selectedParty == null && (v == null || v.trim().isEmpty)
+                    ? AppStrings.fieldRequired
+                    : null,
+                textCapitalization: TextCapitalization.words,
+              ),
+              const SizedBox(height: AppSizes.md),
+              TextFormField(
+                controller: _partyPhone,
+                decoration: const InputDecoration(labelText: AppStrings.phone),
+                keyboardType: TextInputType.phone,
+              ),
+            ],
             const SizedBox(height: AppSizes.md),
             TextFormField(
               controller: _note,
@@ -328,6 +368,73 @@ class _SectionHeader extends StatelessWidget {
             fontWeight: FontWeight.w700,
             color: Theme.of(context).colorScheme.primary,
           ),
+    );
+  }
+}
+
+class _SelectedPartyCard extends StatelessWidget {
+  const _SelectedPartyCard({
+    required this.party,
+    required this.onChange,
+    required this.onClear,
+  });
+
+  final Party party;
+  final VoidCallback onChange;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      margin: EdgeInsets.zero,
+      color: theme.colorScheme.secondaryContainer.withValues(alpha: 0.4),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSizes.md),
+        child: Row(
+          children: [
+            CircleAvatar(
+              backgroundColor: theme.colorScheme.secondaryContainer,
+              child: Text(
+                party.name.characters.first.toUpperCase(),
+                style: TextStyle(
+                  color: theme.colorScheme.onSecondaryContainer,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            const SizedBox(width: AppSizes.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    party.name,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  if (party.phone != null)
+                    Text(party.phone!, style: theme.textTheme.bodySmall),
+                  if (party.gstin != null)
+                    Text(
+                      'GSTIN: ${party.gstin}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            TextButton(onPressed: onChange, child: const Text('Change')),
+            IconButton(
+              icon: const Icon(Icons.close_rounded),
+              onPressed: onClear,
+              visualDensity: VisualDensity.compact,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

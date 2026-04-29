@@ -42,6 +42,7 @@ class InvoicesRemoteDataSource {
   Future<Invoice> createInvoice({
     required String type,
     int? vendorId,
+    int? partyId,
     String? customerName,
     String? customerPhone,
     String? customerGstin,
@@ -54,6 +55,7 @@ class InvoicesRemoteDataSource {
       body: InvoiceDto.toCreateJson(
         type: type,
         vendorId: vendorId,
+        partyId: partyId,
         customerName: customerName,
         customerPhone: customerPhone,
         customerGstin: customerGstin,

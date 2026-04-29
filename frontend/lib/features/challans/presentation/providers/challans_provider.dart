@@ -52,12 +52,14 @@ class ChallansProvider extends ChangeNotifier {
   }
 
   Future<Challan> createChallan({
-    required String partyName,
+    int? partyId,
+    String? partyName,
     String? partyPhone,
     String? note,
     required List<ChallanItemDraft> items,
   }) async {
     final data = ChallanDto.toCreateJson(
+      partyId: partyId,
       partyName: partyName,
       partyPhone: partyPhone,
       note: note,

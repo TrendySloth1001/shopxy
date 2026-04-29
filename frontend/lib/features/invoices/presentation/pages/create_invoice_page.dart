@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/features/invoices/domain/entities/invoice.dart';
 import 'package:shopxy/features/invoices/presentation/providers/invoices_provider.dart';
+import 'package:shopxy/features/parties/domain/entities/party.dart';
+import 'package:shopxy/features/parties/presentation/widgets/party_picker.dart';
 import 'package:shopxy/features/products/data/datasources/products_remote_data_source.dart';
 import 'package:shopxy/features/products/domain/entities/product.dart';
 import 'package:shopxy/features/vendors/data/datasources/vendors_remote_data_source.dart';
@@ -22,6 +24,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
 
   String _type = 'SALE';
   Vendor? _selectedVendor;
+  Party? _selectedParty;
   final _customerName = TextEditingController();
   final _customerPhone = TextEditingController();
   final _customerGstin = TextEditingController();
@@ -94,6 +97,27 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
     setState(() => _productResults = []);
   }
 
+  Future<void> _pickParty() async {
+    final picked = await showPartyPicker(context);
+    if (picked != null && mounted) {
+      setState(() {
+        _selectedParty = picked;
+        _customerName.text = picked.name;
+        _customerPhone.text = picked.phone ?? '';
+        _customerGstin.text = picked.gstin ?? '';
+      });
+    }
+  }
+
+  void _clearParty() {
+    setState(() {
+      _selectedParty = null;
+      _customerName.clear();
+      _customerPhone.clear();
+      _customerGstin.clear();
+    });
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     if (_items.isEmpty) {
@@ -107,6 +131,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
       await context.read<InvoicesProvider>().createInvoice(
         type: _type,
         vendorId: _selectedVendor?.id,
+        partyId: _type == 'SALE' ? _selectedParty?.id : null,
         customerName: _customerName.text,
         customerPhone: _customerPhone.text,
         customerGstin: _customerGstin.text,
@@ -181,6 +206,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
               onSelectionChanged: (v) => setState(() {
                 _type = v.first;
                 _selectedVendor = null;
+                _selectedParty = null;
               }),
             ),
             const SizedBox(height: AppSizes.xxl),
@@ -198,37 +224,51 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                 onSelected: (v) => setState(() => _selectedVendor = v),
               ),
             ] else ...[
-              TextFormField(
-                controller: _customerName,
-                decoration: const InputDecoration(
-                  labelText: AppStrings.customerName,
+              if (_selectedParty != null)
+                _SelectedPartyCard(
+                  party: _selectedParty!,
+                  onChange: _pickParty,
+                  onClear: _clearParty,
+                )
+              else ...[
+                OutlinedButton.icon(
+                  onPressed: _pickParty,
+                  icon: const Icon(Icons.person_search_rounded),
+                  label: const Text(AppStrings.selectParty),
                 ),
-                textCapitalization: TextCapitalization.words,
-              ),
-              const SizedBox(height: AppSizes.md),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _customerPhone,
-                      decoration: const InputDecoration(
-                        labelText: AppStrings.phone,
-                      ),
-                      keyboardType: TextInputType.phone,
-                    ),
+                const SizedBox(height: AppSizes.md),
+                TextFormField(
+                  controller: _customerName,
+                  decoration: const InputDecoration(
+                    labelText: AppStrings.customerName,
                   ),
-                  const SizedBox(width: AppSizes.md),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _customerGstin,
-                      decoration: const InputDecoration(
-                        labelText: AppStrings.gstin,
+                  textCapitalization: TextCapitalization.words,
+                ),
+                const SizedBox(height: AppSizes.md),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _customerPhone,
+                        decoration: const InputDecoration(
+                          labelText: AppStrings.phone,
+                        ),
+                        keyboardType: TextInputType.phone,
                       ),
-                      textCapitalization: TextCapitalization.characters,
                     ),
-                  ),
-                ],
-              ),
+                    const SizedBox(width: AppSizes.md),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _customerGstin,
+                        decoration: const InputDecoration(
+                          labelText: AppStrings.gstin,
+                        ),
+                        textCapitalization: TextCapitalization.characters,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ],
 
             const SizedBox(height: AppSizes.xxl),
@@ -604,6 +644,73 @@ class _SectionHeader extends StatelessWidget {
       style: Theme.of(context).textTheme.titleSmall?.copyWith(
         fontWeight: FontWeight.w700,
         color: Theme.of(context).colorScheme.primary,
+      ),
+    );
+  }
+}
+
+class _SelectedPartyCard extends StatelessWidget {
+  const _SelectedPartyCard({
+    required this.party,
+    required this.onChange,
+    required this.onClear,
+  });
+
+  final Party party;
+  final VoidCallback onChange;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      margin: EdgeInsets.zero,
+      color: theme.colorScheme.secondaryContainer.withValues(alpha: 0.4),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSizes.md),
+        child: Row(
+          children: [
+            CircleAvatar(
+              backgroundColor: theme.colorScheme.secondaryContainer,
+              child: Text(
+                party.name.characters.first.toUpperCase(),
+                style: TextStyle(
+                  color: theme.colorScheme.onSecondaryContainer,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            const SizedBox(width: AppSizes.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    party.name,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  if (party.phone != null)
+                    Text(party.phone!, style: theme.textTheme.bodySmall),
+                  if (party.gstin != null)
+                    Text(
+                      'GSTIN: ${party.gstin}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            TextButton(onPressed: onChange, child: const Text('Change')),
+            IconButton(
+              icon: const Icon(Icons.close_rounded),
+              onPressed: onClear,
+              visualDensity: VisualDensity.compact,
+            ),
+          ],
+        ),
       ),
     );
   }
