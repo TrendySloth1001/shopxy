@@ -10,6 +10,12 @@ import 'package:shopxy/features/vendors/data/datasources/vendors_remote_data_sou
 import 'package:shopxy/features/vendors/domain/entities/vendor.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
+import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/shared/widgets/app_button.dart';
+import 'package:shopxy/shared/widgets/app_card.dart';
+import 'package:shopxy/shared/widgets/app_divider.dart';
+import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
+import 'package:shopxy/shared/widgets/app_section_header.dart';
 
 class CreateInvoicePage extends StatefulWidget {
   const CreateInvoicePage({super.key});
@@ -186,9 +192,10 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
         child: ListView(
           padding: const EdgeInsets.all(AppSizes.lg),
           children: [
-            // Type selector
-            _SectionHeader(title: AppStrings.invoiceType),
-            const SizedBox(height: AppSizes.md),
+            AppSectionHeader(
+              title: AppStrings.invoiceType.toUpperCase(),
+              padding: const EdgeInsets.only(bottom: AppSizes.sm),
+            ),
             SegmentedButton<String>(
               segments: const [
                 ButtonSegment(
@@ -211,13 +218,13 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
             ),
             const SizedBox(height: AppSizes.xxl),
 
-            // Party info
-            _SectionHeader(
-              title: _type == 'SALE'
-                  ? AppStrings.customerInfo
-                  : AppStrings.vendorInfo,
+            AppSectionHeader(
+              title: (_type == 'SALE'
+                      ? AppStrings.customerInfo
+                      : AppStrings.vendorInfo)
+                  .toUpperCase(),
+              padding: const EdgeInsets.only(bottom: AppSizes.sm),
             ),
-            const SizedBox(height: AppSizes.md),
             if (_type == 'PURCHASE') ...[
               _VendorSelector(
                 selectedVendor: _selectedVendor,
@@ -231,10 +238,11 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                   onClear: _clearParty,
                 )
               else ...[
-                OutlinedButton.icon(
+                AppButton.secondary(
+                  label: AppStrings.selectParty,
+                  icon: Icons.person_search_rounded,
                   onPressed: _pickParty,
-                  icon: const Icon(Icons.person_search_rounded),
-                  label: const Text(AppStrings.selectParty),
+                  fullWidth: true,
                 ),
                 const SizedBox(height: AppSizes.md),
                 TextFormField(
@@ -273,9 +281,10 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
 
             const SizedBox(height: AppSizes.xxl),
 
-            // Items
-            _SectionHeader(title: AppStrings.invoiceItems),
-            const SizedBox(height: AppSizes.md),
+            AppSectionHeader(
+              title: AppStrings.invoiceItems.toUpperCase(),
+              padding: const EdgeInsets.only(bottom: AppSizes.sm),
+            ),
 
             // Product search
             TextField(
@@ -298,22 +307,24 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
 
             if (_productResults.isNotEmpty) ...[
               const SizedBox(height: AppSizes.sm),
-              Card(
+              AppCard(
+                padding: EdgeInsets.zero,
                 child: Column(
-                  children: _productResults
-                      .map(
-                        (p) => ListTile(
-                          dense: true,
-                          title: Text(p.name),
-                          subtitle: Text(p.sku),
-                          trailing: Text(
-                            '${AppStrings.currencySymbol}${(_type == 'SALE' ? p.sellingPrice : p.purchasePrice).toStringAsFixed(2)}',
-                            style: theme.textTheme.bodySmall,
-                          ),
-                          onTap: () => _addItem(p),
+                  children: [
+                    for (int i = 0; i < _productResults.length; i++) ...[
+                      if (i > 0) const AppDivider.flush(),
+                      ListTile(
+                        dense: true,
+                        title: Text(_productResults[i].name),
+                        subtitle: Text(_productResults[i].sku),
+                        trailing: Text(
+                          '${AppStrings.currencySymbol}${(_type == 'SALE' ? _productResults[i].sellingPrice : _productResults[i].purchasePrice).toStringAsFixed(2)}',
+                          style: theme.textTheme.bodySmall,
                         ),
-                      )
-                      .toList(),
+                        onTap: () => _addItem(_productResults[i]),
+                      ),
+                    ],
+                  ],
                 ),
               ),
             ],
@@ -321,18 +332,16 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
             const SizedBox(height: AppSizes.md),
 
             if (_items.isEmpty)
-              Container(
+              AppCard(
                 padding: const EdgeInsets.all(AppSizes.lg),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-                ),
-                child: Text(
-                  AppStrings.noItemsYet,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                child: Center(
+                  child: Text(
+                    AppStrings.noItemsYet,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.muted,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  textAlign: TextAlign.center,
                 ),
               )
             else
@@ -347,10 +356,11 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
 
             const SizedBox(height: AppSizes.xxl),
 
-            // Totals
             if (_items.isNotEmpty) ...[
-              _SectionHeader(title: AppStrings.totals),
-              const SizedBox(height: AppSizes.md),
+              AppSectionHeader(
+                title: AppStrings.totals.toUpperCase(),
+                padding: const EdgeInsets.only(bottom: AppSizes.sm),
+              ),
               _TotalRow(label: AppStrings.subtotal, value: _subtotal),
               _TotalRow(label: AppStrings.tax, value: _totalTax),
               Row(
@@ -378,7 +388,10 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                   ),
                 ],
               ),
-              const Divider(),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: AppSizes.sm),
+                child: AppDivider.flush(),
+              ),
               _TotalRow(
                 label: AppStrings.total,
                 value: _total,
@@ -475,9 +488,9 @@ class _ItemRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
-      margin: const EdgeInsets.only(bottom: AppSizes.sm),
-      child: Padding(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSizes.sm),
+      child: AppCard(
         padding: const EdgeInsets.all(AppSizes.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -499,9 +512,9 @@ class _ItemRow extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  icon: Icon(
+                  icon: const Icon(
                     Icons.close_rounded,
-                    color: theme.colorScheme.error,
+                    color: AppColors.error,
                     size: AppSizes.iconMd,
                   ),
                   onPressed: onRemove,
@@ -603,29 +616,21 @@ class _TotalRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final labelStyle = isHighlight
+        ? theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)
+        : theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted);
+    final valueStyle = isHighlight
+        ? theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)
+        : theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: isHighlight
-                ? theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  )
-                : theme.textTheme.bodyMedium,
-          ),
+          Text(label, style: labelStyle),
           Text(
             '${AppStrings.currencySymbol}${value.toStringAsFixed(2)}',
-            style: isHighlight
-                ? theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: theme.colorScheme.primary,
-                  )
-                : theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
+            style: valueStyle,
           ),
         ],
       ),
@@ -633,21 +638,6 @@ class _TotalRow extends StatelessWidget {
   }
 }
 
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title});
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-        fontWeight: FontWeight.w700,
-        color: Theme.of(context).colorScheme.primary,
-      ),
-    );
-  }
-}
 
 class _SelectedPartyCard extends StatelessWidget {
   const _SelectedPartyCard({
@@ -663,54 +653,41 @@ class _SelectedPartyCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
-      margin: EdgeInsets.zero,
-      color: theme.colorScheme.secondaryContainer.withValues(alpha: 0.4),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSizes.md),
-        child: Row(
-          children: [
-            CircleAvatar(
-              backgroundColor: theme.colorScheme.secondaryContainer,
-              child: Text(
-                party.name.characters.first.toUpperCase(),
-                style: TextStyle(
-                  color: theme.colorScheme.onSecondaryContainer,
-                  fontWeight: FontWeight.w700,
+    return AppCard(
+      padding: const EdgeInsets.all(AppSizes.md),
+      child: Row(
+        children: [
+          AppMonogramAvatar(label: party.name),
+          const SizedBox(width: AppSizes.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  party.name,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(width: AppSizes.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+                if (party.phone != null)
+                  Text(party.phone!, style: theme.textTheme.bodySmall),
+                if (party.gstin != null)
                   Text(
-                    party.name,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
+                    'GSTIN: ${party.gstin}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.muted,
                     ),
                   ),
-                  if (party.phone != null)
-                    Text(party.phone!, style: theme.textTheme.bodySmall),
-                  if (party.gstin != null)
-                    Text(
-                      'GSTIN: ${party.gstin}',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                ],
-              ),
+              ],
             ),
-            TextButton(onPressed: onChange, child: const Text('Change')),
-            IconButton(
-              icon: const Icon(Icons.close_rounded),
-              onPressed: onClear,
-              visualDensity: VisualDensity.compact,
-            ),
-          ],
-        ),
+          ),
+          TextButton(onPressed: onChange, child: const Text('Change')),
+          IconButton(
+            icon: const Icon(Icons.close_rounded),
+            onPressed: onClear,
+            visualDensity: VisualDensity.compact,
+          ),
+        ],
       ),
     );
   }

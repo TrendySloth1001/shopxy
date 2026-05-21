@@ -17,6 +17,7 @@ class AppStrings {
   static const String categories = 'Categories';
   static const String lowStock = 'Low Stock';
   static const String outOfStock = 'Out of Stock';
+  static const String inStock = 'In Stock';
   static const String stockValue = 'Stock Value';
   static const String recentActivity = 'Recent Activity';
 

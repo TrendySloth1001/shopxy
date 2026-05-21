@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
+import 'package:shopxy/shared/theme/app_colors.dart';
 
 class EmptyState extends StatelessWidget {
   const EmptyState({
@@ -25,20 +26,8 @@ class EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              padding: const EdgeInsets.all(AppSizes.xl),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest
-                    .withValues(alpha: 0.5),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                icon,
-                size: AppSizes.iconHuge,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: AppSizes.xxl),
+            Icon(icon, size: AppSizes.iconHuge, color: AppColors.muted),
+            const SizedBox(height: AppSizes.xl),
             Text(
               title,
               style: theme.textTheme.titleMedium,
@@ -48,9 +37,7 @@ class EmptyState extends StatelessWidget {
               const SizedBox(height: AppSizes.sm),
               Text(
                 subtitle!,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+                style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted),
                 textAlign: TextAlign.center,
               ),
             ],

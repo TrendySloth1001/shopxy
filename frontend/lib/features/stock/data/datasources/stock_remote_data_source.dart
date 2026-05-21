@@ -21,11 +21,16 @@ class StockRemoteDataSource {
   const StockRemoteDataSource(this._client);
   final ApiClient _client;
 
-  Future<StockTransaction> createTransaction(Map<String, dynamic> data) async {
+  /// Manual stock-in/out now creates a DRAFT invoice instead of posting
+  /// directly. Returns the draft invoice id so callers can navigate to it.
+  Future<int> createTransaction(Map<String, dynamic> data) async {
     final response = await _client.post('/stock', body: data);
-    return StockTransactionDto.fromJson(
-      jsonDecode(response.body) as Map<String, dynamic>,
-    );
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    final draft = body['draftInvoice'] as Map<String, dynamic>?;
+    if (draft == null) {
+      throw Exception('Backend did not return a draft invoice');
+    }
+    return draft['id'] as int;
   }
 
   Future<List<StockTransaction>> getTransactions({

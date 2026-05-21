@@ -4,7 +4,13 @@ import 'package:shopxy/features/vendors/domain/entities/vendor.dart';
 import 'package:shopxy/features/vendors/presentation/providers/vendors_provider.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
+import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/shared/widgets/app_button.dart';
+import 'package:shopxy/shared/widgets/app_dialog.dart';
+import 'package:shopxy/shared/widgets/app_divider.dart';
+import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
 import 'package:shopxy/shared/widgets/app_search_bar.dart';
+import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
 
 class VendorsPage extends StatefulWidget {
@@ -56,49 +62,52 @@ class _VendorsPageState extends State<VendorsPage> {
             child: provider.isLoading && provider.vendors.isEmpty
                 ? const Center(child: CircularProgressIndicator())
                 : provider.error != null && provider.vendors.isEmpty
-                ? Center(
-                    child: EmptyState(
-                      icon: Icons.error_outline_rounded,
-                      title: AppStrings.error,
-                      action: TextButton(
-                        onPressed: () => context
-                            .read<VendorsProvider>()
-                            .loadVendors(refresh: true),
-                        child: const Text(AppStrings.retry),
-                      ),
-                    ),
-                  )
-                : provider.vendors.isEmpty
-                ? EmptyState(
-                    icon: Icons.business_outlined,
-                    title: AppStrings.noVendors,
-                    subtitle: AppStrings.noVendorsHint,
-                    action: FilledButton.icon(
-                      onPressed: () => _showVendorSheet(context),
-                      icon: const Icon(Icons.add_rounded),
-                      label: const Text(AppStrings.addVendor),
-                    ),
-                  )
-                : RefreshIndicator(
-                    onRefresh: () => context
-                        .read<VendorsProvider>()
-                        .loadVendors(refresh: true),
-                    child: ListView.separated(
-                      padding: const EdgeInsets.all(AppSizes.lg),
-                      itemCount: provider.vendors.length,
-                      separatorBuilder: (_, _) =>
-                          const SizedBox(height: AppSizes.sm),
-                      itemBuilder: (context, i) => _VendorTile(
-                        vendor: provider.vendors[i],
-                        onEdit: () => _showVendorSheet(
-                          context,
-                          vendor: provider.vendors[i],
+                    ? EmptyState(
+                        icon: Icons.error_outline_rounded,
+                        title: AppStrings.error,
+                        action: AppButton.secondary(
+                          label: AppStrings.retry,
+                          onPressed: () => context
+                              .read<VendorsProvider>()
+                              .loadVendors(refresh: true),
                         ),
-                        onDelete: () =>
-                            _confirmDelete(context, provider.vendors[i]),
-                      ),
-                    ),
-                  ),
+                      )
+                    : provider.vendors.isEmpty
+                        ? EmptyState(
+                            icon: Icons.business_outlined,
+                            title: AppStrings.noVendors,
+                            subtitle: AppStrings.noVendorsHint,
+                            action: AppButton.primary(
+                              label: AppStrings.addVendor,
+                              icon: Icons.add_rounded,
+                              onPressed: () => _showVendorSheet(context),
+                            ),
+                          )
+                        : RefreshIndicator(
+                            onRefresh: () => context
+                                .read<VendorsProvider>()
+                                .loadVendors(refresh: true),
+                            color: AppColors.black,
+                            backgroundColor: AppColors.white,
+                            child: ListView.separated(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: AppSizes.sm,
+                              ),
+                              itemCount: provider.vendors.length,
+                              separatorBuilder: (_, _) => const AppDivider(),
+                              itemBuilder: (context, i) => _VendorTile(
+                                vendor: provider.vendors[i],
+                                onEdit: () => _showVendorSheet(
+                                  context,
+                                  vendor: provider.vendors[i],
+                                ),
+                                onDelete: () => _confirmDelete(
+                                  context,
+                                  provider.vendors[i],
+                                ),
+                              ),
+                            ),
+                          ),
           ),
         ],
       ),
@@ -110,44 +119,33 @@ class _VendorsPageState extends State<VendorsPage> {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
+      backgroundColor: AppColors.white,
       builder: (_) => _VendorFormSheet(vendor: vendor),
     );
   }
 
-  void _confirmDelete(BuildContext context, Vendor vendor) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text(AppStrings.deleteVendor),
-        content: Text('${AppStrings.deleteVendorConfirm} "${vendor.name}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text(AppStrings.cancel),
-          ),
-          FilledButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              try {
-                await context.read<VendorsProvider>().deleteVendor(vendor.id);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text(AppStrings.vendorDeleted)),
-                  );
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text(e.toString())));
-                }
-              }
-            },
-            child: const Text(AppStrings.delete),
-          ),
-        ],
-      ),
+  Future<void> _confirmDelete(BuildContext context, Vendor vendor) async {
+    final confirmed = await AppConfirmDialog.show(
+      context,
+      title: AppStrings.deleteVendor,
+      message: '${AppStrings.deleteVendorConfirm} "${vendor.name}"?',
+      confirmLabel: AppStrings.delete,
+      danger: true,
     );
+    if (!confirmed || !context.mounted) return;
+    try {
+      await context.read<VendorsProvider>().deleteVendor(vendor.id);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text(AppStrings.vendorDeleted)),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    }
   }
 }
 
@@ -164,24 +162,20 @@ class _VendorTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
+    return Material(
+      color: AppColors.white,
       child: InkWell(
         onTap: onEdit,
-        borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+        splashColor: AppColors.surfaceTint,
+        highlightColor: AppColors.surfaceTint,
         child: Padding(
-          padding: const EdgeInsets.all(AppSizes.md),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.lg,
+            vertical: AppSizes.md,
+          ),
           child: Row(
             children: [
-              CircleAvatar(
-                backgroundColor: theme.colorScheme.primaryContainer,
-                child: Text(
-                  vendor.name.characters.first.toUpperCase(),
-                  style: TextStyle(
-                    color: theme.colorScheme.onPrimaryContainer,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
+              AppMonogramAvatar(label: vendor.name),
               const SizedBox(width: AppSizes.md),
               Expanded(
                 child: Column(
@@ -194,25 +188,33 @@ class _VendorTile extends StatelessWidget {
                       ),
                     ),
                     if (vendor.phone != null)
-                      Text(vendor.phone!, style: theme.textTheme.bodySmall),
+                      Text(
+                        vendor.phone!,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.muted,
+                        ),
+                      ),
                     if (vendor.gstin != null)
                       Text(
                         'GSTIN: ${vendor.gstin}',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
+                          color: AppColors.muted,
                         ),
                       ),
                     const SizedBox(height: AppSizes.xs),
-                    Row(
+                    Wrap(
+                      spacing: AppSizes.xs,
+                      runSpacing: 4,
                       children: [
-                        _StatChip(
-                          icon: Icons.swap_vert_rounded,
+                        AppStatusBadge(
                           label: '${vendor.transactionCount} txns',
+                          icon: Icons.swap_vert_rounded,
+                          dense: true,
                         ),
-                        const SizedBox(width: AppSizes.sm),
-                        _StatChip(
-                          icon: Icons.receipt_outlined,
+                        AppStatusBadge(
                           label: '${vendor.invoiceCount} invoices',
+                          icon: Icons.receipt_outlined,
+                          dense: true,
                         ),
                       ],
                     ),
@@ -220,7 +222,7 @@ class _VendorTile extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.more_vert_rounded),
+                icon: const Icon(Icons.more_vert_rounded, color: AppColors.muted),
                 onPressed: () => _showMenu(context),
               ),
             ],
@@ -233,12 +235,13 @@ class _VendorTile extends StatelessWidget {
   void _showMenu(BuildContext context) {
     showModalBottomSheet(
       context: context,
+      backgroundColor: AppColors.white,
       builder: (_) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.edit_rounded),
+              leading: const Icon(Icons.edit_outlined),
               title: const Text(AppStrings.edit),
               onTap: () {
                 Navigator.pop(context);
@@ -246,13 +249,13 @@ class _VendorTile extends StatelessWidget {
               },
             ),
             ListTile(
-              leading: Icon(
+              leading: const Icon(
                 Icons.delete_outline_rounded,
-                color: Theme.of(context).colorScheme.error,
+                color: AppColors.error,
               ),
-              title: Text(
+              title: const Text(
                 AppStrings.delete,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
+                style: TextStyle(color: AppColors.error),
               ),
               onTap: () {
                 Navigator.pop(context);
@@ -261,37 +264,6 @@ class _VendorTile extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _StatChip extends StatelessWidget {
-  const _StatChip({required this.icon, required this.label});
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm, vertical: 2),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(AppSizes.radiusSm),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: theme.colorScheme.onSurfaceVariant),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -358,7 +330,8 @@ class _VendorFormSheetState extends State<_VendorFormSheet> {
       } else {
         await provider.createVendor(
           name: _name.text,
-          contactName: _contactName.text.isNotEmpty ? _contactName.text : null,
+          contactName:
+              _contactName.text.isNotEmpty ? _contactName.text : null,
           phone: _phone.text.isNotEmpty ? _phone.text : null,
           email: _email.text.isNotEmpty ? _email.text : null,
           address: _address.text.isNotEmpty ? _address.text : null,
@@ -368,9 +341,8 @@ class _VendorFormSheetState extends State<_VendorFormSheet> {
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(e.toString())));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.toString())));
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -394,9 +366,9 @@ class _VendorFormSheetState extends State<_VendorFormSheet> {
             children: [
               Text(
                 isEditing ? AppStrings.editVendor : AppStrings.addVendor,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
               ),
               const SizedBox(height: AppSizes.lg),
               TextFormField(
@@ -457,15 +429,12 @@ class _VendorFormSheetState extends State<_VendorFormSheet> {
                 textCapitalization: TextCapitalization.sentences,
               ),
               const SizedBox(height: AppSizes.xl),
-              FilledButton(
-                onPressed: _isSaving ? null : _save,
-                child: _isSaving
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Text(AppStrings.save),
+              AppButton.primary(
+                label: AppStrings.save,
+                onPressed: _save,
+                isLoading: _isSaving,
+                size: AppButtonSize.lg,
+                fullWidth: true,
               ),
               const SizedBox(height: AppSizes.xl),
             ],

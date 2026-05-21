@@ -5,6 +5,11 @@ import 'package:shopxy/features/parties/domain/entities/party.dart';
 import 'package:shopxy/features/parties/presentation/pages/parties_page.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
+import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/widgets/app_button.dart';
+import 'package:shopxy/shared/widgets/app_divider.dart';
+import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
 
 /// Opens a modal search sheet to pick an existing Party or create a new one.
 /// Returns the selected [Party], or null if cancelled.
@@ -13,6 +18,7 @@ Future<Party?> showPartyPicker(BuildContext context) {
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
+    backgroundColor: AppColors.white,
     builder: (_) => const _PartyPickerSheet(),
   );
 }
@@ -43,7 +49,10 @@ class _PartyPickerSheetState extends State<_PartyPickerSheet> {
   }
 
   Future<void> _load(String query) async {
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final ds = context.read<PartiesRemoteDataSource>();
       final results = await ds.getParties(
@@ -63,6 +72,7 @@ class _PartyPickerSheetState extends State<_PartyPickerSheet> {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
+      backgroundColor: AppColors.white,
       builder: (_) => const PartyFormSheet(),
     );
     if (created != null && mounted) {
@@ -87,9 +97,9 @@ class _PartyPickerSheetState extends State<_PartyPickerSheet> {
             Container(
               width: 40,
               height: 4,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(2),
+              decoration: ShapeDecoration(
+                color: AppColors.hairline,
+                shape: AppShapes.squircle(2),
               ),
             ),
             Padding(
@@ -98,13 +108,16 @@ class _PartyPickerSheetState extends State<_PartyPickerSheet> {
                 children: [
                   Text(
                     AppStrings.selectParty,
-                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   const Spacer(),
-                  TextButton.icon(
+                  AppButton.ghost(
+                    label: AppStrings.newParty,
+                    icon: Icons.add_rounded,
                     onPressed: _addNew,
-                    icon: const Icon(Icons.add_rounded, size: 18),
-                    label: const Text(AppStrings.newParty),
+                    size: AppButtonSize.sm,
                   ),
                 ],
               ),
@@ -134,10 +147,10 @@ class _PartyPickerSheetState extends State<_PartyPickerSheet> {
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(
+                                    const Icon(
                                       Icons.groups_outlined,
-                                      size: 48,
-                                      color: theme.colorScheme.onSurfaceVariant,
+                                      size: AppSizes.iconXl,
+                                      color: AppColors.muted,
                                     ),
                                     const SizedBox(height: AppSizes.md),
                                     Text(
@@ -145,10 +158,10 @@ class _PartyPickerSheetState extends State<_PartyPickerSheet> {
                                       style: theme.textTheme.bodyMedium,
                                     ),
                                     const SizedBox(height: AppSizes.md),
-                                    FilledButton.icon(
+                                    AppButton.primary(
+                                      label: AppStrings.addParty,
+                                      icon: Icons.add_rounded,
                                       onPressed: _addNew,
-                                      icon: const Icon(Icons.add_rounded),
-                                      label: const Text(AppStrings.addParty),
                                     ),
                                   ],
                                 ),
@@ -156,20 +169,11 @@ class _PartyPickerSheetState extends State<_PartyPickerSheet> {
                             )
                           : ListView.separated(
                               itemCount: _parties.length,
-                              separatorBuilder: (_, _) => const Divider(height: 1),
+                              separatorBuilder: (_, _) => const AppDivider(),
                               itemBuilder: (context, i) {
                                 final p = _parties[i];
                                 return ListTile(
-                                  leading: CircleAvatar(
-                                    backgroundColor: theme.colorScheme.secondaryContainer,
-                                    child: Text(
-                                      p.name.characters.first.toUpperCase(),
-                                      style: TextStyle(
-                                        color: theme.colorScheme.onSecondaryContainer,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ),
+                                  leading: AppMonogramAvatar(label: p.name),
                                   title: Text(p.name),
                                   subtitle: Text(p.phone ?? p.contactName ?? '—'),
                                   onTap: () => Navigator.pop(context, p),

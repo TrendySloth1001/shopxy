@@ -4,8 +4,13 @@ import 'package:shopxy/features/categories/domain/entities/category.dart';
 import 'package:shopxy/features/categories/presentation/providers/categories_provider.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
+import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/shared/widgets/app_button.dart';
+import 'package:shopxy/shared/widgets/app_dialog.dart';
+import 'package:shopxy/shared/widgets/app_divider.dart';
+import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
+import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
-import 'package:shopxy/shared/theme/app_shapes.dart';
 
 class CategoriesPage extends StatefulWidget {
   const CategoriesPage({super.key});
@@ -58,12 +63,19 @@ class _CategoriesPageState extends State<CategoriesPage> {
             ),
           ],
         ),
+        actionsPadding: const EdgeInsets.fromLTRB(
+          AppSizes.lg,
+          0,
+          AppSizes.lg,
+          AppSizes.lg,
+        ),
         actions: [
-          TextButton(
+          AppButton.ghost(
+            label: AppStrings.cancel,
             onPressed: () => Navigator.pop(ctx),
-            child: const Text(AppStrings.cancel),
           ),
-          ElevatedButton(
+          AppButton.primary(
+            label: AppStrings.save,
             onPressed: () async {
               final name = nameController.text.trim();
               if (name.isEmpty) return;
@@ -86,7 +98,6 @@ class _CategoriesPageState extends State<CategoriesPage> {
 
               if (ctx.mounted) Navigator.pop(ctx);
             },
-            child: const Text(AppStrings.save),
           ),
         ],
       ),
@@ -94,28 +105,15 @@ class _CategoriesPageState extends State<CategoriesPage> {
   }
 
   void _deleteCategory(Category category) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Delete "${category.name}"?'),
-        content: const Text('Products in this category will be uncategorized.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text(AppStrings.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(ctx).colorScheme.error,
-            ),
-            child: const Text(AppStrings.delete),
-          ),
-        ],
-      ),
+    final confirmed = await AppConfirmDialog.show(
+      context,
+      title: 'Delete "${category.name}"?',
+      message: 'Products in this category will be uncategorized.',
+      confirmLabel: AppStrings.delete,
+      danger: true,
     );
 
-    if (confirmed == true && mounted) {
+    if (confirmed && mounted) {
       await context.read<CategoriesProvider>().deleteCategory(category.id);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -127,7 +125,6 @@ class _CategoriesPageState extends State<CategoriesPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final provider = context.watch<CategoriesProvider>();
 
     return Scaffold(
@@ -135,106 +132,107 @@ class _CategoriesPageState extends State<CategoriesPage> {
       body: provider.isLoading && provider.categories.isEmpty
           ? const Center(child: CircularProgressIndicator())
           : provider.categories.isEmpty
-          ? EmptyState(
-              icon: Icons.category_outlined,
-              title: AppStrings.noCategories,
-              subtitle: AppStrings.noCategoriesHint,
-            )
-          : RefreshIndicator(
-              onRefresh: () => provider.loadCategories(),
-              child: ListView.builder(
-                padding: const EdgeInsets.all(AppSizes.lg),
-                itemCount: provider.categories.length,
-                itemBuilder: (context, index) {
-                  final cat = provider.categories[index];
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: AppSizes.sm),
-                    decoration: ShapeDecoration(
-                      color: theme.cardTheme.color,
-                      shape: AppShapes.squircle(
-                        AppSizes.radiusMd,
-                        side: BorderSide(
-                          color: theme.colorScheme.outlineVariant.withValues(
-                            alpha: 0.3,
-                          ),
-                        ),
-                      ),
-                    ),
-                    child: ListTile(
-                      leading: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: ShapeDecoration(
-                          color: theme.colorScheme.tertiaryContainer.withValues(
-                            alpha: 0.5,
-                          ),
-                          shape: AppShapes.squircle(AppSizes.radiusSm),
-                        ),
-                        child: Icon(
-                          Icons.category_rounded,
-                          color: theme.colorScheme.tertiary,
-                          size: AppSizes.iconMd,
-                        ),
-                      ),
-                      title: Text(
-                        cat.name,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      subtitle: cat.description != null
-                          ? Text(
-                              cat.description!,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            )
-                          : null,
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (cat.productCount != null)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: AppSizes.sm,
-                                vertical: 2,
-                              ),
-                              decoration: ShapeDecoration(
-                                color:
-                                    theme.colorScheme.surfaceContainerHighest,
-                                shape: AppShapes.squircle(AppSizes.radiusFull),
-                              ),
-                              child: Text(
-                                '${cat.productCount}',
-                                style: theme.textTheme.labelSmall,
-                              ),
-                            ),
-                          PopupMenuButton(
-                            itemBuilder: (_) => [
-                              const PopupMenuItem(
-                                value: 'edit',
-                                child: Text(AppStrings.edit),
-                              ),
-                              const PopupMenuItem(
-                                value: 'delete',
-                                child: Text(AppStrings.delete),
-                              ),
-                            ],
-                            onSelected: (value) {
-                              if (value == 'edit') _showAddEditDialog(cat);
-                              if (value == 'delete') _deleteCategory(cat);
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
+              ? const EmptyState(
+                  icon: Icons.category_outlined,
+                  title: AppStrings.noCategories,
+                  subtitle: AppStrings.noCategoriesHint,
+                )
+              : RefreshIndicator(
+                  onRefresh: () => provider.loadCategories(),
+                  color: AppColors.black,
+                  backgroundColor: AppColors.white,
+                  child: ListView.separated(
+                    padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
+                    itemCount: provider.categories.length,
+                    separatorBuilder: (_, _) => const AppDivider(),
+                    itemBuilder: (context, index) {
+                      final cat = provider.categories[index];
+                      return _CategoryTile(
+                        category: cat,
+                        onEdit: () => _showAddEditDialog(cat),
+                        onDelete: () => _deleteCategory(cat),
+                      );
+                    },
+                  ),
+                ),
       floatingActionButton: FloatingActionButton(
         heroTag: 'categories_fab',
         onPressed: () => _showAddEditDialog(),
         child: const Icon(Icons.add_rounded),
+      ),
+    );
+  }
+}
+
+class _CategoryTile extends StatelessWidget {
+  const _CategoryTile({
+    required this.category,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final Category category;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      color: AppColors.white,
+      child: InkWell(
+        onTap: onEdit,
+        splashColor: AppColors.surfaceTint,
+        highlightColor: AppColors.surfaceTint,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.lg,
+            vertical: AppSizes.md,
+          ),
+          child: Row(
+            children: [
+              const AppIconAvatar.outlined(icon: Icons.category_rounded),
+              const SizedBox(width: AppSizes.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      category.name,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    if (category.description != null)
+                      Text(
+                        category.description!,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.muted,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                  ],
+                ),
+              ),
+              if (category.productCount != null) ...[
+                const SizedBox(width: AppSizes.sm),
+                AppStatusBadge(label: '${category.productCount}', dense: true),
+              ],
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert_rounded, color: AppColors.muted),
+                itemBuilder: (_) => const [
+                  PopupMenuItem(value: 'edit', child: Text(AppStrings.edit)),
+                  PopupMenuItem(value: 'delete', child: Text(AppStrings.delete)),
+                ],
+                onSelected: (value) {
+                  if (value == 'edit') onEdit();
+                  if (value == 'delete') onDelete();
+                },
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

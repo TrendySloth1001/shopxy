@@ -2,12 +2,16 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/features/parties/data/datasources/parties_remote_data_source.dart';
+import 'package:shopxy/features/parties/domain/entities/party.dart';
 import 'package:shopxy/features/products/domain/entities/product.dart';
 import 'package:shopxy/features/stock/data/datasources/stock_remote_data_source.dart';
 import 'package:shopxy/features/stock/presentation/providers/stock_provider.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
+import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/widgets/app_button.dart';
 
 // Vendor model scoped to this widget (sourced from /stock/suppliers)
 typedef _SV = SupplierVendor;
@@ -29,33 +33,50 @@ class StockBottomSheet extends StatefulWidget {
 class _StockBottomSheetState extends State<StockBottomSheet> {
   final _formKey = GlobalKey<FormState>();
   late String _type;
-  String _purchasePriceMode = 'WEIGHTED_AVERAGE';
   final _quantity = TextEditingController();
   final _unitPrice = TextEditingController();
   final _supplier = TextEditingController();
   final _supplierFocusNode = FocusNode();
   final _note = TextEditingController();
 
-  // Vendor selection — structured vendors from /stock/suppliers
+  // Vendor selection (STOCK_IN) — structured vendors from /stock/suppliers
   List<_SV> _vendors = const [];
   _SV? _selectedVendor;
   List<String> _freeTextOptions = const [];
   Timer? _supplierDebounce;
   bool _isLoadingSuppliers = false;
   String _lastSupplierQuery = '';
+
+  // Party selection (STOCK_OUT) — customer the goods go to.
+  final _partyQuery = TextEditingController();
+  Party? _selectedParty;
+  List<Party> _partyResults = const [];
+  Timer? _partyDebounce;
+  bool _isSearchingParties = false;
   bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
     _type = widget.initialType;
+    _seedUnitPrice();
     if (_type == 'STOCK_IN') {
-      _unitPrice.text = widget.product.purchasePrice.toStringAsFixed(2);
       _loadSupplierOptions();
+    } else {
+      _searchParties('');
     }
     _unitPrice.addListener(_refreshForm);
     _quantity.addListener(_refreshForm);
     _supplier.addListener(_onSupplierInputChanged);
+    _partyQuery.addListener(_onPartyQueryChanged);
+  }
+
+  void _seedUnitPrice() {
+    if (_unitPrice.text.trim().isNotEmpty) return;
+    _unitPrice.text = (_type == 'STOCK_IN'
+            ? widget.product.purchasePrice
+            : widget.product.sellingPrice)
+        .toStringAsFixed(2);
   }
 
   @override
@@ -66,8 +87,55 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
     _supplier.dispose();
     _supplierFocusNode.dispose();
     _supplierDebounce?.cancel();
+    _partyQuery.removeListener(_onPartyQueryChanged);
+    _partyQuery.dispose();
+    _partyDebounce?.cancel();
     _note.dispose();
     super.dispose();
+  }
+
+  void _onPartyQueryChanged() {
+    if (_type != 'STOCK_OUT') return;
+    final query = _partyQuery.text.trim();
+    if (_selectedParty != null && query != _selectedParty!.name) {
+      _selectedParty = null;
+    }
+    _partyDebounce?.cancel();
+    _partyDebounce = Timer(const Duration(milliseconds: 240), () {
+      _searchParties(query);
+    });
+  }
+
+  Future<void> _searchParties(String query) async {
+    setState(() => _isSearchingParties = true);
+    try {
+      final ds = context.read<PartiesRemoteDataSource>();
+      final results = await ds.getParties(
+        search: query.isEmpty ? null : query,
+        limit: 8,
+      );
+      if (!mounted) return;
+      setState(() {
+        _partyResults = results;
+        _isSearchingParties = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _isSearchingParties = false);
+    }
+  }
+
+  void _pickParty(Party party) {
+    setState(() {
+      _selectedParty = party;
+      _partyQuery.text = party.name;
+    });
+  }
+
+  void _clearParty() {
+    setState(() {
+      _selectedParty = null;
+      _partyQuery.clear();
+    });
   }
 
   void _refreshForm() {
@@ -140,18 +208,19 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
         productId: widget.product.id,
         type: _type,
         quantity: parsedQuantity,
-        unitPrice: _type == 'STOCK_IN' ? parsedUnitPrice : null,
+        unitPrice: parsedUnitPrice,
         vendorId: _type == 'STOCK_IN' ? _selectedVendor?.id : null,
-        supplierName: _type == 'STOCK_IN' && _selectedVendor == null
-            ? (_supplier.text.trim().isNotEmpty ? _supplier.text.trim() : null)
-            : null,
-        purchasePriceMode:
-            _type == 'STOCK_IN' && parsedUnitPrice != null ? _purchasePriceMode : null,
+        partyId: _type == 'STOCK_OUT' ? _selectedParty?.id : null,
         note: _note.text.isNotEmpty ? _note.text : null,
       );
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text(AppStrings.stockUpdated)));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Draft invoice created — confirm it from the Invoices tab to post stock.',
+            ),
+          ),
+        );
         Navigator.pop(context);
       }
     } catch (e) {
@@ -186,7 +255,7 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
                 width: 40,
                 height: 4,
                 decoration: ShapeDecoration(
-                  color: theme.colorScheme.outlineVariant,
+                  color: AppColors.hairline,
                   shape: AppShapes.squircle(2),
                 ),
               ),
@@ -202,44 +271,38 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
             ),
             const SizedBox(height: AppSizes.xl),
 
-            // Type selector
+            // Type selector — manual flow now produces a DRAFT invoice.
+            // Damage / expired / shrinkage live on the Stock Adjustments
+            // page; pure cash movements happen here.
             SegmentedButton<String>(
               segments: const [
                 ButtonSegment(
                   value: 'STOCK_IN',
-                  label: Text(AppStrings.stockIn),
+                  label: Text('Purchase'),
                   icon: Icon(Icons.add_rounded),
                 ),
                 ButtonSegment(
                   value: 'STOCK_OUT',
-                  label: Text(AppStrings.stockOut),
+                  label: Text('Sale'),
                   icon: Icon(Icons.remove_rounded),
-                ),
-                ButtonSegment(
-                  value: 'ADJUSTMENT',
-                  label: Text(AppStrings.adjustment),
-                  icon: Icon(Icons.swap_vert_rounded),
                 ),
               ],
               selected: {_type},
               onSelectionChanged: (v) {
                 setState(() {
                   _type = v.first;
-                  if (_type == 'STOCK_IN' && _unitPrice.text.trim().isEmpty) {
-                    _unitPrice.text = widget.product.purchasePrice
-                        .toStringAsFixed(2);
-                  }
-                  if (_type != 'STOCK_IN') {
-                    _supplierFocusNode.unfocus();
-                  }
+                  _unitPrice.text = (_type == 'STOCK_IN'
+                          ? widget.product.purchasePrice
+                          : widget.product.sellingPrice)
+                      .toStringAsFixed(2);
+                  if (_type != 'STOCK_IN') _supplierFocusNode.unfocus();
                 });
-
                 if (_type == 'STOCK_IN') {
                   _loadSupplierOptions(
-                    query: _supplier.text.trim().isEmpty
-                        ? null
-                        : _supplier.text.trim(),
+                    query: _supplier.text.trim().isEmpty ? null : _supplier.text.trim(),
                   );
+                } else {
+                  _searchParties(_partyQuery.text.trim());
                 }
               },
             ),
@@ -303,6 +366,61 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
               ],
             ),
             const SizedBox(height: AppSizes.md),
+
+            if (_type == 'STOCK_OUT') ...[
+              Text(
+                'Customer',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: AppColors.muted,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.4,
+                ),
+              ),
+              const SizedBox(height: AppSizes.xs),
+              TextFormField(
+                controller: _partyQuery,
+                decoration: InputDecoration(
+                  hintText: 'Search parties — defaults to Walk-in Customer',
+                  prefixIcon: const Icon(Icons.person_search_rounded),
+                  suffixIcon: _selectedParty != null
+                      ? IconButton(
+                          icon: const Icon(Icons.close_rounded),
+                          onPressed: _clearParty,
+                          tooltip: 'Clear',
+                        )
+                      : _isSearchingParties
+                          ? const Padding(
+                              padding: EdgeInsets.all(AppSizes.md),
+                              child: SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                            )
+                          : null,
+                ),
+              ),
+              if (_selectedParty == null && _partyResults.isNotEmpty) ...[
+                const SizedBox(height: AppSizes.xs),
+                Wrap(
+                  spacing: AppSizes.sm,
+                  runSpacing: AppSizes.xs,
+                  children: _partyResults.take(6).map((p) {
+                    return ActionChip(
+                      label: Text(p.name),
+                      avatar: Icon(
+                        p.name == 'Walk-in Customer'
+                            ? Icons.directions_walk_rounded
+                            : Icons.person_rounded,
+                        size: 16,
+                      ),
+                      onPressed: () => _pickParty(p),
+                    );
+                  }).toList(),
+                ),
+              ],
+              const SizedBox(height: AppSizes.md),
+            ],
 
             if (_type == 'STOCK_IN') ...[
               // ── Vendor quick-select ───────────────────────────────────
@@ -373,7 +491,6 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
                   optionsViewBuilder: (context, onSelected, options) {
                     final list = options.toList();
                     if (list.isEmpty) return const SizedBox.shrink();
-                    final theme = Theme.of(context);
                     return Align(
                       alignment: Alignment.topLeft,
                       child: Material(
@@ -386,20 +503,14 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
                             maxWidth: 360,
                           ),
                           decoration: ShapeDecoration(
-                            color: theme.colorScheme.surface,
+                            color: AppColors.white,
                             shape: AppShapes.squircle(
                               AppSizes.radiusMd,
                               side: BorderSide(
-                                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+                                color: AppColors.hairline,
+                                width: 1,
                               ),
                             ),
-                            shadows: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.08),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
                           ),
                           child: ListView.builder(
                             padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
@@ -422,17 +533,6 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
                   },
                 ),
               const SizedBox(height: AppSizes.md),
-              _PurchasePriceModeSection(
-                currentPurchasePrice: widget.product.purchasePrice,
-                currentStock: widget.product.stockQuantity,
-                incomingUnitPrice: _parseDouble(_unitPrice.text),
-                incomingQuantity: _parseDouble(_quantity.text),
-                mode: _purchasePriceMode,
-                onModeChanged: (value) {
-                  setState(() => _purchasePriceMode = value);
-                },
-              ),
-              const SizedBox(height: AppSizes.md),
             ],
 
             TextFormField(
@@ -442,15 +542,12 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
             ),
             const SizedBox(height: AppSizes.xxl),
 
-            ElevatedButton(
-              onPressed: _isSaving ? null : _save,
-              child: _isSaving
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text(AppStrings.confirm),
+            AppButton.primary(
+              label: AppStrings.confirm,
+              onPressed: _save,
+              isLoading: _isSaving,
+              size: AppButtonSize.lg,
+              fullWidth: true,
             ),
             const SizedBox(height: AppSizes.xl),
           ],
@@ -471,206 +568,5 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
       return null;
     }
     return double.tryParse(trimmed);
-  }
-}
-
-class _PurchasePriceModeSection extends StatelessWidget {
-  const _PurchasePriceModeSection({
-    required this.currentPurchasePrice,
-    required this.currentStock,
-    required this.incomingUnitPrice,
-    required this.incomingQuantity,
-    required this.mode,
-    required this.onModeChanged,
-  });
-
-  final double currentPurchasePrice;
-  final double currentStock;
-  final double? incomingUnitPrice;
-  final double? incomingQuantity;
-  final String mode;
-  final ValueChanged<String> onModeChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final nextPrice = _nextPurchasePrice();
-    final hasPreview = nextPrice != null && incomingUnitPrice != null;
-
-    return Container(
-      padding: const EdgeInsets.all(AppSizes.md),
-      decoration: ShapeDecoration(
-        color: theme.colorScheme.primaryContainer.withValues(alpha: 0.24),
-        shape: AppShapes.squircle(AppSizes.radiusMd),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            AppStrings.purchasePriceRule,
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: AppSizes.sm),
-          SegmentedButton<String>(
-            segments: const [
-              ButtonSegment(
-                value: 'WEIGHTED_AVERAGE',
-                label: Text(AppStrings.weightedAverage),
-              ),
-              ButtonSegment(
-                value: 'USE_LATEST',
-                label: Text(AppStrings.useLatestPrice),
-              ),
-              ButtonSegment(
-                value: 'KEEP_CURRENT',
-                label: Text(AppStrings.keepCurrentPrice),
-              ),
-            ],
-            selected: {mode},
-            showSelectedIcon: false,
-            onSelectionChanged: (value) => onModeChanged(value.first),
-          ),
-          if (hasPreview) ...[
-            const SizedBox(height: AppSizes.md),
-            _PriceSummaryRow(
-              label: AppStrings.currentPurchasePrice,
-              value: _inr(currentPurchasePrice),
-            ),
-            _PriceSummaryRow(
-              label: AppStrings.incomingPrice,
-              value: _inr(incomingUnitPrice!),
-            ),
-            _PriceSummaryRow(
-              label: AppStrings.nextPurchasePrice,
-              value: _inr(nextPrice),
-              isHighlight: true,
-            ),
-            const SizedBox(height: AppSizes.xs),
-            Align(
-              alignment: Alignment.centerRight,
-              child: _PriceDeltaChip(
-                percentDelta: _percentDelta(currentPurchasePrice, nextPrice),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  double? _nextPurchasePrice() {
-    if (incomingUnitPrice == null) {
-      return null;
-    }
-
-    if (mode == 'KEEP_CURRENT') {
-      return _roundCurrency(currentPurchasePrice);
-    }
-
-    if (mode == 'USE_LATEST') {
-      return _roundCurrency(incomingUnitPrice!);
-    }
-
-    final qty = incomingQuantity;
-    if (qty == null || qty <= 0) {
-      return _roundCurrency(incomingUnitPrice!);
-    }
-
-    final nextStock = currentStock + qty;
-    if (nextStock <= 0) {
-      return _roundCurrency(incomingUnitPrice!);
-    }
-
-    final weightedAverage =
-        (currentStock * currentPurchasePrice + qty * incomingUnitPrice!) /
-        nextStock;
-    return _roundCurrency(weightedAverage);
-  }
-
-  double _percentDelta(double before, double after) {
-    if (before == 0) return 0;
-    return ((after - before) / before) * 100;
-  }
-
-  double _roundCurrency(double value) {
-    return (value * 100).roundToDouble() / 100;
-  }
-
-  String _inr(double value) {
-    return '${AppStrings.currencySymbol}${value.toStringAsFixed(2)}';
-  }
-}
-
-class _PriceSummaryRow extends StatelessWidget {
-  const _PriceSummaryRow({
-    required this.label,
-    required this.value,
-    this.isHighlight = false,
-  });
-
-  final String label;
-  final String value;
-  final bool isHighlight;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          Text(
-            value,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: isHighlight ? FontWeight.w700 : FontWeight.w600,
-              color: isHighlight ? theme.colorScheme.primary : null,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PriceDeltaChip extends StatelessWidget {
-  const _PriceDeltaChip({required this.percentDelta});
-
-  final double percentDelta;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isIncrease = percentDelta >= 0;
-    final color = isIncrease
-        ? const Color(0xFF1F8A5B)
-        : theme.colorScheme.error;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSizes.sm,
-        vertical: AppSizes.xs,
-      ),
-      decoration: ShapeDecoration(
-        color: color.withValues(alpha: 0.12),
-        shape: AppShapes.squircle(AppSizes.radiusSm),
-      ),
-      child: Text(
-        '${isIncrease ? '+' : ''}${percentDelta.toStringAsFixed(2)}%',
-        style: theme.textTheme.labelSmall?.copyWith(
-          color: color,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
   }
 }

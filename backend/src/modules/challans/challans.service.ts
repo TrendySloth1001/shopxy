@@ -1,4 +1,5 @@
 import prisma from '../../infra/db/prisma.js';
+import { ledgerService } from '../ledger/ledger.service.js';
 
 function round2(v: number): number {
   return Math.round((v + Number.EPSILON) * 100) / 100;
@@ -26,6 +27,7 @@ export class ChallansService {
     partyPhone?: string;
     note?: string;
     items: { productId: number; quantity: number }[];
+    createdById?: number;
   }) {
     if (data.items.length === 0) {
       return { error: 'Challan must have at least one item' as const };
@@ -87,6 +89,38 @@ export class ChallansService {
       include: { items: true, party: true },
     });
 
+    // Post stock movement to the ledger — goods have physically left
+    // the building. If posting fails (e.g. insufficient stock), unwind
+    // the challan so the database stays consistent.
+    const result = await ledgerService.post({
+      direction: 'OUT',
+      reasonCode: 'SALE',
+      sourceType: 'CHALLAN',
+      sourceId: challan.id,
+      createdById: data.createdById,
+      counterpartyName: challan.partyName,
+      counterpartyGstin: challan.party?.gstin ?? undefined,
+      note: `Challan ${challan.challanNo}`,
+      lines: challan.items.map((it) => ({
+        productId: it.productId,
+        quantity: Number(it.quantity),
+        sourceLineId: it.id,
+      })),
+    });
+
+    if ('error' in result) {
+      await prisma.challan.delete({ where: { id: challan.id } });
+      if (result.error === 'Insufficient stock') {
+        return {
+          error: 'Insufficient stock for one or more items' as const,
+          productId: result.productId,
+          available: result.available,
+          requested: result.requested,
+        };
+      }
+      return { error: result.error as string };
+    }
+
     return { challan };
   }
 
@@ -143,12 +177,31 @@ export class ChallansService {
     });
   }
 
-  async cancelChallan(id: number) {
+  async cancelChallan(id: number, createdById?: number) {
     const challan = await prisma.challan.findUnique({ where: { id }, select: { status: true } });
     if (!challan) return { error: 'Challan not found' as const };
     if (challan.status !== 'PENDING') {
       return { error: 'Only pending challans can be cancelled' as const };
     }
+
+    // Reverse all ledger entries posted by this challan.
+    const entries = await prisma.stockTransaction.findMany({
+      where: { sourceType: 'CHALLAN', sourceId: id, reversesId: null },
+      select: { id: true },
+    });
+    for (const entry of entries) {
+      const result = await ledgerService.reverse(entry.id, {
+        reasonCode: 'RETURN_IN',
+        sourceType: 'CHALLAN',
+        sourceId: id,
+        createdById,
+        note: 'Challan cancelled',
+      });
+      if ('error' in result) {
+        return { error: `Reversal failed: ${result.error}` as const };
+      }
+    }
+
     await prisma.challan.update({ where: { id }, data: { status: 'CANCELLED' } });
     return { ok: true };
   }

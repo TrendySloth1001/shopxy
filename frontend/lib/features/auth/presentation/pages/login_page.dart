@@ -4,6 +4,9 @@ import 'package:shopxy/features/auth/presentation/pages/register_page.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
+import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/widgets/app_button.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -29,11 +32,21 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() { _isLoading = true; _error = null; });
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
     try {
-      await context.read<AuthProvider>().login(_email.text.trim(), _password.text);
+      await context.read<AuthProvider>().login(
+        _email.text.trim(),
+        _password.text,
+      );
     } catch (e) {
-      if (mounted) setState(() => _error = e.toString().replaceFirst('Exception: ', ''));
+      if (mounted) {
+        setState(
+          () => _error = e.toString().replaceFirst('Exception: ', ''),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -42,7 +55,6 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colors = theme.colorScheme;
 
     return Scaffold(
       body: SafeArea(
@@ -59,22 +71,20 @@ class _LoginPageState extends State<LoginPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Logo
                     Container(
                       width: 72,
                       height: 72,
-                      decoration: BoxDecoration(
-                        color: colors.primaryContainer,
-                        borderRadius: BorderRadius.circular(20),
+                      decoration: ShapeDecoration(
+                        color: AppColors.black,
+                        shape: AppShapes.squircle(AppSizes.radiusXl),
                       ),
-                      child: Icon(
+                      child: const Icon(
                         Icons.inventory_2_rounded,
-                        size: 36,
-                        color: colors.onPrimaryContainer,
+                        size: AppSizes.iconXl,
+                        color: AppColors.white,
                       ),
                     ),
                     const SizedBox(height: AppSizes.xl),
-
                     Text(
                       AppStrings.welcomeBack,
                       style: theme.textTheme.headlineMedium?.copyWith(
@@ -85,38 +95,14 @@ class _LoginPageState extends State<LoginPage> {
                     Text(
                       AppStrings.loginSubtitle,
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: colors.onSurfaceVariant,
+                        color: AppColors.muted,
                       ),
                     ),
                     const SizedBox(height: AppSizes.xxl),
-
-                    // Error banner
                     if (_error != null) ...[
-                      Container(
-                        padding: const EdgeInsets.all(AppSizes.md),
-                        decoration: BoxDecoration(
-                          color: colors.errorContainer,
-                          borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.error_outline_rounded, color: colors.onErrorContainer, size: 18),
-                            const SizedBox(width: AppSizes.sm),
-                            Expanded(
-                              child: Text(
-                                _error!,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: colors.onErrorContainer,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      _AuthErrorBanner(message: _error!),
                       const SizedBox(height: AppSizes.lg),
                     ],
-
-                    // Email
                     TextFormField(
                       controller: _email,
                       decoration: const InputDecoration(
@@ -127,60 +113,60 @@ class _LoginPageState extends State<LoginPage> {
                       textInputAction: TextInputAction.next,
                       autocorrect: false,
                       validator: (v) {
-                        if (v == null || v.trim().isEmpty) return AppStrings.fieldRequired;
+                        if (v == null || v.trim().isEmpty) {
+                          return AppStrings.fieldRequired;
+                        }
                         if (!v.contains('@')) return AppStrings.invalidEmail;
                         return null;
                       },
                     ),
                     const SizedBox(height: AppSizes.md),
-
-                    // Password
                     TextFormField(
                       controller: _password,
                       decoration: InputDecoration(
                         labelText: AppStrings.password,
                         prefixIcon: const Icon(Icons.lock_outline_rounded),
                         suffixIcon: IconButton(
-                          icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined),
-                          onPressed: () => setState(() => _obscure = !_obscure),
+                          icon: Icon(
+                            _obscure
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                          ),
+                          onPressed: () =>
+                              setState(() => _obscure = !_obscure),
                         ),
                       ),
                       obscureText: _obscure,
                       textInputAction: TextInputAction.done,
                       onFieldSubmitted: (_) => _submit(),
-                      validator: (v) =>
-                          v == null || v.isEmpty ? AppStrings.fieldRequired : null,
+                      validator: (v) => v == null || v.isEmpty
+                          ? AppStrings.fieldRequired
+                          : null,
                     ),
                     const SizedBox(height: AppSizes.xxl),
-
-                    // Login button
-                    FilledButton(
-                      onPressed: _isLoading ? null : _submit,
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: AppSizes.lg),
-                      ),
-                      child: _isLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                            )
-                          : const Text(AppStrings.login, style: TextStyle(fontSize: 16)),
+                    AppButton.primary(
+                      label: AppStrings.login,
+                      onPressed: _submit,
+                      isLoading: _isLoading,
+                      size: AppButtonSize.lg,
+                      fullWidth: true,
                     ),
                     const SizedBox(height: AppSizes.xl),
-
-                    // Register link
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
                           AppStrings.noAccount,
-                          style: theme.textTheme.bodyMedium,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: AppColors.muted,
+                          ),
                         ),
                         TextButton(
                           onPressed: () => Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (_) => const RegisterPage()),
+                            MaterialPageRoute(
+                              builder: (_) => const RegisterPage(),
+                            ),
                           ),
                           child: const Text(AppStrings.register),
                         ),
@@ -192,6 +178,43 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _AuthErrorBanner extends StatelessWidget {
+  const _AuthErrorBanner({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(AppSizes.md),
+      decoration: ShapeDecoration(
+        color: AppColors.white,
+        shape: AppShapes.squircle(
+          AppSizes.radiusMd,
+          side: const BorderSide(color: AppColors.error, width: 1),
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.error_outline_rounded,
+            color: AppColors.error,
+            size: AppSizes.iconSm,
+          ),
+          const SizedBox(width: AppSizes.sm),
+          Expanded(
+            child: Text(
+              message,
+              style: theme.textTheme.bodySmall?.copyWith(color: AppColors.error),
+            ),
+          ),
+        ],
       ),
     );
   }

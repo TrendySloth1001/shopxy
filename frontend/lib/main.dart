@@ -19,6 +19,7 @@ import 'package:shopxy/features/products/data/datasources/products_remote_data_s
 import 'package:shopxy/features/products/presentation/providers/products_provider.dart';
 import 'package:shopxy/features/stock/data/datasources/stock_remote_data_source.dart';
 import 'package:shopxy/features/stock/presentation/providers/stock_provider.dart';
+import 'package:shopxy/features/stock_adjustments/data/datasources/stock_adjustments_remote_data_source.dart';
 import 'package:shopxy/features/vendors/data/datasources/vendors_remote_data_source.dart';
 import 'package:shopxy/features/vendors/presentation/providers/vendors_provider.dart';
 
@@ -41,6 +42,7 @@ void main() async {
   final vendorsDs = VendorsRemoteDataSource(apiClient);
   final partiesDs = PartiesRemoteDataSource(apiClient);
   final challansDs = ChallansRemoteDataSource(apiClient);
+  final stockAdjustmentsDs = StockAdjustmentsRemoteDataSource(apiClient);
 
   // Auth provider (created before runApp so we can wire the callback)
   final authProvider = AuthProvider(authDs, tokenManager);
@@ -61,6 +63,7 @@ void main() async {
         Provider<VendorsRemoteDataSource>.value(value: vendorsDs),
         Provider<PartiesRemoteDataSource>.value(value: partiesDs),
         Provider<ChallansRemoteDataSource>.value(value: challansDs),
+        Provider<StockAdjustmentsRemoteDataSource>.value(value: stockAdjustmentsDs),
 
         // Feature state providers
         ChangeNotifierProvider(create: (_) => DashboardProvider(dashboardDs)),

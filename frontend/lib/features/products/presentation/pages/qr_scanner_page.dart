@@ -7,7 +7,9 @@ import 'package:shopxy/features/products/presentation/pages/add_edit_product_pag
 import 'package:shopxy/features/products/presentation/providers/products_provider.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
+import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/widgets/app_button.dart';
 
 enum _MissingProductAction { add, retry }
 
@@ -79,15 +81,16 @@ class _QrScannerPageState extends State<QrScannerPage> {
     return showModalBottomSheet<_MissingProductAction>(
       context: context,
       isScrollControlled: true,
+      backgroundColor: AppColors.white,
       shape: AppShapes.squircleTop(AppSizes.bottomSheetRadius),
       builder: (ctx) {
         final theme = Theme.of(ctx);
         return Padding(
           padding: EdgeInsets.only(
-            bottom: MediaQuery.of(ctx).viewInsets.bottom,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + AppSizes.xl,
             left: AppSizes.xl,
             right: AppSizes.xl,
-            top: AppSizes.xl,
+            top: AppSizes.lg,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -98,16 +101,16 @@ class _QrScannerPageState extends State<QrScannerPage> {
                   width: 40,
                   height: 4,
                   decoration: ShapeDecoration(
-                    color: theme.colorScheme.outlineVariant,
+                    color: AppColors.hairline,
                     shape: AppShapes.squircle(2),
                   ),
                 ),
               ),
-              const SizedBox(height: AppSizes.lg),
-              Icon(
+              const SizedBox(height: AppSizes.xl),
+              const Icon(
                 Icons.qr_code_rounded,
                 size: AppSizes.iconHuge,
-                color: theme.colorScheme.primary,
+                color: AppColors.black,
               ),
               const SizedBox(height: AppSizes.md),
               Text(
@@ -121,9 +124,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
               Text(
                 AppStrings.productNotFoundHint,
                 textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+                style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted),
               ),
               const SizedBox(height: AppSizes.md),
               Center(
@@ -133,8 +134,11 @@ class _QrScannerPageState extends State<QrScannerPage> {
                     vertical: AppSizes.sm,
                   ),
                   decoration: ShapeDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest,
-                    shape: AppShapes.squircle(AppSizes.radiusFull),
+                    color: AppColors.white,
+                    shape: AppShapes.squircle(
+                      AppSizes.radiusFull,
+                      side: BorderSide(color: AppColors.hairline, width: 1),
+                    ),
                   ),
                   child: Text(
                     code,
@@ -145,18 +149,19 @@ class _QrScannerPageState extends State<QrScannerPage> {
                 ),
               ),
               const SizedBox(height: AppSizes.xl),
-              ElevatedButton.icon(
+              AppButton.primary(
+                label: AppStrings.addProduct,
+                icon: Icons.add_rounded,
                 onPressed: () => Navigator.pop(ctx, _MissingProductAction.add),
-                icon: const Icon(Icons.add_rounded),
-                label: const Text(AppStrings.addProduct),
+                fullWidth: true,
               ),
               const SizedBox(height: AppSizes.sm),
-              OutlinedButton(
+              AppButton.secondary(
+                label: AppStrings.scanAgain,
                 onPressed: () =>
                     Navigator.pop(ctx, _MissingProductAction.retry),
-                child: const Text(AppStrings.scanAgain),
+                fullWidth: true,
               ),
-              const SizedBox(height: AppSizes.xl),
             ],
           ),
         );
@@ -169,15 +174,16 @@ class _QrScannerPageState extends State<QrScannerPage> {
     final theme = Theme.of(context);
 
     return Scaffold(
+      backgroundColor: AppColors.black,
       appBar: AppBar(
         title: const Text(AppStrings.scanQr),
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
+        backgroundColor: AppColors.black,
+        foregroundColor: AppColors.white,
+        iconTheme: const IconThemeData(color: AppColors.white),
       ),
       body: Stack(
         children: [
           MobileScanner(controller: _controller, onDetect: _onDetect),
-          // Scan overlay
           Center(
             child: Container(
               width: 250,
@@ -185,12 +191,11 @@ class _QrScannerPageState extends State<QrScannerPage> {
               decoration: ShapeDecoration(
                 shape: AppShapes.squircle(
                   AppSizes.radiusLg,
-                  side: BorderSide(color: theme.colorScheme.primary, width: 3),
+                  side: const BorderSide(color: AppColors.white, width: 3),
                 ),
               ),
             ),
           ),
-          // Bottom hint
           Positioned(
             bottom: AppSizes.huge,
             left: 0,
@@ -202,13 +207,16 @@ class _QrScannerPageState extends State<QrScannerPage> {
                   vertical: AppSizes.md,
                 ),
                 decoration: ShapeDecoration(
-                  color: Colors.black54,
-                  shape: AppShapes.squircle(AppSizes.radiusFull),
+                  color: AppColors.black,
+                  shape: AppShapes.squircle(
+                    AppSizes.radiusFull,
+                    side: const BorderSide(color: AppColors.white, width: 1),
+                  ),
                 ),
                 child: Text(
                   _isProcessing ? AppStrings.loading : AppStrings.scanHint,
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: Colors.white,
+                    color: AppColors.white,
                   ),
                 ),
               ),

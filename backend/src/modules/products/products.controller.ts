@@ -56,7 +56,9 @@ function parseId(raw: string): number | null {
 export class ProductsController {
   async create(req: Request, res: Response): Promise<void> {
     const payload = createProductSchema.parse(req.body);
-    const product = await productsService.createProduct(payload);
+    const product = await productsService.createProduct(payload, {
+      createdById: req.user?.sub,
+    });
     res.status(201).json(product);
   }
 

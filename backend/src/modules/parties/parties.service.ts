@@ -93,15 +93,16 @@ export class PartiesService {
   }
 
   async deleteParty(id: number) {
-    // Unlink challans and invoices before deletion (keep denormalized partyName)
-    await prisma.challan.updateMany({
-      where: { partyId: id },
-      data: { partyId: null },
-    });
-    await prisma.invoice.updateMany({
-      where: { partyId: id },
-      data: { partyId: null },
-    });
+    // Soft-delete when the party is referenced anywhere — invoices and
+    // challans snapshot customer identity, but keeping the party row lets
+    // users restore it later by re-activating.
+    const [invoiceRefs, challanRefs] = await Promise.all([
+      prisma.invoice.count({ where: { partyId: id } }),
+      prisma.challan.count({ where: { partyId: id } }),
+    ]);
+    if (invoiceRefs + challanRefs > 0) {
+      return prisma.party.update({ where: { id }, data: { isActive: false } });
+    }
     return prisma.party.delete({ where: { id } });
   }
 }

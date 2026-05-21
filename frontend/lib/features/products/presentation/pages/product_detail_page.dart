@@ -8,11 +8,20 @@ import 'package:shopxy/features/products/presentation/pages/add_edit_product_pag
 import 'package:shopxy/features/products/presentation/providers/products_provider.dart';
 import 'package:shopxy/features/stock/data/datasources/stock_remote_data_source.dart';
 import 'package:shopxy/features/stock/domain/entities/stock_transaction.dart';
+import 'package:shopxy/features/stock/presentation/pages/stock_ledger_page.dart';
 import 'package:shopxy/features/stock/presentation/widgets/stock_bottom_sheet.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/constants/app_units.dart';
+import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/widgets/app_button.dart';
+import 'package:shopxy/shared/widgets/app_card.dart';
+import 'package:shopxy/shared/widgets/app_dialog.dart';
+import 'package:shopxy/shared/widgets/app_divider.dart';
+import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
+import 'package:shopxy/shared/widgets/app_section_header.dart';
+import 'package:shopxy/shared/widgets/app_status_badge.dart';
 
 class ProductDetailPage extends StatefulWidget {
   const ProductDetailPage({super.key, required this.productId});
@@ -61,20 +70,13 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         type: 'STOCK_IN',
         limit: 100,
       );
-
-      if (!mounted) {
-        return;
-      }
-
+      if (!mounted) return;
       setState(() {
         _stockInTransactions = transactions;
         _isSupplierHistoryLoading = false;
       });
     } catch (e) {
-      if (!mounted) {
-        return;
-      }
-
+      if (!mounted) return;
       setState(() {
         _supplierHistoryError = e.toString();
         _isSupplierHistoryLoading = false;
@@ -98,9 +100,24 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: AppColors.white,
       shape: AppShapes.squircleTop(AppSizes.bottomSheetRadius),
       builder: (_) => StockBottomSheet(product: _product!, initialType: type),
     ).then((_) => _refreshAll());
+  }
+
+  void _openLedger() {
+    if (_product == null) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => StockLedgerPage(
+          productId: _product!.id,
+          productName: _product!.name,
+          productUnit: _product!.unit,
+        ),
+      ),
+    );
   }
 
   void _showQrDialog() {
@@ -118,13 +135,16 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               Container(
                 padding: const EdgeInsets.all(AppSizes.lg),
                 decoration: ShapeDecoration(
-                  color: Colors.white,
-                  shape: AppShapes.squircle(AppSizes.radiusMd),
+                  color: AppColors.white,
+                  shape: AppShapes.squircle(
+                    AppSizes.radiusMd,
+                    side: BorderSide(color: AppColors.hairline, width: 1),
+                  ),
                 ),
                 child: QrImageView(
                   data: code,
                   size: AppSizes.qrCodeSize,
-                  backgroundColor: Colors.white,
+                  backgroundColor: AppColors.white,
                 ),
               ),
               const SizedBox(height: AppSizes.md),
@@ -137,16 +157,14 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               const SizedBox(height: AppSizes.xs),
               Text(
                 _product!.name,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+                style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
               ),
             ],
           ),
           actions: [
-            TextButton(
+            AppButton.ghost(
+              label: 'Close',
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Close'),
             ),
           ],
         );
@@ -155,27 +173,15 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   }
 
   void _deleteProduct() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text(AppStrings.deleteProductConfirm),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text(AppStrings.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(ctx).colorScheme.error,
-            ),
-            child: const Text(AppStrings.delete),
-          ),
-        ],
-      ),
+    final confirmed = await AppConfirmDialog.show(
+      context,
+      title: AppStrings.delete,
+      message: AppStrings.deleteProductConfirm,
+      confirmLabel: AppStrings.delete,
+      danger: true,
     );
 
-    if (confirmed == true && mounted) {
+    if (confirmed && mounted) {
       await context.read<ProductsProvider>().deleteProduct(widget.productId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -188,7 +194,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final currencyFormat = NumberFormat.currency(
       symbol: AppStrings.currencySymbol,
       decimalDigits: 2,
@@ -209,11 +214,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     }
 
     final p = _product!;
-    final stockColor = p.isOutOfStock
-        ? theme.colorScheme.error
-        : p.isLowStock
-        ? const Color(0xFFF59E0B)
-        : const Color(0xFF1F8A5B);
 
     return Scaffold(
       appBar: AppBar(
@@ -226,9 +226,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           ),
           IconButton(
             onPressed: _openEdit,
-            icon: const Icon(Icons.edit_rounded),
+            icon: const Icon(Icons.edit_outlined),
           ),
-          PopupMenuButton(
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert_rounded),
             itemBuilder: (_) => [
               const PopupMenuItem(
                 value: 'delete',
@@ -243,101 +244,49 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       ),
       body: RefreshIndicator(
         onRefresh: _refreshAll,
+        color: AppColors.black,
+        backgroundColor: AppColors.white,
         child: ListView(
           padding: const EdgeInsets.all(AppSizes.lg),
           children: [
-            // Product header
-            Container(
-              padding: const EdgeInsets.all(AppSizes.xl),
-              decoration: ShapeDecoration(
-                color: theme.cardTheme.color,
-                shape: AppShapes.squircle(
-                  AppSizes.radiusLg,
-                  side: BorderSide(
-                    color: theme.colorScheme.outlineVariant.withValues(
-                      alpha: 0.3,
-                    ),
+            _ProductHeaderCard(product: p),
+            const SizedBox(height: AppSizes.md),
+            _StockStatusCard(product: p),
+            const SizedBox(height: AppSizes.md),
+            Row(
+              children: [
+                Expanded(
+                  child: AppButton.secondary(
+                    label: AppStrings.stockIn,
+                    icon: Icons.add_rounded,
+                    onPressed: () => _openStockSheet('STOCK_IN'),
+                    fullWidth: true,
                   ),
                 ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 60,
-                        height: 60,
-                        decoration: ShapeDecoration(
-                          color: theme.colorScheme.primaryContainer.withValues(
-                            alpha: 0.3,
-                          ),
-                          shape: AppShapes.squircle(AppSizes.radiusMd),
-                        ),
-                        child: Icon(
-                          Icons.inventory_2_outlined,
-                          color: theme.colorScheme.primary,
-                          size: AppSizes.iconXl,
-                        ),
-                      ),
-                      const SizedBox(width: AppSizes.lg),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(p.name, style: theme.textTheme.titleMedium),
-                            const SizedBox(height: 2),
-                            Text(
-                              'SKU: ${p.sku}',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                            if (p.category != null)
-                              Text(
-                                p.category!.name,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.primary,
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ],
+                const SizedBox(width: AppSizes.md),
+                Expanded(
+                  child: AppButton.primary(
+                    label: AppStrings.stockOut,
+                    icon: Icons.remove_rounded,
+                    onPressed: () => _openStockSheet('STOCK_OUT'),
+                    fullWidth: true,
                   ),
-                  if (p.description != null && p.description!.isNotEmpty) ...[
-                    const SizedBox(height: AppSizes.md),
-                    Text(
-                      p.description!,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
+                ),
+              ],
             ),
-            const SizedBox(height: AppSizes.lg),
-
-            // Stock status card
-            Container(
-              padding: const EdgeInsets.all(AppSizes.lg),
-              decoration: ShapeDecoration(
-                color: stockColor.withValues(alpha: 0.05),
-                shape: AppShapes.squircle(
-                  AppSizes.radiusMd,
-                  side: BorderSide(color: stockColor.withValues(alpha: 0.2)),
-                ),
+            const SizedBox(height: AppSizes.md),
+            AppCard(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSizes.lg,
+                vertical: AppSizes.md,
               ),
+              onTap: _openLedger,
               child: Row(
                 children: [
-                  Icon(
-                    p.isOutOfStock
-                        ? Icons.error_outline_rounded
-                        : p.isLowStock
-                        ? Icons.warning_amber_rounded
-                        : Icons.check_circle_outline_rounded,
-                    color: stockColor,
+                  const Icon(
+                    Icons.receipt_long_rounded,
+                    color: AppColors.black,
+                    size: AppSizes.iconMd,
                   ),
                   const SizedBox(width: AppSizes.md),
                   Expanded(
@@ -345,65 +294,31 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '${_formatQty(p.stockQuantity)} ${AppUnits.label(p.unit)}',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            color: stockColor,
-                            fontWeight: FontWeight.w700,
-                          ),
+                          'Stock ledger',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
                         ),
                         Text(
-                          'Low stock alert at ${_formatQty(p.lowStockThreshold)}',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
+                          'Every movement with source documents',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: AppColors.muted,
+                              ),
                         ),
                       ],
                     ),
                   ),
+                  const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    color: AppColors.muted,
+                    size: AppSizes.iconSm,
+                  ),
                 ],
               ),
             ),
-            const SizedBox(height: AppSizes.md),
-
-            // Stock action buttons
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _openStockSheet('STOCK_IN'),
-                    icon: const Icon(Icons.add_rounded),
-                    label: const Text(AppStrings.stockIn),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF1F8A5B),
-                      side: const BorderSide(color: Color(0xFF1F8A5B)),
-                      padding: const EdgeInsets.symmetric(
-                        vertical: AppSizes.md,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: AppSizes.md),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _openStockSheet('STOCK_OUT'),
-                    icon: const Icon(Icons.remove_rounded),
-                    label: const Text(AppStrings.stockOut),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: theme.colorScheme.error,
-                      side: BorderSide(color: theme.colorScheme.error),
-                      padding: const EdgeInsets.symmetric(
-                        vertical: AppSizes.md,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSizes.xxl),
-
-            // Pricing details
+            const SizedBox(height: AppSizes.xl),
             _DetailSection(
-              title: 'Pricing',
+              title: 'PRICING',
               rows: [
                 _DetailRow(AppStrings.mrp, currencyFormat.format(p.mrp)),
                 _DetailRow(
@@ -419,7 +334,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               ],
             ),
             const SizedBox(height: AppSizes.lg),
-
             _SupplierPriceHistorySection(
               transactions: _stockInTransactions,
               isLoading: _isSupplierHistoryLoading,
@@ -427,10 +341,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               currencyFormat: currencyFormat,
             ),
             const SizedBox(height: AppSizes.lg),
-
-            // Additional details
             _DetailSection(
-              title: 'Details',
+              title: 'DETAILS',
               rows: [
                 if (p.barcode != null)
                   _DetailRow(AppStrings.barcode, p.barcode!),
@@ -449,11 +361,124 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       ),
     );
   }
+}
+
+class _ProductHeaderCard extends StatelessWidget {
+  const _ProductHeaderCard({required this.product});
+
+  final Product product;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AppCard(
+      padding: const EdgeInsets.all(AppSizes.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const AppIconAvatar(
+                icon: Icons.inventory_2_outlined,
+                size: 56,
+              ),
+              const SizedBox(width: AppSizes.lg),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(product.name, style: theme.textTheme.titleMedium),
+                    const SizedBox(height: 2),
+                    Text(
+                      'SKU: ${product.sku}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.muted,
+                      ),
+                    ),
+                    if (product.category != null) ...[
+                      const SizedBox(height: 4),
+                      AppStatusBadge(
+                        label: product.category!.name,
+                        dense: true,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (product.description != null &&
+              product.description!.isNotEmpty) ...[
+            const SizedBox(height: AppSizes.md),
+            Text(
+              product.description!,
+              style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _StockStatusCard extends StatelessWidget {
+  const _StockStatusCard({required this.product});
+
+  final Product product;
+
+  AppStatusTone get _tone {
+    if (product.isOutOfStock) return AppStatusTone.error;
+    if (product.isLowStock) return AppStatusTone.warning;
+    return AppStatusTone.success;
+  }
+
+  IconData get _icon {
+    if (product.isOutOfStock) return Icons.error_outline_rounded;
+    if (product.isLowStock) return Icons.warning_amber_rounded;
+    return Icons.check_circle_outline_rounded;
+  }
+
+  String get _label {
+    if (product.isOutOfStock) return AppStrings.outOfStock;
+    if (product.isLowStock) return AppStrings.lowStock;
+    return AppStrings.inStock;
+  }
 
   String _formatQty(double qty) {
     return qty.truncateToDouble() == qty
         ? qty.toInt().toString()
         : qty.toStringAsFixed(2);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AppCard(
+      padding: const EdgeInsets.all(AppSizes.lg),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${_formatQty(product.stockQuantity)} ${AppUnits.label(product.unit)}',
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Low stock alert at ${_formatQty(product.lowStockThreshold)}',
+                  style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
+                ),
+              ],
+            ),
+          ),
+          AppStatusBadge(label: _label, tone: _tone, icon: _icon),
+        ],
+      ),
+    );
   }
 }
 
@@ -478,37 +503,22 @@ class _SupplierPriceHistorySection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          AppStrings.supplierPriceHistory,
-          style: theme.textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: theme.colorScheme.primary,
-          ),
+        AppSectionHeader(
+          title: AppStrings.supplierPriceHistory.toUpperCase(),
+          padding: const EdgeInsets.only(bottom: AppSizes.sm),
         ),
-        const SizedBox(height: AppSizes.md),
-        Container(
+        AppCard(
           padding: const EdgeInsets.all(AppSizes.lg),
-          decoration: ShapeDecoration(
-            color: theme.cardTheme.color,
-            shape: AppShapes.squircle(
-              AppSizes.radiusMd,
-              side: BorderSide(
-                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-              ),
-            ),
-          ),
-          child: _buildContent(context, suppliers),
+          child: _buildContent(theme, suppliers),
         ),
       ],
     );
   }
 
   Widget _buildContent(
-    BuildContext context,
+    ThemeData theme,
     List<MapEntry<String, List<StockTransaction>>> suppliers,
   ) {
-    final theme = Theme.of(context);
-
     if (isLoading) {
       return const Center(
         child: Padding(
@@ -521,33 +531,32 @@ class _SupplierPriceHistorySection extends StatelessWidget {
     if (errorMessage != null) {
       return Text(
         AppStrings.error,
-        style: theme.textTheme.bodyMedium?.copyWith(
-          color: theme.colorScheme.error,
-        ),
+        style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.error),
       );
     }
 
     if (suppliers.isEmpty) {
       return Text(
         AppStrings.noSupplierHistory,
-        style: theme.textTheme.bodyMedium?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
-        ),
+        style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted),
       );
     }
 
     return Column(
-      children: suppliers.map((entry) {
-        final isLast = entry == suppliers.last;
-        return Padding(
-          padding: EdgeInsets.only(bottom: isLast ? 0 : AppSizes.lg),
-          child: _SupplierHistoryTile(
-            supplierName: entry.key,
-            transactions: entry.value,
+      children: [
+        for (int i = 0; i < suppliers.length; i++) ...[
+          if (i > 0) ...[
+            const SizedBox(height: AppSizes.md),
+            const AppDivider.flush(),
+            const SizedBox(height: AppSizes.md),
+          ],
+          _SupplierHistoryTile(
+            supplierName: suppliers[i].key,
+            transactions: suppliers[i].value,
             currencyFormat: currencyFormat,
           ),
-        );
-      }).toList(),
+        ],
+      ],
     );
   }
 
@@ -555,16 +564,15 @@ class _SupplierPriceHistorySection extends StatelessWidget {
     List<StockTransaction> source,
   ) {
     final grouped = <String, List<StockTransaction>>{};
-
     for (final tx in source) {
-      // Prefer vendorName, fall back to supplierName, skip if both null
       final key = tx.displaySupplier?.trim();
       if (key == null || key.isEmpty) continue;
       grouped.putIfAbsent(key, () => []).add(tx);
     }
-
     final entries = grouped.entries.toList();
-    entries.sort((a, b) => b.value.first.createdAt.compareTo(a.value.first.createdAt));
+    entries.sort(
+      (a, b) => b.value.first.createdAt.compareTo(a.value.first.createdAt),
+    );
     return entries;
   }
 }
@@ -583,7 +591,8 @@ class _SupplierHistoryTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final sorted = [...transactions]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final sorted = [...transactions]
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
     final priceValues = sorted
         .where((t) => t.unitPrice != null)
@@ -598,134 +607,97 @@ class _SupplierHistoryTile extends StatelessWidget {
     final lastPolicy = _policyLabel(sorted.first.purchasePriceMode);
     final isVendor = sorted.first.vendorId != null;
 
-    return Container(
-      padding: const EdgeInsets.all(AppSizes.md),
-      decoration: ShapeDecoration(
-        color: theme.colorScheme.surfaceContainerLowest,
-        shape: AppShapes.squircle(
-          AppSizes.radiusMd,
-          side: BorderSide(
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-          ),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  supplierName.isEmpty ? AppStrings.unknownSupplier : supplierName,
-                  style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                supplierName.isEmpty ? AppStrings.unknownSupplier : supplierName,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-              if (isVendor)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSizes.sm,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.secondaryContainer,
-                    borderRadius: BorderRadius.circular(AppSizes.radiusSm),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.business_rounded,
-                        size: 11,
-                        color: theme.colorScheme.onSecondaryContainer,
-                      ),
-                      const SizedBox(width: 3),
-                      Text(
-                        AppStrings.vendor,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.onSecondaryContainer,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: AppSizes.sm),
-          _SupplierMetricRow(
-            label: AppStrings.latestPrice,
-            value: latestPrice == null ? '-' : currencyFormat.format(latestPrice),
-          ),
-          _SupplierMetricRow(
-            label: AppStrings.averagePrice,
-            value: averagePrice == null ? '-' : currencyFormat.format(averagePrice),
-          ),
-          _SupplierMetricRow(
-            label: AppStrings.totalQuantityBought,
-            value: '${totalQty % 1 == 0 ? totalQty.toInt() : totalQty.toStringAsFixed(2)} (${transactions.length} ${AppStrings.transactions})',
-          ),
-          _SupplierMetricRow(
-            label: AppStrings.lastStockIn,
-            value: DateFormat('dd MMM yyyy, hh:mm a').format(lastStockIn.toLocal()),
-          ),
-          _SupplierMetricRow(label: AppStrings.policy, value: lastPolicy),
-          const SizedBox(height: AppSizes.sm),
-          Text(
-            AppStrings.recentBuys,
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
             ),
-          ),
-          const SizedBox(height: AppSizes.xs),
-          ...sorted.take(5).map((tx) {
-            final date = DateFormat('dd MMM yyyy').format(tx.createdAt.toLocal());
-            final qty = tx.quantity % 1 == 0
-                ? tx.quantity.toInt().toString()
-                : tx.quantity.toStringAsFixed(2);
-            final price = tx.unitPrice == null ? '-' : currencyFormat.format(tx.unitPrice);
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 3),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      date,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                  Text(
-                    'Qty: $qty',
-                    style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
-                  ),
-                  const SizedBox(width: AppSizes.md),
-                  Text(
-                    price,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: theme.colorScheme.primary,
-                    ),
-                  ),
-                ],
+            if (isVendor)
+              const AppStatusBadge(
+                label: AppStrings.vendor,
+                icon: Icons.business_rounded,
+                dense: true,
               ),
-            );
-          }),
-        ],
-      ),
+          ],
+        ),
+        const SizedBox(height: AppSizes.sm),
+        _SupplierMetricRow(
+          label: AppStrings.latestPrice,
+          value: latestPrice == null ? '-' : currencyFormat.format(latestPrice),
+        ),
+        _SupplierMetricRow(
+          label: AppStrings.averagePrice,
+          value:
+              averagePrice == null ? '-' : currencyFormat.format(averagePrice),
+        ),
+        _SupplierMetricRow(
+          label: AppStrings.totalQuantityBought,
+          value:
+              '${totalQty % 1 == 0 ? totalQty.toInt() : totalQty.toStringAsFixed(2)} (${transactions.length} ${AppStrings.transactions})',
+        ),
+        _SupplierMetricRow(
+          label: AppStrings.lastStockIn,
+          value: DateFormat('dd MMM yyyy, hh:mm a').format(lastStockIn.toLocal()),
+        ),
+        _SupplierMetricRow(label: AppStrings.policy, value: lastPolicy),
+        const SizedBox(height: AppSizes.sm),
+        Text(
+          AppStrings.recentBuys,
+          style: theme.textTheme.labelMedium?.copyWith(color: AppColors.muted),
+        ),
+        const SizedBox(height: AppSizes.xs),
+        ...sorted.take(5).map((tx) {
+          final date = DateFormat('dd MMM yyyy').format(tx.createdAt.toLocal());
+          final qty = tx.quantity % 1 == 0
+              ? tx.quantity.toInt().toString()
+              : tx.quantity.toStringAsFixed(2);
+          final price =
+              tx.unitPrice == null ? '-' : currencyFormat.format(tx.unitPrice);
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 3),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    date,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.muted,
+                    ),
+                  ),
+                ),
+                Text(
+                  'Qty: $qty',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(width: AppSizes.md),
+                Text(
+                  price,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+      ],
     );
   }
 
   String _policyLabel(String? mode) {
-    if (mode == 'WEIGHTED_AVERAGE') {
-      return AppStrings.weightedAverage;
-    }
-    if (mode == 'USE_LATEST') {
-      return AppStrings.useLatestPrice;
-    }
-    if (mode == 'KEEP_CURRENT') {
-      return AppStrings.keepCurrentPrice;
-    }
+    if (mode == 'WEIGHTED_AVERAGE') return AppStrings.weightedAverage;
+    if (mode == 'USE_LATEST') return AppStrings.useLatestPrice;
+    if (mode == 'KEEP_CURRENT') return AppStrings.keepCurrentPrice;
     return '-';
   }
 }
@@ -739,7 +711,6 @@ class _SupplierMetricRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
@@ -747,9 +718,7 @@ class _SupplierMetricRow extends StatelessWidget {
         children: [
           Text(
             label,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
+            style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
           ),
           Text(
             value,
@@ -774,49 +743,41 @@ class _DetailSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: theme.textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: theme.colorScheme.primary,
-          ),
+        AppSectionHeader(
+          title: title,
+          padding: const EdgeInsets.only(bottom: AppSizes.sm),
         ),
-        const SizedBox(height: AppSizes.md),
-        Container(
-          padding: const EdgeInsets.all(AppSizes.lg),
-          decoration: ShapeDecoration(
-            color: theme.cardTheme.color,
-            shape: AppShapes.squircle(
-              AppSizes.radiusMd,
-              side: BorderSide(
-                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-              ),
-            ),
+        AppCard(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.lg,
+            vertical: AppSizes.md,
           ),
           child: Column(
-            children: rows.map((row) {
-              final isLast = row == rows.last;
-              return Padding(
-                padding: EdgeInsets.only(bottom: isLast ? 0 : AppSizes.md),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      row.label,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
+            children: [
+              for (int i = 0; i < rows.length; i++) ...[
+                if (i > 0) const AppDivider.flush(),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        rows[i].label,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: AppColors.muted,
+                        ),
                       ),
-                    ),
-                    Text(
-                      row.value,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
+                      Text(
+                        rows[i].value,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              );
-            }).toList(),
+              ],
+            ],
           ),
         ),
       ],

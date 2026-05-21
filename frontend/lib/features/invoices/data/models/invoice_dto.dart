@@ -27,6 +27,7 @@ class InvoiceDto {
   static Invoice fromJson(Map<String, dynamic> json) {
     final itemsJson = json['items'] as List<dynamic>?;
     final count = json['_count'] as Map<String, dynamic>?;
+    final createdAt = DateTime.parse(json['createdAt'] as String);
     return Invoice(
       id: json['id'] as int,
       invoiceNo: json['invoiceNo'] as String,
@@ -42,8 +43,10 @@ class InvoiceDto {
       total: _toDouble(json['total']),
       note: json['note'] as String?,
       invoiceDate: DateTime.parse(json['invoiceDate'] as String),
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      createdAt: createdAt,
+      updatedAt: json['updatedAt'] is String
+          ? DateTime.parse(json['updatedAt'] as String)
+          : createdAt,
       items:
           itemsJson
               ?.map((e) => _itemFromJson(e as Map<String, dynamic>))

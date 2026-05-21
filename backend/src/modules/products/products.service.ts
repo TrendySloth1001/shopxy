@@ -1,4 +1,5 @@
 import prisma from '../../infra/db/prisma.js';
+import { ledgerService } from '../ledger/ledger.service.js';
 
 const productSelect = {
   id: true,
@@ -23,32 +24,71 @@ const productSelect = {
 } as const;
 
 export class ProductsService {
-  createProduct(data: {
-    name: string;
-    description?: string;
-    sku: string;
-    barcode?: string;
-    hsnCode?: string;
-    mrp: number;
-    sellingPrice: number;
-    purchasePrice: number;
-    taxPercent?: number;
-    stockQuantity?: number;
-    lowStockThreshold?: number;
-    unit?: string;
-    categoryId?: number;
-    imageUrls?: string[];
-  }) {
-    const { imageUrls, ...rest } = data;
-    return prisma.product.create({
+  async createProduct(
+    data: {
+      name: string;
+      description?: string;
+      sku: string;
+      barcode?: string;
+      hsnCode?: string;
+      mrp: number;
+      sellingPrice: number;
+      purchasePrice: number;
+      taxPercent?: number;
+      stockQuantity?: number;
+      lowStockThreshold?: number;
+      unit?: string;
+      categoryId?: number;
+      imageUrls?: string[];
+    },
+    options: { createdById?: number } = {},
+  ) {
+    const { imageUrls, stockQuantity, ...rest } = data;
+    // Create the product with stockQuantity = 0; the ledger post below is
+    // what funds it. This keeps products.stockQuantity in sync with the
+    // ledger from row one — no orphan stock without a cost basis.
+    const product = await prisma.product.create({
       data: {
         ...rest,
+        stockQuantity: 0,
         images: imageUrls?.length
           ? { create: imageUrls.map((url, i) => ({ url, sortOrder: i })) }
           : undefined,
       },
       select: productSelect,
     });
+
+    if (stockQuantity && stockQuantity > 0) {
+      const result = await ledgerService.post({
+        direction: 'IN',
+        reasonCode: 'OPENING',
+        sourceType: 'OPENING',
+        sourceId: product.id,
+        lines: [
+          {
+            productId: product.id,
+            quantity: stockQuantity,
+            unitPrice: data.purchasePrice,
+          },
+        ],
+        createdById: options.createdById,
+        note: 'Opening balance on product create',
+      });
+
+      if ('error' in result) {
+        // Roll back the product so we never leave one without a ledger.
+        await prisma.product.delete({ where: { id: product.id } });
+        throw new Error(`Failed to post opening balance: ${result.error}`);
+      }
+
+      // Re-read so the response reflects the funded stock quantity.
+      return prisma.product.findUniqueOrThrow({
+        where: { id: product.id },
+        select: productSelect,
+      });
+    }
+
+    return product;
   }
 
   async listProducts(options: {
@@ -177,7 +217,24 @@ export class ProductsService {
     });
   }
 
-  deleteProduct(id: number) {
+  async deleteProduct(id: number) {
+    // Soft-delete if the product is referenced anywhere — invoices, challans,
+    // stock ledger, or adjustment lines all need the row to stay around so
+    // historical documents render correctly. Otherwise hard-delete.
+    const [stockRefs, invoiceRefs, challanRefs, adjustmentRefs] = await Promise.all([
+      prisma.stockTransaction.count({ where: { productId: id } }),
+      prisma.invoiceItem.count({ where: { productId: id } }),
+      prisma.challanItem.count({ where: { productId: id } }),
+      prisma.stockAdjustmentItem.count({ where: { productId: id } }),
+    ]);
+    const referenced = stockRefs + invoiceRefs + challanRefs + adjustmentRefs > 0;
+    if (referenced) {
+      return prisma.product.update({
+        where: { id },
+        data: { isActive: false },
+        select: productSelect,
+      });
+    }
     return prisma.product.delete({ where: { id } });
   }
 

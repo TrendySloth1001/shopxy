@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shopxy/shared/theme/app_colors.dart';
 
 class LoadingOverlay extends StatelessWidget {
   const LoadingOverlay({super.key, required this.isLoading, required this.child});
@@ -12,9 +13,13 @@ class LoadingOverlay extends StatelessWidget {
       children: [
         child,
         if (isLoading)
-          Container(
-            color: Colors.black26,
-            child: const Center(child: CircularProgressIndicator()),
+          ColoredBox(
+            color: AppColors.white.withValues(alpha: 0.85),
+            child: const SizedBox.expand(
+              child: Center(
+                child: CircularProgressIndicator(color: AppColors.black),
+              ),
+            ),
           ),
       ],
     );

@@ -1,39 +1,33 @@
 import 'package:flutter/material.dart';
 
-/// Shopxy 4-color palette — vintage beige + OLED black.
+/// Two-tone palette. Pure white + pure black, with a single hairline
+/// for borders/dividers, plus status accents.
 ///
-/// 1. Ink       – the darkest tone (text on light, background on dark)
-/// 2. Paper     – the lightest tone (background on light, text on dark)
-/// 3. Stone     – mid-tone beige (cards, borders, muted elements)
-/// 4. Espresso  – warm accent (CTAs, highlights, active states)
+/// Do NOT introduce greys, gradients, or surface shades outside this file.
 class AppColors {
   AppColors._();
 
-  // ── The 4 palette colors ───────────────────────────
-  static const Color ink = Color(0xFF000000);       // OLED black
-  static const Color paper = Color(0xFFF5F0E8);     // warm off-white
-  static const Color stone = Color(0xFFD6CEC4);     // muted beige
-  static const Color espresso = Color(0xFF3C2A14);  // deep warm brown
+  // ── Base tones ─────────────────────────────────────
+  static const Color white = Color(0xFFFFFFFF);
+  static const Color black = Color(0xFF000000);
 
-  // ── Semantic mappings (derived from the 4 above) ───
-  // Light mode
-  static const Color lightBackground = paper;
-  static const Color lightSurface = Color(0xFFEDE8DF);    // paper darkened slightly
-  static const Color lightOnBackground = ink;
-  static const Color lightOnSurface = ink;
-  static const Color lightOutline = stone;
-  static const Color lightMuted = Color(0xFF8A8078);       // stone darkened for text
+  /// The one allowed neutral — used for hairline borders and subtle dividers.
+  /// Black at ~10% opacity, kept as a const ARGB literal so it works in
+  /// `const` constructors.
+  static const Color hairline = Color(0x1A000000);
 
-  // Dark mode (OLED)
-  static const Color darkBackground = ink;
-  static const Color darkSurface = Color(0xFF1A1612);      // barely-there warm black
-  static const Color darkOnBackground = paper;
-  static const Color darkOnSurface = paper;
-  static const Color darkOutline = Color(0xFF3A332C);      // stone at very low brightness
-  static const Color darkMuted = Color(0xFF9E958A);        // stone lightened for text
+  /// Even softer hairline for hover/pressed surfaces — black at ~4%.
+  static const Color surfaceTint = Color(0x0A000000);
 
-  // Status (kept minimal — tinted from palette)
-  static const Color success = Color(0xFF4A7A5B);
-  static const Color error = Color(0xFF8B3A2F);
-  static const Color warning = Color(0xFFA67C3D);
+  /// Muted text — black at ~56% opacity for secondary labels.
+  static const Color muted = Color(0x8F000000);
+
+  /// Disabled foreground — black at ~32% opacity.
+  static const Color disabled = Color(0x52000000);
+
+  // ── Status accents ─────────────────────────────────
+  // Used sparingly: only for errors, success confirmation, and warnings.
+  static const Color error = Color(0xFFD92D20);
+  static const Color success = Color(0xFF067647);
+  static const Color warning = Color(0xFFB54708);
 }

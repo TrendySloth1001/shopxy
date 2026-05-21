@@ -8,6 +8,12 @@ import 'package:shopxy/features/products/data/datasources/products_remote_data_s
 import 'package:shopxy/features/products/domain/entities/product.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
+import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/shared/widgets/app_button.dart';
+import 'package:shopxy/shared/widgets/app_card.dart';
+import 'package:shopxy/shared/widgets/app_divider.dart';
+import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
+import 'package:shopxy/shared/widgets/app_section_header.dart';
 
 class CreateChallanPage extends StatefulWidget {
   const CreateChallanPage({super.key});
@@ -105,16 +111,18 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
       await provider.createChallan(
         partyId: _selectedParty?.id,
         partyName: _selectedParty == null ? _partyName.text.trim() : null,
-        partyPhone: _selectedParty == null && _partyPhone.text.trim().isNotEmpty
-            ? _partyPhone.text.trim()
-            : null,
+        partyPhone:
+            _selectedParty == null && _partyPhone.text.trim().isNotEmpty
+                ? _partyPhone.text.trim()
+                : null,
         note: _note.text.trim().isNotEmpty ? _note.text.trim() : null,
         items: _items,
       );
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.toString())));
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -146,9 +154,10 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
         child: ListView(
           padding: const EdgeInsets.all(AppSizes.lg),
           children: [
-            // ── Party info ────────────────────────────────────────────
-            _SectionHeader(title: AppStrings.challanPartyInfo),
-            const SizedBox(height: AppSizes.md),
+            AppSectionHeader(
+              title: AppStrings.challanPartyInfo.toUpperCase(),
+              padding: const EdgeInsets.only(bottom: AppSizes.sm),
+            ),
             if (_selectedParty != null)
               _SelectedPartyCard(
                 party: _selectedParty!,
@@ -156,18 +165,22 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
                 onClear: _clearParty,
               )
             else ...[
-              OutlinedButton.icon(
+              AppButton.secondary(
+                label: AppStrings.selectParty,
+                icon: Icons.person_search_rounded,
                 onPressed: _pickParty,
-                icon: const Icon(Icons.person_search_rounded),
-                label: const Text(AppStrings.selectParty),
+                fullWidth: true,
               ),
               const SizedBox(height: AppSizes.md),
               TextFormField(
                 controller: _partyName,
-                decoration: const InputDecoration(labelText: AppStrings.partyName),
-                validator: (v) => _selectedParty == null && (v == null || v.trim().isEmpty)
-                    ? AppStrings.fieldRequired
-                    : null,
+                decoration: const InputDecoration(
+                  labelText: AppStrings.partyName,
+                ),
+                validator: (v) =>
+                    _selectedParty == null && (v == null || v.trim().isEmpty)
+                        ? AppStrings.fieldRequired
+                        : null,
                 textCapitalization: TextCapitalization.words,
               ),
               const SizedBox(height: AppSizes.md),
@@ -183,17 +196,14 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
               decoration: const InputDecoration(labelText: AppStrings.note),
               maxLines: 2,
             ),
-
             const SizedBox(height: AppSizes.xxl),
-
-            // ── Add products ──────────────────────────────────────────
-            _SectionHeader(title: AppStrings.challanAddProducts),
-            const SizedBox(height: AppSizes.sm),
+            AppSectionHeader(
+              title: AppStrings.challanAddProducts.toUpperCase(),
+              padding: const EdgeInsets.only(bottom: AppSizes.sm),
+            ),
             Text(
               AppStrings.challanNoPricesHint,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
+              style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
             ),
             const SizedBox(height: AppSizes.md),
             TextFormField(
@@ -216,40 +226,45 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
             ),
             if (_searchResults.isNotEmpty) ...[
               const SizedBox(height: AppSizes.xs),
-              Card(
-                margin: EdgeInsets.zero,
+              AppCard(
+                padding: EdgeInsets.zero,
                 child: Column(
-                  children: _searchResults
-                      .map(
-                        (p) => ListTile(
-                          dense: true,
-                          title: Text(p.name),
-                          subtitle: Text(p.sku),
-                          trailing: const Icon(Icons.add_circle_outline_rounded),
-                          onTap: () => _addProduct(p),
-                        ),
-                      )
-                      .toList(),
+                  children: [
+                    for (int i = 0; i < _searchResults.length; i++) ...[
+                      if (i > 0) const AppDivider.flush(),
+                      ListTile(
+                        dense: true,
+                        title: Text(_searchResults[i].name),
+                        subtitle: Text(_searchResults[i].sku),
+                        trailing:
+                            const Icon(Icons.add_circle_outline_rounded),
+                        onTap: () => _addProduct(_searchResults[i]),
+                      ),
+                    ],
+                  ],
                 ),
               ),
             ],
-
             const SizedBox(height: AppSizes.xl),
-
-            // ── Items list ────────────────────────────────────────────
             Row(
               children: [
-                _SectionHeader(title: AppStrings.challanItems),
-                const Spacer(),
-                Text(
-                  '${_items.length} ${AppStrings.items}',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                Expanded(
+                  child: AppSectionHeader(
+                    title: AppStrings.challanItems.toUpperCase(),
+                    padding: const EdgeInsets.only(bottom: AppSizes.sm),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: AppSizes.sm),
+                  child: Text(
+                    '${_items.length} ${AppStrings.items}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.muted,
+                    ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: AppSizes.sm),
             if (_items.isEmpty)
               Container(
                 padding: const EdgeInsets.all(AppSizes.xl),
@@ -257,17 +272,19 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
                 child: Text(
                   AppStrings.challanEmptyItems,
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                    color: AppColors.muted,
                   ),
                 ),
               )
             else
-              ...List.generate(_items.length, (i) => _ItemRow(
-                    item: _items[i],
-                    onQtyChanged: (q) => setState(() => _items[i].quantity = q),
-                    onDelete: () => setState(() => _items.removeAt(i)),
-                  )),
-
+              ...List.generate(
+                _items.length,
+                (i) => _ItemRow(
+                  item: _items[i],
+                  onQtyChanged: (q) => setState(() => _items[i].quantity = q),
+                  onDelete: () => setState(() => _items.removeAt(i)),
+                ),
+              ),
             const SizedBox(height: AppSizes.huge),
           ],
         ),
@@ -290,11 +307,15 @@ class _ItemRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final qtyCtrl = TextEditingController(text: item.quantity.toStringAsFixed(item.quantity == item.quantity.truncateToDouble() ? 0 : 2));
+    final qtyCtrl = TextEditingController(
+      text: item.quantity.toStringAsFixed(
+        item.quantity == item.quantity.truncateToDouble() ? 0 : 2,
+      ),
+    );
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: AppSizes.sm),
-      child: Padding(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSizes.sm),
+      child: AppCard(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSizes.md,
           vertical: AppSizes.sm,
@@ -314,7 +335,7 @@ class _ItemRow extends StatelessWidget {
                   Text(
                     item.productSku,
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+                      color: AppColors.muted,
                     ),
                   ),
                 ],
@@ -334,7 +355,8 @@ class _ItemRow extends StatelessWidget {
                     vertical: AppSizes.xs,
                   ),
                 ),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
                 onChanged: (v) {
                   final parsed = double.tryParse(v);
                   if (parsed != null && parsed > 0) onQtyChanged(parsed);
@@ -342,9 +364,9 @@ class _ItemRow extends StatelessWidget {
               ),
             ),
             IconButton(
-              icon: Icon(
+              icon: const Icon(
                 Icons.delete_outline_rounded,
-                color: theme.colorScheme.error,
+                color: AppColors.error,
               ),
               onPressed: onDelete,
               visualDensity: VisualDensity.compact,
@@ -352,22 +374,6 @@ class _ItemRow extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title});
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: Theme.of(context).colorScheme.primary,
-          ),
     );
   }
 }
@@ -386,54 +392,41 @@ class _SelectedPartyCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
-      margin: EdgeInsets.zero,
-      color: theme.colorScheme.secondaryContainer.withValues(alpha: 0.4),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSizes.md),
-        child: Row(
-          children: [
-            CircleAvatar(
-              backgroundColor: theme.colorScheme.secondaryContainer,
-              child: Text(
-                party.name.characters.first.toUpperCase(),
-                style: TextStyle(
-                  color: theme.colorScheme.onSecondaryContainer,
-                  fontWeight: FontWeight.w700,
+    return AppCard(
+      padding: const EdgeInsets.all(AppSizes.md),
+      child: Row(
+        children: [
+          AppMonogramAvatar(label: party.name),
+          const SizedBox(width: AppSizes.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  party.name,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(width: AppSizes.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+                if (party.phone != null)
+                  Text(party.phone!, style: theme.textTheme.bodySmall),
+                if (party.gstin != null)
                   Text(
-                    party.name,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
+                    'GSTIN: ${party.gstin}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.muted,
                     ),
                   ),
-                  if (party.phone != null)
-                    Text(party.phone!, style: theme.textTheme.bodySmall),
-                  if (party.gstin != null)
-                    Text(
-                      'GSTIN: ${party.gstin}',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                ],
-              ),
+              ],
             ),
-            TextButton(onPressed: onChange, child: const Text('Change')),
-            IconButton(
-              icon: const Icon(Icons.close_rounded),
-              onPressed: onClear,
-              visualDensity: VisualDensity.compact,
-            ),
-          ],
-        ),
+          ),
+          TextButton(onPressed: onChange, child: const Text('Change')),
+          IconButton(
+            icon: const Icon(Icons.close_rounded),
+            onPressed: onClear,
+            visualDensity: VisualDensity.compact,
+          ),
+        ],
       ),
     );
   }

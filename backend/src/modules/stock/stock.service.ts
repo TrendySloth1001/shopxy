@@ -1,120 +1,95 @@
 import prisma from '../../infra/db/prisma.js';
-import { type PurchasePriceMode } from '../../shared/constants/index.js';
-
-const DEFAULT_PURCHASE_PRICE_MODE: PurchasePriceMode = 'WEIGHTED_AVERAGE';
+import { invoicesService } from '../invoices/invoices.service.js';
 
 export class StockService {
+  /// Manual stock-in / stock-out from the product detail bottom sheet.
+  /// Both sides now create a DRAFT invoice (purchase for IN, sale for
+  /// OUT) instead of posting directly to the ledger — the user reviews
+  /// the draft on the dashboard and confirms it to actually deduct
+  /// stock. Damage / expired / shrinkage still go through
+  /// /stock-adjustments.
   async createTransaction(data: {
     productId: number;
-    type: string;
+    type: string; // 'STOCK_IN' | 'STOCK_OUT'
     quantity: number;
     unitPrice?: number;
-    supplierName?: string;
     vendorId?: number;
-    purchasePriceMode?: PurchasePriceMode;
+    partyId?: number;
     note?: string;
+    createdById?: number;
   }) {
-    const product = await prisma.product.findUnique({ where: { id: data.productId } });
+    const product = await prisma.product.findUnique({
+      where: { id: data.productId },
+      select: {
+        id: true,
+        isActive: true,
+        purchasePrice: true,
+        sellingPrice: true,
+        taxPercent: true,
+      },
+    });
     if (!product) return { error: 'Product not found' as const };
+    if (!product.isActive) return { error: 'Product is inactive' as const };
 
-    // Resolve vendor name as supplierName when vendorId provided
-    let resolvedSupplierName = data.supplierName?.trim() || undefined;
-    if (data.vendorId) {
-      const vendor = await prisma.vendor.findUnique({
-        where: { id: data.vendorId },
-        select: { name: true },
+    const direction = data.type === 'STOCK_OUT' ? 'OUT' : 'IN';
+
+    if (direction === 'IN') {
+      const unitPrice = data.unitPrice ?? Number(product.purchasePrice);
+      const result = await invoicesService.createInvoice({
+        type: 'PURCHASE',
+        vendorId: data.vendorId,
+        note: data.note,
+        items: [
+          {
+            productId: data.productId,
+            quantity: data.quantity,
+            unitPrice,
+            taxPercent: Number(product.taxPercent ?? 0),
+          },
+        ],
       });
-      if (!vendor) return { error: 'Vendor not found' as const };
-      resolvedSupplierName = vendor.name;
+      if ('error' in result) return { error: result.error };
+      return { draftInvoice: result.invoice };
     }
 
-    const quantityDelta = data.type === 'STOCK_OUT' ? -data.quantity : data.quantity;
-    const currentStock = Number(product.stockQuantity);
-    const currentPurchasePrice = Number(product.purchasePrice);
-    const unitPrice = data.unitPrice;
-
-    if (data.purchasePriceMode && data.type !== 'STOCK_IN') {
-      return { error: 'Purchase price mode can only be used for stock-in transactions' as const };
-    }
-    if (data.purchasePriceMode && unitPrice === undefined) {
-      return { error: 'Unit price is required when purchase price mode is set' as const };
-    }
-    if (data.type === 'STOCK_OUT' && currentStock < data.quantity) {
-      return { error: 'Insufficient stock' as const, available: currentStock, requested: data.quantity };
-    }
-
-    let purchasePriceMode: PurchasePriceMode | undefined;
-    let purchasePriceBefore: number | undefined;
-    let purchasePriceAfter: number | undefined;
-
-    if (data.type === 'STOCK_IN' && unitPrice !== undefined) {
-      purchasePriceMode = data.purchasePriceMode ?? DEFAULT_PURCHASE_PRICE_MODE;
-      purchasePriceBefore = this.roundCurrency(currentPurchasePrice);
-      purchasePriceAfter = this.computeNextPurchasePrice({
-        mode: purchasePriceMode,
-        currentPurchasePrice,
-        currentStock,
-        incomingQuantity: data.quantity,
-        incomingUnitPrice: unitPrice,
+    // OUT — sale to a party. Default to the system Walk-in Customer when
+    // none picked so the user never has to bail out of the sheet just to
+    // record a quick over-the-counter sale.
+    let partyId = data.partyId;
+    if (!partyId) {
+      const walkin = await prisma.party.findFirst({
+        where: { isSystem: true, name: 'Walk-in Customer' },
+        select: { id: true },
       });
+      if (!walkin) {
+        return { error: 'Walk-in Customer party missing — run migrations' as const };
+      }
+      partyId = walkin.id;
     }
 
-    const productUpdateData: { stockQuantity: { increment: number }; purchasePrice?: number } = {
-      stockQuantity: { increment: quantityDelta },
-    };
-    if (purchasePriceAfter !== undefined) productUpdateData.purchasePrice = purchasePriceAfter;
-
-    const [transaction] = await prisma.$transaction([
-      prisma.stockTransaction.create({
-        data: {
+    const unitPrice = data.unitPrice ?? Number(product.sellingPrice);
+    const result = await invoicesService.createInvoice({
+      type: 'SALE',
+      partyId,
+      note: data.note,
+      items: [
+        {
           productId: data.productId,
-          type: data.type,
           quantity: data.quantity,
-          unitPrice: data.unitPrice,
-          supplierName: resolvedSupplierName,
-          vendorId: data.vendorId ?? null,
-          purchasePriceMode,
-          purchasePriceBefore,
-          purchasePriceAfter,
-          note: data.note,
+          unitPrice,
+          taxPercent: Number(product.taxPercent ?? 0),
         },
-        include: {
-          product: { select: { id: true, name: true, sku: true, purchasePrice: true } },
-          vendor: { select: { id: true, name: true } },
-        },
-      }),
-      prisma.product.update({ where: { id: data.productId }, data: productUpdateData }),
-    ]);
-
-    return { transaction };
-  }
-
-  private computeNextPurchasePrice(args: {
-    mode: PurchasePriceMode;
-    currentPurchasePrice: number;
-    currentStock: number;
-    incomingQuantity: number;
-    incomingUnitPrice: number;
-  }): number {
-    const { mode, currentPurchasePrice, currentStock, incomingQuantity, incomingUnitPrice } = args;
-    if (mode === 'KEEP_CURRENT') return this.roundCurrency(currentPurchasePrice);
-    if (mode === 'USE_LATEST') return this.roundCurrency(incomingUnitPrice);
-    const nextStock = currentStock + incomingQuantity;
-    if (nextStock <= 0) return this.roundCurrency(incomingUnitPrice);
-    return this.roundCurrency(
-      (currentStock * currentPurchasePrice + incomingQuantity * incomingUnitPrice) / nextStock,
-    );
-  }
-
-  private roundCurrency(value: number): number {
-    return Math.round((value + Number.EPSILON) * 100) / 100;
+      ],
+    });
+    if ('error' in result) return { error: result.error };
+    return { draftInvoice: result.invoice };
   }
 
   async listSuppliers(options: { query?: string; productId?: number; limit: number }) {
     const query = options.query?.trim();
 
     // 1. Structured vendors that have stock-in transactions for this product
-    const vendorTxWhere: Record<string, unknown> = { type: 'STOCK_IN' };
+    const vendorTxWhere: Record<string, unknown> = { direction: 'IN' };
     if (options.productId) vendorTxWhere.productId = options.productId;
 
     const vendorWhere: Record<string, unknown> = {
@@ -132,7 +107,7 @@ export class StockService {
 
     // 2. Legacy free-text supplier names (vendorId is null)
     const freeTextWhere: Record<string, unknown> = {
-      type: 'STOCK_IN',
+      direction: 'IN',
       supplierName: { not: null },
       vendorId: null,
     };
@@ -164,6 +139,10 @@ export class StockService {
   async listTransactions(options: {
     productId?: number;
     type?: string;
+    direction?: string;
+    reasonCode?: string;
+    sourceType?: string;
+    sourceId?: number;
     vendorId?: number;
     page: number;
     limit: number;
@@ -172,6 +151,10 @@ export class StockService {
     const where: Record<string, unknown> = {};
     if (options.productId) where.productId = options.productId;
     if (options.type) where.type = options.type;
+    if (options.direction) where.direction = options.direction;
+    if (options.reasonCode) where.reasonCode = options.reasonCode;
+    if (options.sourceType) where.sourceType = options.sourceType;
+    if (options.sourceId) where.sourceId = options.sourceId;
     if (options.vendorId) where.vendorId = options.vendorId;
 
     const [transactions, total] = await Promise.all([
@@ -183,6 +166,7 @@ export class StockService {
         include: {
           product: { select: { id: true, name: true, sku: true, unit: true } },
           vendor: { select: { id: true, name: true } },
+          createdBy: { select: { id: true, name: true } },
         },
       }),
       prisma.stockTransaction.count({ where }),

@@ -8,6 +8,8 @@ import 'package:shopxy/features/products/presentation/providers/products_provide
 import 'package:shopxy/features/products/presentation/widgets/product_list_tile.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
+import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_search_bar.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
 
@@ -106,51 +108,42 @@ class _ProductsPageState extends State<ProductsPage> {
               hint: AppStrings.searchProducts,
               controller: _searchController,
               onChanged: (value) => provider.setSearch(value),
-              trailing: IconButton(
-                icon: const Icon(
-                  Icons.qr_code_scanner_rounded,
-                  size: AppSizes.iconMd,
-                ),
-                onPressed: _openScanner,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-              ),
             ),
           ),
           Expanded(
             child: provider.isLoading && provider.products.isEmpty
                 ? const Center(child: CircularProgressIndicator())
                 : provider.products.isEmpty
-                ? EmptyState(
-                    icon: Icons.inventory_2_outlined,
-                    title: AppStrings.noProducts,
-                    subtitle: AppStrings.noProductsHint,
-                  )
-                : RefreshIndicator(
-                    onRefresh: () => provider.loadProducts(),
-                    child: ListView.builder(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSizes.lg,
-                        vertical: AppSizes.sm,
+                    ? EmptyState(
+                        icon: Icons.inventory_2_outlined,
+                        title: AppStrings.noProducts,
+                        subtitle: AppStrings.noProductsHint,
+                      )
+                    : RefreshIndicator(
+                        onRefresh: () => provider.loadProducts(),
+                        color: AppColors.black,
+                        backgroundColor: AppColors.white,
+                        child: ListView.separated(
+                          padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
+                          itemCount: provider.products.length +
+                              (provider.hasMore ? 1 : 0),
+                          separatorBuilder: (_, _) => const AppDivider(),
+                          itemBuilder: (context, index) {
+                            if (index >= provider.products.length) {
+                              _scheduleLoadMore();
+                              return const Padding(
+                                padding: EdgeInsets.all(AppSizes.lg),
+                                child: Center(child: CircularProgressIndicator()),
+                              );
+                            }
+                            final product = provider.products[index];
+                            return ProductListTile(
+                              product: product,
+                              onTap: () => _openProductDetail(product),
+                            );
+                          },
+                        ),
                       ),
-                      itemCount:
-                          provider.products.length + (provider.hasMore ? 1 : 0),
-                      itemBuilder: (context, index) {
-                        if (index >= provider.products.length) {
-                          _scheduleLoadMore();
-                          return const Padding(
-                            padding: EdgeInsets.all(AppSizes.lg),
-                            child: Center(child: CircularProgressIndicator()),
-                          );
-                        }
-                        final product = provider.products[index];
-                        return ProductListTile(
-                          product: product,
-                          onTap: () => _openProductDetail(product),
-                        );
-                      },
-                    ),
-                  ),
           ),
         ],
       ),

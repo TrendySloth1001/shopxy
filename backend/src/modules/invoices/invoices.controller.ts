@@ -81,9 +81,14 @@ export class InvoicesController {
     if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
 
     const { status } = updateStatusSchema.parse(req.body);
-    const result = await invoicesService.updateStatus(id, status);
+    const result = await invoicesService.updateStatus(id, status, req.user?.sub);
     if ('error' in result) {
-      res.status(400).json({ error: result.error });
+      res.status(400).json({
+        error: result.error,
+        ...('productId' in result
+          ? { productId: result.productId, available: result.available, requested: result.requested }
+          : {}),
+      });
       return;
     }
     res.json(result.invoice);

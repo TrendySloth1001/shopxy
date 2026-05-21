@@ -1,5 +1,6 @@
 import prisma from '../../infra/db/prisma.js';
 import PDFDocument from 'pdfkit';
+import { ledgerService } from '../ledger/ledger.service.js';
 
 type InvoiceType = 'SALE' | 'PURCHASE';
 type InvoiceStatus = 'DRAFT' | 'CONFIRMED' | 'CANCELLED';
@@ -33,6 +34,9 @@ export class InvoicesService {
     let customerName = data.customerName ?? null;
     let customerPhone = data.customerPhone ?? null;
     let customerGstin = data.customerGstin ?? null;
+    let vendorName: string | null = null;
+    let vendorPhone: string | null = null;
+    let vendorGstin: string | null = null;
 
     if (data.partyId) {
       const party = await prisma.party.findUnique({
@@ -45,6 +49,18 @@ export class InvoicesService {
       customerName = customerName ?? party.name;
       customerPhone = customerPhone ?? party.phone ?? null;
       customerGstin = customerGstin ?? party.gstin ?? null;
+    }
+
+    if (data.vendorId) {
+      const vendor = await prisma.vendor.findUnique({
+        where: { id: data.vendorId },
+        select: { id: true, name: true, phone: true, gstin: true, isActive: true },
+      });
+      if (!vendor) return { error: 'Vendor not found' as const };
+      if (!vendor.isActive) return { error: 'Vendor is inactive' as const };
+      vendorName = vendor.name;
+      vendorPhone = vendor.phone ?? null;
+      vendorGstin = vendor.gstin ?? null;
     }
 
     // Resolve products for snapshots
@@ -101,6 +117,9 @@ export class InvoicesService {
         customerName,
         customerPhone,
         customerGstin,
+        vendorName,
+        vendorPhone,
+        vendorGstin,
         subtotal: this.round2(subtotal),
         taxAmount: this.round2(taxAmount),
         discount: headerDiscount,
@@ -151,12 +170,18 @@ export class InvoicesService {
           status: true,
           customerName: true,
           customerPhone: true,
+          customerGstin: true,
+          vendorName: true,
+          vendorPhone: true,
+          vendorGstin: true,
           subtotal: true,
           taxAmount: true,
           discount: true,
           total: true,
+          note: true,
           invoiceDate: true,
           createdAt: true,
+          updatedAt: true,
           vendor: { select: { id: true, name: true } },
           party: { select: { id: true, name: true } },
           _count: { select: { items: true } },
@@ -181,13 +206,99 @@ export class InvoicesService {
     });
   }
 
-  async updateStatus(id: number, status: InvoiceStatus) {
-    const invoice = await prisma.invoice.findUnique({ where: { id }, select: { status: true } });
+  async updateStatus(id: number, status: InvoiceStatus, createdById?: number) {
+    const invoice = await prisma.invoice.findUnique({
+      where: { id },
+      include: { items: true, vendor: true, party: true, challan: { select: { id: true } } },
+    });
     if (!invoice) return { error: 'Invoice not found' as const };
 
     // Cannot re-confirm or un-cancel
     if (invoice.status === 'CANCELLED') {
       return { error: 'Cannot update a cancelled invoice' as const };
+    }
+    if (invoice.status === status) {
+      return { invoice };
+    }
+
+    // If this invoice was converted from a challan, the challan already
+    // posted the stock movement at create time. The invoice should not
+    // re-post on confirm or reverse on its own cancel — the challan is
+    // the source of truth for those rows.
+    const ledgerOwnedByChallan = invoice.challan !== null;
+
+    // Refuse to cancel a challan-sourced invoice — the inventory effect
+    // sits on the challan, so cancelling the invoice in isolation leaves
+    // a "cancelled" invoice attached to a "converted" challan with goods
+    // still considered shipped. Force the user to cancel the challan
+    // instead, which will reverse the ledger correctly.
+    if (ledgerOwnedByChallan && status === 'CANCELLED' && invoice.status === 'CONFIRMED') {
+      return {
+        error: 'Cancel the linked challan instead — this invoice is its bill.' as const,
+      };
+    }
+
+    // ── DRAFT → CONFIRMED: post stock movements ────────────────────
+    if (invoice.status === 'DRAFT' && status === 'CONFIRMED' && !ledgerOwnedByChallan) {
+      const direction = invoice.type === 'SALE' ? 'OUT' : 'IN';
+      const reasonCode = invoice.type === 'SALE' ? 'SALE' : 'PURCHASE';
+      const counterpartyName =
+        invoice.type === 'SALE'
+          ? invoice.customerName ?? invoice.party?.name ?? null
+          : invoice.vendorName ?? invoice.vendor?.name ?? null;
+      const counterpartyGstin =
+        invoice.type === 'SALE'
+          ? invoice.customerGstin ?? invoice.party?.gstin ?? null
+          : invoice.vendorGstin ?? invoice.vendor?.gstin ?? null;
+      const result = await ledgerService.post({
+        direction,
+        reasonCode,
+        sourceType: 'INVOICE',
+        sourceId: invoice.id,
+        idempotencyKey: `INVOICE:${invoice.id}:CONFIRM`,
+        vendorId: invoice.vendorId ?? undefined,
+        counterpartyName: counterpartyName ?? undefined,
+        counterpartyGstin: counterpartyGstin ?? undefined,
+        createdById,
+        note: `Invoice ${invoice.invoiceNo}`,
+        lines: invoice.items.map((it) => ({
+          productId: it.productId,
+          quantity: Number(it.quantity),
+          unitPrice: direction === 'IN' ? Number(it.unitPrice) : undefined,
+          sourceLineId: it.id,
+        })),
+      });
+      if ('error' in result) {
+        if (result.error === 'Insufficient stock') {
+          return {
+            error: 'Insufficient stock for one or more items' as const,
+            productId: result.productId,
+            available: result.available,
+            requested: result.requested,
+          };
+        }
+        return { error: result.error as string };
+      }
+    }
+
+    // ── CONFIRMED → CANCELLED: reverse ledger rows ─────────────────
+    if (invoice.status === 'CONFIRMED' && status === 'CANCELLED' && !ledgerOwnedByChallan) {
+      const entries = await prisma.stockTransaction.findMany({
+        where: { sourceType: 'INVOICE', sourceId: invoice.id, reversesId: null },
+        select: { id: true },
+      });
+      for (const entry of entries) {
+        const result = await ledgerService.reverse(entry.id, {
+          reasonCode: invoice.type === 'SALE' ? 'RETURN_IN' : 'RETURN_OUT',
+          sourceType: 'INVOICE',
+          sourceId: invoice.id,
+          createdById,
+          note: `Cancellation of ${invoice.invoiceNo}`,
+        });
+        if ('error' in result) {
+          return { error: `Reversal failed: ${result.error}` as const };
+        }
+      }
     }
 
     const updated = await prisma.invoice.update({

@@ -30,14 +30,15 @@ class StockProvider extends ChangeNotifier {
     }
   }
 
-  Future<StockTransaction> addStock({
+  /// Posts a manual stock-in or stock-out as a DRAFT invoice. Returns the
+  /// new invoice id so the caller can navigate the user to it for review.
+  Future<int> addStock({
     required int productId,
     required String type,
     required double quantity,
     double? unitPrice,
-    String? supplierName,
     int? vendorId,
-    String? purchasePriceMode,
+    int? partyId,
     String? note,
   }) async {
     final data = StockTransactionDto.toCreateJson(
@@ -45,13 +46,11 @@ class StockProvider extends ChangeNotifier {
       type: type,
       quantity: quantity,
       unitPrice: unitPrice,
-      supplierName: supplierName,
       vendorId: vendorId,
-      purchasePriceMode: purchasePriceMode,
+      partyId: partyId,
       note: note,
     );
-    final transaction = await _dataSource.createTransaction(data);
-    await loadTransactions(productId: productId);
-    return transaction;
+    final draftId = await _dataSource.createTransaction(data);
+    return draftId;
   }
 }

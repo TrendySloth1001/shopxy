@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
+import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 
 class AppSearchBar extends StatelessWidget {
@@ -23,21 +24,19 @@ class AppSearchBar extends StatelessWidget {
     return Container(
       height: 48,
       decoration: ShapeDecoration(
-        color: theme.cardTheme.color,
+        color: AppColors.white,
         shape: AppShapes.squircle(
           AppSizes.radiusMd,
-          side: BorderSide(
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
-          ),
+          side: BorderSide(color: AppColors.hairline, width: 1),
         ),
       ),
       child: Row(
         children: [
           const SizedBox(width: AppSizes.md),
-          Icon(
+          const Icon(
             Icons.search_rounded,
             size: AppSizes.iconMd,
-            color: theme.colorScheme.onSurfaceVariant,
+            color: AppColors.muted,
           ),
           const SizedBox(width: AppSizes.sm),
           Expanded(
@@ -47,6 +46,7 @@ class AppSearchBar extends StatelessWidget {
               style: theme.textTheme.bodyMedium,
               decoration: InputDecoration(
                 hintText: hint,
+                hintStyle: theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted),
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,

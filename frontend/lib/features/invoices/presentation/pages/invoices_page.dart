@@ -11,6 +11,11 @@ import 'package:shopxy/features/invoices/presentation/pages/invoice_detail_page.
 import 'package:shopxy/features/invoices/presentation/providers/invoices_provider.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
+import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/shared/widgets/app_button.dart';
+import 'package:shopxy/shared/widgets/app_divider.dart';
+import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
+import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
 
 class InvoicesPage extends StatefulWidget {
@@ -27,6 +32,16 @@ class _InvoicesPageState extends State<InvoicesPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) context.read<InvoicesProvider>().loadInvoices();
     });
+  }
+
+  Future<void> _openCreate() async {
+    final created = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => const CreateInvoicePage()),
+    );
+    if (created == true && mounted) {
+      context.read<InvoicesProvider>().loadInvoices(refresh: true);
+    }
   }
 
   @override
@@ -59,15 +74,7 @@ class _InvoicesPageState extends State<InvoicesPage> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          final created = await Navigator.push<bool>(
-            context,
-            MaterialPageRoute(builder: (_) => const CreateInvoicePage()),
-          );
-          if (created == true && context.mounted) {
-            context.read<InvoicesProvider>().loadInvoices(refresh: true);
-          }
-        },
+        onPressed: _openCreate,
         icon: const Icon(Icons.add_rounded),
         label: const Text(AppStrings.createInvoice),
       ),
@@ -98,67 +105,55 @@ class _InvoicesPageState extends State<InvoicesPage> {
             child: provider.isLoading && provider.invoices.isEmpty
                 ? const Center(child: CircularProgressIndicator())
                 : provider.error != null && provider.invoices.isEmpty
-                ? Center(
-                    child: EmptyState(
-                      icon: Icons.error_outline_rounded,
-                      title: AppStrings.error,
-                      action: TextButton(
-                        onPressed: () => provider.loadInvoices(refresh: true),
-                        child: const Text(AppStrings.retry),
-                      ),
-                    ),
-                  )
-                : provider.invoices.isEmpty
-                ? EmptyState(
-                    icon: Icons.receipt_long_outlined,
-                    title: AppStrings.noInvoices,
-                    subtitle: AppStrings.noInvoicesHint,
-                    action: FilledButton.icon(
-                      onPressed: () async {
-                        final created = await Navigator.push<bool>(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const CreateInvoicePage(),
-                          ),
-                        );
-                        if (created == true && context.mounted) {
-                          context.read<InvoicesProvider>().loadInvoices(
-                            refresh: true,
-                          );
-                        }
-                      },
-                      icon: const Icon(Icons.add_rounded),
-                      label: const Text(AppStrings.createInvoice),
-                    ),
-                  )
-                : RefreshIndicator(
-                    onRefresh: () => provider.loadInvoices(refresh: true),
-                    child: ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(
-                        AppSizes.lg,
-                        AppSizes.md,
-                        AppSizes.lg,
-                        100,
-                      ),
-                      itemCount: provider.invoices.length,
-                      separatorBuilder: (_, _) =>
-                          const SizedBox(height: AppSizes.sm),
-                      itemBuilder: (context, i) {
-                        final invoice = provider.invoices[i];
-                        return _InvoiceTile(
-                          invoice: invoice,
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  InvoiceDetailPage(invoiceId: invoice.id),
+                    ? EmptyState(
+                        icon: Icons.error_outline_rounded,
+                        title: AppStrings.error,
+                        action: AppButton.secondary(
+                          label: AppStrings.retry,
+                          onPressed: () =>
+                              provider.loadInvoices(refresh: true),
+                        ),
+                      )
+                    : provider.invoices.isEmpty
+                        ? EmptyState(
+                            icon: Icons.receipt_long_outlined,
+                            title: AppStrings.noInvoices,
+                            subtitle: AppStrings.noInvoicesHint,
+                            action: AppButton.primary(
+                              label: AppStrings.createInvoice,
+                              icon: Icons.add_rounded,
+                              onPressed: _openCreate,
+                            ),
+                          )
+                        : RefreshIndicator(
+                            onRefresh: () =>
+                                provider.loadInvoices(refresh: true),
+                            color: AppColors.black,
+                            backgroundColor: AppColors.white,
+                            child: ListView.separated(
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: AppSizes.sm)
+                                      .copyWith(bottom: 100),
+                              itemCount: provider.invoices.length,
+                              separatorBuilder: (_, _) => const AppDivider(),
+                              itemBuilder: (context, i) {
+                                final invoice = provider.invoices[i];
+                                return _InvoiceTile(
+                                  invoice: invoice,
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => InvoiceDetailPage(
+                                        invoiceId: invoice.id,
+                                      ),
+                                    ),
+                                  ),
+                                  onDownload: () =>
+                                      _downloadPdf(context, invoice),
+                                );
+                              },
                             ),
                           ),
-                          onDownload: () => _downloadPdf(context, invoice),
-                        );
-                      },
-                    ),
-                  ),
           ),
         ],
       ),
@@ -201,46 +196,41 @@ class _InvoiceTile extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onDownload;
 
+  AppStatusTone get _statusTone {
+    switch (invoice.status) {
+      case 'CONFIRMED':
+        return AppStatusTone.success;
+      case 'CANCELLED':
+        return AppStatusTone.error;
+      default:
+        return AppStatusTone.neutral;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final df = DateFormat('dd MMM yyyy');
 
-    Color statusColor;
-    switch (invoice.status) {
-      case 'CONFIRMED':
-        statusColor = const Color(0xFF1F8A5B);
-      case 'CANCELLED':
-        statusColor = theme.colorScheme.error;
-      default:
-        statusColor = theme.colorScheme.onSurfaceVariant;
-    }
-
-    return Card(
+    return Material(
+      color: AppColors.white,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+        splashColor: AppColors.surfaceTint,
+        highlightColor: AppColors.surfaceTint,
         child: Padding(
-          padding: const EdgeInsets.all(AppSizes.md),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.lg,
+            vertical: AppSizes.md,
+          ),
           child: Row(
             children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: invoice.isSale
-                      ? theme.colorScheme.primaryContainer
-                      : theme.colorScheme.secondaryContainer,
-                  borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-                ),
-                child: Icon(
-                  invoice.isSale
-                      ? Icons.arrow_upward_rounded
-                      : Icons.arrow_downward_rounded,
-                  color: invoice.isSale
-                      ? theme.colorScheme.onPrimaryContainer
-                      : theme.colorScheme.onSecondaryContainer,
-                ),
+              AppIconAvatar(
+                icon: invoice.isSale
+                    ? Icons.arrow_upward_rounded
+                    : Icons.arrow_downward_rounded,
+                size: 44,
+                filled: invoice.isSale,
               ),
               const SizedBox(width: AppSizes.md),
               Expanded(
@@ -249,44 +239,40 @@ class _InvoiceTile extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Text(
-                          invoice.invoiceNo,
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
+                        Flexible(
+                          child: Text(
+                            invoice.invoiceNo,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         const SizedBox(width: AppSizes.sm),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: statusColor.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(
-                              AppSizes.radiusSm,
-                            ),
-                          ),
-                          child: Text(
-                            invoice.status,
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: statusColor,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                        AppStatusBadge(
+                          label: invoice.status,
+                          tone: _statusTone,
+                          dense: true,
                         ),
                       ],
                     ),
-                    Text(invoice.partyName, style: theme.textTheme.bodySmall),
+                    const SizedBox(height: 2),
+                    Text(
+                      invoice.partyName,
+                      style: theme.textTheme.bodySmall,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     Text(
                       df.format(invoice.invoiceDate),
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
+                        color: AppColors.muted,
                       ),
                     ),
                   ],
                 ),
               ),
+              const SizedBox(width: AppSizes.md),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -299,14 +285,11 @@ class _InvoiceTile extends StatelessWidget {
                   Text(
                     '${invoice.itemCount ?? invoice.items.length} items',
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+                      color: AppColors.muted,
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(
-                      Icons.download_rounded,
-                      size: AppSizes.iconMd,
-                    ),
+                    icon: const Icon(Icons.download_rounded, size: AppSizes.iconMd),
                     onPressed: onDownload,
                     tooltip: AppStrings.downloadInvoice,
                     visualDensity: VisualDensity.compact,

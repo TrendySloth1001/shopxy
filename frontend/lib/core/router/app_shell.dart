@@ -7,8 +7,15 @@ import 'package:shopxy/features/dashboard/presentation/pages/dashboard_page.dart
 import 'package:shopxy/features/invoices/presentation/pages/invoices_page.dart';
 import 'package:shopxy/features/parties/presentation/pages/parties_page.dart';
 import 'package:shopxy/features/products/presentation/pages/products_page.dart';
+import 'package:shopxy/features/stock_adjustments/presentation/pages/stock_adjustments_page.dart';
 import 'package:shopxy/features/vendors/presentation/pages/vendors_page.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
+import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/shared/widgets/app_dialog.dart';
+import 'package:shopxy/shared/widgets/app_divider.dart';
+import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
+import 'package:shopxy/shared/widgets/app_list_tile.dart';
+import 'package:shopxy/shared/widgets/app_section_header.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
@@ -29,36 +36,37 @@ class _AppShellState extends State<AppShell> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
       body: IndexedStack(index: _currentIndex, children: _pages),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (i) => setState(() => _currentIndex = i),
-        backgroundColor: theme.scaffoldBackgroundColor,
-        indicatorColor: theme.colorScheme.primaryContainer,
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard_rounded),
-            label: AppStrings.navDashboard,
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.inventory_2_outlined),
-            selectedIcon: Icon(Icons.inventory_2_rounded),
-            label: AppStrings.navProducts,
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.receipt_long_outlined),
-            selectedIcon: Icon(Icons.receipt_long_rounded),
-            label: AppStrings.navInvoices,
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.more_horiz_rounded),
-            label: AppStrings.navMore,
-          ),
-        ],
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          border: Border(top: BorderSide(color: AppColors.black, width: 1)),
+        ),
+        child: NavigationBar(
+          selectedIndex: _currentIndex,
+          onDestinationSelected: (i) => setState(() => _currentIndex = i),
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.dashboard_outlined),
+              selectedIcon: Icon(Icons.dashboard_rounded),
+              label: AppStrings.navDashboard,
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.inventory_2_outlined),
+              selectedIcon: Icon(Icons.inventory_2_rounded),
+              label: AppStrings.navProducts,
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.receipt_long_outlined),
+              selectedIcon: Icon(Icons.receipt_long_rounded),
+              label: AppStrings.navInvoices,
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.more_horiz_rounded),
+              label: AppStrings.navMore,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -68,22 +76,14 @@ class _MorePage extends StatelessWidget {
   const _MorePage();
 
   Future<void> _logout(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text(AppStrings.logout),
-        content: const Text(AppStrings.logoutConfirm),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text(AppStrings.cancel)),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(backgroundColor: Theme.of(ctx).colorScheme.error),
-            child: const Text(AppStrings.logout),
-          ),
-        ],
-      ),
+    final confirmed = await AppConfirmDialog.show(
+      context,
+      title: AppStrings.logout,
+      message: AppStrings.logoutConfirm,
+      confirmLabel: AppStrings.logout,
+      danger: true,
     );
-    if (confirmed == true && context.mounted) {
+    if (confirmed && context.mounted) {
       await context.read<AuthProvider>().logout();
     }
   }
@@ -91,116 +91,115 @@ class _MorePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
     final user = context.watch<AuthProvider>().user;
 
     return Scaffold(
       appBar: AppBar(title: const Text(AppStrings.navMore)),
       body: ListView(
         children: [
-          // User info tile
-          if (user != null)
-            ListTile(
-              leading: CircleAvatar(
-                backgroundColor: theme.colorScheme.primaryContainer,
-                child: Text(
-                  user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
-                  style: TextStyle(
-                    color: theme.colorScheme.onPrimaryContainer,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              title: Text(user.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-              subtitle: Text(user.email, style: theme.textTheme.bodySmall),
+          if (user != null) ...[
+            const SizedBox(height: 4),
+            AppListTile(
+              leading: AppMonogramAvatar(label: user.name, size: 48),
+              title: user.name,
+              subtitle: user.email,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
-          const Divider(height: 1),
-          _MoreTile(
-            icon: Icons.category_rounded,
-            iconColor: theme.colorScheme.tertiary,
+            const AppDivider.flush(),
+          ],
+          const AppSectionHeader(title: 'MANAGE'),
+          AppListTile(
+            leading: const AppIconAvatar.outlined(icon: Icons.category_rounded),
             title: AppStrings.navCategories,
             subtitle: 'Manage product categories',
+            trailing: const Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.muted,
+            ),
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const CategoriesPage()),
             ),
           ),
-          _MoreTile(
-            icon: Icons.business_rounded,
-            iconColor: theme.colorScheme.secondary,
+          AppListTile(
+            leading: const AppIconAvatar.outlined(icon: Icons.business_rounded),
             title: AppStrings.navVendors,
             subtitle: 'Suppliers you buy from',
+            trailing: const Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.muted,
+            ),
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const VendorsPage()),
             ),
           ),
-          _MoreTile(
-            icon: Icons.groups_rounded,
-            iconColor: Colors.teal,
+          AppListTile(
+            leading: const AppIconAvatar.outlined(icon: Icons.groups_rounded),
             title: AppStrings.navParties,
             subtitle: 'Customers you sell to',
+            trailing: const Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.muted,
+            ),
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const PartiesPage()),
             ),
           ),
-          _MoreTile(
-            icon: Icons.receipt_long_outlined,
-            iconColor: Colors.orange,
+          AppListTile(
+            leading: const AppIconAvatar.outlined(
+              icon: Icons.receipt_long_outlined,
+            ),
             title: AppStrings.navChallans,
             subtitle: 'Party delivery notes without prices',
+            trailing: const Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.muted,
+            ),
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const ChallansPage()),
             ),
           ),
-          const Divider(height: 1),
-          _MoreTile(
-            icon: Icons.logout_rounded,
-            iconColor: theme.colorScheme.error,
+          AppListTile(
+            leading: const AppIconAvatar.outlined(icon: Icons.tune_rounded),
+            title: 'Stock adjustments',
+            subtitle: 'Damage, expired, shrinkage, and count corrections',
+            trailing: const Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.muted,
+            ),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const StockAdjustmentsPage()),
+            ),
+          ),
+          const SizedBox(height: 8),
+          const AppDivider.flush(),
+          AppListTile(
+            leading: const AppIconAvatar.outlined(icon: Icons.logout_rounded),
             title: AppStrings.logout,
             subtitle: 'Sign out of your account',
+            trailing: const Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.muted,
+            ),
             onTap: () => _logout(context),
           ),
+          const SizedBox(height: 32),
+          Center(
+            child: Text(
+              AppStrings.appName,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: AppColors.muted,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
         ],
       ),
-    );
-  }
-}
-
-class _MoreTile extends StatelessWidget {
-  const _MoreTile({
-    required this.icon,
-    required this.iconColor,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final Color iconColor;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return ListTile(
-      leading: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          color: iconColor.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Icon(icon, color: iconColor),
-      ),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
-      subtitle: Text(subtitle, style: theme.textTheme.bodySmall),
-      trailing: const Icon(Icons.chevron_right_rounded),
-      onTap: onTap,
     );
   }
 }

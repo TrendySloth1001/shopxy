@@ -4,12 +4,27 @@ class StockTransactionDto {
   static StockTransaction fromJson(Map<String, dynamic> json) {
     final product = json['product'] as Map<String, dynamic>?;
     final vendor = json['vendor'] as Map<String, dynamic>?;
+    final createdBy = json['createdBy'] as Map<String, dynamic>?;
     return StockTransaction(
       id: json['id'] as int,
       productId: json['productId'] as int,
-      type: json['type'] as String,
+      type: json['type'] as String? ?? 'STOCK_IN',
+      direction: json['direction'] as String? ??
+          (json['type'] == 'STOCK_OUT' ? 'OUT' : 'IN'),
+      reasonCode: json['reasonCode'] as String? ??
+          (json['type'] == 'STOCK_OUT' ? 'SHRINKAGE' : 'PURCHASE'),
+      sourceType: json['sourceType'] as String? ?? 'MANUAL',
+      sourceId: json['sourceId'] as int?,
+      sourceLineId: json['sourceLineId'] as int?,
       quantity: _toDouble(json['quantity']),
       unitPrice: json['unitPrice'] != null ? _toDouble(json['unitPrice']) : null,
+      unitCost: json['unitCost'] != null ? _toDouble(json['unitCost']) : null,
+      totalValue:
+          json['totalValue'] != null ? _toDouble(json['totalValue']) : null,
+      stockBefore:
+          json['stockBefore'] != null ? _toDouble(json['stockBefore']) : null,
+      stockAfter:
+          json['stockAfter'] != null ? _toDouble(json['stockAfter']) : null,
       supplierName: json['supplierName'] as String?,
       vendorId: vendor?['id'] as int?,
       vendorName: vendor?['name'] as String?,
@@ -20,6 +35,9 @@ class StockTransactionDto {
       purchasePriceAfter: json['purchasePriceAfter'] != null
           ? _toDouble(json['purchasePriceAfter'])
           : null,
+      reversesId: json['reversesId'] as int?,
+      createdById: createdBy?['id'] as int?,
+      createdByName: createdBy?['name'] as String?,
       note: json['note'] as String?,
       productName: product?['name'] as String?,
       productSku: product?['sku'] as String?,
@@ -39,9 +57,8 @@ class StockTransactionDto {
     required String type,
     required double quantity,
     double? unitPrice,
-    String? supplierName,
     int? vendorId,
-    String? purchasePriceMode,
+    int? partyId,
     String? note,
   }) {
     final data = <String, dynamic>{
@@ -49,11 +66,8 @@ class StockTransactionDto {
       'type': type,
       'quantity': quantity,
       'unitPrice': unitPrice,
-      'supplierName': (supplierName != null && supplierName.trim().isNotEmpty)
-          ? supplierName.trim()
-          : null,
       'vendorId': vendorId,
-      'purchasePriceMode': purchasePriceMode,
+      'partyId': partyId,
       'note': (note != null && note.isNotEmpty) ? note : null,
     };
     data.removeWhere((_, value) => value == null);

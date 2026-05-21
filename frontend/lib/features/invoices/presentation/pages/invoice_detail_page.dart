@@ -9,6 +9,11 @@ import 'package:shopxy/features/invoices/domain/entities/invoice.dart';
 import 'package:shopxy/features/invoices/presentation/providers/invoices_provider.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
+import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/shared/widgets/app_card.dart';
+import 'package:shopxy/shared/widgets/app_divider.dart';
+import 'package:shopxy/shared/widgets/app_section_header.dart';
+import 'package:shopxy/shared/widgets/app_status_badge.dart';
 
 class InvoiceDetailPage extends StatefulWidget {
   const InvoiceDetailPage({super.key, required this.invoiceId});
@@ -51,16 +56,17 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
     final ds = context.read<InvoicesRemoteDataSource>();
     try {
       final response = await ds.downloadPdf(widget.invoiceId);
-      if (response.statusCode != 200) throw Exception('Failed to generate PDF');
+      if (response.statusCode != 200) {
+        throw Exception('Failed to generate PDF');
+      }
       final dir = await getApplicationDocumentsDirectory();
       final file = File('${dir.path}/$invoiceNo.pdf');
       await file.writeAsBytes(response.bodyBytes);
       await OpenFilex.open(file.path);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(e.toString())));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.toString())));
       }
     } finally {
       if (mounted) setState(() => _isDownloading = false);
@@ -74,9 +80,8 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
       if (mounted) setState(() => _invoice = updated);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(e.toString())));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.toString())));
       }
     }
   }
@@ -118,13 +123,12 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
             ),
-          if (invoice.isDraft) ...[
+          if (invoice.isDraft)
             IconButton(
               icon: const Icon(Icons.check_circle_outline_rounded),
               tooltip: AppStrings.confirmInvoice,
               onPressed: () => _updateStatus('CONFIRMED'),
             ),
-          ],
           PopupMenuButton<String>(
             itemBuilder: (_) => [
               if (invoice.isDraft)
@@ -140,9 +144,9 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
             ],
             onSelected: (v) async {
               if (v == 'delete') {
-                await context.read<InvoicesProvider>().deleteInvoice(
-                  invoice.id,
-                );
+                await context
+                    .read<InvoicesProvider>()
+                    .deleteInvoice(invoice.id);
                 if (!context.mounted) return;
                 Navigator.pop(context);
               } else {
@@ -155,135 +159,120 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
       body: ListView(
         padding: const EdgeInsets.all(AppSizes.lg),
         children: [
-          // Header card
-          Card(
-            child: Padding(
+          AppCard(
+            padding: const EdgeInsets.all(AppSizes.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        invoice.invoiceNo,
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    AppStatusBadge(
+                      label: invoice.status,
+                      tone: _statusTone(invoice.status),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSizes.xs),
+                Text(
+                  invoice.isSale
+                      ? AppStrings.saleInvoice
+                      : AppStrings.purchaseInvoice,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppColors.muted,
+                  ),
+                ),
+                Text(
+                  df.format(invoice.invoiceDate),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.muted,
+                  ),
+                ),
+                const SizedBox(height: AppSizes.md),
+                _InfoRow(
+                  label: invoice.isSale
+                      ? AppStrings.customer
+                      : AppStrings.vendor,
+                  value: invoice.partyName,
+                ),
+                if (invoice.isSale && invoice.customerPhone != null)
+                  _InfoRow(
+                    label: AppStrings.phone,
+                    value: invoice.customerPhone!,
+                  ),
+                if (invoice.isSale && invoice.customerGstin != null)
+                  _InfoRow(
+                    label: AppStrings.gstin,
+                    value: invoice.customerGstin!,
+                  ),
+                if (invoice.isPurchase && invoice.vendor?.name != null)
+                  _InfoRow(
+                    label: AppStrings.vendor,
+                    value: invoice.vendor!.name,
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSizes.md),
+          AppSectionHeader(
+            title: AppStrings.invoiceItems.toUpperCase(),
+            padding: const EdgeInsets.only(bottom: AppSizes.sm),
+          ),
+          AppCard(
+            padding: EdgeInsets.zero,
+            child: Column(
+              children: [
+                for (int i = 0; i < invoice.items.length; i++) ...[
+                  if (i > 0) const AppDivider.flush(),
+                  _ItemTile(item: invoice.items[i]),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSizes.md),
+          AppCard(
+            padding: const EdgeInsets.all(AppSizes.lg),
+            child: Column(
+              children: [
+                _TotalRow(label: AppStrings.subtotal, value: invoice.subtotal),
+                _TotalRow(label: AppStrings.taxAmount, value: invoice.taxAmount),
+                if (invoice.discount > 0)
+                  _TotalRow(label: AppStrings.discount, value: -invoice.discount),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: AppSizes.sm),
+                  child: AppDivider.flush(),
+                ),
+                _TotalRow(
+                  label: AppStrings.total,
+                  value: invoice.total,
+                  isHighlight: true,
+                ),
+              ],
+            ),
+          ),
+          if (invoice.note != null && invoice.note!.isNotEmpty) ...[
+            const SizedBox(height: AppSizes.md),
+            AppCard(
               padding: const EdgeInsets.all(AppSizes.lg),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          invoice.invoiceNo,
-                          style: theme.textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                      _StatusBadge(status: invoice.status),
-                    ],
-                  ),
-                  const SizedBox(height: AppSizes.xs),
                   Text(
-                    invoice.isSale
-                        ? AppStrings.saleInvoice
-                        : AppStrings.purchaseInvoice,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+                    AppStrings.note,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                  Text(
-                    df.format(invoice.invoiceDate),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: AppSizes.md),
-                  _InfoRow(
-                    label: invoice.isSale
-                        ? AppStrings.customer
-                        : AppStrings.vendor,
-                    value: invoice.partyName,
-                  ),
-                  if (invoice.isSale && invoice.customerPhone != null)
-                    _InfoRow(
-                      label: AppStrings.phone,
-                      value: invoice.customerPhone!,
-                    ),
-                  if (invoice.isSale && invoice.customerGstin != null)
-                    _InfoRow(
-                      label: AppStrings.gstin,
-                      value: invoice.customerGstin!,
-                    ),
-                  if (invoice.isPurchase && invoice.vendor?.name != null)
-                    _InfoRow(
-                      label: AppStrings.vendor,
-                      value: invoice.vendor!.name,
-                    ),
+                  const SizedBox(height: AppSizes.sm),
+                  Text(invoice.note!),
                 ],
-              ),
-            ),
-          ),
-          const SizedBox(height: AppSizes.md),
-
-          // Items
-          Text(
-            AppStrings.invoiceItems,
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: theme.colorScheme.primary,
-            ),
-          ),
-          const SizedBox(height: AppSizes.sm),
-          Card(
-            child: Column(
-              children: invoice.items
-                  .map((item) => _ItemTile(item: item))
-                  .toList(),
-            ),
-          ),
-          const SizedBox(height: AppSizes.md),
-
-          // Totals
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(AppSizes.lg),
-              child: Column(
-                children: [
-                  _TotalRow(
-                    label: AppStrings.subtotal,
-                    value: invoice.subtotal,
-                  ),
-                  _TotalRow(
-                    label: AppStrings.taxAmount,
-                    value: invoice.taxAmount,
-                  ),
-                  if (invoice.discount > 0)
-                    _TotalRow(
-                      label: AppStrings.discount,
-                      value: -invoice.discount,
-                    ),
-                  const Divider(),
-                  _TotalRow(
-                    label: AppStrings.total,
-                    value: invoice.total,
-                    isHighlight: true,
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          if (invoice.note != null && invoice.note!.isNotEmpty) ...[
-            const SizedBox(height: AppSizes.md),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(AppSizes.lg),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      AppStrings.note,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: AppSizes.sm),
-                    Text(invoice.note!),
-                  ],
-                ),
               ),
             ),
           ],
@@ -292,41 +281,16 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
       ),
     );
   }
-}
 
-class _StatusBadge extends StatelessWidget {
-  const _StatusBadge({required this.status});
-  final String status;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    Color color;
+  AppStatusTone _statusTone(String status) {
     switch (status) {
       case 'CONFIRMED':
-        color = const Color(0xFF1F8A5B);
+        return AppStatusTone.success;
       case 'CANCELLED':
-        color = theme.colorScheme.error;
+        return AppStatusTone.error;
       default:
-        color = theme.colorScheme.onSurfaceVariant;
+        return AppStatusTone.neutral;
     }
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSizes.sm,
-        vertical: AppSizes.xs,
-      ),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(AppSizes.radiusSm),
-      ),
-      child: Text(
-        status,
-        style: theme.textTheme.labelSmall?.copyWith(
-          color: color,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
   }
 }
 
@@ -344,9 +308,7 @@ class _InfoRow extends StatelessWidget {
         children: [
           Text(
             '$label: ',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
+            style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
           ),
           Text(
             value,
@@ -367,21 +329,40 @@ class _ItemTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return ListTile(
-      dense: true,
-      title: Text(
-        item.productName,
-        style: const TextStyle(fontWeight: FontWeight.w500),
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.md,
       ),
-      subtitle: Text(
-        '${item.quantity} ${item.unit} × ${AppStrings.currencySymbol}${item.unitPrice.toStringAsFixed(2)}'
-        '${item.taxPercent > 0 ? ' + ${item.taxPercent.toStringAsFixed(0)}% GST' : ''}',
-      ),
-      trailing: Text(
-        '${AppStrings.currencySymbol}${item.total.toStringAsFixed(2)}',
-        style: theme.textTheme.bodyMedium?.copyWith(
-          fontWeight: FontWeight.w600,
-        ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.productName,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${item.quantity} ${item.unit} × ${AppStrings.currencySymbol}${item.unitPrice.toStringAsFixed(2)}'
+                  '${item.taxPercent > 0 ? ' + ${item.taxPercent.toStringAsFixed(0)}% GST' : ''}',
+                  style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSizes.md),
+          Text(
+            '${AppStrings.currencySymbol}${item.total.toStringAsFixed(2)}',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -400,29 +381,21 @@ class _TotalRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final labelStyle = isHighlight
+        ? theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)
+        : theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted);
+    final valueStyle = isHighlight
+        ? theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)
+        : theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: isHighlight
-                ? theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  )
-                : theme.textTheme.bodyMedium,
-          ),
+          Text(label, style: labelStyle),
           Text(
             '${value < 0 ? '-' : ''}${AppStrings.currencySymbol}${value.abs().toStringAsFixed(2)}',
-            style: isHighlight
-                ? theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: theme.colorScheme.primary,
-                  )
-                : theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
+            style: valueStyle,
           ),
         ],
       ),

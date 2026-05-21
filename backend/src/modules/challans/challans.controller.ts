@@ -33,9 +33,14 @@ export async function createChallan(req: Request, res: Response) {
     res.status(400).json({ error: parsed.error.flatten() });
     return;
   }
-  const result = await challansService.createChallan(parsed.data);
+  const result = await challansService.createChallan({ ...parsed.data, createdById: req.user?.sub });
   if ('error' in result) {
-    res.status(400).json({ error: result.error });
+    res.status(400).json({
+      error: result.error,
+      ...('productId' in result
+        ? { productId: result.productId, available: result.available, requested: result.requested }
+        : {}),
+    });
     return;
   }
   res.status(201).json(result.challan);
@@ -64,7 +69,7 @@ export async function getChallan(req: Request, res: Response) {
 
 export async function cancelChallan(req: Request, res: Response) {
   const id = Number(req.params.id);
-  const result = await challansService.cancelChallan(id);
+  const result = await challansService.cancelChallan(id, req.user?.sub);
   if ('error' in result) {
     res.status(400).json({ error: result.error });
     return;

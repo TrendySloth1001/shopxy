@@ -3,10 +3,18 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/features/challans/data/datasources/challans_remote_data_source.dart';
 import 'package:shopxy/features/challans/domain/entities/challan.dart';
+import 'package:shopxy/features/challans/presentation/pages/challans_page.dart';
 import 'package:shopxy/features/challans/presentation/providers/challans_provider.dart';
 import 'package:shopxy/features/invoices/presentation/pages/invoice_detail_page.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
+import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/shared/widgets/app_button.dart';
+import 'package:shopxy/shared/widgets/app_card.dart';
+import 'package:shopxy/shared/widgets/app_dialog.dart';
+import 'package:shopxy/shared/widgets/app_divider.dart';
+import 'package:shopxy/shared/widgets/app_section_header.dart';
+import 'package:shopxy/shared/widgets/app_status_badge.dart';
 
 class ChallanDetailPage extends StatefulWidget {
   const ChallanDetailPage({super.key, required this.challanId});
@@ -31,35 +39,37 @@ class _ChallanDetailPageState extends State<ChallanDetailPage> {
     try {
       final ds = context.read<ChallansRemoteDataSource>();
       final challan = await ds.getChallanById(widget.challanId);
-      if (mounted) setState(() { _challan = challan; _isLoading = false; });
+      if (mounted) {
+        setState(() {
+          _challan = challan;
+          _isLoading = false;
+        });
+      }
     } catch (_) {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
   Future<void> _cancel() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text(AppStrings.cancelChallan),
-        content: const Text(AppStrings.cancelChallanConfirm),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text(AppStrings.no)),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(AppStrings.yes, style: TextStyle(color: Theme.of(ctx).colorScheme.error)),
-          ),
-        ],
-      ),
+    final confirmed = await AppConfirmDialog.show(
+      context,
+      title: AppStrings.cancelChallan,
+      message: AppStrings.cancelChallanConfirm,
+      confirmLabel: AppStrings.yes,
+      cancelLabel: AppStrings.no,
+      danger: true,
     );
-    if (confirmed != true || !mounted) return;
+    if (!confirmed || !mounted) return;
 
     final provider = context.read<ChallansProvider>();
     try {
       await provider.cancelChallan(widget.challanId);
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.toString())));
+      }
     }
   }
 
@@ -70,13 +80,15 @@ class _ChallanDetailPageState extends State<ChallanDetailPage> {
       final invoice = await provider.convertToInvoice(widget.challanId);
       if (!mounted) return;
       final invoiceId = invoice['id'] as int;
-      // Replace current page with invoice detail so owner can review + confirm
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => InvoiceDetailPage(invoiceId: invoiceId)),
       );
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.toString())));
+      }
     } finally {
       if (mounted) setState(() => _isConverting = false);
     }
@@ -90,7 +102,10 @@ class _ChallanDetailPageState extends State<ChallanDetailPage> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     if (_challan == null) {
-      return Scaffold(appBar: AppBar(), body: const Center(child: Text(AppStrings.error)));
+      return Scaffold(
+        appBar: AppBar(),
+        body: const Center(child: Text(AppStrings.error)),
+      );
     }
 
     final c = _challan!;
@@ -108,141 +123,131 @@ class _ChallanDetailPageState extends State<ChallanDetailPage> {
                   child: Text(AppStrings.cancelChallan),
                 ),
               ],
-              onSelected: (v) { if (v == 'cancel') _cancel(); },
+              onSelected: (v) {
+                if (v == 'cancel') _cancel();
+              },
             ),
         ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(AppSizes.lg),
         children: [
-          // Header card
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(AppSizes.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          c.challanNo,
-                          style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+          AppCard(
+            padding: const EdgeInsets.all(AppSizes.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        c.challanNo,
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
-                      _StatusBadge(status: c.status),
+                    ),
+                    AppStatusBadge(
+                      label: c.status,
+                      tone: challanStatusTone(c.status),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSizes.xs),
+                Text(
+                  df.format(c.createdAt),
+                  style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
+                ),
+                const SizedBox(height: AppSizes.md),
+                _InfoRow(label: AppStrings.partyName, value: c.partyName),
+                if (c.partyPhone != null)
+                  _InfoRow(label: AppStrings.phone, value: c.partyPhone!),
+                if (c.note != null && c.note!.isNotEmpty)
+                  _InfoRow(label: AppStrings.note, value: c.note!),
+                if (c.isConverted && c.invoice != null) ...[
+                  const SizedBox(height: AppSizes.sm),
+                  _InfoRow(
+                    label: AppStrings.challanLinkedInvoice,
+                    value: c.invoice!.invoiceNo,
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSizes.md),
+          AppSectionHeader(
+            title: AppStrings.challanItems.toUpperCase(),
+            padding: const EdgeInsets.only(bottom: AppSizes.sm),
+          ),
+          AppCard(
+            padding: EdgeInsets.zero,
+            child: c.items.isEmpty
+                ? const Padding(
+                    padding: EdgeInsets.all(AppSizes.lg),
+                    child: Text(AppStrings.challanEmptyItems),
+                  )
+                : Column(
+                    children: [
+                      for (int i = 0; i < c.items.length; i++) ...[
+                        if (i > 0) const AppDivider.flush(),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSizes.lg,
+                            vertical: AppSizes.md,
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      c.items[i].productName,
+                                      style: theme.textTheme.bodyMedium?.copyWith(
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    Text(
+                                      c.items[i].productSku,
+                                      style: theme.textTheme.bodySmall?.copyWith(
+                                        color: AppColors.muted,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: AppSizes.md),
+                              Text(
+                                '${c.items[i].quantity % 1 == 0 ? c.items[i].quantity.toInt() : c.items[i].quantity} ${c.items[i].unit}',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
                   ),
-                  const SizedBox(height: AppSizes.xs),
-                  Text(
-                    df.format(c.createdAt),
-                    style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                  ),
-                  const SizedBox(height: AppSizes.md),
-                  _InfoRow(label: AppStrings.partyName, value: c.partyName),
-                  if (c.partyPhone != null)
-                    _InfoRow(label: AppStrings.phone, value: c.partyPhone!),
-                  if (c.note != null && c.note!.isNotEmpty)
-                    _InfoRow(label: AppStrings.note, value: c.note!),
-                  if (c.isConverted && c.invoice != null) ...[
-                    const SizedBox(height: AppSizes.sm),
-                    _InfoRow(label: AppStrings.challanLinkedInvoice, value: c.invoice!.invoiceNo),
-                  ],
-                ],
-              ),
-            ),
           ),
-
-          const SizedBox(height: AppSizes.md),
-
-          // Items section
-          Text(
-            AppStrings.challanItems,
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: theme.colorScheme.primary,
-            ),
-          ),
-          const SizedBox(height: AppSizes.sm),
-          Card(
-            child: Column(
-              children: c.items.isEmpty
-                  ? [
-                      const ListTile(
-                        title: Text(AppStrings.challanEmptyItems),
-                      )
-                    ]
-                  : c.items
-                      .map((item) => ListTile(
-                            dense: true,
-                            title: Text(
-                              item.productName,
-                              style: const TextStyle(fontWeight: FontWeight.w500),
-                            ),
-                            subtitle: Text(item.productSku),
-                            trailing: Text(
-                              '${item.quantity % 1 == 0 ? item.quantity.toInt() : item.quantity} ${item.unit}',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ))
-                      .toList(),
-            ),
-          ),
-
           const SizedBox(height: AppSizes.huge),
         ],
       ),
-      // Convert to invoice button — only for owner (shown when PENDING)
       bottomNavigationBar: c.isPending
           ? SafeArea(
               child: Padding(
                 padding: const EdgeInsets.all(AppSizes.lg),
-                child: FilledButton.icon(
-                  onPressed: _isConverting ? null : _convertToInvoice,
-                  icon: _isConverting
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Icon(Icons.receipt_long_rounded),
-                  label: const Text(AppStrings.convertToInvoice),
+                child: AppButton.primary(
+                  label: AppStrings.convertToInvoice,
+                  icon: Icons.receipt_long_rounded,
+                  onPressed: _convertToInvoice,
+                  isLoading: _isConverting,
+                  size: AppButtonSize.lg,
+                  fullWidth: true,
                 ),
               ),
             )
           : null,
-    );
-  }
-}
-
-class _StatusBadge extends StatelessWidget {
-  const _StatusBadge({required this.status});
-  final String status;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    Color color;
-    switch (status) {
-      case 'CONVERTED':
-        color = const Color(0xFF1F8A5B);
-      case 'CANCELLED':
-        color = theme.colorScheme.error;
-      default:
-        color = theme.colorScheme.primary;
-    }
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm, vertical: AppSizes.xs),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(AppSizes.radiusSm),
-      ),
-      child: Text(
-        status,
-        style: theme.textTheme.labelSmall?.copyWith(color: color, fontWeight: FontWeight.w700),
-      ),
     );
   }
 }
@@ -261,11 +266,13 @@ class _InfoRow extends StatelessWidget {
         children: [
           Text(
             '$label: ',
-            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
           ),
           Text(
             value,
-            style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ],
       ),

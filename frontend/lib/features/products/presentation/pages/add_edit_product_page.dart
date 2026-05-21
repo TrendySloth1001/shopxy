@@ -13,6 +13,9 @@ import 'package:shopxy/features/products/presentation/utils/product_ocr_parser.d
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/constants/app_units.dart';
+import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/widgets/app_section_header.dart';
 
 class AddEditProductPage extends StatefulWidget {
   const AddEditProductPage({super.key, this.product, this.draft});
@@ -330,7 +333,6 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
   @override
   Widget build(BuildContext context) {
     final categories = context.watch<CategoriesProvider>().categories;
-    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -365,8 +367,10 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
           padding: const EdgeInsets.all(AppSizes.lg),
           children: [
             // ── Images section ────────────────────────────────────────
-            _SectionHeader(title: AppStrings.productImages),
-            const SizedBox(height: AppSizes.md),
+            AppSectionHeader(
+              title: AppStrings.productImages.toUpperCase(),
+              padding: const EdgeInsets.only(bottom: AppSizes.sm),
+            ),
             if (_imageUrls.isNotEmpty) ...[
               SizedBox(
                 height: 96,
@@ -387,8 +391,17 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                           errorBuilder: (_, _, _) => Container(
                             width: 96,
                             height: 96,
-                            color: theme.colorScheme.surfaceContainerHighest,
-                            child: const Icon(Icons.broken_image_rounded),
+                            decoration: ShapeDecoration(
+                              color: AppColors.white,
+                              shape: AppShapes.squircle(
+                                AppSizes.radiusMd,
+                                side: BorderSide(color: AppColors.hairline, width: 1),
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.broken_image_rounded,
+                              color: AppColors.muted,
+                            ),
                           ),
                         ),
                       ),
@@ -404,14 +417,14 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                           }),
                           child: Container(
                             padding: const EdgeInsets.all(2),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.error,
+                            decoration: const BoxDecoration(
+                              color: AppColors.black,
                               shape: BoxShape.circle,
                             ),
-                            child: Icon(
+                            child: const Icon(
                               Icons.close_rounded,
                               size: 14,
-                              color: theme.colorScheme.onError,
+                              color: AppColors.white,
                             ),
                           ),
                         ),
@@ -477,8 +490,10 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
             const SizedBox(height: AppSizes.xxl),
 
             // ── Basic info ────────────────────────────────────────────
-            _SectionHeader(title: AppStrings.sectionBasicInfo),
-            const SizedBox(height: AppSizes.md),
+            AppSectionHeader(
+              title: AppStrings.sectionBasicInfo.toUpperCase(),
+              padding: const EdgeInsets.only(bottom: AppSizes.sm),
+            ),
             TextFormField(
               controller: _name,
               decoration: const InputDecoration(
@@ -556,8 +571,10 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
             const SizedBox(height: AppSizes.xxl),
 
             // ── Pricing ───────────────────────────────────────────────
-            _SectionHeader(title: AppStrings.sectionPricing),
-            const SizedBox(height: AppSizes.md),
+            AppSectionHeader(
+              title: AppStrings.sectionPricing.toUpperCase(),
+              padding: const EdgeInsets.only(bottom: AppSizes.sm),
+            ),
             Row(
               children: [
                 Expanded(
@@ -616,8 +633,10 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
             const SizedBox(height: AppSizes.xxl),
 
             // ── Stock ────────────────────────────────────────────────
-            _SectionHeader(title: AppStrings.sectionStock),
-            const SizedBox(height: AppSizes.md),
+            AppSectionHeader(
+              title: AppStrings.sectionStock.toUpperCase(),
+              padding: const EdgeInsets.only(bottom: AppSizes.sm),
+            ),
             Row(
               children: [
                 if (!isEditing)
@@ -667,18 +686,3 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
   }
 }
 
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title});
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-        fontWeight: FontWeight.w700,
-        color: Theme.of(context).colorScheme.primary,
-      ),
-    );
-  }
-}

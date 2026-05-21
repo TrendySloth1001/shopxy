@@ -94,11 +94,16 @@ export class VendorsService {
   }
 
   async deleteVendor(id: number) {
-    // Unlink transactions before deletion
-    await prisma.stockTransaction.updateMany({
-      where: { vendorId: id },
-      data: { vendorId: null },
-    });
+    // Soft-delete when the vendor is referenced anywhere — invoices and
+    // ledger rows snapshot vendor identity now, but keeping the row lets
+    // users restore the vendor by toggling isActive back on.
+    const [invoiceRefs, stockRefs] = await Promise.all([
+      prisma.invoice.count({ where: { vendorId: id } }),
+      prisma.stockTransaction.count({ where: { vendorId: id } }),
+    ]);
+    if (invoiceRefs + stockRefs > 0) {
+      return prisma.vendor.update({ where: { id }, data: { isActive: false } });
+    }
     return prisma.vendor.delete({ where: { id } });
   }
 }
