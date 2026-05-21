@@ -47,7 +47,7 @@ class ChallanDto {
     required List<ChallanItemDraft> items,
   }) =>
       {
-        if (partyId != null) 'partyId': partyId,
+        'partyId': ?partyId,
         if (partyName != null && partyName.isNotEmpty) 'partyName': partyName,
         if (partyPhone != null && partyPhone.isNotEmpty) 'partyPhone': partyPhone,
         if (note != null && note.isNotEmpty) 'note': note,
