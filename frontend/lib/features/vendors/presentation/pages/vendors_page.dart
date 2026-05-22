@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/features/notifications/domain/entities/invitation.dart';
+import 'package:shopxy/features/notifications/presentation/pages/send_invite_page.dart';
+import 'package:shopxy/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:shopxy/features/vendors/domain/entities/vendor.dart';
 import 'package:shopxy/features/vendors/presentation/providers/vendors_provider.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
 import 'package:shopxy/shared/widgets/app_dialog.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
@@ -26,13 +30,30 @@ class _VendorsPageState extends State<VendorsPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) context.read<VendorsProvider>().loadVendors();
+      if (!mounted) return;
+      context.read<VendorsProvider>().loadVendors();
+      // Pull invite state once so each row can show its status chip.
+      // Cheap query — uses (from_user_id, status, created_at DESC) index.
+      context.read<NotificationsProvider>().loadOutgoing();
     });
+  }
+
+  /// Most recent invitation we've sent for this vendor, if any. PENDING
+  /// beats ACCEPTED beats DECLINED — first match wins because outgoing
+  /// is already createdAt DESC.
+  Invitation? _inviteFor(int vendorId, List<Invitation> outgoing) {
+    for (final i in outgoing) {
+      if (i.linkType == InviteLinkType.vendor && i.vendorId == vendorId) {
+        return i;
+      }
+    }
+    return null;
   }
 
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<VendorsProvider>();
+    final outgoing = context.watch<NotificationsProvider>().outgoing;
 
     return Scaffold(
       appBar: AppBar(
@@ -96,17 +117,19 @@ class _VendorsPageState extends State<VendorsPage> {
                               ),
                               itemCount: provider.vendors.length,
                               separatorBuilder: (_, _) => const AppDivider(),
-                              itemBuilder: (context, i) => _VendorTile(
-                                vendor: provider.vendors[i],
-                                onEdit: () => _showVendorSheet(
-                                  context,
-                                  vendor: provider.vendors[i],
-                                ),
-                                onDelete: () => _confirmDelete(
-                                  context,
-                                  provider.vendors[i],
-                                ),
-                              ),
+                              itemBuilder: (context, i) {
+                                final v = provider.vendors[i];
+                                return _VendorTile(
+                                  vendor: v,
+                                  invite: _inviteFor(v.id, outgoing),
+                                  onEdit: () =>
+                                      _showVendorSheet(context, vendor: v),
+                                  onDelete: () => _confirmDelete(context, v),
+                                  onInvite: () => _openInvite(context, v),
+                                  onCancelInvite: (id) =>
+                                      _cancelInvite(context, id),
+                                );
+                              },
                             ),
                           ),
           ),
@@ -123,6 +146,44 @@ class _VendorsPageState extends State<VendorsPage> {
       backgroundColor: AppColors.white,
       builder: (_) => _VendorFormSheet(vendor: vendor),
     );
+  }
+
+  Future<void> _openInvite(BuildContext context, Vendor v) async {
+    final notifs = context.read<NotificationsProvider>();
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SendInvitePage(initialVendor: v),
+      ),
+    );
+    // Refresh status chips after the send sheet closes. The provider
+    // reference was captured before the await so we don't reach back
+    // into a possibly-disposed BuildContext.
+    if (mounted) notifs.loadOutgoing();
+  }
+
+  Future<void> _cancelInvite(BuildContext context, int invitationId) async {
+    final confirmed = await AppConfirmDialog.show(
+      context,
+      title: 'Cancel invitation',
+      message: 'Cancel this pending invitation? You can send a new one later.',
+      confirmLabel: AppStrings.confirm,
+      danger: true,
+    );
+    if (!confirmed || !context.mounted) return;
+    try {
+      await context.read<NotificationsProvider>().cancel(invitationId);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Invitation cancelled')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    }
   }
 
   Future<void> _confirmDelete(BuildContext context, Vendor vendor) async {
@@ -153,12 +214,18 @@ class _VendorsPageState extends State<VendorsPage> {
 class _VendorTile extends StatelessWidget {
   const _VendorTile({
     required this.vendor,
+    required this.invite,
     required this.onEdit,
     required this.onDelete,
+    required this.onInvite,
+    required this.onCancelInvite,
   });
   final Vendor vendor;
+  final Invitation? invite;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback onInvite;
+  final ValueChanged<int> onCancelInvite;
 
   @override
   Widget build(BuildContext context) {
@@ -217,6 +284,7 @@ class _VendorTile extends StatelessWidget {
                           icon: Icons.receipt_outlined,
                           dense: true,
                         ),
+                        if (invite != null) _InviteChip(invite: invite!),
                       ],
                     ),
                   ],
@@ -233,7 +301,10 @@ class _VendorTile extends StatelessWidget {
     );
   }
 
+  bool get _canInvite => (vendor.email ?? '').isNotEmpty;
+
   void _showMenu(BuildContext context) {
+    final theme = Theme.of(context);
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.white,
@@ -249,6 +320,45 @@ class _VendorTile extends StatelessWidget {
                 onEdit();
               },
             ),
+            if (invite == null || !invite!.isPending) ...[
+              ListTile(
+                leading: const Icon(
+                  Icons.person_add_alt_1_outlined,
+                  color: AppColors.brandStrong,
+                ),
+                enabled: _canInvite,
+                title: const Text(
+                  'Invite to Shopxy',
+                  style: TextStyle(color: AppColors.brandStrong),
+                ),
+                subtitle: _canInvite
+                    ? Text(vendor.email!,
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(color: AppColors.muted))
+                    : Text('Add an email first',
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(color: AppColors.muted)),
+                onTap: () {
+                  Navigator.pop(context);
+                  onInvite();
+                },
+              ),
+            ] else
+              ListTile(
+                leading: const Icon(Icons.cancel_schedule_send_outlined,
+                    color: AppColors.warning),
+                title: const Text(
+                  'Cancel invitation',
+                  style: TextStyle(color: AppColors.warning),
+                ),
+                subtitle: Text('Sent to ${invite!.toEmail}',
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: AppColors.muted)),
+                onTap: () {
+                  Navigator.pop(context);
+                  onCancelInvite(invite!.id);
+                },
+              ),
             ListTile(
               leading: const Icon(
                 Icons.delete_outline_rounded,
@@ -265,6 +375,72 @@ class _VendorTile extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Small status pill that reflects the most recent invitation we've
+/// sent for the surrounding contact. Hidden when no invite exists so
+/// the tile stays calm for the common case.
+class _InviteChip extends StatelessWidget {
+  const _InviteChip({required this.invite});
+  final Invitation invite;
+
+  @override
+  Widget build(BuildContext context) {
+    final (label, icon, fg, bg) = switch (invite.status) {
+      InviteStatus.pending => (
+          'Invited',
+          Icons.mark_email_unread_outlined,
+          AppColors.brandStrong,
+          AppColors.brandSoft,
+        ),
+      InviteStatus.accepted => (
+          'Linked',
+          Icons.verified_rounded,
+          AppColors.success,
+          AppColors.successSoft,
+        ),
+      InviteStatus.declined => (
+          'Declined',
+          Icons.cancel_outlined,
+          AppColors.muted,
+          AppColors.heroPanel,
+        ),
+      InviteStatus.cancelled => (
+          'Cancelled',
+          Icons.cancel_schedule_send_outlined,
+          AppColors.muted,
+          AppColors.heroPanel,
+        ),
+      InviteStatus.expired => (
+          'Expired',
+          Icons.timer_off_outlined,
+          AppColors.error,
+          AppColors.errorSoft,
+        ),
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: ShapeDecoration(
+        color: bg,
+        shape: AppShapes.squircle(AppSizes.radiusFull),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: fg),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: fg,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.3,
+                ),
+          ),
+        ],
       ),
     );
   }

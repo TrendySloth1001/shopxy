@@ -19,6 +19,12 @@ model User {
   stockTransactions StockTransaction[]
   stockAdjustments  StockAdjustment[]
 
+  invitationsSent     Invitation[]   @relation("InvitationsSent")
+  invitationsReceived Invitation[]   @relation("InvitationsReceived")
+  notifications       Notification[]
+  linkedParties       Party[]
+  linkedVendors       Vendor[]
+
   @@index([email])
   @@map("users")
 }
@@ -264,13 +270,19 @@ model Vendor {
   address           String?
   gstin             String?
   isActive          Boolean            @default(true) @map("is_active")
+  /// Once an invited vendor accepts via their Shopxy account this is set to
+  /// their user id — lets the vendor see their own POs in a future portal.
+  linkedUserId      Int?               @map("linked_user_id")
+  linkedUser        User?              @relation(fields: [linkedUserId], references: [id], onDelete: SetNull)
   createdAt         DateTime           @default(now()) @map("created_at")
   updatedAt         DateTime           @updatedAt @map("updated_at")
   stockTransactions StockTransaction[]
   invoices          Invoice[]
+  invitations       Invitation[]
 
   @@index([name])
   @@index([isActive])
+  @@index([linkedUserId])
   @@map("vendors")
 }
 
@@ -287,13 +299,19 @@ model Party {
   /// hides delete/edit affordances and stock flows fall back to this row
   /// when no party is picked.
   isSystem    Boolean   @default(false) @map("is_system")
+  /// Once an invited party accepts via their Shopxy account this is set to
+  /// their user id — lets the party see their own ledger in a future portal.
+  linkedUserId Int?     @map("linked_user_id")
+  linkedUser   User?    @relation(fields: [linkedUserId], references: [id], onDelete: SetNull)
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
   challans    Challan[]
   invoices    Invoice[]
+  invitations Invitation[]
 
   @@index([name])
   @@index([isActive])
+  @@index([linkedUserId])
   @@map("parties")
 }
 
@@ -385,4 +403,73 @@ model InvoiceItem {
   @@index([invoiceId])
   @@index([productId])
   @@map("invoice_items")
+}
+
+/// Cross-account invite: shop owner invites a party (customer) or vendor
+/// (supplier) by email. If a user with that email already exists, an
+/// in-app notification is created immediately; otherwise the row sits
+/// PENDING and is claimed at signup.
+model Invitation {
+  id          Int       @id @default(autoincrement())
+  /// Inviter (shop owner). Cascades on user delete.
+  fromUserId  Int       @map("from_user_id")
+  fromUser    User      @relation("InvitationsSent", fields: [fromUserId], references: [id], onDelete: Cascade)
+  /// Always stored lower-cased so the partial-unique pending index works.
+  toEmail     String    @map("to_email")
+  /// Set once a user with this email exists (either already, or after signup).
+  toUserId    Int?      @map("to_user_id")
+  toUser      User?     @relation("InvitationsReceived", fields: [toUserId], references: [id], onDelete: SetNull)
+
+  /// PARTY or VENDOR.
+  linkType    String    @map("link_type")
+  partyId     Int?      @map("party_id")
+  party       Party?    @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  vendorId    Int?      @map("vendor_id")
+  vendor      Vendor?   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  /// PENDING / ACCEPTED / DECLINED / CANCELLED / EXPIRED.
+  status      String    @default("PENDING")
+  message     String?
+  /// Snapshot of the inviting shop's display name, kept independent of
+  /// the user's profile mutating later.
+  fromShopName String?  @map("from_shop_name")
+  /// Snapshot of the invited party/vendor name at send time.
+  displayName String?   @map("display_name")
+
+  /// Opaque token used for future email deep-links.
+  token       String    @unique
+  expiresAt   DateTime  @map("expires_at")
+  respondedAt DateTime? @map("responded_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // Compound indexes that cover the only three hot paths:
+  //   1. claim-at-signup: lookup by (toEmail, status='PENDING')
+  //   2. inbox list:      lookup by (toUserId, status, createdAt)
+  //   3. outbox list:     lookup by (fromUserId, status, createdAt)
+  @@index([toEmail, status])
+  @@index([toUserId, status, createdAt])
+  @@index([fromUserId, status, createdAt])
+  @@index([status, expiresAt])
+  @@map("invitations")
+}
+
+/// Per-user in-app notification. Reads / unread-count are indexed off
+/// (userId, readAt) so unread-count is an index-only scan.
+model Notification {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @map("user_id")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// INVITE_RECEIVED / INVITE_ACCEPTED / INVITE_DECLINED / INVITE_CANCELLED / GENERIC.
+  kind      String
+  title     String
+  body      String?
+  /// JSON payload — invitationId, partyId, vendorId, etc.
+  data      Json?
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+  @@map("notifications")
 }

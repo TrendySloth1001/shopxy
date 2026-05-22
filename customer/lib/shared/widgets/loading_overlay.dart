@@ -1,0 +1,27 @@
+import 'package:flutter/material.dart';
+import 'package:shopxy_customer/shared/theme/app_colors.dart';
+
+class LoadingOverlay extends StatelessWidget {
+  const LoadingOverlay({super.key, required this.isLoading, required this.child});
+
+  final bool isLoading;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        child,
+        if (isLoading)
+          ColoredBox(
+            color: AppColors.white.withValues(alpha: 0.85),
+            child: const SizedBox.expand(
+              child: Center(
+                child: CircularProgressIndicator(color: AppColors.black),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}

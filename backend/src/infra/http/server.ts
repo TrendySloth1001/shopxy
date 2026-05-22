@@ -12,6 +12,10 @@ import partiesRouter from '../../modules/parties/parties.routes.js';
 import invoicesRouter from '../../modules/invoices/invoices.routes.js';
 import challansRouter from '../../modules/challans/challans.routes.js';
 import uploadRouter from '../../modules/upload/upload.routes.js';
+import invitationsRouter from '../../modules/invitations/invitations.routes.js';
+import notificationsRouter from '../../modules/notifications/notifications.routes.js';
+import reportsRouter from '../../modules/reports/reports.routes.js';
+import meRouter from '../../modules/me/me.routes.js';
 import { getFileStream, ensureBucket } from '../../modules/upload/upload.service.js';
 import { requireAuth } from '../../shared/http/requireAuth.js';
 import { errorHandler } from '../../shared/http/errorHandler.js';
@@ -52,6 +56,10 @@ app.use('/parties', partiesRouter);
 app.use('/invoices', invoicesRouter);
 app.use('/challans', challansRouter);
 app.use('/upload', uploadRouter);
+app.use('/invitations', invitationsRouter);
+app.use('/notifications', notificationsRouter);
+app.use('/reports', reportsRouter);
+app.use('/me', meRouter);
 
 app.use(errorHandler);
 

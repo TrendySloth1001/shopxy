@@ -13,6 +13,10 @@ import 'package:shopxy/features/dashboard/data/datasources/dashboard_remote_data
 import 'package:shopxy/features/dashboard/presentation/providers/dashboard_provider.dart';
 import 'package:shopxy/features/invoices/data/datasources/invoices_remote_data_source.dart';
 import 'package:shopxy/features/invoices/presentation/providers/invoices_provider.dart';
+import 'package:shopxy/features/notifications/data/datasources/notifications_remote_data_source.dart';
+import 'package:shopxy/features/notifications/presentation/providers/notifications_provider.dart';
+import 'package:shopxy/features/reports/data/datasources/reports_remote_data_source.dart';
+import 'package:shopxy/features/reports/presentation/providers/reports_provider.dart';
 import 'package:shopxy/features/parties/data/datasources/parties_remote_data_source.dart';
 import 'package:shopxy/features/parties/presentation/providers/parties_provider.dart';
 import 'package:shopxy/features/products/data/datasources/products_remote_data_source.dart';
@@ -43,12 +47,33 @@ void main() async {
   final partiesDs = PartiesRemoteDataSource(apiClient);
   final challansDs = ChallansRemoteDataSource(apiClient);
   final stockAdjustmentsDs = StockAdjustmentsRemoteDataSource(apiClient);
+  final notificationsDs = NotificationsRemoteDataSource(apiClient);
+  final invitationsDs = InvitationsRemoteDataSource(apiClient);
+  final reportsDs = ReportsRemoteDataSource(apiClient);
+
+  final notificationsProvider = NotificationsProvider(notificationsDs, invitationsDs);
 
   // Auth provider (created before runApp so we can wire the callback)
   final authProvider = AuthProvider(authDs, tokenManager);
 
   // When ApiClient can't recover a 401 (refresh failed), force re-login
-  tokenManager.onUnauthorized = authProvider.clearAuth;
+  // and clear any stale notifications/invitations cached in memory.
+  tokenManager.onUnauthorized = () {
+    authProvider.clearAuth();
+    notificationsProvider.reset();
+  };
+
+  // Whenever the session changes (login or logout), refresh the bell
+  // badge so it reflects the new user immediately. Single listener for
+  // the app lifetime; doesn't leak.
+  authProvider.addListener(() {
+    if (authProvider.isAuthenticated) {
+      notificationsProvider.refreshUnreadCount();
+      notificationsProvider.loadIncoming(status: 'PENDING');
+    } else {
+      notificationsProvider.reset();
+    }
+  });
 
   runApp(
     MultiProvider(
@@ -74,6 +99,8 @@ void main() async {
         ChangeNotifierProvider(create: (_) => VendorsProvider(vendorsDs)),
         ChangeNotifierProvider(create: (_) => PartiesProvider(partiesDs)),
         ChangeNotifierProvider(create: (_) => ChallansProvider(challansDs)),
+        ChangeNotifierProvider<NotificationsProvider>.value(value: notificationsProvider),
+        ChangeNotifierProvider(create: (_) => ReportsProvider(reportsDs)),
       ],
       child: const ShopxyApp(),
     ),

@@ -1,0 +1,73 @@
+import { Request, Response } from 'express';
+import { parsePagination, paginatedResponse } from '../../shared/http/pagination.js';
+import { meService } from './me.service.js';
+
+function parseId(raw: string): number | null {
+  const id = Number(raw);
+  return Number.isInteger(id) && id > 0 ? id : null;
+}
+
+export class MeController {
+  async links(req: Request, res: Response): Promise<void> {
+    const data = await meService.links(req.user!.sub);
+    res.json(data);
+  }
+
+  async partyInvoices(req: Request, res: Response): Promise<void> {
+    const partyId = parseId(req.params.partyId);
+    if (!partyId) { res.status(400).json({ error: 'Invalid party id' }); return; }
+    const party = await meService.assertOwnsParty(req.user!.sub, partyId);
+    if (!party) { res.status(403).json({ error: 'Not linked to this party' }); return; }
+
+    const { page, limit, skip } = parsePagination(req);
+    const { data, total } = await meService.listInvoicesForParty({
+      partyId,
+      skip,
+      limit,
+    });
+    const body = paginatedResponse(data, total, { page, limit, skip });
+    res.json({ ...body, party });
+  }
+
+  async vendorInvoices(req: Request, res: Response): Promise<void> {
+    const vendorId = parseId(req.params.vendorId);
+    if (!vendorId) { res.status(400).json({ error: 'Invalid vendor id' }); return; }
+    const vendor = await meService.assertOwnsVendor(req.user!.sub, vendorId);
+    if (!vendor) { res.status(403).json({ error: 'Not linked to this vendor' }); return; }
+
+    const { page, limit, skip } = parsePagination(req);
+    const { data, total } = await meService.listInvoicesForVendor({
+      vendorId,
+      skip,
+      limit,
+    });
+    const body = paginatedResponse(data, total, { page, limit, skip });
+    res.json({ ...body, vendor });
+  }
+
+  async partyInvoice(req: Request, res: Response): Promise<void> {
+    const partyId = parseId(req.params.partyId);
+    const invoiceId = parseId(req.params.invoiceId);
+    if (!partyId || !invoiceId) { res.status(400).json({ error: 'Invalid id' }); return; }
+    const party = await meService.assertOwnsParty(req.user!.sub, partyId);
+    if (!party) { res.status(403).json({ error: 'Not linked to this party' }); return; }
+
+    const invoice = await meService.getInvoiceForParty({ partyId, invoiceId });
+    if (!invoice) { res.status(404).json({ error: 'Invoice not found' }); return; }
+    res.json(invoice);
+  }
+
+  async vendorInvoice(req: Request, res: Response): Promise<void> {
+    const vendorId = parseId(req.params.vendorId);
+    const invoiceId = parseId(req.params.invoiceId);
+    if (!vendorId || !invoiceId) { res.status(400).json({ error: 'Invalid id' }); return; }
+    const vendor = await meService.assertOwnsVendor(req.user!.sub, vendorId);
+    if (!vendor) { res.status(403).json({ error: 'Not linked to this vendor' }); return; }
+
+    const invoice = await meService.getInvoiceForVendor({ vendorId, invoiceId });
+    if (!invoice) { res.status(404).json({ error: 'Invoice not found' }); return; }
+    res.json(invoice);
+  }
+}
+
+export const meController = new MeController();

@@ -4,6 +4,9 @@ import 'package:provider/provider.dart';
 import 'package:shopxy/features/dashboard/domain/entities/dashboard_stats.dart';
 import 'package:shopxy/features/dashboard/presentation/providers/dashboard_provider.dart';
 import 'package:shopxy/features/invoices/presentation/pages/invoice_detail_page.dart';
+import 'package:shopxy/features/notifications/presentation/pages/notifications_page.dart';
+import 'package:shopxy/features/notifications/presentation/providers/notifications_provider.dart';
+import 'package:shopxy/features/notifications/presentation/widgets/notification_bell.dart';
 import 'package:shopxy/features/stock/domain/entities/stock_transaction.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
@@ -27,6 +30,11 @@ class _DashboardPageState extends State<DashboardPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       context.read<DashboardProvider>().loadStats();
+      // First-login pending-invite check: if the user has unresponded
+      // invitations waiting, surface a one-time banner here. The
+      // provider tracks whether we've already shown it this session.
+      final n = context.read<NotificationsProvider>();
+      n.loadIncoming(status: 'PENDING');
     });
   }
 
@@ -39,6 +47,7 @@ class _DashboardPageState extends State<DashboardPage> {
       appBar: AppBar(
         title: const Text(AppStrings.appName),
         actions: [
+          const NotificationBell(),
           IconButton(
             onPressed: () => provider.loadStats(),
             icon: const Icon(Icons.refresh_rounded),
@@ -56,6 +65,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   child: ListView(
                     padding: EdgeInsets.zero,
                     children: [
+                      const _PendingInviteCallout(),
                       const _Greeting(),
                       const SizedBox(height: AppSizes.lg),
                       _ValueHeadline(stats: stats),
@@ -760,6 +770,99 @@ class _TransactionRow extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// First-login pending-invite callout
+// ─────────────────────────────────────────────────────────────────────
+
+class _PendingInviteCallout extends StatelessWidget {
+  const _PendingInviteCallout();
+
+  @override
+  Widget build(BuildContext context) {
+    final n = context.watch<NotificationsProvider>();
+    final pending = n.pendingIncoming;
+    if (pending.isEmpty) return const SizedBox.shrink();
+
+    final theme = Theme.of(context);
+    final first = pending.first;
+    final shopName = first.fromShopName ?? first.fromUserName ?? 'A shop';
+    final extra = pending.length - 1;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.md,
+        AppSizes.lg,
+        AppSizes.sm,
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const NotificationsPage()),
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(AppSizes.lg),
+          decoration: ShapeDecoration(
+            color: AppColors.brandSoft,
+            shape: AppShapes.squircle(
+              AppSizes.radiusLg,
+              side: const BorderSide(color: AppColors.brand, width: 1),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: const BoxDecoration(
+                  color: AppColors.brand,
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.mark_email_unread_rounded,
+                  color: AppColors.white,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: AppSizes.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'You have a pending invitation',
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: AppColors.brandStrong,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      extra > 0
+                          ? '$shopName and $extra other${extra == 1 ? "" : "s"} are waiting for your reply.'
+                          : '$shopName wants to add you as their '
+                              '${first.isParty ? "party" : "vendor"}. Tap to review.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.brandStrong,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.brandStrong,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

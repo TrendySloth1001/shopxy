@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/features/notifications/domain/entities/invitation.dart';
+import 'package:shopxy/features/notifications/presentation/pages/send_invite_page.dart';
+import 'package:shopxy/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:shopxy/features/parties/domain/entities/party.dart';
 import 'package:shopxy/features/parties/presentation/providers/parties_provider.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
 import 'package:shopxy/shared/widgets/app_dialog.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
@@ -26,13 +30,27 @@ class _PartiesPageState extends State<PartiesPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) context.read<PartiesProvider>().loadParties();
+      if (!mounted) return;
+      context.read<PartiesProvider>().loadParties();
+      context.read<NotificationsProvider>().loadOutgoing();
     });
+  }
+
+  /// Most recent invitation we've sent for this party, if any.
+  /// Outgoing is already createdAt DESC so first match wins.
+  Invitation? _inviteFor(int partyId, List<Invitation> outgoing) {
+    for (final i in outgoing) {
+      if (i.linkType == InviteLinkType.party && i.partyId == partyId) {
+        return i;
+      }
+    }
+    return null;
   }
 
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<PartiesProvider>();
+    final outgoing = context.watch<NotificationsProvider>().outgoing;
 
     return Scaffold(
       appBar: AppBar(
@@ -96,15 +114,19 @@ class _PartiesPageState extends State<PartiesPage> {
                               ),
                               itemCount: provider.parties.length,
                               separatorBuilder: (_, _) => const AppDivider(),
-                              itemBuilder: (context, i) => _PartyTile(
-                                party: provider.parties[i],
-                                onEdit: () => _showPartySheet(
-                                  context,
-                                  party: provider.parties[i],
-                                ),
-                                onDelete: () =>
-                                    _confirmDelete(context, provider.parties[i]),
-                              ),
+                              itemBuilder: (context, i) {
+                                final p = provider.parties[i];
+                                return _PartyTile(
+                                  party: p,
+                                  invite: _inviteFor(p.id, outgoing),
+                                  onEdit: () =>
+                                      _showPartySheet(context, party: p),
+                                  onDelete: () => _confirmDelete(context, p),
+                                  onInvite: () => _openInvite(context, p),
+                                  onCancelInvite: (id) =>
+                                      _cancelInvite(context, id),
+                                );
+                              },
                             ),
                           ),
           ),
@@ -121,6 +143,43 @@ class _PartiesPageState extends State<PartiesPage> {
       backgroundColor: AppColors.white,
       builder: (_) => PartyFormSheet(party: party),
     );
+  }
+
+  Future<void> _openInvite(BuildContext context, Party p) async {
+    final notifs = context.read<NotificationsProvider>();
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SendInvitePage(initialParty: p),
+      ),
+    );
+    // Refresh status chips after the send sheet closes. Provider grabbed
+    // before the await so we don't touch a possibly-disposed context.
+    if (mounted) notifs.loadOutgoing();
+  }
+
+  Future<void> _cancelInvite(BuildContext context, int invitationId) async {
+    final confirmed = await AppConfirmDialog.show(
+      context,
+      title: 'Cancel invitation',
+      message: 'Cancel this pending invitation? You can send a new one later.',
+      confirmLabel: AppStrings.confirm,
+      danger: true,
+    );
+    if (!confirmed || !context.mounted) return;
+    try {
+      await context.read<NotificationsProvider>().cancel(invitationId);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Invitation cancelled')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    }
   }
 
   Future<void> _confirmDelete(BuildContext context, Party party) async {
@@ -151,12 +210,18 @@ class _PartiesPageState extends State<PartiesPage> {
 class _PartyTile extends StatelessWidget {
   const _PartyTile({
     required this.party,
+    required this.invite,
     required this.onEdit,
     required this.onDelete,
+    required this.onInvite,
+    required this.onCancelInvite,
   });
   final Party party;
+  final Invitation? invite;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback onInvite;
+  final ValueChanged<int> onCancelInvite;
 
   @override
   Widget build(BuildContext context) {
@@ -215,6 +280,7 @@ class _PartyTile extends StatelessWidget {
                           icon: Icons.receipt_outlined,
                           dense: true,
                         ),
+                        if (invite != null) _InviteChip(invite: invite!),
                       ],
                     ),
                   ],
@@ -231,7 +297,10 @@ class _PartyTile extends StatelessWidget {
     );
   }
 
+  bool get _canInvite => (party.email ?? '').isNotEmpty;
+
   void _showMenu(BuildContext context) {
+    final theme = Theme.of(context);
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.white,
@@ -247,6 +316,47 @@ class _PartyTile extends StatelessWidget {
                 onEdit();
               },
             ),
+            if (invite == null || !invite!.isPending) ...[
+              ListTile(
+                leading: const Icon(
+                  Icons.person_add_alt_1_outlined,
+                  color: AppColors.brandStrong,
+                ),
+                enabled: _canInvite,
+                title: const Text(
+                  'Invite to Shopxy',
+                  style: TextStyle(color: AppColors.brandStrong),
+                ),
+                subtitle: _canInvite
+                    ? Text(party.email!,
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(color: AppColors.muted))
+                    : Text('Add an email first',
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(color: AppColors.muted)),
+                onTap: () {
+                  Navigator.pop(context);
+                  onInvite();
+                },
+              ),
+            ] else
+              ListTile(
+                leading: const Icon(
+                  Icons.cancel_schedule_send_outlined,
+                  color: AppColors.warning,
+                ),
+                title: const Text(
+                  'Cancel invitation',
+                  style: TextStyle(color: AppColors.warning),
+                ),
+                subtitle: Text('Sent to ${invite!.toEmail}',
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: AppColors.muted)),
+                onTap: () {
+                  Navigator.pop(context);
+                  onCancelInvite(invite!.id);
+                },
+              ),
             ListTile(
               leading: const Icon(
                 Icons.delete_outline_rounded,
@@ -263,6 +373,71 @@ class _PartyTile extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Status pill reflecting the most recent invitation sent for this
+/// party. Hidden when there's no invite so calm cases stay calm.
+class _InviteChip extends StatelessWidget {
+  const _InviteChip({required this.invite});
+  final Invitation invite;
+
+  @override
+  Widget build(BuildContext context) {
+    final (label, icon, fg, bg) = switch (invite.status) {
+      InviteStatus.pending => (
+          'Invited',
+          Icons.mark_email_unread_outlined,
+          AppColors.brandStrong,
+          AppColors.brandSoft,
+        ),
+      InviteStatus.accepted => (
+          'Linked',
+          Icons.verified_rounded,
+          AppColors.success,
+          AppColors.successSoft,
+        ),
+      InviteStatus.declined => (
+          'Declined',
+          Icons.cancel_outlined,
+          AppColors.muted,
+          AppColors.heroPanel,
+        ),
+      InviteStatus.cancelled => (
+          'Cancelled',
+          Icons.cancel_schedule_send_outlined,
+          AppColors.muted,
+          AppColors.heroPanel,
+        ),
+      InviteStatus.expired => (
+          'Expired',
+          Icons.timer_off_outlined,
+          AppColors.error,
+          AppColors.errorSoft,
+        ),
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: ShapeDecoration(
+        color: bg,
+        shape: AppShapes.squircle(AppSizes.radiusFull),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: fg),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: fg,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.3,
+                ),
+          ),
+        ],
       ),
     );
   }

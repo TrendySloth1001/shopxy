@@ -6,6 +6,7 @@ import 'package:shopxy/features/categories/presentation/pages/categories_page.da
 import 'package:shopxy/features/challans/presentation/pages/challans_page.dart';
 import 'package:shopxy/features/parties/presentation/pages/parties_page.dart';
 import 'package:shopxy/features/profile/presentation/pages/settings_page.dart';
+import 'package:shopxy/features/reports/presentation/pages/reports_page.dart';
 import 'package:shopxy/features/stock_adjustments/presentation/pages/stock_adjustments_page.dart';
 import 'package:shopxy/features/vendors/presentation/pages/vendors_page.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
@@ -101,6 +102,17 @@ class ProfilePage extends StatelessWidget {
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const StockAdjustmentsPage()),
+            ),
+          ),
+          _ProfileLink(
+            icon: Icons.insights_outlined,
+            accent: AppColors.brandStrong,
+            accentSoft: AppColors.brandSoft,
+            title: 'Reports',
+            subtitle: 'Sales, purchases, GST and P&L',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ReportsPage()),
             ),
           ),
           const _SectionGap(),

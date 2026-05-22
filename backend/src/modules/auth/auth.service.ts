@@ -2,6 +2,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import prisma from '../../infra/db/prisma.js';
+import { invitationsService } from '../invitations/invitations.service.js';
 
 const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET ?? 'dev-access-secret-CHANGE-IN-PROD';
 const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET ?? 'dev-refresh-secret-CHANGE-IN-PROD';
@@ -39,6 +40,15 @@ export class AuthService {
       data: { email, name: data.name.trim(), passwordHash },
       select: safeUserSelect,
     });
+
+    // Attach any pending invitations addressed to this email so the new
+    // user sees them on first login. Best-effort — a failure here must
+    // not block account creation.
+    try {
+      await invitationsService.claimPendingForNewUser({ userId: user.id, email });
+    } catch (err) {
+      console.warn('Failed to claim pending invitations for new user', user.id, err);
+    }
 
     const accessToken = signAccess(user.id, user.email, user.role);
     const refreshToken = await createRefreshToken(user.id);

@@ -1,6 +1,15 @@
 import 'package:shopxy/features/challans/domain/entities/challan.dart';
 
 class ChallanDto {
+  /// Prisma's `Decimal` columns serialize as JSON strings (e.g. "3.000"),
+  /// not numbers — casting them straight to `num` throws at runtime.
+  static double _asDouble(dynamic v) {
+    if (v == null) return 0;
+    if (v is num) return v.toDouble();
+    if (v is String) return double.tryParse(v) ?? 0;
+    return 0;
+  }
+
   static ChallanItem _itemFromJson(Map<String, dynamic> j) => ChallanItem(
         id: j['id'] as int,
         challanId: j['challanId'] as int,
@@ -8,7 +17,7 @@ class ChallanDto {
         productName: j['productName'] as String,
         productSku: j['productSku'] as String,
         unit: j['unit'] as String? ?? 'PCS',
-        quantity: (j['quantity'] as num).toDouble(),
+        quantity: _asDouble(j['quantity']),
       );
 
   static ChallanInvoiceRef? _invoiceRefFromJson(Map<String, dynamic>? j) {

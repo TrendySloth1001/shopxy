@@ -1,3 +1,46 @@
+<!-- Project layout -->
+## Project layout
+
+```
+shopxy/
+  backend/        Express + Prisma + Postgres. Same backend serves both apps.
+  frontend/       Merchant app (Flutter). Manages inventory, invoices, parties, vendors.
+  customer/       Customer-side companion app (Flutter). Shows invitations and per-shop
+                  invoice ledgers. Same JWT shape as the merchant app — one user can
+                  log into either app with the same credentials.
+```
+
+Both Flutter apps point at `AppConfig.apiBaseUrl` (in `lib/core/config/app_config.dart`).
+The Postgres schema is shared; the two apps differ only in which subset of endpoints they call.
+
+### Key cross-app concepts
+
+- **Linking**: `Party.linked_user_id` / `Vendor.linked_user_id` (nullable FK → users).
+  Set when a customer accepts an invitation. The customer app's `/me/links` endpoint
+  filters off these columns to show "your shops."
+- **Invitations**: see `backend/src/modules/invitations/`. Owners send via the merchant
+  app's `SendInvitePage`; recipients accept via the customer app's `NotificationsPage`.
+  Pending invites are claimed at signup time via `claimPendingForNewUser` so a
+  brand-new user sees them on first login.
+- **Notifications** are per-user; same module powers the bell in both apps.
+
+### Running things
+
+| Task | Working dir | Command |
+|------|-------------|---------|
+| Backend dev server | `backend/` | `npm run dev` |
+| Backend type-check | `backend/` | `npx tsc --noEmit` |
+| Backend migration | `backend/` | `npx prisma migrate dev` |
+| Merchant app | `frontend/` | `flutter run` |
+| Merchant analyze | `frontend/` | `flutter analyze` |
+| Customer app | `customer/` | `flutter run` |
+| Customer analyze | `customer/` | `flutter analyze` |
+| Customer tests | `customer/` | `flutter test` |
+
+The customer app was scaffolded as a separate Flutter project (not a monorepo package);
+common Dart code is duplicated rather than extracted. Keep that in mind when editing
+shared bits (theme tokens, `ApiClient`, notifications feature) — touch both.
+
 <!-- code-review-graph MCP tools -->
 ## MCP Tools: code-review-graph
 
@@ -36,3 +79,10 @@ Fall back to Grep/Glob/Read **only** when the graph doesn't cover what you need.
 2. Use `detect_changes` for code review.
 3. Use `get_affected_flows` to understand impact.
 4. Use `query_graph` pattern="tests_for" to check coverage.
+
+### Graph coverage caveat
+
+The graph was initially built against `frontend/` + `backend/` only. The `customer/`
+app was scaffolded later and may not yet be indexed. If a query about a customer-app
+symbol comes back empty, fall back to Grep/Read in `customer/` and ask the user
+whether to rebuild the graph against the new layout.
