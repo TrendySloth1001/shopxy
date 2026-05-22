@@ -16,6 +16,7 @@ import 'package:shopxy/shared/widgets/app_button.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
+import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
 
 class InvoicesPage extends StatefulWidget {
@@ -105,8 +106,8 @@ class _InvoicesPageState extends State<InvoicesPage> {
             child: provider.isLoading && provider.invoices.isEmpty
                 ? const Center(child: CircularProgressIndicator())
                 : provider.error != null && provider.invoices.isEmpty
-                    ? EmptyState(
-                        icon: Icons.error_outline_rounded,
+                    ? EmptyState.line(
+                        kind: LineArt.warning,
                         title: AppStrings.error,
                         action: AppButton.secondary(
                           label: AppStrings.retry,
@@ -115,8 +116,8 @@ class _InvoicesPageState extends State<InvoicesPage> {
                         ),
                       )
                     : provider.invoices.isEmpty
-                        ? EmptyState(
-                            icon: Icons.receipt_long_outlined,
+                        ? EmptyState.line(
+                            kind: LineArt.invoice,
                             title: AppStrings.noInvoices,
                             subtitle: AppStrings.noInvoicesHint,
                             action: AppButton.primary(

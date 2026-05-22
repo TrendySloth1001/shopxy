@@ -12,6 +12,7 @@ import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
+import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 
 // Vendor model scoped to this widget (sourced from /stock/suppliers)
 typedef _SV = SupplierVendor;
@@ -260,14 +261,30 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
                 ),
               ),
             ),
-            const SizedBox(height: AppSizes.xl),
+            const SizedBox(height: AppSizes.md),
 
-            Text(widget.product.name, style: theme.textTheme.titleMedium),
+            Center(
+              child: LineIllustration(
+                kind: _type == 'STOCK_IN' ? LineArt.cable : LineArt.receipt,
+                size: 76,
+                accent: AppColors.brand,
+              ),
+            ),
+            const SizedBox(height: AppSizes.sm),
+
+            Text(
+              widget.product.name,
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+              textAlign: TextAlign.center,
+            ),
             Text(
               'Current stock: ${_formatQty(widget.product.stockQuantity)} ${widget.product.unit}',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSizes.xl),
 

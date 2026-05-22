@@ -11,6 +11,7 @@ import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_search_bar.dart';
+import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
 
 class ProductsPage extends StatefulWidget {
@@ -114,8 +115,8 @@ class _ProductsPageState extends State<ProductsPage> {
             child: provider.isLoading && provider.products.isEmpty
                 ? const Center(child: CircularProgressIndicator())
                 : provider.products.isEmpty
-                    ? EmptyState(
-                        icon: Icons.inventory_2_outlined,
+                    ? EmptyState.line(
+                        kind: LineArt.boxes,
                         title: AppStrings.noProducts,
                         subtitle: AppStrings.noProductsHint,
                       )

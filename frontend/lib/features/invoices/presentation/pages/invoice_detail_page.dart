@@ -14,6 +14,8 @@ import 'package:shopxy/shared/widgets/app_card.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_section_header.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
+import 'package:shopxy/shared/illustrations/line_illustrations.dart';
+import 'package:shopxy/shared/widgets/glass_widgets.dart';
 
 class InvoiceDetailPage extends StatefulWidget {
   const InvoiceDetailPage({super.key, required this.invoiceId});
@@ -156,9 +158,18 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(AppSizes.lg),
+      body: Column(
         children: [
+          GlassHero.line(
+            kind: LineArt.invoice,
+            height: 180,
+            illustrationSize: 130,
+            accent: invoice.isCancelled ? AppColors.error : AppColors.brand,
+          ),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(AppSizes.lg),
+              children: [
           AppCard(
             padding: const EdgeInsets.all(AppSizes.lg),
             child: Column(
@@ -277,6 +288,9 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
             ),
           ],
           const SizedBox(height: AppSizes.huge),
+              ],
+            ),
+          ),
         ],
       ),
     );

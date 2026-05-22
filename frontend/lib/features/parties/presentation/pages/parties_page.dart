@@ -11,6 +11,7 @@ import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
 import 'package:shopxy/shared/widgets/app_search_bar.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
+import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
 
 class PartiesPage extends StatefulWidget {
@@ -62,8 +63,8 @@ class _PartiesPageState extends State<PartiesPage> {
             child: provider.isLoading && provider.parties.isEmpty
                 ? const Center(child: CircularProgressIndicator())
                 : provider.error != null && provider.parties.isEmpty
-                    ? EmptyState(
-                        icon: Icons.error_outline_rounded,
+                    ? EmptyState.line(
+                        kind: LineArt.warning,
                         title: AppStrings.error,
                         action: AppButton.secondary(
                           label: AppStrings.retry,
@@ -73,8 +74,8 @@ class _PartiesPageState extends State<PartiesPage> {
                         ),
                       )
                     : provider.parties.isEmpty
-                        ? EmptyState(
-                            icon: Icons.groups_outlined,
+                        ? EmptyState.line(
+                            kind: LineArt.customers,
                             title: AppStrings.noParties,
                             subtitle: AppStrings.noPartiesHint,
                             action: AppButton.primary(
@@ -363,11 +364,20 @@ class _PartyFormSheetState extends State<PartyFormSheet> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Center(
+                child: LineIllustration(
+                  kind: LineArt.customers,
+                  size: 88,
+                  accent: AppColors.brand,
+                ),
+              ),
+              const SizedBox(height: AppSizes.sm),
               Text(
                 isEditing ? AppStrings.editParty : AppStrings.addParty,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: AppSizes.lg),
               TextFormField(

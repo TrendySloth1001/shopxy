@@ -11,6 +11,7 @@ import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
 import 'package:shopxy/shared/widgets/app_search_bar.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
+import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
 
 class VendorsPage extends StatefulWidget {
@@ -62,8 +63,8 @@ class _VendorsPageState extends State<VendorsPage> {
             child: provider.isLoading && provider.vendors.isEmpty
                 ? const Center(child: CircularProgressIndicator())
                 : provider.error != null && provider.vendors.isEmpty
-                    ? EmptyState(
-                        icon: Icons.error_outline_rounded,
+                    ? EmptyState.line(
+                        kind: LineArt.warning,
                         title: AppStrings.error,
                         action: AppButton.secondary(
                           label: AppStrings.retry,
@@ -73,8 +74,8 @@ class _VendorsPageState extends State<VendorsPage> {
                         ),
                       )
                     : provider.vendors.isEmpty
-                        ? EmptyState(
-                            icon: Icons.business_outlined,
+                        ? EmptyState.line(
+                            kind: LineArt.vendors,
                             title: AppStrings.noVendors,
                             subtitle: AppStrings.noVendorsHint,
                             action: AppButton.primary(
@@ -364,11 +365,20 @@ class _VendorFormSheetState extends State<_VendorFormSheet> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Center(
+                child: LineIllustration(
+                  kind: LineArt.vendors,
+                  size: 88,
+                  accent: AppColors.brand,
+                ),
+              ),
+              const SizedBox(height: AppSizes.sm),
               Text(
                 isEditing ? AppStrings.editVendor : AppStrings.addVendor,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: AppSizes.lg),
               TextFormField(

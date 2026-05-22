@@ -10,6 +10,8 @@ import 'package:shopxy/shared/widgets/app_button.dart';
 import 'package:shopxy/shared/widgets/app_card.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_section_header.dart';
+import 'package:shopxy/shared/illustrations/line_illustrations.dart';
+import 'package:shopxy/shared/widgets/glass_widgets.dart';
 
 const _kReasons = [
   (code: 'DAMAGE', label: 'Damaged', defaultDirection: 'OUT'),
@@ -161,9 +163,18 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
       ),
       body: Form(
         key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(AppSizes.lg),
+        child: Column(
           children: [
+            GlassHero.line(
+              kind: LineArt.emptyClipboard,
+              height: 160,
+              illustrationSize: 120,
+              accent: AppColors.warning,
+            ),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.all(AppSizes.lg),
+                children: [
             const AppSectionHeader(
               title: 'REASON',
               padding: EdgeInsets.only(bottom: AppSizes.sm),
@@ -282,6 +293,9 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
               size: AppButtonSize.lg,
             ),
             const SizedBox(height: AppSizes.huge),
+                ],
+              ),
+            ),
           ],
         ),
       ),

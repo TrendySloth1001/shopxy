@@ -14,6 +14,8 @@ import 'package:shopxy/shared/widgets/app_card.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
 import 'package:shopxy/shared/widgets/app_section_header.dart';
+import 'package:shopxy/shared/illustrations/line_illustrations.dart';
+import 'package:shopxy/shared/widgets/glass_widgets.dart';
 
 class CreateChallanPage extends StatefulWidget {
   const CreateChallanPage({super.key});
@@ -151,9 +153,17 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
       ),
       body: Form(
         key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(AppSizes.lg),
+        child: Column(
           children: [
+            GlassHero.line(
+              kind: LineArt.deliveryNote,
+              height: 160,
+              illustrationSize: 120,
+            ),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.all(AppSizes.lg),
+                children: [
             AppSectionHeader(
               title: AppStrings.challanPartyInfo.toUpperCase(),
               padding: const EdgeInsets.only(bottom: AppSizes.sm),
@@ -286,6 +296,9 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
                 ),
               ),
             const SizedBox(height: AppSizes.huge),
+                ],
+              ),
+            ),
           ],
         ),
       ),

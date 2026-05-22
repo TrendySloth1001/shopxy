@@ -10,6 +10,7 @@ import 'package:shopxy/shared/widgets/app_dialog.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
+import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
 
 class CategoriesPage extends StatefulWidget {
@@ -132,8 +133,8 @@ class _CategoriesPageState extends State<CategoriesPage> {
       body: provider.isLoading && provider.categories.isEmpty
           ? const Center(child: CircularProgressIndicator())
           : provider.categories.isEmpty
-              ? const EmptyState(
-                  icon: Icons.category_outlined,
+              ? EmptyState.line(
+                  kind: LineArt.productTag,
                   title: AppStrings.noCategories,
                   subtitle: AppStrings.noCategoriesHint,
                 )

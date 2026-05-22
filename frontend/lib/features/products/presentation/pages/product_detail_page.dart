@@ -22,6 +22,8 @@ import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
 import 'package:shopxy/shared/widgets/app_section_header.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
+import 'package:shopxy/shared/illustrations/line_illustrations.dart';
+import 'package:shopxy/shared/widgets/glass_widgets.dart';
 
 class ProductDetailPage extends StatefulWidget {
   const ProductDetailPage({super.key, required this.productId});
@@ -242,11 +244,20 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: _refreshAll,
-        color: AppColors.black,
-        backgroundColor: AppColors.white,
-        child: ListView(
+      body: Column(
+        children: [
+          GlassHero.line(
+            kind: LineArt.productTag,
+            height: 160,
+            illustrationSize: 120,
+            accent: p.isActive ? AppColors.brand : AppColors.muted,
+          ),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: _refreshAll,
+              color: AppColors.black,
+              backgroundColor: AppColors.white,
+              child: ListView(
           padding: const EdgeInsets.all(AppSizes.lg),
           children: [
             _ProductHeaderCard(product: p),
@@ -358,6 +369,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             const SizedBox(height: AppSizes.huge),
           ],
         ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -10,6 +10,29 @@ class AppStrings {
   static const String navInvoices = 'Invoices';
   static const String navVendors = 'Vendors';
   static const String navMore = 'More';
+  static const String navProfile = 'Profile';
+
+  // Profile / Settings
+  static const String settings = 'Settings';
+  static const String editProfile = 'Edit profile';
+  static const String account = 'Account';
+  static const String preferences = 'Preferences';
+  static const String about = 'About';
+  static const String appVersion = 'App version';
+  static const String privacyPolicy = 'Privacy policy';
+  static const String termsOfService = 'Terms of service';
+  static const String appearance = 'Appearance';
+  static const String theme = 'Theme';
+  static const String themeLight = 'Light';
+  static const String themeDark = 'Dark';
+  static const String themeSystem = 'Follow system';
+  static const String currency = 'Currency';
+  static const String language = 'Language';
+  static const String notifications = 'Notifications';
+  static const String comingSoon = 'Coming soon';
+  static const String roleOwner = 'Owner';
+  static const String roleStaff = 'Staff';
+  static const String memberSince = 'Member since';
 
   // Dashboard
   static const String totalProducts = 'Total Products';

@@ -6,7 +6,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
-import 'package:shopxy/shared/widgets/app_button.dart';
+import 'package:shopxy/shared/widgets/glass_widgets.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -56,128 +56,84 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSizes.xxl,
-              vertical: AppSizes.xl,
+    return GlassPage(
+      hero: GlassHero.image(asset: 'assets/login.png', height: 280),
+      title: AppStrings.welcomeBack,
+      subtitle: AppStrings.loginSubtitle,
+      body: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (_error != null) ...[
+              _AuthErrorBanner(message: _error!),
+              const SizedBox(height: AppSizes.lg),
+            ],
+            TextFormField(
+              controller: _email,
+              decoration: const InputDecoration(
+                labelText: AppStrings.email,
+                prefixIcon: Icon(Icons.email_outlined),
+              ),
+              keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.next,
+              autocorrect: false,
+              validator: (v) {
+                if (v == null || v.trim().isEmpty) {
+                  return AppStrings.fieldRequired;
+                }
+                if (!v.contains('@')) return AppStrings.invalidEmail;
+                return null;
+              },
             ),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 400),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Container(
-                      width: 72,
-                      height: 72,
-                      decoration: ShapeDecoration(
-                        color: AppColors.black,
-                        shape: AppShapes.squircle(AppSizes.radiusXl),
-                      ),
-                      child: const Icon(
-                        Icons.inventory_2_rounded,
-                        size: AppSizes.iconXl,
-                        color: AppColors.white,
-                      ),
-                    ),
-                    const SizedBox(height: AppSizes.xl),
-                    Text(
-                      AppStrings.welcomeBack,
-                      style: theme.textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: AppSizes.xs),
-                    Text(
-                      AppStrings.loginSubtitle,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: AppColors.muted,
-                      ),
-                    ),
-                    const SizedBox(height: AppSizes.xxl),
-                    if (_error != null) ...[
-                      _AuthErrorBanner(message: _error!),
-                      const SizedBox(height: AppSizes.lg),
-                    ],
-                    TextFormField(
-                      controller: _email,
-                      decoration: const InputDecoration(
-                        labelText: AppStrings.email,
-                        prefixIcon: Icon(Icons.email_outlined),
-                      ),
-                      keyboardType: TextInputType.emailAddress,
-                      textInputAction: TextInputAction.next,
-                      autocorrect: false,
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty) {
-                          return AppStrings.fieldRequired;
-                        }
-                        if (!v.contains('@')) return AppStrings.invalidEmail;
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: AppSizes.md),
-                    TextFormField(
-                      controller: _password,
-                      decoration: InputDecoration(
-                        labelText: AppStrings.password,
-                        prefixIcon: const Icon(Icons.lock_outline_rounded),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscure
-                                ? Icons.visibility_outlined
-                                : Icons.visibility_off_outlined,
-                          ),
-                          onPressed: () =>
-                              setState(() => _obscure = !_obscure),
-                        ),
-                      ),
-                      obscureText: _obscure,
-                      textInputAction: TextInputAction.done,
-                      onFieldSubmitted: (_) => _submit(),
-                      validator: (v) => v == null || v.isEmpty
-                          ? AppStrings.fieldRequired
-                          : null,
-                    ),
-                    const SizedBox(height: AppSizes.xxl),
-                    AppButton.primary(
-                      label: AppStrings.login,
-                      onPressed: _submit,
-                      isLoading: _isLoading,
-                      size: AppButtonSize.lg,
-                      fullWidth: true,
-                    ),
-                    const SizedBox(height: AppSizes.xl),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          AppStrings.noAccount,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: AppColors.muted,
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const RegisterPage(),
-                            ),
-                          ),
-                          child: const Text(AppStrings.register),
-                        ),
-                      ],
-                    ),
-                  ],
+            const SizedBox(height: AppSizes.md),
+            TextFormField(
+              controller: _password,
+              decoration: InputDecoration(
+                labelText: AppStrings.password,
+                prefixIcon: const Icon(Icons.lock_outline_rounded),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscure
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
+                  ),
+                  onPressed: () => setState(() => _obscure = !_obscure),
                 ),
               ),
+              obscureText: _obscure,
+              textInputAction: TextInputAction.done,
+              onFieldSubmitted: (_) => _submit(),
+              validator: (v) =>
+                  v == null || v.isEmpty ? AppStrings.fieldRequired : null,
             ),
-          ),
+            const SizedBox(height: AppSizes.lg),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  AppStrings.noAccount,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppColors.muted,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const RegisterPage()),
+                  ),
+                  child: const Text(AppStrings.register),
+                ),
+              ],
+            ),
+          ],
         ),
+      ),
+      actions: GlassActionPanel(
+        primaryLabel: AppStrings.login,
+        primaryIcon: Icons.arrow_forward_rounded,
+        onPrimary: _submit,
+        primaryLoading: _isLoading,
       ),
     );
   }

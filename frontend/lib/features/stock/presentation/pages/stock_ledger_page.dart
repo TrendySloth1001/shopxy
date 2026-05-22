@@ -13,6 +13,7 @@ import 'package:shopxy/shared/widgets/app_card.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_error_view.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
+import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
 
 /// Full chronological stock ledger for a single product.
@@ -130,8 +131,8 @@ class _StockLedgerPageState extends State<StockLedgerPage> {
       return AppErrorView(onRetry: _load);
     }
     if (_entries.isEmpty) {
-      return EmptyState(
-        icon: Icons.swap_vert_rounded,
+      return EmptyState.line(
+        kind: LineArt.ledger,
         title: AppStrings.noData,
         subtitle: 'No movements recorded for this product yet.',
       );
@@ -200,7 +201,7 @@ class _LedgerEntryCard extends StatelessWidget {
     final sign = entry.isStockIn ? '+' : '-';
     final qtyStr = '$sign${_formatQty(entry.quantity)}';
     final unitLabel = unit ?? entry.productUnit ?? '';
-    final accent = entry.isStockIn ? AppColors.success : AppColors.error;
+    final accent = entry.isStockIn ? AppColors.brandStrong : AppColors.error;
     final dateStr =
         DateFormat('d MMM yyyy · hh:mm a').format(entry.createdAt.toLocal());
 

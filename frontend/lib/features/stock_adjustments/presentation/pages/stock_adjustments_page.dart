@@ -13,6 +13,7 @@ import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_error_view.dart';
 import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
+import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
 
 class StockAdjustmentsPage extends StatefulWidget {
@@ -84,8 +85,8 @@ class _StockAdjustmentsPageState extends State<StockAdjustmentsPage> {
       return AppErrorView(onRetry: _load);
     }
     if (_items.isEmpty) {
-      return EmptyState(
-        icon: Icons.tune_rounded,
+      return EmptyState.line(
+        kind: LineArt.emptyClipboard,
         title: 'No adjustments yet',
         subtitle: 'Tap + to record damage, expired stock, or a count correction.',
       );

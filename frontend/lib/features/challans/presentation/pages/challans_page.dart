@@ -11,6 +11,7 @@ import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
 import 'package:shopxy/shared/widgets/app_search_bar.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
+import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
 
 class ChallansPage extends StatefulWidget {
@@ -87,8 +88,8 @@ class _ChallansPageState extends State<ChallansPage> {
             child: provider.isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : provider.challans.isEmpty
-                    ? const EmptyState(
-                        icon: Icons.receipt_long_outlined,
+                    ? EmptyState.line(
+                        kind: LineArt.deliveryNote,
                         title: AppStrings.noChallans,
                         subtitle: AppStrings.challansTapCreate,
                       )

@@ -32,7 +32,7 @@ class AppTheme {
       onError: AppColors.white,
       errorContainer: AppColors.white,
       onErrorContainer: AppColors.error,
-      surface: AppColors.white,
+      surface: AppColors.canvas,
       onSurface: AppColors.black,
       onSurfaceVariant: AppColors.muted,
       outline: AppColors.hairline,
@@ -51,8 +51,8 @@ class AppTheme {
       useMaterial3: true,
       colorScheme: scheme,
       textTheme: textTheme,
-      scaffoldBackgroundColor: AppColors.white,
-      canvasColor: AppColors.white,
+      scaffoldBackgroundColor: AppColors.canvas,
+      canvasColor: AppColors.canvas,
       splashColor: AppColors.black.withValues(alpha: 0.04),
       highlightColor: AppColors.black.withValues(alpha: 0.04),
       hoverColor: AppColors.black.withValues(alpha: 0.04),
@@ -60,7 +60,7 @@ class AppTheme {
       iconTheme: const IconThemeData(color: AppColors.black, size: AppSizes.iconMd),
       primaryIconTheme: const IconThemeData(color: AppColors.white),
       appBarTheme: AppBarTheme(
-        backgroundColor: AppColors.white,
+        backgroundColor: AppColors.canvas,
         foregroundColor: AppColors.black,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
@@ -179,9 +179,9 @@ class AppTheme {
         shape: AppShapes.squircle(AppSizes.radiusLg),
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: AppColors.white,
+        backgroundColor: AppColors.canvas,
         surfaceTintColor: Colors.transparent,
-        indicatorColor: AppColors.black,
+        indicatorColor: AppColors.brand,
         elevation: 0,
         height: 64,
         iconTheme: WidgetStateProperty.resolveWith((states) {
@@ -195,7 +195,7 @@ class AppTheme {
             fontWeight: FontWeight.w600,
           );
           if (states.contains(WidgetState.selected)) {
-            return base?.copyWith(color: AppColors.black);
+            return base?.copyWith(color: AppColors.brandStrong);
           }
           return base?.copyWith(color: AppColors.muted);
         }),
@@ -294,7 +294,8 @@ class AppTheme {
         ),
       ),
       progressIndicatorTheme: const ProgressIndicatorThemeData(
-        color: AppColors.black,
+        // Brand-green progress matches the Glassdoor segmented progress bar.
+        color: AppColors.brand,
         circularTrackColor: Colors.transparent,
         linearTrackColor: Colors.transparent,
       ),

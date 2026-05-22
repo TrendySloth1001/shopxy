@@ -15,6 +15,8 @@ import 'package:shopxy/shared/widgets/app_dialog.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_section_header.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
+import 'package:shopxy/shared/illustrations/line_illustrations.dart';
+import 'package:shopxy/shared/widgets/glass_widgets.dart';
 
 class ChallanDetailPage extends StatefulWidget {
   const ChallanDetailPage({super.key, required this.challanId});
@@ -129,9 +131,20 @@ class _ChallanDetailPageState extends State<ChallanDetailPage> {
             ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(AppSizes.lg),
+      body: Column(
         children: [
+          GlassHero.line(
+            kind: LineArt.deliveryNote,
+            height: 180,
+            illustrationSize: 130,
+            accent: c.isConverted
+                ? AppColors.brand
+                : (c.isCancelled ? AppColors.error : AppColors.brand),
+          ),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(AppSizes.lg),
+              children: [
           AppCard(
             padding: const EdgeInsets.all(AppSizes.lg),
             child: Column(
@@ -231,6 +244,9 @@ class _ChallanDetailPageState extends State<ChallanDetailPage> {
                   ),
           ),
           const SizedBox(height: AppSizes.huge),
+              ],
+            ),
+          ),
         ],
       ),
       bottomNavigationBar: c.isPending
