@@ -332,7 +332,27 @@ class _VendorTile extends StatelessWidget {
                 onEdit();
               },
             ),
-            if (invite == null || !invite!.isPending) ...[
+            // Linked vendors don't get a re-invite affordance — the
+            // chip on the tile already signals "Linked" and re-sending
+            // wouldn't change anything.
+            if (invite?.isAccepted == true)
+              ListTile(
+                leading: const Icon(
+                  Icons.verified_rounded,
+                  color: AppColors.success,
+                ),
+                title: const Text(
+                  'Already linked',
+                  style: TextStyle(color: AppColors.success),
+                ),
+                subtitle: Text(
+                  invite!.toEmail,
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: AppColors.muted),
+                ),
+                enabled: false,
+              )
+            else if (invite == null || !invite!.isPending) ...[
               ListTile(
                 leading: const Icon(
                   Icons.person_add_alt_1_outlined,
