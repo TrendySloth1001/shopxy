@@ -222,7 +222,10 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
             ),
           ),
         );
-        Navigator.pop(context);
+        // Return `true` so the opener can distinguish "user saved" from
+        // "user dismissed". Detail page only refetches when this is true,
+        // saving a needless DB round-trip on every cancel/scrim tap.
+        Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {

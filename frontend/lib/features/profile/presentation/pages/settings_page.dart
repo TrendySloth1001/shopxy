@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/core/prefs/navigation_prefs.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
+import 'package:shopxy/features/custom_fields/presentation/pages/custom_fields_settings_page.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
@@ -100,6 +102,29 @@ class _SettingsPageState extends State<SettingsPage> {
             subtitle: 'English',
             trailing: _comingSoonChip(context),
             onTap: () => _stub(AppStrings.language),
+          ),
+          const _NavigationStyleRow(),
+          const _DensityRow(),
+
+          const _Gap(),
+
+          // ── Inventory ───────────────────────────────────────
+          const _Eyebrow('INVENTORY'),
+          const SizedBox(height: AppSizes.sm),
+          _SettingRow(
+            icon: Icons.tune_rounded,
+            title: AppStrings.customFields,
+            subtitle: AppStrings.customFieldsHint,
+            trailing: const Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.subtle,
+            ),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const CustomFieldsSettingsPage(),
+              ),
+            ),
           ),
 
           const _Gap(),
@@ -250,6 +275,179 @@ class _Gap extends StatelessWidget {
         vertical: AppSizes.xl,
       ),
       child: Container(height: 1, color: AppColors.hairline),
+    );
+  }
+}
+
+/// Two-way picker for [ListDensity]. Drives list-row padding on the
+/// products page (and any future inventory-heavy list) so the user
+/// can opt into a compact mode that fits more rows per screen.
+class _DensityRow extends StatelessWidget {
+  const _DensityRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final prefs = context.watch<NavigationPrefsProvider>();
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.md,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: ShapeDecoration(
+              color: AppColors.heroPanel,
+              shape: AppShapes.squircle(AppSizes.radiusSm),
+            ),
+            alignment: Alignment.center,
+            child: const Icon(
+              Icons.density_medium_rounded,
+              size: 18,
+              color: AppColors.black,
+            ),
+          ),
+          const SizedBox(width: AppSizes.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'List density',
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: AppColors.black,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  prefs.isCompact
+                      ? 'Tighter rows — more products per screen.'
+                      : 'Comfortable spacing (default).',
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: AppColors.muted),
+                ),
+                const SizedBox(height: AppSizes.sm),
+                SegmentedButton<ListDensity>(
+                  segments: const [
+                    ButtonSegment(
+                      value: ListDensity.comfortable,
+                      icon: Icon(Icons.format_line_spacing_rounded, size: 16),
+                      label: Text('Comfortable'),
+                    ),
+                    ButtonSegment(
+                      value: ListDensity.compact,
+                      icon: Icon(Icons.density_small_rounded, size: 16),
+                      label: Text('Compact'),
+                    ),
+                  ],
+                  selected: {prefs.density},
+                  showSelectedIcon: false,
+                  onSelectionChanged: (set) => prefs.setDensity(set.first),
+                  style: ButtonStyle(
+                    visualDensity: VisualDensity.compact,
+                    textStyle: WidgetStatePropertyAll(
+                      theme.textTheme.labelMedium
+                          ?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Two-way picker for [NavigationStyle]. Tapping a segment writes
+/// through the [NavigationPrefsProvider] which persists the choice and
+/// rebuilds [AppShell] live — so the user sees the layout swap without
+/// leaving Settings.
+class _NavigationStyleRow extends StatelessWidget {
+  const _NavigationStyleRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final prefs = context.watch<NavigationPrefsProvider>();
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.md,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: ShapeDecoration(
+              color: AppColors.heroPanel,
+              shape: AppShapes.squircle(AppSizes.radiusSm),
+            ),
+            alignment: Alignment.center,
+            child: const Icon(
+              Icons.dashboard_customize_outlined,
+              size: 18,
+              color: AppColors.black,
+            ),
+          ),
+          const SizedBox(width: AppSizes.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Navigation style',
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: AppColors.black,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  prefs.isSidebar
+                      ? 'Left-side rail with destinations stacked vertically.'
+                      : 'Bottom tab bar (default).',
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: AppColors.muted),
+                ),
+                const SizedBox(height: AppSizes.sm),
+                SegmentedButton<NavigationStyle>(
+                  segments: const [
+                    ButtonSegment(
+                      value: NavigationStyle.bottomBar,
+                      icon: Icon(Icons.dock_rounded, size: 16),
+                      label: Text('Bottom bar'),
+                    ),
+                    ButtonSegment(
+                      value: NavigationStyle.sidebar,
+                      icon: Icon(Icons.view_sidebar_outlined, size: 16),
+                      label: Text('Sidebar'),
+                    ),
+                  ],
+                  selected: {prefs.style},
+                  showSelectedIcon: false,
+                  onSelectionChanged: (set) => prefs.setStyle(set.first),
+                  style: ButtonStyle(
+                    visualDensity: VisualDensity.compact,
+                    textStyle: WidgetStatePropertyAll(
+                      theme.textTheme.labelMedium
+                          ?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

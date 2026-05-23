@@ -6,8 +6,9 @@ import 'package:shopxy/features/parties/domain/entities/party.dart';
 import 'package:shopxy/features/parties/presentation/widgets/party_picker.dart';
 import 'package:shopxy/features/products/data/datasources/products_remote_data_source.dart';
 import 'package:shopxy/features/products/domain/entities/product.dart';
-import 'package:shopxy/features/vendors/data/datasources/vendors_remote_data_source.dart';
+import 'package:shopxy/features/products/presentation/pages/qr_scanner_page.dart';
 import 'package:shopxy/features/vendors/domain/entities/vendor.dart';
+import 'package:shopxy/features/vendors/presentation/widgets/vendor_picker.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
@@ -126,6 +127,26 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
     });
   }
 
+  Future<void> _pickVendor() async {
+    final picked = await showVendorPicker(context);
+    if (picked != null && mounted) {
+      setState(() => _selectedVendor = picked);
+    }
+  }
+
+  void _clearVendor() => setState(() => _selectedVendor = null);
+
+  /// Open the camera-based product scanner and append the picked product
+  /// as a draft row. The scanner page handles "not found" itself: it lets
+  /// the user create the product, then returns the fresh row.
+  Future<void> _scanProduct() async {
+    final picked = await Navigator.push<Product?>(
+      context,
+      MaterialPageRoute(builder: (_) => const QrScannerPage()),
+    );
+    if (picked != null && mounted) _addItem(picked);
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     if (_items.isEmpty) {
@@ -236,10 +257,19 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
               padding: const EdgeInsets.only(bottom: AppSizes.sm),
             ),
             if (_type == 'PURCHASE') ...[
-              _VendorSelector(
-                selectedVendor: _selectedVendor,
-                onSelected: (v) => setState(() => _selectedVendor = v),
-              ),
+              if (_selectedVendor != null)
+                _SelectedVendorCard(
+                  vendor: _selectedVendor!,
+                  onChange: _pickVendor,
+                  onClear: _clearVendor,
+                )
+              else
+                AppButton.secondary(
+                  label: AppStrings.selectVendor,
+                  icon: Icons.local_shipping_outlined,
+                  onPressed: _pickVendor,
+                  fullWidth: true,
+                ),
             ] else ...[
               if (_selectedParty != null)
                 _SelectedPartyCard(
@@ -296,23 +326,35 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
               padding: const EdgeInsets.only(bottom: AppSizes.sm),
             ),
 
-            // Product search
-            TextField(
-              controller: _productSearch,
-              decoration: InputDecoration(
-                labelText: AppStrings.searchToAddProduct,
-                prefixIcon: _isSearchingProducts
-                    ? const Padding(
-                        padding: EdgeInsets.all(AppSizes.md),
-                        child: SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      )
-                    : const Icon(Icons.search_rounded),
-              ),
-              onChanged: _searchProducts,
+            // Product search + scan
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _productSearch,
+                    decoration: InputDecoration(
+                      labelText: AppStrings.searchToAddProduct,
+                      prefixIcon: _isSearchingProducts
+                          ? const Padding(
+                              padding: EdgeInsets.all(AppSizes.md),
+                              child: SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                            )
+                          : const Icon(Icons.search_rounded),
+                    ),
+                    onChanged: _searchProducts,
+                  ),
+                ),
+                const SizedBox(width: AppSizes.sm),
+                IconButton.filledTonal(
+                  tooltip: 'Scan barcode',
+                  onPressed: _scanProduct,
+                  icon: const Icon(Icons.qr_code_scanner_rounded),
+                ),
+              ],
             ),
 
             if (_productResults.isNotEmpty) ...[
@@ -428,62 +470,56 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
   }
 }
 
-class _VendorSelector extends StatefulWidget {
-  const _VendorSelector({
-    required this.selectedVendor,
-    required this.onSelected,
+class _SelectedVendorCard extends StatelessWidget {
+  const _SelectedVendorCard({
+    required this.vendor,
+    required this.onChange,
+    required this.onClear,
   });
-  final Vendor? selectedVendor;
-  final ValueChanged<Vendor?> onSelected;
 
-  @override
-  State<_VendorSelector> createState() => _VendorSelectorState();
-}
-
-class _VendorSelectorState extends State<_VendorSelector> {
-  List<Vendor> _vendors = [];
-  bool _isLoading = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    setState(() => _isLoading = true);
-    try {
-      final ds = context.read<VendorsRemoteDataSource>();
-      _vendors = await ds.getVendors();
-    } catch (_) {
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
+  final Vendor vendor;
+  final VoidCallback onChange;
+  final VoidCallback onClear;
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) return const LinearProgressIndicator();
-    return DropdownButtonFormField<int?>(
-      initialValue: widget.selectedVendor?.id,
-      decoration: const InputDecoration(labelText: AppStrings.vendor),
-      items: [
-        const DropdownMenuItem(
-          value: null,
-          child: Text(AppStrings.noVendorSelected),
-        ),
-        ..._vendors.map(
-          (v) => DropdownMenuItem(value: v.id, child: Text(v.name)),
-        ),
-      ],
-      onChanged: (id) {
-        if (id == null) {
-          widget.onSelected(null);
-        } else {
-          final vendor = _vendors.firstWhere((v) => v.id == id);
-          widget.onSelected(vendor);
-        }
-      },
+    final theme = Theme.of(context);
+    return AppCard(
+      padding: const EdgeInsets.all(AppSizes.md),
+      child: Row(
+        children: [
+          AppMonogramAvatar(label: vendor.name),
+          const SizedBox(width: AppSizes.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  vendor.name,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (vendor.phone != null)
+                  Text(vendor.phone!, style: theme.textTheme.bodySmall),
+                if (vendor.gstin != null)
+                  Text(
+                    'GSTIN: ${vendor.gstin}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.muted,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          TextButton(onPressed: onChange, child: const Text('Change')),
+          IconButton(
+            icon: const Icon(Icons.close_rounded),
+            onPressed: onClear,
+            visualDensity: VisualDensity.compact,
+          ),
+        ],
+      ),
     );
   }
 }
