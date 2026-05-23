@@ -29,12 +29,19 @@ import { getFileStream, ensureBucket } from '../../modules/upload/upload.service
 import { requireAuth } from '../../shared/http/requireAuth.js';
 import { requireRole } from '../../shared/http/requireRole.js';
 import { errorHandler } from '../../shared/http/errorHandler.js';
+import { requestId } from '../../shared/http/requestId.js';
+import { logger } from '../../shared/logging/logger.js';
 
 const app = express();
 
 // Security headers (CSP, X-Frame-Options, etc.) — default helmet config is fine
 // for a JSON API; we don't serve HTML beyond the image proxy.
 app.use(helmet());
+
+// Attach a request id + child logger to every request, surface it via the
+// `x-request-id` response header for client/correlation use, and log a
+// structured `request` line on `finish` with status + duration.
+app.use(requestId);
 
 // CORS. In prod, set CORS_ORIGINS to a comma-separated allowlist
 // (e.g. "https://app.example.com,https://merchant.example.com").
@@ -130,12 +137,12 @@ const host = process.env.HOST || '0.0.0.0';
 async function startServer(): Promise<void> {
   try {
     await prisma.$connect();
-    await ensureBucket().catch((e) => console.warn('MinIO bucket init warning:', e.message));
+    await ensureBucket().catch((e) => logger.warn({ err: e }, 'minio bucket init failed'));
     app.listen(port, host, () => {
-      console.log(`Server listening on http://${host}:${port}`);
+      logger.info({ port, host }, 'server listening');
     });
   } catch (err) {
-    console.error('Failed to start server', err);
+    logger.error({ err }, 'failed to start server');
     await prisma.$disconnect();
     process.exit(1);
   }

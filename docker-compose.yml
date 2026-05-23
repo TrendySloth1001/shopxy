@@ -1,0 +1,37 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: shopxy
+      POSTGRES_PASSWORD: shopxy_dev_password
+      POSTGRES_DB: shopxy
+    ports: ["5432:5432"]
+    volumes: [postgres_data:/var/lib/postgresql/data]
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: shopxy
+      MINIO_ROOT_PASSWORD: shopxy_dev_password
+    ports: ["9000:9000", "9001:9001"]
+    volumes: [minio_data:/data]
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on: [postgres, minio]
+    environment:
+      DATABASE_URL: postgres://shopxy:shopxy_dev_password@postgres:5432/shopxy
+      JWT_ACCESS_SECRET: change-me-access
+      JWT_REFRESH_SECRET: change-me-refresh
+      MINIO_ENDPOINT: minio
+      MINIO_ACCESS_KEY: shopxy
+      MINIO_SECRET_KEY: shopxy_dev_password
+      MINIO_BUCKET: shopxy-uploads
+      PORT: 3001
+      CORS_ORIGINS: ""
+    ports: ["3001:3001"]
+volumes:
+  postgres_data:
+  minio_data:
