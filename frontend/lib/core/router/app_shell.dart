@@ -1,10 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/core/prefs/navigation_prefs.dart';
+import 'package:shopxy/features/categories/presentation/pages/categories_page.dart';
+import 'package:shopxy/features/challans/presentation/pages/challans_page.dart';
 import 'package:shopxy/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:shopxy/features/invoices/presentation/pages/invoices_page.dart';
+import 'package:shopxy/features/orders/presentation/pages/orders_inbox_page.dart';
+import 'package:shopxy/features/orders/presentation/providers/orders_provider.dart';
+import 'package:shopxy/features/parties/presentation/pages/parties_page.dart';
 import 'package:shopxy/features/products/presentation/pages/products_page.dart';
 import 'package:shopxy/features/profile/presentation/pages/profile_page.dart';
+import 'package:shopxy/features/reports/presentation/pages/reports_page.dart';
+import 'package:shopxy/features/stock_adjustments/presentation/pages/stock_adjustments_page.dart';
+import 'package:shopxy/features/vendors/presentation/pages/vendors_page.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
@@ -24,12 +32,91 @@ class _Destination {
     required this.icon,
     required this.selectedIcon,
     required this.page,
+    this.id,
   });
   final String label;
   final IconData icon;
   final IconData selectedIcon;
   final Widget page;
+  /// Stable identifier used to attach dynamic affordances (like the
+  /// pending-orders badge) without leaking layout into the static list.
+  final String? id;
 }
+
+const _kOrdersDestinationId = 'orders';
+
+/// One row in the drawer's "operations" sections — a shortcut that
+/// pushes a page on top of the current tab instead of switching tabs.
+/// Drawer-only; the bottom-bar layout doesn't surface these.
+class _Shortcut {
+  const _Shortcut({
+    required this.label,
+    required this.icon,
+    required this.accent,
+    required this.accentSoft,
+    required this.builder,
+  });
+  final String label;
+  final IconData icon;
+  final Color accent;
+  final Color accentSoft;
+  final WidgetBuilder builder;
+}
+
+List<_Shortcut> get _manageShortcuts => [
+      _Shortcut(
+        label: AppStrings.navCategories,
+        icon: Icons.category_outlined,
+        accent: AppColors.accentTeal,
+        accentSoft: AppColors.accentTealSoft,
+        builder: (_) => const CategoriesPage(),
+      ),
+      _Shortcut(
+        label: AppStrings.navVendors,
+        icon: Icons.storefront_outlined,
+        accent: AppColors.accentIndigo,
+        accentSoft: AppColors.accentIndigoSoft,
+        builder: (_) => const VendorsPage(),
+      ),
+      _Shortcut(
+        label: AppStrings.navParties,
+        icon: Icons.groups_outlined,
+        accent: AppColors.accentRose,
+        accentSoft: AppColors.accentRoseSoft,
+        builder: (_) => const PartiesPage(),
+      ),
+    ];
+
+List<_Shortcut> get _operationShortcuts => [
+      _Shortcut(
+        label: AppStrings.navInvoices,
+        icon: Icons.receipt_long_outlined,
+        accent: AppColors.brandStrong,
+        accentSoft: AppColors.brandSoft,
+        builder: (_) => const InvoicesPage(),
+      ),
+      _Shortcut(
+        label: AppStrings.navChallans,
+        icon: Icons.assignment_outlined,
+        accent: AppColors.accentAmber,
+        accentSoft: AppColors.accentAmberSoft,
+        builder: (_) => const ChallansPage(),
+      ),
+      _Shortcut(
+        label: 'Stock adjustments',
+        icon: Icons.tune_rounded,
+        accent: AppColors.brand,
+        accentSoft: AppColors.brandSoft,
+        builder: (_) => const StockAdjustmentsPage(),
+      ),
+      _Shortcut(
+        label: 'Reports',
+        icon: Icons.insights_outlined,
+        accent: AppColors.brandStrong,
+        accentSoft: AppColors.brandSoft,
+        builder: (_) => const ReportsPage(),
+      ),
+    ];
 
 const _destinations = <_Destination>[
   _Destination(
@@ -45,10 +132,11 @@ const _destinations = <_Destination>[
     page: ProductsPage(),
   ),
   _Destination(
-    label: AppStrings.navInvoices,
-    icon: Icons.receipt_long_outlined,
-    selectedIcon: Icons.receipt_long_rounded,
-    page: InvoicesPage(),
+    label: AppStrings.navOrders,
+    icon: Icons.inbox_outlined,
+    selectedIcon: Icons.inbox_rounded,
+    page: OrdersInboxPage(),
+    id: _kOrdersDestinationId,
   ),
   _Destination(
     label: AppStrings.navProfile,
@@ -88,8 +176,20 @@ class AppShellState extends State<AppShell> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    // Seed the orders badge with the first count so it renders correctly
+    // on cold start; the inbox refreshes its own count on enter.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<OrdersProvider>().refreshPendingCount();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final prefs = context.watch<NavigationPrefsProvider>();
+    final pendingOrders = context.watch<OrdersProvider>().pendingCount;
     final pages = _destinations.map((d) => d.page).toList(growable: false);
 
     final body = IndexedStack(index: _currentIndex, children: pages);
@@ -120,14 +220,46 @@ class AppShellState extends State<AppShell> {
                   destinations: [
                     for (final d in _destinations)
                       NavigationDestination(
-                        icon: Icon(d.icon),
-                        selectedIcon: Icon(d.selectedIcon),
+                        icon: _DestinationIcon(
+                          icon: d.icon,
+                          badge: d.id == _kOrdersDestinationId
+                              ? pendingOrders
+                              : 0,
+                        ),
+                        selectedIcon: _DestinationIcon(
+                          icon: d.selectedIcon,
+                          badge: d.id == _kOrdersDestinationId
+                              ? pendingOrders
+                              : 0,
+                        ),
                         label: d.label,
                       ),
                   ],
                 ),
               ),
             ),
+    );
+  }
+}
+
+/// Wraps a destination icon with a Material 3 numeric badge. We hand-roll
+/// the badge wrapper (instead of using NavigationDestination's `badge`
+/// slot, which only renders for the unselected icon on some platforms)
+/// so the indicator stays visible in both states. Hidden when count == 0.
+class _DestinationIcon extends StatelessWidget {
+  const _DestinationIcon({required this.icon, required this.badge});
+  final IconData icon;
+  final int badge;
+
+  @override
+  Widget build(BuildContext context) {
+    if (badge <= 0) return Icon(icon);
+    final label = badge > 99 ? '99+' : '$badge';
+    return Badge(
+      label: Text(label),
+      backgroundColor: AppColors.warning,
+      textColor: AppColors.white,
+      child: Icon(icon),
     );
   }
 }
@@ -191,16 +323,34 @@ class _NavDrawer extends StatelessWidget {
               color: AppColors.hairline,
             ),
             const SizedBox(height: 8),
-            for (int i = 0; i < _destinations.length; i++)
-              _DrawerTile(
-                destination: _destinations[i],
-                selected: active.index == i,
-                onTap: () {
-                  active.select(i);
-                  Navigator.pop(context);
-                },
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  for (int i = 0; i < _destinations.length; i++)
+                    _DrawerTile(
+                      destination: _destinations[i],
+                      selected: active.index == i,
+                      badge: _destinations[i].id == _kOrdersDestinationId
+                          ? context.watch<OrdersProvider>().pendingCount
+                          : 0,
+                      onTap: () {
+                        active.select(i);
+                        Navigator.pop(context);
+                      },
+                    ),
+                  const SizedBox(height: 12),
+                  const _DrawerSectionLabel(text: 'Manage'),
+                  for (final s in _manageShortcuts)
+                    _DrawerShortcutTile(shortcut: s),
+                  const SizedBox(height: 8),
+                  const _DrawerSectionLabel(text: 'Operations'),
+                  for (final s in _operationShortcuts)
+                    _DrawerShortcutTile(shortcut: s),
+                  const SizedBox(height: 12),
+                ],
               ),
-            const Spacer(),
+            ),
             Padding(
               padding: const EdgeInsets.all(20),
               child: Text(
@@ -221,10 +371,12 @@ class _DrawerTile extends StatelessWidget {
     required this.destination,
     required this.selected,
     required this.onTap,
+    this.badge = 0,
   });
   final _Destination destination;
   final bool selected;
   final VoidCallback onTap;
+  final int badge;
 
   @override
   Widget build(BuildContext context) {
@@ -247,12 +399,115 @@ class _DrawerTile extends StatelessWidget {
                   color: selected ? AppColors.white : AppColors.black,
                 ),
                 const SizedBox(width: 14),
-                Text(
-                  destination.label,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: selected ? AppColors.white : AppColors.black,
-                    fontWeight: FontWeight.w700,
+                Expanded(
+                  child: Text(
+                    destination.label,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: selected ? AppColors.white : AppColors.black,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
+                ),
+                if (badge > 0)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: selected ? AppColors.white : AppColors.warning,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      badge > 99 ? '99+' : '$badge',
+                      style: TextStyle(
+                        color: selected ? AppColors.black : AppColors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DrawerSectionLabel extends StatelessWidget {
+  const _DrawerSectionLabel({required this.text});
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 6),
+      child: Text(
+        text.toUpperCase(),
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: AppColors.muted,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 1.0,
+        ),
+      ),
+    );
+  }
+}
+
+/// Drawer row that pushes a page on top of the active tab instead of
+/// switching tabs. Visually lighter than [_DrawerTile] (no selection
+/// state, colored leading square) so the eye reads them as shortcuts
+/// rather than primary destinations.
+class _DrawerShortcutTile extends StatelessWidget {
+  const _DrawerShortcutTile({required this.shortcut});
+  final _Shortcut shortcut;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      child: Material(
+        color: Colors.transparent,
+        shape: AppShapes.squircle(14),
+        child: InkWell(
+          customBorder: AppShapes.squircle(14),
+          onTap: () {
+            final navigator = Navigator.of(context);
+            navigator.pop();
+            navigator.push(MaterialPageRoute(builder: shortcut.builder));
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            child: Row(
+              children: [
+                Container(
+                  width: 30,
+                  height: 30,
+                  decoration: ShapeDecoration(
+                    color: shortcut.accentSoft,
+                    shape: AppShapes.squircle(8),
+                  ),
+                  alignment: Alignment.center,
+                  child: Icon(shortcut.icon, size: 16, color: shortcut.accent),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    shortcut.label,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: AppColors.black,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  size: 18,
+                  color: AppColors.subtle,
                 ),
               ],
             ),
