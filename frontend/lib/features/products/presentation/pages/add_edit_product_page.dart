@@ -33,6 +33,11 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
   final _formKey = GlobalKey<FormState>();
   bool _isSaving = false;
   bool _isScanning = false;
+  // Heuristic unsaved-changes guard. Flipped true by any tracked text
+  // controller listener or explicit mutation; reset to false right
+  // before a successful Navigator.pop. Not exact — we only watch a
+  // handful of representative fields to keep the wiring minimal.
+  bool _dirty = false;
 
   late final TextEditingController _name;
   late final TextEditingController _description;
@@ -112,6 +117,16 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
         _existingImageIdByUrl[img.url] = img.id;
       }
     }
+
+    // Heuristic dirty-tracker — single listener shared across the
+    // representative text fields. Avoids instrumenting every input.
+    void markDirty() {
+      if (!_dirty) _dirty = true;
+    }
+    _name.addListener(markDirty);
+    _description.addListener(markDirty);
+    _sellingPrice.addListener(markDirty);
+    _stockQuantity.addListener(markDirty);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -225,6 +240,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
         );
       }
 
+      _dirty = false;
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
@@ -380,11 +396,39 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     });
   }
 
+  Future<bool> _confirmDiscard() async {
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Discard changes?'),
+        content: const Text('Your edits will be lost.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Keep editing'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Discard'),
+          ),
+        ],
+      ),
+    );
+    return discard == true;
+  }
+
   @override
   Widget build(BuildContext context) {
     final categories = context.watch<CategoriesProvider>().categories;
 
-    return Scaffold(
+    return PopScope(
+      canPop: !_dirty,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final discard = await _confirmDiscard();
+        if (discard && context.mounted) Navigator.pop(context);
+      },
+      child: Scaffold(
       appBar: AppBar(
         title: Text(isEditing ? AppStrings.editProduct : AppStrings.addProduct),
         actions: [
@@ -766,6 +810,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
             const SizedBox(height: AppSizes.huge),
           ],
         ),
+      ),
       ),
     );
   }

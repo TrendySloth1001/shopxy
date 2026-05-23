@@ -55,6 +55,19 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
   List<Product> _searchResults = const [];
   bool _isSearching = false;
   bool _isSaving = false;
+  // Heuristic unsaved-changes guard. Watches the note controller and
+  // item adds — not exact.
+  bool _dirty = false;
+
+  void _markDirty() {
+    if (!_dirty) _dirty = true;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _note.addListener(_markDirty);
+  }
 
   @override
   void dispose() {
@@ -88,6 +101,7 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
   }
 
   void _addProduct(Product p) {
+    _markDirty();
     final existing = _items.indexWhere((i) => i.productId == p.id);
     if (existing >= 0) {
       setState(() => _items[existing].quantity += 1);
@@ -129,6 +143,7 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
                 ))
             .toList(),
       );
+      _dirty = false;
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
@@ -140,12 +155,40 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
     }
   }
 
+  Future<bool> _confirmDiscard() async {
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Discard changes?'),
+        content: const Text('Your edits will be lost.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Keep editing'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Discard'),
+          ),
+        ],
+      ),
+    );
+    return discard == true;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final allowDirectionToggle = _reason == 'RECOUNT' || _reason == 'OPENING';
 
-    return Scaffold(
+    return PopScope(
+      canPop: !_dirty,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final discard = await _confirmDiscard();
+        if (discard && context.mounted) Navigator.pop(context);
+      },
+      child: Scaffold(
       appBar: AppBar(
         title: const Text('New stock adjustment'),
         actions: [
@@ -298,6 +341,7 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

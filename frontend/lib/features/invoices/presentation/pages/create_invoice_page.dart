@@ -30,6 +30,10 @@ class CreateInvoicePage extends StatefulWidget {
 class _CreateInvoicePageState extends State<CreateInvoicePage> {
   final _formKey = GlobalKey<FormState>();
   bool _isSaving = false;
+  // Heuristic unsaved-changes guard. Flipped true by the customer/name
+  // and note listeners, or whenever an item is added/removed. Not exact —
+  // intentional, see PopScope wiring below.
+  bool _dirty = false;
 
   String _type = 'SALE';
   Vendor? _selectedVendor;
@@ -46,6 +50,18 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
   List<Product> _productResults = [];
   bool _isSearchingProducts = false;
   final _productSearch = TextEditingController();
+
+  void _markDirty() {
+    if (!_dirty) _dirty = true;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _customerName.addListener(_markDirty);
+    _note.addListener(_markDirty);
+    _discount.addListener(_markDirty);
+  }
 
   @override
   void dispose() {
@@ -81,6 +97,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
   }
 
   void _addItem(Product product) {
+    _markDirty();
     final existing = _items.indexWhere((i) => i.productId == product.id);
     if (existing >= 0) {
       setState(() => _items[existing].quantity += 1);
@@ -178,6 +195,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
             )
             .toList(),
       );
+      _dirty = false;
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
@@ -190,11 +208,39 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
     }
   }
 
+  Future<bool> _confirmDiscard() async {
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Discard changes?'),
+        content: const Text('Your edits will be lost.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Keep editing'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Discard'),
+          ),
+        ],
+      ),
+    );
+    return discard == true;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Scaffold(
+    return PopScope(
+      canPop: !_dirty,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final discard = await _confirmDiscard();
+        if (discard && context.mounted) Navigator.pop(context);
+      },
+      child: Scaffold(
       appBar: AppBar(
         title: const Text(AppStrings.createInvoice),
         actions: [
@@ -465,6 +511,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
             ),
           ],
         ),
+      ),
       ),
     );
   }
