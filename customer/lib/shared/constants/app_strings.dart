@@ -6,6 +6,8 @@ class AppStrings {
 
   // Navigation
   static const String navHome = 'Home';
+  static const String navBrowse = 'Browse';
+  static const String navOrders = 'Orders';
   static const String navNotifications = 'Notifications';
   static const String navProfile = 'Profile';
 
@@ -70,4 +72,31 @@ class AppStrings {
   static const String termsOfService = 'Terms of service';
   static const String memberSince = 'Member since';
   static const String currencySymbol = '₹';
+
+  // Catalog
+  static const String browseTitle = 'Browse';
+  static const String searchProducts = 'Search products';
+  static const String addToCart = 'Add to cart';
+  static const String inCart = 'In cart';
+  static const String outOfStock = 'Out of stock';
+  static const String cart = 'Cart';
+  static const String yourCart = 'Your cart';
+  static const String emptyCart = 'Your cart is empty';
+  static const String emptyCartHint = 'Add products from the Browse tab.';
+  static const String checkout = 'Place order';
+  static const String orderNotePlaceholder = 'Note for the shop (optional)';
+  static const String orderPlaced = 'Order placed';
+  static const String orderPlacedHint =
+      'The shop will confirm and create your invoice.';
+  static const String emptyOrders = 'No orders yet';
+  static const String emptyOrdersHint =
+      'Pending orders and past purchases will show up here.';
+  static const String myOrders = 'My orders';
+  static const String orderPending = 'Pending';
+  static const String orderConfirmed = 'Confirmed';
+  static const String orderRejected = 'Declined';
+  static const String orderCancelled = 'Cancelled';
+  static const String cancelOrder = 'Cancel order';
+  static const String linkedInvoice = 'Linked invoice';
+  static const String estimatedTotal = 'Estimated total';
 }
