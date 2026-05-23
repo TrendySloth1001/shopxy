@@ -6,6 +6,11 @@ class Party {
     this.phone,
     this.email,
     this.address,
+    this.city,
+    this.state,
+    this.stateCode,
+    this.pinCode,
+    this.panNumber,
     this.gstin,
     required this.isActive,
     required this.createdAt,
@@ -20,6 +25,11 @@ class Party {
   final String? phone;
   final String? email;
   final String? address;
+  final String? city;
+  final String? state;
+  final String? stateCode;
+  final String? pinCode;
+  final String? panNumber;
   final String? gstin;
   final bool isActive;
   final DateTime createdAt;

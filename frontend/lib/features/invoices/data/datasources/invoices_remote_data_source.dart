@@ -48,6 +48,8 @@ class InvoicesRemoteDataSource {
     String? customerGstin,
     double? discount,
     String? note,
+    String? documentType,
+    String? placeOfSupplyStateCode,
     required List<Map<String, dynamic>> items,
   }) async {
     final res = await _client.post(
@@ -61,6 +63,8 @@ class InvoicesRemoteDataSource {
         customerGstin: customerGstin,
         discount: discount,
         note: note,
+        documentType: documentType,
+        placeOfSupplyStateCode: placeOfSupplyStateCode,
         items: items,
       ),
     );

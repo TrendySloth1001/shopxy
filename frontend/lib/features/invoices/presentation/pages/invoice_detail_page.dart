@@ -192,6 +192,23 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                   ],
                 ),
                 const SizedBox(height: AppSizes.xs),
+                Wrap(
+                  spacing: AppSizes.xs,
+                  runSpacing: 4,
+                  children: [
+                    AppStatusBadge(
+                      label: _documentTypeLabel(invoice.documentType),
+                      tone: AppStatusTone.neutral,
+                      dense: true,
+                    ),
+                    AppStatusBadge(
+                      label: invoice.isInterstate ? 'IGST' : 'CGST+SGST',
+                      tone: AppStatusTone.neutral,
+                      dense: true,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSizes.xs),
                 Text(
                   invoice.isSale
                       ? AppStrings.saleInvoice
@@ -213,21 +230,66 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                       : AppStrings.vendor,
                   value: invoice.partyName,
                 ),
-                if (invoice.isSale && invoice.customerPhone != null)
-                  _InfoRow(
-                    label: AppStrings.phone,
-                    value: invoice.customerPhone!,
-                  ),
-                if (invoice.isSale && invoice.customerGstin != null)
-                  _InfoRow(
-                    label: AppStrings.gstin,
-                    value: invoice.customerGstin!,
-                  ),
-                if (invoice.isPurchase && invoice.vendor?.name != null)
-                  _InfoRow(
-                    label: AppStrings.vendor,
-                    value: invoice.vendor!.name,
-                  ),
+                if (invoice.isSale) ...[
+                  if (invoice.customerPhone != null)
+                    _InfoRow(
+                      label: AppStrings.phone,
+                      value: invoice.customerPhone!,
+                    ),
+                  if (invoice.customerGstin != null)
+                    _InfoRow(
+                      label: AppStrings.gstin,
+                      value: invoice.customerGstin!,
+                    ),
+                  if (invoice.customerPanNumber != null)
+                    _InfoRow(
+                      label: 'PAN',
+                      value: invoice.customerPanNumber!,
+                    ),
+                  if (_addressLine(
+                    invoice.customerAddress,
+                    invoice.customerCity,
+                    invoice.customerState,
+                    invoice.customerPinCode,
+                  )
+                      .isNotEmpty)
+                    _InfoRow(
+                      label: AppStrings.address,
+                      value: _addressLine(
+                        invoice.customerAddress,
+                        invoice.customerCity,
+                        invoice.customerState,
+                        invoice.customerPinCode,
+                      ),
+                    ),
+                ] else ...[
+                  if (invoice.vendor?.name != null)
+                    _InfoRow(
+                      label: AppStrings.vendor,
+                      value: invoice.vendor!.name,
+                    ),
+                  if (invoice.vendorGstin != null)
+                    _InfoRow(
+                      label: AppStrings.gstin,
+                      value: invoice.vendorGstin!,
+                    ),
+                  if (_addressLine(
+                    invoice.vendorAddress,
+                    invoice.vendorCity,
+                    invoice.vendorState,
+                    invoice.vendorPinCode,
+                  )
+                      .isNotEmpty)
+                    _InfoRow(
+                      label: AppStrings.address,
+                      value: _addressLine(
+                        invoice.vendorAddress,
+                        invoice.vendorCity,
+                        invoice.vendorState,
+                        invoice.vendorPinCode,
+                      ),
+                    ),
+                ],
               ],
             ),
           ),
@@ -253,9 +315,25 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
             child: Column(
               children: [
                 _TotalRow(label: AppStrings.subtotal, value: invoice.subtotal),
-                _TotalRow(label: AppStrings.taxAmount, value: invoice.taxAmount),
+                // GST split mirrors how the invoice was saved. For older
+                // rows without the split (igst/cgst/sgst all 0) we fall
+                // back to the single taxAmount column.
+                if (invoice.igstAmount == 0 &&
+                    invoice.cgstAmount == 0 &&
+                    invoice.sgstAmount == 0)
+                  _TotalRow(label: AppStrings.taxAmount, value: invoice.taxAmount)
+                else if (invoice.isInterstate)
+                  _TotalRow(label: 'IGST', value: invoice.igstAmount)
+                else ...[
+                  _TotalRow(label: 'CGST', value: invoice.cgstAmount),
+                  _TotalRow(label: 'SGST', value: invoice.sgstAmount),
+                ],
+                if (invoice.cessAmount > 0)
+                  _TotalRow(label: 'Cess', value: invoice.cessAmount),
                 if (invoice.discount > 0)
                   _TotalRow(label: AppStrings.discount, value: -invoice.discount),
+                if (invoice.roundOff != 0)
+                  _TotalRow(label: 'Round-off', value: invoice.roundOff),
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: AppSizes.sm),
                   child: AppDivider.flush(),
@@ -265,6 +343,20 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                   value: invoice.total,
                   isHighlight: true,
                 ),
+                if (invoice.amountInWords != null &&
+                    invoice.amountInWords!.isNotEmpty) ...[
+                  const SizedBox(height: AppSizes.xs),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      invoice.amountInWords!,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.muted,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -294,6 +386,34 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
         ],
       ),
     );
+  }
+
+  /// Compose a one-line "addr, city, state - pin" string, skipping empties.
+  static String _addressLine(String? addr, String? city, String? state, String? pin) {
+    final parts = <String>[];
+    if (addr != null && addr.isNotEmpty) parts.add(addr);
+    if (city != null && city.isNotEmpty) parts.add(city);
+    if (state != null && state.isNotEmpty) {
+      parts.add(pin != null && pin.isNotEmpty ? '$state - $pin' : state);
+    } else if (pin != null && pin.isNotEmpty) {
+      parts.add(pin);
+    }
+    return parts.join(', ');
+  }
+
+  static String _documentTypeLabel(String docType) {
+    switch (docType) {
+      case 'TAX_INVOICE':
+        return 'TAX INVOICE';
+      case 'BILL_OF_SUPPLY':
+        return 'BILL OF SUPPLY';
+      case 'CREDIT_NOTE':
+        return 'CREDIT NOTE';
+      case 'DEBIT_NOTE':
+        return 'DEBIT NOTE';
+      default:
+        return docType.replaceAll('_', ' ');
+    }
   }
 
   AppStatusTone _statusTone(String status) {

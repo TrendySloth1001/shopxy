@@ -53,10 +53,39 @@ class AuthRemoteDataSource {
   Future<AuthUser> updateProfile({
     String? name,
     bool? emailNotifications,
+    String? shopName,
+    String? shopAddress,
+    String? shopCity,
+    String? shopState,
+    String? shopStateCode,
+    String? shopPinCode,
+    String? shopGstin,
+    String? shopPan,
+    String? upiVpa,
   }) async {
     final body = <String, dynamic>{};
     if (name != null) body['name'] = name;
-    if (emailNotifications != null) body['emailNotifications'] = emailNotifications;
+    if (emailNotifications != null) {
+      body['emailNotifications'] = emailNotifications;
+    }
+    // For shop fields, treat empty string as explicit clear (→ JSON null),
+    // and a non-null value as "user touched this and wants to save it."
+    // Untouched fields stay out of the body entirely.
+    void put(String key, String? value) {
+      if (value == null) return;
+      body[key] = value.isEmpty ? null : value;
+    }
+
+    put('shopName', shopName);
+    put('shopAddress', shopAddress);
+    put('shopCity', shopCity);
+    put('shopState', shopState);
+    put('shopStateCode', shopStateCode);
+    put('shopPinCode', shopPinCode);
+    put('shopGstin', shopGstin);
+    put('shopPan', shopPan);
+    put('upiVpa', upiVpa);
+
     final res = await _client.patch('/auth/me', body: body);
     if (res.statusCode != 200) {
       final errBody = jsonDecode(res.body) as Map<String, dynamic>;

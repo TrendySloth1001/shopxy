@@ -65,10 +65,31 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> updateProfile({String? name, bool? emailNotifications}) async {
+  Future<void> updateProfile({
+    String? name,
+    bool? emailNotifications,
+    String? shopName,
+    String? shopAddress,
+    String? shopCity,
+    String? shopState,
+    String? shopStateCode,
+    String? shopPinCode,
+    String? shopGstin,
+    String? shopPan,
+    String? upiVpa,
+  }) async {
     final updated = await _dataSource.updateProfile(
       name: name,
       emailNotifications: emailNotifications,
+      shopName: shopName,
+      shopAddress: shopAddress,
+      shopCity: shopCity,
+      shopState: shopState,
+      shopStateCode: shopStateCode,
+      shopPinCode: shopPinCode,
+      shopGstin: shopGstin,
+      shopPan: shopPan,
+      upiVpa: upiVpa,
     );
     _user = updated;
     notifyListeners();
