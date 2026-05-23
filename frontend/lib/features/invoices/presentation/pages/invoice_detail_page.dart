@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:shopxy/features/invoices/data/datasources/invoices_remote_data_source.dart';
 import 'package:shopxy/features/invoices/domain/entities/invoice.dart';
 import 'package:shopxy/features/invoices/presentation/providers/invoices_provider.dart';
@@ -75,6 +77,74 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
     }
   }
 
+  /// Downloads the PDF to the temp dir and pops the native share sheet.
+  /// WhatsApp appears as a share target on both Android and iOS, so users
+  /// effectively get a one-tap WhatsApp share — same flow handles email,
+  /// Drive, etc. without extra integration code.
+  Future<void> _sharePdf() async {
+    if (_invoice == null) return;
+    setState(() => _isDownloading = true);
+    final invoiceNo = _invoice!.invoiceNo;
+    final ds = context.read<InvoicesRemoteDataSource>();
+    try {
+      final response = await ds.downloadPdf(widget.invoiceId);
+      if (response.statusCode != 200) {
+        throw Exception('Failed to generate PDF');
+      }
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/$invoiceNo.pdf');
+      await file.writeAsBytes(response.bodyBytes);
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path)],
+          text: 'Invoice $invoiceNo',
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    } finally {
+      if (mounted) setState(() => _isDownloading = false);
+    }
+  }
+
+  /// Open WhatsApp pre-filled with an invoice summary. If the invoice has
+  /// a customer phone we deep-link to that chat directly; otherwise we
+  /// fall back to the picker (`wa.me/?text=...`).
+  Future<void> _shareViaWhatsApp() async {
+    final invoice = _invoice;
+    if (invoice == null) return;
+    final text =
+        'Invoice ${invoice.invoiceNo} — Total ${AppStrings.currencySymbol}${invoice.total.toStringAsFixed(2)}';
+    final encoded = Uri.encodeComponent(text);
+    final phone = _normalizeIndianPhone(invoice.customerPhone);
+    final uri = phone != null
+        ? Uri.parse('https://wa.me/$phone?text=$encoded')
+        : Uri.parse('https://wa.me/?text=$encoded');
+    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open WhatsApp')),
+      );
+    }
+  }
+
+  /// Strip non-digits and ensure a 91 (India) country prefix. Returns null
+  /// when we can't make sense of the input — caller falls back to the
+  /// generic WhatsApp share link.
+  static String? _normalizeIndianPhone(String? raw) {
+    if (raw == null) return null;
+    final digits = raw.replaceAll(RegExp(r'\D'), '');
+    if (digits.isEmpty) return null;
+    if (digits.startsWith('91') && digits.length >= 12) return digits;
+    if (digits.length == 10) return '91$digits';
+    // Already has some other country code — trust the caller.
+    if (digits.length >= 11) return digits;
+    return null;
+  }
+
   Future<void> _updateStatus(String status) async {
     final provider = context.read<InvoicesProvider>();
     try {
@@ -110,13 +180,18 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
       appBar: AppBar(
         title: Text(invoice.invoiceNo),
         actions: [
-          if (!_isDownloading)
+          if (!_isDownloading) ...[
+            IconButton(
+              icon: const Icon(Icons.share_rounded),
+              tooltip: 'Share',
+              onPressed: _sharePdf,
+            ),
             IconButton(
               icon: const Icon(Icons.download_rounded),
               tooltip: AppStrings.downloadInvoice,
               onPressed: _downloadPdf,
-            )
-          else
+            ),
+          ] else
             const Padding(
               padding: EdgeInsets.all(AppSizes.md),
               child: SizedBox(
@@ -358,6 +433,27 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                   ),
                 ],
               ],
+            ),
+          ),
+          const SizedBox(height: AppSizes.md),
+          AppCard(
+            padding: EdgeInsets.zero,
+            child: ListTile(
+              leading: const Icon(
+                Icons.chat_rounded,
+                color: Color(0xFF25D366),
+              ),
+              title: const Text('Send via WhatsApp'),
+              subtitle: Text(
+                invoice.customerPhone != null && invoice.customerPhone!.isNotEmpty
+                    ? 'Opens chat with ${invoice.customerPhone}'
+                    : 'Pick a chat to send to',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppColors.muted,
+                ),
+              ),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: _shareViaWhatsApp,
             ),
           ),
           if (invoice.note != null && invoice.note!.isNotEmpty) ...[
