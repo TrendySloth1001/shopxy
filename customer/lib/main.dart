@@ -12,6 +12,7 @@ import 'package:shopxy_customer/features/notifications/data/datasources/notifica
 import 'package:shopxy_customer/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:shopxy_customer/features/orders/data/datasources/orders_remote_data_source.dart';
 import 'package:shopxy_customer/features/orders/presentation/providers/orders_provider.dart';
+import 'package:shopxy_customer/features/search/presentation/providers/search_provider.dart';
 import 'package:shopxy_customer/features/shops/data/datasources/me_remote_data_source.dart';
 import 'package:shopxy_customer/features/shops/presentation/providers/shops_provider.dart';
 
@@ -82,6 +83,11 @@ void main() async {
         ChangeNotifierProvider<CatalogProvider>.value(value: catalogProvider),
         ChangeNotifierProvider<CartProvider>.value(value: cartProvider),
         ChangeNotifierProvider<OrdersProvider>.value(value: ordersProvider),
+        // Search has no provider-level boot work; create lazily on first
+        // open so we don't pay for it on every cold start.
+        ChangeNotifierProvider<SearchProvider>(
+          create: (_) => SearchProvider(catalogDs),
+        ),
       ],
       child: const ShopxyCustomerApp(),
     ),
