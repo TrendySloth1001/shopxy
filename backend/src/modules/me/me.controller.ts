@@ -8,6 +8,34 @@ function parseId(raw: string): number | null {
 }
 
 export class MeController {
+  async catalog(req: Request, res: Response): Promise<void> {
+    const { page, limit, skip } = parsePagination(req);
+    const search = (req.query.search as string) || '';
+    const categoryRaw = req.query.categoryId as string | undefined;
+    const categoryId = categoryRaw ? parseId(categoryRaw) ?? undefined : undefined;
+
+    const { data, total } = await meService.listCatalog({
+      search,
+      categoryId,
+      skip,
+      limit,
+    });
+    res.json(paginatedResponse(data, total, { page, limit, skip }));
+  }
+
+  async catalogProduct(req: Request, res: Response): Promise<void> {
+    const id = parseId(req.params.productId);
+    if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
+    const product = await meService.getCatalogProduct(id);
+    if (!product) { res.status(404).json({ error: 'Product not found' }); return; }
+    res.json(product);
+  }
+
+  async catalogCategories(_req: Request, res: Response): Promise<void> {
+    const data = await meService.listCategoriesWithCounts();
+    res.json(data);
+  }
+
   async links(req: Request, res: Response): Promise<void> {
     const data = await meService.links(req.user!.sub);
     res.json(data);

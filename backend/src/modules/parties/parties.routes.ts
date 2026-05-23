@@ -6,6 +6,7 @@ const router = Router();
 
 router.post('/', asyncHandler((req, res) => partiesController.create(req, res)));
 router.get('/', asyncHandler((req, res) => partiesController.list(req, res)));
+router.get('/:id/overview', asyncHandler((req, res) => partiesController.overview(req, res)));
 router.get('/:id', asyncHandler((req, res) => partiesController.getById(req, res)));
 router.patch('/:id', asyncHandler((req, res) => partiesController.update(req, res)));
 router.delete('/:id', asyncHandler((req, res) => partiesController.delete(req, res)));
