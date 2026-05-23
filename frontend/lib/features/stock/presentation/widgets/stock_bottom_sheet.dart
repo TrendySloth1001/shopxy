@@ -74,10 +74,11 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
 
   void _seedUnitPrice() {
     if (_unitPrice.text.trim().isNotEmpty) return;
-    _unitPrice.text = (_type == 'STOCK_IN'
-            ? widget.product.purchasePrice
-            : widget.product.sellingPrice)
-        .toStringAsFixed(2);
+    _unitPrice.text =
+        (_type == 'STOCK_IN'
+                ? widget.product.purchasePrice
+                : widget.product.sellingPrice)
+            .toStringAsFixed(2);
   }
 
   @override
@@ -163,7 +164,11 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
     setState(() => _isLoadingSuppliers = true);
     try {
       final ds = context.read<StockRemoteDataSource>();
-      var result = await ds.getSuppliers(query: query, productId: widget.product.id, limit: 12);
+      var result = await ds.getSuppliers(
+        query: query,
+        productId: widget.product.id,
+        limit: 12,
+      );
       // If no product-specific vendors, fall back to all vendors
       if (result.vendors.isEmpty && result.freeTextSuppliers.isEmpty) {
         result = await ds.getSuppliers(query: query, limit: 12);
@@ -229,7 +234,9 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.toString())));
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -249,328 +256,345 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
       ),
       child: Form(
         key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Handle
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: ShapeDecoration(
-                  color: AppColors.hairline,
-                  shape: AppShapes.squircle(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: AppSizes.md),
-
-            Center(
-              child: LineIllustration(
-                kind: _type == 'STOCK_IN' ? LineArt.cable : LineArt.receipt,
-                size: 76,
-                accent: AppColors.brand,
-              ),
-            ),
-            const SizedBox(height: AppSizes.sm),
-
-            Text(
-              widget.product.name,
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            Text(
-              'Current stock: ${_formatQty(widget.product.stockQuantity)} ${widget.product.unit}',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppSizes.xl),
-
-            // Type selector — manual flow now produces a DRAFT invoice.
-            // Damage / expired / shrinkage live on the Stock Adjustments
-            // page; pure cash movements happen here.
-            SegmentedButton<String>(
-              segments: const [
-                ButtonSegment(
-                  value: 'STOCK_IN',
-                  label: Text('Purchase'),
-                  icon: Icon(Icons.add_rounded),
-                ),
-                ButtonSegment(
-                  value: 'STOCK_OUT',
-                  label: Text('Sale'),
-                  icon: Icon(Icons.remove_rounded),
-                ),
-              ],
-              selected: {_type},
-              onSelectionChanged: (v) {
-                setState(() {
-                  _type = v.first;
-                  _unitPrice.text = (_type == 'STOCK_IN'
-                          ? widget.product.purchasePrice
-                          : widget.product.sellingPrice)
-                      .toStringAsFixed(2);
-                  if (_type != 'STOCK_IN') _supplierFocusNode.unfocus();
-                });
-                if (_type == 'STOCK_IN') {
-                  _loadSupplierOptions(
-                    query: _supplier.text.trim().isEmpty ? null : _supplier.text.trim(),
-                  );
-                } else {
-                  _searchParties(_partyQuery.text.trim());
-                }
-              },
-            ),
-            const SizedBox(height: AppSizes.lg),
-
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _quantity,
-                    decoration: const InputDecoration(
-                      labelText: AppStrings.quantity,
-                    ),
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    autofocus: true,
-                    validator: (v) {
-                      if (v == null || v.isEmpty) {
-                        return AppStrings.fieldRequired;
-                      }
-                      final n = double.tryParse(v);
-                      if (n == null || n <= 0) {
-                        return AppStrings.invalidNumber;
-                      }
-                      return null;
-                    },
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Handle
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: ShapeDecoration(
+                    color: AppColors.hairline,
+                    shape: AppShapes.squircle(2),
                   ),
                 ),
-                const SizedBox(width: AppSizes.md),
-                Expanded(
-                  child: TextFormField(
-                    controller: _unitPrice,
-                    decoration: InputDecoration(
-                      labelText: AppStrings.unitPrice,
-                      prefixText: '${AppStrings.currencySymbol} ',
-                    ),
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    validator: (v) {
-                      if (_type != 'STOCK_IN') {
-                        if (v == null || v.isEmpty) {
-                          return null;
-                        }
-                        return double.tryParse(v) == null
-                            ? AppStrings.invalidNumber
-                            : null;
-                      }
-                      if (v == null || v.isEmpty) {
-                        return AppStrings.fieldRequired;
-                      }
-                      final n = double.tryParse(v);
-                      if (n == null || n < 0) {
-                        return AppStrings.invalidNumber;
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSizes.md),
-
-            if (_type == 'STOCK_OUT') ...[
-              Text(
-                'Customer',
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: AppColors.muted,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.4,
-                ),
               ),
-              const SizedBox(height: AppSizes.xs),
-              TextFormField(
-                controller: _partyQuery,
-                decoration: InputDecoration(
-                  hintText: 'Search parties — defaults to Walk-in Customer',
-                  prefixIcon: const Icon(Icons.person_search_rounded),
-                  suffixIcon: _selectedParty != null
-                      ? IconButton(
-                          icon: const Icon(Icons.close_rounded),
-                          onPressed: _clearParty,
-                          tooltip: 'Clear',
-                        )
-                      : _isSearchingParties
-                          ? const Padding(
-                              padding: EdgeInsets.all(AppSizes.md),
-                              child: SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              ),
-                            )
-                          : null,
-                ),
-              ),
-              if (_selectedParty == null && _partyResults.isNotEmpty) ...[
-                const SizedBox(height: AppSizes.xs),
-                Wrap(
-                  spacing: AppSizes.sm,
-                  runSpacing: AppSizes.xs,
-                  children: _partyResults.take(6).map((p) {
-                    return ActionChip(
-                      label: Text(p.name),
-                      avatar: Icon(
-                        p.name == 'Walk-in Customer'
-                            ? Icons.directions_walk_rounded
-                            : Icons.person_rounded,
-                        size: 16,
-                      ),
-                      onPressed: () => _pickParty(p),
-                    );
-                  }).toList(),
-                ),
-              ],
               const SizedBox(height: AppSizes.md),
-            ],
 
-            if (_type == 'STOCK_IN') ...[
-              // ── Vendor quick-select ───────────────────────────────────
-              if (_isLoadingSuppliers)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: AppSizes.sm),
-                  child: LinearProgressIndicator(),
-                )
-              else if (_vendors.isNotEmpty || _selectedVendor != null) ...[
-                Text(
-                  AppStrings.supplier,
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+              Center(
+                child: LineIllustration(
+                  kind: _type == 'STOCK_IN' ? LineArt.cable : LineArt.receipt,
+                  size: 76,
+                  accent: AppColors.brand,
+                ),
+              ),
+              const SizedBox(height: AppSizes.sm),
+
+              Text(
+                widget.product.name,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              Text(
+                'Current stock: ${_formatQty(widget.product.stockQuantity)} ${widget.product.unit}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSizes.xl),
+
+              // Type selector — manual flow now produces a DRAFT invoice.
+              // Damage / expired / shrinkage live on the Stock Adjustments
+              // page; pure cash movements happen here.
+              SegmentedButton<String>(
+                segments: const [
+                  ButtonSegment(
+                    value: 'STOCK_IN',
+                    label: Text('Purchase'),
+                    icon: Icon(Icons.add_rounded),
+                  ),
+                  ButtonSegment(
+                    value: 'STOCK_OUT',
+                    label: Text('Sale'),
+                    icon: Icon(Icons.remove_rounded),
+                  ),
+                ],
+                selected: {_type},
+                onSelectionChanged: (v) {
+                  setState(() {
+                    _type = v.first;
+                    _unitPrice.text =
+                        (_type == 'STOCK_IN'
+                                ? widget.product.purchasePrice
+                                : widget.product.sellingPrice)
+                            .toStringAsFixed(2);
+                    if (_type != 'STOCK_IN') _supplierFocusNode.unfocus();
+                  });
+                  if (_type == 'STOCK_IN') {
+                    _loadSupplierOptions(
+                      query: _supplier.text.trim().isEmpty
+                          ? null
+                          : _supplier.text.trim(),
+                    );
+                  } else {
+                    _searchParties(_partyQuery.text.trim());
+                  }
+                },
+              ),
+              const SizedBox(height: AppSizes.lg),
+
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _quantity,
+                      decoration: const InputDecoration(
+                        labelText: AppStrings.quantity,
                       ),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      autofocus: true,
+                      validator: (v) {
+                        if (v == null || v.isEmpty) {
+                          return AppStrings.fieldRequired;
+                        }
+                        final n = double.tryParse(v);
+                        if (n == null || n <= 0) {
+                          return AppStrings.invalidNumber;
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: AppSizes.md),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _unitPrice,
+                      decoration: InputDecoration(
+                        labelText: AppStrings.unitPrice,
+                        prefixText: '${AppStrings.currencySymbol} ',
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      validator: (v) {
+                        if (_type != 'STOCK_IN') {
+                          if (v == null || v.isEmpty) {
+                            return null;
+                          }
+                          return double.tryParse(v) == null
+                              ? AppStrings.invalidNumber
+                              : null;
+                        }
+                        if (v == null || v.isEmpty) {
+                          return AppStrings.fieldRequired;
+                        }
+                        final n = double.tryParse(v);
+                        if (n == null || n < 0) {
+                          return AppStrings.invalidNumber;
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSizes.md),
+
+              if (_type == 'STOCK_OUT') ...[
+                Text(
+                  'Customer',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: AppColors.muted,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.4,
+                  ),
                 ),
                 const SizedBox(height: AppSizes.xs),
-                Wrap(
-                  spacing: AppSizes.sm,
-                  runSpacing: AppSizes.xs,
-                  children: _vendors.map((v) {
-                    final isSelected = _selectedVendor?.id == v.id;
-                    return FilterChip(
-                      label: Text(v.name),
-                      selected: isSelected,
-                      onSelected: (_) => isSelected ? _clearVendor() : _selectVendor(v),
-                      avatar: Icon(
-                        Icons.business_rounded,
-                        size: 14,
-                        color: isSelected
-                            ? Theme.of(context).colorScheme.onSecondaryContainer
-                            : Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: AppSizes.sm),
-              ],
-              // ── Free-text supplier (when no vendor selected) ──────────
-              if (_selectedVendor == null)
-                RawAutocomplete<String>(
-                  textEditingController: _supplier,
-                  focusNode: _supplierFocusNode,
-                  optionsBuilder: (textEditingValue) {
-                    final query = textEditingValue.text.trim().toLowerCase();
-                    if (_freeTextOptions.isEmpty) return const Iterable<String>.empty();
-                    if (query.isEmpty) return _freeTextOptions;
-                    return _freeTextOptions.where((o) => o.toLowerCase().contains(query));
-                  },
-                  onSelected: (option) {
-                    _supplier
-                      ..text = option
-                      ..selection = TextSelection.collapsed(offset: option.length);
-                  },
-                  fieldViewBuilder: (context, ctrl, focusNode, _) => TextFormField(
-                    controller: ctrl,
-                    focusNode: focusNode,
-                    decoration: InputDecoration(
-                      labelText: AppStrings.supplier,
-                      helperText: _freeTextOptions.isEmpty
-                          ? AppStrings.supplierHint
-                          : AppStrings.supplierAutocompleteHint,
-                      suffixIcon: _freeTextOptions.isNotEmpty
-                          ? const Icon(Icons.history_rounded)
-                          : null,
-                    ),
-                    textCapitalization: TextCapitalization.words,
+                TextFormField(
+                  controller: _partyQuery,
+                  decoration: InputDecoration(
+                    hintText: 'Search parties — defaults to Walk-in Customer',
+                    prefixIcon: const Icon(Icons.person_search_rounded),
+                    suffixIcon: _selectedParty != null
+                        ? IconButton(
+                            icon: const Icon(Icons.close_rounded),
+                            onPressed: _clearParty,
+                            tooltip: 'Clear',
+                          )
+                        : _isSearchingParties
+                        ? const Padding(
+                            padding: EdgeInsets.all(AppSizes.md),
+                            child: SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          )
+                        : null,
                   ),
-                  optionsViewBuilder: (context, onSelected, options) {
-                    final list = options.toList();
-                    if (list.isEmpty) return const SizedBox.shrink();
-                    return Align(
-                      alignment: Alignment.topLeft,
-                      child: Material(
-                        color: Colors.transparent,
-                        child: Container(
-                          margin: const EdgeInsets.only(top: AppSizes.xs),
-                          constraints: const BoxConstraints(
-                            maxHeight: 200,
-                            minWidth: 200,
-                            maxWidth: 360,
+                ),
+                if (_selectedParty == null && _partyResults.isNotEmpty) ...[
+                  const SizedBox(height: AppSizes.xs),
+                  Wrap(
+                    spacing: AppSizes.sm,
+                    runSpacing: AppSizes.xs,
+                    children: _partyResults.take(6).map((p) {
+                      return ActionChip(
+                        label: Text(p.name),
+                        avatar: Icon(
+                          p.name == 'Walk-in Customer'
+                              ? Icons.directions_walk_rounded
+                              : Icons.person_rounded,
+                          size: 16,
+                        ),
+                        onPressed: () => _pickParty(p),
+                      );
+                    }).toList(),
+                  ),
+                ],
+                const SizedBox(height: AppSizes.md),
+              ],
+
+              if (_type == 'STOCK_IN') ...[
+                // ── Vendor quick-select ───────────────────────────────────
+                if (_isLoadingSuppliers)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: AppSizes.sm),
+                    child: LinearProgressIndicator(),
+                  )
+                else if (_vendors.isNotEmpty || _selectedVendor != null) ...[
+                  Text(
+                    AppStrings.supplier,
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: AppSizes.xs),
+                  Wrap(
+                    spacing: AppSizes.sm,
+                    runSpacing: AppSizes.xs,
+                    children: _vendors.map((v) {
+                      final isSelected = _selectedVendor?.id == v.id;
+                      return FilterChip(
+                        label: Text(v.name),
+                        selected: isSelected,
+                        onSelected: (_) =>
+                            isSelected ? _clearVendor() : _selectVendor(v),
+                        avatar: Icon(
+                          Icons.business_rounded,
+                          size: 14,
+                          color: isSelected
+                              ? Theme.of(
+                                  context,
+                                ).colorScheme.onSecondaryContainer
+                              : Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: AppSizes.sm),
+                ],
+                // ── Free-text supplier (when no vendor selected) ──────────
+                if (_selectedVendor == null)
+                  RawAutocomplete<String>(
+                    textEditingController: _supplier,
+                    focusNode: _supplierFocusNode,
+                    optionsBuilder: (textEditingValue) {
+                      final query = textEditingValue.text.trim().toLowerCase();
+                      if (_freeTextOptions.isEmpty) {
+                        return const Iterable<String>.empty();
+                      }
+                      if (query.isEmpty) return _freeTextOptions;
+                      return _freeTextOptions.where(
+                        (o) => o.toLowerCase().contains(query),
+                      );
+                    },
+                    onSelected: (option) {
+                      _supplier
+                        ..text = option
+                        ..selection = TextSelection.collapsed(
+                          offset: option.length,
+                        );
+                    },
+                    fieldViewBuilder: (context, ctrl, focusNode, _) =>
+                        TextFormField(
+                          controller: ctrl,
+                          focusNode: focusNode,
+                          decoration: InputDecoration(
+                            labelText: AppStrings.supplier,
+                            helperText: _freeTextOptions.isEmpty
+                                ? AppStrings.supplierHint
+                                : AppStrings.supplierAutocompleteHint,
+                            suffixIcon: _freeTextOptions.isNotEmpty
+                                ? const Icon(Icons.history_rounded)
+                                : null,
                           ),
-                          decoration: ShapeDecoration(
-                            color: AppColors.white,
-                            shape: AppShapes.squircle(
-                              AppSizes.radiusMd,
-                              side: BorderSide(
-                                color: AppColors.hairline,
-                                width: 1,
+                          textCapitalization: TextCapitalization.words,
+                        ),
+                    optionsViewBuilder: (context, onSelected, options) {
+                      final list = options.toList();
+                      if (list.isEmpty) return const SizedBox.shrink();
+                      return Align(
+                        alignment: Alignment.topLeft,
+                        child: Material(
+                          color: Colors.transparent,
+                          child: Container(
+                            margin: const EdgeInsets.only(top: AppSizes.xs),
+                            constraints: const BoxConstraints(
+                              maxHeight: 200,
+                              minWidth: 200,
+                              maxWidth: 360,
+                            ),
+                            decoration: ShapeDecoration(
+                              color: AppColors.white,
+                              shape: AppShapes.squircle(
+                                AppSizes.radiusMd,
+                                side: BorderSide(
+                                  color: AppColors.hairline,
+                                  width: 1,
+                                ),
                               ),
                             ),
-                          ),
-                          child: ListView.builder(
-                            padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
-                            shrinkWrap: true,
-                            itemCount: list.length,
-                            itemBuilder: (context, i) => InkWell(
-                              onTap: () => onSelected(list[i]),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: AppSizes.md,
-                                  vertical: AppSizes.sm,
+                            child: ListView.builder(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: AppSizes.xs,
+                              ),
+                              shrinkWrap: true,
+                              itemCount: list.length,
+                              itemBuilder: (context, i) => InkWell(
+                                onTap: () => onSelected(list[i]),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: AppSizes.md,
+                                    vertical: AppSizes.sm,
+                                  ),
+                                  child: Text(list[i]),
                                 ),
-                                child: Text(list[i]),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                    );
-                  },
-                ),
-              const SizedBox(height: AppSizes.md),
+                      );
+                    },
+                  ),
+                const SizedBox(height: AppSizes.md),
+              ],
+
+              TextFormField(
+                controller: _note,
+                decoration: const InputDecoration(labelText: AppStrings.note),
+                textCapitalization: TextCapitalization.sentences,
+              ),
+              const SizedBox(height: AppSizes.xxl),
+
+              AppButton.primary(
+                label: AppStrings.confirm,
+                onPressed: _save,
+                isLoading: _isSaving,
+                size: AppButtonSize.lg,
+                fullWidth: true,
+              ),
+              const SizedBox(height: AppSizes.xl),
             ],
-
-            TextFormField(
-              controller: _note,
-              decoration: const InputDecoration(labelText: AppStrings.note),
-              textCapitalization: TextCapitalization.sentences,
-            ),
-            const SizedBox(height: AppSizes.xxl),
-
-            AppButton.primary(
-              label: AppStrings.confirm,
-              onPressed: _save,
-              isLoading: _isSaving,
-              size: AppButtonSize.lg,
-              fullWidth: true,
-            ),
-            const SizedBox(height: AppSizes.xl),
-          ],
+          ),
         ),
       ),
     );
