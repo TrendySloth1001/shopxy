@@ -13,6 +13,7 @@ import 'package:shopxy/features/invoices/presentation/providers/invoices_provide
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/shared/widgets/app_button.dart';
 import 'package:shopxy/shared/widgets/app_card.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_section_header.dart';
@@ -57,7 +58,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
   Future<void> _downloadPdf() async {
     if (_invoice == null) return;
     setState(() => _isDownloading = true);
-    final invoiceNo = _invoice!.invoiceNo;
+    final filename = _safePdfFilename(_invoice!.invoiceNo);
     final ds = context.read<InvoicesRemoteDataSource>();
     try {
       final response = await ds.downloadPdf(widget.invoiceId);
@@ -65,7 +66,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
         throw Exception('Failed to generate PDF');
       }
       final dir = await getApplicationDocumentsDirectory();
-      final file = File('${dir.path}/$invoiceNo.pdf');
+      final file = File('${dir.path}/$filename');
       await file.writeAsBytes(response.bodyBytes);
       await OpenFilex.open(file.path);
     } catch (e) {
@@ -78,6 +79,15 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
     }
   }
 
+  /// Invoice numbers can contain `/` (e.g. `PUR/26-27/00001`). Using
+  /// that raw as a filename makes Dart try to create nested directories
+  /// that don't exist — `PathNotFoundException`. Strip / replace anything
+  /// the host filesystem might choke on.
+  static String _safePdfFilename(String invoiceNo) {
+    final sanitized = invoiceNo.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
+    return '$sanitized.pdf';
+  }
+
   /// Downloads the PDF to the temp dir and pops the native share sheet.
   /// WhatsApp appears as a share target on both Android and iOS, so users
   /// effectively get a one-tap WhatsApp share — same flow handles email,
@@ -86,6 +96,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
     if (_invoice == null) return;
     setState(() => _isDownloading = true);
     final invoiceNo = _invoice!.invoiceNo;
+    final filename = _safePdfFilename(invoiceNo);
     final ds = context.read<InvoicesRemoteDataSource>();
     try {
       final response = await ds.downloadPdf(widget.invoiceId);
@@ -93,7 +104,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
         throw Exception('Failed to generate PDF');
       }
       final dir = await getTemporaryDirectory();
-      final file = File('${dir.path}/$invoiceNo.pdf');
+      final file = File('${dir.path}/$filename');
       await file.writeAsBytes(response.bodyBytes);
       await SharePlus.instance.share(
         ShareParams(
@@ -207,6 +218,35 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
     }
   }
 
+  /// Cancelling a draft is destructive — it reverses any stock movement
+  /// the draft would have posted on confirm. Gate it behind a dialog
+  /// because the bottom bar puts the action one tap away.
+  Future<void> _confirmAndCancel() async {
+    final invoice = _invoice;
+    if (invoice == null) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text(AppStrings.cancelInvoice),
+        content: Text(
+          'Cancel ${invoice.invoiceNo}? No stock will be moved and the '
+          'invoice will be marked as cancelled.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Keep draft'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text(AppStrings.cancelInvoice),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) await _updateStatus('CANCELLED');
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -249,39 +289,31 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
             ),
-          if (invoice.isDraft)
-            IconButton(
-              icon: const Icon(Icons.check_circle_outline_rounded),
-              tooltip: AppStrings.confirmInvoice,
-              onPressed: () => _updateStatus('CONFIRMED'),
-            ),
-          PopupMenuButton<String>(
-            itemBuilder: (_) => [
-              if (invoice.isDraft)
-                const PopupMenuItem(
-                  value: 'CANCELLED',
-                  child: Text(AppStrings.cancelInvoice),
-                ),
-              if (!invoice.isConfirmed)
-                const PopupMenuItem(
+          // Draft actions (Confirm / Cancel) live in the sticky bottom
+          // bar so they're impossible to miss. The overflow menu is kept
+          // for the only remaining secondary action: hard-delete a
+          // not-yet-confirmed invoice.
+          if (!invoice.isConfirmed)
+            PopupMenuButton<String>(
+              itemBuilder: (_) => const [
+                PopupMenuItem(
                   value: 'delete',
                   child: Text(AppStrings.delete),
                 ),
-            ],
-            onSelected: (v) async {
-              if (v == 'delete') {
-                await context
-                    .read<InvoicesProvider>()
-                    .deleteInvoice(invoice.id);
-                if (!context.mounted) return;
-                Navigator.pop(context);
-              } else {
-                _updateStatus(v);
-              }
-            },
-          ),
+              ],
+              onSelected: (v) async {
+                if (v == 'delete') {
+                  await context
+                      .read<InvoicesProvider>()
+                      .deleteInvoice(invoice.id);
+                  if (!context.mounted) return;
+                  Navigator.pop(context);
+                }
+              },
+            ),
         ],
       ),
+      bottomNavigationBar: invoice.isDraft ? _buildDraftActionBar() : null,
       body: Column(
         children: [
           GlassHero.line(
@@ -599,6 +631,52 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Sticky bar shown only while the invoice is a DRAFT. Confirm posts
+  /// the stock movement; Cancel is gated behind a dialog because it's
+  /// destructive (no stock is moved and the row is marked cancelled).
+  ///
+  /// AppButton's inner [Center] expands unbounded in [bottomNavigationBar]
+  /// — wrap each in a [SizedBox] with explicit height so they don't
+  /// stretch to fill the screen.
+  Widget _buildDraftActionBar() {
+    return SafeArea(
+      top: false,
+      child: Container(
+        decoration: const BoxDecoration(
+          color: AppColors.white,
+          border: Border(top: BorderSide(color: AppColors.hairline, width: 1)),
+        ),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSizes.lg,
+          vertical: AppSizes.md,
+        ),
+        child: SizedBox(
+          height: 52,
+          child: Row(
+            children: [
+              Expanded(
+                child: AppButton.secondary(
+                  label: AppStrings.cancelInvoice,
+                  onPressed: _confirmAndCancel,
+                  fullWidth: true,
+                ),
+              ),
+              const SizedBox(width: AppSizes.sm),
+              Expanded(
+                flex: 2,
+                child: AppButton.primary(
+                  label: AppStrings.confirmInvoice,
+                  onPressed: () => _updateStatus('CONFIRMED'),
+                  fullWidth: true,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
