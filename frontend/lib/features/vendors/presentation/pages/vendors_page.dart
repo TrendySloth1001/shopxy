@@ -4,6 +4,7 @@ import 'package:shopxy/features/notifications/domain/entities/invitation.dart';
 import 'package:shopxy/features/notifications/presentation/pages/send_invite_page.dart';
 import 'package:shopxy/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:shopxy/features/vendors/domain/entities/vendor.dart';
+import 'package:shopxy/features/vendors/presentation/pages/vendor_detail_page.dart';
 import 'package:shopxy/features/vendors/presentation/providers/vendors_provider.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
@@ -122,6 +123,7 @@ class _VendorsPageState extends State<VendorsPage> {
                                 return _VendorTile(
                                   vendor: v,
                                   invite: _inviteFor(v.id, outgoing),
+                                  onTap: () => _openDetail(context, v),
                                   onEdit: () =>
                                       _showVendorSheet(context, vendor: v),
                                   onDelete: () => _confirmDelete(context, v),
@@ -138,13 +140,24 @@ class _VendorsPageState extends State<VendorsPage> {
     );
   }
 
+  Future<void> _openDetail(BuildContext context, Vendor v) async {
+    // Capture before await so the post-pop refresh doesn't reach back
+    // into a possibly-disposed BuildContext.
+    final provider = context.read<VendorsProvider>();
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => VendorDetailPage(vendorId: v.id)),
+    );
+    if (mounted) provider.loadVendors(refresh: true);
+  }
+
   void _showVendorSheet(BuildContext context, {Vendor? vendor}) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: AppColors.white,
-      builder: (_) => _VendorFormSheet(vendor: vendor),
+      builder: (_) => VendorFormSheet(vendor: vendor),
     );
   }
 
@@ -213,6 +226,7 @@ class _VendorsPageState extends State<VendorsPage> {
 
 class _VendorTile extends StatelessWidget {
   const _VendorTile({
+    required this.onTap,
     required this.vendor,
     required this.invite,
     required this.onEdit,
@@ -222,6 +236,7 @@ class _VendorTile extends StatelessWidget {
   });
   final Vendor vendor;
   final Invitation? invite;
+  final VoidCallback onTap;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final VoidCallback onInvite;
@@ -233,7 +248,7 @@ class _VendorTile extends StatelessWidget {
     return Material(
       color: AppColors.white,
       child: InkWell(
-        onTap: onEdit,
+        onTap: onTap,
         splashColor: AppColors.surfaceTint,
         highlightColor: AppColors.surfaceTint,
         child: Padding(
@@ -446,15 +461,15 @@ class _InviteChip extends StatelessWidget {
   }
 }
 
-class _VendorFormSheet extends StatefulWidget {
-  const _VendorFormSheet({this.vendor});
+class VendorFormSheet extends StatefulWidget {
+  const VendorFormSheet({super.key, this.vendor});
   final Vendor? vendor;
 
   @override
-  State<_VendorFormSheet> createState() => _VendorFormSheetState();
+  State<VendorFormSheet> createState() => VendorFormSheetState();
 }
 
-class _VendorFormSheetState extends State<_VendorFormSheet> {
+class VendorFormSheetState extends State<VendorFormSheet> {
   final _formKey = GlobalKey<FormState>();
   bool _isSaving = false;
   late final TextEditingController _name;

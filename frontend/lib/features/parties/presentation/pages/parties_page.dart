@@ -4,6 +4,7 @@ import 'package:shopxy/features/notifications/domain/entities/invitation.dart';
 import 'package:shopxy/features/notifications/presentation/pages/send_invite_page.dart';
 import 'package:shopxy/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:shopxy/features/parties/domain/entities/party.dart';
+import 'package:shopxy/features/parties/presentation/pages/party_detail_page.dart';
 import 'package:shopxy/features/parties/presentation/providers/parties_provider.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
@@ -119,6 +120,7 @@ class _PartiesPageState extends State<PartiesPage> {
                                 return _PartyTile(
                                   party: p,
                                   invite: _inviteFor(p.id, outgoing),
+                                  onTap: () => _openDetail(context, p),
                                   onEdit: () =>
                                       _showPartySheet(context, party: p),
                                   onDelete: () => _confirmDelete(context, p),
@@ -133,6 +135,17 @@ class _PartiesPageState extends State<PartiesPage> {
         ],
       ),
     );
+  }
+
+  Future<void> _openDetail(BuildContext context, Party p) async {
+    // Capture before await so the post-pop refresh doesn't reach back
+    // into a possibly-disposed BuildContext.
+    final provider = context.read<PartiesProvider>();
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => PartyDetailPage(partyId: p.id)),
+    );
+    if (mounted) provider.loadParties(refresh: true);
   }
 
   void _showPartySheet(BuildContext context, {Party? party}) {
@@ -211,6 +224,7 @@ class _PartyTile extends StatelessWidget {
   const _PartyTile({
     required this.party,
     required this.invite,
+    required this.onTap,
     required this.onEdit,
     required this.onDelete,
     required this.onInvite,
@@ -218,6 +232,7 @@ class _PartyTile extends StatelessWidget {
   });
   final Party party;
   final Invitation? invite;
+  final VoidCallback onTap;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final VoidCallback onInvite;
@@ -229,7 +244,7 @@ class _PartyTile extends StatelessWidget {
     return Material(
       color: AppColors.white,
       child: InkWell(
-        onTap: onEdit,
+        onTap: onTap,
         splashColor: AppColors.surfaceTint,
         highlightColor: AppColors.surfaceTint,
         child: Padding(

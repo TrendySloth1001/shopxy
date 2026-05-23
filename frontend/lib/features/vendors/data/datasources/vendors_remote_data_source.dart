@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'package:shopxy/core/network/api_client.dart';
 import 'package:shopxy/features/vendors/data/models/vendor_dto.dart';
+import 'package:shopxy/features/vendors/data/models/vendor_overview_dto.dart';
 import 'package:shopxy/features/vendors/domain/entities/vendor.dart';
+import 'package:shopxy/features/vendors/domain/entities/vendor_overview.dart';
 
 class VendorsRemoteDataSource {
   const VendorsRemoteDataSource(this._client);
@@ -30,6 +32,12 @@ class VendorsRemoteDataSource {
     final res = await _client.get('/vendors/$id');
     if (res.statusCode != 200) throw Exception('Vendor not found');
     return VendorDto.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+  }
+
+  Future<VendorOverview> getVendorOverview(int id) async {
+    final res = await _client.get('/vendors/$id/overview');
+    if (res.statusCode != 200) throw Exception('Vendor not found');
+    return VendorOverviewDto.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
   Future<Vendor> createVendor({
