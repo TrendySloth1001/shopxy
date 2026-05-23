@@ -14,6 +14,7 @@ class CatalogProduct {
     this.hsnCode,
     this.categoryId,
     this.categoryName,
+    this.categoryIconName,
   });
 
   final int id;
@@ -29,6 +30,7 @@ class CatalogProduct {
   final String? hsnCode;
   final int? categoryId;
   final String? categoryName;
+  final String? categoryIconName;
 
   bool get inStock => stockQuantity > 0;
   bool get isDiscounted => mrp > 0 && mrp > sellingPrice;
@@ -62,6 +64,7 @@ class CatalogProduct {
       hsnCode: j['hsnCode'] as String?,
       categoryId: j['categoryId'] as int?,
       categoryName: category?['name'] as String?,
+      categoryIconName: category?['iconName'] as String?,
     );
   }
 }
@@ -71,11 +74,13 @@ class CatalogCategory {
     required this.id,
     required this.name,
     this.imageUrl,
+    this.iconName,
     this.productCount = 0,
   });
   final int id;
   final String name;
   final String? imageUrl;
+  final String? iconName;
   final int productCount;
 
   factory CatalogCategory.fromJson(Map<String, dynamic> j) {
@@ -83,6 +88,7 @@ class CatalogCategory {
       id: j['id'] as int,
       name: j['name'] as String,
       imageUrl: j['imageUrl'] as String?,
+      iconName: j['iconName'] as String?,
       productCount: ((j['_count'] as Map?)?['products'] as int?) ?? 0,
     );
   }

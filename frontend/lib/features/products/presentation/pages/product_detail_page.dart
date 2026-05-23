@@ -7,6 +7,7 @@ import 'package:shopxy/features/products/data/datasources/products_remote_data_s
 import 'package:shopxy/features/products/domain/entities/product.dart';
 import 'package:shopxy/features/products/presentation/pages/add_edit_product_page.dart';
 import 'package:shopxy/features/products/presentation/providers/products_provider.dart';
+import 'package:shopxy/features/categories/presentation/widgets/category_icon_catalog.dart';
 import 'package:shopxy/features/custom_fields/data/datasources/custom_fields_remote_data_source.dart';
 import 'package:shopxy/features/custom_fields/domain/entities/custom_field.dart';
 import 'package:shopxy/features/custom_fields/presentation/providers/custom_fields_provider.dart';
@@ -592,6 +593,7 @@ class _ProductHeaderCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       AppStatusBadge(
                         label: product.category!.name,
+                        icon: resolveCategoryIcon(product.category!.iconName),
                         dense: true,
                       ),
                     ],

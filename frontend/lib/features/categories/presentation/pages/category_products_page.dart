@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/features/categories/domain/entities/category.dart';
+import 'package:shopxy/features/categories/presentation/widgets/category_icon_catalog.dart';
 import 'package:shopxy/features/products/data/datasources/products_remote_data_source.dart';
 import 'package:shopxy/features/products/domain/entities/product.dart';
 import 'package:shopxy/features/products/presentation/pages/product_detail_page.dart';
@@ -241,8 +242,8 @@ class _Header extends StatelessWidget {
               shape: AppShapes.squircle(AppSizes.radiusMd),
             ),
             alignment: Alignment.center,
-            child: const Icon(
-              Icons.category_rounded,
+            child: Icon(
+              resolveCategoryIcon(category.iconName),
               color: AppColors.accentTeal,
               size: 26,
             ),

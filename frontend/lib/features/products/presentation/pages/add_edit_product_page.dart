@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/core/network/image_url.dart';
 import 'package:shopxy/features/categories/presentation/providers/categories_provider.dart';
+import 'package:shopxy/features/categories/presentation/widgets/category_icon_catalog.dart';
 import 'package:shopxy/features/custom_fields/data/datasources/custom_fields_remote_data_source.dart';
 import 'package:shopxy/features/custom_fields/presentation/widgets/custom_fields_form_section.dart';
 import 'package:shopxy/features/products/data/datasources/products_remote_data_source.dart';
@@ -692,7 +693,23 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                         ...categories.map(
                           (c) => DropdownMenuItem(
                             value: c.id,
-                            child: Text(c.name),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  resolveCategoryIcon(c.iconName),
+                                  size: 18,
+                                  color: AppColors.muted,
+                                ),
+                                const SizedBox(width: 8),
+                                Flexible(
+                                  child: Text(
+                                    c.name,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ],
