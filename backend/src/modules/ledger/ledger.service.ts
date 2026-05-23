@@ -71,15 +71,24 @@ export class LedgerService {
   /// Post a ledger entry (one row per line). Wraps everything in a
   /// serializable transaction and locks each product row before touching
   /// stock. Returns either { entries } or { error, … }.
-  async post(input: PostInput): Promise<PostResult | PostError> {
+  ///
+  /// Accepts an optional `tx` so callers that are already inside a
+  /// `$transaction` can post atomically with their parent work (e.g.
+  /// invoice creation + ledger post must succeed or fail together).
+  async post(
+    input: PostInput,
+    tx?: Prisma.TransactionClient,
+  ): Promise<PostResult | PostError> {
     if (input.lines.length === 0) {
       return { entries: [] };
     }
 
+    const db: Prisma.TransactionClient | typeof prisma = tx ?? prisma;
+
     // Idempotency: if the same key has been posted before, return the
     // already-posted entries instead of duplicating.
     if (input.idempotencyKey) {
-      const existing = await prisma.stockTransaction.findMany({
+      const existing = await db.stockTransaction.findMany({
         where: { idempotencyKey: input.idempotencyKey },
       });
       if (existing.length > 0) {
@@ -99,20 +108,56 @@ export class LedgerService {
       }
     }
 
-    try {
-      return await prisma.$transaction(async (tx) => {
-        const entries: PostedEntry[] = [];
-        // Sequential — locks must be acquired in deterministic order to
-        // avoid deadlocks when posting multi-line documents.
-        const sortedLines = [...input.lines].sort((a, b) => a.productId - b.productId);
+    const runPosting = async (txClient: Prisma.TransactionClient): Promise<PostResult> => {
+      const entries: PostedEntry[] = [];
+      // Sequential — locks must be acquired in deterministic order to
+      // avoid deadlocks when posting multi-line documents.
+      const sortedLines = [...input.lines].sort((a, b) => a.productId - b.productId);
 
-        for (const line of sortedLines) {
-          const posted = await this.postLine(tx, input, line);
+      for (const line of sortedLines) {
+        try {
+          const posted = await this.postLine(txClient, input, line);
           if ('error' in posted) throw posted;
           entries.push(posted);
+        } catch (err) {
+          // Idempotency unique-violation: another concurrent post won
+          // the race. Fall back to returning the existing rows for this
+          // idempotency key.
+          if (
+            input.idempotencyKey &&
+            err && typeof err === 'object' && 'code' in err &&
+            (err as { code?: string }).code === 'P2002'
+          ) {
+            const existing = await txClient.stockTransaction.findMany({
+              where: { idempotencyKey: input.idempotencyKey },
+            });
+            if (existing.length > 0) {
+              return {
+                entries: existing.map((e) => ({
+                  id: e.id,
+                  productId: e.productId,
+                  direction: e.direction as LedgerDirection,
+                  reasonCode: e.reasonCode as LedgerReasonCode,
+                  quantity: Number(e.quantity),
+                  unitCost: e.unitCost === null ? null : Number(e.unitCost),
+                  totalValue: e.totalValue === null ? null : Number(e.totalValue),
+                  stockBefore: Number(e.stockBefore ?? 0),
+                  stockAfter: Number(e.stockAfter ?? 0),
+                })),
+              };
+            }
+          }
+          throw err;
         }
-        return { entries };
-      });
+      }
+      return { entries };
+    };
+
+    try {
+      if (tx) {
+        return await runPosting(tx);
+      }
+      return await prisma.$transaction(runPosting);
     } catch (err) {
       if (err && typeof err === 'object' && 'error' in err) return err as PostError;
       throw err;
@@ -131,9 +176,9 @@ export class LedgerService {
       createdById?: number;
       note?: string;
     },
+    txClient?: Prisma.TransactionClient,
   ): Promise<PostResult | PostError | { error: 'Entry not found' } | { error: 'Already reversed' }> {
-    try {
-      return await prisma.$transaction(async (tx) => {
+    const work = async (tx: Prisma.TransactionClient) => {
         const original = await tx.stockTransaction.findUnique({
           where: { id: originalEntryId },
           include: { costConsumptions: true, costLayer: true },
@@ -224,7 +269,12 @@ export class LedgerService {
             },
           ],
         };
-      });
+    };
+    try {
+      if (txClient) {
+        return await work(txClient);
+      }
+      return await prisma.$transaction(work);
     } catch (err) {
       if (err && typeof err === 'object' && 'error' in err)
         return err as PostError | { error: 'Entry not found' } | { error: 'Already reversed' };
