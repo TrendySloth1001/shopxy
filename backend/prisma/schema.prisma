@@ -13,6 +13,19 @@ model User {
   passwordHash      String             @map("password_hash")
   role              String             @default("OWNER")
   isActive          Boolean            @default(true) @map("is_active")
+  emailNotifications Boolean           @default(true) @map("email_notifications")
+  /// Shop profile fields — rendered on invoices and exposed via the
+  /// merchant app's settings screen. Filled in by the owner; nullable so
+  /// pre-GST users (and customer-side accounts) work unchanged.
+  shopName          String?            @map("shop_name")
+  shopAddress       String?            @map("shop_address")
+  shopCity          String?            @map("shop_city")
+  shopState         String?            @map("shop_state")
+  shopStateCode     String?            @map("shop_state_code")
+  shopPinCode       String?            @map("shop_pin_code")
+  shopGstin         String?            @map("shop_gstin")
+  shopPan           String?            @map("shop_pan")
+  upiVpa            String?            @map("upi_vpa")
   createdAt         DateTime           @default(now()) @map("created_at")
   updatedAt         DateTime           @updatedAt @map("updated_at")
   refreshTokens     RefreshToken[]
@@ -348,6 +361,11 @@ model Vendor {
   phone             String?
   email             String?
   address           String?
+  city              String?
+  state             String?
+  stateCode         String?            @map("state_code")
+  pinCode           String?            @map("pin_code")
+  panNumber         String?            @map("pan_number")
   gstin             String?
   isActive          Boolean            @default(true) @map("is_active")
   /// Once an invited vendor accepts via their Shopxy account this is set to
@@ -373,6 +391,11 @@ model Party {
   phone       String?
   email       String?
   address     String?
+  city        String?
+  state       String?
+  stateCode   String?   @map("state_code")
+  pinCode     String?   @map("pin_code")
+  panNumber   String?   @map("pan_number")
   gstin       String?
   isActive    Boolean   @default(true) @map("is_active")
   /// True for system-managed parties (e.g. "Walk-in Customer") — the UI
@@ -400,6 +423,13 @@ model Invoice {
   id            Int           @id @default(autoincrement())
   invoiceNo     String        @unique @map("invoice_no")
   type          String
+  /// One of TAX_INVOICE | BILL_OF_SUPPLY | ESTIMATE | PROFORMA |
+  /// CREDIT_NOTE | DEBIT_NOTE. Renders as the document title at the top of
+  /// the printed PDF and drives the invoice-number prefix.
+  documentType  String        @default("TAX_INVOICE") @map("document_type")
+  /// Indian FY ("25-26"). Denormalised so report filters and the
+  /// invoice-number reset boundary survive without parsing invoiceDate.
+  financialYear String        @map("financial_year")
   status        String        @default("DRAFT")
   vendorId      Int?          @map("vendor_id")
   vendor        Vendor?       @relation(fields: [vendorId], references: [id], onDelete: SetNull)
@@ -408,13 +438,44 @@ model Invoice {
   customerName  String?       @map("customer_name")
   customerPhone String?       @map("customer_phone")
   customerGstin String?       @map("customer_gstin")
+  customerAddress   String?   @map("customer_address")
+  customerCity      String?   @map("customer_city")
+  customerState     String?   @map("customer_state")
+  customerStateCode String?   @map("customer_state_code")
+  customerPinCode   String?   @map("customer_pin_code")
+  customerPanNumber String?   @map("customer_pan_number")
   vendorName    String?       @map("vendor_name")
   vendorPhone   String?       @map("vendor_phone")
   vendorGstin   String?       @map("vendor_gstin")
+  vendorAddress     String?   @map("vendor_address")
+  vendorCity        String?   @map("vendor_city")
+  vendorState       String?   @map("vendor_state")
+  vendorStateCode   String?   @map("vendor_state_code")
+  vendorPinCode     String?   @map("vendor_pin_code")
+  vendorPanNumber   String?   @map("vendor_pan_number")
+  /// 2-digit GST state code of the place of supply. Drives IGST vs
+  /// CGST+SGST: when it differs from the shop's stateCode we charge IGST.
+  placeOfSupplyStateCode String? @map("place_of_supply_state_code")
+  /// Cached at create time so legacy code paths don't have to re-derive.
+  isInterstate  Boolean       @default(false) @map("is_interstate")
   subtotal      Decimal       @db.Decimal(12, 2)
+  /// Sum of (qty * unitPrice - lineDiscount) across items — the GST
+  /// "taxable value" before tax + cess.
+  taxableValue  Decimal       @default(0) @map("taxable_value") @db.Decimal(12, 2)
+  /// Kept for backwards-compatibility with older clients. Equals
+  /// igstAmount + cgstAmount + sgstAmount + cessAmount.
   taxAmount     Decimal       @default(0) @map("tax_amount") @db.Decimal(12, 2)
+  igstAmount    Decimal       @default(0) @map("igst_amount") @db.Decimal(12, 2)
+  cgstAmount    Decimal       @default(0) @map("cgst_amount") @db.Decimal(12, 2)
+  sgstAmount    Decimal       @default(0) @map("sgst_amount") @db.Decimal(12, 2)
+  cessAmount    Decimal       @default(0) @map("cess_amount") @db.Decimal(12, 2)
   discount      Decimal       @default(0) @db.Decimal(12, 2)
+  /// Delta applied to round the grand total to the nearest whole rupee.
+  /// `total = sum(lineTotals) + roundOff`.
+  roundOff      Decimal       @default(0) @map("round_off") @db.Decimal(6, 2)
   total         Decimal       @db.Decimal(12, 2)
+  /// "Rupees X and Paise Y only" — pre-rendered for the printed PDF.
+  amountInWords String?       @map("amount_in_words")
   note          String?
   invoiceDate   DateTime      @default(now()) @map("invoice_date")
   createdAt     DateTime      @default(now()) @map("created_at")
@@ -428,6 +489,9 @@ model Invoice {
   @@index([invoiceDate])
   @@index([vendorId])
   @@index([partyId])
+  @@index([financialYear])
+  @@index([financialYear, type])
+  @@index([placeOfSupplyStateCode])
   @@map("invoices")
 }
 
@@ -480,6 +544,13 @@ model InvoiceItem {
   unitPrice  Decimal  @map("unit_price") @db.Decimal(12, 2)
   taxPercent Decimal  @default(0) @map("tax_percent") @db.Decimal(5, 2)
   discount   Decimal  @default(0) @db.Decimal(12, 2)
+  /// (quantity * unitPrice) - discount. Pre-tax, pre-cess.
+  taxableValue Decimal @default(0) @map("taxable_value") @db.Decimal(12, 2)
+  igstAmount Decimal  @default(0) @map("igst_amount") @db.Decimal(12, 2)
+  cgstAmount Decimal  @default(0) @map("cgst_amount") @db.Decimal(12, 2)
+  sgstAmount Decimal  @default(0) @map("sgst_amount") @db.Decimal(12, 2)
+  cessRate   Decimal  @default(0) @map("cess_rate") @db.Decimal(5, 2)
+  cessAmount Decimal  @default(0) @map("cess_amount") @db.Decimal(12, 2)
   total      Decimal  @db.Decimal(12, 2)
 
   @@index([invoiceId])

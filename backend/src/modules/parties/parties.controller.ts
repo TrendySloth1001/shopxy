@@ -3,12 +3,21 @@ import { z } from 'zod';
 import { parsePagination, paginatedResponse } from '../../shared/http/pagination.js';
 import { partiesService } from './parties.service.js';
 
+// GST state code is a strict 2 digits; full validation against the lookup
+// is enforced client-side via the state drop-down.
+const stateCodeSchema = z.string().regex(/^\d{2}$/, 'must be 2-digit GST state code');
+
 const createPartySchema = z.object({
   name: z.string().min(1).max(200),
   contactName: z.string().max(200).optional(),
   phone: z.string().max(20).optional(),
   email: z.string().email().max(200).optional(),
   address: z.string().max(500).optional(),
+  city: z.string().max(120).optional(),
+  state: z.string().max(120).optional(),
+  stateCode: stateCodeSchema.optional(),
+  pinCode: z.string().max(10).optional(),
+  panNumber: z.string().max(20).optional(),
   gstin: z.string().max(20).optional(),
 });
 
@@ -19,6 +28,11 @@ const updatePartySchema = z
     phone: z.string().max(20).nullable().optional(),
     email: z.string().email().max(200).nullable().optional(),
     address: z.string().max(500).nullable().optional(),
+    city: z.string().max(120).nullable().optional(),
+    state: z.string().max(120).nullable().optional(),
+    stateCode: stateCodeSchema.nullable().optional(),
+    pinCode: z.string().max(10).nullable().optional(),
+    panNumber: z.string().max(20).nullable().optional(),
     gstin: z.string().max(20).nullable().optional(),
     isActive: z.boolean().optional(),
   })

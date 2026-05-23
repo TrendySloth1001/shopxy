@@ -22,6 +22,15 @@ const safeUserSelect = {
   role: true,
   isActive: true,
   emailNotifications: true,
+  shopName: true,
+  shopAddress: true,
+  shopCity: true,
+  shopState: true,
+  shopStateCode: true,
+  shopPinCode: true,
+  shopGstin: true,
+  shopPan: true,
+  upiVpa: true,
   createdAt: true,
 } as const;
 
@@ -153,13 +162,49 @@ export class AuthService {
 
   async updateProfile(
     userId: number,
-    data: { name?: string; emailNotifications?: boolean },
+    data: {
+      name?: string;
+      emailNotifications?: boolean;
+      // Shop profile fields — used to populate the invoice header /
+      // GST footer / UPI QR. All independently optional so the settings
+      // screen can PATCH a single field at a time.
+      shopName?: string | null;
+      shopAddress?: string | null;
+      shopCity?: string | null;
+      shopState?: string | null;
+      shopStateCode?: string | null;
+      shopPinCode?: string | null;
+      shopGstin?: string | null;
+      shopPan?: string | null;
+      upiVpa?: string | null;
+    },
   ) {
-    const updates: { name?: string; emailNotifications?: boolean } = {};
+    const updates: {
+      name?: string;
+      emailNotifications?: boolean;
+      shopName?: string | null;
+      shopAddress?: string | null;
+      shopCity?: string | null;
+      shopState?: string | null;
+      shopStateCode?: string | null;
+      shopPinCode?: string | null;
+      shopGstin?: string | null;
+      shopPan?: string | null;
+      upiVpa?: string | null;
+    } = {};
     if (data.name !== undefined) updates.name = data.name;
     if (data.emailNotifications !== undefined) {
       updates.emailNotifications = data.emailNotifications;
     }
+    if (data.shopName !== undefined) updates.shopName = data.shopName;
+    if (data.shopAddress !== undefined) updates.shopAddress = data.shopAddress;
+    if (data.shopCity !== undefined) updates.shopCity = data.shopCity;
+    if (data.shopState !== undefined) updates.shopState = data.shopState;
+    if (data.shopStateCode !== undefined) updates.shopStateCode = data.shopStateCode;
+    if (data.shopPinCode !== undefined) updates.shopPinCode = data.shopPinCode;
+    if (data.shopGstin !== undefined) updates.shopGstin = data.shopGstin;
+    if (data.shopPan !== undefined) updates.shopPan = data.shopPan;
+    if (data.upiVpa !== undefined) updates.upiVpa = data.upiVpa;
     if (Object.keys(updates).length === 0) {
       return prisma.user.findUnique({ where: { id: userId }, select: safeUserSelect });
     }

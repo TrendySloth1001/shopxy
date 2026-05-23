@@ -3,21 +3,34 @@ import PDFDocument from 'pdfkit';
 import { Prisma } from '@prisma/client';
 import { ledgerService } from '../ledger/ledger.service.js';
 import { nextInvoiceNo } from '../../shared/numbering/sequences.js';
+import { isInterstateSupply } from '../../shared/validation/indian.js';
+import { amountInWords } from '../../shared/numbering/amount_in_words.js';
 
 type InvoiceType = 'SALE' | 'PURCHASE';
 type InvoiceStatus = 'DRAFT' | 'CONFIRMED' | 'CANCELLED';
+
+type DocumentType =
+  | 'TAX_INVOICE'
+  | 'BILL_OF_SUPPLY'
+  | 'ESTIMATE'
+  | 'PROFORMA'
+  | 'CREDIT_NOTE'
+  | 'DEBIT_NOTE';
 
 interface InvoiceItemInput {
   productId: number;
   quantity: number;
   unitPrice: number;
   taxPercent?: number;
+  cessRate?: number;
   discount?: number;
 }
 
 export class InvoicesService {
   async createInvoice(data: {
     type: InvoiceType;
+    documentType?: DocumentType;
+    placeOfSupplyStateCode?: string;
     vendorId?: number;
     partyId?: number;
     customerName?: string;
@@ -32,18 +45,39 @@ export class InvoicesService {
       return { error: 'Invoice must have at least one item' as const };
     }
 
+    const documentType: DocumentType = data.documentType ?? 'TAX_INVOICE';
+
     let partyId: number | null = null;
     let customerName = data.customerName ?? null;
     let customerPhone = data.customerPhone ?? null;
     let customerGstin = data.customerGstin ?? null;
+    // Address snapshot. Filled from the party row below; left null when an
+    // ad-hoc walk-in is invoiced without a party.
+    let customerAddress: string | null = null;
+    let customerCity: string | null = null;
+    let customerState: string | null = null;
+    let customerStateCode: string | null = null;
+    let customerPinCode: string | null = null;
+    let customerPanNumber: string | null = null;
+
     let vendorName: string | null = null;
     let vendorPhone: string | null = null;
     let vendorGstin: string | null = null;
+    let vendorAddress: string | null = null;
+    let vendorCity: string | null = null;
+    let vendorState: string | null = null;
+    let vendorStateCode: string | null = null;
+    let vendorPinCode: string | null = null;
+    let vendorPanNumber: string | null = null;
 
     if (data.partyId) {
       const party = await prisma.party.findUnique({
         where: { id: data.partyId },
-        select: { id: true, name: true, phone: true, gstin: true, isActive: true },
+        select: {
+          id: true, name: true, phone: true, gstin: true, isActive: true,
+          address: true, city: true, state: true, stateCode: true,
+          pinCode: true, panNumber: true,
+        },
       });
       if (!party) return { error: 'Party not found' as const };
       if (!party.isActive) return { error: 'Party is inactive' as const };
@@ -51,19 +85,53 @@ export class InvoicesService {
       customerName = customerName ?? party.name;
       customerPhone = customerPhone ?? party.phone ?? null;
       customerGstin = customerGstin ?? party.gstin ?? null;
+      customerAddress = party.address ?? null;
+      customerCity = party.city ?? null;
+      customerState = party.state ?? null;
+      customerStateCode = party.stateCode ?? null;
+      customerPinCode = party.pinCode ?? null;
+      customerPanNumber = party.panNumber ?? null;
     }
 
     if (data.vendorId) {
       const vendor = await prisma.vendor.findUnique({
         where: { id: data.vendorId },
-        select: { id: true, name: true, phone: true, gstin: true, isActive: true },
+        select: {
+          id: true, name: true, phone: true, gstin: true, isActive: true,
+          address: true, city: true, state: true, stateCode: true,
+          pinCode: true, panNumber: true,
+        },
       });
       if (!vendor) return { error: 'Vendor not found' as const };
       if (!vendor.isActive) return { error: 'Vendor is inactive' as const };
       vendorName = vendor.name;
       vendorPhone = vendor.phone ?? null;
       vendorGstin = vendor.gstin ?? null;
+      vendorAddress = vendor.address ?? null;
+      vendorCity = vendor.city ?? null;
+      vendorState = vendor.state ?? null;
+      vendorStateCode = vendor.stateCode ?? null;
+      vendorPinCode = vendor.pinCode ?? null;
+      vendorPanNumber = vendor.panNumber ?? null;
     }
+
+    // Shop owner identity drives IGST vs CGST+SGST. Cached once per call so
+    // we don't re-query inside the per-line loop.
+    const shopOwner = await prisma.user.findFirst({
+      where: { role: 'OWNER', isActive: true },
+      select: { shopStateCode: true },
+    });
+    const shopStateCode = shopOwner?.shopStateCode ?? null;
+
+    // For SALE: place of supply defaults to the customer's state code. For
+    // PURCHASE: it defaults to the shop owner's state code (we are the
+    // recipient). Either way: when shop and place-of-supply state codes
+    // disagree we charge IGST; otherwise CGST+SGST.
+    const placeOfSupplyStateCode =
+      data.placeOfSupplyStateCode ??
+      (data.type === 'SALE' ? customerStateCode : shopStateCode) ??
+      null;
+    const isInterstate = isInterstateSupply(shopStateCode, placeOfSupplyStateCode);
 
     // Resolve products for snapshots
     const productIds = [...new Set(data.items.map((i) => i.productId))];
@@ -79,20 +147,49 @@ export class InvoicesService {
       }
     }
 
-    // Compute totals
+    // Per-line GST split — IGST or (CGST+SGST), plus optional cess.
+    // We round per-component to two decimals so the values stored agree
+    // with what would be re-computed by the printed PDF.
     let subtotal = 0;
-    let taxAmount = 0;
+    let taxableValueTotal = 0;
+    let igstTotal = 0;
+    let cgstTotal = 0;
+    let sgstTotal = 0;
+    let cessTotal = 0;
     const headerDiscount = data.discount ?? 0;
 
     const itemsData = data.items.map((item) => {
       const product = productMap.get(item.productId)!;
       const taxPct = item.taxPercent ?? 0;
+      const cessRate = item.cessRate ?? 0;
       const itemDiscount = item.discount ?? 0;
-      const base = item.quantity * item.unitPrice - itemDiscount;
-      const tax = (base * taxPct) / 100;
-      const total = base + tax;
-      subtotal += base;
-      taxAmount += tax;
+      const taxableValue = this.round2(item.quantity * item.unitPrice - itemDiscount);
+
+      let igstAmount = 0;
+      let cgstAmount = 0;
+      let sgstAmount = 0;
+      if (isInterstate) {
+        igstAmount = this.round2((taxableValue * taxPct) / 100);
+      } else {
+        // Compute the GST total first, then split, so CGST+SGST always
+        // re-sum to that total (avoids one-paisa drift from independent
+        // rounding of each half).
+        const gstTotal = this.round2((taxableValue * taxPct) / 100);
+        cgstAmount = this.round2(gstTotal / 2);
+        sgstAmount = this.round2(gstTotal - cgstAmount);
+      }
+      const cessAmount = this.round2((taxableValue * cessRate) / 100);
+      const lineTotal = this.round2(
+        taxableValue + igstAmount + cgstAmount + sgstAmount + cessAmount,
+      );
+
+      subtotal += taxableValue;
+      taxableValueTotal += taxableValue;
+      igstTotal += igstAmount;
+      cgstTotal += cgstAmount;
+      sgstTotal += sgstAmount;
+      cessTotal += cessAmount;
+
       return {
         productId: item.productId,
         productName: product.name,
@@ -103,12 +200,31 @@ export class InvoicesService {
         unitPrice: item.unitPrice,
         taxPercent: taxPct,
         discount: itemDiscount,
-        total: this.round2(total),
+        taxableValue,
+        igstAmount,
+        cgstAmount,
+        sgstAmount,
+        cessRate,
+        cessAmount,
+        total: lineTotal,
       };
     });
 
-    const total = this.round2(subtotal + taxAmount - headerDiscount);
-    const invoiceNo = await nextInvoiceNo(data.type);
+    const taxAmount = this.round2(igstTotal + cgstTotal + sgstTotal + cessTotal);
+    // Apply the header-level discount against the taxable value before
+    // computing the round-off so we still finish on a whole rupee.
+    const grandTotalRaw = this.round2(
+      taxableValueTotal + taxAmount - headerDiscount,
+    );
+    const roundOff = this.round2(Math.round(grandTotalRaw) - grandTotalRaw);
+    const total = this.round2(grandTotalRaw + roundOff);
+    const words = amountInWords(total);
+    const invoiceDate = data.invoiceDate ? new Date(data.invoiceDate) : new Date();
+    const { invoiceNo, financialYear } = await nextInvoiceNo(
+      data.type,
+      documentType,
+      invoiceDate,
+    );
 
     // Header + line items must materialise together. Even though Prisma's
     // nested create is already atomic at the row level, wrapping the
@@ -119,21 +235,44 @@ export class InvoicesService {
       return tx.invoice.create({
         data: {
           invoiceNo,
+          financialYear,
+          documentType,
           type: data.type,
           vendorId: data.vendorId ?? null,
           partyId,
           customerName,
           customerPhone,
           customerGstin,
+          customerAddress,
+          customerCity,
+          customerState,
+          customerStateCode,
+          customerPinCode,
+          customerPanNumber,
           vendorName,
           vendorPhone,
           vendorGstin,
+          vendorAddress,
+          vendorCity,
+          vendorState,
+          vendorStateCode,
+          vendorPinCode,
+          vendorPanNumber,
+          placeOfSupplyStateCode,
+          isInterstate,
           subtotal: this.round2(subtotal),
-          taxAmount: this.round2(taxAmount),
+          taxableValue: this.round2(taxableValueTotal),
+          taxAmount,
+          igstAmount: this.round2(igstTotal),
+          cgstAmount: this.round2(cgstTotal),
+          sgstAmount: this.round2(sgstTotal),
+          cessAmount: this.round2(cessTotal),
           discount: headerDiscount,
+          roundOff,
           total,
+          amountInWords: words,
           note: data.note ?? null,
-          invoiceDate: data.invoiceDate ? new Date(data.invoiceDate) : new Date(),
+          invoiceDate,
           items: { create: itemsData },
         },
         include: { items: true, vendor: true, party: true },
@@ -175,18 +314,41 @@ export class InvoicesService {
         select: {
           id: true,
           invoiceNo: true,
+          documentType: true,
+          financialYear: true,
           type: true,
           status: true,
           customerName: true,
           customerPhone: true,
           customerGstin: true,
+          customerAddress: true,
+          customerCity: true,
+          customerState: true,
+          customerStateCode: true,
+          customerPinCode: true,
+          customerPanNumber: true,
           vendorName: true,
           vendorPhone: true,
           vendorGstin: true,
+          vendorAddress: true,
+          vendorCity: true,
+          vendorState: true,
+          vendorStateCode: true,
+          vendorPinCode: true,
+          vendorPanNumber: true,
+          placeOfSupplyStateCode: true,
+          isInterstate: true,
           subtotal: true,
+          taxableValue: true,
           taxAmount: true,
+          igstAmount: true,
+          cgstAmount: true,
+          sgstAmount: true,
+          cessAmount: true,
           discount: true,
+          roundOff: true,
           total: true,
+          amountInWords: true,
           note: true,
           invoiceDate: true,
           createdAt: true,

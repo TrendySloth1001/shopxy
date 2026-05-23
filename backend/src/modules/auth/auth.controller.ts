@@ -1,6 +1,12 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import { authService } from './auth.service.js';
+import {
+  GSTIN_REGEX,
+  PAN_REGEX,
+  PINCODE_REGEX,
+  UPI_VPA_REGEX,
+} from '../../shared/validation/indian.js';
 
 const registerSchema = z.object({
   name: z.string().trim().min(2).max(80),
@@ -32,9 +38,43 @@ const changePasswordSchema = z.object({
     .regex(/[0-9]/),
 });
 
+// `.nullable()` on each shop field so the settings screen can clear a value
+// by sending null (e.g. user removes their GSTIN). Format checks run only
+// when a non-null string is supplied — null bypasses the regex.
+const nullableShopString = (max: number) => z.string().trim().max(max).nullable().optional();
+
 const updateProfileSchema = z.object({
   name: z.string().trim().min(2).max(80).optional(),
   emailNotifications: z.boolean().optional(),
+  shopName: nullableShopString(200),
+  shopAddress: nullableShopString(500),
+  shopCity: nullableShopString(120),
+  shopState: nullableShopString(120),
+  shopStateCode: z
+    .string()
+    .regex(/^\d{2}$/, 'must be 2-digit GST state code')
+    .nullable()
+    .optional(),
+  shopPinCode: z
+    .string()
+    .regex(PINCODE_REGEX, 'invalid Indian PIN code')
+    .nullable()
+    .optional(),
+  shopGstin: z
+    .string()
+    .regex(GSTIN_REGEX, 'invalid GSTIN')
+    .nullable()
+    .optional(),
+  shopPan: z
+    .string()
+    .regex(PAN_REGEX, 'invalid PAN')
+    .nullable()
+    .optional(),
+  upiVpa: z
+    .string()
+    .regex(UPI_VPA_REGEX, 'invalid UPI VPA')
+    .nullable()
+    .optional(),
 });
 
 export async function register(req: Request, res: Response) {
