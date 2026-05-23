@@ -13,6 +13,7 @@ import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
+import 'package:shopxy/shared/widgets/app_error_view.dart';
 import 'package:shopxy/shared/widgets/app_filter_pill.dart';
 import 'package:shopxy/shared/widgets/app_search_bar.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
@@ -246,14 +247,7 @@ class _ProductsPageState extends State<ProductsPage> {
             child: provider.isLoading && provider.products.isEmpty
                 ? const Center(child: CircularProgressIndicator())
                 : provider.error != null && provider.products.isEmpty
-                    ? EmptyState.line(
-                        kind: LineArt.warning,
-                        title: AppStrings.error,
-                        action: AppButton.secondary(
-                          label: AppStrings.retry,
-                          onPressed: () => provider.loadProducts(),
-                        ),
-                      )
+                    ? AppErrorView(onRetry: () => provider.loadProducts())
                     : provider.products.isEmpty
                         ? () {
                             // Low-stock or out-of-stock with zero

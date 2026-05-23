@@ -5,6 +5,7 @@ import 'package:shopxy/core/router/app_shell.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/categories/presentation/pages/categories_page.dart';
 import 'package:shopxy/features/challans/presentation/pages/challans_page.dart';
+import 'package:shopxy/features/orders/presentation/pages/orders_inbox_page.dart';
 import 'package:shopxy/features/parties/presentation/pages/parties_page.dart';
 import 'package:shopxy/features/profile/presentation/pages/settings_page.dart';
 import 'package:shopxy/features/reports/presentation/pages/reports_page.dart';
@@ -82,6 +83,17 @@ class ProfilePage extends StatelessWidget {
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const PartiesPage()),
+            ),
+          ),
+          _ProfileLink(
+            icon: Icons.inbox_outlined,
+            accent: AppColors.accentIndigo,
+            accentSoft: AppColors.accentIndigoSoft,
+            title: 'Orders',
+            subtitle: 'Purchase requests from your customers',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const OrdersInboxPage()),
             ),
           ),
           _ProfileLink(

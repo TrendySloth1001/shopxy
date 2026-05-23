@@ -36,6 +36,20 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
   bool _isSearching = false;
   bool _isSaving = false;
   Party? _selectedParty;
+  // Heuristic unsaved-changes guard. Not exact — only watches the
+  // party-name/note controllers plus item adds.
+  bool _dirty = false;
+
+  void _markDirty() {
+    if (!_dirty) _dirty = true;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _partyName.addListener(_markDirty);
+    _note.addListener(_markDirty);
+  }
 
   @override
   void dispose() {
@@ -63,6 +77,7 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
   }
 
   void _addProduct(Product p) {
+    _markDirty();
     final existing = _items.indexWhere((i) => i.productId == p.id);
     if (existing >= 0) {
       setState(() => _items[existing].quantity += 1);
@@ -120,6 +135,7 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
         note: _note.text.trim().isNotEmpty ? _note.text.trim() : null,
         items: _items,
       );
+      _dirty = false;
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
@@ -131,11 +147,39 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
     }
   }
 
+  Future<bool> _confirmDiscard() async {
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Discard changes?'),
+        content: const Text('Your edits will be lost.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Keep editing'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Discard'),
+          ),
+        ],
+      ),
+    );
+    return discard == true;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Scaffold(
+    return PopScope(
+      canPop: !_dirty,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final discard = await _confirmDiscard();
+        if (discard && context.mounted) Navigator.pop(context);
+      },
+      child: Scaffold(
       appBar: AppBar(
         title: const Text(AppStrings.createChallan),
         actions: [
@@ -301,6 +345,7 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
             ),
           ],
         ),
+      ),
       ),
     );
   }
