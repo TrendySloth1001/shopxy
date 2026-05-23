@@ -634,3 +634,14 @@ model PurchaseRequestItem {
   @@index([productId])
   @@map("purchase_request_items")
 }
+
+/// Monotonic counter keyed by an arbitrary string. Used to allocate
+/// invoice/challan numbers atomically: a Postgres UPSERT increment
+/// returns the next value in one round-trip, defeating the `count()+1`
+/// race flagged in audit C4.
+model Counter {
+  key   String @id
+  value Int    @default(0)
+
+  @@map("counters")
+}

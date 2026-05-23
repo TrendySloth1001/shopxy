@@ -23,6 +23,7 @@ import {
 } from '../../modules/purchase-requests/purchase-requests.routes.js';
 import { getFileStream, ensureBucket } from '../../modules/upload/upload.service.js';
 import { requireAuth } from '../../shared/http/requireAuth.js';
+import { requireRole } from '../../shared/http/requireRole.js';
 import { errorHandler } from '../../shared/http/errorHandler.js';
 
 const app = express();
@@ -51,23 +52,29 @@ app.get('/images/:filename', async (req: Request, res: Response) => {
 // ── Protected routes (Bearer token required) ──────────────────────────────────
 app.use(requireAuth);
 
-app.use('/categories', categoriesRouter);
-app.use('/custom-fields', customFieldsRouter);
-app.use('/products', productsRouter);
-app.use('/stock', stockRouter);
-app.use('/stock-adjustments', stockAdjustmentsRouter);
-app.use('/dashboard', dashboardRouter);
-app.use('/vendors', vendorsRouter);
-app.use('/parties', partiesRouter);
-app.use('/invoices', invoicesRouter);
-app.use('/challans', challansRouter);
-app.use('/upload', uploadRouter);
-app.use('/invitations', invitationsRouter);
-app.use('/notifications', notificationsRouter);
-app.use('/reports', reportsRouter);
+// Customer-surface (any authenticated role): /me/* and /notifications.
+// Invitations are also any-role so a customer can list incoming and respond.
 app.use('/me', meRouter);
 app.use('/me/orders', customerOrdersRouter);
-app.use('/orders', ordersRouter);
+app.use('/notifications', notificationsRouter);
+app.use('/invitations', invitationsRouter);
+
+// Merchant-only surface. All write/read endpoints scoped to shop data
+// require OWNER role to plug the cross-tenant authz hole flagged in audit C1.
+const ownerOnly = requireRole('OWNER');
+app.use('/categories', ownerOnly, categoriesRouter);
+app.use('/custom-fields', ownerOnly, customFieldsRouter);
+app.use('/products', ownerOnly, productsRouter);
+app.use('/stock', ownerOnly, stockRouter);
+app.use('/stock-adjustments', ownerOnly, stockAdjustmentsRouter);
+app.use('/dashboard', ownerOnly, dashboardRouter);
+app.use('/vendors', ownerOnly, vendorsRouter);
+app.use('/parties', ownerOnly, partiesRouter);
+app.use('/invoices', ownerOnly, invoicesRouter);
+app.use('/challans', ownerOnly, challansRouter);
+app.use('/upload', ownerOnly, uploadRouter);
+app.use('/reports', ownerOnly, reportsRouter);
+app.use('/orders', ownerOnly, ordersRouter);
 
 app.use(errorHandler);
 

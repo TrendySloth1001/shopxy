@@ -16,7 +16,13 @@ declare global {
   }
 }
 
-const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET ?? 'dev-access-secret-CHANGE-IN-PROD';
+function requireEnv(name: string): string {
+  const v = process.env[name];
+  if (!v) throw new Error(`${name} is required — refusing to start with a default secret`);
+  return v;
+}
+
+const ACCESS_SECRET = requireEnv('JWT_ACCESS_SECRET');
 
 export function requireAuth(req: Request, res: Response, next: NextFunction): void {
   const header = req.headers.authorization;
