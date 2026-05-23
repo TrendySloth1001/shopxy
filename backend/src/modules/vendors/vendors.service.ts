@@ -96,7 +96,7 @@ export class VendorsService {
     });
     if (!vendor) return null;
 
-    const [counts, totalsByType, recentInvoices, recentStockIns] =
+    const [counts, totalsByType, recentInvoices, recentStockIns, balanceParts] =
       await Promise.all([
         Promise.all([
           prisma.invoice.count({ where: { vendorId: id } }),
@@ -142,7 +142,23 @@ export class VendorsService {
             product: { select: { id: true, name: true, sku: true, unit: true } },
           },
         }),
+
+        // Outstanding payable = sum(PURCHASE,CONFIRMED) − sum(PAYMENT).
+        Promise.all([
+          prisma.invoice.aggregate({
+            where: { vendorId: id, type: 'PURCHASE', status: 'CONFIRMED' },
+            _sum: { total: true },
+          }),
+          prisma.payment.aggregate({
+            where: { vendorId: id, type: 'PAYMENT' },
+            _sum: { amount: true },
+          }),
+        ]),
       ]);
+
+    const billed = Number(balanceParts[0]._sum.total?.toString() ?? '0');
+    const paid = Number(balanceParts[1]._sum.amount?.toString() ?? '0');
+    const balance = billed - paid;
 
     const lastInvoice = recentInvoices[0]?.invoiceDate ?? null;
     const lastStockIn = recentStockIns[0]?.createdAt ?? null;
@@ -164,6 +180,7 @@ export class VendorsService {
       recentInvoices,
       recentStockIns,
       lastActivityAt,
+      balance,
     };
   }
 

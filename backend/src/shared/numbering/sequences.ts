@@ -62,3 +62,20 @@ export async function nextChallanNo(): Promise<string> {
   const seq = await nextCounter(`CH-${fy}`);
   return `CH/${fy}/${String(seq).padStart(5, '0')}`;
 }
+
+/// Payment reference number per FY. Mirrors `nextInvoiceNo`:
+///   * RECEIPT (money in from a party) → `RCT/FY/00001`
+///   * PAYMENT (money out to a vendor) → `PAY/FY/00001`
+/// Counter resets at the FY boundary because the counter key embeds FY.
+export async function nextPaymentRef(
+  type: 'RECEIPT' | 'PAYMENT',
+  paymentDate: Date = new Date(),
+): Promise<{ referenceNo: string; financialYear: string }> {
+  const fy = financialYearForDate(paymentDate);
+  const prefix = type === 'RECEIPT' ? 'RCT' : 'PAY';
+  const seq = await nextCounter(`${prefix}-${fy}`);
+  return {
+    referenceNo: `${prefix}/${fy}/${String(seq).padStart(5, '0')}`,
+    financialYear: fy,
+  };
+}

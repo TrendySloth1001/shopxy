@@ -117,7 +117,7 @@ export class PartiesService {
     });
     if (!party) return null;
 
-    const [counts, totalsByType, recentInvoices, recentChallans] =
+    const [counts, totalsByType, recentInvoices, recentChallans, balanceParts] =
       await Promise.all([
         // Aggregate counts — cheap and avoids two extra queries below.
         Promise.all([
@@ -162,7 +162,25 @@ export class PartiesService {
             _count: { select: { items: true } },
           },
         }),
+
+        // Current outstanding = sum(SALE,CONFIRMED) − sum(RECEIPT). Two
+        // parallel aggregates is cheaper than the full ledger walk and
+        // good enough for the header tile.
+        Promise.all([
+          prisma.invoice.aggregate({
+            where: { partyId: id, type: 'SALE', status: 'CONFIRMED' },
+            _sum: { total: true },
+          }),
+          prisma.payment.aggregate({
+            where: { partyId: id, type: 'RECEIPT' },
+            _sum: { amount: true },
+          }),
+        ]),
       ]);
+
+    const billed = Number(balanceParts[0]._sum.total?.toString() ?? '0');
+    const received = Number(balanceParts[1]._sum.amount?.toString() ?? '0');
+    const balance = billed - received;
 
     // Most recent activity across both invoices and challans.
     const lastInvoice = recentInvoices[0]?.invoiceDate ?? null;
@@ -185,6 +203,7 @@ export class PartiesService {
       recentInvoices,
       recentChallans,
       lastActivityAt,
+      balance,
     };
   }
 
