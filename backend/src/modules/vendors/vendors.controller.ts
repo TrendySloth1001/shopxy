@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { z } from 'zod';
 import { parsePagination, paginatedResponse } from '../../shared/http/pagination.js';
 import { vendorsService } from './vendors.service.js';
+import { paymentsService } from '../payments/payments.service.js';
 
 // 2-digit GST state code; full validation against the lookup is enforced
 // client-side via the state drop-down.
@@ -93,6 +94,14 @@ export class VendorsController {
     const payload = updateVendorSchema.parse(req.body);
     const vendor = await vendorsService.updateVendor(id, payload);
     res.json(vendor);
+  }
+
+  async ledger(req: Request, res: Response): Promise<void> {
+    const id = parseId(req.params.id);
+    if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
+    const ledger = await paymentsService.vendorLedger(id);
+    if (!ledger) { res.status(404).json({ error: 'Vendor not found' }); return; }
+    res.json(ledger);
   }
 
   async delete(req: Request, res: Response): Promise<void> {

@@ -39,6 +39,7 @@ model User {
   linkedVendors       Vendor[]
   purchaseRequests    PurchaseRequest[] @relation("CustomerPurchaseRequests")
   decidedRequests     PurchaseRequest[] @relation("MerchantDecidedRequests")
+  paymentsCreated     Payment[]         @relation("PaymentCreatedBy")
 
   @@index([email])
   @@map("users")
@@ -377,6 +378,7 @@ model Vendor {
   stockTransactions StockTransaction[]
   invoices          Invoice[]
   invitations       Invitation[]
+  payments          Payment[]
 
   @@index([name])
   @@index([isActive])
@@ -412,6 +414,7 @@ model Party {
   invoices    Invoice[]
   invitations Invitation[]
   purchaseRequests PurchaseRequest[]
+  payments    Payment[]
 
   @@index([name])
   @@index([isActive])
@@ -483,6 +486,7 @@ model Invoice {
   items         InvoiceItem[]
   challan       Challan?
   purchaseRequest PurchaseRequest?
+  payments      Payment[]
 
   @@index([type])
   @@index([status])
@@ -704,6 +708,42 @@ model PurchaseRequestItem {
   @@index([requestId])
   @@index([productId])
   @@map("purchase_request_items")
+}
+
+/// Money in / money out against a party (RECEIPT) or vendor (PAYMENT).
+/// Payments are first-class ledger rows that interleave with invoices on
+/// the party/vendor detail page to drive a running balance. Optionally
+/// allocated to one invoice; otherwise treated as on-account credit.
+model Payment {
+  id              Int      @id @default(autoincrement())
+  /// 'RECEIPT' (money in from a party) or 'PAYMENT' (money out to a vendor).
+  type            String
+  referenceNo     String   @unique @map("reference_no")
+  amount          Decimal  @db.Decimal(12, 2)
+  /// CASH | UPI | NEFT | RTGS | CHEQUE | CARD | OTHER.
+  mode            String
+  /// Free-form ref (UPI txn id, cheque no, etc.).
+  modeReference   String?  @map("mode_reference")
+  paymentDate     DateTime @default(now()) @map("payment_date")
+  /// Exactly one of partyId / vendorId is set (depending on type).
+  partyId         Int?     @map("party_id")
+  party           Party?   @relation(fields: [partyId], references: [id], onDelete: SetNull)
+  vendorId        Int?     @map("vendor_id")
+  vendor          Vendor?  @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+  /// Optional direct allocation to one invoice. Null = on-account credit.
+  invoiceId       Int?     @map("invoice_id")
+  invoice         Invoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  note            String?
+  /// Owner who recorded the payment.
+  createdById     Int?     @map("created_by_id")
+  createdBy       User?    @relation("PaymentCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([partyId, paymentDate])
+  @@index([vendorId, paymentDate])
+  @@index([invoiceId])
+  @@map("payments")
 }
 
 /// Monotonic counter keyed by an arbitrary string. Used to allocate

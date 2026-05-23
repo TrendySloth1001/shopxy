@@ -23,6 +23,7 @@ class VendorOverview {
     required this.recentInvoices,
     required this.recentStockIns,
     this.lastActivityAt,
+    this.balance = 0,
   });
 
   final int id;
@@ -47,6 +48,10 @@ class VendorOverview {
   final List<VendorInvoiceRef> recentInvoices;
   final List<VendorStockInRef> recentStockIns;
   final DateTime? lastActivityAt;
+  /// Outstanding payable in INR. Computed by the backend as
+  /// sum(PURCHASE CONFIRMED invoices) − sum(PAYMENT payments). > 0 means
+  /// the shop owes the vendor.
+  final double balance;
 
   double get totalPurchases => totals
       .where((t) => t.type == 'PURCHASE')

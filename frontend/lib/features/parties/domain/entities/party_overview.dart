@@ -26,6 +26,7 @@ class PartyOverview {
     required this.recentInvoices,
     required this.recentChallans,
     this.lastActivityAt,
+    this.balance = 0,
   });
 
   final int id;
@@ -51,6 +52,10 @@ class PartyOverview {
   final List<PartyInvoiceRef> recentInvoices;
   final List<PartyChallanRef> recentChallans;
   final DateTime? lastActivityAt;
+  /// Current outstanding receivable in INR. Computed by the backend as
+  /// sum(SALE CONFIRMED invoices) − sum(RECEIPT payments). > 0 means the
+  /// party owes the shop; < 0 means the shop owes them (advance/credit).
+  final double balance;
 
   double get totalSales => totals
       .where((t) => t.type == 'SALE')
