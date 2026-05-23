@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import prisma from '../../infra/db/prisma.js';
 import { invitationsService } from '../invitations/invitations.service.js';
 import { notificationsService } from '../notifications/notifications.service.js';
+import { logger } from '../../shared/logging/logger.js';
 
 function requireEnv(name: string): string {
   const v = process.env[name];
@@ -85,16 +86,12 @@ export class AuthService {
     try {
       await invitationsService.claimPendingForNewUser({ userId: user.id, email });
     } catch (err) {
-      // Stable JSON tag so Sentry/Logstash can alert on this without
-      // string-matching free-form log text. Keep the human-readable warn too.
-      console.warn('Failed to claim pending invitations for new user', user.id, err);
-      console.error(
-        JSON.stringify({
-          event: 'invitation_claim_failed',
-          userId: user.id,
-          error: err instanceof Error ? err.message : String(err),
-        }),
-      );
+      // Stable `event` tag so alerts can match without parsing free-form text.
+      // pino emits JSON natively so a single structured call covers both the
+      // human-readable warn and the machine-readable error record we used to
+      // emit as two separate console calls.
+      logger.error({ event: 'invitation_claim_failed', userId: user.id, err });
+      logger.warn({ userId: user.id, err }, 'invitation claim failed');
     }
 
     const accessToken = signAccess(user.id, user.email, user.role);
