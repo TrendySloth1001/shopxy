@@ -1,7 +1,15 @@
 import { Router } from 'express';
 import asyncHandler from '../../shared/http/asyncHandler.js';
 import { requireAuth } from '../../shared/http/requireAuth.js';
-import { register, login, refresh, logout, getMe, changePassword } from './auth.controller.js';
+import {
+  register,
+  login,
+  refresh,
+  logout,
+  getMe,
+  updateProfile,
+  changePassword,
+} from './auth.controller.js';
 
 const router = Router();
 
@@ -13,6 +21,7 @@ router.post('/logout', asyncHandler(logout));
 
 // Protected — token required
 router.get('/me', requireAuth, asyncHandler(getMe));
+router.patch('/me', requireAuth, asyncHandler(updateProfile));
 router.post('/change-password', requireAuth, asyncHandler(changePassword));
 
 export default router;

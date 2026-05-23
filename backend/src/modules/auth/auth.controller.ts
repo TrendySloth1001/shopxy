@@ -32,6 +32,11 @@ const changePasswordSchema = z.object({
     .regex(/[0-9]/),
 });
 
+const updateProfileSchema = z.object({
+  name: z.string().trim().min(2).max(80).optional(),
+  emailNotifications: z.boolean().optional(),
+});
+
 export async function register(req: Request, res: Response) {
   const parsed = registerSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -82,6 +87,20 @@ export async function logout(req: Request, res: Response) {
 
 export async function getMe(req: Request, res: Response) {
   const user = await authService.getMe(req.user!.sub);
+  if (!user) {
+    res.status(404).json({ error: 'User not found' });
+    return;
+  }
+  res.json(user);
+}
+
+export async function updateProfile(req: Request, res: Response) {
+  const parsed = updateProfileSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.flatten() });
+    return;
+  }
+  const user = await authService.updateProfile(req.user!.sub, parsed.data);
   if (!user) {
     res.status(404).json({ error: 'User not found' });
     return;
