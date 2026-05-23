@@ -13,5 +13,5 @@ COPY --from=base /app/dist ./dist
 COPY --from=base /app/node_modules ./node_modules
 COPY --from=base /app/prisma ./prisma
 COPY --from=base /app/package.json ./
-EXPOSE 3001
+EXPOSE 3003
 CMD ["node", "dist/infra/http/server.js"]

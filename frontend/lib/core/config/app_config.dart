@@ -5,6 +5,6 @@ class AppConfig {
   /// `${apiBaseUrl}auth/login`, not joined with a path separator.
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://localhost:3001/',
+    defaultValue: 'https://qjhcp0ph-3003.inc1.devtunnels.ms/',
   );
 }
