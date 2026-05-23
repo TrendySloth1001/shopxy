@@ -8,11 +8,28 @@ const itemSchema = z.object({
   quantity: z.number().positive(),
   unitPrice: z.number().nonnegative(),
   taxPercent: z.number().min(0).max(100).optional(),
+  /// GST compensation cess. Most line items leave this at 0; tobacco /
+  /// luxury goods / aerated drinks attract it.
+  cessRate: z.number().min(0).max(100).optional(),
   discount: z.number().nonnegative().optional(),
 });
 
+const documentTypeEnum = z.enum([
+  'TAX_INVOICE',
+  'BILL_OF_SUPPLY',
+  'ESTIMATE',
+  'PROFORMA',
+  'CREDIT_NOTE',
+  'DEBIT_NOTE',
+]);
+
 const createInvoiceSchema = z.object({
   type: z.enum(['SALE', 'PURCHASE']),
+  /// Defaults server-side to TAX_INVOICE when omitted.
+  documentType: documentTypeEnum.optional(),
+  /// 2-digit GST state code of the place of supply. When omitted the
+  /// service derives it (customer state for SALE, shop state for PURCHASE).
+  placeOfSupplyStateCode: z.string().regex(/^\d{2}$/, 'must be 2-digit GST state code').optional(),
   vendorId: z.number().int().positive().optional(),
   partyId: z.number().int().positive().optional(),
   customerName: z.string().max(200).optional(),

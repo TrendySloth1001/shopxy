@@ -7,6 +7,11 @@ export class VendorsService {
     phone?: string;
     email?: string;
     address?: string;
+    city?: string;
+    state?: string;
+    stateCode?: string;
+    pinCode?: string;
+    panNumber?: string;
     gstin?: string;
   }) {
     return prisma.vendor.create({ data });
@@ -44,6 +49,11 @@ export class VendorsService {
           phone: true,
           email: true,
           address: true,
+          city: true,
+          state: true,
+          stateCode: true,
+          pinCode: true,
+          panNumber: true,
           gstin: true,
           isActive: true,
           createdAt: true,
@@ -71,6 +81,11 @@ export class VendorsService {
         phone: true,
         email: true,
         address: true,
+        city: true,
+        state: true,
+        stateCode: true,
+        pinCode: true,
+        panNumber: true,
         gstin: true,
         isActive: true,
         createdAt: true,
@@ -181,6 +196,11 @@ export class VendorsService {
       phone?: string | null;
       email?: string | null;
       address?: string | null;
+      city?: string | null;
+      state?: string | null;
+      stateCode?: string | null;
+      pinCode?: string | null;
+      panNumber?: string | null;
       gstin?: string | null;
       isActive?: boolean;
     },

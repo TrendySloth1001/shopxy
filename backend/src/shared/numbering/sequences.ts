@@ -1,4 +1,5 @@
 import prisma from '../../infra/db/prisma.js';
+import { financialYearForDate } from '../validation/indian.js';
 
 /// Atomic per-key counter. Postgres UPSERT in a single round-trip means
 /// two concurrent allocations never collide — fixes the `count()+1`
@@ -12,19 +13,52 @@ async function nextCounter(key: string): Promise<number> {
   return rows[0].value;
 }
 
-function currentYearMonth(): string {
-  return new Date().toISOString().slice(0, 7).replace('-', '');
-}
-
-export async function nextInvoiceNo(type: 'SALE' | 'PURCHASE'): Promise<string> {
-  const prefix = type === 'SALE' ? 'INV' : 'PUR';
-  const ym = currentYearMonth();
-  const seq = await nextCounter(`${prefix}-${ym}`);
-  return `${prefix}-${ym}-${String(seq).padStart(5, '0')}`;
+/// Invoice number per Indian convention: ${prefix}/${FY}/${seq}.
+/// Example: `INV/25-26/00001`. Resets at the FY boundary because the
+/// counter key embeds the FY string.
+///
+/// Document types follow the same shape with different prefixes:
+///   TAX_INVOICE/BILL_OF_SUPPLY → INV (sale) | PUR (purchase)
+///   ESTIMATE / PROFORMA         → EST
+///   CREDIT_NOTE                 → CRN
+///   DEBIT_NOTE                  → DBN
+export async function nextInvoiceNo(
+  type: 'SALE' | 'PURCHASE',
+  documentType:
+    | 'TAX_INVOICE'
+    | 'BILL_OF_SUPPLY'
+    | 'ESTIMATE'
+    | 'PROFORMA'
+    | 'CREDIT_NOTE'
+    | 'DEBIT_NOTE' = 'TAX_INVOICE',
+  invoiceDate: Date = new Date(),
+): Promise<{ invoiceNo: string; financialYear: string }> {
+  const fy = financialYearForDate(invoiceDate);
+  let prefix: string;
+  switch (documentType) {
+    case 'ESTIMATE':
+    case 'PROFORMA':
+      prefix = 'EST';
+      break;
+    case 'CREDIT_NOTE':
+      prefix = 'CRN';
+      break;
+    case 'DEBIT_NOTE':
+      prefix = 'DBN';
+      break;
+    default:
+      prefix = type === 'SALE' ? 'INV' : 'PUR';
+  }
+  const seq = await nextCounter(`${prefix}-${fy}`);
+  return {
+    invoiceNo: `${prefix}/${fy}/${String(seq).padStart(5, '0')}`,
+    financialYear: fy,
+  };
 }
 
 export async function nextChallanNo(): Promise<string> {
-  const ym = currentYearMonth();
-  const seq = await nextCounter(`CH-${ym}`);
-  return `CH-${ym}-${String(seq).padStart(5, '0')}`;
+  const now = new Date();
+  const fy = financialYearForDate(now);
+  const seq = await nextCounter(`CH-${fy}`);
+  return `CH/${fy}/${String(seq).padStart(5, '0')}`;
 }
