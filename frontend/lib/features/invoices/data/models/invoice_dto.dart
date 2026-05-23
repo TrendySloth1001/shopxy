@@ -14,6 +14,12 @@ class InvoiceDto {
     taxPercent: _toDouble(json['taxPercent']),
     discount: _toDouble(json['discount']),
     total: _toDouble(json['total']),
+    taxableValue: _toDouble(json['taxableValue']),
+    igstAmount: _toDouble(json['igstAmount']),
+    cgstAmount: _toDouble(json['cgstAmount']),
+    sgstAmount: _toDouble(json['sgstAmount']),
+    cessRate: _toDouble(json['cessRate']),
+    cessAmount: _toDouble(json['cessAmount']),
   );
 
   static InvoiceVendorRef? _vendorFromJson(Map<String, dynamic>? json) {
@@ -37,10 +43,36 @@ class InvoiceDto {
       customerName: json['customerName'] as String?,
       customerPhone: json['customerPhone'] as String?,
       customerGstin: json['customerGstin'] as String?,
+      customerAddress: json['customerAddress'] as String?,
+      customerCity: json['customerCity'] as String?,
+      customerState: json['customerState'] as String?,
+      customerStateCode: json['customerStateCode'] as String?,
+      customerPinCode: json['customerPinCode'] as String?,
+      customerPanNumber: json['customerPanNumber'] as String?,
+      vendorName: json['vendorName'] as String?,
+      vendorPhone: json['vendorPhone'] as String?,
+      vendorGstin: json['vendorGstin'] as String?,
+      vendorAddress: json['vendorAddress'] as String?,
+      vendorCity: json['vendorCity'] as String?,
+      vendorState: json['vendorState'] as String?,
+      vendorStateCode: json['vendorStateCode'] as String?,
+      vendorPinCode: json['vendorPinCode'] as String?,
+      vendorPanNumber: json['vendorPanNumber'] as String?,
       subtotal: _toDouble(json['subtotal']),
       taxAmount: _toDouble(json['taxAmount']),
       discount: _toDouble(json['discount']),
       total: _toDouble(json['total']),
+      taxableValue: _toDouble(json['taxableValue']),
+      igstAmount: _toDouble(json['igstAmount']),
+      cgstAmount: _toDouble(json['cgstAmount']),
+      sgstAmount: _toDouble(json['sgstAmount']),
+      cessAmount: _toDouble(json['cessAmount']),
+      roundOff: _toDouble(json['roundOff']),
+      amountInWords: json['amountInWords'] as String?,
+      documentType: (json['documentType'] as String?) ?? 'TAX_INVOICE',
+      financialYear: (json['financialYear'] as String?) ?? '',
+      placeOfSupplyStateCode: json['placeOfSupplyStateCode'] as String?,
+      isInterstate: (json['isInterstate'] as bool?) ?? false,
       note: json['note'] as String?,
       invoiceDate: DateTime.parse(json['invoiceDate'] as String),
       createdAt: createdAt,
@@ -57,6 +89,7 @@ class InvoiceDto {
   }
 
   static double _toDouble(dynamic value) {
+    if (value == null) return 0;
     if (value is num) return value.toDouble();
     if (value is String) return double.tryParse(value) ?? 0;
     return 0;
@@ -71,6 +104,8 @@ class InvoiceDto {
     String? customerGstin,
     double? discount,
     String? note,
+    String? documentType,
+    String? placeOfSupplyStateCode,
     required List<Map<String, dynamic>> items,
   }) {
     final payload = <String, dynamic>{'type': type, 'items': items};
@@ -87,6 +122,12 @@ class InvoiceDto {
     }
     if (discount != null && discount > 0) payload['discount'] = discount;
     if (note != null && note.isNotEmpty) payload['note'] = note;
+    if (documentType != null && documentType.isNotEmpty) {
+      payload['documentType'] = documentType;
+    }
+    if (placeOfSupplyStateCode != null && placeOfSupplyStateCode.isNotEmpty) {
+      payload['placeOfSupplyStateCode'] = placeOfSupplyStateCode;
+    }
     return payload;
   }
 }
