@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:shopxy/core/config/app_config.dart';
 import 'package:shopxy/core/network/api_client.dart';
 import 'package:shopxy/features/invoices/data/models/invoice_dto.dart';
 import 'package:shopxy/features/invoices/domain/entities/invoice.dart';
@@ -14,6 +13,7 @@ class InvoicesRemoteDataSource {
     String? status,
     String? documentType,
     int? vendorId,
+    int? productId,
     String? search,
     int page = 1,
     int limit = 20,
@@ -23,6 +23,7 @@ class InvoicesRemoteDataSource {
     if (status != null) params['status'] = status;
     if (documentType != null) params['documentType'] = documentType;
     if (vendorId != null) params['vendorId'] = '$vendorId';
+    if (productId != null) params['productId'] = '$productId';
     if (search != null && search.isNotEmpty) params['search'] = search;
     final res = await _client.get('/invoices', queryParameters: params);
     if (res.statusCode != 200) {
@@ -109,8 +110,12 @@ class InvoicesRemoteDataSource {
     }
   }
 
-  Future<http.Response> downloadPdf(int id) async {
-    final uri = Uri.parse('${AppConfig.apiBaseUrl}invoices/$id/pdf');
-    return http.get(uri);
+  /// Returns the raw HTTP response so the caller can read [bodyBytes]
+  /// (PDF binary). Goes through [ApiClient.get] so the auth header is
+  /// attached — calling [http.get] directly here hit the `ownerOnly`
+  /// middleware and returned 401, which surfaced as "Failed to generate
+  /// PDF" in the UI.
+  Future<http.Response> downloadPdf(int id) {
+    return _client.get('/invoices/$id/pdf');
   }
 }
