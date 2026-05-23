@@ -179,6 +179,33 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     final provider = context.read<ProductsProvider>();
     final ds = context.read<ProductsRemoteDataSource>();
     final customFieldsDs = context.read<CustomFieldsRemoteDataSource>();
+    final messenger = ScaffoldMessenger.of(context);
+    // Soft guard: warn (don't block) if the typed SKU or barcode already
+    // belongs to a different product. Backend's unique constraints still
+    // own correctness; this just gives the user a chance to notice.
+    final currentId = widget.product?.id;
+    final skuText = _sku.text.trim();
+    final barcodeText = _barcode.text.trim();
+    Future<void> warnIfDuplicate(String code, String label) async {
+      if (code.isEmpty) return;
+      try {
+        final existing = await ds.lookupByCode(code);
+        if (existing != null && existing.id != currentId) {
+          messenger.showSnackBar(
+            SnackBar(
+              content: Text(
+                'A product with that $label already exists — saving will not merge',
+              ),
+            ),
+          );
+        }
+      } catch (_) {
+        // Lookup failures are non-critical; never block the save on them.
+      }
+    }
+    await warnIfDuplicate(skuText, 'SKU');
+    await warnIfDuplicate(barcodeText, 'barcode');
+    if (!mounted) return;
     try {
       int productId;
       if (isEditing) {
