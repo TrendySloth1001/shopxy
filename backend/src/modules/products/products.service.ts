@@ -136,7 +136,8 @@ export class ProductsService {
         }),
         prisma.product.count({ where }),
       ]);
-      return { products, total };
+      const enriched = await this._enrichWithLastActivity(products);
+      return { products: enriched, total };
     }
 
     if (options.lowStock) {
@@ -176,7 +177,8 @@ export class ProductsService {
         select: productSelect,
       });
 
-      return { products, total: lowStockIds.length };
+      const enriched = await this._enrichWithLastActivity(products);
+      return { products: enriched, total: lowStockIds.length };
     }
 
     const orderBy = { [options.sortBy]: options.sortOrder } as Record<string, 'asc' | 'desc'>;
@@ -192,7 +194,100 @@ export class ProductsService {
       prisma.product.count({ where }),
     ]);
 
-    return { products, total };
+    const enriched = await this._enrichWithLastActivity(products);
+    return { products: enriched, total };
+  }
+
+  /**
+   * Enrich a page of products with last STOCK_IN / STOCK_OUT timestamps and
+   * the vendor of the most recent STOCK_IN (when one exists).
+   *
+   * Single window-function pass over the relevant slice of stock_transactions,
+   * so this stays O(page) regardless of ledger size. `lastVendor` is suppressed
+   * when both vendor_id and vendor_name come back null — those are free-text
+   * suppliers from the legacy `supplier_name` column.
+   */
+  private async _enrichWithLastActivity<T extends { id: number }>(
+    products: T[],
+  ): Promise<Array<T & {
+    lastStockInAt: Date | null;
+    lastStockOutAt: Date | null;
+    lastVendor: { id: number; name: string } | null;
+  }>> {
+    if (products.length === 0) {
+      return products.map((p) => ({
+        ...p,
+        lastStockInAt: null,
+        lastStockOutAt: null,
+        lastVendor: null,
+      }));
+    }
+
+    const ids = products.map((p) => p.id);
+    const rows = await prisma.$queryRaw<
+      Array<{
+        product_id: number;
+        type: string;
+        vendor_id: number | null;
+        vendor_name: string | null;
+        created_at: Date;
+      }>
+    >`
+      WITH ranked AS (
+        SELECT
+          st.product_id,
+          st.type,
+          st.vendor_id,
+          st.created_at,
+          v.name AS vendor_name,
+          ROW_NUMBER() OVER (PARTITION BY st.product_id, st.type ORDER BY st.created_at DESC) AS rn
+        FROM stock_transactions st
+        LEFT JOIN vendors v ON v.id = st.vendor_id
+        WHERE st.product_id = ANY(${ids}::int[])
+          AND st.type IN ('STOCK_IN','STOCK_OUT')
+      )
+      SELECT product_id, type, vendor_id, vendor_name, created_at
+      FROM ranked
+      WHERE rn = 1
+    `;
+
+    // Bucket by productId, splitting last-IN vs last-OUT.
+    const byProduct = new Map<
+      number,
+      {
+        lastIn?: { vendorId: number | null; vendorName: string | null; at: Date };
+        lastOut?: { at: Date };
+      }
+    >();
+    for (const r of rows) {
+      const bucket = byProduct.get(r.product_id) ?? {};
+      if (r.type === 'STOCK_IN') {
+        bucket.lastIn = {
+          vendorId: r.vendor_id,
+          vendorName: r.vendor_name,
+          at: r.created_at,
+        };
+      } else if (r.type === 'STOCK_OUT') {
+        bucket.lastOut = { at: r.created_at };
+      }
+      byProduct.set(r.product_id, bucket);
+    }
+
+    return products.map((p) => {
+      const b = byProduct.get(p.id);
+      const lastIn = b?.lastIn;
+      const lastOut = b?.lastOut;
+      const lastVendor =
+        lastIn && lastIn.vendorId != null && lastIn.vendorName != null
+          ? { id: lastIn.vendorId, name: lastIn.vendorName }
+          : null;
+      return {
+        ...p,
+        lastStockInAt: lastIn?.at ?? null,
+        lastStockOutAt: lastOut?.at ?? null,
+        lastVendor,
+      };
+    });
   }
 
   lookupProduct(code: string) {

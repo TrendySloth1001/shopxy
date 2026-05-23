@@ -8,8 +8,9 @@ import 'package:shopxy/features/products/presentation/pages/product_detail_page.
 import 'package:shopxy/features/products/presentation/pages/qr_scanner_page.dart';
 import 'package:shopxy/features/products/presentation/providers/products_provider.dart';
 import 'package:shopxy/features/products/presentation/widgets/product_list_tile.dart';
-import 'package:shopxy/features/products/presentation/widgets/products_kpi_strip.dart';
-import 'package:shopxy/features/dashboard/presentation/providers/dashboard_provider.dart';
+import 'package:shopxy/features/stock/presentation/widgets/stock_bottom_sheet.dart';
+import 'package:shopxy/core/prefs/navigation_prefs.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
@@ -48,12 +49,6 @@ class _ProductsPageState extends State<ProductsPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       context.read<ProductsProvider>().loadProducts();
-      // Kick a dashboard stats fetch if the user lands here cold —
-      // the KPI strip reads from DashboardProvider.stats.
-      final dash = context.read<DashboardProvider>();
-      if (dash.stats == null && !dash.isLoading) {
-        dash.loadStats();
-      }
     });
   }
 
@@ -95,6 +90,23 @@ class _ProductsPageState extends State<ProductsPage> {
         builder: (_) => ProductDetailPage(productId: product.id),
       ),
     );
+  }
+
+  /// Opens the StockBottomSheet for the given product pre-set to either
+  /// STOCK_IN or STOCK_OUT — wired from the Slidable actions on each
+  /// product row. On a successful post we kick a list reload so qty +
+  /// stock state stay in sync.
+  Future<void> _openStockSheet(Product product, String type) async {
+    final result = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.white,
+      builder: (_) => StockBottomSheet(product: product, initialType: type),
+    );
+    if (!mounted) return;
+    if (result == true) {
+      context.read<ProductsProvider>().loadProducts();
+    }
   }
 
   void _scheduleLoadMore() {
@@ -180,6 +192,22 @@ class _ProductsPageState extends State<ProductsPage> {
         leading: const ShellMenuButton(),
         title: const Text(AppStrings.navProducts),
         actions: [
+          Builder(
+            builder: (ctx) {
+              final prefs = ctx.watch<NavigationPrefsProvider>();
+              return IconButton(
+                tooltip: prefs.isCompact ? 'Switch to card view' : 'Switch to compact view',
+                icon: Icon(
+                  prefs.isCompact
+                      ? Icons.view_agenda_outlined
+                      : Icons.view_compact_outlined,
+                ),
+                onPressed: () => prefs.setDensity(
+                  prefs.isCompact ? ListDensity.comfortable : ListDensity.compact,
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.add_rounded),
             tooltip: AppStrings.addProduct,
@@ -202,24 +230,6 @@ class _ProductsPageState extends State<ProductsPage> {
               onChanged: provider.setSearch,
               trailing: _ScanAction(onTap: _openScanner),
             ),
-          ),
-          ProductsKpiStrip(
-            onTapAll: () {
-              if (provider.lowStockOnly) provider.setLowStockOnly(false);
-              if (provider.outOfStockOnly) provider.setOutOfStockOnly(false);
-              if (provider.categoryFilter != null) {
-                setState(() => _selectedCategoryName = null);
-                provider.setCategoryFilter(null);
-              }
-            },
-            onTapLowStock: () {
-              if (provider.outOfStockOnly) provider.setOutOfStockOnly(false);
-              provider.setLowStockOnly(!provider.lowStockOnly);
-            },
-            onTapOutOfStock: () {
-              if (provider.lowStockOnly) provider.setLowStockOnly(false);
-              provider.setOutOfStockOnly(!provider.outOfStockOnly);
-            },
           ),
           AppFilterStrip(
             children: [
@@ -345,10 +355,45 @@ class _ProductsPageState extends State<ProductsPage> {
                                     label: label,
                                     first: index == 0,
                                   ),
-                                  product: (p) => ProductListTile(
-                                    product: p,
-                                    showCategory: showCategoryOnRow,
-                                    onTap: () => _openProductDetail(p),
+                                  product: (p) => Slidable(
+                                    key: ValueKey('product_${p.id}'),
+                                    // Swipe right (start) → Stock In.
+                                    startActionPane: ActionPane(
+                                      motion: const StretchMotion(),
+                                      extentRatio: 0.28,
+                                      children: [
+                                        SlidableAction(
+                                          onPressed: (_) =>
+                                              _openStockSheet(p, 'STOCK_IN'),
+                                          backgroundColor: AppColors.success,
+                                          foregroundColor: AppColors.white,
+                                          icon: Icons.arrow_downward_rounded,
+                                          label: 'Stock in',
+                                          padding: EdgeInsets.zero,
+                                        ),
+                                      ],
+                                    ),
+                                    // Swipe left (end) → Stock Out.
+                                    endActionPane: ActionPane(
+                                      motion: const StretchMotion(),
+                                      extentRatio: 0.28,
+                                      children: [
+                                        SlidableAction(
+                                          onPressed: (_) =>
+                                              _openStockSheet(p, 'STOCK_OUT'),
+                                          backgroundColor: AppColors.error,
+                                          foregroundColor: AppColors.white,
+                                          icon: Icons.arrow_upward_rounded,
+                                          label: 'Stock out',
+                                          padding: EdgeInsets.zero,
+                                        ),
+                                      ],
+                                    ),
+                                    child: ProductListTile(
+                                      product: p,
+                                      showCategory: showCategoryOnRow,
+                                      onTap: () => _openProductDetail(p),
+                                    ),
                                   ),
                                 );
                               },
