@@ -1,5 +1,8 @@
 import 'dotenv/config';
 import express, { Request, Response } from 'express';
+import helmet from 'helmet';
+import cors from 'cors';
+import rateLimit from 'express-rate-limit';
 import prisma from '../db/prisma.js';
 import authRouter from '../../modules/auth/auth.routes.js';
 import categoriesRouter from '../../modules/categories/categories.routes.js';
@@ -28,24 +31,65 @@ import { errorHandler } from '../../shared/http/errorHandler.js';
 
 const app = express();
 
+// Security headers (CSP, X-Frame-Options, etc.) — default helmet config is fine
+// for a JSON API; we don't serve HTML beyond the image proxy.
+app.use(helmet());
+
+// CORS. In prod, set CORS_ORIGINS to a comma-separated allowlist
+// (e.g. "https://app.example.com,https://merchant.example.com").
+// In dev we fall back to `true` (reflect request origin) so mobile clients
+// hitting the box from arbitrary LAN IPs / emulator origins still work.
+const corsOriginsEnv = (process.env.CORS_ORIGINS ?? '').split(',').filter(Boolean);
+app.use(
+  cors({
+    origin: corsOriginsEnv.length > 0 ? corsOriginsEnv : true,
+    credentials: true,
+  }),
+);
+
 app.use(express.json({ limit: '2mb' }));
 
-app.get('/health', (_req, res) => {
-  res.json({ status: 'ok' });
+// Rate-limit auth endpoints: 10 requests per minute per IP. Mounted before
+// the /auth router so login/refresh brute-force attempts get throttled.
+const authLimiter = rateLimit({
+  windowMs: 60_000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.get('/health', async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.status(200).json({ status: 'ok' });
+  } catch {
+    res.status(503).json({ status: 'degraded', db: 'down' });
+  }
 });
 
 // ── Public routes (no auth) ───────────────────────────────────────────────────
-app.use('/auth', authRouter);
+app.use('/auth', authLimiter, authRouter);
 
 // Image proxy is public so cached images display without a token in <img> tags
+const SAFE_FILENAME_RE = /^[a-zA-Z0-9_.-]+$/;
 app.get('/images/:filename', async (req: Request, res: Response) => {
-  const result = await getFileStream(req.params.filename);
+  const { filename } = req.params;
+  // Defeat path traversal: reject anything containing slashes, "..", or other
+  // path metacharacters before we hand it to the storage layer.
+  if (!SAFE_FILENAME_RE.test(filename)) {
+    res.status(400).json({ error: 'Invalid filename' });
+    return;
+  }
+  const result = await getFileStream(filename);
   if (!result) {
     res.status(404).json({ error: 'Image not found' });
     return;
   }
   res.setHeader('Content-Type', result.contentType);
-  res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  // 1h cache (not immutable): images can be deleted/replaced via the upload
+  // module, so a stale CDN/browser cache should self-heal within an hour
+  // rather than persist for a year.
+  res.setHeader('Cache-Control', 'public, max-age=3600');
   result.stream.pipe(res);
 });
 
