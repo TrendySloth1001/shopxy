@@ -57,6 +57,101 @@ export class VendorsService {
     return { vendors, total };
   }
 
+  /// One-shot detail payload for the vendor page. Pulls vendor header,
+  /// recent purchase invoices, recent inbound stock ledger entries,
+  /// totals grouped by invoice type and the linked-user identity in
+  /// parallel. Mirrors `partiesService.getPartyOverview`.
+  async getVendorOverview(id: number) {
+    const vendor = await prisma.vendor.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        contactName: true,
+        phone: true,
+        email: true,
+        address: true,
+        gstin: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+        linkedUserId: true,
+        linkedUser: { select: { id: true, name: true, email: true } },
+      },
+    });
+    if (!vendor) return null;
+
+    const [counts, totalsByType, recentInvoices, recentStockIns] =
+      await Promise.all([
+        Promise.all([
+          prisma.invoice.count({ where: { vendorId: id } }),
+          prisma.stockTransaction.count({
+            where: { vendorId: id, direction: 'IN' },
+          }),
+        ]).then(([invoices, stockIns]) => ({ invoices, stockIns })),
+
+        prisma.invoice.groupBy({
+          by: ['type'],
+          where: { vendorId: id },
+          _sum: { total: true },
+          _count: { _all: true },
+        }),
+
+        prisma.invoice.findMany({
+          where: { vendorId: id },
+          orderBy: { invoiceDate: 'desc' },
+          take: 15,
+          select: {
+            id: true,
+            invoiceNo: true,
+            type: true,
+            status: true,
+            invoiceDate: true,
+            total: true,
+            _count: { select: { items: true } },
+          },
+        }),
+
+        prisma.stockTransaction.findMany({
+          where: { vendorId: id, direction: 'IN' },
+          orderBy: { createdAt: 'desc' },
+          take: 15,
+          select: {
+            id: true,
+            quantity: true,
+            unitCost: true,
+            totalValue: true,
+            createdAt: true,
+            reasonCode: true,
+            sourceType: true,
+            product: { select: { id: true, name: true, sku: true, unit: true } },
+          },
+        }),
+      ]);
+
+    const lastInvoice = recentInvoices[0]?.invoiceDate ?? null;
+    const lastStockIn = recentStockIns[0]?.createdAt ?? null;
+    const lastActivityAt =
+      lastInvoice && lastStockIn
+        ? lastInvoice > lastStockIn
+          ? lastInvoice
+          : lastStockIn
+        : lastInvoice ?? lastStockIn;
+
+    return {
+      vendor,
+      counts,
+      totals: totalsByType.map((t) => ({
+        type: t.type,
+        count: t._count._all,
+        total: t._sum.total ?? 0,
+      })),
+      recentInvoices,
+      recentStockIns,
+      lastActivityAt,
+    };
+  }
+
   async getVendorById(id: number) {
     return prisma.vendor.findUnique({
       where: { id },

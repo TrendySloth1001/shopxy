@@ -4,13 +4,27 @@ import { UNITS } from '../../shared/constants/index.js';
 import { parsePagination, paginatedResponse } from '../../shared/http/pagination.js';
 import { productsService } from './products.service.js';
 
+// Accepts either an absolute URL (legacy rows, externally-hosted images)
+// or a server-relative path like `/images/<key>` (the format our own
+// /upload endpoint returns — relative on purpose so the same row works
+// against localhost, devtunnels, and prod). Using bare `z.string().url()`
+// here silently rejected every fresh upload, leaving newly-created
+// products without an image even though the file landed in MinIO.
+const productImageRef = z
+  .string()
+  .min(1)
+  .max(2048)
+  .refine((v) => /^https?:\/\//i.test(v) || v.startsWith('/'), {
+    message: 'Must be an http(s) URL or a server-relative path',
+  });
+
 const createProductSchema = z.object({
   name: z.string().min(1).max(200),
   description: z.string().max(1000).optional(),
   sku: z.string().min(1).max(50),
   barcode: z.string().max(50).optional(),
   hsnCode: z.string().max(20).optional(),
-  imageUrls: z.array(z.string().url()).max(10).optional(),
+  imageUrls: z.array(productImageRef).max(10).optional(),
   mrp: z.number().positive(),
   sellingPrice: z.number().positive(),
   purchasePrice: z.number().nonnegative(),
@@ -40,7 +54,7 @@ const updateProductSchema = z
   .refine((d) => Object.keys(d).length > 0, { message: 'At least one field is required' });
 
 const addImageSchema = z.object({
-  url: z.string().url(),
+  url: productImageRef,
   sortOrder: z.number().int().nonnegative().optional(),
 });
 
@@ -67,6 +81,7 @@ export class ProductsController {
     const search = (req.query.search as string) || '';
     const categoryId = req.query.categoryId ? Number(req.query.categoryId) : undefined;
     const lowStock = req.query.lowStock === 'true';
+    const outOfStock = req.query.outOfStock === 'true';
     const activeOnly = req.query.active !== 'false';
     const sortBy = (req.query.sortBy as string) || 'updatedAt';
     const sortOrder = req.query.sortOrder === 'asc' ? 'asc' : 'desc';
@@ -74,6 +89,7 @@ export class ProductsController {
     const { products, total } = await productsService.listProducts({
       activeOnly,
       lowStock,
+      outOfStock,
       categoryId,
       search,
       sortBy,

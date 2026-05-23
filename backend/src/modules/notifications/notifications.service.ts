@@ -1,5 +1,5 @@
 import prisma from '../../infra/db/prisma.js';
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
 const notifSelect = {
   id: true,
@@ -49,6 +49,26 @@ export class NotificationsService {
       data: { readAt: new Date() },
     });
     return result.count > 0;
+  }
+
+  /// Write a single notification row. Used by other modules
+  /// (invitations, orders) when fanning out events to recipients.
+  async create(opts: {
+    userId: number;
+    kind: string;
+    title: string;
+    body?: string;
+    data?: Record<string, unknown>;
+  }) {
+    return prisma.notification.create({
+      data: {
+        userId: opts.userId,
+        kind: opts.kind,
+        title: opts.title,
+        body: opts.body ?? null,
+        data: (opts.data ?? Prisma.JsonNull) as Prisma.InputJsonValue,
+      },
+    });
   }
 
   async markAllRead(userId: number) {
