@@ -4,10 +4,15 @@ import 'package:provider/provider.dart';
 import 'package:shopxy_customer/features/orders/domain/entities/customer_order.dart';
 import 'package:shopxy_customer/features/orders/presentation/pages/order_detail_page.dart';
 import 'package:shopxy_customer/features/orders/presentation/providers/orders_provider.dart';
+import 'package:shopxy_customer/core/router/app_shell.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/constants/app_strings.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+import 'package:shopxy_customer/shared/widgets/app_app_bar.dart';
+import 'package:shopxy_customer/shared/widgets/app_button.dart';
+import 'package:shopxy_customer/shared/widgets/app_price_text.dart';
+import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 
 class MyOrdersPage extends StatefulWidget {
   const MyOrdersPage({super.key});
@@ -29,12 +34,13 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
   Widget build(BuildContext context) {
     final p = context.watch<OrdersProvider>();
     return Scaffold(
-      appBar: AppBar(title: const Text(AppStrings.myOrders)),
+      backgroundColor: AppColors.canvas,
+      appBar: const AppAppBar(title: AppStrings.myOrders),
       body: RefreshIndicator(
         onRefresh: p.load,
         color: AppColors.brand,
         child: p.isLoading && p.orders.isEmpty
-            ? const Center(child: CircularProgressIndicator())
+            ? const _LoadingState()
             : p.error != null && p.orders.isEmpty
                 ? _ErrorState(message: p.error!, onRetry: p.load)
                 : p.orders.isEmpty
@@ -42,10 +48,55 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
                     : ListView.separated(
                         physics: const AlwaysScrollableScrollPhysics(),
                         itemCount: p.orders.length,
-                        separatorBuilder: (_, _) =>
-                            const Divider(height: 1, color: AppColors.hairline),
+                        separatorBuilder: (_, index) => const Divider(
+                          height: 1,
+                          color: AppColors.hairline,
+                        ),
                         itemBuilder: (_, i) => _OrderRow(order: p.orders[i]),
                       ),
+      ),
+    );
+  }
+}
+
+class _LoadingState extends StatelessWidget {
+  const _LoadingState();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.md,
+      ),
+      itemCount: 5,
+      separatorBuilder: (_, index) => const SizedBox(height: AppSizes.md),
+      itemBuilder: (_, index) => Container(
+        padding: const EdgeInsets.all(AppSizes.md),
+        decoration: ShapeDecoration(
+          color: AppColors.white,
+          shape: AppShapes.squircle(
+            AppSizes.radiusMd,
+            side: const BorderSide(color: AppColors.hairline),
+          ),
+        ),
+        child: Row(
+          children: const [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AppShimmerLine(widthFactor: 0.5, height: 14),
+                  SizedBox(height: 8),
+                  AppShimmerLine(widthFactor: 0.8, height: 10),
+                  SizedBox(height: 6),
+                  AppShimmerLine(widthFactor: 0.4, height: 10),
+                ],
+              ),
+            ),
+            AppShimmerBox(width: 64, height: 16, radius: 6),
+          ],
+        ),
       ),
     );
   }
@@ -122,10 +173,10 @@ class _OrderRow extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(
-                  '${AppStrings.currencySymbol}${order.estimatedTotal.toStringAsFixed(2)}',
-                  style: theme.textTheme.titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w800),
+                AppPriceText.precise(
+                  order.estimatedTotal,
+                  style: theme.textTheme.titleSmall,
+                  fontWeight: FontWeight.w800,
                 ),
                 const SizedBox(height: 4),
                 Container(
@@ -181,26 +232,32 @@ class _EmptyOrders extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return ListView(
+      padding: const EdgeInsets.all(AppSizes.xl),
       children: [
-        const SizedBox(height: AppSizes.massive),
+        const SizedBox(height: AppSizes.xxl),
         Center(
           child: Container(
-            width: 140,
-            height: 140,
+            width: 120,
+            height: 120,
             decoration: ShapeDecoration(
               color: AppColors.heroPanel,
               shape: AppShapes.squircle(AppSizes.radiusLg),
             ),
             alignment: Alignment.center,
-            child: const Icon(Icons.receipt_long_outlined,
-                size: 48, color: AppColors.muted),
+            child: const Icon(
+              Icons.receipt_long_outlined,
+              size: 48,
+              color: AppColors.muted,
+            ),
           ),
         ),
         const SizedBox(height: AppSizes.lg),
         Text(
           AppStrings.emptyOrders,
-          style: theme.textTheme.titleMedium
-              ?.copyWith(fontWeight: FontWeight.w700),
+          style: theme.textTheme.titleMedium?.copyWith(
+            color: AppColors.black,
+            fontWeight: FontWeight.w800,
+          ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: AppSizes.xs),
@@ -208,6 +265,15 @@ class _EmptyOrders extends StatelessWidget {
           AppStrings.emptyOrdersHint,
           style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted),
           textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: AppSizes.xl),
+        Center(
+          child: AppButton.primary(
+            label: 'Browse products',
+            icon: Icons.grid_view_rounded,
+            onPressed: () => CustomerShellScope.of(context)
+                ?.select(CustomerShellTab.browse.index),
+          ),
         ),
       ],
     );
@@ -247,11 +313,10 @@ class _ErrorState extends StatelessWidget {
         ),
         const SizedBox(height: AppSizes.lg),
         Center(
-          child: FilledButton.icon(
-            onPressed: onRetry,
-            icon: const Icon(Icons.refresh_rounded),
-            label: const Text(AppStrings.tryAgain),
-            style: FilledButton.styleFrom(backgroundColor: AppColors.brand),
+          child: AppButton.secondary(
+            label: AppStrings.tryAgain,
+            icon: Icons.refresh_rounded,
+            onPressed: () => onRetry(),
           ),
         ),
       ],
