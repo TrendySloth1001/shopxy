@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/core/app.dart';
 import 'package:shopxy/core/auth/token_manager.dart';
 import 'package:shopxy/core/network/api_client.dart';
+import 'package:shopxy/core/prefs/navigation_prefs.dart';
 import 'package:shopxy/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/categories/data/datasources/categories_remote_data_source.dart';
 import 'package:shopxy/features/categories/presentation/providers/categories_provider.dart';
+import 'package:shopxy/features/custom_fields/data/datasources/custom_fields_remote_data_source.dart';
+import 'package:shopxy/features/custom_fields/presentation/providers/custom_fields_provider.dart';
 import 'package:shopxy/features/challans/data/datasources/challans_remote_data_source.dart';
 import 'package:shopxy/features/challans/presentation/providers/challans_provider.dart';
 import 'package:shopxy/features/dashboard/data/datasources/dashboard_remote_data_source.dart';
@@ -15,6 +19,8 @@ import 'package:shopxy/features/invoices/data/datasources/invoices_remote_data_s
 import 'package:shopxy/features/invoices/presentation/providers/invoices_provider.dart';
 import 'package:shopxy/features/notifications/data/datasources/notifications_remote_data_source.dart';
 import 'package:shopxy/features/notifications/presentation/providers/notifications_provider.dart';
+import 'package:shopxy/features/orders/data/datasources/orders_remote_data_source.dart';
+import 'package:shopxy/features/orders/presentation/providers/orders_provider.dart';
 import 'package:shopxy/features/reports/data/datasources/reports_remote_data_source.dart';
 import 'package:shopxy/features/reports/presentation/providers/reports_provider.dart';
 import 'package:shopxy/features/parties/data/datasources/parties_remote_data_source.dart';
@@ -34,11 +40,18 @@ void main() async {
   final tokenManager = TokenManager();
   await tokenManager.init();
 
+  // Reuse the same secure-storage container we already use for tokens
+  // for tiny user prefs (currently just nav style). Awaited so the
+  // first frame already reflects the saved choice.
+  final navPrefs = NavigationPrefsProvider(const FlutterSecureStorage());
+  await navPrefs.load();
+
   final apiClient = ApiClient(tokenManager);
 
   // Data sources
   final authDs = AuthRemoteDataSource(apiClient);
   final categoriesDs = CategoriesRemoteDataSource(apiClient);
+  final customFieldsDs = CustomFieldsRemoteDataSource(apiClient);
   final productsDs = ProductsRemoteDataSource(apiClient);
   final stockDs = StockRemoteDataSource(apiClient);
   final dashboardDs = DashboardRemoteDataSource(apiClient);
@@ -50,6 +63,8 @@ void main() async {
   final notificationsDs = NotificationsRemoteDataSource(apiClient);
   final invitationsDs = InvitationsRemoteDataSource(apiClient);
   final reportsDs = ReportsRemoteDataSource(apiClient);
+  final ordersDs = OrdersRemoteDataSource(apiClient);
+  final ordersProvider = OrdersProvider(ordersDs);
 
   final notificationsProvider = NotificationsProvider(notificationsDs, invitationsDs);
 
@@ -62,6 +77,13 @@ void main() async {
     authProvider.clearAuth();
     notificationsProvider.reset();
   };
+
+  // Keep the pending-orders badge fresh on session change.
+  authProvider.addListener(() {
+    if (authProvider.isAuthenticated) {
+      ordersProvider.refreshPendingCount();
+    }
+  });
 
   // Whenever the session changes (login or logout), refresh the bell
   // badge so it reflects the new user immediately. Single listener for
@@ -80,6 +102,7 @@ void main() async {
       providers: [
         // Auth first — _AuthGate reads this
         ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
+        ChangeNotifierProvider<NavigationPrefsProvider>.value(value: navPrefs),
 
         // Data sources available for direct injection (e.g. detail pages)
         Provider<ProductsRemoteDataSource>.value(value: productsDs),
@@ -89,10 +112,15 @@ void main() async {
         Provider<PartiesRemoteDataSource>.value(value: partiesDs),
         Provider<ChallansRemoteDataSource>.value(value: challansDs),
         Provider<StockAdjustmentsRemoteDataSource>.value(value: stockAdjustmentsDs),
+        Provider<CategoriesRemoteDataSource>.value(value: categoriesDs),
+        Provider<CustomFieldsRemoteDataSource>.value(value: customFieldsDs),
 
         // Feature state providers
         ChangeNotifierProvider(create: (_) => DashboardProvider(dashboardDs)),
         ChangeNotifierProvider(create: (_) => CategoriesProvider(categoriesDs)),
+        ChangeNotifierProvider(
+          create: (_) => CustomFieldsProvider(customFieldsDs),
+        ),
         ChangeNotifierProvider(create: (_) => ProductsProvider(productsDs)),
         ChangeNotifierProvider(create: (_) => StockProvider(stockDs)),
         ChangeNotifierProvider(create: (_) => InvoicesProvider(invoicesDs)),
@@ -101,6 +129,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ChallansProvider(challansDs)),
         ChangeNotifierProvider<NotificationsProvider>.value(value: notificationsProvider),
         ChangeNotifierProvider(create: (_) => ReportsProvider(reportsDs)),
+        ChangeNotifierProvider<OrdersProvider>.value(value: ordersProvider),
       ],
       child: const ShopxyApp(),
     ),
