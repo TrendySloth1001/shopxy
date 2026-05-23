@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:shopxy/core/network/image_url.dart';
 import 'package:shopxy/features/products/domain/entities/product.dart';
@@ -89,10 +90,19 @@ class _ProductImageCarouselState extends State<ProductImageCarousel> {
                 onTap: () => _openLightbox(i),
                 child: Hero(
                   tag: 'product-image-${widget.product.id}-$i',
-                  child: Image.network(
-                    resolveImageUrl(images[i].url),
+                  child: CachedNetworkImage(
+                    imageUrl: resolveImageUrl(images[i].url),
                     fit: BoxFit.contain,
-                    errorBuilder: (_, _, _) => Center(
+                    placeholder: (_, _) => Container(
+                      color: AppColors.heroPanel,
+                      alignment: Alignment.center,
+                      child: const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
+                    errorWidget: (_, _, _) => Center(
                       child: ProductThumbnail(
                         product: widget.product,
                         size: 128,
@@ -190,12 +200,24 @@ class _ThumbnailStrip extends StatelessWidget {
                 clipper: ShapeBorderClipper(
                   shape: AppShapes.squircle(AppSizes.radiusSm),
                 ),
-                child: Image.network(
-                  resolveImageUrl(urls[i]),
+                child: CachedNetworkImage(
+                  imageUrl: resolveImageUrl(urls[i]),
                   fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => const Icon(
-                    Icons.broken_image_rounded,
-                    color: AppColors.muted,
+                  placeholder: (_, _) => Container(
+                    color: AppColors.heroPanel,
+                    alignment: Alignment.center,
+                    child: const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                  errorWidget: (_, _, _) => Container(
+                    color: AppColors.heroPanel,
+                    child: const Icon(
+                      Icons.image_not_supported_outlined,
+                      color: AppColors.muted,
+                    ),
                   ),
                 ),
               ),
@@ -253,11 +275,19 @@ class _ProductLightboxState extends State<_ProductLightbox> {
             minScale: 1,
             maxScale: 4,
             child: Center(
-              child: Image.network(
-                resolveImageUrl(widget.urls[i]),
+              child: CachedNetworkImage(
+                imageUrl: resolveImageUrl(widget.urls[i]),
                 fit: BoxFit.contain,
-                errorBuilder: (_, _, _) => const Icon(
-                  Icons.broken_image_rounded,
+                placeholder: (_, _) => const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white54,
+                  ),
+                ),
+                errorWidget: (_, _, _) => const Icon(
+                  Icons.image_not_supported_outlined,
                   color: Colors.white54,
                   size: 64,
                 ),
