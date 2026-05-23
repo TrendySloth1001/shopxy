@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:shopxy/features/invoices/data/datasources/invoices_remote_data_source.dart';
 import 'package:shopxy/features/invoices/domain/entities/invoice.dart';
 import 'package:shopxy/features/payments/presentation/widgets/record_payment_sheet.dart';
+import 'package:shopxy/features/invoices/presentation/pages/create_invoice_page.dart';
 import 'package:shopxy/features/invoices/presentation/providers/invoices_provider.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
@@ -205,6 +206,21 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
     }
   }
 
+  /// Open the create form in edit mode for a DRAFT invoice. Once the user
+  /// saves we reload the detail (totals + line items may have changed),
+  /// so the page reflects the new state without a stale snapshot.
+  Future<void> _openEdit() async {
+    final invoice = _invoice;
+    if (invoice == null || !invoice.isDraft) return;
+    final saved = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CreateInvoicePage(existing: invoice),
+      ),
+    );
+    if (saved == true && mounted) await _load();
+  }
+
   Future<void> _updateStatus(String status) async {
     final provider = context.read<InvoicesProvider>();
     try {
@@ -270,6 +286,12 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
         title: Text(invoice.invoiceNo),
         actions: [
           if (!_isDownloading) ...[
+            if (invoice.isDraft)
+              IconButton(
+                icon: const Icon(Icons.edit_outlined),
+                tooltip: 'Edit',
+                onPressed: _openEdit,
+              ),
             IconButton(
               icon: const Icon(Icons.share_rounded),
               tooltip: 'Share',

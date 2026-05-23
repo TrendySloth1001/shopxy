@@ -92,6 +92,39 @@ class InvoicesProvider extends ChangeNotifier {
     return invoice;
   }
 
+  Future<Invoice> updateInvoice({
+    required int id,
+    required String type,
+    int? vendorId,
+    int? partyId,
+    String? customerName,
+    String? customerPhone,
+    String? customerGstin,
+    double? discount,
+    String? note,
+    String? documentType,
+    String? placeOfSupplyStateCode,
+    required List<Map<String, dynamic>> items,
+  }) async {
+    final invoice = await _ds.updateInvoice(
+      id: id,
+      type: type,
+      vendorId: vendorId,
+      partyId: partyId,
+      customerName: customerName,
+      customerPhone: customerPhone,
+      customerGstin: customerGstin,
+      discount: discount,
+      note: note,
+      documentType: documentType,
+      placeOfSupplyStateCode: placeOfSupplyStateCode,
+      items: items,
+    );
+    _invoices = _invoices.map((i) => i.id == id ? invoice : i).toList();
+    notifyListeners();
+    return invoice;
+  }
+
   Future<Invoice> updateStatus(int id, String status) async {
     final invoice = await _ds.updateStatus(id, status);
     _invoices = _invoices.map((i) => i.id == id ? invoice : i).toList();

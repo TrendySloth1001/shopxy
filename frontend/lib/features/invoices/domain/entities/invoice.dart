@@ -175,6 +175,23 @@ class InvoiceItemDraft {
     this.discount = 0,
   });
 
+  /// Seed a draft from a persisted [InvoiceItem] when entering edit mode.
+  /// Preserves the exact qty / price the user originally entered — the
+  /// backend will recompute totals from these on save.
+  factory InvoiceItemDraft.fromInvoiceItem(InvoiceItem item) {
+    return InvoiceItemDraft(
+      productId: item.productId,
+      productName: item.productName,
+      productSku: item.productSku,
+      hsn: item.hsn,
+      unit: item.unit,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      taxPercent: item.taxPercent,
+      discount: item.discount,
+    );
+  }
+
   final int productId;
   final String productName;
   final String productSku;
