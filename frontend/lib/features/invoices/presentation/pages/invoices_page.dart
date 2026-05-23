@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/core/router/app_shell.dart';
 import 'package:shopxy/features/invoices/data/datasources/invoices_remote_data_source.dart';
 import 'package:shopxy/features/invoices/domain/entities/invoice.dart';
 import 'package:shopxy/features/invoices/presentation/pages/create_invoice_page.dart';
@@ -12,12 +13,21 @@ import 'package:shopxy/features/invoices/presentation/providers/invoices_provide
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
+import 'package:shopxy/shared/widgets/app_filter_pill.dart';
 import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
+import 'package:shopxy/shared/widgets/app_search_bar.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
+
+/// Cycle order for the single status chip: ALL → DRAFT → CONFIRMED →
+/// CANCELLED → ALL. Tapping the chip walks through this loop, which
+/// keeps the filter row tight without losing the option to slice by
+/// status.
+const _statusCycle = <String?>[null, 'DRAFT', 'CONFIRMED', 'CANCELLED'];
 
 class InvoicesPage extends StatefulWidget {
   const InvoicesPage({super.key});
@@ -27,12 +37,20 @@ class InvoicesPage extends StatefulWidget {
 }
 
 class _InvoicesPageState extends State<InvoicesPage> {
+  final _searchCtrl = TextEditingController();
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) context.read<InvoicesProvider>().loadInvoices();
     });
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _openCreate() async {
@@ -45,63 +63,74 @@ class _InvoicesPageState extends State<InvoicesPage> {
     }
   }
 
+  void _cycleStatus(InvoicesProvider provider) {
+    final i = _statusCycle.indexOf(provider.statusFilter);
+    final next = _statusCycle[(i + 1) % _statusCycle.length];
+    provider.setStatusFilter(next);
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<InvoicesProvider>();
 
     return Scaffold(
       appBar: AppBar(
+        leading: const ShellMenuButton(),
         title: const Text(AppStrings.navInvoices),
         actions: [
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.filter_list_rounded),
-            tooltip: AppStrings.filter,
-            onSelected: (value) {
-              if (value == 'all') {
-                provider.setTypeFilter(null);
-              } else {
-                provider.setTypeFilter(value);
-              }
-            },
-            itemBuilder: (_) => [
-              const PopupMenuItem(value: 'all', child: Text('All Invoices')),
-              const PopupMenuItem(value: 'SALE', child: Text('Sales Only')),
-              const PopupMenuItem(
-                value: 'PURCHASE',
-                child: Text('Purchases Only'),
-              ),
-            ],
+          IconButton(
+            icon: const Icon(Icons.add_rounded),
+            tooltip: AppStrings.createInvoice,
+            onPressed: _openCreate,
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openCreate,
-        icon: const Icon(Icons.add_rounded),
-        label: const Text(AppStrings.createInvoice),
-      ),
       body: Column(
         children: [
-          if (provider.typeFilter != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSizes.lg,
-                AppSizes.md,
-                AppSizes.lg,
-                0,
-              ),
-              child: Row(
-                children: [
-                  Chip(
-                    label: Text(
-                      provider.typeFilter == 'SALE'
-                          ? AppStrings.saleInvoice
-                          : AppStrings.purchaseInvoice,
-                    ),
-                    onDeleted: () => provider.setTypeFilter(null),
-                  ),
-                ],
-              ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSizes.lg,
+              AppSizes.md,
+              AppSizes.lg,
+              0,
             ),
+            child: AppSearchBar(
+              hint: AppStrings.searchInvoices,
+              controller: _searchCtrl,
+              onChanged: provider.updateSearch,
+            ),
+          ),
+          AppFilterStrip(
+            children: [
+              AppFilterPill(
+                label: AppStrings.filterAll,
+                selected: provider.typeFilter == null,
+                onTap: () => provider.setTypeFilter(null),
+              ),
+              AppFilterPill(
+                label: AppStrings.invoiceTypeSale,
+                icon: Icons.arrow_upward_rounded,
+                selected: provider.typeFilter == 'SALE',
+                onTap: () => provider.setTypeFilter(
+                  provider.typeFilter == 'SALE' ? null : 'SALE',
+                ),
+              ),
+              AppFilterPill(
+                label: AppStrings.invoiceTypePurchase,
+                icon: Icons.arrow_downward_rounded,
+                selected: provider.typeFilter == 'PURCHASE',
+                onTap: () => provider.setTypeFilter(
+                  provider.typeFilter == 'PURCHASE' ? null : 'PURCHASE',
+                ),
+              ),
+            ],
+          ),
+          _StatusChipRow(
+            current: provider.statusFilter,
+            onCycle: () => _cycleStatus(provider),
+            onClear: () => provider.setStatusFilter(null),
+          ),
+          const AppDivider.flush(),
           Expanded(
             child: provider.isLoading && provider.invoices.isEmpty
                 ? const Center(child: CircularProgressIndicator())
@@ -132,9 +161,9 @@ class _InvoicesPageState extends State<InvoicesPage> {
                             color: AppColors.black,
                             backgroundColor: AppColors.white,
                             child: ListView.separated(
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: AppSizes.sm)
-                                      .copyWith(bottom: 100),
+                              padding: const EdgeInsets.symmetric(
+                                vertical: AppSizes.sm,
+                              ).copyWith(bottom: 100),
                               itemCount: provider.invoices.length,
                               separatorBuilder: (_, _) => const AppDivider(),
                               itemBuilder: (context, i) {
@@ -183,6 +212,115 @@ class _InvoicesPageState extends State<InvoicesPage> {
         messenger.showSnackBar(SnackBar(content: Text(e.toString())));
       }
     }
+  }
+}
+
+/// Single chip that cycles through DRAFT / CONFIRMED / CANCELLED / ALL.
+/// When a real status is selected the chip carries that status's color
+/// so the active filter is obvious from across the room. A close
+/// affordance appears so the user can clear without cycling all the way
+/// through.
+class _StatusChipRow extends StatelessWidget {
+  const _StatusChipRow({
+    required this.current,
+    required this.onCycle,
+    required this.onClear,
+  });
+  final String? current;
+  final VoidCallback onCycle;
+  final VoidCallback onClear;
+
+  (String, Color, Color) _visual(String? s) {
+    switch (s) {
+      case 'DRAFT':
+        return ('Draft', AppColors.warning, AppColors.warningSoft);
+      case 'CONFIRMED':
+        return ('Confirmed', AppColors.success, AppColors.successSoft);
+      case 'CANCELLED':
+        return ('Cancelled', AppColors.error, AppColors.errorSoft);
+      default:
+        return ('Any status', AppColors.muted, AppColors.surfaceTint);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final (label, color, soft) = _visual(current);
+    final active = current != null;
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        0,
+        AppSizes.lg,
+        AppSizes.sm,
+      ),
+      child: Row(
+        children: [
+          Text(
+            'Status',
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: AppColors.muted,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.4,
+            ),
+          ),
+          const SizedBox(width: AppSizes.sm),
+          Material(
+            color: soft,
+            shape: AppShapes.squircle(
+              AppSizes.radiusFull,
+              side: BorderSide(color: active ? color : AppColors.hairline),
+            ),
+            child: InkWell(
+              customBorder: AppShapes.squircle(AppSizes.radiusFull),
+              onTap: onCycle,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  AppSizes.md,
+                  6,
+                  active ? 4 : AppSizes.md,
+                  6,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      label,
+                      style: TextStyle(
+                        color: color,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                      ),
+                    ),
+                    if (active) ...[
+                      const SizedBox(width: 4),
+                      InkWell(
+                        customBorder: const CircleBorder(),
+                        onTap: onClear,
+                        child: Padding(
+                          padding: const EdgeInsets.all(2),
+                          child: Icon(Icons.close_rounded, size: 14, color: color),
+                        ),
+                      ),
+                    ] else
+                      Padding(
+                        padding: const EdgeInsets.only(left: 2),
+                        child: Icon(
+                          Icons.unfold_more_rounded,
+                          size: 14,
+                          color: color,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
