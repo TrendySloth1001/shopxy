@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'package:shopxy/core/network/api_client.dart';
 import 'package:shopxy/features/parties/data/models/party_dto.dart';
+import 'package:shopxy/features/parties/data/models/party_overview_dto.dart';
 import 'package:shopxy/features/parties/domain/entities/party.dart';
+import 'package:shopxy/features/parties/domain/entities/party_overview.dart';
 
 class PartiesRemoteDataSource {
   const PartiesRemoteDataSource(this._client);
@@ -30,6 +32,12 @@ class PartiesRemoteDataSource {
     final res = await _client.get('/parties/$id');
     if (res.statusCode != 200) throw Exception('Party not found');
     return PartyDto.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+  }
+
+  Future<PartyOverview> getPartyOverview(int id) async {
+    final res = await _client.get('/parties/$id/overview');
+    if (res.statusCode != 200) throw Exception('Party not found');
+    return PartyOverviewDto.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
   Future<Party> createParty({
