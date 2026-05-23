@@ -45,6 +45,22 @@ const updateStatusSchema = z.object({
   status: z.enum(['DRAFT', 'CONFIRMED', 'CANCELLED']),
 });
 
+/// PATCH /invoices/:id payload. Mirrors create, but vendorId/partyId can
+/// be explicitly nulled to detach a draft from its counterparty.
+const updateInvoiceSchema = z.object({
+  type: z.enum(['SALE', 'PURCHASE']),
+  documentType: documentTypeEnum.optional(),
+  placeOfSupplyStateCode: z.string().regex(/^\d{2}$/, 'must be 2-digit GST state code').optional(),
+  vendorId: z.number().int().positive().nullable().optional(),
+  partyId: z.number().int().positive().nullable().optional(),
+  customerName: z.string().max(200).optional(),
+  customerPhone: z.string().max(20).optional(),
+  customerGstin: z.string().max(20).optional(),
+  discount: z.number().nonnegative().optional(),
+  note: z.string().max(1000).optional(),
+  items: z.array(itemSchema).min(1),
+});
+
 const listQuerySchema = z.object({
   type: z.enum(['SALE', 'PURCHASE']).optional(),
   status: z.enum(['DRAFT', 'CONFIRMED', 'CANCELLED']).optional(),
@@ -111,6 +127,19 @@ export class InvoicesController {
     if (!invoice) { res.status(404).json({ error: 'Invoice not found' }); return; }
 
     res.json(invoice);
+  }
+
+  async update(req: Request, res: Response): Promise<void> {
+    const id = parseId(req.params.id);
+    if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
+
+    const payload = updateInvoiceSchema.parse(req.body);
+    const result = await invoicesService.updateInvoice(id, payload);
+    if ('error' in result) {
+      res.status(400).json({ error: result.error });
+      return;
+    }
+    res.json(result.invoice);
   }
 
   async updateStatus(req: Request, res: Response): Promise<void> {

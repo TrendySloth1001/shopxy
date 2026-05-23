@@ -78,6 +78,46 @@ class InvoicesRemoteDataSource {
     return InvoiceDto.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
+  /// Replace the contents of a DRAFT invoice. Backend rejects non-draft
+  /// invoices; reuses the create payload shape so the only call-site
+  /// difference is the HTTP verb.
+  Future<Invoice> updateInvoice({
+    required int id,
+    required String type,
+    int? vendorId,
+    int? partyId,
+    String? customerName,
+    String? customerPhone,
+    String? customerGstin,
+    double? discount,
+    String? note,
+    String? documentType,
+    String? placeOfSupplyStateCode,
+    required List<Map<String, dynamic>> items,
+  }) async {
+    final res = await _client.patch(
+      '/invoices/$id',
+      body: InvoiceDto.toCreateJson(
+        type: type,
+        vendorId: vendorId,
+        partyId: partyId,
+        customerName: customerName,
+        customerPhone: customerPhone,
+        customerGstin: customerGstin,
+        discount: discount,
+        note: note,
+        documentType: documentType,
+        placeOfSupplyStateCode: placeOfSupplyStateCode,
+        items: items,
+      ),
+    );
+    if (res.statusCode != 200) {
+      final body = jsonDecode(res.body) as Map<String, dynamic>;
+      throw Exception(body['error'] ?? 'Failed to update invoice');
+    }
+    return InvoiceDto.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+  }
+
   Future<Invoice> updateStatus(int id, String status) async {
     final res = await _client.patch(
       '/invoices/$id/status',

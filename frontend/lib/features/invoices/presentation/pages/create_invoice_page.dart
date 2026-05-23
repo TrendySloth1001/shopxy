@@ -23,7 +23,13 @@ import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/glass_widgets.dart';
 
 class CreateInvoicePage extends StatefulWidget {
-  const CreateInvoicePage({super.key});
+  /// [existing] turns this page into an edit form. Pre-fills every
+  /// control from the invoice and routes the save action through PATCH
+  /// instead of POST. Only DRAFT invoices should be passed in — the
+  /// backend rejects anything else.
+  const CreateInvoicePage({super.key, this.existing});
+
+  final Invoice? existing;
 
   @override
   State<CreateInvoicePage> createState() => _CreateInvoicePageState();
@@ -66,12 +72,44 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
     if (!_dirty) _dirty = true;
   }
 
+  bool get _isEditing => widget.existing != null;
+
   @override
   void initState() {
     super.initState();
     _customerName.addListener(_markDirty);
     _note.addListener(_markDirty);
     _discount.addListener(_markDirty);
+
+    // Edit mode: rehydrate every control from the persisted invoice so
+    // the user sees exactly what's on file before tweaking.
+    final existing = widget.existing;
+    if (existing != null) {
+      _type = existing.type;
+      _documentType = existing.documentType;
+      _customerName.text = existing.customerName ?? '';
+      _customerPhone.text = existing.customerPhone ?? '';
+      _customerGstin.text = existing.customerGstin ?? '';
+      _discount.text = existing.discount > 0
+          ? existing.discount.toStringAsFixed(2)
+          : '0';
+      _note.text = existing.note ?? '';
+      _walkInStateCode = existing.placeOfSupplyStateCode;
+      // Reconstruct minimal Party/Vendor stubs from the invoice's address
+      // snapshot. They're enough for the picker cards to render + for
+      // IGST detection (state code drives that). If the user wants the
+      // live row, they can tap "Change".
+      if (existing.partyId != null && existing.isSale) {
+        _selectedParty = _partyFromInvoiceSnapshot(existing);
+      }
+      if (existing.vendorId != null && existing.isPurchase) {
+        _selectedVendor = _vendorFromInvoiceSnapshot(existing);
+      }
+      _items.addAll(existing.items.map(InvoiceItemDraft.fromInvoiceItem));
+      // The form starts clean — user must touch something to mark dirty.
+      _dirty = false;
+    }
+
     // Seed the walk-in dropdown to the shop's own state so a fresh
     // SALE without a party defaults to intrastate CGST+SGST.
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -81,6 +119,45 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
         setState(() => _walkInStateCode = shopCode);
       }
     });
+  }
+
+  /// Build a stub [Party] from an invoice's snapshot. Used in edit mode
+  /// so the SelectedPartyCard can render without an extra network call.
+  /// The user can tap "Change" to swap in the live row from the picker.
+  static Party _partyFromInvoiceSnapshot(Invoice inv) {
+    return Party(
+      id: inv.partyId!,
+      name: inv.customerName ?? '—',
+      phone: inv.customerPhone,
+      gstin: inv.customerGstin,
+      address: inv.customerAddress,
+      city: inv.customerCity,
+      state: inv.customerState,
+      stateCode: inv.customerStateCode,
+      pinCode: inv.customerPinCode,
+      panNumber: inv.customerPanNumber,
+      isActive: true,
+      createdAt: inv.createdAt,
+      updatedAt: inv.updatedAt,
+    );
+  }
+
+  static Vendor _vendorFromInvoiceSnapshot(Invoice inv) {
+    return Vendor(
+      id: inv.vendorId!,
+      name: inv.vendorName ?? inv.vendor?.name ?? '—',
+      phone: inv.vendorPhone,
+      gstin: inv.vendorGstin,
+      address: inv.vendorAddress,
+      city: inv.vendorCity,
+      state: inv.vendorState,
+      stateCode: inv.vendorStateCode,
+      pinCode: inv.vendorPinCode,
+      panNumber: inv.vendorPanNumber,
+      isActive: true,
+      createdAt: inv.createdAt,
+      updatedAt: inv.updatedAt,
+    );
   }
 
   @override
@@ -221,30 +298,50 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
     }
     setState(() => _isSaving = true);
     try {
-      await context.read<InvoicesProvider>().createInvoice(
-        type: _type,
-        vendorId: _selectedVendor?.id,
-        partyId: _type == 'SALE' ? _selectedParty?.id : null,
-        customerName: _customerName.text,
-        customerPhone: _customerPhone.text,
-        customerGstin: _customerGstin.text,
-        discount: _headerDiscount > 0 ? _headerDiscount : null,
-        note: _note.text.isNotEmpty ? _note.text : null,
-        // Document type only varies for SALE; PURCHASE is always a tax invoice.
-        documentType: _type == 'SALE' ? _documentType : 'TAX_INVOICE',
-        placeOfSupplyStateCode: _placeOfSupplyStateCode,
-        items: _items
-            .map(
-              (i) => {
-                'productId': i.productId,
-                'quantity': i.quantity,
-                'unitPrice': i.unitPrice,
-                'taxPercent': i.taxPercent,
-                'discount': i.discount,
-              },
-            )
-            .toList(),
-      );
+      final provider = context.read<InvoicesProvider>();
+      final itemsPayload = _items
+          .map(
+            (i) => {
+              'productId': i.productId,
+              'quantity': i.quantity,
+              'unitPrice': i.unitPrice,
+              'taxPercent': i.taxPercent,
+              'discount': i.discount,
+            },
+          )
+          .toList();
+      final docType = _type == 'SALE' ? _documentType : 'TAX_INVOICE';
+      final existing = widget.existing;
+      if (existing != null) {
+        await provider.updateInvoice(
+          id: existing.id,
+          type: _type,
+          vendorId: _selectedVendor?.id,
+          partyId: _type == 'SALE' ? _selectedParty?.id : null,
+          customerName: _customerName.text,
+          customerPhone: _customerPhone.text,
+          customerGstin: _customerGstin.text,
+          discount: _headerDiscount > 0 ? _headerDiscount : null,
+          note: _note.text.isNotEmpty ? _note.text : null,
+          documentType: docType,
+          placeOfSupplyStateCode: _placeOfSupplyStateCode,
+          items: itemsPayload,
+        );
+      } else {
+        await provider.createInvoice(
+          type: _type,
+          vendorId: _selectedVendor?.id,
+          partyId: _type == 'SALE' ? _selectedParty?.id : null,
+          customerName: _customerName.text,
+          customerPhone: _customerPhone.text,
+          customerGstin: _customerGstin.text,
+          discount: _headerDiscount > 0 ? _headerDiscount : null,
+          note: _note.text.isNotEmpty ? _note.text : null,
+          documentType: docType,
+          placeOfSupplyStateCode: _placeOfSupplyStateCode,
+          items: itemsPayload,
+        );
+      }
       _dirty = false;
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
@@ -292,7 +389,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
       },
       child: Scaffold(
       appBar: AppBar(
-        title: const Text(AppStrings.createInvoice),
+        title: Text(_isEditing ? 'Edit Draft' : AppStrings.createInvoice),
         actions: [
           TextButton(
             onPressed: _isSaving ? null : _save,
@@ -302,7 +399,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text(AppStrings.save),
+                : Text(_isEditing ? 'Update' : AppStrings.save),
           ),
         ],
       ),
@@ -337,11 +434,17 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                 ),
               ],
               selected: {_type},
-              onSelectionChanged: (v) => setState(() {
-                _type = v.first;
-                _selectedVendor = null;
-                _selectedParty = null;
-              }),
+              // Type is immutable once an invoice exists — switching it
+              // would change the number prefix (INV ↔ PUR) and stock
+              // direction, so backend rejects it. Lock the toggle in
+              // edit mode rather than silently failing on save.
+              onSelectionChanged: _isEditing
+                  ? null
+                  : (v) => setState(() {
+                        _type = v.first;
+                        _selectedVendor = null;
+                        _selectedParty = null;
+                      }),
             ),
             const SizedBox(height: AppSizes.xxl),
 
