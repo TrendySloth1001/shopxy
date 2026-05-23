@@ -253,7 +253,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
   Future<void> _openStockSheet(String type) async {
     if (_product == null) return;
-    final saved = await showModalBottomSheet<bool>(
+    final draftId = await showModalBottomSheet<int>(
       context: context,
       isScrollControlled: true,
       backgroundColor: AppColors.white,
@@ -265,7 +265,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     // supplier history actually move when a stock entry is posted. The
     // custom-field tree and the per-product values don't — re-fetching
     // them on every open/dismiss multiplied DB load for nothing.
-    if (saved == true) {
+    if (draftId != null) {
       // The stock sheet creates a new DRAFT invoice — refresh the
       // pending-drafts callout too so the user immediately sees their
       // entry waiting to be confirmed.

@@ -109,8 +109,10 @@ class InvoiceDto {
     String? documentType,
     String? placeOfSupplyStateCode,
     required List<Map<String, dynamic>> items,
+    bool? confirm,
   }) {
     final payload = <String, dynamic>{'type': type, 'items': items};
+    if (confirm == true) payload['confirm'] = true;
     if (vendorId != null) payload['vendorId'] = vendorId;
     if (partyId != null) payload['partyId'] = partyId;
     if (customerName != null && customerName.isNotEmpty) {

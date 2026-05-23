@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/invoices/domain/entities/invoice.dart';
+import 'package:shopxy/features/invoices/presentation/pages/invoice_detail_page.dart';
 import 'package:shopxy/features/invoices/presentation/providers/invoices_provider.dart';
 import 'package:shopxy/features/parties/domain/entities/party.dart';
 import 'package:shopxy/features/parties/presentation/widgets/party_picker.dart';
@@ -288,7 +289,17 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
     if (picked != null && mounted) _addItem(picked);
   }
 
-  Future<void> _save() async {
+  /// Saves the form. When [confirm] is true the backend (create path)
+  /// or this method (edit path) immediately posts the stock movement
+  /// too — saves the merchant a separate Confirm round-trip.
+  ///
+  /// Outcome routing:
+  ///   - save-as-draft → pop true; list refreshes.
+  ///   - save + confirm OK → pop true with a "confirmed" snackbar.
+  ///   - save OK but confirm failed (insufficient stock) → push the
+  ///     just-created draft's detail page so the merchant lands on the
+  ///     row they need to fix, with a snackbar explaining why.
+  Future<void> _save({required bool confirm}) async {
     if (!_formKey.currentState!.validate()) return;
     if (_items.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -297,6 +308,8 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
       return;
     }
     setState(() => _isSaving = true);
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
     try {
       final provider = context.read<InvoicesProvider>();
       final itemsPayload = _items
@@ -327,33 +340,89 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
           placeOfSupplyStateCode: _placeOfSupplyStateCode,
           items: itemsPayload,
         );
-      } else {
-        await provider.createInvoice(
-          type: _type,
-          vendorId: _selectedVendor?.id,
-          partyId: _type == 'SALE' ? _selectedParty?.id : null,
-          customerName: _customerName.text,
-          customerPhone: _customerPhone.text,
-          customerGstin: _customerGstin.text,
-          discount: _headerDiscount > 0 ? _headerDiscount : null,
-          note: _note.text.isNotEmpty ? _note.text : null,
-          documentType: docType,
-          placeOfSupplyStateCode: _placeOfSupplyStateCode,
-          items: itemsPayload,
-        );
+        _dirty = false;
+        if (confirm) {
+          // Edit path runs confirm as a follow-up call so the create
+          // and the status flip aren't double-coupled at the API level.
+          try {
+            await provider.updateStatus(existing.id, 'CONFIRMED');
+            if (!mounted) return;
+            messenger.showSnackBar(
+              const SnackBar(content: Text('Invoice updated and confirmed')),
+            );
+          } catch (e) {
+            if (!mounted) return;
+            messenger.showSnackBar(
+              SnackBar(content: Text(_friendly(e))),
+            );
+          }
+        } else if (mounted) {
+          messenger.showSnackBar(
+            const SnackBar(content: Text('Saved as draft')),
+          );
+        }
+        if (mounted) navigator.pop(true);
+        return;
       }
+
+      final result = await provider.createInvoice(
+        type: _type,
+        vendorId: _selectedVendor?.id,
+        partyId: _type == 'SALE' ? _selectedParty?.id : null,
+        customerName: _customerName.text,
+        customerPhone: _customerPhone.text,
+        customerGstin: _customerGstin.text,
+        discount: _headerDiscount > 0 ? _headerDiscount : null,
+        note: _note.text.isNotEmpty ? _note.text : null,
+        documentType: docType,
+        placeOfSupplyStateCode: _placeOfSupplyStateCode,
+        items: itemsPayload,
+        confirm: confirm,
+      );
       _dirty = false;
-      if (mounted) Navigator.pop(context, true);
+      if (!mounted) return;
+
+      if (!confirm) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Saved as draft')),
+        );
+        navigator.pop(true);
+        return;
+      }
+      if (result.confirmed) {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text('Invoice ${result.invoice.invoiceNo} confirmed'),
+          ),
+        );
+        navigator.pop(true);
+        return;
+      }
+      // Auto-confirm failed — land the merchant on the draft so they
+      // can address the underlying issue (usually insufficient stock).
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            result.confirmError ??
+                'Saved as draft — confirm failed, please review.',
+          ),
+        ),
+      );
+      navigator.pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => InvoiceDetailPage(invoiceId: result.invoice.id),
+        ),
+      );
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(e.toString())));
+        messenger.showSnackBar(SnackBar(content: Text(_friendly(e))));
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
   }
+
+  String _friendly(Object e) => e.toString().replaceFirst('Exception: ', '');
 
   Future<bool> _confirmDiscard() async {
     final discard = await showDialog<bool>(
@@ -390,18 +459,54 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
       child: Scaffold(
       appBar: AppBar(
         title: Text(_isEditing ? 'Edit Draft' : AppStrings.createInvoice),
-        actions: [
-          TextButton(
-            onPressed: _isSaving ? null : _save,
-            child: _isSaving
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Text(_isEditing ? 'Update' : AppStrings.save),
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Container(
+          padding: const EdgeInsets.all(AppSizes.lg),
+          decoration: const BoxDecoration(
+            color: AppColors.white,
+            border: Border(top: BorderSide(color: AppColors.hairline)),
           ),
-        ],
+          child: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _isSaving ? null : () => _save(confirm: false),
+                  icon: const Icon(Icons.save_outlined),
+                  label: Text(_isEditing ? 'Update draft' : 'Save as draft'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(48),
+                    side: const BorderSide(color: AppColors.hairline),
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSizes.md),
+              Expanded(
+                flex: 2,
+                child: FilledButton.icon(
+                  onPressed: _isSaving ? null : () => _save(confirm: true),
+                  icon: _isSaving
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.white,
+                          ),
+                        )
+                      : const Icon(Icons.check_rounded),
+                  label: Text(
+                    _isEditing ? 'Update & confirm' : 'Save & confirm',
+                  ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.brand,
+                    minimumSize: const Size.fromHeight(48),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
       body: Form(
         key: _formKey,

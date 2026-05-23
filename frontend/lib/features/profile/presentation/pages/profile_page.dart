@@ -6,7 +6,7 @@ import 'package:shopxy/features/auth/domain/entities/auth_user.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/categories/presentation/pages/categories_page.dart';
 import 'package:shopxy/features/challans/presentation/pages/challans_page.dart';
-import 'package:shopxy/features/orders/presentation/pages/orders_inbox_page.dart';
+import 'package:shopxy/features/invoices/presentation/pages/invoices_page.dart';
 import 'package:shopxy/features/parties/presentation/pages/parties_page.dart';
 import 'package:shopxy/features/profile/presentation/pages/edit_profile_page.dart';
 import 'package:shopxy/features/profile/presentation/pages/settings_page.dart';
@@ -102,17 +102,6 @@ class ProfilePage extends StatelessWidget {
                   MaterialPageRoute(builder: (_) => const PartiesPage()),
                 ),
               ),
-              _ManageTile(
-                icon: Icons.inbox_outlined,
-                accent: AppColors.accentIndigo,
-                accentSoft: AppColors.accentIndigoSoft,
-                title: 'Orders',
-                subtitle: 'Purchase requests from your customers',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const OrdersInboxPage()),
-                ),
-              ),
             ],
           ),
           const SizedBox(height: AppSizes.lg),
@@ -122,6 +111,17 @@ class ProfilePage extends StatelessWidget {
             children: [
               _ManageTile(
                 icon: Icons.receipt_long_outlined,
+                accent: AppColors.brandStrong,
+                accentSoft: AppColors.brandSoft,
+                title: AppStrings.navInvoices,
+                subtitle: 'Sales, purchase and credit notes',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const InvoicesPage()),
+                ),
+              ),
+              _ManageTile(
+                icon: Icons.assignment_outlined,
                 accent: AppColors.accentAmber,
                 accentSoft: AppColors.accentAmberSoft,
                 title: AppStrings.navChallans,

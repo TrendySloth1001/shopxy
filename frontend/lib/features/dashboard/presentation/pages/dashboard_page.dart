@@ -8,7 +8,6 @@ import 'package:shopxy/features/notifications/presentation/pages/notifications_p
 import 'package:shopxy/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:shopxy/core/router/app_shell.dart';
 import 'package:shopxy/features/notifications/presentation/widgets/notification_bell.dart';
-import 'package:shopxy/features/orders/presentation/pages/orders_inbox_page.dart';
 import 'package:shopxy/features/orders/presentation/providers/orders_provider.dart';
 import 'package:shopxy/features/stock/domain/entities/stock_transaction.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
@@ -73,7 +72,6 @@ class _DashboardPageState extends State<DashboardPage> {
                     padding: EdgeInsets.zero,
                     children: [
                       const _PendingInviteCallout(),
-                      const _OrdersCallout(),
                       const _Greeting(),
                       const SizedBox(height: AppSizes.lg),
                       _ValueHeadline(stats: stats),
@@ -813,82 +811,6 @@ class _TransactionRow extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────
 // First-login pending-invite callout
 // ─────────────────────────────────────────────────────────────────────
-
-class _OrdersCallout extends StatelessWidget {
-  const _OrdersCallout();
-
-  @override
-  Widget build(BuildContext context) {
-    final count = context.watch<OrdersProvider>().pendingCount;
-    if (count == 0) return const SizedBox.shrink();
-
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSizes.lg,
-        AppSizes.md,
-        AppSizes.lg,
-        AppSizes.sm,
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(AppSizes.radiusLg),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const OrdersInboxPage()),
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(AppSizes.lg),
-          decoration: ShapeDecoration(
-            color: AppColors.warningSoft,
-            shape: AppShapes.squircle(
-              AppSizes.radiusLg,
-              side: const BorderSide(color: AppColors.warning, width: 1),
-            ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: const BoxDecoration(
-                  color: AppColors.warning,
-                  shape: BoxShape.circle,
-                ),
-                alignment: Alignment.center,
-                child: const Icon(Icons.inbox_rounded,
-                    color: AppColors.white, size: 18),
-              ),
-              const SizedBox(width: AppSizes.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      count == 1
-                          ? '1 ${AppStrings.newOrderWaitingTitle.toLowerCase()}'
-                          : '$count ${AppStrings.newOrdersWaitingTitle.toLowerCase()}',
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: AppColors.warning,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      AppStrings.newOrderWaitingSubtitle,
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: AppColors.warning),
-                    ),
-                  ],
-                ),
-              ),
-              const Icon(Icons.chevron_right_rounded, color: AppColors.warning),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class _PendingInviteCallout extends StatelessWidget {
   const _PendingInviteCallout();

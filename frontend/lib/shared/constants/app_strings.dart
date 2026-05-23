@@ -8,6 +8,7 @@ class AppStrings {
   static const String navProducts = 'Products';
   static const String navCategories = 'Categories';
   static const String navInvoices = 'Invoices';
+  static const String navOrders = 'Orders';
   static const String navVendors = 'Vendors';
   static const String navMore = 'More';
   static const String navProfile = 'Profile';
@@ -60,10 +61,6 @@ class AppStrings {
   static const String recentActivityEyebrow = 'RECENT ACTIVITY';
   static const String noRecentActivity =
       'No stock movements yet. Your recent in/out activity will appear here.';
-  static const String newOrderWaitingTitle = 'New order waiting';
-  static const String newOrdersWaitingTitle = 'New orders waiting';
-  static const String newOrderWaitingSubtitle =
-      'Confirm to create the invoice and notify the customer.';
   static const String pendingInvitationTitle = 'You have a pending invitation';
 
   // Filters (shared)
@@ -291,6 +288,53 @@ class AppStrings {
   static const String edit = 'Edit';
   static const String retry = 'Retry';
   static const String confirm = 'Confirm';
+
+  // Orders
+  static const String orders = 'Orders';
+  static const String confirmOrder = 'Confirm order';
+  static const String confirmAndCreateInvoice = 'Confirm & create invoice';
+  static const String declineOrder = 'Decline order';
+  static const String confirmOrderTitle = 'Confirm this order?';
+  static const String confirmOrderBody =
+      'This creates a draft sale invoice for the items. Stock will move once you confirm the invoice.';
+  static const String declineOrderTitle = 'Decline this order?';
+  static const String declineOrderBody =
+      'The customer will be notified. You can leave a note explaining why.';
+  static const String declineOrderNoteHint = 'Reason (optional)';
+  static const String inboxSearchHint = 'Search customer, item or #id';
+  static const String tabAll = 'All';
+  static const String tabPending = 'Pending';
+  static const String tabConfirmed = 'Confirmed';
+  static const String tabRejected = 'Rejected';
+  static const String allCaughtUp = 'All caught up';
+  static const String allCaughtUpHint = 'New orders will land here.';
+  static const String noOrdersYet = 'No orders here yet';
+  static const String stockShortfall = 'Low stock';
+  static const String inactiveProduct = 'Inactive product';
+
+  // Order detail
+  static const String orderLinkedParty = 'Linked party';
+  static const String orderRestock = 'Restock';
+  static const String orderTotalsSubtotal = 'Subtotal';
+  static const String orderTotalsTax = 'Tax';
+  static const String orderTotalsDiscount = 'Discount';
+  static const String orderTotalsTotal = 'Total';
+  static const String orderCustomerNote = "Customer's note";
+  static const String orderPartialFulfillFootnote =
+      'Final invoice may differ if you partial-fulfill.';
+  static const String orderJourneyPlaced = 'Placed';
+  static const String orderJourneyConfirmed = 'Confirmed';
+  static const String orderJourneyInvoiced = 'Invoiced';
+  static const String orderJourneyPaid = 'Paid';
+  static const String orderSummaryItemsLabel = 'Items';
+  static const String orderSummaryQtyLabel = 'Total qty';
+  static const String orderSummaryTotalLabel = 'Estimated';
+  static const String orderActionShare = 'Share order summary';
+  static const String orderDeclineReasonOutOfStock = 'Out of stock';
+  static const String orderDeclineReasonClosed = 'Closed today';
+  static const String orderDeclineReasonPriceChanged = 'Price changed';
+  static const String orderDeclineReasonOther = 'Other';
+  static const String orderStockUnknown = 'Stock unknown';
 
   // States
   static const String loading = 'Loading...';
