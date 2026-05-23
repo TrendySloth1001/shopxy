@@ -131,7 +131,7 @@ app.use('/payments', ownerOnly, paymentsRouter);
 
 app.use(errorHandler);
 
-const port = Number(process.env.PORT) || 3001;
+const port = Number(process.env.PORT) || 3003;
 const host = process.env.HOST || '0.0.0.0';
 
 async function startServer(): Promise<void> {
