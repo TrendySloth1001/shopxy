@@ -77,6 +77,102 @@ export class PartiesService {
     });
   }
 
+  /// One-shot detail payload for the party page. Pulls party header,
+  /// recent invoices + challans, totals grouped by invoice type, and the
+  /// linked-user identity in parallel. Used by the merchant-side party
+  /// detail screen.
+  async getPartyOverview(id: number) {
+    const party = await prisma.party.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        contactName: true,
+        phone: true,
+        email: true,
+        address: true,
+        gstin: true,
+        isActive: true,
+        isSystem: true,
+        createdAt: true,
+        updatedAt: true,
+        linkedUserId: true,
+        linkedUser: { select: { id: true, name: true, email: true } },
+      },
+    });
+    if (!party) return null;
+
+    const [counts, totalsByType, recentInvoices, recentChallans] =
+      await Promise.all([
+        // Aggregate counts — cheap and avoids two extra queries below.
+        Promise.all([
+          prisma.invoice.count({ where: { partyId: id } }),
+          prisma.challan.count({ where: { partyId: id } }),
+        ]).then(([invoices, challans]) => ({ invoices, challans })),
+
+        // Sum totals per invoice type so the detail page can show
+        // sales / returns / net side by side in a single round trip.
+        prisma.invoice.groupBy({
+          by: ['type'],
+          where: { partyId: id },
+          _sum: { total: true },
+          _count: { _all: true },
+        }),
+
+        prisma.invoice.findMany({
+          where: { partyId: id },
+          orderBy: { invoiceDate: 'desc' },
+          take: 15,
+          select: {
+            id: true,
+            invoiceNo: true,
+            type: true,
+            status: true,
+            invoiceDate: true,
+            total: true,
+            _count: { select: { items: true } },
+          },
+        }),
+
+        prisma.challan.findMany({
+          where: { partyId: id },
+          orderBy: { createdAt: 'desc' },
+          take: 15,
+          select: {
+            id: true,
+            challanNo: true,
+            status: true,
+            createdAt: true,
+            invoiceId: true,
+            _count: { select: { items: true } },
+          },
+        }),
+      ]);
+
+    // Most recent activity across both invoices and challans.
+    const lastInvoice = recentInvoices[0]?.invoiceDate ?? null;
+    const lastChallan = recentChallans[0]?.createdAt ?? null;
+    const lastActivityAt =
+      lastInvoice && lastChallan
+        ? lastInvoice > lastChallan
+          ? lastInvoice
+          : lastChallan
+        : lastInvoice ?? lastChallan;
+
+    return {
+      party,
+      counts,
+      totals: totalsByType.map((t) => ({
+        type: t.type,
+        count: t._count._all,
+        total: t._sum.total ?? 0,
+      })),
+      recentInvoices,
+      recentChallans,
+      lastActivityAt,
+    };
+  }
+
   async updateParty(
     id: number,
     data: {

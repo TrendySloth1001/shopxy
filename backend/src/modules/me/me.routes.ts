@@ -6,6 +6,18 @@ const router = Router();
 
 router.get('/links', asyncHandler((req, res) => meController.links(req, res)));
 router.get(
+  '/catalog/products',
+  asyncHandler((req, res) => meController.catalog(req, res)),
+);
+router.get(
+  '/catalog/products/:productId',
+  asyncHandler((req, res) => meController.catalogProduct(req, res)),
+);
+router.get(
+  '/catalog/categories',
+  asyncHandler((req, res) => meController.catalogCategories(req, res)),
+);
+router.get(
   '/parties/:partyId/invoices',
   asyncHandler((req, res) => meController.partyInvoices(req, res)),
 );

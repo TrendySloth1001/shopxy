@@ -16,7 +16,6 @@ const MINIO_PORT = Number(process.env.MINIO_PORT ?? 9000);
 const MINIO_ACCESS_KEY = process.env.MINIO_ACCESS_KEY ?? 'shopxy';
 const MINIO_SECRET_KEY = process.env.MINIO_SECRET_KEY ?? 'shopxy123';
 export const MINIO_BUCKET = process.env.MINIO_BUCKET ?? 'shopxy-images';
-export const MINIO_PUBLIC_URL = (process.env.MINIO_PUBLIC_URL ?? 'http://localhost:3005').replace(/\/$/, '');
 
 export const s3 = new S3Client({
   region: 'us-east-1',
@@ -66,7 +65,13 @@ export async function uploadFile(
     }),
   );
 
-  const url = `${MINIO_PUBLIC_URL}/images/${key}`;
+  // Return a **relative path** rather than an absolute URL — the
+  // backend has no reliable way to know what host the client will use
+  // to reach it (localhost in dev, a devtunnel URL on a phone,
+  // a production domain when shipped). The frontend joins this path
+  // with its own `apiBaseUrl` at render time, so the same row works
+  // for every deployment.
+  const url = `/images/${key}`;
   return { key, url };
 }
 

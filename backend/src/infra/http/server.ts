@@ -16,6 +16,11 @@ import invitationsRouter from '../../modules/invitations/invitations.routes.js';
 import notificationsRouter from '../../modules/notifications/notifications.routes.js';
 import reportsRouter from '../../modules/reports/reports.routes.js';
 import meRouter from '../../modules/me/me.routes.js';
+import customFieldsRouter from '../../modules/customFields/customFields.routes.js';
+import {
+  ordersRouter,
+  customerOrdersRouter,
+} from '../../modules/purchase-requests/purchase-requests.routes.js';
 import { getFileStream, ensureBucket } from '../../modules/upload/upload.service.js';
 import { requireAuth } from '../../shared/http/requireAuth.js';
 import { errorHandler } from '../../shared/http/errorHandler.js';
@@ -47,6 +52,7 @@ app.get('/images/:filename', async (req: Request, res: Response) => {
 app.use(requireAuth);
 
 app.use('/categories', categoriesRouter);
+app.use('/custom-fields', customFieldsRouter);
 app.use('/products', productsRouter);
 app.use('/stock', stockRouter);
 app.use('/stock-adjustments', stockAdjustmentsRouter);
@@ -60,6 +66,8 @@ app.use('/invitations', invitationsRouter);
 app.use('/notifications', notificationsRouter);
 app.use('/reports', reportsRouter);
 app.use('/me', meRouter);
+app.use('/me/orders', customerOrdersRouter);
+app.use('/orders', ordersRouter);
 
 app.use(errorHandler);
 

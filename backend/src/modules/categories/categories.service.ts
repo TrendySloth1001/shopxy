@@ -12,11 +12,23 @@ export class CategoriesService {
 
   async listCategories(options: {
     activeOnly: boolean;
+    search?: string;
     page: number;
     limit: number;
     skip: number;
   }) {
-    const where = options.activeOnly ? { isActive: true } : {};
+    // Composite filter: active flag + optional case-insensitive name
+    // contains-search. Needed once a shop has more categories than fit
+    // on a horizontal pill strip — the picker UI lazy-fetches matches
+    // as the user types.
+    const where: {
+      isActive?: boolean;
+      name?: { contains: string; mode: 'insensitive' };
+    } = {};
+    if (options.activeOnly) where.isActive = true;
+    if (options.search && options.search.trim().length > 0) {
+      where.name = { contains: options.search.trim(), mode: 'insensitive' };
+    }
 
     const [categories, total] = await Promise.all([
       prisma.category.findMany({
