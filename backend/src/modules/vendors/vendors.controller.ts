@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { parsePagination, paginatedResponse } from '../../shared/http/pagination.js';
 import { vendorsService } from './vendors.service.js';
 import { paymentsService } from '../payments/payments.service.js';
+import { contactChangeLogService } from '../contact-change-log/contact-change-log.service.js';
 
 // 2-digit GST state code; full validation against the lookup is enforced
 // client-side via the state drop-down.
@@ -92,7 +93,7 @@ export class VendorsController {
     if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
 
     const payload = updateVendorSchema.parse(req.body);
-    const vendor = await vendorsService.updateVendor(id, payload);
+    const vendor = await vendorsService.updateVendor(id, payload, req.user?.sub ?? null);
     res.json(vendor);
   }
 
@@ -110,6 +111,18 @@ export class VendorsController {
 
     await vendorsService.deleteVendor(id);
     res.status(204).send();
+  }
+
+  async changes(req: Request, res: Response): Promise<void> {
+    const id = parseId(req.params.id);
+    if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
+    const params = parsePagination(req);
+    const { rows, total } = await contactChangeLogService.listForEntity({
+      entityType: 'VENDOR',
+      entityId: id,
+      ...params,
+    });
+    res.json(paginatedResponse(rows, total, params));
   }
 }
 

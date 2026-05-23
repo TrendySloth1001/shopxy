@@ -1,4 +1,5 @@
 import prisma from '../../infra/db/prisma.js';
+import { contactChangeLogService } from '../contact-change-log/contact-change-log.service.js';
 
 export class PartiesService {
   async createParty(data: {
@@ -223,8 +224,43 @@ export class PartiesService {
       gstin?: string | null;
       isActive?: boolean;
     },
+    changedById: number | null = null,
   ) {
-    return prisma.party.update({ where: { id }, data });
+    // Read-then-write inside one transaction so the log never disagrees
+    // with the row. The BEFORE snapshot is restricted to the fields
+    // present in the patch — logging fields the caller didn't touch
+    // would be noise.
+    return prisma.$transaction(async (tx) => {
+      const before = await tx.party.findUnique({
+        where: { id },
+        select: {
+          name: true,
+          contactName: true,
+          phone: true,
+          email: true,
+          address: true,
+          city: true,
+          state: true,
+          stateCode: true,
+          pinCode: true,
+          panNumber: true,
+          gstin: true,
+          isActive: true,
+        },
+      });
+      const updated = await tx.party.update({ where: { id }, data });
+      if (before) {
+        await contactChangeLogService.recordChanges({
+          entityType: 'PARTY',
+          entityId: id,
+          before,
+          after: data,
+          changedById,
+          tx,
+        });
+      }
+      return updated;
+    });
   }
 
   async deleteParty(id: number) {

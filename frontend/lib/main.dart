@@ -107,6 +107,10 @@ void main() async {
         ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
         ChangeNotifierProvider<NavigationPrefsProvider>.value(value: navPrefs),
 
+        // Raw HTTP client — surfaced for widgets that hit small endpoints
+        // (e.g. ContactChangesSection) without their own data-source layer.
+        Provider<ApiClient>.value(value: apiClient),
+
         // Data sources available for direct injection (e.g. detail pages)
         Provider<ProductsRemoteDataSource>.value(value: productsDs),
         Provider<StockRemoteDataSource>.value(value: stockDs),
