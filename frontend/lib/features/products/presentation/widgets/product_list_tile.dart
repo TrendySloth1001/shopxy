@@ -15,8 +15,14 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 ///   2. Sell · cost · margin % — what you actually price-set against,
 ///      with the margin colour-coded (green ≥ 20%, amber 5–20%, red < 5%)
 ///   3. Stock state with threshold context ("3 KG / reorder at 5")
-///   4. Loss-leader flag if sellingPrice > MRP (a price-entry mistake
+///   4. Last-activity hint ("Sold 3d ago" / "Out since 5d ago") + vendor pill
+///   5. Loss-leader flag if sellingPrice > MRP (a price-entry mistake
 ///      worth catching at a glance)
+///
+/// Density modes are meaningfully different:
+///   • compact   — small thumb, name 1 line, no description, tight padding.
+///   • comfortable (card) — large thumb, name up to 2 lines, description shown
+///                 when present, larger price font.
 ///
 /// The whole row is tappable to the product detail page.
 class ProductListTile extends StatelessWidget {
@@ -81,10 +87,22 @@ class ProductListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final compact = context.watch<NavigationPrefsProvider>().isCompact;
-    final imageSide = compact ? 56.0 : 72.0;
-    final vPad = compact ? AppSizes.sm : AppSizes.md;
+    // Card mode (comfortable) is the richer layout — bigger thumb, more
+    // breathing room, name wraps to 2 lines, description visible.
+    final imageSide = compact ? 56.0 : 96.0;
+    final vPad = compact ? AppSizes.sm : AppSizes.lg;
+    final nameMaxLines = compact ? 1 : 2;
+    final showDescription =
+        !compact && (product.description?.trim().isNotEmpty ?? false);
+    final priceStyle = compact
+        ? theme.textTheme.titleMedium
+        : theme.textTheme.titleLarge;
     final margin = _marginPct;
     final stock = _stockPalette();
+    final activity = _activityHint();
+    final hasVendor =
+        (product.lastVendorName != null && product.lastVendorName!.isNotEmpty);
+    final showMetaLine = activity != null || hasVendor;
 
     return Material(
       color: AppColors.white,
@@ -113,7 +131,7 @@ class ProductListTile extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                         height: 1.25,
                       ),
-                      maxLines: 1,
+                      maxLines: nameMaxLines,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 2),
@@ -127,6 +145,19 @@ class ProductListTile extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
+                    // Description — comfortable-only, gives the card real body
+                    if (showDescription) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        product.description!.trim(),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.muted,
+                          height: 1.35,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                     const SizedBox(height: AppSizes.sm),
                     // Price + margin line
                     _MerchantPriceLine(
@@ -136,6 +167,7 @@ class ProductListTile extends StatelessWidget {
                       marginPct: margin,
                       marginPalette: margin == null ? null : _marginPalette(margin),
                       isAboveMrp: _isAboveMrp,
+                      priceStyle: priceStyle,
                     ),
                     const SizedBox(height: AppSizes.xs),
                     // Stock pill
@@ -164,6 +196,33 @@ class ProductListTile extends StatelessWidget {
                         ],
                       ),
                     ),
+                    // Last-activity + vendor pill row — only when we have
+                    // something to say. Skipped entirely for fresh products
+                    // with no ledger history so we don't render empty space.
+                    if (showMetaLine) ...[
+                      const SizedBox(height: AppSizes.xs),
+                      Wrap(
+                        spacing: AppSizes.xs,
+                        runSpacing: 4,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          if (activity != null)
+                            _MetaChip(
+                              icon: activity.icon,
+                              label: activity.label,
+                              fg: activity.fg,
+                              bg: activity.bg,
+                            ),
+                          if (hasVendor)
+                            _MetaChip(
+                              icon: Icons.storefront_outlined,
+                              label: product.lastVendorName!,
+                              fg: AppColors.muted,
+                              bg: AppColors.surfaceTint,
+                            ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -190,6 +249,116 @@ class ProductListTile extends StatelessWidget {
         ? qty.toInt().toString()
         : qty.toStringAsFixed(2);
   }
+
+  /// Resolve the most useful last-activity hint for this row.
+  ///
+  /// Rules (in order):
+  ///   • Out-of-stock + lastStockOutAt → "Out since 5d ago" (red).
+  ///   • Otherwise, whichever of lastStockOutAt / lastStockInAt is most recent
+  ///     wins. STOCK_OUT framed as "Sold Xago", STOCK_IN as "Stocked in Xago"
+  ///     (within 7d) or "Last in: Xago" when older.
+  ///   • Nothing if there's no ledger movement at all.
+  ({IconData icon, String label, Color fg, Color bg})? _activityHint() {
+    final lastIn = product.lastStockInAt;
+    final lastOut = product.lastStockOutAt;
+
+    if (product.isOutOfStock && lastOut != null) {
+      return (
+        icon: Icons.event_busy_outlined,
+        label: 'Out since ${_relativeTime(lastOut)}',
+        fg: AppColors.error,
+        bg: AppColors.errorSoft,
+      );
+    }
+
+    // Pick the most recent of the two when both exist — STOCK_OUT framed
+    // as "Sold X ago" since the merchant cares more about the movement.
+    if (lastOut != null && (lastIn == null || lastOut.isAfter(lastIn))) {
+      return (
+        icon: Icons.point_of_sale_outlined,
+        label: 'Sold ${_relativeTime(lastOut)}',
+        fg: AppColors.muted,
+        bg: AppColors.surfaceTint,
+      );
+    }
+
+    if (lastIn != null) {
+      final ageDays = DateTime.now().difference(lastIn).inDays;
+      final label = ageDays <= 7
+          ? 'Stocked in ${_relativeTime(lastIn)}'
+          : 'Last in: ${_relativeTime(lastIn)}';
+      return (
+        icon: Icons.south_west_rounded,
+        label: label,
+        fg: AppColors.muted,
+        bg: AppColors.surfaceTint,
+      );
+    }
+
+    return null;
+  }
+}
+
+/// Concise relative-time formatter — "5h ago", "2d ago", "1w ago", "3mo ago".
+/// Tuned for at-a-glance scanning in dense list rows, not precision.
+String _relativeTime(DateTime when) {
+  final diff = DateTime.now().difference(when);
+  if (diff.inMinutes < 1) return 'just now';
+  if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+  if (diff.inHours < 24) return '${diff.inHours}h ago';
+  final days = diff.inDays;
+  if (days < 7) return '${days}d ago';
+  if (days < 30) return '${(days / 7).floor()}w ago';
+  if (days < 365) return '${(days / 30).floor()}mo ago';
+  return '${(days / 365).floor()}y ago';
+}
+
+/// Tiny rounded pill used for the activity + vendor metadata row.
+class _MetaChip extends StatelessWidget {
+  const _MetaChip({
+    required this.icon,
+    required this.label,
+    required this.fg,
+    required this.bg,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color fg;
+  final Color bg;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: ShapeDecoration(
+        color: bg,
+        shape: AppShapes.squircle(AppSizes.radiusFull),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 11, color: fg),
+          const SizedBox(width: 3),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 160),
+            child: Text(
+              label,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: fg,
+                fontWeight: FontWeight.w600,
+                fontSize: 10.5,
+                letterSpacing: 0.1,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 /// Sell price (prominent) · cost (muted, smaller) · margin chip.
@@ -203,6 +372,7 @@ class _MerchantPriceLine extends StatelessWidget {
     required this.marginPct,
     required this.marginPalette,
     required this.isAboveMrp,
+    this.priceStyle,
   });
 
   final double sell;
@@ -211,6 +381,7 @@ class _MerchantPriceLine extends StatelessWidget {
   final double? marginPct;
   final ({Color fg, Color bg})? marginPalette;
   final bool isAboveMrp;
+  final TextStyle? priceStyle;
 
   @override
   Widget build(BuildContext context) {
@@ -223,7 +394,7 @@ class _MerchantPriceLine extends StatelessWidget {
         // Sell price — primary
         Text(
           '${AppStrings.currencySymbol}${_fmt(sell)}',
-          style: theme.textTheme.titleMedium?.copyWith(
+          style: (priceStyle ?? theme.textTheme.titleMedium)?.copyWith(
             color: AppColors.black,
             fontWeight: FontWeight.w800,
             letterSpacing: -0.4,

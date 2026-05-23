@@ -37,6 +37,10 @@ class Product {
     required this.createdAt,
     required this.updatedAt,
     this.images = const [],
+    this.lastStockInAt,
+    this.lastStockOutAt,
+    this.lastVendorId,
+    this.lastVendorName,
   });
 
   final int id;
@@ -58,6 +62,21 @@ class Product {
   final DateTime createdAt;
   final DateTime updatedAt;
   final List<ProductImage> images;
+
+  /// Most recent STOCK_IN ledger timestamp for this product, when one exists.
+  /// Powers the "Stocked in 2d ago" hint on the merchant product list.
+  final DateTime? lastStockInAt;
+
+  /// Most recent STOCK_OUT ledger timestamp. Used for "Sold 3d ago" and
+  /// "Out since 5d ago" framings.
+  final DateTime? lastStockOutAt;
+
+  /// Vendor id for the supplier of the most recent STOCK_IN, when the
+  /// transaction recorded a real vendor (not a free-text supplier).
+  final int? lastVendorId;
+
+  /// Vendor display name paired with [lastVendorId].
+  final String? lastVendorName;
 
   String? get primaryImageUrl => images.isNotEmpty ? images.first.url : null;
   bool get isLowStock => stockQuantity <= lowStockThreshold && stockQuantity > 0;
