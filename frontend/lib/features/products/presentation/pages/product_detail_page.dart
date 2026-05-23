@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -6,6 +7,11 @@ import 'package:shopxy/features/products/data/datasources/products_remote_data_s
 import 'package:shopxy/features/products/domain/entities/product.dart';
 import 'package:shopxy/features/products/presentation/pages/add_edit_product_page.dart';
 import 'package:shopxy/features/products/presentation/providers/products_provider.dart';
+import 'package:shopxy/features/custom_fields/data/datasources/custom_fields_remote_data_source.dart';
+import 'package:shopxy/features/custom_fields/domain/entities/custom_field.dart';
+import 'package:shopxy/features/custom_fields/presentation/providers/custom_fields_provider.dart';
+import 'package:shopxy/features/products/presentation/widgets/product_image_carousel.dart';
+import 'package:shopxy/features/products/presentation/widgets/product_thumbnail.dart';
 import 'package:shopxy/features/stock/data/datasources/stock_remote_data_source.dart';
 import 'package:shopxy/features/stock/domain/entities/stock_transaction.dart';
 import 'package:shopxy/features/stock/presentation/pages/stock_ledger_page.dart';
@@ -19,11 +25,8 @@ import 'package:shopxy/shared/widgets/app_button.dart';
 import 'package:shopxy/shared/widgets/app_card.dart';
 import 'package:shopxy/shared/widgets/app_dialog.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
-import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
 import 'package:shopxy/shared/widgets/app_section_header.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
-import 'package:shopxy/shared/illustrations/line_illustrations.dart';
-import 'package:shopxy/shared/widgets/glass_widgets.dart';
 
 class ProductDetailPage extends StatefulWidget {
   const ProductDetailPage({super.key, required this.productId});
@@ -40,6 +43,11 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   String? _supplierHistoryError;
   List<StockTransaction> _stockInTransactions = const [];
 
+  // Custom field values for this product. Empty by default — populated
+  // alongside the supplier history on every refresh so the detail page
+  // never shows stale specs.
+  List<ProductCustomFieldValue> _customFieldValues = const [];
+
   @override
   void initState() {
     super.initState();
@@ -47,7 +55,123 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   }
 
   Future<void> _refreshAll() async {
-    await Future.wait([_loadProduct(), _loadSupplierHistory()]);
+    // Tree lookup (sections + their names) is needed to label the
+    // Specifications groups. Provider caches across pages so this is
+    // a no-op once the user has visited settings or another product.
+    final cf = context.read<CustomFieldsProvider>();
+    final treeFuture = cf.hasLoadedOnce ? Future.value() : cf.load();
+
+    await Future.wait([
+      _loadProduct(),
+      _loadSupplierHistory(),
+      _loadCustomFieldValues(),
+      treeFuture,
+    ]);
+  }
+
+  /// Build the SPECIFICATIONS area as one [_DetailSection] per
+  /// shop-side section, plus a fallback group for ungrouped values.
+  /// Sections with no filled-in values collapse away — the page stays
+  /// tight even when many definitions exist.
+  List<Widget> _buildCustomFieldSections() {
+    if (_customFieldValues.isEmpty) return const [];
+
+    // Section-id → name resolved from the provider. Definitions
+    // shipped on each value already carry sectionId, so this is
+    // a cheap lookup once the tree is loaded.
+    final cf = context.watch<CustomFieldsProvider>();
+    final sectionNames = <int, String>{
+      for (final s in cf.sections) s.id: s.name,
+    };
+
+    final Map<int?, List<ProductCustomFieldValue>> bySection = {};
+    for (final v in _customFieldValues
+        .where((v) => v.value.trim().isNotEmpty)) {
+      bySection.putIfAbsent(v.definition.sectionId, () => []).add(v);
+    }
+    if (bySection.isEmpty) return const [];
+
+    final widgets = <Widget>[];
+    final ungrouped = bySection.remove(null);
+    if (ungrouped != null) {
+      widgets.add(_buildSection(AppStrings.specifications, ungrouped));
+      widgets.add(const SizedBox(height: AppSizes.lg));
+    }
+    // Render sections in provider order (which itself is sortOrder-
+    // then-name) so the detail page matches the form's grouping.
+    final orderedSectionIds = [
+      for (final s in cf.sections) s.id,
+      ...bySection.keys.where((id) => id != null && !sectionNames.containsKey(id)),
+    ];
+    for (final sectionId in orderedSectionIds) {
+      final values = bySection[sectionId];
+      if (values == null || values.isEmpty) continue;
+      widgets.add(_buildSection(
+        sectionNames[sectionId] ?? AppStrings.specifications,
+        values,
+      ));
+      widgets.add(const SizedBox(height: AppSizes.lg));
+    }
+    return widgets;
+  }
+
+  Widget _buildSection(
+    String title,
+    List<ProductCustomFieldValue> values,
+  ) {
+    return _DetailSection(
+      title: title.toUpperCase(),
+      rows: values
+          .map(
+            (v) => _DetailRow(
+              v.definition.name,
+              _formatCustomFieldValue(v),
+              // Paragraphy values stack label-above-value so reading
+              // them isn't a right-aligned eye-strain exercise. Same
+              // rule for any TEXT/DROPDOWN value that's long enough
+              // to need wrapping — a single short word like "DC" can
+              // stay inline on the right.
+              stack: v.definition.type == CustomFieldType.LONG_TEXT ||
+                  v.value.length > 40 ||
+                  v.value.contains('\n'),
+            ),
+          )
+          .toList(),
+    );
+  }
+
+  /// Pretty-print a custom field value for the DETAILS-style row.
+  /// Backend stores everything as a string; type-aware rendering lives
+  /// here so the wire format stays uniform.
+  String _formatCustomFieldValue(ProductCustomFieldValue v) {
+    switch (v.definition.type) {
+      case CustomFieldType.DATE:
+        final parsed = DateTime.tryParse(v.value);
+        if (parsed == null) return v.value;
+        return DateFormat('dd MMM yyyy').format(parsed.toLocal());
+      case CustomFieldType.BOOLEAN:
+        return v.value == 'true' ? 'Yes' : 'No';
+      case CustomFieldType.NUMBER:
+        final suffix = v.definition.unitSuffix;
+        if (suffix == null || suffix.isEmpty) return v.value;
+        return '${v.value} $suffix';
+      case CustomFieldType.TEXT:
+      case CustomFieldType.LONG_TEXT:
+      case CustomFieldType.DROPDOWN:
+        return v.value;
+    }
+  }
+
+  Future<void> _loadCustomFieldValues() async {
+    try {
+      final ds = context.read<CustomFieldsRemoteDataSource>();
+      final values = await ds.listValuesForProduct(widget.productId);
+      if (!mounted) return;
+      setState(() => _customFieldValues = values);
+    } catch (_) {
+      // Specs are non-blocking; if they fail we just don't render the
+      // section, rather than erroring the whole detail page.
+    }
   }
 
   Future<void> _loadProduct() async {
@@ -97,15 +221,23 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     }
   }
 
-  void _openStockSheet(String type) {
+  Future<void> _openStockSheet(String type) async {
     if (_product == null) return;
-    showModalBottomSheet(
+    final saved = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       backgroundColor: AppColors.white,
       shape: AppShapes.squircleTop(AppSizes.bottomSheetRadius),
       builder: (_) => StockBottomSheet(product: _product!, initialType: type),
-    ).then((_) => _refreshAll());
+    );
+    if (!mounted) return;
+    // Only the product (stock count / cached purchase price) and the
+    // supplier history actually move when a stock entry is posted. The
+    // custom-field tree and the per-product values don't — re-fetching
+    // them on every open/dismiss multiplied DB load for nothing.
+    if (saved == true) {
+      await Future.wait([_loadProduct(), _loadSupplierHistory()]);
+    }
   }
 
   void _openLedger() {
@@ -244,47 +376,39 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          GlassHero.line(
-            kind: LineArt.productTag,
-            height: 160,
-            illustrationSize: 120,
-            accent: p.isActive ? AppColors.brand : AppColors.muted,
-          ),
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: _refreshAll,
-              color: AppColors.black,
-              backgroundColor: AppColors.white,
-              child: ListView(
-          padding: const EdgeInsets.all(AppSizes.lg),
+      bottomNavigationBar: _StockActionBar(
+        onStockIn: () => _openStockSheet('STOCK_IN'),
+        onStockOut: () => _openStockSheet('STOCK_OUT'),
+      ),
+      body: RefreshIndicator(
+        onRefresh: _refreshAll,
+        color: AppColors.black,
+        backgroundColor: AppColors.white,
+        child: ListView(
+          // No outer padding — the carousel needs to bleed full-
+          // width to the screen edges. The content below is wrapped
+          // in its own Padding instead.
+          padding: EdgeInsets.zero,
           children: [
-            _ProductHeaderCard(product: p),
+            // Carousel pages through every image the product has;
+            // falls back to a monogram band when there are none.
+            // Tap any image opens a pinch-zoom lightbox. Lives in
+            // the scroll view so the user can scroll past it
+            // instead of having it occupy permanent top real-estate.
+            ProductImageCarousel(product: p),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSizes.lg,
+                AppSizes.lg,
+                AppSizes.lg,
+                AppSizes.huge,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _ProductHeaderCard(product: p),
             const SizedBox(height: AppSizes.md),
             _StockStatusCard(product: p),
-            const SizedBox(height: AppSizes.md),
-            Row(
-              children: [
-                Expanded(
-                  child: AppButton.secondary(
-                    label: AppStrings.stockIn,
-                    icon: Icons.add_rounded,
-                    onPressed: () => _openStockSheet('STOCK_IN'),
-                    fullWidth: true,
-                  ),
-                ),
-                const SizedBox(width: AppSizes.md),
-                Expanded(
-                  child: AppButton.primary(
-                    label: AppStrings.stockOut,
-                    icon: Icons.remove_rounded,
-                    onPressed: () => _openStockSheet('STOCK_OUT'),
-                    fullWidth: true,
-                  ),
-                ),
-              ],
-            ),
             const SizedBox(height: AppSizes.md),
             AppCard(
               padding: const EdgeInsets.symmetric(
@@ -305,13 +429,13 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Stock ledger',
+                          AppStrings.stockLedger,
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
                         ),
                         Text(
-                          'Every movement with source documents',
+                          AppStrings.stockLedgerHint,
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                 color: AppColors.muted,
                               ),
@@ -341,7 +465,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   currencyFormat.format(p.purchasePrice),
                 ),
                 _DetailRow(AppStrings.taxPercent, '${p.taxPercent}%'),
-                _DetailRow('Profit Margin', '${p.margin.toStringAsFixed(1)}%'),
+                _DetailRow(AppStrings.profitMargin, '${p.margin.toStringAsFixed(1)}%'),
               ],
             ),
             const SizedBox(height: AppSizes.lg),
@@ -352,6 +476,12 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               currencyFormat: currencyFormat,
             ),
             const SizedBox(height: AppSizes.lg),
+            // Custom-field values render between supplier history and
+            // the immutable DETAILS section, grouped by their section
+            // definitions (one [_DetailSection] per shop-side
+            // [CustomFieldSection]). Values with no section land in a
+            // generic SPECIFICATIONS group.
+            ..._buildCustomFieldSections(),
             _DetailSection(
               title: 'DETAILS',
               rows: [
@@ -361,17 +491,17 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   _DetailRow(AppStrings.hsnCode, p.hsnCode!),
                 _DetailRow(AppStrings.unit, AppUnits.label(p.unit)),
                 _DetailRow(
-                  'Created',
+                  AppStrings.created,
                   DateFormat('dd MMM yyyy').format(p.createdAt.toLocal()),
                 ),
               ],
             ),
-            const SizedBox(height: AppSizes.huge),
+                  const SizedBox(height: AppSizes.huge),
+                ],
+              ),
+            ),
           ],
         ),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -392,23 +522,16 @@ class _ProductHeaderCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const AppIconAvatar(
-                icon: Icons.inventory_2_outlined,
-                size: 56,
-              ),
+              // Same thumbnail primitive used by the list row and the
+              // hero — picks the product's photo when present, else
+              // its hash-tinted monogram. Always identifies the row.
+              ProductThumbnail(product: product, size: 56),
               const SizedBox(width: AppSizes.lg),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(product.name, style: theme.textTheme.titleMedium),
-                    const SizedBox(height: 2),
-                    Text(
-                      'SKU: ${product.sku}',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: AppColors.muted,
-                      ),
-                    ),
                     if (product.category != null) ...[
                       const SizedBox(height: 4),
                       AppStatusBadge(
@@ -420,6 +543,14 @@ class _ProductHeaderCard extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: AppSizes.md),
+          // Identifier ribbon — SKU + barcode as tap-to-copy chips so
+          // they're one tap away during inventory work (printing
+          // labels, looking up a row in invoices, etc).
+          _IdentifierRibbon(
+            sku: product.sku,
+            barcode: product.barcode,
           ),
           if (product.description != null &&
               product.description!.isNotEmpty) ...[
@@ -772,23 +903,49 @@ class _DetailSection extends StatelessWidget {
                 if (i > 0) const AppDivider.flush(),
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        rows[i].label,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: AppColors.muted,
+                  child: rows[i].stack
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              rows[i].label,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: AppColors.muted,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              rows[i].value,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        )
+                      : Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              rows[i].label,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: AppColors.muted,
+                              ),
+                            ),
+                            const SizedBox(width: AppSizes.md),
+                            // Expanded + soft-wrap so a long value
+                            // breaks to the next line instead of
+                            // overflowing the row off-screen.
+                            Expanded(
+                              child: Text(
+                                rows[i].value,
+                                textAlign: TextAlign.right,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      Text(
-                        rows[i].value,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
               ],
             ],
@@ -800,7 +957,171 @@ class _DetailSection extends StatelessWidget {
 }
 
 class _DetailRow {
-  const _DetailRow(this.label, this.value);
+  const _DetailRow(this.label, this.value, {this.stack = false});
   final String label;
   final String value;
+
+  /// When `true`, render the value below the label on its own line
+  /// (label small/muted, value full-width). Used for long-text custom
+  /// field values where a right-aligned wrap looks awkward.
+  final bool stack;
 }
+
+/// Sticky bottom action bar with the two stock movements. Always
+/// reachable regardless of scroll position — critical because the
+/// page now hosts carousel, pricing, supplier history, and (soon)
+/// custom fields, so the previous in-flow buttons were getting
+/// pushed far down off-screen.
+class _StockActionBar extends StatelessWidget {
+  const _StockActionBar({
+    required this.onStockIn,
+    required this.onStockOut,
+  });
+
+  final VoidCallback onStockIn;
+  final VoidCallback onStockOut;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      top: false,
+      child: Container(
+        decoration: const BoxDecoration(
+          color: AppColors.white,
+          border: Border(top: BorderSide(color: AppColors.hairline)),
+        ),
+        padding: const EdgeInsets.fromLTRB(
+          AppSizes.lg,
+          AppSizes.sm,
+          AppSizes.lg,
+          AppSizes.sm,
+        ),
+        // Bounded height — AppButton's inner `Center` would otherwise
+        // expand to fill the bottomNavigationBar slot vertically, the
+        // result being two giant rectangles instead of buttons.
+        child: SizedBox(
+          height: 52,
+          child: Row(
+            children: [
+              Expanded(
+                child: AppButton.secondary(
+                  label: AppStrings.stockIn,
+                  icon: Icons.add_rounded,
+                  onPressed: onStockIn,
+                  fullWidth: true,
+                ),
+              ),
+              const SizedBox(width: AppSizes.md),
+              Expanded(
+                child: AppButton.primary(
+                  label: AppStrings.stockOut,
+                  icon: Icons.remove_rounded,
+                  onPressed: onStockOut,
+                  fullWidth: true,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Identifier chips for SKU + optional barcode. Tap to copy. Lives
+/// directly under the product name so it's the first thing the user
+/// can act on — labels, lookups, scans all start here.
+class _IdentifierRibbon extends StatelessWidget {
+  const _IdentifierRibbon({required this.sku, required this.barcode});
+
+  final String sku;
+  final String? barcode;
+
+  void _copy(BuildContext context, String value, String label) {
+    Clipboard.setData(ClipboardData(text: value));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$label copied'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: AppSizes.sm,
+      runSpacing: AppSizes.xs,
+      children: [
+        _IdentifierChip(
+          icon: Icons.tag_rounded,
+          label: AppStrings.sku,
+          value: sku,
+          onTap: () => _copy(context, sku, AppStrings.sku),
+        ),
+        if (barcode != null && barcode!.isNotEmpty)
+          _IdentifierChip(
+            icon: Icons.qr_code_2_rounded,
+            label: AppStrings.barcode,
+            value: barcode!,
+            onTap: () => _copy(context, barcode!, AppStrings.barcode),
+          ),
+      ],
+    );
+  }
+}
+
+class _IdentifierChip extends StatelessWidget {
+  const _IdentifierChip({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      color: AppColors.surfaceTint,
+      shape: AppShapes.squircle(AppSizes.radiusFull),
+      child: InkWell(
+        customBorder: AppShapes.squircle(AppSizes.radiusFull),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.md,
+            vertical: 6,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: AppSizes.iconSm - 2, color: AppColors.muted),
+              const SizedBox(width: AppSizes.xs),
+              Text(
+                value,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: AppColors.black,
+                  fontWeight: FontWeight.w600,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
+              const SizedBox(width: AppSizes.xs),
+              const Icon(
+                Icons.copy_rounded,
+                size: 12,
+                color: AppColors.muted,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+

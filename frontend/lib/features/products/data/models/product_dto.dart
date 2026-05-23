@@ -2,13 +2,15 @@ import 'package:shopxy/features/categories/data/models/category_dto.dart';
 import 'package:shopxy/features/products/domain/entities/product.dart';
 
 class ProductDto {
-  static ProductImage _imageFromJson(Map<String, dynamic> json) => ProductImage(
+  static ProductImage imageFromJson(Map<String, dynamic> json) => ProductImage(
         id: json['id'] as int,
         productId: json['productId'] as int,
         url: json['url'] as String,
         sortOrder: json['sortOrder'] as int? ?? 0,
         createdAt: DateTime.parse(json['createdAt'] as String),
       );
+  static ProductImage _imageFromJson(Map<String, dynamic> json) =>
+      imageFromJson(json);
 
   static Product fromJson(Map<String, dynamic> json) {
     final imagesJson = json['images'] as List<dynamic>?;
