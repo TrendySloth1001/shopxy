@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { parsePagination, paginatedResponse } from '../../shared/http/pagination.js';
 import { partiesService } from './parties.service.js';
 import { paymentsService } from '../payments/payments.service.js';
+import { contactChangeLogService } from '../contact-change-log/contact-change-log.service.js';
 
 // GST state code is a strict 2 digits; full validation against the lookup
 // is enforced client-side via the state drop-down.
@@ -92,7 +93,7 @@ export class PartiesController {
     if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
 
     const payload = updatePartySchema.parse(req.body);
-    const party = await partiesService.updateParty(id, payload);
+    const party = await partiesService.updateParty(id, payload, req.user?.sub ?? null);
     res.json(party);
   }
 
@@ -110,6 +111,18 @@ export class PartiesController {
 
     await partiesService.deleteParty(id);
     res.status(204).send();
+  }
+
+  async changes(req: Request, res: Response): Promise<void> {
+    const id = parseId(req.params.id);
+    if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
+    const params = parsePagination(req);
+    const { rows, total } = await contactChangeLogService.listForEntity({
+      entityType: 'PARTY',
+      entityId: id,
+      ...params,
+    });
+    res.json(paginatedResponse(rows, total, params));
   }
 }
 

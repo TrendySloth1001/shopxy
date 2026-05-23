@@ -1,4 +1,5 @@
 import prisma from '../../infra/db/prisma.js';
+import { contactChangeLogService } from '../contact-change-log/contact-change-log.service.js';
 
 export class VendorsService {
   async createVendor(data: {
@@ -221,8 +222,39 @@ export class VendorsService {
       gstin?: string | null;
       isActive?: boolean;
     },
+    changedById: number | null = null,
   ) {
-    return prisma.vendor.update({ where: { id }, data });
+    return prisma.$transaction(async (tx) => {
+      const before = await tx.vendor.findUnique({
+        where: { id },
+        select: {
+          name: true,
+          contactName: true,
+          phone: true,
+          email: true,
+          address: true,
+          city: true,
+          state: true,
+          stateCode: true,
+          pinCode: true,
+          panNumber: true,
+          gstin: true,
+          isActive: true,
+        },
+      });
+      const updated = await tx.vendor.update({ where: { id }, data });
+      if (before) {
+        await contactChangeLogService.recordChanges({
+          entityType: 'VENDOR',
+          entityId: id,
+          before,
+          after: data,
+          changedById,
+          tx,
+        });
+      }
+      return updated;
+    });
   }
 
   async deleteVendor(id: number) {

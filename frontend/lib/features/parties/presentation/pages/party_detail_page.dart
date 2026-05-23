@@ -15,6 +15,7 @@ import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
 import 'package:shopxy/shared/widgets/app_section_header.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
+import 'package:shopxy/shared/widgets/contact_changes_section.dart';
 
 class PartyDetailPage extends StatefulWidget {
   const PartyDetailPage({super.key, required this.partyId});
@@ -161,6 +162,7 @@ class _PartyDetailPageState extends State<PartyDetailPage> {
           _ChallanRow(challan: c, dateFmt: _dateFmt),
         const SizedBox(height: AppSizes.xl),
       ],
+      ContactChangesSection(endpoint: '/parties/${p.id}'),
       if (p.recentInvoices.isEmpty && p.recentChallans.isEmpty)
         Padding(
           padding: const EdgeInsets.all(AppSizes.xl),

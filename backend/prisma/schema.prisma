@@ -44,9 +44,39 @@ model User {
   purchaseRequests    PurchaseRequest[] @relation("CustomerPurchaseRequests")
   decidedRequests     PurchaseRequest[] @relation("MerchantDecidedRequests")
   paymentsCreated     Payment[]         @relation("PaymentCreatedBy")
+  contactChanges      ContactChangeLog[]
 
   @@index([email])
   @@map("users")
+}
+
+/// Append-only audit log of edits to Party/Vendor contact fields. One
+/// row per (field that actually changed) per update — fields whose
+/// value did not change are not logged, keeping the timeline focused.
+/// The party/vendor row itself still holds the latest value; this
+/// table is only the trail of *what was before*.
+model ContactChangeLog {
+  id          Int      @id @default(autoincrement())
+  /// 'PARTY' or 'VENDOR'. Stored as text rather than a separate FK per
+  /// entity so the log is single-table and the same UI can render
+  /// either timeline without two queries.
+  entityType  String   @map("entity_type")
+  entityId    Int      @map("entity_id")
+  /// Camel-case field name (e.g. "phone", "gstin"). Matches the API
+  /// field names so the Flutter side can map straight to a label
+  /// dictionary without a translation table.
+  field       String
+  oldValue    String?  @map("old_value")
+  newValue    String?  @map("new_value")
+  /// Nullable because system-managed flips (e.g. soft-delete) may have
+  /// no acting user, and because we don't want a user FK to block log
+  /// retention when the user row is removed.
+  changedById Int?     @map("changed_by_id")
+  changedBy   User?    @relation(fields: [changedById], references: [id], onDelete: SetNull)
+  changedAt   DateTime @default(now()) @map("changed_at")
+
+  @@index([entityType, entityId, changedAt])
+  @@map("contact_change_log")
 }
 
 model RefreshToken {

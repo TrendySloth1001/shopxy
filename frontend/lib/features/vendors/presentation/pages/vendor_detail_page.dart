@@ -14,6 +14,7 @@ import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
 import 'package:shopxy/shared/widgets/app_section_header.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
+import 'package:shopxy/shared/widgets/contact_changes_section.dart';
 
 class VendorDetailPage extends StatefulWidget {
   const VendorDetailPage({super.key, required this.vendorId});
@@ -164,6 +165,7 @@ class _VendorDetailPageState extends State<VendorDetailPage> {
           ),
         const SizedBox(height: AppSizes.xl),
       ],
+      ContactChangesSection(endpoint: '/vendors/${v.id}'),
       if (v.recentInvoices.isEmpty && v.recentStockIns.isEmpty)
         Padding(
           padding: const EdgeInsets.all(AppSizes.xl),

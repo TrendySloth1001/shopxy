@@ -56,6 +56,15 @@ export class InvoicesService {
     note?: string;
     invoiceDate?: string;
     items: InvoiceItemInput[];
+    /// When true, the freshly-created draft is immediately confirmed
+    /// (stock posted via the ledger) in a follow-up transaction. Lets
+    /// the create form offer a "Save & Confirm" CTA so the merchant
+    /// doesn't have to land on the draft just to confirm it.
+    confirm?: boolean;
+    /// Audit trail for the auto-confirm path. Forwarded to updateStatus
+    /// so the ledger rows carry the same createdById they would on the
+    /// manual two-step flow.
+    confirmedById?: number;
   }) {
     const resolved = await this.resolveInvoiceFields(data);
     if ('error' in resolved) return resolved;
@@ -81,7 +90,27 @@ export class InvoicesService {
       });
     });
 
-    return { invoice };
+    if (!data.confirm) {
+      return { invoice, confirmed: false as const };
+    }
+
+    // Auto-confirm path. Reuses updateStatus so numbering, ledger and
+    // idempotency stay funnelled through one code path. On failure we
+    // keep the draft (the merchant can fix and confirm later) and
+    // surface the error so the client can decide how to surface it.
+    const confirmResult = await this.updateStatus(
+      invoice.id,
+      'CONFIRMED',
+      data.confirmedById,
+    );
+    if ('error' in confirmResult) {
+      return {
+        invoice,
+        confirmed: false as const,
+        confirmError: confirmResult,
+      };
+    }
+    return { invoice: confirmResult.invoice, confirmed: true as const };
   }
 
   /// Pure resolution step shared by create + update: party/vendor look-ups,
@@ -570,18 +599,76 @@ export class InvoicesService {
         };
       }
 
+      // ── DRAFT → CONFIRMED: refresh contact snapshot, then post ─────
+      // A draft is not yet a legally-issued document; if the merchant
+      // edited the party/vendor while the draft was open, the about-
+      // to-be-issued invoice should carry the *current* contact
+      // details. Once status flips to CONFIRMED these columns are
+      // frozen forever (we don't re-write them on subsequent edits to
+      // the party/vendor — that would mutate an issued tax document).
+      const snapshotRefresh: Record<string, string | null | boolean> = {};
+      if (invoice.status === 'DRAFT' && status === 'CONFIRMED' && invoice.partyId) {
+        const party = await tx.party.findUnique({
+          where: { id: invoice.partyId },
+          select: {
+            name: true, phone: true, gstin: true, address: true,
+            city: true, state: true, stateCode: true, pinCode: true,
+            panNumber: true,
+          },
+        });
+        if (party) {
+          snapshotRefresh.customerName = party.name;
+          snapshotRefresh.customerPhone = party.phone ?? null;
+          snapshotRefresh.customerGstin = party.gstin ?? null;
+          snapshotRefresh.customerAddress = party.address ?? null;
+          snapshotRefresh.customerCity = party.city ?? null;
+          snapshotRefresh.customerState = party.state ?? null;
+          snapshotRefresh.customerStateCode = party.stateCode ?? null;
+          snapshotRefresh.customerPinCode = party.pinCode ?? null;
+          snapshotRefresh.customerPanNumber = party.panNumber ?? null;
+        }
+      }
+      if (invoice.status === 'DRAFT' && status === 'CONFIRMED' && invoice.vendorId) {
+        const vendor = await tx.vendor.findUnique({
+          where: { id: invoice.vendorId },
+          select: {
+            name: true, phone: true, gstin: true, address: true,
+            city: true, state: true, stateCode: true, pinCode: true,
+            panNumber: true,
+          },
+        });
+        if (vendor) {
+          snapshotRefresh.vendorName = vendor.name;
+          snapshotRefresh.vendorPhone = vendor.phone ?? null;
+          snapshotRefresh.vendorGstin = vendor.gstin ?? null;
+          snapshotRefresh.vendorAddress = vendor.address ?? null;
+          snapshotRefresh.vendorCity = vendor.city ?? null;
+          snapshotRefresh.vendorState = vendor.state ?? null;
+          snapshotRefresh.vendorStateCode = vendor.stateCode ?? null;
+          snapshotRefresh.vendorPinCode = vendor.pinCode ?? null;
+          snapshotRefresh.vendorPanNumber = vendor.panNumber ?? null;
+        }
+      }
+
       // ── DRAFT → CONFIRMED: post stock movements ────────────────────
       if (invoice.status === 'DRAFT' && status === 'CONFIRMED' && !ledgerOwnedByChallan) {
         const direction = invoice.type === 'SALE' ? 'OUT' : 'IN';
         const reasonCode = invoice.type === 'SALE' ? 'SALE' : 'PURCHASE';
+        // Prefer the just-refreshed values over the stale draft
+        // snapshot so the ledger row matches what the issued invoice
+        // will print.
         const counterpartyName =
           invoice.type === 'SALE'
-            ? invoice.customerName ?? invoice.party?.name ?? null
-            : invoice.vendorName ?? invoice.vendor?.name ?? null;
+            ? (snapshotRefresh.customerName as string | undefined)
+              ?? invoice.customerName ?? invoice.party?.name ?? null
+            : (snapshotRefresh.vendorName as string | undefined)
+              ?? invoice.vendorName ?? invoice.vendor?.name ?? null;
         const counterpartyGstin =
           invoice.type === 'SALE'
-            ? invoice.customerGstin ?? invoice.party?.gstin ?? null
-            : invoice.vendorGstin ?? invoice.vendor?.gstin ?? null;
+            ? (snapshotRefresh.customerGstin as string | null | undefined)
+              ?? invoice.customerGstin ?? invoice.party?.gstin ?? null
+            : (snapshotRefresh.vendorGstin as string | null | undefined)
+              ?? invoice.vendorGstin ?? invoice.vendor?.gstin ?? null;
         const result = await ledgerService.post({
           direction,
           reasonCode,
@@ -635,7 +722,7 @@ export class InvoicesService {
 
       const updated = await tx.invoice.update({
         where: { id },
-        data: { status },
+        data: { status, ...snapshotRefresh },
         include: { vendor: true, party: true, items: true },
       });
       return { invoice: updated };
