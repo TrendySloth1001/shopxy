@@ -7,6 +7,7 @@ import 'package:shopxy/features/categories/presentation/pages/categories_page.da
 import 'package:shopxy/features/challans/presentation/pages/challans_page.dart';
 import 'package:shopxy/features/orders/presentation/pages/orders_inbox_page.dart';
 import 'package:shopxy/features/parties/presentation/pages/parties_page.dart';
+import 'package:shopxy/features/profile/presentation/pages/edit_profile_page.dart';
 import 'package:shopxy/features/profile/presentation/pages/settings_page.dart';
 import 'package:shopxy/features/reports/presentation/pages/reports_page.dart';
 import 'package:shopxy/features/stock_adjustments/presentation/pages/stock_adjustments_page.dart';
@@ -129,33 +130,6 @@ class ProfilePage extends StatelessWidget {
               MaterialPageRoute(builder: (_) => const ReportsPage()),
             ),
           ),
-          const _SectionGap(),
-          const _Eyebrow('PREFERENCES'),
-          const SizedBox(height: AppSizes.sm),
-          _ProfileLink(
-            icon: Icons.settings_outlined,
-            accent: AppColors.black,
-            accentSoft: AppColors.heroPanel,
-            title: AppStrings.settings,
-            subtitle: 'Account, appearance, and more',
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const SettingsPage()),
-            ),
-          ),
-          _ProfileLink(
-            icon: Icons.info_outline_rounded,
-            accent: AppColors.muted,
-            accentSoft: AppColors.heroPanel,
-            title: AppStrings.about,
-            subtitle: 'Version, privacy and terms',
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const SettingsPage(initialSection: SettingsSection.about),
-              ),
-            ),
-          ),
           const SizedBox(height: AppSizes.huge),
           Center(
             child: Text(
@@ -251,14 +225,14 @@ class _ProfileHeader extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSizes.lg),
-          // Inline subtle "edit profile" link — no box.
+          // Inline subtle "edit profile" link — no box. Opens the focused
+          // EditProfilePage directly so this is the one quick action for
+          // name + shop details; broader app settings live behind the
+          // gear icon in the AppBar.
           InkWell(
             onTap: () => Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (_) =>
-                    const SettingsPage(initialSection: SettingsSection.account),
-              ),
+              MaterialPageRoute(builder: (_) => const EditProfilePage()),
             ),
             customBorder: AppShapes.squircle(AppSizes.radiusFull),
             child: Padding(

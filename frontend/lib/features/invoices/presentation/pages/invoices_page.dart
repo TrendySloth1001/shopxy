@@ -23,12 +23,6 @@ import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
 
-/// Cycle order for the single status chip: ALL → DRAFT → CONFIRMED →
-/// CANCELLED → ALL. Tapping the chip walks through this loop, which
-/// keeps the filter row tight without losing the option to slice by
-/// status.
-const _statusCycle = <String?>[null, 'DRAFT', 'CONFIRMED', 'CANCELLED'];
-
 class InvoicesPage extends StatefulWidget {
   const InvoicesPage({super.key});
 
@@ -63,21 +57,61 @@ class _InvoicesPageState extends State<InvoicesPage> {
     }
   }
 
-  void _cycleStatus(InvoicesProvider provider) {
-    final i = _statusCycle.indexOf(provider.statusFilter);
-    final next = _statusCycle[(i + 1) % _statusCycle.length];
-    provider.setStatusFilter(next);
+  Future<void> _openFilterSheet(InvoicesProvider provider) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppSizes.bottomSheetRadius)),
+      ),
+      builder: (_) => _InvoiceFilterSheet(
+        documentType: provider.documentTypeFilter,
+        status: provider.statusFilter,
+        onApply: (doc, status) {
+          provider.setDocumentTypeFilter(doc);
+          provider.setStatusFilter(status);
+        },
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<InvoicesProvider>();
+    final activeSecondary = [
+      if (provider.documentTypeFilter != null) provider.documentTypeFilter!,
+      if (provider.statusFilter != null) provider.statusFilter!,
+    ];
 
     return Scaffold(
       appBar: AppBar(
         leading: const ShellMenuButton(),
         title: const Text(AppStrings.navInvoices),
         actions: [
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.tune_rounded),
+                tooltip: 'Filters',
+                onPressed: () => _openFilterSheet(provider),
+              ),
+              if (activeSecondary.isNotEmpty)
+                Positioned(
+                  right: 6,
+                  top: 6,
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: AppColors.brand,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+            ],
+          ),
           IconButton(
             icon: const Icon(Icons.add_rounded),
             tooltip: AppStrings.createInvoice,
@@ -100,6 +134,9 @@ class _InvoicesPageState extends State<InvoicesPage> {
               onChanged: provider.updateSearch,
             ),
           ),
+          // Primary axis filter — direction of money. Document type +
+          // status live in the filter sheet (tune icon in the AppBar)
+          // since they're orthogonal and would crowd the header.
           AppFilterStrip(
             children: [
               AppFilterPill(
@@ -125,43 +162,13 @@ class _InvoicesPageState extends State<InvoicesPage> {
               ),
             ],
           ),
-          // Document-type filter — All / Tax Invoice / Estimate. Lets the
-          // user slice the list to just quotations, which otherwise mingle
-          // with regular tax invoices since they share one table.
-          AppFilterStrip(
-            children: [
-              AppFilterPill(
-                label: AppStrings.filterAll,
-                selected: provider.documentTypeFilter == null,
-                onTap: () => provider.setDocumentTypeFilter(null),
-              ),
-              AppFilterPill(
-                label: 'Tax Invoice',
-                icon: Icons.receipt_long_rounded,
-                selected: provider.documentTypeFilter == 'TAX_INVOICE',
-                onTap: () => provider.setDocumentTypeFilter(
-                  provider.documentTypeFilter == 'TAX_INVOICE'
-                      ? null
-                      : 'TAX_INVOICE',
-                ),
-              ),
-              AppFilterPill(
-                label: 'Estimate',
-                icon: Icons.request_quote_outlined,
-                selected: provider.documentTypeFilter == 'ESTIMATE',
-                onTap: () => provider.setDocumentTypeFilter(
-                  provider.documentTypeFilter == 'ESTIMATE'
-                      ? null
-                      : 'ESTIMATE',
-                ),
-              ),
-            ],
-          ),
-          _StatusChipRow(
-            current: provider.statusFilter,
-            onCycle: () => _cycleStatus(provider),
-            onClear: () => provider.setStatusFilter(null),
-          ),
+          if (activeSecondary.isNotEmpty)
+            _ActiveSecondaryFiltersRow(
+              documentType: provider.documentTypeFilter,
+              status: provider.statusFilter,
+              onClearDocumentType: () => provider.setDocumentTypeFilter(null),
+              onClearStatus: () => provider.setStatusFilter(null),
+            ),
           const AppDivider.flush(),
           Expanded(
             child: provider.isLoading && provider.invoices.isEmpty
@@ -247,110 +254,242 @@ class _InvoicesPageState extends State<InvoicesPage> {
   }
 }
 
-/// Single chip that cycles through DRAFT / CONFIRMED / CANCELLED / ALL.
-/// When a real status is selected the chip carries that status's color
-/// so the active filter is obvious from across the room. A close
-/// affordance appears so the user can clear without cycling all the way
-/// through.
-class _StatusChipRow extends StatelessWidget {
-  const _StatusChipRow({
-    required this.current,
-    required this.onCycle,
-    required this.onClear,
+/// Inline row showing the secondary filters (document type + status) as
+/// removable chips so the user can see at a glance what's filtered and
+/// kill any single facet without re-opening the sheet.
+class _ActiveSecondaryFiltersRow extends StatelessWidget {
+  const _ActiveSecondaryFiltersRow({
+    this.documentType,
+    this.status,
+    required this.onClearDocumentType,
+    required this.onClearStatus,
   });
-  final String? current;
-  final VoidCallback onCycle;
-  final VoidCallback onClear;
 
-  (String, Color, Color) _visual(String? s) {
-    switch (s) {
-      case 'DRAFT':
-        return ('Draft', AppColors.warning, AppColors.warningSoft);
-      case 'CONFIRMED':
-        return ('Confirmed', AppColors.success, AppColors.successSoft);
-      case 'CANCELLED':
-        return ('Cancelled', AppColors.error, AppColors.errorSoft);
-      default:
-        return ('Any status', AppColors.muted, AppColors.surfaceTint);
-    }
+  final String? documentType;
+  final String? status;
+  final VoidCallback onClearDocumentType;
+  final VoidCallback onClearStatus;
+
+  String _documentLabel(String d) => switch (d) {
+        'TAX_INVOICE' => 'Tax Invoice',
+        'BILL_OF_SUPPLY' => 'Bill of Supply',
+        'ESTIMATE' => 'Estimate',
+        'PROFORMA' => 'Proforma',
+        'CREDIT_NOTE' => 'Credit Note',
+        'DEBIT_NOTE' => 'Debit Note',
+        _ => d,
+      };
+
+  String _statusLabel(String s) => switch (s) {
+        'DRAFT' => 'Draft',
+        'CONFIRMED' => 'Confirmed',
+        'CANCELLED' => 'Cancelled',
+        _ => s,
+      };
+
+  (Color, Color) _statusColors(String s) => switch (s) {
+        'DRAFT' => (AppColors.warning, AppColors.warningSoft),
+        'CONFIRMED' => (AppColors.success, AppColors.successSoft),
+        'CANCELLED' => (AppColors.error, AppColors.errorSoft),
+        _ => (AppColors.muted, AppColors.surfaceTint),
+      };
+
+  Widget _chip(BuildContext context, String label, VoidCallback onClear,
+      {Color? color, Color? soft}) {
+    final c = color ?? AppColors.brandStrong;
+    final s = soft ?? AppColors.brandSoft;
+    return Material(
+      color: s,
+      shape: AppShapes.squircle(
+        AppSizes.radiusFull,
+        side: BorderSide(color: c),
+      ),
+      child: InkWell(
+        customBorder: AppShapes.squircle(AppSizes.radiusFull),
+        onTap: onClear,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(AppSizes.md, 6, 6, 6),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  color: c,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Padding(
+                padding: const EdgeInsets.all(2),
+                child: Icon(Icons.close_rounded, size: 14, color: c),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final (label, color, soft) = _visual(current);
-    final active = current != null;
-    final theme = Theme.of(context);
-
+    final chips = <Widget>[];
+    if (documentType != null) {
+      chips.add(_chip(context, _documentLabel(documentType!), onClearDocumentType));
+    }
+    if (status != null) {
+      final (c, s) = _statusColors(status!);
+      chips.add(_chip(context, _statusLabel(status!), onClearStatus, color: c, soft: s));
+    }
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSizes.lg,
-        0,
-        AppSizes.lg,
-        AppSizes.sm,
+      padding: const EdgeInsets.fromLTRB(AppSizes.lg, 0, AppSizes.lg, AppSizes.sm),
+      child: Wrap(
+        spacing: AppSizes.sm,
+        runSpacing: AppSizes.xs,
+        children: chips,
       ),
-      child: Row(
-        children: [
-          Text(
-            'Status',
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: AppColors.muted,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.4,
-            ),
-          ),
-          const SizedBox(width: AppSizes.sm),
-          Material(
-            color: soft,
-            shape: AppShapes.squircle(
-              AppSizes.radiusFull,
-              side: BorderSide(color: active ? color : AppColors.hairline),
-            ),
-            child: InkWell(
-              customBorder: AppShapes.squircle(AppSizes.radiusFull),
-              onTap: onCycle,
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(
-                  AppSizes.md,
-                  6,
-                  active ? 4 : AppSizes.md,
-                  6,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      label,
-                      style: TextStyle(
-                        color: color,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13,
-                      ),
-                    ),
-                    if (active) ...[
-                      const SizedBox(width: 4),
-                      InkWell(
-                        customBorder: const CircleBorder(),
-                        onTap: onClear,
-                        child: Padding(
-                          padding: const EdgeInsets.all(2),
-                          child: Icon(Icons.close_rounded, size: 14, color: color),
-                        ),
-                      ),
-                    ] else
-                      Padding(
-                        padding: const EdgeInsets.only(left: 2),
-                        child: Icon(
-                          Icons.unfold_more_rounded,
-                          size: 14,
-                          color: color,
-                        ),
-                      ),
-                  ],
+    );
+  }
+}
+
+/// Bottom sheet that consolidates the orthogonal invoice filters
+/// (document type + status). Picks are buffered locally and only
+/// pushed to the provider on Apply, so the user can experiment
+/// without spamming reloads.
+class _InvoiceFilterSheet extends StatefulWidget {
+  const _InvoiceFilterSheet({
+    required this.documentType,
+    required this.status,
+    required this.onApply,
+  });
+
+  final String? documentType;
+  final String? status;
+  final void Function(String? documentType, String? status) onApply;
+
+  @override
+  State<_InvoiceFilterSheet> createState() => _InvoiceFilterSheetState();
+}
+
+class _InvoiceFilterSheetState extends State<_InvoiceFilterSheet> {
+  late String? _documentType = widget.documentType;
+  late String? _status = widget.status;
+
+  static const _documentOptions = <(String?, String, IconData)>[
+    (null, 'All documents', Icons.layers_outlined),
+    ('TAX_INVOICE', 'Tax Invoice', Icons.receipt_long_rounded),
+    ('BILL_OF_SUPPLY', 'Bill of Supply', Icons.description_outlined),
+    ('ESTIMATE', 'Estimate', Icons.request_quote_outlined),
+    ('PROFORMA', 'Proforma', Icons.article_outlined),
+    ('CREDIT_NOTE', 'Credit Note', Icons.undo_rounded),
+    ('DEBIT_NOTE', 'Debit Note', Icons.redo_rounded),
+  ];
+
+  static const _statusOptions = <(String?, String, Color?)>[
+    (null, 'Any status', null),
+    ('DRAFT', 'Draft', AppColors.warning),
+    ('CONFIRMED', 'Confirmed', AppColors.success),
+    ('CANCELLED', 'Cancelled', AppColors.error),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(AppSizes.lg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.hairline,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
-            ),
+              const SizedBox(height: AppSizes.lg),
+              Text('Filters', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+              const SizedBox(height: AppSizes.lg),
+              Text(
+                'Document type',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: AppColors.muted,
+                  letterSpacing: 0.6,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: AppSizes.sm),
+              Wrap(
+                spacing: AppSizes.sm,
+                runSpacing: AppSizes.sm,
+                children: [
+                  for (final (value, label, icon) in _documentOptions)
+                    AppFilterPill(
+                      label: label,
+                      icon: icon,
+                      selected: _documentType == value,
+                      onTap: () => setState(() => _documentType = value),
+                    ),
+                ],
+              ),
+              const SizedBox(height: AppSizes.lg),
+              Text(
+                'Status',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: AppColors.muted,
+                  letterSpacing: 0.6,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: AppSizes.sm),
+              Wrap(
+                spacing: AppSizes.sm,
+                runSpacing: AppSizes.sm,
+                children: [
+                  for (final (value, label, _) in _statusOptions)
+                    AppFilterPill(
+                      label: label,
+                      selected: _status == value,
+                      onTap: () => setState(() => _status = value),
+                    ),
+                ],
+              ),
+              const SizedBox(height: AppSizes.xl),
+              Row(
+                children: [
+                  Expanded(
+                    child: AppButton.secondary(
+                      label: 'Clear all',
+                      onPressed: () => setState(() {
+                        _documentType = null;
+                        _status = null;
+                      }),
+                    ),
+                  ),
+                  const SizedBox(width: AppSizes.md),
+                  Expanded(
+                    flex: 2,
+                    child: AppButton.primary(
+                      label: 'Apply',
+                      onPressed: () {
+                        widget.onApply(_documentType, _status);
+                        Navigator.pop(context);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
