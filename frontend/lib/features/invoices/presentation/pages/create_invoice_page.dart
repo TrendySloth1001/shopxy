@@ -533,8 +533,10 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                 padding: const EdgeInsets.only(bottom: AppSizes.sm),
               ),
               if (_type == 'SALE') ...[
-                // Document-type toggle: a bill-of-supply is used when the
-                // shop isn't charging GST on this txn (composition / nil-rated).
+                // Document-type toggle. Tax Invoice is the default; Bill of
+                // Supply is for composition / nil-rated dealers; Estimate
+                // creates an EST-prefixed quotation the user can later
+                // convert via the detail page.
                 SegmentedButton<String>(
                   segments: const [
                     ButtonSegment(
@@ -544,6 +546,10 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                     ButtonSegment(
                       value: 'BILL_OF_SUPPLY',
                       label: Text('Bill of Supply'),
+                    ),
+                    ButtonSegment(
+                      value: 'ESTIMATE',
+                      label: Text('Estimate'),
                     ),
                   ],
                   selected: {_documentType},
