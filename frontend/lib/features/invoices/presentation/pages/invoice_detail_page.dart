@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shopxy/features/invoices/data/datasources/invoices_remote_data_source.dart';
 import 'package:shopxy/features/invoices/domain/entities/invoice.dart';
+import 'package:shopxy/features/payments/presentation/widgets/record_payment_sheet.dart';
 import 'package:shopxy/features/invoices/presentation/providers/invoices_provider.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
@@ -456,6 +457,49 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
               onTap: _shareViaWhatsApp,
             ),
           ),
+          if (invoice.status == 'CONFIRMED' &&
+              (invoice.partyId != null || invoice.vendorId != null)) ...[
+            const SizedBox(height: AppSizes.md),
+            AppCard(
+              padding: EdgeInsets.zero,
+              child: ListTile(
+                leading: const Icon(
+                  Icons.check_circle_outline_rounded,
+                  color: AppColors.success,
+                ),
+                title: const Text('Mark as Paid'),
+                subtitle: Text(
+                  invoice.type == 'SALE'
+                      ? 'Record a receipt for this invoice'
+                      : 'Record a payment for this bill',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.muted,
+                  ),
+                ),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () async {
+                  final isSale = invoice.type == 'SALE';
+                  final created = await RecordPaymentSheet.show(
+                    context,
+                    type: isSale ? 'RECEIPT' : 'PAYMENT',
+                    partyId: isSale ? invoice.partyId : null,
+                    vendorId: isSale ? null : invoice.vendorId,
+                    partyName: invoice.customerName,
+                    vendorName: invoice.vendorName,
+                    initialAmount: invoice.total,
+                    lockedInvoiceId: invoice.id,
+                    lockedInvoiceLabel: invoice.invoiceNo,
+                  );
+                  if (!context.mounted) return;
+                  if (created != null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Payment recorded')),
+                    );
+                  }
+                },
+              ),
+            ),
+          ],
           if (invoice.note != null && invoice.note!.isNotEmpty) ...[
             const SizedBox(height: AppSizes.md),
             AppCard(

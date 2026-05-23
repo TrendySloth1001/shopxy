@@ -55,6 +55,8 @@ class Invoice {
     required this.invoiceNo,
     required this.type,
     required this.status,
+    this.partyId,
+    this.vendorId,
     this.vendor,
     this.customerName,
     this.customerPhone,
@@ -101,6 +103,8 @@ class Invoice {
   final String invoiceNo;
   final String type; // SALE | PURCHASE
   final String status; // DRAFT | CONFIRMED | CANCELLED
+  final int? partyId;
+  final int? vendorId;
   final InvoiceVendorRef? vendor;
   final String? customerName;
   final String? customerPhone;

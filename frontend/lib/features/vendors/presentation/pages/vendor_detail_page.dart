@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/features/invoices/presentation/pages/invoice_detail_page.dart';
+import 'package:shopxy/features/payments/data/datasources/payments_remote_data_source.dart';
+import 'package:shopxy/features/payments/domain/entities/payment.dart';
+import 'package:shopxy/features/payments/presentation/widgets/record_payment_sheet.dart';
 import 'package:shopxy/features/vendors/data/datasources/vendors_remote_data_source.dart';
 import 'package:shopxy/features/vendors/domain/entities/vendor_overview.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/shared/widgets/app_card.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
 import 'package:shopxy/shared/widgets/app_section_header.dart';
@@ -21,6 +25,7 @@ class VendorDetailPage extends StatefulWidget {
 
 class _VendorDetailPageState extends State<VendorDetailPage> {
   VendorOverview? _overview;
+  Ledger? _ledger;
   bool _isLoading = true;
   String? _error;
 
@@ -37,11 +42,16 @@ class _VendorDetailPageState extends State<VendorDetailPage> {
 
   Future<void> _load() async {
     try {
-      final ds = context.read<VendorsRemoteDataSource>();
-      final overview = await ds.getVendorOverview(widget.vendorId);
+      final vendorsDs = context.read<VendorsRemoteDataSource>();
+      final paymentsDs = context.read<PaymentsRemoteDataSource>();
+      final results = await Future.wait([
+        vendorsDs.getVendorOverview(widget.vendorId),
+        paymentsDs.getVendorLedger(widget.vendorId),
+      ]);
       if (mounted) {
         setState(() {
-          _overview = overview;
+          _overview = results[0] as VendorOverview;
+          _ledger = results[1] as Ledger;
           _isLoading = false;
           _error = null;
         });
@@ -56,10 +66,32 @@ class _VendorDetailPageState extends State<VendorDetailPage> {
     }
   }
 
+  Future<void> _openRecordPayment() async {
+    final overview = _overview;
+    if (overview == null) return;
+    final created = await RecordPaymentSheet.show(
+      context,
+      type: 'PAYMENT',
+      vendorId: overview.id,
+      vendorName: overview.name,
+    );
+    if (created != null && mounted) {
+      await _load();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final canRecord = !_isLoading && _overview != null;
     return Scaffold(
       appBar: AppBar(title: const Text('Vendor')),
+      floatingActionButton: canRecord
+          ? FloatingActionButton.extended(
+              onPressed: _openRecordPayment,
+              icon: const Icon(Icons.payments_outlined),
+              label: const Text('Record payment'),
+            )
+          : null,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
@@ -82,11 +114,37 @@ class _VendorDetailPageState extends State<VendorDetailPage> {
   List<Widget> _buildBody(VendorOverview v) {
     final theme = Theme.of(context);
 
+    final ledger = _ledger;
     return [
       _Header(vendor: v),
       const SizedBox(height: AppSizes.lg),
+      _BalanceTile(vendor: v, currency: _currency),
+      const SizedBox(height: AppSizes.lg),
       _Totals(vendor: v, currency: _currency),
       const SizedBox(height: AppSizes.xl),
+      if (ledger != null && ledger.entries.isNotEmpty) ...[
+        const AppSectionHeader(title: 'Ledger'),
+        const AppDivider(),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+          child: AppCard(
+            padding: EdgeInsets.zero,
+            child: Column(
+              children: [
+                for (int i = 0; i < ledger.entries.length; i++) ...[
+                  if (i > 0) const AppDivider.flush(),
+                  _LedgerRow(
+                    entry: ledger.entries[i],
+                    currency: _currency,
+                    dateFmt: _dateFmt,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSizes.xl),
+      ],
       if (v.recentInvoices.isNotEmpty) ...[
         const AppSectionHeader(title: 'Recent bills'),
         const AppDivider(),
@@ -411,6 +469,150 @@ class _StockInRow extends StatelessWidget {
                   style: theme.textTheme.bodySmall
                       ?.copyWith(color: AppColors.muted),
                 ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BalanceTile extends StatelessWidget {
+  const _BalanceTile({required this.vendor, required this.currency});
+  final VendorOverview vendor;
+  final NumberFormat currency;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final balance = vendor.balance;
+    // Vendor balance convention: positive = we owe the vendor; negative = advance.
+    final positive = balance > 0;
+    final settled = balance.abs() < 0.005;
+    final color = settled
+        ? AppColors.muted
+        : (positive ? AppColors.error : AppColors.success);
+    final label = settled
+        ? 'No outstanding'
+        : positive
+            ? 'You owe'
+            : 'Advance with vendor';
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+      child: AppCard(
+        padding: const EdgeInsets.all(AppSizes.lg),
+        child: Row(
+          children: [
+            Icon(
+              positive
+                  ? Icons.arrow_upward_rounded
+                  : settled
+                      ? Icons.check_circle_outline_rounded
+                      : Icons.arrow_downward_rounded,
+              color: color,
+            ),
+            const SizedBox(width: AppSizes.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'BALANCE',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: AppColors.muted,
+                      letterSpacing: 0.6,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    label,
+                    style: theme.textTheme.bodyMedium
+                        ?.copyWith(color: AppColors.muted),
+                  ),
+                ],
+              ),
+            ),
+            Text(
+              currency.format(balance.abs()),
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: color,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LedgerRow extends StatelessWidget {
+  const _LedgerRow({
+    required this.entry,
+    required this.currency,
+    required this.dateFmt,
+  });
+  final LedgerEntry entry;
+  final NumberFormat currency;
+  final DateFormat dateFmt;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    // Vendor side: invoice = bill we owe (credit); payment = money we paid (debit).
+    final isInvoice = entry.isInvoice;
+    final amount = isInvoice ? entry.credit : entry.debit;
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.md,
+      ),
+      child: Row(
+        children: [
+          Icon(
+            isInvoice
+                ? Icons.receipt_long_outlined
+                : Icons.payments_outlined,
+            color: isInvoice ? AppColors.error : AppColors.success,
+            size: AppSizes.iconMd,
+          ),
+          const SizedBox(width: AppSizes.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  entry.label,
+                  style: theme.textTheme.titleSmall
+                      ?.copyWith(fontWeight: FontWeight.w600),
+                ),
+                Text(
+                  isInvoice
+                      ? dateFmt.format(entry.date)
+                      : '${dateFmt.format(entry.date)} · ${entry.mode ?? ''}',
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: AppColors.muted),
+                ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${isInvoice ? '+' : '-'}${currency.format(amount)}',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: isInvoice ? AppColors.error : AppColors.success,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Bal ${currency.format(entry.runningBalance)}',
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(color: AppColors.muted),
+              ),
             ],
           ),
         ],

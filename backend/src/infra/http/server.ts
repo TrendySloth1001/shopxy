@@ -19,6 +19,7 @@ import invitationsRouter from '../../modules/invitations/invitations.routes.js';
 import notificationsRouter from '../../modules/notifications/notifications.routes.js';
 import reportsRouter from '../../modules/reports/reports.routes.js';
 import meRouter from '../../modules/me/me.routes.js';
+import paymentsRouter from '../../modules/payments/payments.routes.js';
 import customFieldsRouter from '../../modules/customFields/customFields.routes.js';
 import {
   ordersRouter,
@@ -119,6 +120,7 @@ app.use('/challans', ownerOnly, challansRouter);
 app.use('/upload', ownerOnly, uploadRouter);
 app.use('/reports', ownerOnly, reportsRouter);
 app.use('/orders', ownerOnly, ordersRouter);
+app.use('/payments', ownerOnly, paymentsRouter);
 
 app.use(errorHandler);
 
