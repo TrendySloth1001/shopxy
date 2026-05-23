@@ -6,7 +6,10 @@ import 'package:shopxy/features/dashboard/presentation/providers/dashboard_provi
 import 'package:shopxy/features/invoices/presentation/pages/invoice_detail_page.dart';
 import 'package:shopxy/features/notifications/presentation/pages/notifications_page.dart';
 import 'package:shopxy/features/notifications/presentation/providers/notifications_provider.dart';
+import 'package:shopxy/core/router/app_shell.dart';
 import 'package:shopxy/features/notifications/presentation/widgets/notification_bell.dart';
+import 'package:shopxy/features/orders/presentation/pages/orders_inbox_page.dart';
+import 'package:shopxy/features/orders/presentation/providers/orders_provider.dart';
 import 'package:shopxy/features/stock/domain/entities/stock_transaction.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
@@ -35,6 +38,9 @@ class _DashboardPageState extends State<DashboardPage> {
       // provider tracks whether we've already shown it this session.
       final n = context.read<NotificationsProvider>();
       n.loadIncoming(status: 'PENDING');
+      // Pending-orders badge on the orders callout. Cheap COUNT query
+      // — safe to fire every time the dashboard appears.
+      context.read<OrdersProvider>().refreshPendingCount();
     });
   }
 
@@ -45,6 +51,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: const ShellMenuButton(),
         title: const Text(AppStrings.appName),
         actions: [
           const NotificationBell(),
@@ -66,6 +73,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     padding: EdgeInsets.zero,
                     children: [
                       const _PendingInviteCallout(),
+                      const _OrdersCallout(),
                       const _Greeting(),
                       const SizedBox(height: AppSizes.lg),
                       _ValueHeadline(stats: stats),
@@ -132,9 +140,9 @@ class _Greeting extends StatelessWidget {
 
   String _greeting() {
     final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
+    if (hour < 12) return AppStrings.greetingMorning;
+    if (hour < 17) return AppStrings.greetingAfternoon;
+    return AppStrings.greetingEvening;
   }
 
   @override
@@ -164,7 +172,7 @@ class _Greeting extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  "Here's how your shop is doing today.",
+                  AppStrings.dashboardSubtitle,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: AppColors.muted,
                   ),
@@ -219,7 +227,7 @@ class _ValueHeadline extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSizes.sm),
-              const _Eyebrow('INVENTORY VALUE'),
+              const _Eyebrow(AppStrings.inventoryValueEyebrow),
             ],
           ),
           const SizedBox(height: AppSizes.sm),
@@ -238,7 +246,7 @@ class _ValueHeadline extends StatelessWidget {
           ),
           const SizedBox(height: AppSizes.xs),
           Text(
-            'Estimated value of stock currently on hand.',
+            AppStrings.inventoryValueHint,
             style: theme.textTheme.bodySmall?.copyWith(
               color: AppColors.muted,
             ),
@@ -269,11 +277,20 @@ class _QuickStats extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            _StatColumn(label: 'Products', value: '$productCount'),
+            _StatColumn(
+              label: AppStrings.statProducts,
+              value: '$productCount',
+            ),
             _ThinVRule(),
-            _StatColumn(label: 'Active', value: '$activeCount'),
+            _StatColumn(
+              label: AppStrings.statActive,
+              value: '$activeCount',
+            ),
             _ThinVRule(),
-            _StatColumn(label: 'Categories', value: '$categoryCount'),
+            _StatColumn(
+              label: AppStrings.statCategories,
+              value: '$categoryCount',
+            ),
           ],
         ),
       ),
@@ -352,10 +369,10 @@ class _StockPulse extends StatelessWidget {
         children: [
           Row(
             children: [
-              const _Eyebrow('STOCK PULSE'),
+              const _Eyebrow(AppStrings.stockPulseEyebrow),
               const Spacer(),
               Text(
-                total == 0 ? '—' : '$pct% healthy',
+                total == 0 ? '—' : '$pct% ${AppStrings.stockPulseHealthy}',
                 style: theme.textTheme.labelMedium?.copyWith(
                   color: AppColors.brandStrong,
                   fontWeight: FontWeight.w700,
@@ -371,29 +388,36 @@ class _StockPulse extends StatelessWidget {
             total: total,
           ),
           const SizedBox(height: AppSizes.md),
-          DefaultTextStyle.merge(
-            style: theme.textTheme.bodySmall ?? const TextStyle(),
-            child: Wrap(
-              spacing: AppSizes.lg,
-              runSpacing: AppSizes.sm,
-              children: [
-                _PulseLegend(
+          // Three legend items share width equally so the dot/value/label
+          // triplets line up vertically — replaces the previous Wrap,
+          // which left ragged gaps when one label was much longer.
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: _PulseLegend(
                   color: AppColors.brand,
-                  label: 'In good stock',
+                  label: AppStrings.stockPulseInGoodStock,
                   value: '$healthy',
                 ),
-                _PulseLegend(
+              ),
+              const SizedBox(width: AppSizes.sm),
+              Expanded(
+                child: _PulseLegend(
                   color: AppColors.warning,
-                  label: AppStrings.lowStock,
+                  label: AppStrings.stockPulseLow,
                   value: '$low',
                 ),
-                _PulseLegend(
+              ),
+              const SizedBox(width: AppSizes.sm),
+              Expanded(
+                child: _PulseLegend(
                   color: AppColors.error,
-                  label: AppStrings.outOfStock,
+                  label: AppStrings.stockPulseOut,
                   value: '$out',
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),
@@ -466,27 +490,38 @@ class _PulseLegend extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Row(
-      mainAxisSize: MainAxisSize.min,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: AppSizes.sm),
+            Text(
+              value,
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: AppColors.black,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.2,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: AppSizes.sm),
-        Text(
-          '$value ',
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: AppColors.black,
-            fontWeight: FontWeight.w700,
-            fontFeatures: const [FontFeature.tabularFigures()],
-          ),
-        ),
-        Text(
-          label.toLowerCase(),
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: AppColors.muted,
+        const SizedBox(height: 2),
+        Padding(
+          padding: const EdgeInsets.only(left: 16),
+          child: Text(
+            label,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: AppColors.muted,
+              height: 1.2,
+            ),
           ),
         ),
       ],
@@ -529,7 +564,7 @@ class _DraftsSection extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const _Eyebrow('PENDING DRAFTS'),
+                    const _Eyebrow(AppStrings.pendingDraftsEyebrow),
                     const SizedBox(height: AppSizes.xs),
                     Text(
                       '$count draft ${count == 1 ? "invoice" : "invoices"} '
@@ -540,7 +575,7 @@ class _DraftsSection extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      'Stock has not been deducted yet.',
+                      AppStrings.draftsStockNotDeducted,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: AppColors.muted,
                       ),
@@ -648,7 +683,7 @@ class _ActivitySection extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
-          child: const _Eyebrow('RECENT ACTIVITY'),
+          child: const _Eyebrow(AppStrings.recentActivityEyebrow),
         ),
         const SizedBox(height: AppSizes.md),
         if (transactions.isEmpty)
@@ -667,7 +702,7 @@ class _ActivitySection extends StatelessWidget {
                 const SizedBox(width: AppSizes.md),
                 Expanded(
                   child: Text(
-                    'No stock movements yet. Your recent in/out activity will appear here.',
+                    AppStrings.noRecentActivity,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: AppColors.muted,
                     ),
@@ -779,6 +814,82 @@ class _TransactionRow extends StatelessWidget {
 // First-login pending-invite callout
 // ─────────────────────────────────────────────────────────────────────
 
+class _OrdersCallout extends StatelessWidget {
+  const _OrdersCallout();
+
+  @override
+  Widget build(BuildContext context) {
+    final count = context.watch<OrdersProvider>().pendingCount;
+    if (count == 0) return const SizedBox.shrink();
+
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.md,
+        AppSizes.lg,
+        AppSizes.sm,
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const OrdersInboxPage()),
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(AppSizes.lg),
+          decoration: ShapeDecoration(
+            color: AppColors.warningSoft,
+            shape: AppShapes.squircle(
+              AppSizes.radiusLg,
+              side: const BorderSide(color: AppColors.warning, width: 1),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: const BoxDecoration(
+                  color: AppColors.warning,
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: const Icon(Icons.inbox_rounded,
+                    color: AppColors.white, size: 18),
+              ),
+              const SizedBox(width: AppSizes.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      count == 1
+                          ? '1 ${AppStrings.newOrderWaitingTitle.toLowerCase()}'
+                          : '$count ${AppStrings.newOrdersWaitingTitle.toLowerCase()}',
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: AppColors.warning,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      AppStrings.newOrderWaitingSubtitle,
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: AppColors.warning),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded, color: AppColors.warning),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _PendingInviteCallout extends StatelessWidget {
   const _PendingInviteCallout();
 
@@ -837,7 +948,7 @@ class _PendingInviteCallout extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'You have a pending invitation',
+                      AppStrings.pendingInvitationTitle,
                       style: theme.textTheme.bodyLarge?.copyWith(
                         color: AppColors.brandStrong,
                         fontWeight: FontWeight.w800,
