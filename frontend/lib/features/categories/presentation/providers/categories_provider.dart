@@ -33,14 +33,33 @@ class CategoriesProvider extends ChangeNotifier {
   Future<void> createCategory({
     required String name,
     String? description,
+    String? iconName,
   }) async {
-    final data = CategoryDto.toCreateJson(name: name, description: description);
+    final data = CategoryDto.toCreateJson(
+      name: name,
+      description: description,
+      iconName: iconName,
+    );
     await _dataSource.createCategory(data);
     await loadCategories();
   }
 
-  Future<void> updateCategory(int id, {String? name, String? description}) async {
-    final data = CategoryDto.toUpdateJson(name: name, description: description);
+  /// [clearIcon] = true sends `iconName: null` to wipe the existing icon.
+  /// [iconName] = non-null replaces the icon. Passing neither leaves it
+  /// alone. This avoids the ambiguity of a single nullable string param.
+  Future<void> updateCategory(
+    int id, {
+    String? name,
+    String? description,
+    String? iconName,
+    bool clearIcon = false,
+  }) async {
+    final data = CategoryDto.toUpdateJson(
+      name: name,
+      description: description,
+      iconName: iconName,
+      clearIcon: clearIcon,
+    );
     await _dataSource.updateCategory(id, data);
     await loadCategories();
   }

@@ -59,6 +59,7 @@ class Invitation {
   final String? fromUserEmail;
 
   bool get isPending => status == InviteStatus.pending;
+  bool get isAccepted => status == InviteStatus.accepted;
   bool get isParty => linkType == InviteLinkType.party;
 
   factory Invitation.fromJson(Map<String, dynamic> j) {

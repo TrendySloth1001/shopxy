@@ -4,6 +4,7 @@ class Category {
     required this.name,
     this.description,
     this.imageUrl,
+    this.iconName,
     required this.sortOrder,
     required this.isActive,
     this.productCount,
@@ -15,6 +16,7 @@ class Category {
   final String name;
   final String? description;
   final String? imageUrl;
+  final String? iconName;
   final int sortOrder;
   final bool isActive;
   final int? productCount;
