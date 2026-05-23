@@ -8,6 +8,7 @@ import 'package:shopxy/features/vendors/presentation/pages/vendor_detail_page.da
 import 'package:shopxy/features/vendors/presentation/providers/vendors_provider.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
+import 'package:shopxy/shared/constants/indian.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
@@ -473,7 +474,11 @@ class VendorFormSheetState extends State<VendorFormSheet> {
   late final TextEditingController _phone;
   late final TextEditingController _email;
   late final TextEditingController _address;
+  late final TextEditingController _city;
+  late final TextEditingController _pinCode;
+  late final TextEditingController _panNumber;
   late final TextEditingController _gstin;
+  String? _stateCode;
 
   bool get isEditing => widget.vendor != null;
 
@@ -486,7 +491,11 @@ class VendorFormSheetState extends State<VendorFormSheet> {
     _phone = TextEditingController(text: v?.phone ?? '');
     _email = TextEditingController(text: v?.email ?? '');
     _address = TextEditingController(text: v?.address ?? '');
+    _city = TextEditingController(text: v?.city ?? '');
+    _pinCode = TextEditingController(text: v?.pinCode ?? '');
+    _panNumber = TextEditingController(text: v?.panNumber ?? '');
     _gstin = TextEditingController(text: v?.gstin ?? '');
+    _stateCode = v?.stateCode;
   }
 
   @override
@@ -496,6 +505,9 @@ class VendorFormSheetState extends State<VendorFormSheet> {
     _phone.dispose();
     _email.dispose();
     _address.dispose();
+    _city.dispose();
+    _pinCode.dispose();
+    _panNumber.dispose();
     _gstin.dispose();
     super.dispose();
   }
@@ -505,6 +517,7 @@ class VendorFormSheetState extends State<VendorFormSheet> {
     setState(() => _isSaving = true);
     try {
       final provider = context.read<VendorsProvider>();
+      final stateName = IndianStates.stateNameFromCode(_stateCode);
       if (isEditing) {
         await provider.updateVendor(
           widget.vendor!.id,
@@ -513,7 +526,12 @@ class VendorFormSheetState extends State<VendorFormSheet> {
           phone: _phone.text,
           email: _email.text,
           address: _address.text,
-          gstin: _gstin.text,
+          city: _city.text,
+          state: stateName ?? '',
+          stateCode: _stateCode ?? '',
+          pinCode: _pinCode.text,
+          panNumber: _panNumber.text.toUpperCase(),
+          gstin: _gstin.text.toUpperCase(),
         );
       } else {
         await provider.createVendor(
@@ -523,7 +541,13 @@ class VendorFormSheetState extends State<VendorFormSheet> {
           phone: _phone.text.isNotEmpty ? _phone.text : null,
           email: _email.text.isNotEmpty ? _email.text : null,
           address: _address.text.isNotEmpty ? _address.text : null,
-          gstin: _gstin.text.isNotEmpty ? _gstin.text : null,
+          city: _city.text.isNotEmpty ? _city.text : null,
+          state: stateName,
+          stateCode: _stateCode,
+          pinCode: _pinCode.text.isNotEmpty ? _pinCode.text : null,
+          panNumber:
+              _panNumber.text.isNotEmpty ? _panNumber.text.toUpperCase() : null,
+          gstin: _gstin.text.isNotEmpty ? _gstin.text.toUpperCase() : null,
         );
       }
       if (mounted) Navigator.pop(context);
@@ -611,10 +635,28 @@ class VendorFormSheetState extends State<VendorFormSheet> {
                 ],
               ),
               const SizedBox(height: AppSizes.md),
-              TextFormField(
-                controller: _gstin,
-                decoration: const InputDecoration(labelText: AppStrings.gstin),
-                textCapitalization: TextCapitalization.characters,
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _gstin,
+                      decoration: const InputDecoration(
+                        labelText: AppStrings.gstin,
+                      ),
+                      textCapitalization: TextCapitalization.characters,
+                      validator: IndianValidators.gstin,
+                    ),
+                  ),
+                  const SizedBox(width: AppSizes.md),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _panNumber,
+                      decoration: const InputDecoration(labelText: 'PAN'),
+                      textCapitalization: TextCapitalization.characters,
+                      validator: IndianValidators.pan,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: AppSizes.md),
               TextFormField(
@@ -624,6 +666,45 @@ class VendorFormSheetState extends State<VendorFormSheet> {
                 ),
                 maxLines: 2,
                 textCapitalization: TextCapitalization.sentences,
+              ),
+              const SizedBox(height: AppSizes.md),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _city,
+                      decoration: const InputDecoration(labelText: 'City'),
+                      textCapitalization: TextCapitalization.words,
+                    ),
+                  ),
+                  const SizedBox(width: AppSizes.md),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _pinCode,
+                      decoration: const InputDecoration(labelText: 'PIN code'),
+                      keyboardType: TextInputType.number,
+                      validator: IndianValidators.pincode,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSizes.md),
+              DropdownButtonFormField<String>(
+                initialValue: _stateCode,
+                isExpanded: true,
+                decoration: const InputDecoration(labelText: 'State'),
+                items: [
+                  const DropdownMenuItem<String>(
+                    value: null,
+                    child: Text('— Select —'),
+                  ),
+                  for (final s in IndianStates.all)
+                    DropdownMenuItem<String>(
+                      value: s.code,
+                      child: Text('${s.code} — ${s.name}'),
+                    ),
+                ],
+                onChanged: (v) => setState(() => _stateCode = v),
               ),
               const SizedBox(height: AppSizes.xl),
               AppButton.primary(

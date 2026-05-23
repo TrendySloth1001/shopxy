@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/invoices/domain/entities/invoice.dart';
 import 'package:shopxy/features/invoices/presentation/providers/invoices_provider.dart';
 import 'package:shopxy/features/parties/domain/entities/party.dart';
@@ -11,6 +12,7 @@ import 'package:shopxy/features/vendors/domain/entities/vendor.dart';
 import 'package:shopxy/features/vendors/presentation/widgets/vendor_picker.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
+import 'package:shopxy/shared/constants/indian.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
 import 'package:shopxy/shared/widgets/app_card.dart';
@@ -44,6 +46,15 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
   final _discount = TextEditingController(text: '0');
   final _note = TextEditingController();
 
+  // Tax-invoice vs bill-of-supply toggle, only meaningful for SALE.
+  // PURCHASE always falls back to TAX_INVOICE on the wire.
+  String _documentType = 'TAX_INVOICE';
+
+  // Walk-in place-of-supply (used when no party is selected on a SALE).
+  // Defaults to the shop's own state code once auth has loaded, which
+  // gives the intrastate split out of the box.
+  String? _walkInStateCode;
+
   final List<InvoiceItemDraft> _items = [];
 
   // product search
@@ -61,6 +72,15 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
     _customerName.addListener(_markDirty);
     _note.addListener(_markDirty);
     _discount.addListener(_markDirty);
+    // Seed the walk-in dropdown to the shop's own state so a fresh
+    // SALE without a party defaults to intrastate CGST+SGST.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final shopCode = context.read<AuthProvider>().user?.shopStateCode;
+      if (shopCode != null && _walkInStateCode == null) {
+        setState(() => _walkInStateCode = shopCode);
+      }
+    });
   }
 
   @override
@@ -77,7 +97,34 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
   double get _subtotal => _items.fold(0, (sum, i) => sum + i.subtotal);
   double get _totalTax => _items.fold(0, (sum, i) => sum + i.tax);
   double get _headerDiscount => double.tryParse(_discount.text) ?? 0;
-  double get _total => _subtotal + _totalTax - _headerDiscount;
+  // Pre-roundoff total: taxable + tax − header discount, mirroring the
+  // backend's `total = taxableValue + totalTax − discount` math.
+  double get _rawTotal => _subtotal + _totalTax - _headerDiscount;
+  // Indian invoices commonly round to the nearest rupee. We compute the
+  // diff the same way the backend does so the UI matches the saved row.
+  double get _roundedTotal => _rawTotal.roundToDouble();
+  double get _roundOff => _roundedTotal - _rawTotal;
+  double get _total => _roundedTotal;
+
+  /// Counterparty state code for IGST-vs-CGST/SGST. SALE uses the
+  /// selected party (or the walk-in picker); PURCHASE uses the vendor.
+  /// Null if nothing is selected yet → defaults to intrastate.
+  String? get _placeOfSupplyStateCode {
+    if (_type == 'SALE') {
+      return _selectedParty?.stateCode ?? _walkInStateCode;
+    }
+    return _selectedVendor?.stateCode;
+  }
+
+  /// True if the counterparty's state differs from the shop's. Mirrors
+  /// backend `isInterstateSupply` — both halves must be present, else
+  /// we treat it as intrastate to avoid mis-charging IGST.
+  bool get _isInterstate {
+    final shop = context.read<AuthProvider>().user?.shopStateCode;
+    final pos = _placeOfSupplyStateCode;
+    if (shop == null || pos == null) return false;
+    return shop != pos;
+  }
 
   Future<void> _searchProducts(String query) async {
     if (query.trim().isEmpty) {
@@ -183,6 +230,9 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
         customerGstin: _customerGstin.text,
         discount: _headerDiscount > 0 ? _headerDiscount : null,
         note: _note.text.isNotEmpty ? _note.text : null,
+        // Document type only varies for SALE; PURCHASE is always a tax invoice.
+        documentType: _type == 'SALE' ? _documentType : 'TAX_INVOICE',
+        placeOfSupplyStateCode: _placeOfSupplyStateCode,
         items: _items
             .map(
               (i) => {
@@ -362,6 +412,29 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                     ),
                   ],
                 ),
+                const SizedBox(height: AppSizes.md),
+                // Walk-in place-of-supply picker. Drives the GST split
+                // when no party is attached to the invoice.
+                DropdownButtonFormField<String>(
+                  initialValue: _walkInStateCode,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Place of supply (state)',
+                    helperText: 'Buyer state — drives CGST/SGST vs IGST',
+                  ),
+                  items: [
+                    const DropdownMenuItem<String>(
+                      value: null,
+                      child: Text('— Select —'),
+                    ),
+                    for (final s in IndianStates.all)
+                      DropdownMenuItem<String>(
+                        value: s.code,
+                        child: Text('${s.code} — ${s.name}'),
+                      ),
+                  ],
+                  onChanged: (v) => setState(() => _walkInStateCode = v),
+                ),
               ],
             ],
 
@@ -459,8 +532,37 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                 title: AppStrings.totals.toUpperCase(),
                 padding: const EdgeInsets.only(bottom: AppSizes.sm),
               ),
+              if (_type == 'SALE') ...[
+                // Document-type toggle: a bill-of-supply is used when the
+                // shop isn't charging GST on this txn (composition / nil-rated).
+                SegmentedButton<String>(
+                  segments: const [
+                    ButtonSegment(
+                      value: 'TAX_INVOICE',
+                      label: Text('Tax Invoice'),
+                    ),
+                    ButtonSegment(
+                      value: 'BILL_OF_SUPPLY',
+                      label: Text('Bill of Supply'),
+                    ),
+                  ],
+                  selected: {_documentType},
+                  onSelectionChanged: (v) =>
+                      setState(() => _documentType = v.first),
+                ),
+                const SizedBox(height: AppSizes.md),
+              ],
               _TotalRow(label: AppStrings.subtotal, value: _subtotal),
-              _TotalRow(label: AppStrings.tax, value: _totalTax),
+              // GST split: same formula as the backend — line.taxableValue =
+              // qty*price − discount, line tax = taxableValue * rate / 100.
+              // We sum across lines and either show one IGST row (interstate)
+              // or split CGST/SGST 50/50 (intrastate).
+              if (_isInterstate)
+                _TotalRow(label: 'IGST', value: _totalTax)
+              else ...[
+                _TotalRow(label: 'CGST', value: _totalTax / 2),
+                _TotalRow(label: 'SGST', value: _totalTax / 2),
+              ],
               Row(
                 children: [
                   Expanded(
@@ -486,12 +588,14 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                   ),
                 ],
               ),
+              if (_roundOff != 0)
+                _TotalRow(label: 'Round-off', value: _roundOff),
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: AppSizes.sm),
                 child: AppDivider.flush(),
               ),
               _TotalRow(
-                label: AppStrings.total,
+                label: 'Grand Total',
                 value: _total,
                 isHighlight: true,
               ),

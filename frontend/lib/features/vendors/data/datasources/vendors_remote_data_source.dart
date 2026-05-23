@@ -46,6 +46,11 @@ class VendorsRemoteDataSource {
     String? phone,
     String? email,
     String? address,
+    String? city,
+    String? state,
+    String? stateCode,
+    String? pinCode,
+    String? panNumber,
     String? gstin,
   }) async {
     final res = await _client.post(
@@ -56,6 +61,11 @@ class VendorsRemoteDataSource {
         phone: phone,
         email: email,
         address: address,
+        city: city,
+        state: state,
+        stateCode: stateCode,
+        pinCode: pinCode,
+        panNumber: panNumber,
         gstin: gstin,
       ),
     );
