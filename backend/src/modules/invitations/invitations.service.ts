@@ -234,6 +234,19 @@ export class InvitationsService {
       const newStatus = opts.decision === 'ACCEPT' ? 'ACCEPTED' : 'DECLINED';
       const respondedAt = new Date();
 
+      // Race guard: two concurrent accepts could both pass the PENDING
+      // check above before either commits. Atomically flip status here
+      // and bail if someone else won. The party/vendor linking + status
+      // finalisation below is then guaranteed to run for exactly one
+      // accept.
+      const claimed = await tx.invitation.updateMany({
+        where: { id: invite.id, status: 'PENDING' },
+        data: { status: newStatus, respondedAt },
+      });
+      if (claimed.count === 0) {
+        return { error: 'Already responded' as const };
+      }
+
       // ── On ACCEPT: link or lazy-create the party/vendor row. We do
       // this BEFORE the invitation.update so we can stamp the new FK
       // back onto the invitation in a single write.
@@ -279,11 +292,12 @@ export class InvitationsService {
         }
       }
 
+      // Status + respondedAt were already set by the updateMany race
+      // guard above; here we only stamp the (possibly newly-materialised)
+      // partyId/vendorId back onto the invitation row.
       const updated = await tx.invitation.update({
         where: { id: invite.id },
         data: {
-          status: newStatus,
-          respondedAt,
           partyId: newPartyId,
           vendorId: newVendorId,
         },
