@@ -8,6 +8,8 @@ import 'package:shopxy/features/products/presentation/pages/product_detail_page.
 import 'package:shopxy/features/products/presentation/pages/qr_scanner_page.dart';
 import 'package:shopxy/features/products/presentation/providers/products_provider.dart';
 import 'package:shopxy/features/products/presentation/widgets/product_list_tile.dart';
+import 'package:shopxy/features/products/presentation/widgets/products_kpi_strip.dart';
+import 'package:shopxy/features/dashboard/presentation/providers/dashboard_provider.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
@@ -46,6 +48,12 @@ class _ProductsPageState extends State<ProductsPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       context.read<ProductsProvider>().loadProducts();
+      // Kick a dashboard stats fetch if the user lands here cold —
+      // the KPI strip reads from DashboardProvider.stats.
+      final dash = context.read<DashboardProvider>();
+      if (dash.stats == null && !dash.isLoading) {
+        dash.loadStats();
+      }
     });
   }
 
@@ -194,6 +202,24 @@ class _ProductsPageState extends State<ProductsPage> {
               onChanged: provider.setSearch,
               trailing: _ScanAction(onTap: _openScanner),
             ),
+          ),
+          ProductsKpiStrip(
+            onTapAll: () {
+              if (provider.lowStockOnly) provider.setLowStockOnly(false);
+              if (provider.outOfStockOnly) provider.setOutOfStockOnly(false);
+              if (provider.categoryFilter != null) {
+                setState(() => _selectedCategoryName = null);
+                provider.setCategoryFilter(null);
+              }
+            },
+            onTapLowStock: () {
+              if (provider.outOfStockOnly) provider.setOutOfStockOnly(false);
+              provider.setLowStockOnly(!provider.lowStockOnly);
+            },
+            onTapOutOfStock: () {
+              if (provider.lowStockOnly) provider.setLowStockOnly(false);
+              provider.setOutOfStockOnly(!provider.outOfStockOnly);
+            },
           ),
           AppFilterStrip(
             children: [

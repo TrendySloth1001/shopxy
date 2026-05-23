@@ -27,6 +27,21 @@ interface InvoiceItemInput {
   discount?: number;
 }
 
+interface ResolveInvoiceInput {
+  type: InvoiceType;
+  documentType?: DocumentType;
+  placeOfSupplyStateCode?: string;
+  vendorId?: number | null;
+  partyId?: number | null;
+  customerName?: string;
+  customerPhone?: string;
+  customerGstin?: string;
+  discount?: number;
+  note?: string;
+  invoiceDate?: string;
+  items: InvoiceItemInput[];
+}
+
 export class InvoicesService {
   async createInvoice(data: {
     type: InvoiceType;
@@ -42,18 +57,110 @@ export class InvoicesService {
     invoiceDate?: string;
     items: InvoiceItemInput[];
   }) {
+    const resolved = await this.resolveInvoiceFields(data);
+    if ('error' in resolved) return resolved;
+
+    const { header, itemsData } = resolved;
+    const { invoiceNo, financialYear } = await nextInvoiceNo(
+      data.type,
+      header.documentType,
+      header.invoiceDate,
+    );
+
+    // Wrapping in $transaction keeps the create atomic and gives us a
+    // boundary for future per-create side effects (e.g. auto-confirm).
+    const invoice = await prisma.$transaction(async (tx) => {
+      return tx.invoice.create({
+        data: {
+          ...header,
+          invoiceNo,
+          financialYear,
+          items: { create: itemsData },
+        },
+        include: { items: true, vendor: true, party: true },
+      });
+    });
+
+    return { invoice };
+  }
+
+  /// Pure resolution step shared by create + update: party/vendor look-ups,
+  /// product snapshots, GST split and total calculation. Returns either an
+  /// `error` or the ready-to-write header + items payload.
+  ///
+  /// Query budget: ≤ 4 statements (party + vendor + shop owner + products),
+  /// each one bounded — no per-item round trips.
+  private async resolveInvoiceFields(data: ResolveInvoiceInput): Promise<
+    | { error: string }
+    | {
+        header: {
+          documentType: DocumentType;
+          type: InvoiceType;
+          vendorId: number | null;
+          partyId: number | null;
+          customerName: string | null;
+          customerPhone: string | null;
+          customerGstin: string | null;
+          customerAddress: string | null;
+          customerCity: string | null;
+          customerState: string | null;
+          customerStateCode: string | null;
+          customerPinCode: string | null;
+          customerPanNumber: string | null;
+          vendorName: string | null;
+          vendorPhone: string | null;
+          vendorGstin: string | null;
+          vendorAddress: string | null;
+          vendorCity: string | null;
+          vendorState: string | null;
+          vendorStateCode: string | null;
+          vendorPinCode: string | null;
+          vendorPanNumber: string | null;
+          placeOfSupplyStateCode: string | null;
+          isInterstate: boolean;
+          subtotal: number;
+          taxableValue: number;
+          taxAmount: number;
+          igstAmount: number;
+          cgstAmount: number;
+          sgstAmount: number;
+          cessAmount: number;
+          discount: number;
+          roundOff: number;
+          total: number;
+          amountInWords: string;
+          note: string | null;
+          invoiceDate: Date;
+        };
+        itemsData: Array<{
+          productId: number;
+          productName: string;
+          productSku: string;
+          hsn: string | undefined;
+          unit: string;
+          quantity: number;
+          unitPrice: number;
+          taxPercent: number;
+          discount: number;
+          taxableValue: number;
+          igstAmount: number;
+          cgstAmount: number;
+          sgstAmount: number;
+          cessRate: number;
+          cessAmount: number;
+          total: number;
+        }>;
+      }
+  > {
     if (data.items.length === 0) {
       return { error: 'Invoice must have at least one item' as const };
     }
-
     const documentType: DocumentType = data.documentType ?? 'TAX_INVOICE';
 
     let partyId: number | null = null;
     let customerName = data.customerName ?? null;
     let customerPhone = data.customerPhone ?? null;
     let customerGstin = data.customerGstin ?? null;
-    // Address snapshot. Filled from the party row below; left null when an
-    // ad-hoc walk-in is invoiced without a party.
     let customerAddress: string | null = null;
     let customerCity: string | null = null;
     let customerState: string | null = null;
@@ -94,6 +201,7 @@ export class InvoicesService {
       customerPanNumber = party.panNumber ?? null;
     }
 
+    let resolvedVendorId: number | null = null;
     if (data.vendorId) {
       const vendor = await prisma.vendor.findUnique({
         where: { id: data.vendorId },
@@ -105,6 +213,7 @@ export class InvoicesService {
       });
       if (!vendor) return { error: 'Vendor not found' as const };
       if (!vendor.isActive) return { error: 'Vendor is inactive' as const };
+      resolvedVendorId = vendor.id;
       vendorName = vendor.name;
       vendorPhone = vendor.phone ?? null;
       vendorGstin = vendor.gstin ?? null;
@@ -116,31 +225,25 @@ export class InvoicesService {
       vendorPanNumber = vendor.panNumber ?? null;
     }
 
-    // Shop owner identity drives IGST vs CGST+SGST. Cached once per call so
-    // we don't re-query inside the per-line loop.
+    // Shop owner identity drives IGST vs CGST+SGST. Read once per call.
     const shopOwner = await prisma.user.findFirst({
       where: { role: 'OWNER', isActive: true },
       select: { shopStateCode: true },
     });
     const shopStateCode = shopOwner?.shopStateCode ?? null;
 
-    // For SALE: place of supply defaults to the customer's state code. For
-    // PURCHASE: it defaults to the shop owner's state code (we are the
-    // recipient). Either way: when shop and place-of-supply state codes
-    // disagree we charge IGST; otherwise CGST+SGST.
     const placeOfSupplyStateCode =
       data.placeOfSupplyStateCode ??
       (data.type === 'SALE' ? customerStateCode : shopStateCode) ??
       null;
     const isInterstate = isInterstateSupply(shopStateCode, placeOfSupplyStateCode);
 
-    // Resolve products for snapshots
+    // One findMany regardless of item count — no per-line lookups.
     const productIds = [...new Set(data.items.map((i) => i.productId))];
     const products = await prisma.product.findMany({
       where: { id: { in: productIds } },
       select: { id: true, name: true, sku: true, hsnCode: true, unit: true, stockQuantity: true },
     });
-
     const productMap = new Map(products.map((p) => [p.id, p]));
     for (const item of data.items) {
       if (!productMap.has(item.productId)) {
@@ -148,9 +251,6 @@ export class InvoicesService {
       }
     }
 
-    // Per-line GST split — IGST or (CGST+SGST), plus optional cess.
-    // We round per-component to two decimals so the values stored agree
-    // with what would be re-computed by the printed PDF.
     let subtotal = 0;
     let taxableValueTotal = 0;
     let igstTotal = 0;
@@ -212,8 +312,6 @@ export class InvoicesService {
     });
 
     const taxAmount = this.round2(igstTotal + cgstTotal + sgstTotal + cessTotal);
-    // Apply the header-level discount against the taxable value before
-    // computing the round-off so we still finish on a whole rupee.
     const grandTotalRaw = this.round2(
       taxableValueTotal + taxAmount - headerDiscount,
     );
@@ -221,62 +319,114 @@ export class InvoicesService {
     const total = this.round2(grandTotalRaw + roundOff);
     const words = amountInWords(total);
     const invoiceDate = data.invoiceDate ? new Date(data.invoiceDate) : new Date();
-    const { invoiceNo, financialYear } = await nextInvoiceNo(
-      data.type,
-      documentType,
-      invoiceDate,
-    );
 
-    // Header + line items must materialise together. Even though Prisma's
-    // nested create is already atomic at the row level, wrapping the
-    // whole flow in $transaction makes the boundary explicit and gives
-    // us a place to hang future per-create ledger posts (e.g. auto-
-    // confirm) without re-architecting.
+    return {
+      header: {
+        documentType,
+        type: data.type,
+        vendorId: resolvedVendorId,
+        partyId,
+        customerName,
+        customerPhone,
+        customerGstin,
+        customerAddress,
+        customerCity,
+        customerState,
+        customerStateCode,
+        customerPinCode,
+        customerPanNumber,
+        vendorName,
+        vendorPhone,
+        vendorGstin,
+        vendorAddress,
+        vendorCity,
+        vendorState,
+        vendorStateCode,
+        vendorPinCode,
+        vendorPanNumber,
+        placeOfSupplyStateCode,
+        isInterstate,
+        subtotal: this.round2(subtotal),
+        taxableValue: this.round2(taxableValueTotal),
+        taxAmount,
+        igstAmount: this.round2(igstTotal),
+        cgstAmount: this.round2(cgstTotal),
+        sgstAmount: this.round2(sgstTotal),
+        cessAmount: this.round2(cessTotal),
+        discount: headerDiscount,
+        roundOff,
+        total,
+        amountInWords: words,
+        note: data.note ?? null,
+        invoiceDate,
+      },
+      itemsData,
+    };
+  }
+
+  /// Replace a DRAFT invoice's contents in a single transaction. The
+  /// invoice number and creation date are preserved; everything else
+  /// (party/vendor snapshot, line items, totals) is recomputed from the
+  /// payload, so cancelling-and-recreating is no longer the only way to
+  /// fix a wrong line item.
+  ///
+  /// Query budget (steady state):
+  ///   - 1 SELECT to read status + invoiceDate
+  ///   - ≤ 4 from [resolveInvoiceFields]
+  ///   - 1 deleteMany (items)
+  ///   - 1 createMany (items)
+  ///   - 1 update (header) + final include re-read
+  /// Independent of item count — no N+1 fan-out.
+  async updateInvoice(id: number, data: {
+    type: InvoiceType;
+    documentType?: DocumentType;
+    placeOfSupplyStateCode?: string;
+    vendorId?: number | null;
+    partyId?: number | null;
+    customerName?: string;
+    customerPhone?: string;
+    customerGstin?: string;
+    discount?: number;
+    note?: string;
+    items: InvoiceItemInput[];
+  }) {
+    const existing = await prisma.invoice.findUnique({
+      where: { id },
+      select: { id: true, status: true, invoiceDate: true, type: true },
+    });
+    if (!existing) return { error: 'Invoice not found' as const };
+    if (existing.status !== 'DRAFT') {
+      return { error: 'Only draft invoices can be edited' as const };
+    }
+    if (existing.type !== data.type) {
+      // Type drives stock direction and number prefix — switching mid-flight
+      // would corrupt both. Force cancel-and-create instead.
+      return { error: 'Cannot change invoice type — cancel and create a new one' as const };
+    }
+
+    const resolved = await this.resolveInvoiceFields({
+      ...data,
+      // Preserve the original creation date so the invoice number ↔ date
+      // alignment from when it was minted stays consistent.
+      invoiceDate: existing.invoiceDate.toISOString(),
+    });
+    if ('error' in resolved) return resolved;
+
+    const { header, itemsData } = resolved;
+
     const invoice = await prisma.$transaction(async (tx) => {
-      return tx.invoice.create({
-        data: {
-          invoiceNo,
-          financialYear,
-          documentType,
-          type: data.type,
-          vendorId: data.vendorId ?? null,
-          partyId,
-          customerName,
-          customerPhone,
-          customerGstin,
-          customerAddress,
-          customerCity,
-          customerState,
-          customerStateCode,
-          customerPinCode,
-          customerPanNumber,
-          vendorName,
-          vendorPhone,
-          vendorGstin,
-          vendorAddress,
-          vendorCity,
-          vendorState,
-          vendorStateCode,
-          vendorPinCode,
-          vendorPanNumber,
-          placeOfSupplyStateCode,
-          isInterstate,
-          subtotal: this.round2(subtotal),
-          taxableValue: this.round2(taxableValueTotal),
-          taxAmount,
-          igstAmount: this.round2(igstTotal),
-          cgstAmount: this.round2(cgstTotal),
-          sgstAmount: this.round2(sgstTotal),
-          cessAmount: this.round2(cessTotal),
-          discount: headerDiscount,
-          roundOff,
-          total,
-          amountInWords: words,
-          note: data.note ?? null,
-          invoiceDate,
-          items: { create: itemsData },
-        },
-        include: { items: true, vendor: true, party: true },
+      // Wipe and re-write items in two bulk calls. Diff-and-patch was
+      // considered but adds complexity for no real gain — a draft is
+      // usually edited end-to-end and item rows have no FKs pointing
+      // into them yet (no ledger entries exist for drafts).
+      await tx.invoiceItem.deleteMany({ where: { invoiceId: id } });
+      await tx.invoiceItem.createMany({
+        data: itemsData.map((it) => ({ ...it, invoiceId: id })),
+      });
+      return tx.invoice.update({
+        where: { id },
+        data: header,
+        include: { items: { orderBy: { id: 'asc' } }, vendor: true, party: true },
       });
     });
 
