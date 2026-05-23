@@ -1,0 +1,162 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
+
+import 'package:shopxy/features/custom_fields/domain/entities/custom_field.dart';
+import 'package:shopxy/shared/theme/app_colors.dart';
+
+/// Renders the right input for a [CustomFieldDefinition]'s type:
+///   TEXT       → single-line TextField
+///   LONG_TEXT  → multi-line TextField
+///   NUMBER     → numeric TextField with optional unit suffix
+///   DATE       → tap-to-pick using showDatePicker
+///   BOOLEAN    → SwitchListTile
+///   DROPDOWN   → DropdownButtonFormField
+///
+/// All values come in and out as strings — the backend normalises and
+/// validates against the declared type before persisting. The render
+/// layer here just picks the right control for ergonomics.
+class CustomFieldInput extends StatefulWidget {
+  const CustomFieldInput({
+    super.key,
+    required this.definition,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final CustomFieldDefinition definition;
+  final String value;
+  final ValueChanged<String> onChanged;
+
+  @override
+  State<CustomFieldInput> createState() => _CustomFieldInputState();
+}
+
+class _CustomFieldInputState extends State<CustomFieldInput> {
+  late final TextEditingController _controller =
+      TextEditingController(text: widget.value);
+
+  @override
+  void didUpdateWidget(covariant CustomFieldInput oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.value != _controller.text &&
+        widget.value != oldWidget.value) {
+      _controller.text = widget.value;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickDate() async {
+    final initial = DateTime.tryParse(widget.value) ?? DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null) {
+      widget.onChanged(picked.toIso8601String());
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    switch (widget.definition.type) {
+      case CustomFieldType.TEXT:
+        return TextField(
+          controller: _controller,
+          onChanged: widget.onChanged,
+          decoration: InputDecoration(
+            labelText: widget.definition.name,
+            border: const OutlineInputBorder(),
+          ),
+        );
+
+      case CustomFieldType.LONG_TEXT:
+        return TextField(
+          controller: _controller,
+          onChanged: widget.onChanged,
+          minLines: 2,
+          maxLines: 6,
+          decoration: InputDecoration(
+            labelText: widget.definition.name,
+            border: const OutlineInputBorder(),
+            alignLabelWithHint: true,
+          ),
+        );
+
+      case CustomFieldType.NUMBER:
+        return TextField(
+          controller: _controller,
+          onChanged: widget.onChanged,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'[\d.,\-]')),
+          ],
+          decoration: InputDecoration(
+            labelText: widget.definition.name,
+            border: const OutlineInputBorder(),
+            suffixText: widget.definition.unitSuffix,
+          ),
+        );
+
+      case CustomFieldType.DATE:
+        final parsed = DateTime.tryParse(widget.value);
+        final display = parsed == null
+            ? ''
+            : DateFormat('dd MMM yyyy').format(parsed.toLocal());
+        return InkWell(
+          onTap: _pickDate,
+          child: InputDecorator(
+            decoration: InputDecoration(
+              labelText: widget.definition.name,
+              border: const OutlineInputBorder(),
+              suffixIcon: const Icon(Icons.calendar_today_rounded),
+            ),
+            child: Text(
+              display.isEmpty ? 'Pick a date' : display,
+              style: TextStyle(
+                color: display.isEmpty ? AppColors.muted : AppColors.black,
+              ),
+            ),
+          ),
+        );
+
+      case CustomFieldType.BOOLEAN:
+        final boolValue = widget.value == 'true';
+        return Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: AppColors.hairline),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: SwitchListTile(
+            value: boolValue,
+            onChanged: (v) => widget.onChanged(v ? 'true' : 'false'),
+            title: Text(widget.definition.name),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+          ),
+        );
+
+      case CustomFieldType.DROPDOWN:
+        final options = widget.definition.options ?? const <String>[];
+        final isValid = widget.value.isEmpty || options.contains(widget.value);
+        return DropdownButtonFormField<String>(
+          initialValue: isValid && widget.value.isNotEmpty ? widget.value : null,
+          decoration: InputDecoration(
+            labelText: widget.definition.name,
+            border: const OutlineInputBorder(),
+          ),
+          items: [
+            for (final o in options)
+              DropdownMenuItem(value: o, child: Text(o)),
+          ],
+          onChanged: (v) => widget.onChanged(v ?? ''),
+        );
+    }
+  }
+}
