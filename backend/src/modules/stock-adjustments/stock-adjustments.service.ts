@@ -7,6 +7,16 @@ import {
 } from '../../shared/constants/index.js';
 import { ledgerService } from '../ledger/ledger.service.js';
 
+/// Sentinel used to surface a ledger-post failure out of an adjustment
+/// `$transaction` so Prisma rolls back the header/items, while still
+/// letting the caller return the original error shape (and not a thrown
+/// exception).
+class AdjustmentLedgerFailure extends Error {
+  constructor(public readonly result: { error: string } & Record<string, unknown>) {
+    super(typeof result.error === 'string' ? result.error : 'Ledger post failed');
+  }
+}
+
 interface AdjustmentItemInput {
   productId: number;
   quantity: number;
@@ -50,61 +60,69 @@ export class StockAdjustmentsService {
 
     const adjustmentNo = await this.nextAdjustmentNo();
 
-    // Create header first so we have an id to attach to ledger rows.
-    const header = await prisma.stockAdjustment.create({
-      data: {
-        adjustmentNo,
-        reasonCode: input.reasonCode,
-        direction,
-        note: input.note ?? null,
-        createdById: input.createdById,
-        items: {
-          create: input.items.map((item) => {
-            const product = productMap.get(item.productId)!;
-            return {
-              productId: item.productId,
-              productName: product.name,
-              productSku: product.sku,
-              unit: product.unit,
-              quantity: item.quantity,
-              unitCost: item.unitCost ?? null,
-              note: item.note ?? null,
-            };
-          }),
+    // Single transaction: header + items + ledger post all-or-nothing.
+    // Previously we created the header, then on ledger failure did a
+    // best-effort delete, which left orphan rows if the delete itself
+    // failed (or the process crashed in between).
+    return prisma.$transaction(async (tx) => {
+      const header = await tx.stockAdjustment.create({
+        data: {
+          adjustmentNo,
+          reasonCode: input.reasonCode,
+          direction,
+          note: input.note ?? null,
+          createdById: input.createdById,
+          items: {
+            create: input.items.map((item) => {
+              const product = productMap.get(item.productId)!;
+              return {
+                productId: item.productId,
+                productName: product.name,
+                productSku: product.sku,
+                unit: product.unit,
+                quantity: item.quantity,
+                unitCost: item.unitCost ?? null,
+                note: item.note ?? null,
+              };
+            }),
+          },
         },
-      },
-      include: { items: true },
+        include: { items: true },
+      });
+
+      const result = await ledgerService.post({
+        direction,
+        reasonCode: input.reasonCode,
+        sourceType: 'ADJUSTMENT',
+        sourceId: header.id,
+        lines: header.items.map((it) => {
+          const product = productMap.get(it.productId)!;
+          const fallbackCost = Number(product.purchasePrice);
+          return {
+            productId: it.productId,
+            quantity: Number(it.quantity),
+            unitPrice:
+              direction === 'IN' ? Number(it.unitCost ?? fallbackCost) : undefined,
+            sourceLineId: it.id,
+            note: it.note ?? undefined,
+          };
+        }),
+        createdById: input.createdById,
+        note: input.note ?? undefined,
+      }, tx);
+
+      if ('error' in result) {
+        // Throw to abort the transaction — Prisma rolls back the header
+        // and items for us. Wrap the original error so callers still see
+        // the original shape.
+        throw new AdjustmentLedgerFailure(result);
+      }
+
+      return { adjustment: header, entries: result.entries };
+    }).catch((err: unknown) => {
+      if (err instanceof AdjustmentLedgerFailure) return err.result;
+      throw err;
     });
-
-    // Post each item to the ledger.
-    const result = await ledgerService.post({
-      direction,
-      reasonCode: input.reasonCode,
-      sourceType: 'ADJUSTMENT',
-      sourceId: header.id,
-      lines: header.items.map((it) => {
-        const product = productMap.get(it.productId)!;
-        const fallbackCost = Number(product.purchasePrice);
-        return {
-          productId: it.productId,
-          quantity: Number(it.quantity),
-          unitPrice:
-            direction === 'IN' ? Number(it.unitCost ?? fallbackCost) : undefined,
-          sourceLineId: it.id,
-          note: it.note ?? undefined,
-        };
-      }),
-      createdById: input.createdById,
-      note: input.note ?? undefined,
-    });
-
-    if ('error' in result) {
-      // Rollback header — keeps the database clean if posting failed.
-      await prisma.stockAdjustment.delete({ where: { id: header.id } });
-      return result;
-    }
-
-    return { adjustment: header, entries: result.entries };
   }
 
   async list(options: { reasonCode?: string; page: number; limit: number; skip: number }) {

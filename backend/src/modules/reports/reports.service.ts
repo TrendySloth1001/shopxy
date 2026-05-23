@@ -1,6 +1,11 @@
 import prisma from '../../infra/db/prisma.js';
 import type { Prisma } from '@prisma/client';
 
+// Single-tenant Indian shop — bucket "day" by IST ('Asia/Kolkata')
+// so a sale at 11:30pm local doesn't land on the next UTC day. If we go
+// multi-tenant later, thread a `tz` (IANA name) through DateRange and
+// parameterise the SQL below.
+
 /// All numeric aggregates come back from Postgres as strings (because
 /// numeric / decimal types can't safely round-trip through JS doubles).
 /// Cast to Number once at the edge.
@@ -41,7 +46,7 @@ export class ReportsService {
         { day: Date; invoices: bigint; revenue: string; tax: string }[]
       >`
         SELECT
-          date_trunc('day', invoice_date) AS day,
+          date_trunc('day', invoice_date AT TIME ZONE 'Asia/Kolkata') AS day,
           COUNT(*)::bigint                AS invoices,
           COALESCE(SUM(total), 0)::text   AS revenue,
           COALESCE(SUM(tax_amount), 0)::text AS tax
@@ -149,7 +154,7 @@ export class ReportsService {
         { day: Date; invoices: bigint; spend: string; tax: string }[]
       >`
         SELECT
-          date_trunc('day', invoice_date) AS day,
+          date_trunc('day', invoice_date AT TIME ZONE 'Asia/Kolkata') AS day,
           COUNT(*)::bigint                AS invoices,
           COALESCE(SUM(total), 0)::text   AS spend,
           COALESCE(SUM(tax_amount), 0)::text AS tax
