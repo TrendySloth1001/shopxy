@@ -1,23 +1,9 @@
 import prisma from '../../infra/db/prisma.js';
 import { ledgerService } from '../ledger/ledger.service.js';
+import { nextChallanNo, nextInvoiceNo } from '../../shared/numbering/sequences.js';
 
 function round2(v: number): number {
   return Math.round((v + Number.EPSILON) * 100) / 100;
-}
-
-async function nextChallanNo(): Promise<string> {
-  const count = await prisma.challan.count();
-  const seq = String(count + 1).padStart(5, '0');
-  const ym = new Date().toISOString().slice(0, 7).replace('-', '');
-  return `CH-${ym}-${seq}`;
-}
-
-async function nextInvoiceNo(type: 'SALE' | 'PURCHASE'): Promise<string> {
-  const prefix = type === 'SALE' ? 'INV' : 'PUR';
-  const count = await prisma.invoice.count({ where: { type } });
-  const seq = String(count + 1).padStart(5, '0');
-  const ym = new Date().toISOString().slice(0, 7).replace('-', '');
-  return `${prefix}-${ym}-${seq}`;
 }
 
 export class ChallansService {

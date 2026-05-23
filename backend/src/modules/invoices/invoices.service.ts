@@ -1,6 +1,7 @@
 import prisma from '../../infra/db/prisma.js';
 import PDFDocument from 'pdfkit';
 import { ledgerService } from '../ledger/ledger.service.js';
+import { nextInvoiceNo } from '../../shared/numbering/sequences.js';
 
 type InvoiceType = 'SALE' | 'PURCHASE';
 type InvoiceStatus = 'DRAFT' | 'CONFIRMED' | 'CANCELLED';
@@ -106,7 +107,7 @@ export class InvoicesService {
     });
 
     const total = this.round2(subtotal + taxAmount - headerDiscount);
-    const invoiceNo = await this.nextInvoiceNo(data.type);
+    const invoiceNo = await nextInvoiceNo(data.type);
 
     const invoice = await prisma.invoice.create({
       data: {
@@ -451,14 +452,6 @@ export class InvoicesService {
 
       doc.end();
     });
-  }
-
-  private async nextInvoiceNo(type: InvoiceType): Promise<string> {
-    const prefix = type === 'SALE' ? 'INV' : 'PUR';
-    const count = await prisma.invoice.count({ where: { type } });
-    const seq = String(count + 1).padStart(5, '0');
-    const ym = new Date().toISOString().slice(0, 7).replace('-', '');
-    return `${prefix}-${ym}-${seq}`;
   }
 
   private round2(v: number): number {
