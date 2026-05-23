@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/core/network/image_url.dart';
 import 'package:shopxy/features/categories/presentation/providers/categories_provider.dart';
+import 'package:shopxy/features/custom_fields/data/datasources/custom_fields_remote_data_source.dart';
+import 'package:shopxy/features/custom_fields/presentation/widgets/custom_fields_form_section.dart';
 import 'package:shopxy/features/products/data/datasources/products_remote_data_source.dart';
 import 'package:shopxy/features/products/data/models/product_dto.dart';
 import 'package:shopxy/features/products/domain/entities/product.dart';
@@ -52,6 +55,11 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
   final _imageUrlController = TextEditingController();
 
   bool _isUploading = false;
+
+  // Custom field values, keyed by definition id. Loaded on init for
+  // edit mode; written in one bulk call after product create/update
+  // so the existing _save's success/error semantics still apply.
+  final Map<int, String> _customFieldValues = {};
 
   bool get isEditing => widget.product != null;
 
@@ -108,7 +116,27 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       context.read<CategoriesProvider>().loadCategories();
+      _loadCustomFieldValuesForEdit();
     });
+  }
+
+  Future<void> _loadCustomFieldValuesForEdit() async {
+    if (widget.product == null) return;
+    try {
+      final values = await context
+          .read<CustomFieldsRemoteDataSource>()
+          .listValuesForProduct(widget.product!.id);
+      if (!mounted) return;
+      setState(() {
+        for (final v in values) {
+          _customFieldValues[v.definitionId] = v.value;
+        }
+      });
+    } catch (_) {
+      // Values are non-critical for editing the core product fields —
+      // a transient fetch failure shouldn't block the form. The user
+      // will see empty inputs and can refill or retry by reopening.
+    }
   }
 
   @override
@@ -131,11 +159,15 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isSaving = true);
+    // Capture before any awaits so we don't have to reach back through
+    // context after async gaps.
+    final provider = context.read<ProductsProvider>();
+    final ds = context.read<ProductsRemoteDataSource>();
+    final customFieldsDs = context.read<CustomFieldsRemoteDataSource>();
     try {
-      final provider = context.read<ProductsProvider>();
-      final ds = context.read<ProductsRemoteDataSource>();
+      int productId;
       if (isEditing) {
-        final productId = widget.product!.id;
+        productId = widget.product!.id;
         final data = ProductDto.toUpdateJson(
           name: _name.text,
           description: _description.text,
@@ -162,7 +194,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
           }
         }
       } else {
-        await provider.createProduct(
+        final created = await provider.createProduct(
           name: _name.text,
           sku: _sku.text,
           mrp: double.parse(_mrp.text),
@@ -178,7 +210,21 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
           unit: _selectedUnit,
           categoryId: _selectedCategoryId,
         );
+        productId = created.id;
       }
+
+      // One bulk call regardless of create/edit. Empty-string values
+      // get treated as "clear" server-side, so retiring a previously
+      // set custom field is just leaving its input blank.
+      if (_customFieldValues.isNotEmpty) {
+        await customFieldsDs.bulkSetValuesForProduct(
+          productId,
+          _customFieldValues.entries
+              .map((e) => (definitionId: e.key, value: e.value))
+              .toList(),
+        );
+      }
+
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
@@ -302,8 +348,12 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
       final url = await ds.uploadImage(File(picked.path));
 
       if (isEditing) {
-        // In edit mode: persist immediately via the image endpoint
-        await ds.addImage(widget.product!.id, url);
+        // In edit mode the image is persisted immediately so it
+        // survives a mid-edit crash. We also need to remember the
+        // returned ImageId — otherwise the save handler treats this
+        // URL as "new" and posts it again, duplicating the row.
+        final image = await ds.addImage(widget.product!.id, url);
+        _existingImageIdByUrl[url] = image.id;
       }
       setState(() => _imageUrls.add(url));
     } catch (e) {
@@ -384,7 +434,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                       ClipRRect(
                         borderRadius: BorderRadius.circular(AppSizes.radiusMd),
                         child: Image.network(
-                          _imageUrls[i],
+                          resolveImageUrl(_imageUrls[i]),
                           width: 96,
                           height: 96,
                           fit: BoxFit.cover,
@@ -547,23 +597,38 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                 ),
                 const SizedBox(width: AppSizes.md),
                 Expanded(
-                  child: DropdownButtonFormField<int?>(
-                    initialValue: _selectedCategoryId,
-                    decoration: const InputDecoration(
-                      labelText: AppStrings.category,
-                    ),
-                    items: [
-                      const DropdownMenuItem(
-                        value: null,
-                        child: Text(AppStrings.none),
+                  child: () {
+                    // Dropdown asserts when initialValue doesn't match
+                    // any item — happens when the product references a
+                    // category that's been deleted, or when categories
+                    // haven't finished loading yet. Pin the displayed
+                    // value to null in those cases; the underlying
+                    // _selectedCategoryId stays unchanged until the
+                    // user actively picks something else.
+                    final hasMatch = _selectedCategoryId != null &&
+                        categories.any((c) => c.id == _selectedCategoryId);
+                    final dropdownValue = hasMatch ? _selectedCategoryId : null;
+                    return DropdownButtonFormField<int?>(
+                      initialValue: dropdownValue,
+                      decoration: const InputDecoration(
+                        labelText: AppStrings.category,
                       ),
-                      ...categories.map(
-                        (c) =>
-                            DropdownMenuItem(value: c.id, child: Text(c.name)),
-                      ),
-                    ],
-                    onChanged: (v) => setState(() => _selectedCategoryId = v),
-                  ),
+                      items: [
+                        const DropdownMenuItem(
+                          value: null,
+                          child: Text(AppStrings.none),
+                        ),
+                        ...categories.map(
+                          (c) => DropdownMenuItem(
+                            value: c.id,
+                            child: Text(c.name),
+                          ),
+                        ),
+                      ],
+                      onChanged: (v) =>
+                          setState(() => _selectedCategoryId = v),
+                    );
+                  }(),
                 ),
               ],
             ),
@@ -663,7 +728,13 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
             ),
             const SizedBox(height: AppSizes.md),
             DropdownButtonFormField<String>(
-              initialValue: _selectedUnit,
+              // Defensive: if the product's stored unit isn't in the
+              // known set (e.g. backend added new units, legacy data),
+              // fall back to the first known unit so we don't trip
+              // the Dropdown's "exactly one matching item" assertion.
+              initialValue: AppUnits.all.contains(_selectedUnit)
+                  ? _selectedUnit
+                  : AppUnits.all.first,
               decoration: const InputDecoration(labelText: AppStrings.unit),
               items: AppUnits.all
                   .map(
@@ -676,6 +747,20 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
               onChanged: (v) {
                 if (v != null) setState(() => _selectedUnit = v);
               },
+            ),
+
+            const SizedBox(height: AppSizes.xl),
+            // ── More about this product ───────────────────────────────
+            // Shop-wide custom fields. Inline "+ Add field" lets the
+            // user define a new field without leaving the form.
+            AppSectionHeader(
+              title: AppStrings.moreAboutThisProduct.toUpperCase(),
+              padding: const EdgeInsets.only(bottom: AppSizes.sm),
+            ),
+            CustomFieldsFormSection(
+              values: _customFieldValues,
+              onValueChanged: (id, value) =>
+                  setState(() => _customFieldValues[id] = value),
             ),
 
             const SizedBox(height: AppSizes.huge),

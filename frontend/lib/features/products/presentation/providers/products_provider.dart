@@ -14,6 +14,8 @@ class ProductsProvider extends ChangeNotifier {
   int _page = 1;
   String _search = '';
   int? _categoryFilter;
+  bool _lowStockOnly = false;
+  bool _outOfStockOnly = false;
 
   List<Product> get products => _products;
   bool get isLoading => _isLoading;
@@ -22,6 +24,8 @@ class ProductsProvider extends ChangeNotifier {
   int get page => _page;
   String get search => _search;
   int? get categoryFilter => _categoryFilter;
+  bool get lowStockOnly => _lowStockOnly;
+  bool get outOfStockOnly => _outOfStockOnly;
   bool get hasMore => _products.length < _total;
 
   void setSearch(String value) {
@@ -32,6 +36,23 @@ class ProductsProvider extends ChangeNotifier {
 
   void setCategoryFilter(int? categoryId) {
     _categoryFilter = categoryId;
+    _page = 1;
+    loadProducts();
+  }
+
+  void setLowStockOnly(bool value) {
+    _lowStockOnly = value;
+    // Low and Out are conceptually exclusive — keep at most one
+    // active so the user can't end up with an empty intersection
+    // they don't expect.
+    if (value) _outOfStockOnly = false;
+    _page = 1;
+    loadProducts();
+  }
+
+  void setOutOfStockOnly(bool value) {
+    _outOfStockOnly = value;
+    if (value) _lowStockOnly = false;
     _page = 1;
     loadProducts();
   }
@@ -51,6 +72,8 @@ class ProductsProvider extends ChangeNotifier {
       final result = await _dataSource.getProducts(
         search: _search.isNotEmpty ? _search : null,
         categoryId: _categoryFilter,
+        lowStock: _lowStockOnly ? true : null,
+        outOfStock: _outOfStockOnly ? true : null,
         page: _page,
       );
 
