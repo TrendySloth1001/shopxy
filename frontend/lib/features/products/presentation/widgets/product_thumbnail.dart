@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:shopxy/core/network/image_url.dart';
 import 'package:shopxy/features/products/domain/entities/product.dart';
@@ -66,10 +67,19 @@ class ProductThumbnail extends StatelessWidget {
       child: hasImage
           ? ClipPath(
               clipper: ShapeBorderClipper(shape: shape),
-              child: Image.network(
-                resolved,
+              child: CachedNetworkImage(
+                imageUrl: resolved,
                 fit: BoxFit.cover,
-                errorBuilder: (_, _, _) =>
+                placeholder: (_, _) => Container(
+                  color: AppColors.heroPanel,
+                  alignment: Alignment.center,
+                  child: const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+                errorWidget: (_, _, _) =>
                     _MonogramFallback(initial: _initial, bg: bg, fg: fg, size: size),
               ),
             )
