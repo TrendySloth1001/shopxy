@@ -66,6 +66,7 @@ model Category {
   name        String    @unique
   description String?
   imageUrl    String?   @map("image_url")
+  iconName    String?   @map("icon_name")
   sortOrder   Int       @default(0) @map("sort_order")
   isActive    Boolean   @default(true) @map("is_active")
   createdAt   DateTime  @default(now()) @map("created_at")
@@ -680,6 +681,12 @@ model PurchaseRequest {
   /// preview number for the customer's order list.
   estimatedTotal  Decimal   @default(0) @map("estimated_total") @db.Decimal(12, 2)
 
+  /// Client-supplied idempotency key. Lets the customer app retry a
+  /// flaky POST /me/orders without creating duplicates — the server
+  /// short-circuits to the existing row when the same (userId, key)
+  /// arrives twice. Scoped per user via the partial unique below.
+  idempotencyKey  String?   @map("idempotency_key")
+
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
   items           PurchaseRequestItem[]
@@ -690,6 +697,9 @@ model PurchaseRequest {
   @@index([customerUserId, createdAt])
   @@index([status, createdAt])
   @@index([partyId])
+  /// Idempotency lookup. Scoped to the placing user so two different
+  /// customers can reuse the same client-side UUID without colliding.
+  @@unique([customerUserId, idempotencyKey], name: "purchase_requests_user_idempotency_key")
   @@map("purchase_requests")
 }
 

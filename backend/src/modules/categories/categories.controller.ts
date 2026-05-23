@@ -7,6 +7,7 @@ const createCategorySchema = z.object({
   name: z.string().min(1).max(100),
   description: z.string().max(500).optional(),
   imageUrl: z.string().url().optional(),
+  iconName: z.string().min(1).max(60).optional(),
   sortOrder: z.number().int().min(0).optional(),
 });
 
@@ -15,6 +16,7 @@ const updateCategorySchema = z
     name: z.string().min(1).max(100).optional(),
     description: z.string().max(500).nullable().optional(),
     imageUrl: z.string().url().nullable().optional(),
+    iconName: z.string().min(1).max(60).nullable().optional(),
     sortOrder: z.number().int().min(0).optional(),
     isActive: z.boolean().optional(),
   })
