@@ -43,6 +43,11 @@ class VendorsProvider extends ChangeNotifier {
     String? phone,
     String? email,
     String? address,
+    String? city,
+    String? state,
+    String? stateCode,
+    String? pinCode,
+    String? panNumber,
     String? gstin,
   }) async {
     final vendor = await _ds.createVendor(
@@ -51,6 +56,11 @@ class VendorsProvider extends ChangeNotifier {
       phone: phone,
       email: email,
       address: address,
+      city: city,
+      state: state,
+      stateCode: stateCode,
+      pinCode: pinCode,
+      panNumber: panNumber,
       gstin: gstin,
     );
     _vendors = [vendor, ..._vendors];
@@ -64,6 +74,11 @@ class VendorsProvider extends ChangeNotifier {
     String? phone,
     String? email,
     String? address,
+    String? city,
+    String? state,
+    String? stateCode,
+    String? pinCode,
+    String? panNumber,
     String? gstin,
     bool? isActive,
   }) async {
@@ -75,6 +90,11 @@ class VendorsProvider extends ChangeNotifier {
         phone: phone,
         email: email,
         address: address,
+        city: city,
+        state: state,
+        stateCode: stateCode,
+        pinCode: pinCode,
+        panNumber: panNumber,
         gstin: gstin,
         isActive: isActive,
       ),

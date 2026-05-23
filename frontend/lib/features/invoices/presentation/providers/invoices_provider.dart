@@ -62,6 +62,8 @@ class InvoicesProvider extends ChangeNotifier {
     String? customerGstin,
     double? discount,
     String? note,
+    String? documentType,
+    String? placeOfSupplyStateCode,
     required List<Map<String, dynamic>> items,
   }) async {
     final invoice = await _ds.createInvoice(
@@ -73,6 +75,8 @@ class InvoicesProvider extends ChangeNotifier {
       customerGstin: customerGstin,
       discount: discount,
       note: note,
+      documentType: documentType,
+      placeOfSupplyStateCode: placeOfSupplyStateCode,
       items: items,
     );
     _invoices = [invoice, ..._invoices];
