@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import prisma from '../../infra/db/prisma.js';
 import { invitationsService } from '../invitations/invitations.service.js';
+import { notificationsService } from '../notifications/notifications.service.js';
 
 function requireEnv(name: string): string {
   const v = process.env[name];
@@ -28,11 +29,29 @@ function signAccess(userId: number, email: string, role: string): string {
   return jwt.sign({ sub: userId, email, role }, ACCESS_SECRET, { expiresIn: '15m' });
 }
 
+const MAX_ACTIVE_REFRESH_TOKENS_PER_USER = 5;
+
 async function createRefreshToken(userId: number): Promise<string> {
   const jti = crypto.randomUUID();
   const token = jwt.sign({ sub: userId, jti }, REFRESH_SECRET, { expiresIn: '7d' });
   const expiresAt = new Date(Date.now() + REFRESH_EXPIRES_MS);
   await prisma.refreshToken.create({ data: { token, userId, expiresAt } });
+
+  // Cap the number of active sessions per user. If we're now over the limit,
+  // drop the oldest tokens (FIFO by createdAt). Keeps a forgotten device or
+  // a stolen-cookie attacker from accumulating indefinite footholds.
+  const active = await prisma.refreshToken.findMany({
+    where: { userId },
+    orderBy: { createdAt: 'asc' },
+    select: { id: true },
+  });
+  if (active.length > MAX_ACTIVE_REFRESH_TOKENS_PER_USER) {
+    const excess = active.slice(0, active.length - MAX_ACTIVE_REFRESH_TOKENS_PER_USER);
+    await prisma.refreshToken.deleteMany({
+      where: { id: { in: excess.map((t) => t.id) } },
+    });
+  }
+
   return token;
 }
 
@@ -57,7 +76,16 @@ export class AuthService {
     try {
       await invitationsService.claimPendingForNewUser({ userId: user.id, email });
     } catch (err) {
+      // Stable JSON tag so Sentry/Logstash can alert on this without
+      // string-matching free-form log text. Keep the human-readable warn too.
       console.warn('Failed to claim pending invitations for new user', user.id, err);
+      console.error(
+        JSON.stringify({
+          event: 'invitation_claim_failed',
+          userId: user.id,
+          error: err instanceof Error ? err.message : String(err),
+        }),
+      );
     }
 
     const accessToken = signAccess(user.id, user.email, user.role);
@@ -153,6 +181,21 @@ export class AuthService {
     await prisma.user.update({ where: { id: userId }, data: { passwordHash } });
     // Revoke all sessions after password change
     await prisma.refreshToken.deleteMany({ where: { userId } });
+
+    // Best-effort security alert. If the notification write fails we still
+    // consider the password change successful — the user has already been
+    // logged out everywhere via the refresh-token sweep above.
+    try {
+      await notificationsService.create({
+        userId,
+        kind: 'SECURITY',
+        title: 'Password changed',
+        body: "Your password was changed. If this wasn't you, contact support.",
+      });
+    } catch (err) {
+      console.warn('Failed to write password-change notification', userId, err);
+    }
+
     return { ok: true };
   }
 }
