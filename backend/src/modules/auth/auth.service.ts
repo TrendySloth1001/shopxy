@@ -20,6 +20,7 @@ const safeUserSelect = {
   name: true,
   role: true,
   isActive: true,
+  emailNotifications: true,
   createdAt: true,
 } as const;
 
@@ -120,6 +121,25 @@ export class AuthService {
 
   getMe(userId: number) {
     return prisma.user.findUnique({ where: { id: userId }, select: safeUserSelect });
+  }
+
+  async updateProfile(
+    userId: number,
+    data: { name?: string; emailNotifications?: boolean },
+  ) {
+    const updates: { name?: string; emailNotifications?: boolean } = {};
+    if (data.name !== undefined) updates.name = data.name;
+    if (data.emailNotifications !== undefined) {
+      updates.emailNotifications = data.emailNotifications;
+    }
+    if (Object.keys(updates).length === 0) {
+      return prisma.user.findUnique({ where: { id: userId }, select: safeUserSelect });
+    }
+    return prisma.user.update({
+      where: { id: userId },
+      data: updates,
+      select: safeUserSelect,
+    });
   }
 
   async changePassword(userId: number, currentPassword: string, newPassword: string) {
