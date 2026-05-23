@@ -11,6 +11,7 @@ class InvoicesProvider extends ChangeNotifier {
   String? _error;
   String? _typeFilter;
   String? _statusFilter;
+  String? _documentTypeFilter;
   String _search = '';
 
   List<Invoice> get invoices => _invoices;
@@ -18,6 +19,7 @@ class InvoicesProvider extends ChangeNotifier {
   String? get error => _error;
   String? get typeFilter => _typeFilter;
   String? get statusFilter => _statusFilter;
+  String? get documentTypeFilter => _documentTypeFilter;
 
   Future<void> loadInvoices({bool refresh = false}) async {
     if (_isLoading) return;
@@ -28,6 +30,7 @@ class InvoicesProvider extends ChangeNotifier {
       _invoices = await _ds.getInvoices(
         type: _typeFilter,
         status: _statusFilter,
+        documentType: _documentTypeFilter,
         search: _search.isNotEmpty ? _search : null,
       );
     } catch (e) {
@@ -45,6 +48,11 @@ class InvoicesProvider extends ChangeNotifier {
 
   void setStatusFilter(String? status) {
     _statusFilter = status;
+    loadInvoices(refresh: true);
+  }
+
+  void setDocumentTypeFilter(String? documentType) {
+    _documentTypeFilter = documentType;
     loadInvoices(refresh: true);
   }
 

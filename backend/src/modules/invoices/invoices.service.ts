@@ -286,6 +286,7 @@ export class InvoicesService {
   async listInvoices(options: {
     type?: string;
     status?: string;
+    documentType?: string;
     vendorId?: number;
     partyId?: number;
     search: string;
@@ -296,6 +297,7 @@ export class InvoicesService {
     const where: Record<string, unknown> = {};
     if (options.type) where.type = options.type;
     if (options.status) where.status = options.status;
+    if (options.documentType) where.documentType = options.documentType;
     if (options.vendorId) where.vendorId = options.vendorId;
     if (options.partyId) where.partyId = options.partyId;
     if (options.search) {
@@ -483,6 +485,46 @@ export class InvoicesService {
         include: { vendor: true, party: true, items: true },
       });
       return { invoice: updated };
+    });
+  }
+
+  /// Convert an ESTIMATE / PROFORMA quotation into a real TAX_INVOICE.
+  /// Reuses createInvoice so numbering, GST split and ledger semantics
+  /// all stay funnelled through one code path — the new invoice gets its
+  /// own INV-prefixed number while the source row remains untouched as
+  /// historical reference.
+  async convertEstimate(invoiceId: number) {
+    const source = await prisma.invoice.findUnique({
+      where: { id: invoiceId },
+      include: { items: true },
+    });
+    if (!source) return { error: 'Invoice not found' as const };
+    if (source.documentType !== 'ESTIMATE' && source.documentType !== 'PROFORMA') {
+      return { error: 'Only estimates or proforma invoices can be converted' as const };
+    }
+    if (source.status === 'CANCELLED') {
+      return { error: 'Cannot convert a cancelled estimate' as const };
+    }
+
+    return this.createInvoice({
+      type: source.type as InvoiceType,
+      documentType: 'TAX_INVOICE',
+      placeOfSupplyStateCode: source.placeOfSupplyStateCode ?? undefined,
+      vendorId: source.vendorId ?? undefined,
+      partyId: source.partyId ?? undefined,
+      customerName: source.customerName ?? undefined,
+      customerPhone: source.customerPhone ?? undefined,
+      customerGstin: source.customerGstin ?? undefined,
+      discount: Number(source.discount),
+      note: source.note ?? undefined,
+      items: source.items.map((it) => ({
+        productId: it.productId,
+        quantity: Number(it.quantity),
+        unitPrice: Number(it.unitPrice),
+        taxPercent: Number(it.taxPercent),
+        cessRate: Number(it.cessRate),
+        discount: Number(it.discount),
+      })),
     });
   }
 
