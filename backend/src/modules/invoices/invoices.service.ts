@@ -289,6 +289,7 @@ export class InvoicesService {
     documentType?: string;
     vendorId?: number;
     partyId?: number;
+    productId?: number;
     search: string;
     page: number;
     limit: number;
@@ -300,6 +301,9 @@ export class InvoicesService {
     if (options.documentType) where.documentType = options.documentType;
     if (options.vendorId) where.vendorId = options.vendorId;
     if (options.partyId) where.partyId = options.partyId;
+    if (options.productId) {
+      where.items = { some: { productId: options.productId } };
+    }
     if (options.search) {
       where.OR = [
         { invoiceNo: { contains: options.search, mode: 'insensitive' } },

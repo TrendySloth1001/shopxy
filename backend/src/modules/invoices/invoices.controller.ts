@@ -51,6 +51,7 @@ const listQuerySchema = z.object({
   documentType: documentTypeEnum.optional(),
   vendorId: z.coerce.number().int().positive().optional(),
   partyId: z.coerce.number().int().positive().optional(),
+  productId: z.coerce.number().int().positive().optional(),
   search: z.string().optional(),
 });
 
@@ -80,6 +81,7 @@ export class InvoicesController {
       documentType: query.documentType,
       vendorId: query.vendorId,
       partyId: query.partyId,
+      productId: query.productId,
       search: query.search ?? '',
       page,
       limit,
