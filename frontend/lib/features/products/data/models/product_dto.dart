@@ -36,7 +36,18 @@ class ProductDto {
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
       images: imagesJson?.map((e) => _imageFromJson(e as Map<String, dynamic>)).toList() ?? [],
+      lastStockInAt: _parseDate(json['lastStockInAt']),
+      lastStockOutAt: _parseDate(json['lastStockOutAt']),
+      lastVendorId: (json['lastVendor'] as Map<String, dynamic>?)?['id'] as int?,
+      lastVendorName:
+          (json['lastVendor'] as Map<String, dynamic>?)?['name'] as String?,
     );
+  }
+
+  static DateTime? _parseDate(dynamic value) {
+    if (value == null) return null;
+    if (value is String && value.isEmpty) return null;
+    return DateTime.tryParse(value.toString());
   }
 
   static double _toDouble(dynamic value) {
