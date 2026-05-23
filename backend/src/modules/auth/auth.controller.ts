@@ -17,6 +17,18 @@ const registerSchema = z.object({
     .max(128)
     .regex(/[A-Za-z]/, 'Password must contain at least one letter')
     .regex(/[0-9]/, 'Password must contain at least one number'),
+  // DPDP consent gate. We require both checkboxes to be true at the
+  // wire level too, so a malicious client can't bypass the UI ticks.
+  acceptedTerms: z.literal(true, {
+    errorMap: () => ({ message: 'You must accept the terms of service' }),
+  }),
+  acceptedPrivacy: z.literal(true, {
+    errorMap: () => ({ message: 'You must accept the privacy policy' }),
+  }),
+});
+
+const deleteAccountSchema = z.object({
+  currentPassword: z.string().min(1),
 });
 
 const loginSchema = z.object({
@@ -83,7 +95,10 @@ export async function register(req: Request, res: Response) {
     res.status(400).json({ error: parsed.error.flatten() });
     return;
   }
-  const result = await authService.register(parsed.data);
+  // Drop the consent literals before handing to the service — they
+  // exist only to gate the request, they're not persisted as flags.
+  const { acceptedTerms: _t, acceptedPrivacy: _p, ...registerData } = parsed.data;
+  const result = await authService.register(registerData);
   if ('error' in result) {
     res.status(409).json({ error: result.error });
     return;
@@ -146,6 +161,41 @@ export async function updateProfile(req: Request, res: Response) {
     return;
   }
   res.json(user);
+}
+
+export async function exportData(req: Request, res: Response) {
+  const blob = await authService.exportData(req.user!.sub);
+  res.setHeader(
+    'Content-Disposition',
+    `attachment; filename="shopxy-data-${req.user!.sub}-${Date.now()}.json"`,
+  );
+  res.setHeader('Content-Type', 'application/json');
+  res.json(blob);
+}
+
+export async function deleteAccount(req: Request, res: Response) {
+  const parsed = deleteAccountSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.flatten() });
+    return;
+  }
+  const result = await authService.deleteAccount(
+    req.user!.sub,
+    parsed.data.currentPassword,
+  );
+  if ('error' in result) {
+    if (result.error === 'invalid_password') {
+      res.status(400).json({ error: result.error });
+      return;
+    }
+    if (result.error === 'cannot_delete_with_active_records') {
+      res.status(409).json({ error: result.error });
+      return;
+    }
+    res.status(404).json({ error: result.error });
+    return;
+  }
+  res.json(result);
 }
 
 export async function changePassword(req: Request, res: Response) {

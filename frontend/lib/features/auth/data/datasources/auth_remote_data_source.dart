@@ -27,7 +27,16 @@ class AuthRemoteDataSource {
   Future<AuthResult> register(String name, String email, String password) async {
     final res = await _client.post(
       '/auth/register',
-      body: {'name': name, 'email': email, 'password': password},
+      body: {
+        'name': name,
+        'email': email,
+        'password': password,
+        // DPDP consent gate — both literals required by the backend
+        // schema. The register page disables submit until the user
+        // ticks both boxes, so reaching this line implies acceptance.
+        'acceptedTerms': true,
+        'acceptedPrivacy': true,
+      },
     );
     final body = jsonDecode(res.body) as Map<String, dynamic>;
     if (res.statusCode != 201) {
@@ -92,6 +101,40 @@ class AuthRemoteDataSource {
       throw Exception(_extractError(errBody));
     }
     return AuthUser.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+  }
+
+  /// DPDP right-to-access — fetches the full user-bound data dump as
+  /// raw bytes. Returned as bytes (not parsed JSON) so the caller can
+  /// hand the unmodified blob to the share sheet / file system.
+  Future<List<int>> exportData() async {
+    final res = await _client.get('/auth/me/export');
+    if (res.statusCode != 200) {
+      throw Exception('Failed to export data (HTTP ${res.statusCode})');
+    }
+    return res.bodyBytes;
+  }
+
+  /// DPDP right-to-erasure. Throws with a stable message the UI can
+  /// match on so the "active records" case can render a useful hint.
+  Future<void> deleteAccount(String currentPassword) async {
+    final res = await _client.delete(
+      '/auth/me',
+      body: {'currentPassword': currentPassword},
+    );
+    if (res.statusCode == 200) return;
+    final body = jsonDecode(res.body) as Map<String, dynamic>;
+    final err = body['error'];
+    if (err == 'cannot_delete_with_active_records') {
+      throw Exception(
+        'This account has invoices that must be retained for 8 years '
+        '(Companies Act / GST). Contact support@shopxy.example to request '
+        'a controlled deletion.',
+      );
+    }
+    if (err == 'invalid_password') {
+      throw Exception('Current password is incorrect');
+    }
+    throw Exception(_extractError(body));
   }
 
   Future<void> changePassword(String currentPassword, String newPassword) async {

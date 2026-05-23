@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
+import 'package:shopxy/features/profile/presentation/pages/legal_page.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
@@ -23,7 +24,14 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _obscurePass = true;
   bool _obscureConfirm = true;
   bool _isLoading = false;
+  // DPDP §6 consent gate — both must be ticked before submit enables.
+  // Stored in widget state because they are throw-away UI flags, not
+  // persisted data.
+  bool _acceptedTerms = false;
+  bool _acceptedPrivacy = false;
   String? _error;
+
+  bool get _canSubmit => _acceptedTerms && _acceptedPrivacy && !_isLoading;
 
   @override
   void dispose() {
@@ -36,6 +44,13 @@ class _RegisterPageState extends State<RegisterPage> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    if (!_acceptedTerms || !_acceptedPrivacy) {
+      setState(
+        () => _error =
+            'Please accept the Terms of Service and Privacy Policy to continue.',
+      );
+      return;
+    }
     setState(() {
       _isLoading = true;
       _error = null;
@@ -157,6 +172,27 @@ class _RegisterPageState extends State<RegisterPage> {
               },
             ),
             const SizedBox(height: AppSizes.lg),
+            _ConsentCheckbox(
+              value: _acceptedTerms,
+              onChanged: (v) => setState(() => _acceptedTerms = v ?? false),
+              label: 'I accept the',
+              linkLabel: 'Terms of Service',
+              onLinkTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const LegalPage.terms()),
+              ),
+            ),
+            _ConsentCheckbox(
+              value: _acceptedPrivacy,
+              onChanged: (v) => setState(() => _acceptedPrivacy = v ?? false),
+              label: 'I accept the',
+              linkLabel: 'Privacy Policy',
+              onLinkTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const LegalPage.privacy()),
+              ),
+            ),
+            const SizedBox(height: AppSizes.md),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -178,9 +214,74 @@ class _RegisterPageState extends State<RegisterPage> {
       actions: GlassActionPanel(
         primaryLabel: AppStrings.createAccount,
         primaryIcon: Icons.arrow_forward_rounded,
-        onPrimary: _submit,
+        // Submit stays disabled until both DPDP consent boxes are
+        // ticked — passing null is what GlassActionPanel treats as
+        // "disabled" so we don't need a separate flag.
+        onPrimary: _canSubmit ? _submit : null,
         primaryLoading: _isLoading,
       ),
+    );
+  }
+}
+
+/// Compact consent row used twice on the register page (terms +
+/// privacy). Renders a leading checkbox, an inline label, and a
+/// [TextButton] that opens the matching [LegalPage]. Kept private to
+/// this file because no other surface in the merchant app currently
+/// needs the same layout.
+class _ConsentCheckbox extends StatelessWidget {
+  const _ConsentCheckbox({
+    required this.value,
+    required this.onChanged,
+    required this.label,
+    required this.linkLabel,
+    required this.onLinkTap,
+  });
+
+  final bool value;
+  final ValueChanged<bool?> onChanged;
+  final String label;
+  final String linkLabel;
+  final VoidCallback onLinkTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Checkbox(
+          value: value,
+          onChanged: onChanged,
+          visualDensity: VisualDensity.compact,
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+        const SizedBox(width: AppSizes.xs),
+        Expanded(
+          child: Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text(
+                label,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: AppColors.muted,
+                ),
+              ),
+              TextButton(
+                onPressed: onLinkTap,
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSizes.xs,
+                  ),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: Text(linkLabel),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

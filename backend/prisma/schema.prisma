@@ -26,6 +26,10 @@ model User {
   shopGstin         String?            @map("shop_gstin")
   shopPan           String?            @map("shop_pan")
   upiVpa            String?            @map("upi_vpa")
+  /// Timestamp when the user accepted the Terms of Service and Privacy
+  /// Policy at registration. Required by DPDP §6 — store evidence of
+  /// consent. Nullable so legacy users predating the consent gate work.
+  acceptedAt        DateTime?          @map("accepted_at")
   createdAt         DateTime           @default(now()) @map("created_at")
   updatedAt         DateTime           @updatedAt @map("updated_at")
   refreshTokens     RefreshToken[]
