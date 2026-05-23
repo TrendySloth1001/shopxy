@@ -31,6 +31,7 @@ class _ReportsPageState extends State<ReportsPage> {
       firstDate: DateTime.now().subtract(const Duration(days: 365 * 5)),
       lastDate: DateTime.now(),
       initialDateRange: DateTimeRange(start: p.from, end: p.to),
+      locale: const Locale('en', 'IN'),
     );
     if (picked != null) {
       p.setRange(
