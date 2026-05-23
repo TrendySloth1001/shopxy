@@ -79,7 +79,7 @@ const catalogListSelect = {
   taxPercent: true,
   stockQuantity: true,
   categoryId: true,
-  category: { select: { id: true, name: true } },
+  category: { select: { id: true, name: true, iconName: true } },
   images: {
     select: { id: true, url: true },
     orderBy: { sortOrder: 'asc' },
@@ -143,6 +143,7 @@ export class MeService {
         id: true,
         name: true,
         imageUrl: true,
+        iconName: true,
         _count: { select: { products: { where: { isActive: true } } } },
       },
     });

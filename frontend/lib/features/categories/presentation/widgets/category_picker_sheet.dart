@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/features/categories/data/datasources/categories_remote_data_source.dart';
 import 'package:shopxy/features/categories/domain/entities/category.dart';
+import 'package:shopxy/features/categories/presentation/widgets/category_icon_catalog.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
@@ -269,6 +270,20 @@ class _CategoryPickerSheetState extends State<CategoryPickerSheet> {
     final count = category.productCount;
     return ListTile(
       contentPadding: EdgeInsets.zero,
+      leading: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: AppColors.surfaceTint,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        alignment: Alignment.center,
+        child: Icon(
+          resolveCategoryIcon(category.iconName),
+          size: 20,
+          color: AppColors.black,
+        ),
+      ),
       title: Text(
         category.name,
         style: theme.textTheme.bodyLarge?.copyWith(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/core/router/app_shell.dart';
+import 'package:shopxy/features/categories/presentation/widgets/category_icon_catalog.dart';
 import 'package:shopxy/features/categories/presentation/widgets/category_picker_sheet.dart';
 import 'package:shopxy/features/products/domain/entities/product.dart';
 import 'package:shopxy/features/products/presentation/pages/add_edit_product_page.dart';
@@ -153,9 +154,13 @@ class _ProductsPageState extends State<ProductsPage> {
     }
 
     final buckets = <String, List<Product>>{};
+    // Remember the first iconName seen per group label so the section
+    // header can render the picked glyph alongside the title.
+    final groupIcons = <String, String?>{};
     for (final p in provider.products) {
       final group = p.category?.name ?? AppStrings.uncategorised;
       buckets.putIfAbsent(group, () => []).add(p);
+      groupIcons.putIfAbsent(group, () => p.category?.iconName);
     }
     final groupNames = buckets.keys.toList()
       ..sort((a, b) {
@@ -165,7 +170,7 @@ class _ProductsPageState extends State<ProductsPage> {
       });
 
     for (final name in groupNames) {
-      items.add(_ListItem.header(name));
+      items.add(_ListItem.header(name, iconName: groupIcons[name]));
       for (final p in buckets[name]!) {
         items.add(_ListItem.product(p));
       }
@@ -351,8 +356,9 @@ class _ProductsPageState extends State<ProductsPage> {
                                 }
                                 final item = items[index];
                                 return item.map(
-                                  header: (label) => _CategoryHeader(
+                                  header: (label, iconName) => _CategoryHeader(
                                     label: label,
+                                    iconName: iconName,
                                     first: index == 0,
                                   ),
                                   product: (p) => Slidable(
@@ -408,20 +414,22 @@ class _ProductsPageState extends State<ProductsPage> {
 
 /// Discriminated union for items rendered in the products list.
 class _ListItem {
-  const _ListItem._(this._label, this._product);
-  factory _ListItem.header(String label) => _ListItem._(label, null);
-  factory _ListItem.product(Product p) => _ListItem._(null, p);
+  const _ListItem._(this._label, this._iconName, this._product);
+  factory _ListItem.header(String label, {String? iconName}) =>
+      _ListItem._(label, iconName, null);
+  factory _ListItem.product(Product p) => _ListItem._(null, null, p);
 
   final String? _label;
+  final String? _iconName;
   final Product? _product;
 
   bool get isHeader => _label != null;
 
   T map<T>({
-    required T Function(String label) header,
+    required T Function(String label, String? iconName) header,
     required T Function(Product product) product,
   }) {
-    if (_label != null) return header(_label);
+    if (_label != null) return header(_label, _iconName);
     return product(_product!);
   }
 }
@@ -430,9 +438,14 @@ class _ListItem {
 /// section-header eyebrows used elsewhere in the app (dashboard,
 /// settings) so the visual language stays consistent.
 class _CategoryHeader extends StatelessWidget {
-  const _CategoryHeader({required this.label, required this.first});
+  const _CategoryHeader({
+    required this.label,
+    required this.first,
+    this.iconName,
+  });
   final String label;
   final bool first;
+  final String? iconName;
 
   @override
   Widget build(BuildContext context) {
@@ -444,13 +457,25 @@ class _CategoryHeader extends StatelessWidget {
         AppSizes.lg,
         AppSizes.xs,
       ),
-      child: Text(
-        label.toUpperCase(),
-        style: theme.textTheme.labelSmall?.copyWith(
-          color: AppColors.muted,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 1.4,
-        ),
+      child: Row(
+        children: [
+          Icon(
+            resolveCategoryIcon(iconName),
+            size: 14,
+            color: AppColors.muted,
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              label.toUpperCase(),
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: AppColors.muted,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.4,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
