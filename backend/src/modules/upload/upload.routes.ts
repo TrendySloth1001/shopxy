@@ -1,47 +1,21 @@
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
+import { fromBuffer as fileTypeFromBuffer } from 'file-type';
 import asyncHandler from '../../shared/http/asyncHandler.js';
 import { uploadFile } from './upload.service.js';
 
 const router = Router();
 
-const IMAGE_EXTENSIONS = new Set([
-  '.jpg',
-  '.jpeg',
-  '.png',
-  '.gif',
-  '.webp',
-  '.bmp',
-  '.avif',
-  '.heic',
-  '.heif',
-  '.tif',
-  '.tiff',
-]);
-
-function isImageFile(file: Express.Multer.File): boolean {
-  if (file.mimetype.startsWith('image/')) {
-    return true;
-  }
-
-  const dotIndex = file.originalname.lastIndexOf('.');
-  if (dotIndex === -1) {
-    return false;
-  }
-
-  return IMAGE_EXTENSIONS.has(file.originalname.slice(dotIndex).toLowerCase());
-}
+// We resize/serve as the original mime; sticking to widely-supported formats
+// avoids surprises (HEIC/AVIF/TIFF render unevenly across browsers, and GIF/BMP
+// aren't worth the validation surface area).
+const ALLOWED_MIMES = new Set<string>(['image/jpeg', 'image/png', 'image/webp']);
 
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 8 * 1024 * 1024 }, // 8 MB
-  fileFilter: (_req, file, cb) => {
-    if (!isImageFile(file)) {
-      cb(new Error('Only image files are allowed'));
-      return;
-    }
-    cb(null, true);
-  },
+  // No fileFilter here — extension/mimetype can be spoofed by the client.
+  // We validate the actual bytes below via file-type's magic-byte sniffing.
 });
 
 router.post(
@@ -52,7 +26,13 @@ router.post(
       res.status(400).json({ error: 'No file uploaded' });
       return;
     }
-    const { url } = await uploadFile(req.file.buffer, req.file.originalname, req.file.mimetype);
+    const sniffed = await fileTypeFromBuffer(req.file.buffer);
+    if (!sniffed || !ALLOWED_MIMES.has(sniffed.mime)) {
+      res.status(400).json({ error: 'Only JPEG, PNG, or WebP images are allowed' });
+      return;
+    }
+    // Use the sniffed mime — never trust the client-supplied one.
+    const { url } = await uploadFile(req.file.buffer, req.file.originalname, sniffed.mime);
     res.status(201).json({ url });
   }),
 );
