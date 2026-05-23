@@ -99,6 +99,21 @@ class AuthProvider extends ChangeNotifier {
     await _dataSource.changePassword(current, next);
   }
 
+  /// DPDP right-to-access — returns the JSON bytes so the caller can
+  /// hand them to the share sheet / file system without an extra
+  /// encode-decode round trip.
+  Future<List<int>> exportData() => _dataSource.exportData();
+
+  /// DPDP right-to-erasure. On success clears the local session so the
+  /// app returns to the login page — the backend has already revoked
+  /// every refresh token by deleting the user row.
+  Future<void> deleteAccount(String currentPassword) async {
+    await _dataSource.deleteAccount(currentPassword);
+    await _tokenManager.clear();
+    _user = null;
+    notifyListeners();
+  }
+
   /// Called by ApiClient when a refresh fails — forces re-login.
   void clearAuth() {
     _tokenManager.clear();

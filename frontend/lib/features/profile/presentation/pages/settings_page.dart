@@ -1,5 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:shopxy/core/prefs/navigation_prefs.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/custom_fields/presentation/pages/custom_fields_settings_page.dart';
@@ -28,6 +32,56 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   bool _savingEmailNotifications = false;
+  bool _exporting = false;
+
+  Future<void> _exportData() async {
+    if (_exporting) return;
+    setState(() => _exporting = true);
+    try {
+      final bytes = await context.read<AuthProvider>().exportData();
+      final dir = await getTemporaryDirectory();
+      final ts = DateTime.now().millisecondsSinceEpoch;
+      final file = File('${dir.path}/shopxy-data-$ts.json');
+      await file.writeAsBytes(bytes);
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path)],
+          text: 'Your ShopXY data export',
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Export failed: ${e.toString().replaceFirst('Exception: ', '')}',
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _exporting = false);
+    }
+  }
+
+  Future<void> _deleteAccount() async {
+    final password = await _DeleteAccountDialog.show(context);
+    if (password == null || !mounted) return;
+    try {
+      await context.read<AuthProvider>().deleteAccount(password);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Account deleted')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          duration: const Duration(seconds: 6),
+        ),
+      );
+    }
+  }
 
   Future<void> _logout() async {
     final confirmed = await AppConfirmDialog.show(
@@ -203,6 +257,44 @@ class _SettingsPageState extends State<SettingsPage> {
               context,
               MaterialPageRoute(builder: (_) => const LegalPage.terms()),
             ),
+          ),
+
+          const _Gap(),
+
+          // ── Danger zone ─────────────────────────────────────
+          // DPDP §11/§12 affordances. Kept above the logout row so the
+          // destructive actions live together at the bottom of the page.
+          const _Eyebrow('DANGER ZONE'),
+          const SizedBox(height: AppSizes.sm),
+          _SettingRow(
+            icon: Icons.download_rounded,
+            title: 'Export my data',
+            subtitle:
+                'Download a JSON copy of every record tied to your account.',
+            trailing: _exporting
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(
+                    Icons.chevron_right_rounded,
+                    color: AppColors.subtle,
+                  ),
+            onTap: _exporting ? null : _exportData,
+          ),
+          _SettingRow(
+            icon: Icons.delete_forever_rounded,
+            title: 'Delete account',
+            subtitle:
+                'Permanently erase your account. Shop owners with invoices '
+                'in the past 8 years must contact support (Companies Act / GST '
+                'retention).',
+            trailing: const Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.error,
+            ),
+            onTap: _deleteAccount,
           ),
 
           const _Gap(),
@@ -622,6 +714,86 @@ class _SettingToggle extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Password-gated confirmation for DPDP §12 erasure. Returns the
+/// entered password on confirm and `null` on cancel — the caller then
+/// invokes [AuthProvider.deleteAccount] and routes the user out.
+class _DeleteAccountDialog extends StatefulWidget {
+  const _DeleteAccountDialog();
+
+  static Future<String?> show(BuildContext context) {
+    return showDialog<String>(
+      context: context,
+      builder: (_) => const _DeleteAccountDialog(),
+    );
+  }
+
+  @override
+  State<_DeleteAccountDialog> createState() => _DeleteAccountDialogState();
+}
+
+class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
+  final _password = TextEditingController();
+  bool _obscure = true;
+
+  @override
+  void dispose() {
+    _password.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AlertDialog(
+      title: const Text('Delete account'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'This permanently erases your account and revokes every '
+            'session. Owners whose invoices are still inside the 8-year '
+            'Companies Act / GST retention window cannot delete in-app — '
+            'contact support@shopxy.example for a controlled wipe.',
+            style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
+          ),
+          const SizedBox(height: AppSizes.md),
+          TextField(
+            controller: _password,
+            obscureText: _obscure,
+            autofocus: true,
+            decoration: InputDecoration(
+              labelText: 'Current password',
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _obscure
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                ),
+                onPressed: () => setState(() => _obscure = !_obscure),
+              ),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () {
+            if (_password.text.isEmpty) return;
+            Navigator.pop(context, _password.text);
+          },
+          style: TextButton.styleFrom(foregroundColor: AppColors.error),
+          child: const Text('Delete'),
+        ),
+      ],
     );
   }
 }
