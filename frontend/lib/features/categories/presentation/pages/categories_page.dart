@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/features/categories/domain/entities/category.dart';
+import 'package:shopxy/features/categories/presentation/pages/category_products_page.dart';
 import 'package:shopxy/features/categories/presentation/providers/categories_provider.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
@@ -150,6 +151,12 @@ class _CategoriesPageState extends State<CategoriesPage> {
                       final cat = provider.categories[index];
                       return _CategoryTile(
                         category: cat,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => CategoryProductsPage(category: cat),
+                          ),
+                        ),
                         onEdit: () => _showAddEditDialog(cat),
                         onDelete: () => _deleteCategory(cat),
                       );
@@ -168,11 +175,13 @@ class _CategoriesPageState extends State<CategoriesPage> {
 class _CategoryTile extends StatelessWidget {
   const _CategoryTile({
     required this.category,
+    required this.onTap,
     required this.onEdit,
     required this.onDelete,
   });
 
   final Category category;
+  final VoidCallback onTap;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -182,7 +191,7 @@ class _CategoryTile extends StatelessWidget {
     return Material(
       color: AppColors.white,
       child: InkWell(
-        onTap: onEdit,
+        onTap: onTap,
         splashColor: AppColors.surfaceTint,
         highlightColor: AppColors.surfaceTint,
         child: Padding(

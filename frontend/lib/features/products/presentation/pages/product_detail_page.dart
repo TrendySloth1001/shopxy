@@ -10,6 +10,9 @@ import 'package:shopxy/features/products/presentation/providers/products_provide
 import 'package:shopxy/features/custom_fields/data/datasources/custom_fields_remote_data_source.dart';
 import 'package:shopxy/features/custom_fields/domain/entities/custom_field.dart';
 import 'package:shopxy/features/custom_fields/presentation/providers/custom_fields_provider.dart';
+import 'package:shopxy/features/invoices/data/datasources/invoices_remote_data_source.dart';
+import 'package:shopxy/features/invoices/domain/entities/invoice.dart';
+import 'package:shopxy/features/invoices/presentation/pages/invoice_detail_page.dart';
 import 'package:shopxy/features/products/presentation/widgets/product_image_carousel.dart';
 import 'package:shopxy/features/products/presentation/widgets/product_thumbnail.dart';
 import 'package:shopxy/features/stock/data/datasources/stock_remote_data_source.dart';
@@ -48,6 +51,12 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   // never shows stale specs.
   List<ProductCustomFieldValue> _customFieldValues = const [];
 
+  // Draft invoices that contain this product. Stock movements created
+  // from the stock-in/out sheet land here until the user confirms them
+  // — surfacing them on the detail page tells the user "your stock count
+  // will change once these are confirmed" so the count never feels stale.
+  List<Invoice> _pendingDrafts = const [];
+
   @override
   void initState() {
     super.initState();
@@ -65,8 +74,28 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       _loadProduct(),
       _loadSupplierHistory(),
       _loadCustomFieldValues(),
+      _loadPendingDrafts(),
       treeFuture,
     ]);
+  }
+
+  /// Pulls the list of DRAFT invoices that include this product so the
+  /// detail page can show a callout. Backend filters via
+  /// `items.some.productId`, so we only get the relevant drafts — keeps
+  /// the response small even on shops with hundreds of open drafts.
+  Future<void> _loadPendingDrafts() async {
+    try {
+      final ds = context.read<InvoicesRemoteDataSource>();
+      final drafts = await ds.getInvoices(
+        status: 'DRAFT',
+        productId: widget.productId,
+        limit: 20,
+      );
+      if (!mounted) return;
+      setState(() => _pendingDrafts = drafts);
+    } catch (_) {
+      // Non-blocking — if the call fails we just don't show the callout.
+    }
   }
 
   /// Build the SPECIFICATIONS area as one [_DetailSection] per
@@ -236,8 +265,27 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     // custom-field tree and the per-product values don't — re-fetching
     // them on every open/dismiss multiplied DB load for nothing.
     if (saved == true) {
-      await Future.wait([_loadProduct(), _loadSupplierHistory()]);
+      // The stock sheet creates a new DRAFT invoice — refresh the
+      // pending-drafts callout too so the user immediately sees their
+      // entry waiting to be confirmed.
+      await Future.wait([
+        _loadProduct(),
+        _loadSupplierHistory(),
+        _loadPendingDrafts(),
+      ]);
     }
+  }
+
+  void _openInvoice(int id) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => InvoiceDetailPage(invoiceId: id)),
+    ).then((_) {
+      // Coming back from invoice detail: the user may have confirmed
+      // or cancelled drafts that affect this product, so refresh.
+      if (mounted) _loadPendingDrafts();
+      if (mounted) _loadProduct();
+    });
   }
 
   void _openLedger() {
@@ -409,6 +457,14 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   _ProductHeaderCard(product: p),
             const SizedBox(height: AppSizes.md),
             _StockStatusCard(product: p),
+            if (_pendingDrafts.isNotEmpty) ...[
+              const SizedBox(height: AppSizes.md),
+              _PendingDraftsCard(
+                drafts: _pendingDrafts,
+                productUnit: p.unit,
+                onTap: _openInvoice,
+              ),
+            ],
             const SizedBox(height: AppSizes.md),
             AppCard(
               padding: const EdgeInsets.symmetric(
@@ -1119,6 +1175,176 @@ class _IdentifierChip extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Callout card listing every DRAFT invoice that includes this product.
+/// Each row shows the doc number, customer/vendor + quantity, and the
+/// direction of stock movement that's pending. Tapping a row opens the
+/// invoice so the user can confirm or cancel it — once confirmed, the
+/// product's stock count actually moves.
+class _PendingDraftsCard extends StatelessWidget {
+  const _PendingDraftsCard({
+    required this.drafts,
+    required this.productUnit,
+    required this.onTap,
+  });
+
+  final List<Invoice> drafts;
+  final String productUnit;
+  final void Function(int invoiceId) onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final unitLabel = AppUnits.label(productUnit);
+    return AppCard(
+      padding: EdgeInsets.zero,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSizes.lg,
+              AppSizes.md,
+              AppSizes.lg,
+              AppSizes.sm,
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: ShapeDecoration(
+                    color: AppColors.warning.withValues(alpha: 0.12),
+                    shape: AppShapes.squircle(AppSizes.radiusSm),
+                  ),
+                  child: const Icon(
+                    Icons.hourglass_top_rounded,
+                    size: 18,
+                    color: AppColors.warning,
+                  ),
+                ),
+                const SizedBox(width: AppSizes.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Pending drafts (${drafts.length})',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      Text(
+                        'Stock will move once these are confirmed.',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.muted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const AppDivider.flush(),
+          for (int i = 0; i < drafts.length; i++) ...[
+            if (i > 0) const AppDivider.flush(),
+            _PendingDraftRow(
+              invoice: drafts[i],
+              productUnit: unitLabel,
+              onTap: () => onTap(drafts[i].id),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _PendingDraftRow extends StatelessWidget {
+  const _PendingDraftRow({
+    required this.invoice,
+    required this.productUnit,
+    required this.onTap,
+  });
+
+  final Invoice invoice;
+  final String productUnit;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isSale = invoice.isSale;
+    final qty = invoice.items.fold<double>(
+      0,
+      (sum, item) => sum + item.quantity,
+    );
+    final qtyLabel = qty.truncateToDouble() == qty
+        ? qty.toInt().toString()
+        : qty.toStringAsFixed(2);
+    final counterparty = isSale
+        ? ((invoice.customerName?.isNotEmpty ?? false)
+            ? invoice.customerName!
+            : AppStrings.customer)
+        : (invoice.vendorName ?? AppStrings.vendor);
+
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSizes.lg,
+          vertical: AppSizes.md,
+        ),
+        child: Row(
+          children: [
+            Icon(
+              isSale
+                  ? Icons.north_east_rounded
+                  : Icons.south_west_rounded,
+              size: 18,
+              color: isSale ? AppColors.error : AppColors.success,
+            ),
+            const SizedBox(width: AppSizes.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    invoice.invoiceNo,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    '${isSale ? 'Sale' : 'Purchase'} · $counterparty',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.muted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: AppSizes.sm),
+            Text(
+              '${isSale ? '-' : '+'}$qtyLabel $productUnit',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: isSale ? AppColors.error : AppColors.success,
+              ),
+            ),
+            const SizedBox(width: AppSizes.xs),
+            const Icon(
+              Icons.chevron_right_rounded,
+              size: 18,
+              color: AppColors.muted,
+            ),
+          ],
         ),
       ),
     );
