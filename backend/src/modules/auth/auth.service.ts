@@ -32,6 +32,7 @@ const safeUserSelect = {
   shopGstin: true,
   shopPan: true,
   upiVpa: true,
+  acceptedAt: true,
   createdAt: true,
 } as const;
 
@@ -76,7 +77,16 @@ export class AuthService {
     // out-of-band (seed script or admin endpoint) — otherwise anyone hitting
     // /auth/register gets full merchant access (audit C1).
     const user = await prisma.user.create({
-      data: { email, name: data.name.trim(), passwordHash, role: 'CUSTOMER' },
+      data: {
+        email,
+        name: data.name.trim(),
+        passwordHash,
+        role: 'CUSTOMER',
+        // DPDP §6: record the moment of consent. The controller enforces
+        // that both terms + privacy were ticked before reaching the
+        // service, so reaching here implies a freely-given consent.
+        acceptedAt: new Date(),
+      },
       select: safeUserSelect,
     });
 
@@ -239,6 +249,140 @@ export class AuthService {
     }
 
     return { ok: true };
+  }
+
+  /// DPDP §11 right-to-access: build a single JSON blob containing
+  /// every row this user can reasonably claim as "their data". Shape
+  /// depends on role — OWNERs get a full shop dump (so they can take
+  /// their books elsewhere), CUSTOMERs get only their own activity.
+  /// Refresh tokens are deliberately summarised to a count to avoid
+  /// handing out live session secrets.
+  async exportData(userId: number): Promise<Record<string, unknown>> {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        notifications: true,
+        invitationsSent: {
+          include: {
+            toUser: { select: { email: true, name: true } },
+          },
+        },
+        invitationsReceived: {
+          include: {
+            fromUser: { select: { email: true, name: true } },
+          },
+        },
+        linkedParties: { select: { id: true, name: true } },
+        linkedVendors: { select: { id: true, name: true } },
+        purchaseRequests: { include: { items: true } },
+      },
+    });
+    if (!user) return { error: 'user_not_found' };
+
+    const refreshTokenCount = await prisma.refreshToken.count({
+      where: { userId },
+    });
+
+    // Strip the password hash before serialising — never include
+    // credential material in an export, even one going to the owner.
+    const { passwordHash: _ph, ...safeUser } = user;
+
+    const blob: Record<string, unknown> = {
+      exportedAt: new Date().toISOString(),
+      user: safeUser,
+      refreshTokenCount,
+      notifications: user.notifications,
+      invitationsSent: user.invitationsSent,
+      invitationsReceived: user.invitationsReceived,
+      linkedParties: user.linkedParties,
+      linkedVendors: user.linkedVendors,
+      purchaseRequests: user.purchaseRequests,
+    };
+
+    if (user.role === 'OWNER') {
+      // Full shop dump — owners are the data fiduciary for these rows,
+      // so they're entitled to a full copy on request. We fetch each
+      // table separately to keep the include tree shallow.
+      const [
+        products,
+        categories,
+        parties,
+        vendors,
+        invoices,
+        payments,
+        challans,
+        customFieldDefinitions,
+        customFieldSections,
+        stockTransactions,
+        stockAdjustments,
+      ] = await Promise.all([
+        prisma.product.findMany({
+          include: { images: true, customFieldValues: true },
+        }),
+        prisma.category.findMany(),
+        prisma.party.findMany(),
+        prisma.vendor.findMany(),
+        prisma.invoice.findMany({ include: { items: true } }),
+        prisma.payment.findMany(),
+        prisma.challan.findMany({ include: { items: true } }),
+        prisma.customFieldDefinition.findMany(),
+        prisma.customFieldSection.findMany(),
+        prisma.stockTransaction.findMany(),
+        prisma.stockAdjustment.findMany({ include: { items: true } }),
+      ]);
+      blob.shop = {
+        products,
+        categories,
+        parties,
+        vendors,
+        invoices,
+        payments,
+        challans,
+        customFieldDefinitions,
+        customFieldSections,
+        stockTransactions,
+        stockAdjustments,
+      };
+    }
+
+    return blob;
+  }
+
+  /// DPDP §12 right-to-erasure. OWNER accounts that still hold legally
+  /// retained records (CONFIRMED invoices within the 8-year Companies
+  /// Act window) cannot be deleted — the user is told to contact
+  /// support so we can do a controlled wipe. CUSTOMER accounts cascade
+  /// freely because the schema's onDelete rules cover their footprint.
+  async deleteAccount(userId: number, currentPassword: string) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return { error: 'user_not_found' as const };
+
+    const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!valid) return { error: 'invalid_password' as const };
+
+    if (user.role === 'OWNER') {
+      // Companies Act §128 + GST §36: books of account must be kept
+      // for 8 financial years. If any CONFIRMED invoice falls inside
+      // that window we refuse the delete and surface a stable error
+      // code the UI can match on.
+      const cutoff = new Date();
+      cutoff.setFullYear(cutoff.getFullYear() - 8);
+      const protectedInvoices = await prisma.invoice.count({
+        where: { status: 'CONFIRMED', invoiceDate: { gte: cutoff } },
+      });
+      if (protectedInvoices > 0) {
+        return { error: 'cannot_delete_with_active_records' as const };
+      }
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // Cascade should handle refresh tokens but be explicit — keeps
+      // the intent obvious and survives any future onDelete change.
+      await tx.refreshToken.deleteMany({ where: { userId } });
+      await tx.user.delete({ where: { id: userId } });
+    });
+
+    return { ok: true as const };
   }
 }
 
