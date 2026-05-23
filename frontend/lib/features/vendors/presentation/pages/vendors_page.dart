@@ -13,6 +13,7 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
 import 'package:shopxy/shared/widgets/app_dialog.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
+import 'package:shopxy/shared/widgets/app_error_view.dart';
 import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
 import 'package:shopxy/shared/widgets/app_search_bar.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
@@ -85,15 +86,10 @@ class _VendorsPageState extends State<VendorsPage> {
             child: provider.isLoading && provider.vendors.isEmpty
                 ? const Center(child: CircularProgressIndicator())
                 : provider.error != null && provider.vendors.isEmpty
-                    ? EmptyState.line(
-                        kind: LineArt.warning,
-                        title: AppStrings.error,
-                        action: AppButton.secondary(
-                          label: AppStrings.retry,
-                          onPressed: () => context
-                              .read<VendorsProvider>()
-                              .loadVendors(refresh: true),
-                        ),
+                    ? AppErrorView(
+                        onRetry: () => context
+                            .read<VendorsProvider>()
+                            .loadVendors(refresh: true),
                       )
                     : provider.vendors.isEmpty
                         ? EmptyState.line(

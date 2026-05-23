@@ -14,7 +14,7 @@ class OrdersRemoteDataSource {
     final res = await _client.get('/orders', queryParameters: {
       'page': '$page',
       'limit': '$limit',
-      if (status != null) 'status': status,
+      'status': ?status,
     });
     if (res.statusCode != 200) {
       throw Exception('Failed to load orders: ${res.statusCode}');

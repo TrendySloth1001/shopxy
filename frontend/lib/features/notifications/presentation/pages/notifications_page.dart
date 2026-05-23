@@ -111,7 +111,7 @@ class _InboxTab extends StatelessWidget {
       child: ListView.separated(
         padding: const EdgeInsets.only(top: AppSizes.sm, bottom: 96),
         itemCount: p.items.length,
-        separatorBuilder: (_, __) =>
+        separatorBuilder: (_, _) =>
             Container(height: 1, color: AppColors.hairline),
         itemBuilder: (_, i) => _NotificationTile(notification: p.items[i]),
       ),
@@ -239,7 +239,7 @@ class _IncomingTab extends StatelessWidget {
       child: ListView.separated(
         padding: const EdgeInsets.only(top: AppSizes.sm, bottom: 96),
         itemCount: p.incoming.length,
-        separatorBuilder: (_, __) =>
+        separatorBuilder: (_, _) =>
             Container(height: 1, color: AppColors.hairline),
         itemBuilder: (_, i) => _IncomingInviteTile(invite: p.incoming[i]),
       ),
@@ -410,7 +410,7 @@ class _OutgoingTab extends StatelessWidget {
       child: ListView.separated(
         padding: const EdgeInsets.only(top: AppSizes.sm, bottom: 96),
         itemCount: p.outgoing.length,
-        separatorBuilder: (_, __) =>
+        separatorBuilder: (_, _) =>
             Container(height: 1, color: AppColors.hairline),
         itemBuilder: (_, i) {
           final invite = p.outgoing[i];
