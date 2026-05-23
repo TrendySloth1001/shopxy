@@ -3,6 +3,9 @@ import 'package:provider/provider.dart';
 import 'package:shopxy/core/prefs/navigation_prefs.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/custom_fields/presentation/pages/custom_fields_settings_page.dart';
+import 'package:shopxy/features/profile/presentation/pages/change_password_page.dart';
+import 'package:shopxy/features/profile/presentation/pages/edit_profile_page.dart';
+import 'package:shopxy/features/profile/presentation/pages/legal_page.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
@@ -24,7 +27,7 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  bool _emailNotifications = true;
+  bool _savingEmailNotifications = false;
 
   Future<void> _logout() async {
     final confirmed = await AppConfirmDialog.show(
@@ -47,6 +50,21 @@ class _SettingsPageState extends State<SettingsPage> {
       );
   }
 
+  Future<void> _toggleEmailNotifications(bool value) async {
+    if (_savingEmailNotifications) return;
+    setState(() => _savingEmailNotifications = true);
+    try {
+      await context.read<AuthProvider>().updateProfile(emailNotifications: value);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not save preference: ${e.toString().replaceFirst('Exception: ', '')}')),
+      );
+    } finally {
+      if (mounted) setState(() => _savingEmailNotifications = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().user;
@@ -63,15 +81,27 @@ class _SettingsPageState extends State<SettingsPage> {
             icon: Icons.badge_outlined,
             title: AppStrings.editProfile,
             subtitle: user?.name ?? '—',
-            trailing: _comingSoonChip(context),
-            onTap: () => _stub(AppStrings.editProfile),
+            trailing: const Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.subtle,
+            ),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const EditProfilePage()),
+            ),
           ),
           _SettingRow(
             icon: Icons.lock_outline_rounded,
             title: AppStrings.changePassword,
             subtitle: 'Update the password on your account',
-            trailing: _comingSoonChip(context),
-            onTap: () => _stub(AppStrings.changePassword),
+            trailing: const Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.subtle,
+            ),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ChangePasswordPage()),
+            ),
           ),
           _SettingRow(
             icon: Icons.alternate_email_rounded,
@@ -136,8 +166,8 @@ class _SettingsPageState extends State<SettingsPage> {
             icon: Icons.notifications_none_rounded,
             title: 'Email notifications',
             subtitle: 'Low-stock alerts and weekly summary',
-            value: _emailNotifications,
-            onChanged: (v) => setState(() => _emailNotifications = v),
+            value: user?.emailNotifications ?? true,
+            onChanged: _savingEmailNotifications ? null : _toggleEmailNotifications,
           ),
 
           const _Gap(),
@@ -157,7 +187,10 @@ class _SettingsPageState extends State<SettingsPage> {
               Icons.chevron_right_rounded,
               color: AppColors.subtle,
             ),
-            onTap: () => _stub(AppStrings.privacyPolicy),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const LegalPage.privacy()),
+            ),
           ),
           _SettingRow(
             icon: Icons.description_outlined,
@@ -166,7 +199,10 @@ class _SettingsPageState extends State<SettingsPage> {
               Icons.chevron_right_rounded,
               color: AppColors.subtle,
             ),
-            onTap: () => _stub(AppStrings.termsOfService),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const LegalPage.terms()),
+            ),
           ),
 
           const _Gap(),
@@ -536,13 +572,13 @@ class _SettingToggle extends StatelessWidget {
   final String title;
   final String subtitle;
   final bool value;
-  final ValueChanged<bool> onChanged;
+  final ValueChanged<bool>? onChanged;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return InkWell(
-      onTap: () => onChanged(!value),
+      onTap: onChanged == null ? null : () => onChanged!(!value),
       child: Padding(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSizes.lg,

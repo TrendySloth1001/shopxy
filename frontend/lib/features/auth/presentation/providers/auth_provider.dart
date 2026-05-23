@@ -65,6 +65,19 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> updateProfile({String? name, bool? emailNotifications}) async {
+    final updated = await _dataSource.updateProfile(
+      name: name,
+      emailNotifications: emailNotifications,
+    );
+    _user = updated;
+    notifyListeners();
+  }
+
+  Future<void> changePassword(String current, String next) async {
+    await _dataSource.changePassword(current, next);
+  }
+
   /// Called by ApiClient when a refresh fails — forces re-login.
   void clearAuth() {
     _tokenManager.clear();
