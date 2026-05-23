@@ -12,6 +12,7 @@ class InvoicesRemoteDataSource {
   Future<List<Invoice>> getInvoices({
     String? type,
     String? status,
+    String? documentType,
     int? vendorId,
     String? search,
     int page = 1,
@@ -20,6 +21,7 @@ class InvoicesRemoteDataSource {
     final params = <String, String>{'page': '$page', 'limit': '$limit'};
     if (type != null) params['type'] = type;
     if (status != null) params['status'] = status;
+    if (documentType != null) params['documentType'] = documentType;
     if (vendorId != null) params['vendorId'] = '$vendorId';
     if (search != null && search.isNotEmpty) params['search'] = search;
     final res = await _client.get('/invoices', queryParameters: params);
@@ -83,6 +85,18 @@ class InvoicesRemoteDataSource {
     if (res.statusCode != 200) {
       final body = jsonDecode(res.body) as Map<String, dynamic>;
       throw Exception(body['error'] ?? 'Failed to update status');
+    }
+    return InvoiceDto.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+  }
+
+  /// Convert an ESTIMATE / PROFORMA quotation into a real TAX_INVOICE.
+  /// Backend mints a brand new invoice (new number, new id) from the
+  /// source's items; the source row is left untouched.
+  Future<Invoice> convertEstimate(int id) async {
+    final res = await _client.post('/invoices/$id/convert');
+    if (res.statusCode != 201) {
+      final body = jsonDecode(res.body) as Map<String, dynamic>;
+      throw Exception(body['error'] ?? 'Failed to convert estimate');
     }
     return InvoiceDto.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
