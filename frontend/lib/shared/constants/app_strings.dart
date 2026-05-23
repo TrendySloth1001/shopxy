@@ -35,14 +35,11 @@ class AppStrings {
   static const String memberSince = 'Member since';
 
   // Dashboard
-  static const String totalProducts = 'Total Products';
-  static const String activeProducts = 'Active Products';
   static const String categories = 'Categories';
   static const String lowStock = 'Low Stock';
   static const String outOfStock = 'Out of Stock';
   static const String inStock = 'In Stock';
   static const String stockValue = 'Stock Value';
-  static const String recentActivity = 'Recent Activity';
   static const String greetingMorning = 'Good morning';
   static const String greetingAfternoon = 'Good afternoon';
   static const String greetingEvening = 'Good evening';
@@ -98,7 +95,6 @@ class AppStrings {
   static const String clearSelection = 'Clear selection';
   static const String noCategoriesMatch = 'No categories match that search.';
   static const String categoryPickerLabel = 'Category';
-  static const String done = 'Done';
 
   // Custom fields
   static const String customFields = 'Custom Fields';
@@ -150,7 +146,6 @@ class AppStrings {
   static const String lowStockThreshold = 'Low Stock Alert';
   static const String unit = 'Unit';
   static const String category = 'Category';
-  static const String imageUrl = 'Image URL';
 
   // Categories
   static const String addCategory = 'Add Category';
@@ -204,7 +199,6 @@ class AppStrings {
   static const String customerName = 'Customer Name';
   static const String customerInfo = 'Customer Information';
   static const String vendorInfo = 'Vendor Information';
-  static const String noVendorSelected = 'No vendor selected';
   static const String invoiceNeedsItems = 'Please add at least one item';
   static const String searchToAddProduct = 'Search product to add';
   static const String noItemsYet = 'No items added yet';
@@ -215,7 +209,6 @@ class AppStrings {
   static const String discount = 'Discount';
   static const String totals = 'Totals';
   static const String total = 'Total';
-  static const String filter = 'Filter';
   static const String generatingPdf = 'Generating PDF...';
   static const String downloadInvoice = 'Download Invoice';
   static const String confirmInvoice = 'Confirm Invoice';
@@ -236,7 +229,6 @@ class AppStrings {
   static const String useLatestPrice = 'Use Latest';
   static const String weightedAverage = 'Weighted Avg';
   static const String nextPurchasePrice = 'Next Purchase Price';
-  static const String incomingPrice = 'Incoming Price';
   static const String currentPurchasePrice = 'Current Purchase Price';
   static const String supplierHint = 'Track supplier-wise price history';
   static const String supplierPriceHistory = 'Supplier-wise Price History';
@@ -254,12 +246,10 @@ class AppStrings {
   static const String note = 'Note';
   static const String stockUpdated = 'Stock updated successfully';
   static const String insufficientStock = 'Insufficient stock';
-  static const String stockHistory = 'Stock History';
 
   // QR
   static const String scanQr = 'Scan QR / Barcode';
   static const String generateQr = 'Generate QR Code';
-  static const String shareQr = 'Share QR';
   static const String productNotFound = 'Product not found for this code';
   static const String productNotFoundTitle = 'Product not found';
   static const String productNotFoundHint = 'Add it now with the scanned code';
