@@ -29,9 +29,9 @@ services:
       MINIO_ACCESS_KEY: shopxy
       MINIO_SECRET_KEY: shopxy_dev_password
       MINIO_BUCKET: shopxy-uploads
-      PORT: 3001
+      PORT: 3003
       CORS_ORIGINS: ""
-    ports: ["3001:3001"]
+    ports: ["3003:3003"]
 volumes:
   postgres_data:
   minio_data:
