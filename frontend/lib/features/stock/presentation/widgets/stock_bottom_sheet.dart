@@ -210,7 +210,7 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
       return;
     }
     try {
-      await context.read<StockProvider>().addStock(
+      final draftId = await context.read<StockProvider>().addStock(
         productId: widget.product.id,
         type: _type,
         quantity: parsedQuantity,
@@ -227,10 +227,11 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
             ),
           ),
         );
-        // Return `true` so the opener can distinguish "user saved" from
-        // "user dismissed". Detail page only refetches when this is true,
-        // saving a needless DB round-trip on every cancel/scrim tap.
-        Navigator.pop(context, true);
+        // Return the draft invoice id so the opener can offer an
+        // inline "confirm this draft" affordance without leaving its
+        // page. Callers that only need a saved/dismissed signal can
+        // null-check the result.
+        Navigator.pop(context, draftId);
       }
     } catch (e) {
       if (mounted) {

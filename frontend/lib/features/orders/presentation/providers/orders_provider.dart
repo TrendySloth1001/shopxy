@@ -9,20 +9,33 @@ class OrdersProvider extends ChangeNotifier {
   List<MerchantOrder> _orders = const [];
   bool _loading = false;
   String? _error;
+
   String? _statusFilter; // null = all
+  String _search = '';
+  DateTime? _from;
+  DateTime? _to;
+
   int _pendingCount = 0;
 
   List<MerchantOrder> get orders => _orders;
   bool get isLoading => _loading;
   String? get error => _error;
   String? get statusFilter => _statusFilter;
+  String get search => _search;
+  DateTime? get from => _from;
+  DateTime? get to => _to;
   int get pendingCount => _pendingCount;
 
   Future<void> load() async {
     _loading = true;
     notifyListeners();
     try {
-      final result = await _ds.list(status: _statusFilter);
+      final result = await _ds.list(
+        status: _statusFilter,
+        search: _search,
+        from: _from,
+        to: _to,
+      );
       _orders = result.data;
       _error = null;
     } catch (e) {
@@ -41,7 +54,29 @@ class OrdersProvider extends ChangeNotifier {
   }
 
   void setStatusFilter(String? value) {
+    if (_statusFilter == value) return;
     _statusFilter = value;
+    load();
+  }
+
+  void setSearch(String value) {
+    if (_search == value) return;
+    _search = value;
+    load();
+  }
+
+  void setDateRange(DateTime? from, DateTime? to) {
+    if (_from == from && _to == to) return;
+    _from = from;
+    _to = to;
+    load();
+  }
+
+  void clearFilters() {
+    if (_search.isEmpty && _from == null && _to == null) return;
+    _search = '';
+    _from = null;
+    _to = null;
     load();
   }
 

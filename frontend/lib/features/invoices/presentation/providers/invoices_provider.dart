@@ -61,7 +61,7 @@ class InvoicesProvider extends ChangeNotifier {
     loadInvoices(refresh: true);
   }
 
-  Future<Invoice> createInvoice({
+  Future<CreateInvoiceResult> createInvoice({
     required String type,
     int? vendorId,
     int? partyId,
@@ -73,8 +73,9 @@ class InvoicesProvider extends ChangeNotifier {
     String? documentType,
     String? placeOfSupplyStateCode,
     required List<Map<String, dynamic>> items,
+    bool confirm = false,
   }) async {
-    final invoice = await _ds.createInvoice(
+    final result = await _ds.createInvoice(
       type: type,
       vendorId: vendorId,
       partyId: partyId,
@@ -86,10 +87,11 @@ class InvoicesProvider extends ChangeNotifier {
       documentType: documentType,
       placeOfSupplyStateCode: placeOfSupplyStateCode,
       items: items,
+      confirm: confirm,
     );
-    _invoices = [invoice, ..._invoices];
+    _invoices = [result.invoice, ..._invoices];
     notifyListeners();
-    return invoice;
+    return result;
   }
 
   Future<Invoice> updateInvoice({

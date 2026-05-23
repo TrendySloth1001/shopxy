@@ -36,12 +36,13 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
         child: p.isLoading && p.orders.isEmpty
             ? const Center(child: CircularProgressIndicator())
             : p.error != null && p.orders.isEmpty
-                ? Center(child: Text(p.error!))
+                ? _ErrorState(message: p.error!, onRetry: p.load)
                 : p.orders.isEmpty
                     ? const _EmptyOrders()
                     : ListView.separated(
+                        physics: const AlwaysScrollableScrollPhysics(),
                         itemCount: p.orders.length,
-                        separatorBuilder: (_, __) =>
+                        separatorBuilder: (_, _) =>
                             const Divider(height: 1, color: AppColors.hairline),
                         itemBuilder: (_, i) => _OrderRow(order: p.orders[i]),
                       ),
@@ -60,6 +61,7 @@ class _OrderRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final (label, color, soft) = _statusVisual(order);
+    final previewText = _itemPreview(order);
     return InkWell(
       onTap: () => Navigator.push(
         context,
@@ -71,30 +73,57 @@ class _OrderRow extends StatelessWidget {
           vertical: AppSizes.md,
         ),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Order #${order.id}',
-                    style: theme.textTheme.titleSmall
-                        ?.copyWith(fontWeight: FontWeight.w700),
+                  Row(
+                    children: [
+                      Text(
+                        'Order #${order.id}',
+                        style: theme.textTheme.titleSmall
+                            ?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                      if (order.shop != null) ...[
+                        const SizedBox(width: AppSizes.sm),
+                        Flexible(
+                          child: Text(
+                            '· ${order.shop!.displayName}',
+                            style: theme.textTheme.bodySmall
+                                ?.copyWith(color: AppColors.muted),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                   const SizedBox(height: 2),
+                  if (previewText != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 2),
+                      child: Text(
+                        previewText,
+                        style: theme.textTheme.bodySmall,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                   Text(
-                    '${_date.format(order.createdAt)} · ${order.itemCount} items',
+                    '${_date.format(order.createdAt)} · ${order.itemCount} ${order.itemCount == 1 ? 'item' : 'items'}',
                     style: theme.textTheme.bodySmall
                         ?.copyWith(color: AppColors.muted),
                   ),
                 ],
               ),
             ),
+            const SizedBox(width: AppSizes.sm),
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  '${AppStrings.currencySymbol}${order.estimatedTotal.toStringAsFixed(0)}',
+                  '${AppStrings.currencySymbol}${order.estimatedTotal.toStringAsFixed(2)}',
                   style: theme.textTheme.titleSmall
                       ?.copyWith(fontWeight: FontWeight.w800),
                 ),
@@ -120,6 +149,16 @@ class _OrderRow extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// "Solder Wire Roll · Tea Bag (+3 more)" — preview from the
+  /// itemsPreview backend payload, falling back gracefully when empty.
+  static String? _itemPreview(CustomerOrder order) {
+    if (order.itemPreview.isEmpty) return null;
+    final names = order.itemPreview.map((i) => i.productName).toList();
+    final remainder = order.itemCount - names.length;
+    final preview = names.join(' · ');
+    return remainder > 0 ? '$preview (+$remainder more)' : preview;
   }
 
   static (String, Color, Color) _statusVisual(CustomerOrder o) {
@@ -169,6 +208,51 @@ class _EmptyOrders extends StatelessWidget {
           AppStrings.emptyOrdersHint,
           style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted),
           textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  const _ErrorState({required this.message, required this.onRetry});
+  final String message;
+  final Future<void> Function() onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ListView(
+      // ListView lets RefreshIndicator still pull-to-refresh from the
+      // error state — handy when the user lost connection briefly.
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        const SizedBox(height: AppSizes.massive),
+        const Icon(Icons.cloud_off_rounded, size: 48, color: AppColors.muted),
+        const SizedBox(height: AppSizes.md),
+        Text(
+          AppStrings.somethingWentWrong,
+          style: theme.textTheme.titleMedium
+              ?.copyWith(fontWeight: FontWeight.w700),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 4),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSizes.xl),
+          child: Text(
+            message,
+            style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        const SizedBox(height: AppSizes.lg),
+        Center(
+          child: FilledButton.icon(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh_rounded),
+            label: const Text(AppStrings.tryAgain),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.brand),
+          ),
         ),
       ],
     );

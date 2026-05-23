@@ -30,21 +30,15 @@ class OrdersProvider extends ChangeNotifier {
 
   Future<CustomerOrderDetail> loadDetail(int id) => _ds.detail(id);
 
+  /// Cancels an order and updates the cached list with the new status.
+  /// Throws [CancelOrderException] on backend rejection so the page can
+  /// surface a targeted error.
   Future<void> cancel(int id) async {
     await _ds.cancel(id);
     _orders = _orders
         .map((o) =>
             o.id == id
-                ? CustomerOrder(
-                    id: o.id,
-                    status: 'CANCELLED',
-                    customerName: o.customerName,
-                    customerPhone: o.customerPhone,
-                    estimatedTotal: o.estimatedTotal,
-                    itemCount: o.itemCount,
-                    createdAt: o.createdAt,
-                    decidedAt: DateTime.now(),
-                  )
+                ? o.copyWith(status: 'CANCELLED', decidedAt: DateTime.now())
                 : o)
         .toList();
     notifyListeners();

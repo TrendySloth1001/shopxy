@@ -99,4 +99,16 @@ class AppStrings {
   static const String cancelOrder = 'Cancel order';
   static const String linkedInvoice = 'Linked invoice';
   static const String estimatedTotal = 'Estimated total';
+  static const String finalTotal = 'Final total';
+
+  // Cancel confirmation
+  static const String cancelOrderTitle = 'Cancel this order?';
+  static const String cancelOrderBody =
+      'Once cancelled, the shop won\'t process it. This can\'t be undone.';
+  static const String keepOrder = 'Keep order';
+  static const String confirmCancelOrder = 'Yes, cancel';
+
+  // Error / retry
+  static const String somethingWentWrong = 'Something went wrong';
+  static const String tryAgain = 'Try again';
 }

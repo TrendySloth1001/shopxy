@@ -2,12 +2,37 @@ import 'dart:convert';
 import 'package:shopxy/core/network/api_client.dart';
 import 'package:shopxy/features/orders/domain/entities/merchant_order.dart';
 
+/// Surfaces the 409 INSUFFICIENT_STOCK detail (productId / available /
+/// requested) without losing it in a generic Exception string. The
+/// detail page uses these fields to highlight the offending line.
+class OrderConfirmException implements Exception {
+  OrderConfirmException({
+    required this.code,
+    required this.message,
+    this.productId,
+    this.available,
+    this.requested,
+  });
+
+  final String code;
+  final String message;
+  final int? productId;
+  final double? available;
+  final double? requested;
+
+  @override
+  String toString() => message;
+}
+
 class OrdersRemoteDataSource {
   const OrdersRemoteDataSource(this._client);
   final ApiClient _client;
 
   Future<({List<MerchantOrder> data, int total})> list({
     String? status,
+    String? search,
+    DateTime? from,
+    DateTime? to,
     int page = 1,
     int limit = 30,
   }) async {
@@ -15,6 +40,9 @@ class OrdersRemoteDataSource {
       'page': '$page',
       'limit': '$limit',
       'status': ?status,
+      'search': ?(search != null && search.isNotEmpty ? search : null),
+      'from': ?from?.toUtc().toIso8601String(),
+      'to': ?to?.toUtc().toIso8601String(),
     });
     if (res.statusCode != 200) {
       throw Exception('Failed to load orders: ${res.statusCode}');
@@ -44,13 +72,24 @@ class OrdersRemoteDataSource {
     final res = await _client.post('/orders/$id/confirm', body: {
       if (note != null && note.isNotEmpty) 'note': note,
     });
-    if (res.statusCode != 200) {
-      final err = jsonDecode(res.body) as Map<String, dynamic>;
-      throw Exception(err['error'] ?? 'Failed to confirm');
+    if (res.statusCode == 200) {
+      final json = jsonDecode(res.body) as Map<String, dynamic>;
+      final inv = json['invoice'] as Map<String, dynamic>;
+      return (invoiceId: inv['id'] as int, invoiceNo: inv['invoiceNo'] as String);
     }
-    final json = jsonDecode(res.body) as Map<String, dynamic>;
-    final inv = json['invoice'] as Map<String, dynamic>;
-    return (invoiceId: inv['id'] as int, invoiceNo: inv['invoiceNo'] as String);
+    Map<String, dynamic> body = const {};
+    try {
+      body = jsonDecode(res.body) as Map<String, dynamic>;
+    } catch (_) {/* keep empty */}
+    final code = (body['error'] as String?) ?? 'CONFIRM_FAILED';
+    final message = _confirmMessageForCode(code, body);
+    throw OrderConfirmException(
+      code: code,
+      message: message,
+      productId: body['productId'] as int?,
+      available: _maybeDouble(body['available']),
+      requested: _maybeDouble(body['requested']),
+    );
   }
 
   Future<void> reject(int id, {String? note}) async {
@@ -60,5 +99,29 @@ class OrdersRemoteDataSource {
     if (res.statusCode != 204) {
       throw Exception('Failed to reject');
     }
+  }
+
+  static String _confirmMessageForCode(String code, Map<String, dynamic> body) {
+    switch (code) {
+      case 'INSUFFICIENT_STOCK':
+        return 'Not enough stock to fulfil this order';
+      case 'NOT_FOUND':
+        return 'Order not found';
+      case 'NOT_PENDING':
+        return 'This order is no longer pending';
+      case 'NO_ITEMS':
+        return 'Order has no items';
+      default:
+        // Fall back to whatever the server sent, even if it was a
+        // domain error string from the invoices service.
+        return body['error']?.toString() ?? 'Failed to confirm order';
+    }
+  }
+
+  static double? _maybeDouble(dynamic v) {
+    if (v == null) return null;
+    if (v is num) return v.toDouble();
+    if (v is String) return double.tryParse(v);
+    return null;
   }
 }

@@ -16,10 +16,11 @@ class ApiClient {
     return queryParameters == null ? uri : uri.replace(queryParameters: queryParameters);
   }
 
-  Map<String, String> _headers() => {
+  Map<String, String> _headers([Map<String, String>? extra]) => {
         'Content-Type': 'application/json',
         if (_tokenManager.accessToken != null)
           'Authorization': 'Bearer ${_tokenManager.accessToken}',
+        ...?extra,
       };
 
   // ── Public HTTP methods ───────────────────────────────────────────────────
@@ -27,8 +28,20 @@ class ApiClient {
   Future<http.Response> get(String path, {Map<String, String>? queryParameters}) =>
       _withRetry(() => http.get(_buildUri(path, queryParameters), headers: _headers()));
 
-  Future<http.Response> post(String path, {Object? body}) => _withRetry(
-        () => http.post(_buildUri(path), headers: _headers(), body: body != null ? jsonEncode(body) : null),
+  /// [extraHeaders] are merged on top of the defaults — used for things
+  /// like `X-Idempotency-Key` on cart submit so a flaky retry doesn't
+  /// double-book the customer.
+  Future<http.Response> post(
+    String path, {
+    Object? body,
+    Map<String, String>? extraHeaders,
+  }) =>
+      _withRetry(
+        () => http.post(
+          _buildUri(path),
+          headers: _headers(extraHeaders),
+          body: body != null ? jsonEncode(body) : null,
+        ),
       );
 
   Future<http.Response> patch(String path, {Object? body}) => _withRetry(

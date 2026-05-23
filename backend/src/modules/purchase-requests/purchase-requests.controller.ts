@@ -19,9 +19,53 @@ const createSchema = z.object({
 
 const decisionSchema = z.object({ note: z.string().max(500).optional() });
 
+/// Inbox filters. Search and date range come in as query strings; we
+/// keep the contract loose (strings) and parse defensively so a stray
+/// "abc" in date never blows up the request.
+const merchantListSchema = z.object({
+  status: z.enum(['PENDING', 'CONFIRMED', 'REJECTED', 'CANCELLED']).optional(),
+  search: z.string().max(80).optional(),
+  from: z.string().datetime().optional(),
+  to: z.string().datetime().optional(),
+});
+
 function parseId(raw: string): number | null {
   const id = Number(raw);
   return Number.isInteger(id) && id > 0 ? id : null;
+}
+
+/// Pull the per-request idempotency token off the canonical header. We
+/// also tolerate the unprefixed `Idempotency-Key` form (RFC draft name)
+/// so curl/Postman testers don't need to remember the X- prefix.
+function readIdempotencyKey(req: Request): string | undefined {
+  const raw = (req.get('x-idempotency-key') ?? req.get('idempotency-key') ?? '').trim();
+  if (!raw) return undefined;
+  // Anchor to a reasonable shape — UUID-ish, ≤ 80 chars. Lets us add
+  // the unique index without worrying about adversarial payloads.
+  if (raw.length > 80) return undefined;
+  return raw;
+}
+
+/// Map the customer-facing error codes to user-friendly response bodies.
+/// Kept controller-side so the service stays domain-clean.
+function cancelErrorMessage(code: 'NOT_FOUND' | 'NOT_OWNED' | 'NOT_PENDING'): {
+  status: number;
+  body: { error: string; code: string };
+} {
+  switch (code) {
+    case 'NOT_FOUND':
+      return { status: 404, body: { error: 'Order not found', code } };
+    case 'NOT_OWNED':
+      return { status: 403, body: { error: 'You can only cancel your own orders', code } };
+    case 'NOT_PENDING':
+      return {
+        status: 409,
+        body: {
+          error: 'This order can no longer be cancelled — the shop has already acted on it.',
+          code,
+        },
+      };
+  }
 }
 
 export class PurchaseRequestsController {
@@ -30,27 +74,31 @@ export class PurchaseRequestsController {
   async createForCustomer(req: Request, res: Response): Promise<void> {
     const payload = createSchema.parse(req.body);
     const userId = req.user!.sub;
+    const idempotencyKey = readIdempotencyKey(req);
 
     const result = await purchaseRequestsService.createForCustomer({
       customerUserId: userId,
       items: payload.items,
       note: payload.note,
+      idempotencyKey,
     });
     if ('error' in result) {
       res.status(400).json({ error: result.error });
       return;
     }
 
-    // Notify every merchant so any owner role can pick it up. Best-effort
-    // — a notification fail must not block the order from being saved.
-    void notifyAllMerchants({
-      kind: 'ORDER_RECEIVED',
-      title: 'New order',
-      body: `Order #${result.request.id}`,
-      data: { requestId: result.request.id },
-    }).catch(() => {});
+    // Only notify on a *new* request — deduplicated retries shouldn't
+    // page the merchant a second time.
+    if (!result.deduplicated) {
+      void notifyAllMerchants({
+        kind: 'ORDER_RECEIVED',
+        title: 'New order',
+        body: `Order #${result.request.id}`,
+        data: { requestId: result.request.id },
+      }).catch(() => {});
+    }
 
-    res.status(201).json(result.request);
+    res.status(result.deduplicated ? 200 : 201).json(result.request);
   }
 
   async listForCustomer(req: Request, res: Response): Promise<void> {
@@ -81,8 +129,9 @@ export class PurchaseRequestsController {
       userId: req.user!.sub,
       id,
     });
-    if (result.count === 0) {
-      res.status(409).json({ error: 'Order cannot be cancelled' });
+    if ('error' in result) {
+      const { status, body } = cancelErrorMessage(result.error);
+      res.status(status).json(body);
       return;
     }
     res.status(204).send();
@@ -92,9 +141,16 @@ export class PurchaseRequestsController {
 
   async listForMerchant(req: Request, res: Response): Promise<void> {
     const { page, limit, skip } = parsePagination(req);
-    const status = req.query.status as string | undefined;
+    const filters = merchantListSchema.parse({
+      status: req.query.status,
+      search: req.query.search,
+      from: req.query.from,
+      to: req.query.to,
+    });
     const { data, total } = await purchaseRequestsService.listForMerchant({
-      status,
+      ...filters,
+      from: filters.from ? new Date(filters.from) : undefined,
+      to: filters.to ? new Date(filters.to) : undefined,
       skip,
       limit,
     });
@@ -125,7 +181,16 @@ export class PurchaseRequestsController {
       note: payload.note,
     });
     if ('error' in result) {
-      res.status(409).json({ error: result.error });
+      // Stock shortfalls carry productId/available/requested so the
+      // client can render an actionable message. Map the failure
+      // category to an HTTP status the client can branch on.
+      const status =
+        result.error === 'NOT_FOUND'
+          ? 404
+          : result.error === 'INSUFFICIENT_STOCK'
+            ? 409
+            : 409;
+      res.status(status).json(result);
       return;
     }
 
@@ -155,7 +220,7 @@ export class PurchaseRequestsController {
       note: payload.note,
     });
     if ('error' in result) {
-      res.status(409).json({ error: result.error });
+      res.status(result.error === 'NOT_FOUND' ? 404 : 409).json({ error: result.error });
       return;
     }
 
@@ -176,8 +241,8 @@ export class PurchaseRequestsController {
 }
 
 /// Fans out an in-app notification to every merchant (anyone with role
-/// OWNER). Used when a customer submits an order; lets any logged-in
-/// merchant see the inbox badge update.
+/// OWNER). One Promise.all on the User read + creates so a 50-merchant
+/// fleet doesn't pay sequential latency for the notification storm.
 async function notifyAllMerchants(payload: {
   kind: string;
   title: string;

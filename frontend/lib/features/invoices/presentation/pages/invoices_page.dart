@@ -86,7 +86,7 @@ class _InvoicesPageState extends State<InvoicesPage> {
 
     return Scaffold(
       appBar: AppBar(
-        leading: const ShellMenuButton(),
+        leading: Navigator.canPop(context) ? null : const ShellMenuButton(),
         title: const Text(AppStrings.navInvoices),
         actions: [
           Stack(

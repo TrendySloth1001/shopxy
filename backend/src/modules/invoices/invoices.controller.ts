@@ -39,6 +39,9 @@ const createInvoiceSchema = z.object({
   note: z.string().max(1000).optional(),
   invoiceDate: z.string().datetime().optional(),
   items: z.array(itemSchema).min(1),
+  /// One-shot create + confirm. Saves a round-trip when the merchant
+  /// knows the invoice is final at submit time.
+  confirm: z.boolean().optional(),
 });
 
 const updateStatusSchema = z.object({
@@ -79,12 +82,25 @@ function parseId(raw: string): number | null {
 export class InvoicesController {
   async create(req: Request, res: Response): Promise<void> {
     const payload = createInvoiceSchema.parse(req.body);
-    const result = await invoicesService.createInvoice(payload);
+    const result = await invoicesService.createInvoice({
+      ...payload,
+      confirmedById: payload.confirm ? req.user?.sub : undefined,
+    });
     if ('error' in result) {
       res.status(400).json({ error: result.error });
       return;
     }
-    res.status(201).json(result.invoice);
+    // confirmError surfaces auto-confirm failures (e.g. insufficient
+    // stock) without losing the draft we just created — client can show
+    // a snackbar and route to the draft for the merchant to resolve.
+    const body: Record<string, unknown> = {
+      ...result.invoice,
+      confirmed: result.confirmed,
+    };
+    if ('confirmError' in result && result.confirmError) {
+      body.confirmError = result.confirmError;
+    }
+    res.status(201).json(body);
   }
 
   async list(req: Request, res: Response): Promise<void> {

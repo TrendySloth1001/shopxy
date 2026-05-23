@@ -4,6 +4,23 @@ import 'package:shopxy/core/network/api_client.dart';
 import 'package:shopxy/features/invoices/data/models/invoice_dto.dart';
 import 'package:shopxy/features/invoices/domain/entities/invoice.dart';
 
+/// Outcome of POST /invoices when the caller asked for a one-shot
+/// create + confirm. The invoice always exists (we never roll the
+/// create back on a confirm failure); the confirm bits tell the UI
+/// whether stock posted or the merchant needs to resolve a shortfall.
+class CreateInvoiceResult {
+  const CreateInvoiceResult({
+    required this.invoice,
+    required this.confirmed,
+    this.confirmError,
+    this.shortfallProductId,
+  });
+  final Invoice invoice;
+  final bool confirmed;
+  final String? confirmError;
+  final int? shortfallProductId;
+}
+
 class InvoicesRemoteDataSource {
   const InvoicesRemoteDataSource(this._client);
   final ApiClient _client;
@@ -42,7 +59,12 @@ class InvoicesRemoteDataSource {
     return InvoiceDto.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  Future<Invoice> createInvoice({
+  /// Returns the freshly-created invoice plus the result of the
+  /// optional auto-confirm. `confirmed` is true when the server ran
+  /// updateStatus inline successfully; `confirmError` carries the
+  /// server-side reason (e.g. insufficient stock) when the create
+  /// landed as a draft but the confirm step failed.
+  Future<CreateInvoiceResult> createInvoice({
     required String type,
     int? vendorId,
     int? partyId,
@@ -54,6 +76,7 @@ class InvoicesRemoteDataSource {
     String? documentType,
     String? placeOfSupplyStateCode,
     required List<Map<String, dynamic>> items,
+    bool confirm = false,
   }) async {
     final res = await _client.post(
       '/invoices',
@@ -69,13 +92,23 @@ class InvoicesRemoteDataSource {
         documentType: documentType,
         placeOfSupplyStateCode: placeOfSupplyStateCode,
         items: items,
+        confirm: confirm,
       ),
     );
     if (res.statusCode != 201) {
       final body = jsonDecode(res.body) as Map<String, dynamic>;
       throw Exception(body['error'] ?? 'Failed to create invoice');
     }
-    return InvoiceDto.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+    final body = jsonDecode(res.body) as Map<String, dynamic>;
+    final invoice = InvoiceDto.fromJson(body);
+    final confirmed = (body['confirmed'] as bool?) ?? false;
+    final errMap = body['confirmError'] as Map<String, dynamic>?;
+    return CreateInvoiceResult(
+      invoice: invoice,
+      confirmed: confirmed,
+      confirmError: errMap?['error'] as String?,
+      shortfallProductId: errMap?['productId'] as int?,
+    );
   }
 
   /// Replace the contents of a DRAFT invoice. Backend rejects non-draft
