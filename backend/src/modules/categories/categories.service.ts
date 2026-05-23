@@ -5,6 +5,7 @@ export class CategoriesService {
     name: string;
     description?: string;
     imageUrl?: string;
+    iconName?: string;
     sortOrder?: number;
   }) {
     return prisma.category.create({ data });
@@ -57,6 +58,7 @@ export class CategoriesService {
       name?: string;
       description?: string | null;
       imageUrl?: string | null;
+      iconName?: string | null;
       sortOrder?: number;
       isActive?: boolean;
     }

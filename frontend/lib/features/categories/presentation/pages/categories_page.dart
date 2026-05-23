@@ -3,10 +3,11 @@ import 'package:provider/provider.dart';
 import 'package:shopxy/features/categories/domain/entities/category.dart';
 import 'package:shopxy/features/categories/presentation/pages/category_products_page.dart';
 import 'package:shopxy/features/categories/presentation/providers/categories_provider.dart';
+import 'package:shopxy/features/categories/presentation/widgets/category_form_sheet.dart';
+import 'package:shopxy/features/categories/presentation/widgets/category_icon_catalog.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
-import 'package:shopxy/shared/widgets/app_button.dart';
 import 'package:shopxy/shared/widgets/app_dialog.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
@@ -31,79 +32,8 @@ class _CategoriesPageState extends State<CategoriesPage> {
     });
   }
 
-  void _showAddEditDialog([Category? category]) {
-    final nameController = TextEditingController(text: category?.name ?? '');
-    final descController = TextEditingController(
-      text: category?.description ?? '',
-    );
-    final isEditing = category != null;
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(
-          isEditing ? AppStrings.editCategory : AppStrings.addCategory,
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(
-                labelText: AppStrings.categoryName,
-              ),
-              autofocus: true,
-              textCapitalization: TextCapitalization.words,
-            ),
-            const SizedBox(height: AppSizes.md),
-            TextField(
-              controller: descController,
-              decoration: const InputDecoration(
-                labelText: AppStrings.description,
-              ),
-              textCapitalization: TextCapitalization.sentences,
-            ),
-          ],
-        ),
-        actionsPadding: const EdgeInsets.fromLTRB(
-          AppSizes.lg,
-          0,
-          AppSizes.lg,
-          AppSizes.lg,
-        ),
-        actions: [
-          AppButton.ghost(
-            label: AppStrings.cancel,
-            onPressed: () => Navigator.pop(ctx),
-          ),
-          AppButton.primary(
-            label: AppStrings.save,
-            onPressed: () async {
-              final name = nameController.text.trim();
-              if (name.isEmpty) return;
-
-              final provider = context.read<CategoriesProvider>();
-              if (isEditing) {
-                await provider.updateCategory(
-                  category.id,
-                  name: name,
-                  description: descController.text.trim(),
-                );
-              } else {
-                await provider.createCategory(
-                  name: name,
-                  description: descController.text.trim().isNotEmpty
-                      ? descController.text.trim()
-                      : null,
-                );
-              }
-
-              if (ctx.mounted) Navigator.pop(ctx);
-            },
-          ),
-        ],
-      ),
-    );
+  void _showAddEditSheet([Category? category]) {
+    CategoryFormSheet.show(context, category: category);
   }
 
   void _deleteCategory(Category category) async {
@@ -157,7 +87,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
                             builder: (_) => CategoryProductsPage(category: cat),
                           ),
                         ),
-                        onEdit: () => _showAddEditDialog(cat),
+                        onEdit: () => _showAddEditSheet(cat),
                         onDelete: () => _deleteCategory(cat),
                       );
                     },
@@ -165,7 +95,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
                 ),
       floatingActionButton: FloatingActionButton(
         heroTag: 'categories_fab',
-        onPressed: () => _showAddEditDialog(),
+        onPressed: () => _showAddEditSheet(),
         child: const Icon(Icons.add_rounded),
       ),
     );
@@ -201,7 +131,7 @@ class _CategoryTile extends StatelessWidget {
           ),
           child: Row(
             children: [
-              const AppIconAvatar.outlined(icon: Icons.category_rounded),
+              AppIconAvatar.outlined(icon: resolveCategoryIcon(category.iconName)),
               const SizedBox(width: AppSizes.md),
               Expanded(
                 child: Column(
