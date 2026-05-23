@@ -12,6 +12,7 @@ import 'package:shopxy_customer/features/orders/presentation/providers/orders_pr
 import 'package:shopxy_customer/features/search/presentation/pages/search_page.dart';
 import 'package:shopxy_customer/features/shops/presentation/pages/my_shops_page.dart';
 import 'package:shopxy_customer/features/shops/presentation/providers/shops_provider.dart';
+import 'package:shopxy_customer/features/wishlist/presentation/pages/wishlist_page.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
@@ -111,22 +112,10 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  /// Wishlist isn't wired yet (next milestone). Until then the tile
-  /// drops a snackbar so the user knows it's intentional, not broken.
   void _openWishlist(BuildContext context) {
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Saved items are coming soon.'),
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.fromLTRB(
-          AppSizes.lg,
-          0,
-          AppSizes.lg,
-          AppSizes.lg,
-        ),
-        shape: AppShapes.squircle(AppSizes.radiusMd),
-      ),
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const WishlistPage()),
     );
   }
 }

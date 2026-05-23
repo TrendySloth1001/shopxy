@@ -45,9 +45,28 @@ model User {
   decidedRequests     PurchaseRequest[] @relation("MerchantDecidedRequests")
   paymentsCreated     Payment[]         @relation("PaymentCreatedBy")
   contactChanges      ContactChangeLog[]
+  wishlistItems       WishlistItem[]
 
   @@index([email])
   @@map("users")
+}
+
+/// Customer-side "saved for later" list. One row per (user, product)
+/// pair; the unique constraint stops the same product from being
+/// saved twice and makes the toggle a simple upsert/delete. Cascade
+/// on user delete so deactivating an account leaves no dangling
+/// rows.
+model WishlistItem {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId Int      @map("product_id")
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([userId, productId])
+  @@index([userId, createdAt])
+  @@map("wishlist_items")
 }
 
 /// Append-only audit log of edits to Party/Vendor contact fields. One
@@ -138,6 +157,7 @@ model Product {
   stockAdjustmentItems StockAdjustmentItem[]
   purchaseRequestItems PurchaseRequestItem[]
   customFieldValues    ProductCustomFieldValue[]
+  wishlistedBy         WishlistItem[]
 
   @@index([categoryId])
   @@index([isActive])
