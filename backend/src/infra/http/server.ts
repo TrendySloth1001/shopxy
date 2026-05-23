@@ -34,6 +34,11 @@ import { logger } from '../../shared/logging/logger.js';
 
 const app = express();
 
+// Trust the immediate proxy (devtunnel / reverse proxy / load balancer) so
+// `req.ip` resolves to the real client IP and `X-Forwarded-For` is honoured.
+// Tighten the hop count in prod if you front the API with more than one proxy.
+app.set('trust proxy', 1);
+
 // Security headers (CSP, X-Frame-Options, etc.) — default helmet config is fine
 // for a JSON API; we don't serve HTML beyond the image proxy.
 app.use(helmet());
