@@ -4,8 +4,14 @@ import crypto from 'crypto';
 import prisma from '../../infra/db/prisma.js';
 import { invitationsService } from '../invitations/invitations.service.js';
 
-const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET ?? 'dev-access-secret-CHANGE-IN-PROD';
-const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET ?? 'dev-refresh-secret-CHANGE-IN-PROD';
+function requireEnv(name: string): string {
+  const v = process.env[name];
+  if (!v) throw new Error(`${name} is required — refusing to start with a default secret`);
+  return v;
+}
+
+const ACCESS_SECRET = requireEnv('JWT_ACCESS_SECRET');
+const REFRESH_SECRET = requireEnv('JWT_REFRESH_SECRET');
 const REFRESH_EXPIRES_MS = 7 * 24 * 60 * 60 * 1000;
 
 const safeUserSelect = {
@@ -36,8 +42,11 @@ export class AuthService {
     if (existing) return { error: 'Email already registered' as const };
 
     const passwordHash = await bcrypt.hash(data.password, 12);
+    // Self-signup defaults to CUSTOMER. OWNER accounts must be created
+    // out-of-band (seed script or admin endpoint) — otherwise anyone hitting
+    // /auth/register gets full merchant access (audit C1).
     const user = await prisma.user.create({
-      data: { email, name: data.name.trim(), passwordHash },
+      data: { email, name: data.name.trim(), passwordHash, role: 'CUSTOMER' },
       select: safeUserSelect,
     });
 
