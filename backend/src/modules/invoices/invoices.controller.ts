@@ -45,6 +45,15 @@ const updateStatusSchema = z.object({
   status: z.enum(['DRAFT', 'CONFIRMED', 'CANCELLED']),
 });
 
+const listQuerySchema = z.object({
+  type: z.enum(['SALE', 'PURCHASE']).optional(),
+  status: z.enum(['DRAFT', 'CONFIRMED', 'CANCELLED']).optional(),
+  documentType: documentTypeEnum.optional(),
+  vendorId: z.coerce.number().int().positive().optional(),
+  partyId: z.coerce.number().int().positive().optional(),
+  search: z.string().optional(),
+});
+
 function parseId(raw: string): number | null {
   const id = Number(raw);
   return Number.isInteger(id) && id > 0 ? id : null;
@@ -63,24 +72,33 @@ export class InvoicesController {
 
   async list(req: Request, res: Response): Promise<void> {
     const { page, limit, skip } = parsePagination(req);
-    const type = req.query.type as string | undefined;
-    const status = req.query.status as string | undefined;
-    const vendorId = req.query.vendorId ? Number(req.query.vendorId) : undefined;
-    const partyId = req.query.partyId ? Number(req.query.partyId) : undefined;
-    const search = (req.query.search as string) || '';
+    const query = listQuerySchema.parse(req.query);
 
     const { invoices, total } = await invoicesService.listInvoices({
-      type,
-      status,
-      vendorId,
-      partyId,
-      search,
+      type: query.type,
+      status: query.status,
+      documentType: query.documentType,
+      vendorId: query.vendorId,
+      partyId: query.partyId,
+      search: query.search ?? '',
       page,
       limit,
       skip,
     });
 
     res.json(paginatedResponse(invoices, total, { page, limit, skip }));
+  }
+
+  async convert(req: Request, res: Response): Promise<void> {
+    const id = parseId(req.params.id);
+    if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
+
+    const result = await invoicesService.convertEstimate(id);
+    if ('error' in result) {
+      res.status(400).json({ error: result.error });
+      return;
+    }
+    res.status(201).json(result.invoice);
   }
 
   async getById(req: Request, res: Response): Promise<void> {

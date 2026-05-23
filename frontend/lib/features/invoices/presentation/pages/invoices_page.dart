@@ -125,6 +125,38 @@ class _InvoicesPageState extends State<InvoicesPage> {
               ),
             ],
           ),
+          // Document-type filter — All / Tax Invoice / Estimate. Lets the
+          // user slice the list to just quotations, which otherwise mingle
+          // with regular tax invoices since they share one table.
+          AppFilterStrip(
+            children: [
+              AppFilterPill(
+                label: AppStrings.filterAll,
+                selected: provider.documentTypeFilter == null,
+                onTap: () => provider.setDocumentTypeFilter(null),
+              ),
+              AppFilterPill(
+                label: 'Tax Invoice',
+                icon: Icons.receipt_long_rounded,
+                selected: provider.documentTypeFilter == 'TAX_INVOICE',
+                onTap: () => provider.setDocumentTypeFilter(
+                  provider.documentTypeFilter == 'TAX_INVOICE'
+                      ? null
+                      : 'TAX_INVOICE',
+                ),
+              ),
+              AppFilterPill(
+                label: 'Estimate',
+                icon: Icons.request_quote_outlined,
+                selected: provider.documentTypeFilter == 'ESTIMATE',
+                onTap: () => provider.setDocumentTypeFilter(
+                  provider.documentTypeFilter == 'ESTIMATE'
+                      ? null
+                      : 'ESTIMATE',
+                ),
+              ),
+            ],
+          ),
           _StatusChipRow(
             current: provider.statusFilter,
             onCycle: () => _cycleStatus(provider),

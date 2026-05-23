@@ -146,6 +146,54 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
     return null;
   }
 
+  /// Convert this estimate/proforma into a real tax invoice. The backend
+  /// mints a fresh invoice (new id, INV-prefixed number) from the source's
+  /// items; we navigate to its detail page so the user can confirm/print.
+  Future<void> _convertToInvoice() async {
+    final invoice = _invoice;
+    if (invoice == null) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Convert to Invoice?'),
+        content: Text(
+          'A new tax invoice will be created from ${invoice.invoiceNo}. '
+          'The estimate stays on file unchanged.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Convert'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _isDownloading = true);
+    final ds = context.read<InvoicesRemoteDataSource>();
+    final invoicesProvider = context.read<InvoicesProvider>();
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final created = await ds.convertEstimate(invoice.id);
+      // Refresh the parent list so the new INV row appears immediately.
+      invoicesProvider.loadInvoices(refresh: true);
+      navigator.pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => InvoiceDetailPage(invoiceId: created.id),
+        ),
+      );
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(e.toString())));
+    } finally {
+      if (mounted) setState(() => _isDownloading = false);
+    }
+  }
+
   Future<void> _updateStatus(String status) async {
     final provider = context.read<InvoicesProvider>();
     try {
@@ -457,6 +505,33 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
               onTap: _shareViaWhatsApp,
             ),
           ),
+          // Estimates / proformas get a one-tap "Convert to Invoice" tile.
+          // Hidden once the source is cancelled — converting a cancelled
+          // quotation makes no business sense and the backend would reject
+          // it anyway.
+          if ((invoice.documentType == 'ESTIMATE' ||
+                  invoice.documentType == 'PROFORMA') &&
+              invoice.status != 'CANCELLED') ...[
+            const SizedBox(height: AppSizes.md),
+            AppCard(
+              padding: EdgeInsets.zero,
+              child: ListTile(
+                leading: const Icon(
+                  Icons.swap_horiz_rounded,
+                  color: AppColors.brand,
+                ),
+                title: const Text('Convert to Invoice'),
+                subtitle: Text(
+                  'Create a tax invoice from this estimate',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.muted,
+                  ),
+                ),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: _isDownloading ? null : _convertToInvoice,
+              ),
+            ),
+          ],
           if (invoice.status == 'CONFIRMED' &&
               (invoice.partyId != null || invoice.vendorId != null)) ...[
             const SizedBox(height: AppSizes.md),
