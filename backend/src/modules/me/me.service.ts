@@ -67,7 +67,87 @@ const invoiceDetailSelect = {
   },
 } satisfies Prisma.InvoiceSelect;
 
+const catalogListSelect = {
+  id: true,
+  name: true,
+  description: true,
+  sku: true,
+  hsnCode: true,
+  unit: true,
+  mrp: true,
+  sellingPrice: true,
+  taxPercent: true,
+  stockQuantity: true,
+  categoryId: true,
+  category: { select: { id: true, name: true } },
+  images: {
+    select: { id: true, url: true },
+    orderBy: { sortOrder: 'asc' },
+    take: 1,
+  },
+} satisfies Prisma.ProductSelect;
+
+const catalogDetailSelect = {
+  ...catalogListSelect,
+  images: {
+    select: { id: true, url: true, sortOrder: true },
+    orderBy: { sortOrder: 'asc' },
+  },
+} satisfies Prisma.ProductSelect;
+
 export class MeService {
+  /// Customer-side product catalog. Mirrors the merchant `/products`
+  /// list but only ever returns active products and projects the
+  /// minimal fields the customer app actually renders. The same
+  /// (isActive, name) index that powers the merchant page is enough.
+  async listCatalog(opts: {
+    search: string;
+    categoryId?: number;
+    skip: number;
+    limit: number;
+  }) {
+    const where: Prisma.ProductWhereInput = { isActive: true };
+    if (opts.categoryId) where.categoryId = opts.categoryId;
+    if (opts.search) {
+      where.OR = [
+        { name: { contains: opts.search, mode: 'insensitive' } },
+        { sku: { contains: opts.search, mode: 'insensitive' } },
+        { barcode: { contains: opts.search, mode: 'insensitive' } },
+      ];
+    }
+    const [data, total] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        select: catalogListSelect,
+        orderBy: { name: 'asc' },
+        skip: opts.skip,
+        take: opts.limit,
+      }),
+      prisma.product.count({ where }),
+    ]);
+    return { data, total };
+  }
+
+  async getCatalogProduct(id: number) {
+    return prisma.product.findFirst({
+      where: { id, isActive: true },
+      select: catalogDetailSelect,
+    });
+  }
+
+  async listCategoriesWithCounts() {
+    return prisma.category.findMany({
+      where: { isActive: true },
+      orderBy: { sortOrder: 'asc' },
+      select: {
+        id: true,
+        name: true,
+        imageUrl: true,
+        _count: { select: { products: { where: { isActive: true } } } },
+      },
+    });
+  }
+
   /// Top-level "what am I linked to" list — one query each, parallel.
   async links(userId: number) {
     const [parties, vendors] = await Promise.all([

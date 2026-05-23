@@ -94,6 +94,7 @@ export class ProductsService {
   async listProducts(options: {
     activeOnly: boolean;
     lowStock: boolean;
+    outOfStock: boolean;
     categoryId?: number;
     search: string;
     sortBy: string;
@@ -112,6 +113,30 @@ export class ProductsService {
         { sku: { contains: options.search, mode: 'insensitive' } },
         { barcode: { contains: options.search, mode: 'insensitive' } },
       ];
+    }
+
+    // Out-of-stock is the simple case: stockQuantity = 0, no
+    // column-to-column comparison needed. Wins on Low if both are
+    // toggled (defensive — UI keeps them mutually exclusive).
+    if (options.outOfStock) {
+      where.isActive = true;
+      where.stockQuantity = 0;
+
+      const orderBy = { [options.sortBy]: options.sortOrder } as Record<
+        string,
+        'asc' | 'desc'
+      >;
+      const [products, total] = await Promise.all([
+        prisma.product.findMany({
+          where,
+          orderBy,
+          skip: options.skip,
+          take: options.limit,
+          select: productSelect,
+        }),
+        prisma.product.count({ where }),
+      ]);
+      return { products, total };
     }
 
     if (options.lowStock) {

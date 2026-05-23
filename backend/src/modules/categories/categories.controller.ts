@@ -36,9 +36,11 @@ export class CategoriesController {
 
   async list(req: Request, res: Response): Promise<void> {
     const activeOnly = req.query.active !== 'false';
+    const search = typeof req.query.search === 'string' ? req.query.search : undefined;
     const { page, limit, skip } = parsePagination(req);
     const { categories, total } = await categoriesService.listCategories({
       activeOnly,
+      search,
       page,
       limit,
       skip,

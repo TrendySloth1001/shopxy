@@ -62,6 +62,16 @@ export class VendorsController {
     res.json(vendor);
   }
 
+  async overview(req: Request, res: Response): Promise<void> {
+    const id = parseId(req.params.id);
+    if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
+
+    const overview = await vendorsService.getVendorOverview(id);
+    if (!overview) { res.status(404).json({ error: 'Vendor not found' }); return; }
+
+    res.json(overview);
+  }
+
   async update(req: Request, res: Response): Promise<void> {
     const id = parseId(req.params.id);
     if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
