@@ -244,12 +244,18 @@ export class ChallansService {
     });
 
     const total = round2(subtotal + taxAmount - headerDiscount);
-    const invoiceNo = await nextInvoiceNo('SALE');
+    const invoiceDate = new Date();
+    const { invoiceNo, financialYear } = await nextInvoiceNo(
+      'SALE',
+      'TAX_INVOICE',
+      invoiceDate,
+    );
 
     const invoice = await prisma.$transaction(async (tx) => {
       const newInvoice = await tx.invoice.create({
         data: {
           invoiceNo,
+          financialYear,
           type: 'SALE',
           status: 'DRAFT',
           partyId: challan.partyId,
