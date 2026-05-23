@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy_customer/core/router/app_shell.dart';
 import 'package:shopxy_customer/features/catalog/presentation/widgets/catalog_product_thumbnail.dart';
 import 'package:shopxy_customer/features/catalog/domain/entities/cart_item.dart';
 import 'package:shopxy_customer/features/catalog/presentation/providers/cart_provider.dart';
@@ -10,6 +11,12 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/constants/app_strings.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+import 'package:shopxy_customer/shared/widgets/app_app_bar.dart';
+import 'package:shopxy_customer/shared/widgets/app_button.dart';
+import 'package:shopxy_customer/shared/widgets/app_price_text.dart';
+import 'package:shopxy_customer/shared/widgets/app_quantity_stepper.dart';
+import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
+import 'package:shopxy_customer/shared/widgets/app_text_field.dart';
 
 class CartPage extends StatefulWidget {
   const CartPage({super.key});
@@ -37,21 +44,20 @@ class _CartPageState extends State<CartPage> {
     final cart = context.read<CartProvider>();
     cart.setNote(_note.text);
     final navigator = Navigator.of(context);
-    final messenger = ScaffoldMessenger.of(context);
     final ordersProvider = context.read<OrdersProvider>();
 
     final orderId = await cart.placeOrder();
-    if (!mounted) return;
+    if (!context.mounted) return;
 
     if (orderId == null) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(cart.error ?? AppStrings.error)),
+      showAppSnackbar(
+        context,
+        message: cart.error ?? AppStrings.error,
+        tone: AppSnackbarTone.error,
       );
       return;
     }
 
-    // Refresh the orders list so "My orders" shows the new row when the
-    // user lands on it. Don't block on this — fire and forget.
     unawaited(ordersProvider.load());
 
     navigator.pushReplacement(
@@ -64,61 +70,69 @@ class _CartPageState extends State<CartPage> {
     final cart = context.watch<CartProvider>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text(AppStrings.yourCart)),
-      body: cart.isEmpty ? const _EmptyCart() : _Body(note: _note, lines: cart.lines),
-      bottomNavigationBar: cart.isEmpty
-          ? null
-          : SafeArea(
-              child: Container(
-                padding: const EdgeInsets.all(AppSizes.lg),
-                decoration: const BoxDecoration(
-                  color: AppColors.white,
-                  border: Border(top: BorderSide(color: AppColors.hairline)),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            AppStrings.estimatedTotal,
-                            style: Theme.of(context)
-                                .textTheme
-                                .labelSmall
-                                ?.copyWith(color: AppColors.muted),
-                          ),
-                          Text(
-                            '${AppStrings.currencySymbol}${cart.totalPrice.toStringAsFixed(2)}',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleLarge
-                                ?.copyWith(fontWeight: FontWeight.w800),
-                          ),
-                        ],
-                      ),
+      backgroundColor: AppColors.canvas,
+      appBar: const AppAppBar(title: AppStrings.yourCart),
+      body: cart.isEmpty
+          ? const _EmptyCart()
+          : _Body(note: _note, lines: cart.lines),
+      bottomNavigationBar:
+          cart.isEmpty ? null : _CheckoutBar(cart: cart, onCheckout: _checkout),
+    );
+  }
+}
+
+class _CheckoutBar extends StatelessWidget {
+  const _CheckoutBar({required this.cart, required this.onCheckout});
+  final CartProvider cart;
+  final Future<void> Function(BuildContext) onCheckout;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SafeArea(
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(
+          AppSizes.lg,
+          AppSizes.md,
+          AppSizes.lg,
+          AppSizes.md,
+        ),
+        decoration: const BoxDecoration(
+          color: AppColors.white,
+          border: Border(top: BorderSide(color: AppColors.hairline)),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    AppStrings.estimatedTotal,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: AppColors.muted,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.4,
                     ),
-                    FilledButton(
-                      onPressed: cart.isPlacing ? null : () => _checkout(context),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.brand,
-                        minimumSize: const Size(160, 48),
-                      ),
-                      child: cart.isPlacing
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(
-                                color: AppColors.white,
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : const Text(AppStrings.checkout),
-                    ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 2),
+                  AppPriceText.precise(
+                    cart.totalPrice,
+                    style: theme.textTheme.titleLarge,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ],
               ),
             ),
+            AppButton.primary(
+              label: AppStrings.checkout,
+              icon: Icons.arrow_forward_rounded,
+              isLoading: cart.isPlacing,
+              onPressed: () => onCheckout(context),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -141,13 +155,14 @@ class _Body extends StatelessWidget {
             AppSizes.lg,
             AppSizes.lg,
           ),
-          child: TextField(
+          child: AppTextField(
             controller: note,
-            decoration: const InputDecoration(
-              hintText: AppStrings.orderNotePlaceholder,
-              border: OutlineInputBorder(),
-            ),
-            maxLines: 3,
+            label: AppStrings.orderNotePlaceholder,
+            hint: 'Anything the shop should know?',
+            minLines: 2,
+            maxLines: 4,
+            maxLength: 240,
+            textCapitalization: TextCapitalization.sentences,
           ),
         ),
       ],
@@ -167,121 +182,81 @@ class _CartRow extends StatelessWidget {
         horizontal: AppSizes.lg,
         vertical: AppSizes.sm,
       ),
-      child: Row(
-        children: [
-          CatalogProductThumbnail(
-            product: line.product,
-            size: 60,
+      child: Container(
+        padding: const EdgeInsets.all(AppSizes.md),
+        decoration: ShapeDecoration(
+          color: AppColors.white,
+          shape: AppShapes.squircle(
+            AppSizes.radiusMd,
+            side: const BorderSide(color: AppColors.hairline),
           ),
-          const SizedBox(width: AppSizes.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  line.product.name,
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(fontWeight: FontWeight.w700),
-                ),
-                Text(
-                  '${AppStrings.currencySymbol}${line.product.sellingPrice.toStringAsFixed(2)} · ${line.product.unit}',
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: AppColors.muted),
-                ),
-                const SizedBox(height: AppSizes.xs),
-                Container(
-                  decoration: ShapeDecoration(
-                    color: AppColors.surfaceTint,
-                    shape: AppShapes.squircle(AppSizes.radiusFull),
+        ),
+        child: Row(
+          children: [
+            CatalogProductThumbnail(product: line.product, size: 60),
+            const SizedBox(width: AppSizes.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    line.product.name,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: AppColors.black,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+                  const SizedBox(height: 2),
+                  Row(
                     children: [
-                      IconButton(
-                        visualDensity: VisualDensity.compact,
-                        iconSize: 16,
-                        icon: const Icon(Icons.remove_rounded),
-                        onPressed: () => context
-                            .read<CartProvider>()
-                            .setQuantity(line.product.id, line.quantity - 1),
+                      AppPriceText.precise(
+                        line.product.sellingPrice,
+                        style: theme.textTheme.bodySmall,
+                        color: AppColors.muted,
+                        fontWeight: FontWeight.w600,
                       ),
                       Text(
-                        line.quantity % 1 == 0
-                            ? line.quantity.toInt().toString()
-                            : line.quantity.toStringAsFixed(2),
-                        style: const TextStyle(fontWeight: FontWeight.w800),
-                      ),
-                      IconButton(
-                        visualDensity: VisualDensity.compact,
-                        iconSize: 16,
-                        icon: const Icon(Icons.add_rounded),
-                        onPressed: () => context
-                            .read<CartProvider>()
-                            .setQuantity(line.product.id, line.quantity + 1),
+                        ' · ${line.product.unit}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.muted,
+                        ),
                       ),
                     ],
                   ),
+                  const SizedBox(height: AppSizes.sm),
+                  AppQuantityStepper(
+                    dense: true,
+                    quantity: line.quantity.toInt(),
+                    onChanged: (q) => context
+                        .read<CartProvider>()
+                        .setQuantity(line.product.id, q.toDouble()),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: AppSizes.sm),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                AppPriceText.precise(
+                  line.lineTotal,
+                  style: theme.textTheme.bodyMedium,
+                  fontWeight: FontWeight.w800,
+                ),
+                IconButton(
+                  icon: const Icon(
+                    Icons.close_rounded,
+                    color: AppColors.muted,
+                    size: 18,
+                  ),
+                  visualDensity: VisualDensity.compact,
+                  tooltip: 'Remove',
+                  onPressed: () =>
+                      context.read<CartProvider>().remove(line.product.id),
                 ),
               ],
-            ),
-          ),
-          const SizedBox(width: AppSizes.sm),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '${AppStrings.currencySymbol}${line.lineTotal.toStringAsFixed(2)}',
-                style: theme.textTheme.bodyMedium
-                    ?.copyWith(fontWeight: FontWeight.w700),
-              ),
-              IconButton(
-                icon: const Icon(Icons.close_rounded, color: AppColors.muted),
-                onPressed: () =>
-                    context.read<CartProvider>().remove(line.product.id),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _EmptyCart extends StatelessWidget {
-  const _EmptyCart();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSizes.xxxl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 140,
-              height: 140,
-              decoration: ShapeDecoration(
-                color: AppColors.heroPanel,
-                shape: AppShapes.squircle(AppSizes.radiusLg),
-              ),
-              alignment: Alignment.center,
-              child: const Icon(Icons.shopping_bag_outlined,
-                  size: 48, color: AppColors.muted),
-            ),
-            const SizedBox(height: AppSizes.lg),
-            Text(
-              AppStrings.emptyCart,
-              style: theme.textTheme.titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: AppSizes.xs),
-            Text(
-              AppStrings.emptyCartHint,
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(color: AppColors.muted),
-              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -290,3 +265,63 @@ class _EmptyCart extends StatelessWidget {
   }
 }
 
+/// Baymard rule (DESIGN.md #11): empty cart shows "Continue shopping",
+/// not "Go back". The CTA flips to the Browse tab so the user lands
+/// on something useful, not on the previous route.
+class _EmptyCart extends StatelessWidget {
+  const _EmptyCart();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSizes.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 120,
+              height: 120,
+              decoration: ShapeDecoration(
+                color: AppColors.heroPanel,
+                shape: AppShapes.squircle(AppSizes.radiusLg),
+              ),
+              alignment: Alignment.center,
+              child: const Icon(
+                Icons.shopping_bag_outlined,
+                size: 48,
+                color: AppColors.muted,
+              ),
+            ),
+            const SizedBox(height: AppSizes.lg),
+            Text(
+              AppStrings.emptyCart,
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: AppColors.black,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: AppSizes.xs),
+            Text(
+              AppStrings.emptyCartHint,
+              style:
+                  theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSizes.xl),
+            AppButton.primary(
+              label: 'Continue shopping',
+              icon: Icons.grid_view_rounded,
+              onPressed: () {
+                CustomerShellScope.of(context)
+                    ?.select(CustomerShellTab.browse.index);
+                Navigator.maybePop(context);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
