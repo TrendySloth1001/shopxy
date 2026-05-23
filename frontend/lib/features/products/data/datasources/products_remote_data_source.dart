@@ -13,6 +13,7 @@ class ProductsRemoteDataSource {
     String? search,
     int? categoryId,
     bool? lowStock,
+    bool? outOfStock,
     int page = 1,
     int limit = 20,
     String sortBy = 'updatedAt',
@@ -27,6 +28,7 @@ class ProductsRemoteDataSource {
     if (search != null && search.isNotEmpty) params['search'] = search;
     if (categoryId != null) params['categoryId'] = categoryId.toString();
     if (lowStock == true) params['lowStock'] = 'true';
+    if (outOfStock == true) params['outOfStock'] = 'true';
 
     final response = await _client.get('/products', queryParameters: params);
     final body = jsonDecode(response.body) as Map<String, dynamic>;
@@ -77,8 +79,22 @@ class ProductsRemoteDataSource {
     await _client.delete('/products/$id');
   }
 
-  Future<void> addImage(int productId, String url) async {
-    await _client.post('/products/$productId/images', body: {'url': url});
+  /// Returns the created image record so callers can track its id
+  /// (used by the edit form to mark the image as "already persisted"
+  /// and avoid double-adding it during the next save).
+  Future<ProductImage> addImage(int productId, String url) async {
+    final response =
+        await _client.post('/products/$productId/images', body: {'url': url});
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      // Surface the backend's actual error rather than letting the
+      // parse-as-Map cast blow up on `{error: "..."}`.
+      throw Exception(
+        'Add image failed (${response.statusCode}): ${response.body}',
+      );
+    }
+    return ProductDto.imageFromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
   }
 
   Future<void> deleteImage(int productId, int imageId) async {
