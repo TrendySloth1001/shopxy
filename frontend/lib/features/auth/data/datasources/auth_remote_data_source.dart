@@ -50,6 +50,21 @@ class AuthRemoteDataSource {
     await _client.post('/auth/logout', body: {'refreshToken': refreshToken});
   }
 
+  Future<AuthUser> updateProfile({
+    String? name,
+    bool? emailNotifications,
+  }) async {
+    final body = <String, dynamic>{};
+    if (name != null) body['name'] = name;
+    if (emailNotifications != null) body['emailNotifications'] = emailNotifications;
+    final res = await _client.patch('/auth/me', body: body);
+    if (res.statusCode != 200) {
+      final errBody = jsonDecode(res.body) as Map<String, dynamic>;
+      throw Exception(_extractError(errBody));
+    }
+    return AuthUser.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+  }
+
   Future<void> changePassword(String currentPassword, String newPassword) async {
     final res = await _client.post(
       '/auth/change-password',
