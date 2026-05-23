@@ -6,6 +6,7 @@ import 'package:shopxy_customer/features/catalog/presentation/pages/cart_page.da
 import 'package:shopxy_customer/features/catalog/presentation/pages/product_detail_page.dart';
 import 'package:shopxy_customer/features/catalog/presentation/providers/cart_provider.dart';
 import 'package:shopxy_customer/features/catalog/presentation/providers/catalog_provider.dart';
+import 'package:shopxy_customer/features/wishlist/presentation/widgets/wishlist_heart_button.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/widgets/category_icon_catalog.dart';
 import 'package:shopxy_customer/shared/constants/app_strings.dart';
@@ -283,16 +284,27 @@ class _ProductCard extends StatelessWidget {
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(AppSizes.radiusLg),
                 ),
-                // LayoutBuilder so the thumbnail's monogram letter
-                // scales with the actual rendered card size, not a
-                // fixed magic number — looks the same on a tight
-                // 2-column phone grid as on a wider tablet grid.
-                child: LayoutBuilder(
-                  builder: (context, c) => CatalogProductThumbnail(
-                    product: product,
-                    size: c.maxWidth,
-                    cornerRadius: 0,
-                  ),
+                child: Stack(
+                  children: [
+                    // LayoutBuilder so the thumbnail's monogram letter
+                    // scales with the actual rendered card size, not
+                    // a magic number — looks the same on a tight
+                    // 2-col phone grid as on a wider tablet grid.
+                    Positioned.fill(
+                      child: LayoutBuilder(
+                        builder: (context, c) => CatalogProductThumbnail(
+                          product: product,
+                          size: c.maxWidth,
+                          cornerRadius: 0,
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: AppSizes.xs,
+                      right: AppSizes.xs,
+                      child: WishlistHeartButton(productId: product.id),
+                    ),
+                  ],
                 ),
               ),
             ),

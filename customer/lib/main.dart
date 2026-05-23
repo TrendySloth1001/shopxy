@@ -15,6 +15,8 @@ import 'package:shopxy_customer/features/orders/presentation/providers/orders_pr
 import 'package:shopxy_customer/features/search/presentation/providers/search_provider.dart';
 import 'package:shopxy_customer/features/shops/data/datasources/me_remote_data_source.dart';
 import 'package:shopxy_customer/features/shops/presentation/providers/shops_provider.dart';
+import 'package:shopxy_customer/features/wishlist/data/datasources/wishlist_remote_data_source.dart';
+import 'package:shopxy_customer/features/wishlist/presentation/providers/wishlist_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,6 +32,7 @@ void main() async {
   final meDs = MeRemoteDataSource(apiClient);
   final catalogDs = CatalogRemoteDataSource(apiClient);
   final ordersDs = OrdersRemoteDataSource(apiClient);
+  final wishlistDs = WishlistRemoteDataSource(apiClient);
 
   final authProvider = AuthProvider(authDs, tokenManager);
   final notificationsProvider =
@@ -38,6 +41,7 @@ void main() async {
   final catalogProvider = CatalogProvider(catalogDs);
   final cartProvider = CartProvider(ordersDs);
   final ordersProvider = OrdersProvider(ordersDs);
+  final wishlistProvider = WishlistProvider(wishlistDs);
 
   // Force re-login if the refresh fails and clear cached state.
   tokenManager.onUnauthorized = () {
@@ -47,6 +51,7 @@ void main() async {
     catalogProvider.reset();
     cartProvider.clear();
     ordersProvider.reset();
+    wishlistProvider.reset();
   };
 
   // After login or app boot: prime the bell badge + pending invites so
@@ -60,12 +65,14 @@ void main() async {
       catalogProvider.load();
       catalogProvider.loadCategories();
       ordersProvider.load();
+      wishlistProvider.load();
     } else {
       notificationsProvider.reset();
       shopsProvider.reset();
       catalogProvider.reset();
       cartProvider.clear();
       ordersProvider.reset();
+      wishlistProvider.reset();
     }
   });
 
@@ -83,6 +90,7 @@ void main() async {
         ChangeNotifierProvider<CatalogProvider>.value(value: catalogProvider),
         ChangeNotifierProvider<CartProvider>.value(value: cartProvider),
         ChangeNotifierProvider<OrdersProvider>.value(value: ordersProvider),
+        ChangeNotifierProvider<WishlistProvider>.value(value: wishlistProvider),
         // Search has no provider-level boot work; create lazily on first
         // open so we don't pay for it on every cold start.
         ChangeNotifierProvider<SearchProvider>(

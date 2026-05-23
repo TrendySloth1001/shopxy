@@ -34,4 +34,17 @@ router.get(
   asyncHandler((req, res) => meController.vendorInvoice(req, res)),
 );
 
+router.get(
+  '/wishlist',
+  asyncHandler((req, res) => meController.wishlist(req, res)),
+);
+router.post(
+  '/wishlist/:productId',
+  asyncHandler((req, res) => meController.wishlistAdd(req, res)),
+);
+router.delete(
+  '/wishlist/:productId',
+  asyncHandler((req, res) => meController.wishlistRemove(req, res)),
+);
+
 export default router;

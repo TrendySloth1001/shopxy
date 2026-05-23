@@ -85,6 +85,29 @@ export class MeController {
     res.json(invoice);
   }
 
+  async wishlist(req: Request, res: Response): Promise<void> {
+    const data = await meService.listWishlist(req.user!.sub);
+    res.json({ data });
+  }
+
+  async wishlistAdd(req: Request, res: Response): Promise<void> {
+    const productId = parseId(req.params.productId);
+    if (!productId) { res.status(400).json({ error: 'Invalid product id' }); return; }
+    const result = await meService.addToWishlist(req.user!.sub, productId);
+    if ('error' in result) {
+      res.status(404).json({ error: result.error });
+      return;
+    }
+    res.status(204).send();
+  }
+
+  async wishlistRemove(req: Request, res: Response): Promise<void> {
+    const productId = parseId(req.params.productId);
+    if (!productId) { res.status(400).json({ error: 'Invalid product id' }); return; }
+    await meService.removeFromWishlist(req.user!.sub, productId);
+    res.status(204).send();
+  }
+
   async vendorInvoice(req: Request, res: Response): Promise<void> {
     const vendorId = parseId(req.params.vendorId);
     const invoiceId = parseId(req.params.invoiceId);

@@ -5,6 +5,7 @@ import 'package:shopxy_customer/features/catalog/presentation/widgets/catalog_pr
 import 'package:shopxy_customer/features/catalog/domain/entities/catalog_product.dart';
 import 'package:shopxy_customer/features/catalog/presentation/pages/cart_page.dart';
 import 'package:shopxy_customer/features/catalog/presentation/providers/cart_provider.dart';
+import 'package:shopxy_customer/features/wishlist/presentation/widgets/wishlist_heart_button.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/constants/app_strings.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
@@ -54,7 +55,16 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Product')),
+      appBar: AppBar(
+        title: const Text('Product'),
+        actions: [
+          if (_product != null)
+            Padding(
+              padding: const EdgeInsets.only(right: AppSizes.sm),
+              child: WishlistHeartButton.flat(productId: _product!.id),
+            ),
+        ],
+      ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null

@@ -135,6 +135,63 @@ export class MeService {
     });
   }
 
+  /// Customer wishlist. Returns the saved products with the same shape
+  /// as the catalog list so the same product card can render either
+  /// surface. Most-recent-first matches how shopping carts/lists
+  /// behave everywhere (newest at the top).
+  async listWishlist(userId: number) {
+    const rows = await prisma.wishlistItem.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        createdAt: true,
+        product: { select: catalogListSelect },
+      },
+    });
+    return rows
+      .filter((r) => r.product !== null && r.product.id != null)
+      .map((r) => ({
+        id: r.id,
+        savedAt: r.createdAt,
+        product: r.product,
+      }));
+  }
+
+  async listWishlistProductIds(userId: number): Promise<number[]> {
+    const rows = await prisma.wishlistItem.findMany({
+      where: { userId },
+      select: { productId: true },
+    });
+    return rows.map((r) => r.productId);
+  }
+
+  /// Idempotent add — if the row exists, return it. The unique
+  /// constraint on (userId, productId) means concurrent calls can't
+  /// duplicate.
+  async addToWishlist(userId: number, productId: number) {
+    const product = await prisma.product.findFirst({
+      where: { id: productId, isActive: true },
+      select: { id: true },
+    });
+    if (!product) return { error: 'Product not found' as const };
+    await prisma.wishlistItem.upsert({
+      where: { userId_productId: { userId, productId } },
+      create: { userId, productId },
+      update: {},
+    });
+    return { ok: true as const };
+  }
+
+  /// Idempotent remove — no error if the row is already gone, so the
+  /// frontend can hammer the toggle without checking state first.
+  async removeFromWishlist(userId: number, productId: number) {
+    await prisma.wishlistItem.deleteMany({
+      where: { userId, productId },
+    });
+    return { ok: true as const };
+  }
+
   async listCategoriesWithCounts() {
     return prisma.category.findMany({
       where: { isActive: true },
