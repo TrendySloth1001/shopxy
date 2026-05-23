@@ -8,6 +8,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
+import 'package:shopxy/shared/widgets/app_error_view.dart';
 import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
 import 'package:shopxy/shared/widgets/app_search_bar.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
@@ -85,9 +86,14 @@ class _ChallansPageState extends State<ChallansPage> {
             ),
           ),
           Expanded(
-            child: provider.isLoading
+            child: provider.isLoading && provider.challans.isEmpty
                 ? const Center(child: CircularProgressIndicator())
-                : provider.challans.isEmpty
+                : provider.error != null && provider.challans.isEmpty
+                    ? AppErrorView(
+                        onRetry: () =>
+                            context.read<ChallansProvider>().loadChallans(),
+                      )
+                    : provider.challans.isEmpty
                     ? EmptyState.line(
                         kind: LineArt.deliveryNote,
                         title: AppStrings.noChallans,
