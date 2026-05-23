@@ -9,6 +9,7 @@ import 'package:shopxy_customer/features/home/presentation/widgets/home_search_e
 import 'package:shopxy_customer/features/home/presentation/widgets/home_shops_section.dart';
 import 'package:shopxy_customer/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:shopxy_customer/features/orders/presentation/providers/orders_provider.dart';
+import 'package:shopxy_customer/features/search/presentation/pages/search_page.dart';
 import 'package:shopxy_customer/features/shops/presentation/pages/my_shops_page.dart';
 import 'package:shopxy_customer/features/shops/presentation/providers/shops_provider.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
@@ -72,9 +73,7 @@ class _HomePageState extends State<HomePage> {
             padding: const EdgeInsets.only(bottom: AppSizes.huge),
             children: [
               const HomeGreetingHeader(),
-              HomeSearchEntry(
-                onTap: () => _switchTab(CustomerShellTab.browse.index),
-              ),
+              HomeSearchEntry(onTap: () => _openSearch(context)),
               HomePendingInviteCallout(
                 onTap: () =>
                     _switchTab(CustomerShellTab.notifications.index),
@@ -102,6 +101,13 @@ class _HomePageState extends State<HomePage> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const MyShopsPage()),
+    );
+  }
+
+  void _openSearch(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const SearchPage()),
     );
   }
 
