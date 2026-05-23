@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { z } from 'zod';
 import { parsePagination, paginatedResponse } from '../../shared/http/pagination.js';
 import { partiesService } from './parties.service.js';
+import { paymentsService } from '../payments/payments.service.js';
 
 // GST state code is a strict 2 digits; full validation against the lookup
 // is enforced client-side via the state drop-down.
@@ -93,6 +94,14 @@ export class PartiesController {
     const payload = updatePartySchema.parse(req.body);
     const party = await partiesService.updateParty(id, payload);
     res.json(party);
+  }
+
+  async ledger(req: Request, res: Response): Promise<void> {
+    const id = parseId(req.params.id);
+    if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
+    const ledger = await paymentsService.partyLedger(id);
+    if (!ledger) { res.status(404).json({ error: 'Party not found' }); return; }
+    res.json(ledger);
   }
 
   async delete(req: Request, res: Response): Promise<void> {

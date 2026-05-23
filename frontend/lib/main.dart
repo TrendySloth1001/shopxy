@@ -25,6 +25,8 @@ import 'package:shopxy/features/reports/data/datasources/reports_remote_data_sou
 import 'package:shopxy/features/reports/presentation/providers/reports_provider.dart';
 import 'package:shopxy/features/parties/data/datasources/parties_remote_data_source.dart';
 import 'package:shopxy/features/parties/presentation/providers/parties_provider.dart';
+import 'package:shopxy/features/payments/data/datasources/payments_remote_data_source.dart';
+import 'package:shopxy/features/payments/presentation/providers/payments_provider.dart';
 import 'package:shopxy/features/products/data/datasources/products_remote_data_source.dart';
 import 'package:shopxy/features/products/presentation/providers/products_provider.dart';
 import 'package:shopxy/features/stock/data/datasources/stock_remote_data_source.dart';
@@ -65,6 +67,7 @@ void main() async {
   final reportsDs = ReportsRemoteDataSource(apiClient);
   final ordersDs = OrdersRemoteDataSource(apiClient);
   final ordersProvider = OrdersProvider(ordersDs);
+  final paymentsDs = PaymentsRemoteDataSource(apiClient);
 
   final notificationsProvider = NotificationsProvider(notificationsDs, invitationsDs);
 
@@ -110,6 +113,7 @@ void main() async {
         Provider<InvoicesRemoteDataSource>.value(value: invoicesDs),
         Provider<VendorsRemoteDataSource>.value(value: vendorsDs),
         Provider<PartiesRemoteDataSource>.value(value: partiesDs),
+        Provider<PaymentsRemoteDataSource>.value(value: paymentsDs),
         Provider<ChallansRemoteDataSource>.value(value: challansDs),
         Provider<StockAdjustmentsRemoteDataSource>.value(value: stockAdjustmentsDs),
         Provider<CategoriesRemoteDataSource>.value(value: categoriesDs),
@@ -126,6 +130,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => InvoicesProvider(invoicesDs)),
         ChangeNotifierProvider(create: (_) => VendorsProvider(vendorsDs)),
         ChangeNotifierProvider(create: (_) => PartiesProvider(partiesDs)),
+        ChangeNotifierProvider(create: (_) => PaymentsProvider(paymentsDs)),
         ChangeNotifierProvider(create: (_) => ChallansProvider(challansDs)),
         ChangeNotifierProvider<NotificationsProvider>.value(value: notificationsProvider),
         ChangeNotifierProvider(create: (_) => ReportsProvider(reportsDs)),

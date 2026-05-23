@@ -39,6 +39,8 @@ class InvoiceDto {
       invoiceNo: json['invoiceNo'] as String,
       type: json['type'] as String,
       status: json['status'] as String,
+      partyId: json['partyId'] as int?,
+      vendorId: json['vendorId'] as int?,
       vendor: _vendorFromJson(json['vendor'] as Map<String, dynamic>?),
       customerName: json['customerName'] as String?,
       customerPhone: json['customerPhone'] as String?,
