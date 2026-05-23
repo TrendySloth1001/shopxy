@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/core/prefs/navigation_prefs.dart';
+import 'package:shopxy/features/categories/presentation/widgets/category_icon_catalog.dart';
 import 'package:shopxy/features/products/domain/entities/product.dart';
 import 'package:shopxy/features/products/presentation/widgets/product_thumbnail.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
@@ -135,16 +136,10 @@ class ProductListTile extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 2),
-                    // Identifiers — SKU · HSN · Category (when shown)
-                    Text(
-                      _buildIdentifierLine(),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: AppColors.muted,
-                        fontFeatures: const [FontFeature.tabularFigures()],
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    // Identifiers — SKU · HSN · Category (when shown).
+                    // Category renders with its picked icon so the row
+                    // matches the bucket header / picker visually.
+                    _buildIdentifierRow(theme),
                     // Description — comfortable-only, gives the card real body
                     if (showDescription) ...[
                       const SizedBox(height: 4),
@@ -233,15 +228,41 @@ class ProductListTile extends StatelessWidget {
     );
   }
 
-  String _buildIdentifierLine() {
-    final parts = <String>[product.sku];
+  /// Renders the SKU · HSN · Category line. Category portion uses a
+  /// [WidgetSpan] so the picked icon sits inline with the text rather
+  /// than forcing the row into a wrapping layout.
+  Widget _buildIdentifierRow(ThemeData theme) {
+    final baseStyle = theme.textTheme.bodySmall?.copyWith(
+      color: AppColors.muted,
+      fontFeatures: const [FontFeature.tabularFigures()],
+    );
+    final leading = StringBuffer(product.sku);
     if (product.hsnCode != null && product.hsnCode!.isNotEmpty) {
-      parts.add('HSN ${product.hsnCode}');
+      leading.write(' · HSN ${product.hsnCode}');
     }
+
+    final spans = <InlineSpan>[TextSpan(text: leading.toString())];
     if (showCategory && product.category != null) {
-      parts.add(product.category!.name);
+      spans.add(const TextSpan(text: ' · '));
+      spans.add(WidgetSpan(
+        alignment: PlaceholderAlignment.middle,
+        child: Padding(
+          padding: const EdgeInsets.only(right: 3),
+          child: Icon(
+            resolveCategoryIcon(product.category!.iconName),
+            size: 12,
+            color: AppColors.muted,
+          ),
+        ),
+      ));
+      spans.add(TextSpan(text: product.category!.name));
     }
-    return parts.join(' · ');
+
+    return RichText(
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      text: TextSpan(style: baseStyle, children: spans),
+    );
   }
 
   String _formatQty(double qty) {

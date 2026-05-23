@@ -7,6 +7,7 @@ import 'package:shopxy_customer/features/catalog/presentation/pages/product_deta
 import 'package:shopxy_customer/features/catalog/presentation/providers/cart_provider.dart';
 import 'package:shopxy_customer/features/catalog/presentation/providers/catalog_provider.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
+import 'package:shopxy_customer/shared/widgets/category_icon_catalog.dart';
 import 'package:shopxy_customer/shared/constants/app_strings.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
@@ -149,12 +150,14 @@ class _CategoryStrip extends StatelessWidget {
         children: [
           _Chip(
             label: 'All',
+            icon: Icons.apps_rounded,
             selected: selected == null,
             onTap: () => onSelect(null),
           ),
           for (final c in categories)
             _Chip(
               label: c.name,
+              icon: resolveCategoryIcon(c.iconName),
               selected: selected == c.id,
               onTap: () => onSelect(c.id),
             ),
@@ -165,13 +168,20 @@ class _CategoryStrip extends StatelessWidget {
 }
 
 class _Chip extends StatelessWidget {
-  const _Chip({required this.label, required this.selected, required this.onTap});
+  const _Chip({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
   final String label;
+  final IconData icon;
   final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final fg = selected ? AppColors.white : AppColors.black;
     return Padding(
       padding: const EdgeInsets.only(right: AppSizes.sm),
       child: Material(
@@ -182,15 +192,20 @@ class _Chip extends StatelessWidget {
           onTap: onTap,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSizes.md),
-            child: Center(
-              child: Text(
-                label,
-                style: TextStyle(
-                  color: selected ? AppColors.white : AppColors.black,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 16, color: fg),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: fg,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
         ),
