@@ -43,6 +43,40 @@ class AppStrings {
   static const String inStock = 'In Stock';
   static const String stockValue = 'Stock Value';
   static const String recentActivity = 'Recent Activity';
+  static const String greetingMorning = 'Good morning';
+  static const String greetingAfternoon = 'Good afternoon';
+  static const String greetingEvening = 'Good evening';
+  static const String dashboardSubtitle = "Here's how your shop is doing today.";
+  static const String inventoryValueEyebrow = 'INVENTORY VALUE';
+  static const String inventoryValueHint =
+      'Estimated value of stock currently on hand.';
+  static const String statProducts = 'Products';
+  static const String statActive = 'Active';
+  static const String statCategories = 'Categories';
+  static const String stockPulseEyebrow = 'STOCK PULSE';
+  static const String stockPulseHealthy = 'healthy';
+  static const String stockPulseInGoodStock = 'in good stock';
+  static const String stockPulseLow = 'low stock';
+  static const String stockPulseOut = 'out of stock';
+  static const String pendingDraftsEyebrow = 'PENDING DRAFTS';
+  static const String draftsStockNotDeducted = 'Stock has not been deducted yet.';
+  static const String recentActivityEyebrow = 'RECENT ACTIVITY';
+  static const String noRecentActivity =
+      'No stock movements yet. Your recent in/out activity will appear here.';
+  static const String newOrderWaitingTitle = 'New order waiting';
+  static const String newOrdersWaitingTitle = 'New orders waiting';
+  static const String newOrderWaitingSubtitle =
+      'Confirm to create the invoice and notify the customer.';
+  static const String pendingInvitationTitle = 'You have a pending invitation';
+
+  // Filters (shared)
+  static const String filterAll = 'All';
+  static const String noMatches = 'No matches';
+  static const String noMatchesHint =
+      'Try clearing filters or searching for something else.';
+  static const String searchInvoices = 'Search invoice no, party, vendor';
+  static const String invoiceTypeSale = 'Sales';
+  static const String invoiceTypePurchase = 'Purchases';
 
   // Products
   static const String addProduct = 'Add Product';
@@ -51,6 +85,42 @@ class AppStrings {
   static const String searchProducts = 'Search products...';
   static const String noProducts = 'No products found';
   static const String noProductsHint = 'Tap + to add your first product';
+  static const String uncategorised = 'Uncategorised';
+  static const String allStockedUpTitle = 'All stocked up';
+  static const String allStockedUpHint =
+      'Nothing is running low right now. Nice work.';
+  static const String stockLedger = 'Stock ledger';
+  static const String stockLedgerHint = 'Every movement with source documents';
+  static const String profitMargin = 'Profit Margin';
+  static const String created = 'Created';
+  static const String selectCategory = 'Select category';
+  static const String searchCategories = 'Search categories...';
+  static const String clearSelection = 'Clear selection';
+  static const String noCategoriesMatch = 'No categories match that search.';
+  static const String categoryPickerLabel = 'Category';
+  static const String done = 'Done';
+
+  // Custom fields
+  static const String customFields = 'Custom Fields';
+  static const String customFieldsHint =
+      'Track extra information on every product';
+  static const String customFieldsEmptyTitle = 'No custom fields yet';
+  static const String customFieldsEmptyHint =
+      'Define fields like Warranty, Model Number, Material — visible on every product.';
+  static const String addCustomField = 'Add field';
+  static const String editCustomField = 'Edit field';
+  static const String fieldName = 'Field name';
+  static const String fieldType = 'Field type';
+  static const String fieldOptions = 'Options';
+  static const String fieldOptionsHint =
+      'One per line. Used for dropdown choices.';
+  static const String unitSuffix = 'Unit (optional)';
+  static const String unitSuffixHint = 'e.g. kg, days, GB';
+  static const String specifications = 'Specifications';
+  static const String moreAboutThisProduct = 'More about this product';
+  static const String archive = 'Archive';
+  static const String archiveCustomFieldConfirm =
+      'Archive this field? Existing values stay on each product, but the field stops appearing on new ones.';
   static const String deleteProductConfirm = 'Delete this product?';
   static const String productDeleted = 'Product deleted';
   static const String scanLabel = 'Scan label';
@@ -107,6 +177,8 @@ class AppStrings {
   static const String gstin = 'GSTIN';
   static const String address = 'Address';
   static const String vendor = 'Vendor';
+  static const String selectVendor = 'Select vendor';
+  static const String newVendor = 'New vendor';
 
   // Parties
   static const String navParties = 'Parties';

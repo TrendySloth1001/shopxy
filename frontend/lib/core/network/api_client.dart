@@ -35,6 +35,10 @@ class ApiClient {
         () => http.patch(_buildUri(path), headers: _headers(), body: body != null ? jsonEncode(body) : null),
       );
 
+  Future<http.Response> put(String path, {Object? body}) => _withRetry(
+        () => http.put(_buildUri(path), headers: _headers(), body: body != null ? jsonEncode(body) : null),
+      );
+
   Future<http.Response> delete(String path) =>
       _withRetry(() => http.delete(_buildUri(path), headers: _headers()));
 

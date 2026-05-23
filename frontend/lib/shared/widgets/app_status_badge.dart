@@ -5,19 +5,32 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 
 enum AppStatusTone { neutral, success, warning, error, info }
 
-/// Small pill used for status labels: paid, pending, low stock, out of stock,
-/// stock in/out, etc. Outline-only, never filled — keeps the surface white.
+/// Visual weight of the badge.
+///
+/// * [outline] — hairline border, transparent surface. The quiet default,
+///   used for steady states like a stock count in good standing.
+/// * [soft]   — tinted background with the tone's strong colour for text.
+///   Calls attention without shouting; sits between outline and filled.
+/// * [filled] — fully filled background with white text. Reserved for
+///   states the user needs to react to (out of stock, declined, error).
+enum AppStatusWeight { outline, soft, filled }
+
+/// Small pill used for status labels: stock counts, invoice status,
+/// order status, etc. Three weights so urgent things can be visually
+/// louder than steady-state things in the same row.
 class AppStatusBadge extends StatelessWidget {
   const AppStatusBadge({
     super.key,
     required this.label,
     this.tone = AppStatusTone.neutral,
+    this.weight = AppStatusWeight.outline,
     this.icon,
     this.dense = false,
   });
 
   final String label;
   final AppStatusTone tone;
+  final AppStatusWeight weight;
   final IconData? icon;
   final bool dense;
 
@@ -35,6 +48,20 @@ class AppStatusBadge extends StatelessWidget {
     }
   }
 
+  Color get _soft {
+    switch (tone) {
+      case AppStatusTone.neutral:
+      case AppStatusTone.info:
+        return AppColors.surfaceTint;
+      case AppStatusTone.success:
+        return AppColors.successSoft;
+      case AppStatusTone.warning:
+        return AppColors.warningSoft;
+      case AppStatusTone.error:
+        return AppColors.errorSoft;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -45,27 +72,42 @@ class AppStatusBadge extends StatelessWidget {
             vertical: AppSizes.xs,
           );
 
+    final Color bg;
+    final Color fg;
+    final BorderSide side;
+    switch (weight) {
+      case AppStatusWeight.outline:
+        bg = AppColors.white;
+        fg = _color;
+        side = BorderSide(color: _color, width: 1);
+      case AppStatusWeight.soft:
+        bg = _soft;
+        fg = _color;
+        side = BorderSide.none;
+      case AppStatusWeight.filled:
+        bg = _color;
+        fg = AppColors.white;
+        side = BorderSide.none;
+    }
+
     return Container(
       padding: padding,
       decoration: ShapeDecoration(
-        color: AppColors.white,
-        shape: AppShapes.squircle(
-          AppSizes.radiusFull,
-          side: BorderSide(color: _color, width: 1),
-        ),
+        color: bg,
+        shape: AppShapes.squircle(AppSizes.radiusFull, side: side),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: AppSizes.iconSm - 2, color: _color),
+            Icon(icon, size: AppSizes.iconSm - 2, color: fg),
             const SizedBox(width: 4),
           ],
           Text(
             label,
             style: theme.textTheme.labelSmall?.copyWith(
-              color: _color,
-              fontWeight: FontWeight.w600,
+              color: fg,
+              fontWeight: FontWeight.w700,
               letterSpacing: 0.2,
             ),
           ),
