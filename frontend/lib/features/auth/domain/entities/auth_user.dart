@@ -4,6 +4,7 @@ class AuthUser {
     required this.email,
     required this.name,
     required this.role,
+    this.isPlatformAdmin = false,
     required this.emailNotifications,
     required this.createdAt,
     this.shopName,
@@ -21,6 +22,9 @@ class AuthUser {
   final String email;
   final String name;
   final String role;
+  /// Platform-wide curation privilege (banners, taxonomy, collections).
+  /// Independent of role — flag any user via DB to grant it.
+  final bool isPlatformAdmin;
   final bool emailNotifications;
   final DateTime createdAt;
   // Shop profile — surfaced on /auth/me and editable via PATCH /auth/me.
@@ -40,6 +44,7 @@ class AuthUser {
         email: j['email'] as String,
         name: j['name'] as String,
         role: j['role'] as String,
+        isPlatformAdmin: (j['isPlatformAdmin'] as bool?) ?? false,
         emailNotifications: (j['emailNotifications'] as bool?) ?? true,
         createdAt: DateTime.parse(j['createdAt'] as String),
         shopName: j['shopName'] as String?,
@@ -73,6 +78,7 @@ class AuthUser {
         email: email,
         name: name ?? this.name,
         role: role,
+        isPlatformAdmin: isPlatformAdmin,
         emailNotifications: emailNotifications ?? this.emailNotifications,
         createdAt: createdAt,
         shopName: shopName ?? this.shopName,

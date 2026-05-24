@@ -48,6 +48,19 @@ class CategoriesRemoteDataSource {
     return (categories: categories, total: total);
   }
 
+  /// Full taxonomy tree — one network round-trip, server pre-nests the
+  /// children. Used by the platform-admin taxonomy editor.
+  Future<List<CategoryNode>> getTree({bool activeOnly = false}) async {
+    final response = await _client.get(
+      '/categories/tree',
+      queryParameters: {'active': activeOnly.toString()},
+    );
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    return (body['data'] as List)
+        .map((e) => CategoryDto.treeNodeFromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
   Future<Category> getCategory(int id) async {
     final response = await _client.get('/categories/$id');
     return CategoryDto.fromJson(

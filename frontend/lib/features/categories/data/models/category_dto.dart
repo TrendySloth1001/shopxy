@@ -15,7 +15,19 @@ class CategoryDto {
           : null,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
+      slug: json['slug'] as String?,
+      parentId: json['parentId'] as int?,
     );
+  }
+
+  /// Tree-shape parser — mirrors backend categories.service.getTree.
+  /// Each node carries the same flat Category payload plus its already-
+  /// resolved children list.
+  static CategoryNode treeNodeFromJson(Map<String, dynamic> json) {
+    final children = (json['children'] as List<dynamic>? ?? [])
+        .map((e) => treeNodeFromJson(e as Map<String, dynamic>))
+        .toList();
+    return CategoryNode(category: fromJson(json), children: children);
   }
 
   static Map<String, dynamic> toCreateJson({
@@ -24,6 +36,7 @@ class CategoryDto {
     String? imageUrl,
     String? iconName,
     int? sortOrder,
+    int? parentId,
   }) {
     final data = <String, dynamic>{
       'name': name,
@@ -31,6 +44,7 @@ class CategoryDto {
       'imageUrl': imageUrl,
       'iconName': iconName,
       'sortOrder': sortOrder,
+      'parentId': parentId,
     };
     data.removeWhere((_, value) => value == null);
     return data;
@@ -48,6 +62,7 @@ class CategoryDto {
     bool clearIcon = false,
     int? sortOrder,
     bool? isActive,
+    Object? parentId = _absent,
   }) {
     final data = <String, dynamic>{
       'name': name,
@@ -62,6 +77,14 @@ class CategoryDto {
     } else if (iconName != null) {
       data['iconName'] = iconName;
     }
+    // parentId distinguishes "leave alone" (absent), "clear" (explicit null
+    // → move to root), and "re-parent" (int). Matches the backend service
+    // which uses `data.parentId !== undefined` to decide whether to touch.
+    if (!identical(parentId, _absent)) {
+      data['parentId'] = parentId;
+    }
     return data;
   }
 }
+
+const Object _absent = Object();
