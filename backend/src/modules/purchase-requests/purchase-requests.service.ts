@@ -1,6 +1,7 @@
 import prisma from '../../infra/db/prisma.js';
 import type { Prisma } from '@prisma/client';
 import { invoicesService } from '../invoices/invoices.service.js';
+import { flashSalesService } from '../flash-sales/flash-sales.service.js';
 
 const itemSelect = {
   id: true,
@@ -25,6 +26,7 @@ const previewItemSelect = {
 
 const listSelect = {
   id: true,
+  shopId: true,
   status: true,
   customerName: true,
   customerPhone: true,
@@ -35,6 +37,7 @@ const listSelect = {
   createdAt: true,
   decidedAt: true,
   party: { select: { id: true, name: true, linkedUserId: true } },
+  shop: { select: { id: true, name: true, slug: true, owner: { select: { id: true, name: true, shopName: true } } } },
   _count: { select: { items: true } },
   /// Two-line preview so the inbox row can show product names without
   /// a follow-up fetch. Ordered by id for stable rendering.
@@ -52,6 +55,7 @@ function withItemsPreview<T extends { items: unknown }>(row: T) {
 
 const detailSelect = {
   id: true,
+  shopId: true,
   status: true,
   customerName: true,
   customerPhone: true,
@@ -62,6 +66,7 @@ const detailSelect = {
   createdAt: true,
   decidedAt: true,
   party: { select: { id: true, name: true, linkedUserId: true } },
+  shop: { select: { id: true, name: true, slug: true, owner: { select: { id: true, name: true, shopName: true } } } },
   _count: { select: { items: true } },
   customerAddress: true,
   customerUserId: true,
@@ -108,14 +113,18 @@ interface CartLine {
   quantity: number;
 }
 
-/// Looks up the singleton shop owner. Cached per call site so the
-/// /orders list response doesn't fan out one User read per row.
-async function loadShopIdentity() {
-  return prisma.user.findFirst({
-    where: { role: 'OWNER', isActive: true },
-    select: { id: true, name: true, shopName: true },
-    orderBy: { id: 'asc' },
-  });
+/// Project the embedded Shop relation into the legacy
+/// `{ id, name, shopName }` shape the customer app already consumes.
+/// Multi-shop response — one shop per row, not one shop per response.
+function shopAsDto(
+  shop: { id: number; name: string; slug: string; owner: { id: number; name: string; shopName: string | null } } | null,
+) {
+  if (!shop) return null;
+  return {
+    id: shop.owner.id,
+    name: shop.owner.name,
+    shopName: shop.name ?? shop.owner.shopName,
+  };
 }
 
 export class PurchaseRequestsService {
@@ -128,23 +137,37 @@ export class PurchaseRequestsService {
   /// request id without creating a duplicate. Saves a duplicate-order
   /// nightmare when checkout retries on a flaky connection.
   async createForCustomer(opts: {
+    shopId: number;
     customerUserId: number;
     items: CartLine[];
     note?: string;
     idempotencyKey?: string;
+    addressId?: number;
   }): Promise<
-    | { error: 'EMPTY_CART' | 'PRODUCT_MISSING' | 'PRODUCT_INACTIVE' | 'BAD_QTY' }
+    | { error: 'EMPTY_CART' | 'PRODUCT_MISSING' | 'PRODUCT_INACTIVE' | 'BAD_QTY' | 'ADDRESS_NOT_OWNED' | 'OWN_SHOP_ITEM' | 'SHOP_NOT_FOUND' | 'CROSS_SHOP_ITEM' }
     | { request: { id: number }; deduplicated?: true }
   > {
     if (opts.items.length === 0) return { error: 'EMPTY_CART' };
+
+    // Shop must exist + cannot be the customer's own shop (the
+    // "can't buy from your own shop" marketplace guardrail).
+    const shop = await prisma.shop.findUnique({
+      where: { id: opts.shopId },
+      select: { id: true, ownerUserId: true },
+    });
+    if (!shop) return { error: 'SHOP_NOT_FOUND' };
+    if (shop.ownerUserId === opts.customerUserId) {
+      return { error: 'OWN_SHOP_ITEM' };
+    }
 
     // Idempotency short-circuit — one indexed lookup, no row created
     // when we already saw this key.
     if (opts.idempotencyKey) {
       const existing = await prisma.purchaseRequest.findUnique({
         where: {
-          purchase_requests_user_idempotency_key: {
+          purchase_requests_user_shop_idempotency_key: {
             customerUserId: opts.customerUserId,
+            shopId: opts.shopId,
             idempotencyKey: opts.idempotencyKey,
           },
         },
@@ -158,6 +181,7 @@ export class PurchaseRequestsService {
       where: { id: { in: productIds } },
       select: {
         id: true,
+        shopId: true,
         name: true,
         sku: true,
         unit: true,
@@ -165,6 +189,14 @@ export class PurchaseRequestsService {
         isActive: true,
       },
     });
+    // Reject the request if any item belongs to a different shop than
+    // the order's shopId — the customer-side splitter is supposed to
+    // fire one POST per shop. This stays as a server-side guard.
+    for (const p of products) {
+      if (p.shopId !== opts.shopId) {
+        return { error: 'CROSS_SHOP_ITEM' };
+      }
+    }
     const productMap = new Map(products.map((p) => [p.id, p]));
 
     for (const line of opts.items) {
@@ -174,8 +206,43 @@ export class PurchaseRequestsService {
       if (!(line.quantity > 0)) return { error: 'BAD_QTY' };
     }
 
-    // One read for the customer + their first linked party. The Party
-    // join is constrained to the smallest possible projection.
+    // ── Flash-sale claim pass ───────────────────────────────────────
+    // For each line, atomically reserve units from any active flash
+    // sale. The line is billed at the flash price when the claim
+    // succeeds, and at the normal sellingPrice otherwise. Failures
+    // (out-of-stock, sale ended between view and submit) must
+    // release whatever was claimed earlier in the loop so the
+    // customer never sees a "partial reserve" they can't unwind.
+    //
+    // Two-layer race protection lives inside flashSalesService.claim
+    // (Redis INCRBY + DB-lock fallback) — we just orchestrate.
+    const claimedQty = new Map<number, number>();   // productId → qty
+    const flashPrices = new Map<number, number>();  // productId → flashPrice
+    for (const line of opts.items) {
+      const result = await flashSalesService.claim(line.productId, Math.ceil(line.quantity));
+      if (result.ok) {
+        claimedQty.set(line.productId, (claimedQty.get(line.productId) ?? 0) + Math.ceil(line.quantity));
+        flashPrices.set(line.productId, result.flashPrice);
+        continue;
+      }
+      if (result.reason === 'not_active') {
+        // No flash sale running for this product — bill at normal
+        // sellingPrice. Not an error.
+        continue;
+      }
+      // Out of stock / sale just ended → rollback everything we
+      // claimed for prior lines, then surface a structured error.
+      for (const [pid, q] of claimedQty.entries()) {
+        await flashSalesService.release(pid, q);
+      }
+      return { error: 'PRODUCT_INACTIVE' };
+    }
+
+    // One read for the customer + the Party row that links them to the
+    // *target shop* (if any). Today a customer can be linked as a Party
+    // in many shops at once, so we filter to opts.shopId — otherwise we'd
+    // pick whichever linked party row had the lowest id, which could
+    // belong to a different merchant.
     const user = await prisma.user.findUniqueOrThrow({
       where: { id: opts.customerUserId },
       select: {
@@ -183,7 +250,7 @@ export class PurchaseRequestsService {
         name: true,
         email: true,
         linkedParties: {
-          where: { isActive: true },
+          where: { isActive: true, shopId: opts.shopId },
           select: { id: true, name: true, phone: true, address: true },
           take: 1,
         },
@@ -191,10 +258,45 @@ export class PurchaseRequestsService {
     });
     const linkedParty = user.linkedParties[0];
 
+    // Snapshot the chosen address (or fall back to the linked-party
+    // address) so the order remains stable after the user edits or
+    // deletes the underlying UserAddress row.
+    let snapshotName: string | null = null;
+    let snapshotPhone: string | null = null;
+    let snapshotAddress: string | null = null;
+    if (opts.addressId) {
+      const addr = await prisma.userAddress.findFirst({
+        where: { id: opts.addressId, userId: opts.customerUserId },
+        select: {
+          fullName: true,
+          phone: true,
+          line1: true,
+          line2: true,
+          city: true,
+          state: true,
+          pincode: true,
+          landmark: true,
+        },
+      });
+      if (!addr) return { error: 'ADDRESS_NOT_OWNED' };
+      snapshotName = addr.fullName;
+      snapshotPhone = addr.phone;
+      const lines = [
+        addr.line1,
+        addr.line2 || null,
+        `${addr.city}, ${addr.state} ${addr.pincode}`,
+        addr.landmark ? `Landmark: ${addr.landmark}` : null,
+      ].filter((s): s is string => !!s && s.trim().length > 0);
+      snapshotAddress = lines.join('\n');
+    }
+
     let estimatedTotal = 0;
     const itemsData = opts.items.map((line) => {
       const p = productMap.get(line.productId)!;
-      const price = Number(p.sellingPrice);
+      // Prefer the flash price when we successfully claimed inventory
+      // for this product line; fall back to the merchant's normal
+      // sellingPrice when there's no active sale.
+      const price = flashPrices.get(line.productId) ?? Number(p.sellingPrice);
       const lineTotal = round2(line.quantity * price);
       estimatedTotal += lineTotal;
       return {
@@ -211,15 +313,21 @@ export class PurchaseRequestsService {
     // Two clients hitting submit at the same instant (both before either
     // INSERT lands) could race past the lookup above and both create a
     // row — catch the unique-violation on the way out and re-fetch.
+    // Note: if the create throws, the flash-sale claims made above
+    // will eventually expire from Redis (TTL) — releasing on rejection
+    // would also be defensible but adds a partial-write window. We
+    // accept the small leak; the row count is the source of truth at
+    // the next flush cycle.
     try {
       const request = await prisma.purchaseRequest.create({
         data: {
+          shopId: opts.shopId,
           customerUserId: opts.customerUserId,
           partyId: linkedParty?.id ?? null,
-          customerName: linkedParty?.name ?? user.name,
-          customerPhone: linkedParty?.phone ?? null,
+          customerName: snapshotName ?? linkedParty?.name ?? user.name,
+          customerPhone: snapshotPhone ?? linkedParty?.phone ?? null,
           customerEmail: user.email,
-          customerAddress: linkedParty?.address ?? null,
+          customerAddress: snapshotAddress ?? linkedParty?.address ?? null,
           note: opts.note ?? null,
           estimatedTotal: round2(estimatedTotal),
           idempotencyKey: opts.idempotencyKey ?? null,
@@ -233,8 +341,9 @@ export class PurchaseRequestsService {
       if (code === 'P2002' && opts.idempotencyKey) {
         const existing = await prisma.purchaseRequest.findUnique({
           where: {
-            purchase_requests_user_idempotency_key: {
+            purchase_requests_user_shop_idempotency_key: {
               customerUserId: opts.customerUserId,
+              shopId: opts.shopId,
               idempotencyKey: opts.idempotencyKey,
             },
           },
@@ -248,9 +357,10 @@ export class PurchaseRequestsService {
 
   async listForCustomer(opts: { userId: number; skip: number; limit: number }) {
     const where: Prisma.PurchaseRequestWhereInput = { customerUserId: opts.userId };
-    // Pagination + count + the shop identity all fly in parallel — the
-    // owner read is needed once per response, not per row.
-    const [data, total, shop] = await Promise.all([
+    // Shop identity now travels per-row via the embedded `shop` select
+    // — different orders may belong to different merchants, so the old
+    // "one shop per response" model can't represent that any more.
+    const [data, total] = await Promise.all([
       prisma.purchaseRequest.findMany({
         where,
         select: listSelect,
@@ -259,21 +369,20 @@ export class PurchaseRequestsService {
         take: opts.limit,
       }),
       prisma.purchaseRequest.count({ where }),
-      loadShopIdentity(),
     ]);
-    return { data: data.map((row) => ({ ...withItemsPreview(row), shop })), total };
+    return {
+      data: data.map((row) => ({ ...withItemsPreview(row), shop: shopAsDto(row.shop) })),
+      total,
+    };
   }
 
   async getForCustomer(opts: { userId: number; id: number }) {
-    const [request, shop] = await Promise.all([
-      prisma.purchaseRequest.findFirst({
-        where: { id: opts.id, customerUserId: opts.userId },
-        select: detailSelect,
-      }),
-      loadShopIdentity(),
-    ]);
+    const request = await prisma.purchaseRequest.findFirst({
+      where: { id: opts.id, customerUserId: opts.userId },
+      select: detailSelect,
+    });
     if (!request) return null;
-    return { ...request, shop };
+    return { ...request, shop: shopAsDto(request.shop) };
   }
 
   /// Cancel with explicit reason codes so the API consumer can render
@@ -310,6 +419,7 @@ export class PurchaseRequestsService {
   /// from-to date filters. Search is intentionally a single `OR` so
   /// Postgres can pick the right index instead of stitching joins.
   async listForMerchant(opts: {
+    shopId: number;
     status?: string;
     search?: string;
     from?: Date;
@@ -317,7 +427,7 @@ export class PurchaseRequestsService {
     skip: number;
     limit: number;
   }) {
-    const where: Prisma.PurchaseRequestWhereInput = {};
+    const where: Prisma.PurchaseRequestWhereInput = { shopId: opts.shopId };
     if (opts.status) where.status = opts.status;
 
     if (opts.from || opts.to) {
@@ -353,9 +463,9 @@ export class PurchaseRequestsService {
     return { data: data.map(withItemsPreview), total };
   }
 
-  async getForMerchant(id: number) {
-    return prisma.purchaseRequest.findUnique({
-      where: { id },
+  async getForMerchant(shopId: number, id: number) {
+    return prisma.purchaseRequest.findFirst({
+      where: { id, shopId },
       select: detailSelect,
     });
   }
@@ -374,6 +484,7 @@ export class PurchaseRequestsService {
   ///      that on its own confirm), we just guarantee the merchant
   ///      isn't given a confirm that's bound to fail.
   async confirmRequest(opts: {
+    shopId: number;
     requestId: number;
     decidedById: number;
     note?: string;
@@ -382,16 +493,14 @@ export class PurchaseRequestsService {
     | { invoice: { id: number; invoiceNo: string } }
   > {
     return prisma.$transaction(async (tx) => {
-      // ── 1. Atomic claim ──────────────────────────────────────────
+      // ── 1. Atomic claim scoped to this shop ──────────────────────
       const claim = await tx.purchaseRequest.updateMany({
-        where: { id: opts.requestId, status: 'PENDING' },
+        where: { id: opts.requestId, shopId: opts.shopId, status: 'PENDING' },
         data: { status: 'PROCESSING' },
       });
       if (claim.count === 0) {
-        // Either it doesn't exist, isn't pending, or another merchant
-        // beat us to it. One indexed read to disambiguate.
-        const probe = await tx.purchaseRequest.findUnique({
-          where: { id: opts.requestId },
+        const probe = await tx.purchaseRequest.findFirst({
+          where: { id: opts.requestId, shopId: opts.shopId },
           select: { id: true },
         });
         return { error: probe ? 'NOT_PENDING' : 'NOT_FOUND' as const };
@@ -441,6 +550,7 @@ export class PurchaseRequestsService {
       if (!partyId) {
         const created = await tx.party.create({
           data: {
+            shopId: request.shopId,
             name: request.customerName,
             phone: request.customerPhone,
             email: request.customerEmail,
@@ -457,6 +567,7 @@ export class PurchaseRequestsService {
       // transactions in Prisma collapse into the outer one so the whole
       // operation remains atomic.
       const result = await invoicesService.createInvoice({
+        shopId: request.shopId,
         type: 'SALE',
         partyId,
         customerName: request.customerName,
@@ -496,6 +607,7 @@ export class PurchaseRequestsService {
   }
 
   async rejectRequest(opts: {
+    shopId: number;
     requestId: number;
     decidedById: number;
     note?: string;
@@ -503,9 +615,9 @@ export class PurchaseRequestsService {
     | { error: 'NOT_FOUND' | 'NOT_PENDING' }
     | { ok: true }
   > {
-    // Same atomic-claim trick: updateMany gated on status='PENDING'.
+    // Same atomic-claim trick: updateMany gated on (shopId, status='PENDING').
     const update = await prisma.purchaseRequest.updateMany({
-      where: { id: opts.requestId, status: 'PENDING' },
+      where: { id: opts.requestId, shopId: opts.shopId, status: 'PENDING' },
       data: {
         status: 'REJECTED',
         decidedById: opts.decidedById,
@@ -515,16 +627,16 @@ export class PurchaseRequestsService {
     });
     if (update.count === 1) return { ok: true };
 
-    const probe = await prisma.purchaseRequest.findUnique({
-      where: { id: opts.requestId },
+    const probe = await prisma.purchaseRequest.findFirst({
+      where: { id: opts.requestId, shopId: opts.shopId },
       select: { id: true },
     });
     return { error: probe ? 'NOT_PENDING' : 'NOT_FOUND' };
   }
 
   /// Merchant-side counters for the orders badge.
-  async pendingCount() {
-    return prisma.purchaseRequest.count({ where: { status: 'PENDING' } });
+  async pendingCount(shopId: number) {
+    return prisma.purchaseRequest.count({ where: { shopId, status: 'PENDING' } });
   }
 }
 

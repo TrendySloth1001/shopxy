@@ -65,6 +65,22 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Updates the user's display name. The data source returns the
+  /// fresh AuthUser so we don't need a follow-up `getMe`.
+  Future<void> updateName(String name) async {
+    final fresh = await _dataSource.updateProfile(name: name);
+    _user = fresh;
+    notifyListeners();
+  }
+
+  /// Wraps the password-change endpoint. Surfaces backend errors so
+  /// the caller can render them inline.
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) =>
+      _dataSource.changePassword(currentPassword, newPassword);
+
   /// Called by ApiClient when a refresh fails — forces re-login.
   void clearAuth() {
     _tokenManager.clear();

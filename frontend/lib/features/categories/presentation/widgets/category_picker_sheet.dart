@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/features/categories/data/datasources/categories_remote_data_source.dart';
@@ -9,25 +7,20 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
-import 'package:shopxy/shared/widgets/app_search_bar.dart';
 
-/// Searchable, paginated category picker. Replaces the inline pill
-/// strip on the Products page once a shop has more categories than
-/// fit across a phone width — keeps the chassis usable at 10 or
-/// 10,000 categories.
+/// Two-level tree picker over the canonical taxonomy. Replaces the
+/// flat searchable list — categories are fixed and curated now, so the
+/// browse pattern (parent → child) matches how merchants think about
+/// where their product lives.
 ///
-/// Pagination is server-side via
-/// [CategoriesRemoteDataSource.searchCategories]; this sheet just
-/// asks for the next page when the user scrolls near the end.
+/// The picker only commits a *leaf* selection; tapping a parent expands
+/// it inline. A "Clear" footer surfaces when there's already a current
+/// pick.
 class CategoryPickerSheet extends StatefulWidget {
   const CategoryPickerSheet({super.key, required this.currentSelectionId});
 
-  /// Currently-selected category id, so we can highlight the active
-  /// row and offer a "Clear selection" footer.
   final int? currentSelectionId;
 
-  /// Convenience: show the sheet and return the user's choice (or
-  /// `null` if dismissed without choosing).
   static Future<CategoryPickerResult?> show(
     BuildContext context, {
     required int? currentSelectionId,
@@ -47,89 +40,40 @@ class CategoryPickerSheet extends StatefulWidget {
 }
 
 class _CategoryPickerSheetState extends State<CategoryPickerSheet> {
-  static const _pageSize = 50;
-  static const _debounce = Duration(milliseconds: 220);
-
-  final _searchController = TextEditingController();
-  final _scrollController = ScrollController();
-
-  List<Category> _items = const [];
-  bool _isLoading = false;
-  bool _isLoadingMore = false;
+  List<CategoryNode> _tree = const [];
+  bool _isLoading = true;
   String? _error;
-  int _page = 1;
-  int _total = 0;
-  Timer? _debounceTimer;
-  // Each fetch tags itself with this counter so stale responses
-  // (slow network, type-ahead) never overwrite the latest result.
-  int _requestSeq = 0;
+  final Set<int> _expanded = {};
 
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(_onScroll);
-    _fetch(reset: true);
+    // If the current selection is a leaf, pre-expand its parent so the
+    // user lands on it visually without scrolling-and-tapping.
+    _load();
   }
 
-  @override
-  void dispose() {
-    _debounceTimer?.cancel();
-    _searchController.dispose();
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  void _onSearchChanged(String _) {
-    _debounceTimer?.cancel();
-    _debounceTimer = Timer(_debounce, () => _fetch(reset: true));
-  }
-
-  void _onScroll() {
-    if (!_scrollController.hasClients) return;
-    final pos = _scrollController.position;
-    if (pos.pixels >= pos.maxScrollExtent - 200 &&
-        !_isLoading &&
-        !_isLoadingMore &&
-        _items.length < _total) {
-      _fetch(reset: false);
-    }
-  }
-
-  Future<void> _fetch({required bool reset}) async {
+  Future<void> _load() async {
     final ds = context.read<CategoriesRemoteDataSource>();
-    final seq = ++_requestSeq;
-    final query = _searchController.text.trim();
-
-    setState(() {
-      if (reset) {
-        _isLoading = true;
-        _page = 1;
-      } else {
-        _isLoadingMore = true;
-        _page += 1;
-      }
-      _error = null;
-    });
-
     try {
-      final result = await ds.searchCategories(
-        search: query.isEmpty ? null : query,
-        page: reset ? 1 : _page,
-        limit: _pageSize,
-      );
-      if (!mounted || seq != _requestSeq) return;
+      final tree = await ds.getTree(activeOnly: true);
+      if (!mounted) return;
       setState(() {
-        _items = reset ? result.categories : [..._items, ...result.categories];
-        _total = result.total;
+        _tree = tree;
         _isLoading = false;
-        _isLoadingMore = false;
+        // Auto-expand any parent whose subtree contains the current
+        // selection so the user can confirm what's picked at a glance.
+        for (final p in tree) {
+          if (p.children.any((c) => c.category.id == widget.currentSelectionId)) {
+            _expanded.add(p.category.id);
+          }
+        }
       });
     } catch (e) {
-      if (!mounted || seq != _requestSeq) return;
+      if (!mounted) return;
       setState(() {
         _error = e.toString();
         _isLoading = false;
-        _isLoadingMore = false;
       });
     }
   }
@@ -147,7 +91,7 @@ class _CategoryPickerSheetState extends State<CategoryPickerSheet> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final mediaQuery = MediaQuery.of(context);
-    final maxHeight = mediaQuery.size.height * 0.78;
+    final maxHeight = mediaQuery.size.height * 0.82;
 
     return SafeArea(
       top: false,
@@ -155,8 +99,6 @@ class _CategoryPickerSheetState extends State<CategoryPickerSheet> {
         constraints: BoxConstraints(maxHeight: maxHeight),
         child: Padding(
           padding: EdgeInsets.only(
-            left: AppSizes.lg,
-            right: AppSizes.lg,
             top: AppSizes.md,
             bottom: mediaQuery.viewInsets.bottom + AppSizes.md,
           ),
@@ -166,30 +108,27 @@ class _CategoryPickerSheetState extends State<CategoryPickerSheet> {
             children: [
               const _GrabHandle(),
               const SizedBox(height: AppSizes.md),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      AppStrings.selectCategory,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        AppStrings.selectCategory,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close_rounded),
-                    tooltip: AppStrings.cancel,
-                  ),
-                ],
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close_rounded),
+                      tooltip: AppStrings.cancel,
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: AppSizes.sm),
-              AppSearchBar(
-                hint: AppStrings.searchCategories,
-                controller: _searchController,
-                onChanged: _onSearchChanged,
-              ),
-              const SizedBox(height: AppSizes.md),
               Flexible(child: _buildBody(theme)),
               if (widget.currentSelectionId != null) ...[
                 const Divider(color: AppColors.hairline, height: 1),
@@ -197,9 +136,7 @@ class _CategoryPickerSheetState extends State<CategoryPickerSheet> {
                   onPressed: () => _pick(null),
                   icon: const Icon(Icons.close_rounded, size: 18),
                   label: const Text(AppStrings.clearSelection),
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.error,
-                  ),
+                  style: TextButton.styleFrom(foregroundColor: AppColors.error),
                 ),
               ],
             ],
@@ -227,81 +164,237 @@ class _CategoryPickerSheetState extends State<CategoryPickerSheet> {
         ),
       );
     }
-    if (_items.isEmpty) {
+    if (_tree.isEmpty) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: AppSizes.xl),
         child: Center(
           child: Text(
             AppStrings.noCategoriesMatch,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: AppColors.muted,
-            ),
+            style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted),
           ),
         ),
       );
     }
-
-    return ListView.separated(
-      controller: _scrollController,
-      shrinkWrap: true,
-      itemCount: _items.length + (_isLoadingMore ? 1 : 0),
-      separatorBuilder: (_, _) =>
-          const Divider(height: 1, color: AppColors.hairline),
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+      itemCount: _tree.length,
       itemBuilder: (context, index) {
-        if (index >= _items.length) {
-          return const Padding(
-            padding: EdgeInsets.symmetric(vertical: AppSizes.md),
-            child: Center(
-              child: SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            ),
-          );
-        }
-        return _categoryTile(_items[index], theme);
+        final parent = _tree[index];
+        final expanded = _expanded.contains(parent.category.id);
+        return _ParentRow(
+          parent: parent,
+          expanded: expanded,
+          currentSelectionId: widget.currentSelectionId,
+          onToggle: () {
+            setState(() {
+              if (expanded) {
+                _expanded.remove(parent.category.id);
+              } else {
+                _expanded.add(parent.category.id);
+              }
+            });
+          },
+          onPickChild: _pick,
+          onPickParent: parent.children.isEmpty ? _pick : null,
+        );
       },
     );
   }
+}
 
-  Widget _categoryTile(Category category, ThemeData theme) {
-    final isSelected = category.id == widget.currentSelectionId;
-    final count = category.productCount;
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: Container(
-        width: 36,
-        height: 36,
+class _ParentRow extends StatelessWidget {
+  const _ParentRow({
+    required this.parent,
+    required this.expanded,
+    required this.currentSelectionId,
+    required this.onToggle,
+    required this.onPickChild,
+    required this.onPickParent,
+  });
+
+  final CategoryNode parent;
+  final bool expanded;
+  final int? currentSelectionId;
+  final VoidCallback onToggle;
+  final ValueChanged<Category?> onPickChild;
+  /// When the parent has no children, tapping the row picks it directly
+  /// instead of toggling (otherwise the parent is unpickable).
+  final ValueChanged<Category?>? onPickParent;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isSelected = parent.category.id == currentSelectionId;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        InkWell(
+          onTap: onPickParent != null
+              ? () => onPickParent!(parent.category)
+              : onToggle,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
+            child: Row(
+              children: [
+                _CategoryThumb(category: parent.category, size: 44),
+                const SizedBox(width: AppSizes.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        parent.category.name,
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          fontWeight:
+                              isSelected ? FontWeight.w700 : FontWeight.w600,
+                        ),
+                      ),
+                      if (parent.children.isNotEmpty)
+                        Text(
+                          '${parent.children.length} subcategories',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: AppColors.muted,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                if (parent.children.isEmpty)
+                  Icon(
+                    isSelected
+                        ? Icons.check_circle_rounded
+                        : Icons.chevron_right_rounded,
+                    color: isSelected ? AppColors.brand : AppColors.muted,
+                  )
+                else
+                  Icon(
+                    expanded
+                        ? Icons.keyboard_arrow_up_rounded
+                        : Icons.keyboard_arrow_down_rounded,
+                    color: AppColors.muted,
+                  ),
+              ],
+            ),
+          ),
+        ),
+        if (expanded && parent.children.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(left: 56, bottom: AppSizes.sm),
+            child: Wrap(
+              spacing: AppSizes.sm,
+              runSpacing: AppSizes.sm,
+              children: [
+                for (final child in parent.children)
+                  _ChildChip(
+                    category: child.category,
+                    isSelected: child.category.id == currentSelectionId,
+                    onTap: () => onPickChild(child.category),
+                  ),
+              ],
+            ),
+          ),
+        const Divider(height: 1, color: AppColors.hairline),
+      ],
+    );
+  }
+}
+
+class _ChildChip extends StatelessWidget {
+  const _ChildChip({
+    required this.category,
+    required this.isSelected,
+    required this.onTap,
+  });
+  final Category category;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSizes.md,
+          vertical: AppSizes.xs,
+        ),
         decoration: BoxDecoration(
-          color: AppColors.surfaceTint,
-          borderRadius: BorderRadius.circular(8),
+          color: isSelected ? AppColors.black : AppColors.surfaceTint,
+          borderRadius: BorderRadius.circular(20),
         ),
-        alignment: Alignment.center,
-        child: Icon(
-          resolveCategoryIcon(category.iconName),
-          size: 20,
-          color: AppColors.black,
-        ),
-      ),
-      title: Text(
-        category.name,
-        style: theme.textTheme.bodyLarge?.copyWith(
-          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-        ),
-      ),
-      subtitle: count != null
-          ? Text(
-              '$count ${count == 1 ? 'product' : 'products'}',
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _CategoryThumb(category: category, size: 22, rounded: true),
+            const SizedBox(width: AppSizes.xs),
+            Text(
+              category.name,
               style: theme.textTheme.bodySmall?.copyWith(
-                color: AppColors.muted,
+                color: isSelected ? AppColors.white : AppColors.black,
+                fontWeight: FontWeight.w600,
               ),
-            )
-          : null,
-      trailing: isSelected
-          ? const Icon(Icons.check_circle_rounded, color: AppColors.brand)
-          : const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
-      onTap: () => _pick(category),
+            ),
+            if (isSelected) ...[
+              const SizedBox(width: 4),
+              const Icon(
+                Icons.check_rounded,
+                size: 14,
+                color: AppColors.white,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Thumbnail used in the parent row and child chip. Falls back to the
+/// iconName-derived glyph over a tint when the URL is empty or the
+/// load errors.
+class _CategoryThumb extends StatelessWidget {
+  const _CategoryThumb({
+    required this.category,
+    required this.size,
+    this.rounded = true,
+  });
+  final Category category;
+  final double size;
+  final bool rounded;
+
+  @override
+  Widget build(BuildContext context) {
+    final url = category.imageUrl;
+    final fallback = Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: AppColors.surfaceTint,
+        borderRadius:
+            BorderRadius.circular(rounded ? size / 2 : 8),
+      ),
+      alignment: Alignment.center,
+      child: Icon(
+        resolveCategoryIcon(category.iconName),
+        color: AppColors.black,
+        size: size * 0.55,
+      ),
+    );
+    if (url == null || url.isEmpty) return fallback;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(rounded ? size / 2 : 8),
+      child: Image.network(
+        url,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        loadingBuilder: (_, child, progress) =>
+            progress == null ? child : fallback,
+        errorBuilder: (_, _, _) => fallback,
+      ),
     );
   }
 }

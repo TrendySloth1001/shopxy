@@ -5,8 +5,6 @@ import { vendorsService } from './vendors.service.js';
 import { paymentsService } from '../payments/payments.service.js';
 import { contactChangeLogService } from '../contact-change-log/contact-change-log.service.js';
 
-// 2-digit GST state code; full validation against the lookup is enforced
-// client-side via the state drop-down.
 const stateCodeSchema = z.string().regex(/^\d{2}$/, 'must be 2-digit GST state code');
 
 const createVendorSchema = z.object({
@@ -45,19 +43,32 @@ function parseId(raw: string): number | null {
   return Number.isInteger(id) && id > 0 ? id : null;
 }
 
+function requireShopId(req: Request, res: Response): number | null {
+  const shopId = req.user?.shopId;
+  if (!shopId) {
+    res.status(403).json({ error: 'This account has no shop linked.' });
+    return null;
+  }
+  return shopId;
+}
+
 export class VendorsController {
   async create(req: Request, res: Response): Promise<void> {
+    const shopId = requireShopId(req, res);
+    if (!shopId) return;
     const payload = createVendorSchema.parse(req.body);
-    const vendor = await vendorsService.createVendor(payload);
+    const vendor = await vendorsService.createVendor(shopId, payload);
     res.status(201).json(vendor);
   }
 
   async list(req: Request, res: Response): Promise<void> {
+    const shopId = requireShopId(req, res);
+    if (!shopId) return;
     const { page, limit, skip } = parsePagination(req);
     const search = (req.query.search as string) || '';
     const activeOnly = req.query.active !== 'false';
 
-    const { vendors, total } = await vendorsService.listVendors({
+    const { vendors, total } = await vendorsService.listVendors(shopId, {
       search,
       activeOnly,
       page,
@@ -69,53 +80,74 @@ export class VendorsController {
   }
 
   async getById(req: Request, res: Response): Promise<void> {
+    const shopId = requireShopId(req, res);
+    if (!shopId) return;
     const id = parseId(req.params.id);
     if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
 
-    const vendor = await vendorsService.getVendorById(id);
+    const vendor = await vendorsService.getVendorById(shopId, id);
     if (!vendor) { res.status(404).json({ error: 'Vendor not found' }); return; }
 
     res.json(vendor);
   }
 
   async overview(req: Request, res: Response): Promise<void> {
+    const shopId = requireShopId(req, res);
+    if (!shopId) return;
     const id = parseId(req.params.id);
     if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
 
-    const overview = await vendorsService.getVendorOverview(id);
+    const overview = await vendorsService.getVendorOverview(shopId, id);
     if (!overview) { res.status(404).json({ error: 'Vendor not found' }); return; }
 
     res.json(overview);
   }
 
   async update(req: Request, res: Response): Promise<void> {
+    const shopId = requireShopId(req, res);
+    if (!shopId) return;
     const id = parseId(req.params.id);
     if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
 
     const payload = updateVendorSchema.parse(req.body);
-    const vendor = await vendorsService.updateVendor(id, payload, req.user?.sub ?? null);
+    const vendor = await vendorsService.updateVendor(
+      shopId,
+      id,
+      payload,
+      req.user?.sub ?? null,
+    );
+    if (!vendor) { res.status(404).json({ error: 'Vendor not found' }); return; }
     res.json(vendor);
   }
 
   async ledger(req: Request, res: Response): Promise<void> {
+    const shopId = requireShopId(req, res);
+    if (!shopId) return;
     const id = parseId(req.params.id);
     if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
-    const ledger = await paymentsService.vendorLedger(id);
+    const ledger = await paymentsService.vendorLedger(shopId, id);
     if (!ledger) { res.status(404).json({ error: 'Vendor not found' }); return; }
     res.json(ledger);
   }
 
   async delete(req: Request, res: Response): Promise<void> {
+    const shopId = requireShopId(req, res);
+    if (!shopId) return;
     const id = parseId(req.params.id);
     if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
 
-    await vendorsService.deleteVendor(id);
+    const result = await vendorsService.deleteVendor(shopId, id);
+    if (!result) { res.status(404).json({ error: 'Vendor not found' }); return; }
     res.status(204).send();
   }
 
   async changes(req: Request, res: Response): Promise<void> {
+    const shopId = requireShopId(req, res);
+    if (!shopId) return;
     const id = parseId(req.params.id);
     if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
+    const owned = await vendorsService.getVendorById(shopId, id);
+    if (!owned) { res.status(404).json({ error: 'Vendor not found' }); return; }
     const params = parsePagination(req);
     const { rows, total } = await contactChangeLogService.listForEntity({
       entityType: 'VENDOR',

@@ -2,13 +2,13 @@ import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import { fromBuffer as fileTypeFromBuffer } from 'file-type';
 import asyncHandler from '../../shared/http/asyncHandler.js';
-import { uploadFile } from './upload.service.js';
+import { uploadImageWithVariants } from './upload.service.js';
 
 const router = Router();
 
-// We resize/serve as the original mime; sticking to widely-supported formats
-// avoids surprises (HEIC/AVIF/TIFF render unevenly across browsers, and GIF/BMP
-// aren't worth the validation surface area).
+// Accept the same three input formats we did before. Sharp will decode
+// any of them and re-encode to WebP for storage, so the on-disk format
+// is uniform regardless of what the client sent.
 const ALLOWED_MIMES = new Set<string>(['image/jpeg', 'image/png', 'image/webp']);
 
 const upload = multer({
@@ -31,9 +31,11 @@ router.post(
       res.status(400).json({ error: 'Only JPEG, PNG, or WebP images are allowed' });
       return;
     }
-    // Use the sniffed mime — never trust the client-supplied one.
-    const { url } = await uploadFile(req.file.buffer, req.file.originalname, sniffed.mime);
-    res.status(201).json({ url });
+    // Re-encode + resize on upload so the storage layer is uniform
+    // WebP at 3 widths. Response includes both the default url (md)
+    // and the variant map so clients can request the size they need.
+    const result = await uploadImageWithVariants(req.file.buffer, req.file.originalname);
+    res.status(201).json(result);
   }),
 );
 

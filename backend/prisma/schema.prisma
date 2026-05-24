@@ -7,48 +7,85 @@ datasource db {
 }
 
 model User {
-  id                Int                @id @default(autoincrement())
-  email             String             @unique
-  name              String
-  passwordHash      String             @map("password_hash")
-  role              String             @default("OWNER")
-  isActive          Boolean            @default(true) @map("is_active")
-  emailNotifications Boolean           @default(true) @map("email_notifications")
+  id                 Int                @id @default(autoincrement())
+  email              String             @unique
+  name               String
+  passwordHash       String             @map("password_hash")
+  role               Role               @default(OWNER)
+  isPlatformAdmin    Boolean            @default(false) @map("is_platform_admin")
+  isActive           Boolean            @default(true) @map("is_active")
+  emailNotifications Boolean            @default(true) @map("email_notifications")
   /// Shop profile fields — rendered on invoices and exposed via the
   /// merchant app's settings screen. Filled in by the owner; nullable so
   /// pre-GST users (and customer-side accounts) work unchanged.
-  shopName          String?            @map("shop_name")
-  shopAddress       String?            @map("shop_address")
-  shopCity          String?            @map("shop_city")
-  shopState         String?            @map("shop_state")
-  shopStateCode     String?            @map("shop_state_code")
-  shopPinCode       String?            @map("shop_pin_code")
-  shopGstin         String?            @map("shop_gstin")
-  shopPan           String?            @map("shop_pan")
-  upiVpa            String?            @map("upi_vpa")
+  shopName           String?            @map("shop_name")
+  shopAddress        String?            @map("shop_address")
+  shopCity           String?            @map("shop_city")
+  shopState          String?            @map("shop_state")
+  shopStateCode      String?            @map("shop_state_code")
+  shopPinCode        String?            @map("shop_pin_code")
+  shopGstin          String?            @map("shop_gstin")
+  shopPan            String?            @map("shop_pan")
+  upiVpa             String?            @map("upi_vpa")
   /// Timestamp when the user accepted the Terms of Service and Privacy
   /// Policy at registration. Required by DPDP §6 — store evidence of
   /// consent. Nullable so legacy users predating the consent gate work.
-  acceptedAt        DateTime?          @map("accepted_at")
-  createdAt         DateTime           @default(now()) @map("created_at")
-  updatedAt         DateTime           @updatedAt @map("updated_at")
-  refreshTokens     RefreshToken[]
-  stockTransactions StockTransaction[]
-  stockAdjustments  StockAdjustment[]
+  acceptedAt         DateTime?          @map("accepted_at")
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+  refreshTokens      RefreshToken[]
+  stockTransactions  StockTransaction[]
+  stockAdjustments   StockAdjustment[]
 
-  invitationsSent     Invitation[]   @relation("InvitationsSent")
-  invitationsReceived Invitation[]   @relation("InvitationsReceived")
+  invitationsSent     Invitation[]          @relation("InvitationsSent")
+  invitationsReceived Invitation[]          @relation("InvitationsReceived")
   notifications       Notification[]
   linkedParties       Party[]
   linkedVendors       Vendor[]
-  purchaseRequests    PurchaseRequest[] @relation("CustomerPurchaseRequests")
-  decidedRequests     PurchaseRequest[] @relation("MerchantDecidedRequests")
-  paymentsCreated     Payment[]         @relation("PaymentCreatedBy")
+  purchaseRequests    PurchaseRequest[]     @relation("CustomerPurchaseRequests")
+  decidedRequests     PurchaseRequest[]     @relation("MerchantDecidedRequests")
+  paymentsCreated     Payment[]             @relation("PaymentCreatedBy")
   contactChanges      ContactChangeLog[]
   wishlistItems       WishlistItem[]
+  shop                Shop?
+  productReviews      ProductReview[]
+  reviewedSpotlights  BrandSpotlight[]      @relation("BrandSpotlightReviewer")
+  productEvents       ProductEvent[]
+  recentlyViewed      RecentlyViewed[]
+  recommendationCache RecommendationCache[]
+  searchEvents        SearchEvent[]
+  addresses           UserAddress[]
 
   @@index([email])
   @@map("users")
+}
+
+/// Customer-side delivery address. Decoupled from the B2B
+/// `parties.address` freeform string — that one is scoped to one
+/// merchant's invited contact; this is a structured list owned by
+/// the user and reachable from the marketplace checkout. The
+/// partial unique index `user_addresses_one_default_per_user` (raw
+/// DDL — Prisma can't model partial uniques) keeps at most one
+/// `is_default = true` row per user even under concurrent writes.
+model UserAddress {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label     String?
+  fullName  String   @map("full_name")
+  phone     String
+  line1     String
+  line2     String?
+  city      String
+  state     String
+  pincode   String
+  landmark  String?
+  isDefault Boolean  @default(false) @map("is_default")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([userId, createdAt])
+  @@map("user_addresses")
 }
 
 /// Customer-side "saved for later" list. One row per (user, product)
@@ -111,44 +148,105 @@ model RefreshToken {
 }
 
 model Category {
-  id          Int       @id @default(autoincrement())
-  name        String    @unique
+  id          Int        @id @default(autoincrement())
+  /// Display label. Not unique — the canonical taxonomy reuses names
+  /// across parents ("Footwear" under both Men's and Women's Fashion).
+  /// Uniqueness lives on `slug`.
+  name        String
+  /// URL-safe identifier exposed in customer-facing routes (`/category/:slug`).
+  /// Derived from name on first save; renames re-derive but keep uniqueness
+  /// via numeric-suffix collision handling in the service.
+  slug        String     @unique
   description String?
-  imageUrl    String?   @map("image_url")
-  iconName    String?   @map("icon_name")
-  sortOrder   Int       @default(0) @map("sort_order")
-  isActive    Boolean   @default(true) @map("is_active")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  imageUrl    String?    @map("image_url")
+  iconName    String?    @map("icon_name")
+  sortOrder   Int        @default(0) @map("sort_order")
+  isActive    Boolean    @default(true) @map("is_active")
+  /// Self-referential parent for taxonomy tree (Beauty > Skincare > Serums).
+  /// Null = root. Service enforces no-cycles on update.
+  parentId    Int?       @map("parent_id")
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children    Category[] @relation("CategoryHierarchy")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
 
-  products Product[]
+  products       Product[]
+  trendingScores TrendingScore[]
 
+  @@index([parentId])
   @@map("categories")
 }
 
 model Product {
-  id                Int      @id @default(autoincrement())
-  name              String
-  description       String?
-  sku               String   @unique
-  barcode           String?  @unique
-  hsnCode           String?  @map("hsn_code")
+  id          Int     @id @default(autoincrement())
+  name        String
+  description String?
+  sku         String  @unique
+  barcode     String? @unique
+  hsnCode     String? @map("hsn_code")
 
-  mrp               Decimal  @db.Decimal(12, 2)
-  sellingPrice      Decimal  @map("selling_price") @db.Decimal(12, 2)
-  purchasePrice     Decimal  @map("purchase_price") @db.Decimal(12, 2)
-  taxPercent        Decimal  @default(0) @map("tax_percent") @db.Decimal(5, 2)
+  mrp           Decimal @db.Decimal(12, 2)
+  sellingPrice  Decimal @map("selling_price") @db.Decimal(12, 2)
+  purchasePrice Decimal @map("purchase_price") @db.Decimal(12, 2)
+  taxPercent    Decimal @default(0) @map("tax_percent") @db.Decimal(5, 2)
 
-  stockQuantity     Decimal  @default(0) @map("stock_quantity") @db.Decimal(12, 3)
-  lowStockThreshold Decimal  @default(10) @map("low_stock_threshold") @db.Decimal(12, 3)
-  unit              String   @default("PCS")
+  stockQuantity     Decimal @default(0) @map("stock_quantity") @db.Decimal(12, 3)
+  lowStockThreshold Decimal @default(10) @map("low_stock_threshold") @db.Decimal(12, 3)
+  unit              String  @default("PCS")
 
-  categoryId        Int?     @map("category_id")
-  category          Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categoryId Int?      @map("category_id")
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
-  isActive          Boolean  @default(true) @map("is_active")
-  createdAt         DateTime @default(now()) @map("created_at")
-  updatedAt         DateTime @updatedAt @map("updated_at")
+  shopId Int  @map("shop_id")
+  shop   Shop @relation(fields: [shopId], references: [id], onDelete: Restrict)
+
+  isActive    Boolean @default(true) @map("is_active")
+  /// Marketplace visibility toggle. Merchants choose which catalog items
+  /// surface in the public marketplace; defaults to false so newly added
+  /// SKUs don't leak before the merchant is ready.
+  isPublished Boolean @default(false) @map("is_published")
+
+  /// Denormalised review aggregates — updated inside the review-write
+  /// transaction so feed reads never join product_reviews. Null until
+  /// the first review lands; default 0 means "no reviews yet" for count.
+  ratingAvg   Decimal? @map("rating_avg") @db.Decimal(3, 2)
+  ratingCount Int      @default(0) @map("rating_count")
+  /// Free-form tags for filterable lists ("Bestseller", "Eco-friendly"…).
+  /// Stored as a Postgres text[] for cheap @> containment queries.
+  tags        String[] @default([])
+
+  /// Short product highlights rendered as bullets above the fold on
+  /// the V2 PDP. Same text[] storage as `tags` so we keep the simple
+  /// Prisma projection. Distinct from tags because tags drive filters
+  /// (containment queries) and highlights drive presentation only.
+  highlights String[] @default([])
+
+  /// Long-form grouped spec sheet ("Display features → Resolution: …").
+  /// JSONB because shape varies by category and the relational
+  /// model would balloon. Expected shape:
+  ///   [{ "title": string, "rows": [{ "label": string, "value": string }] }]
+  specs Json?
+
+  /// Bank / coupon / EMI / exchange offers rendered as cards
+  /// beneath the price block. Same JSONB rationale as `specs`.
+  /// Expected shape:
+  ///   [{ "kind": "BANK"|"COUPON"|"EMI"|"EXCHANGE",
+  ///      "headline": string, "detail"?: string, "code"?: string }]
+  offers    Json?
+  /// Lifetime sold quantity (sum of CONFIRMED InvoiceItem quantities).
+  /// Backfilled in P1 migration; subsequent updates land in Phase 6
+  /// (trending) — Phase 1 only needs the column to exist for sort order.
+  totalSold Int   @default(0) @map("total_sold")
+
+  /// Watermark for the embed-pending cron — `NULL` means the row has
+  /// never been embedded. The embedding column itself is a
+  /// `vector(1536)` column (text-embedding-3-small dims). Prisma can't
+  /// model the type natively, so it's accessed through raw SQL in the
+  /// search service; we only carry the timestamp here so cron picks
+  /// can be expressed in regular Prisma queries.
+  embeddedAt DateTime? @map("embedded_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
 
   stockTransactions    StockTransaction[]
   images               ProductImage[]
@@ -158,10 +256,19 @@ model Product {
   purchaseRequestItems PurchaseRequestItem[]
   customFieldValues    ProductCustomFieldValue[]
   wishlistedBy         WishlistItem[]
+  reviews              ProductReview[]
+  flashSales           FlashSale[]
+  collectionItems      CollectionItem[]
+  bannerLinks          BannerProduct[]
+  events               ProductEvent[]
+  recentlyViewedBy     RecentlyViewed[]
+  trendingScores       TrendingScore[]
+  promotions           Promotion[]
 
   @@index([categoryId])
   @@index([isActive])
   @@index([name])
+  @@index([shopId, isPublished])
   @@map("products")
 }
 
@@ -171,7 +278,11 @@ model Product {
 /// before sections existed.
 model CustomFieldSection {
   id        Int      @id @default(autoincrement())
-  name      String   @unique
+  /// Owning shop — each merchant defines their own taxonomy of custom
+  /// fields (Warranty, Model, etc).
+  shopId    Int      @map("shop_id")
+  shop      Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  name      String
   /// Material icon name (e.g. "verified", "build", "local_shipping").
   /// Stored as a string so the frontend can swap icon sets without a
   /// migration.
@@ -183,8 +294,9 @@ model CustomFieldSection {
 
   fields CustomFieldDefinition[]
 
-  @@index([isActive])
-  @@index([sortOrder])
+  @@unique([shopId, name])
+  @@index([shopId, isActive])
+  @@index([shopId, sortOrder])
   @@map("custom_field_sections")
 }
 
@@ -193,30 +305,34 @@ model CustomFieldSection {
 /// Soft-deletable via `isActive` — keeps historical values readable
 /// even when a definition is retired.
 model CustomFieldDefinition {
-  id         Int      @id @default(autoincrement())
-  name       String   @unique
+  id         Int                 @id @default(autoincrement())
+  /// Owning shop — same shop scope as the parent section.
+  shopId     Int                 @map("shop_id")
+  shop       Shop                @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  name       String
   /// TEXT | LONG_TEXT | NUMBER | DATE | BOOLEAN | DROPDOWN
   type       String
   /// JSON array of strings — only meaningful when type=DROPDOWN.
   options    Json?
   /// Optional suffix for NUMBER fields (e.g. "kg", "days", "GB").
-  unitSuffix String?  @map("unit_suffix")
+  unitSuffix String?             @map("unit_suffix")
   /// Optional Material icon name for the field itself; falls back to
   /// the section's icon when null.
   icon       String?
   /// Optional grouping. Null = ungrouped (rendered at the top of the
   /// custom-fields section).
-  sectionId  Int?     @map("section_id")
+  sectionId  Int?                @map("section_id")
   section    CustomFieldSection? @relation(fields: [sectionId], references: [id], onDelete: SetNull)
-  sortOrder  Int      @default(0) @map("sort_order")
-  isActive   Boolean  @default(true) @map("is_active")
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
+  sortOrder  Int                 @default(0) @map("sort_order")
+  isActive   Boolean             @default(true) @map("is_active")
+  createdAt  DateTime            @default(now()) @map("created_at")
+  updatedAt  DateTime            @updatedAt @map("updated_at")
 
   values ProductCustomFieldValue[]
 
-  @@index([isActive])
-  @@index([sortOrder])
+  @@unique([shopId, name])
+  @@index([shopId, isActive])
+  @@index([shopId, sortOrder])
   @@index([sectionId])
   @@map("custom_field_definitions")
 }
@@ -246,6 +362,12 @@ model ProductCustomFieldValue {
 /// `stockQuantity` is a derived cache of stockAfter on the latest row.
 model StockTransaction {
   id        Int     @id @default(autoincrement())
+  /// Owning shop — denormalised from product.shopId for cheap
+  /// per-shop filtering on the ledger (a shop's stock report scans
+  /// thousands of rows; the shopId index lets it stay an index-only
+  /// scan instead of joining through Product).
+  shopId    Int     @map("shop_id")
+  shop      Shop    @relation(fields: [shopId], references: [id], onDelete: Cascade)
   productId Int     @map("product_id")
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   vendorId  Int?    @map("vendor_id")
@@ -253,16 +375,16 @@ model StockTransaction {
 
   // ── Ledger essentials ────────────────────────────────────────────
   /// 'IN' or 'OUT' — explicit direction. Quantity is always positive.
-  direction String
+  direction    String
   /// Why this movement happened. One of:
   /// SALE, PURCHASE, OPENING, DAMAGE, EXPIRED, SHRINKAGE, RECOUNT,
   /// RETURN_IN, RETURN_OUT, TRANSFER_IN, TRANSFER_OUT.
-  reasonCode String @map("reason_code")
+  reasonCode   String @map("reason_code")
   /// What posted this row. MANUAL / INVOICE / CHALLAN / ADJUSTMENT / OPENING.
-  sourceType String @default("MANUAL") @map("source_type")
+  sourceType   String @default("MANUAL") @map("source_type")
   /// Polymorphic id pointing at the source document.
-  sourceId     Int? @map("source_id")
-  sourceLineId Int? @map("source_line_id")
+  sourceId     Int?   @map("source_id")
+  sourceLineId Int?   @map("source_line_id")
 
   /// Always positive. Sign comes from `direction`.
   quantity   Decimal  @db.Decimal(12, 3)
@@ -306,11 +428,11 @@ model StockTransaction {
   costConsumptions CostConsumption[] @relation("LedgerConsumes")
   costLayer        CostLayer?        @relation("LedgerOriginated")
 
-  @@index([productId, createdAt])
-  @@index([type])
-  @@index([reasonCode])
+  @@index([shopId, productId, createdAt])
+  @@index([shopId, type])
+  @@index([shopId, reasonCode])
   @@index([sourceType, sourceId])
-  @@index([createdAt])
+  @@index([shopId, createdAt])
   @@index([vendorId])
   @@map("stock_transactions")
 }
@@ -362,21 +484,25 @@ model CostConsumption {
 /// A stock adjustment is a first-class document (like an invoice) that
 /// groups one or more product write-offs/corrections under a reason.
 model StockAdjustment {
-  id           Int    @id @default(autoincrement())
-  adjustmentNo String @unique @map("adjustment_no")
+  id           Int      @id @default(autoincrement())
+  /// Owning shop — adjustment numbers reset per shop.
+  shopId       Int      @map("shop_id")
+  shop         Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  adjustmentNo String   @map("adjustment_no")
   /// DAMAGE / EXPIRED / SHRINKAGE / RECOUNT / OPENING.
-  reasonCode String @map("reason_code")
+  reasonCode   String   @map("reason_code")
   /// 'IN' (recount delta + or opening) or 'OUT' (damage/expired/etc).
-  direction   String
-  note        String?
-  createdById Int?    @map("created_by_id")
-  createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: SetNull)
-  createdAt   DateTime @default(now()) @map("created_at")
+  direction    String
+  note         String?
+  createdById  Int?     @map("created_by_id")
+  createdBy    User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt    DateTime @default(now()) @map("created_at")
 
   items StockAdjustmentItem[]
 
-  @@index([reasonCode])
-  @@index([createdAt])
+  @@unique([shopId, adjustmentNo])
+  @@index([shopId, reasonCode])
+  @@index([shopId, createdAt])
   @@map("stock_adjustments")
 }
 
@@ -412,6 +538,10 @@ model ProductImage {
 
 model Vendor {
   id                Int                @id @default(autoincrement())
+  /// Owning shop. Required after the multi-tenant migration — a vendor
+  /// always belongs to exactly one merchant's address book.
+  shopId            Int                @map("shop_id")
+  shop              Shop               @relation(fields: [shopId], references: [id], onDelete: Cascade)
   name              String
   contactName       String?            @map("contact_name")
   phone             String?
@@ -435,128 +565,141 @@ model Vendor {
   invitations       Invitation[]
   payments          Payment[]
 
-  @@index([name])
-  @@index([isActive])
+  @@index([shopId, name])
+  @@index([shopId, isActive])
   @@index([linkedUserId])
   @@map("vendors")
 }
 
 model Party {
-  id          Int       @id @default(autoincrement())
-  name        String
-  contactName String?   @map("contact_name")
-  phone       String?
-  email       String?
-  address     String?
-  city        String?
-  state       String?
-  stateCode   String?   @map("state_code")
-  pinCode     String?   @map("pin_code")
-  panNumber   String?   @map("pan_number")
-  gstin       String?
-  isActive    Boolean   @default(true) @map("is_active")
+  id               Int               @id @default(autoincrement())
+  /// Owning shop. A Party row is one merchant's customer record;
+  /// the same end-user can be a Party in many shops (one row per
+  /// merchant relationship), distinguished by shopId.
+  shopId           Int               @map("shop_id")
+  shop             Shop              @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  name             String
+  contactName      String?           @map("contact_name")
+  phone            String?
+  email            String?
+  address          String?
+  city             String?
+  state            String?
+  stateCode        String?           @map("state_code")
+  pinCode          String?           @map("pin_code")
+  panNumber        String?           @map("pan_number")
+  gstin            String?
+  isActive         Boolean           @default(true) @map("is_active")
   /// True for system-managed parties (e.g. "Walk-in Customer") — the UI
   /// hides delete/edit affordances and stock flows fall back to this row
   /// when no party is picked.
-  isSystem    Boolean   @default(false) @map("is_system")
+  isSystem         Boolean           @default(false) @map("is_system")
   /// Once an invited party accepts via their Shopxy account this is set to
   /// their user id — lets the party see their own ledger in a future portal.
-  linkedUserId Int?     @map("linked_user_id")
-  linkedUser   User?    @relation(fields: [linkedUserId], references: [id], onDelete: SetNull)
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-  challans    Challan[]
-  invoices    Invoice[]
-  invitations Invitation[]
+  linkedUserId     Int?              @map("linked_user_id")
+  linkedUser       User?             @relation(fields: [linkedUserId], references: [id], onDelete: SetNull)
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+  challans         Challan[]
+  invoices         Invoice[]
+  invitations      Invitation[]
   purchaseRequests PurchaseRequest[]
-  payments    Payment[]
+  payments         Payment[]
 
-  @@index([name])
-  @@index([isActive])
+  @@index([shopId, name])
+  @@index([shopId, isActive])
   @@index([linkedUserId])
   @@map("parties")
 }
 
 model Invoice {
-  id            Int           @id @default(autoincrement())
-  invoiceNo     String        @unique @map("invoice_no")
-  type          String
+  id                     Int              @id @default(autoincrement())
+  /// Owning shop. Invoice numbers reset per shop, so the unique
+  /// constraint is composite below.
+  shopId                 Int              @map("shop_id")
+  shop                   Shop             @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  invoiceNo              String           @map("invoice_no")
+  type                   String
   /// One of TAX_INVOICE | BILL_OF_SUPPLY | ESTIMATE | PROFORMA |
   /// CREDIT_NOTE | DEBIT_NOTE. Renders as the document title at the top of
   /// the printed PDF and drives the invoice-number prefix.
-  documentType  String        @default("TAX_INVOICE") @map("document_type")
+  documentType           String           @default("TAX_INVOICE") @map("document_type")
   /// Indian FY ("25-26"). Denormalised so report filters and the
   /// invoice-number reset boundary survive without parsing invoiceDate.
-  financialYear String        @map("financial_year")
-  status        String        @default("DRAFT")
-  vendorId      Int?          @map("vendor_id")
-  vendor        Vendor?       @relation(fields: [vendorId], references: [id], onDelete: SetNull)
-  partyId       Int?          @map("party_id")
-  party         Party?        @relation(fields: [partyId], references: [id], onDelete: SetNull)
-  customerName  String?       @map("customer_name")
-  customerPhone String?       @map("customer_phone")
-  customerGstin String?       @map("customer_gstin")
-  customerAddress   String?   @map("customer_address")
-  customerCity      String?   @map("customer_city")
-  customerState     String?   @map("customer_state")
-  customerStateCode String?   @map("customer_state_code")
-  customerPinCode   String?   @map("customer_pin_code")
-  customerPanNumber String?   @map("customer_pan_number")
-  vendorName    String?       @map("vendor_name")
-  vendorPhone   String?       @map("vendor_phone")
-  vendorGstin   String?       @map("vendor_gstin")
-  vendorAddress     String?   @map("vendor_address")
-  vendorCity        String?   @map("vendor_city")
-  vendorState       String?   @map("vendor_state")
-  vendorStateCode   String?   @map("vendor_state_code")
-  vendorPinCode     String?   @map("vendor_pin_code")
-  vendorPanNumber   String?   @map("vendor_pan_number")
+  financialYear          String           @map("financial_year")
+  status                 String           @default("DRAFT")
+  vendorId               Int?             @map("vendor_id")
+  vendor                 Vendor?          @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+  partyId                Int?             @map("party_id")
+  party                  Party?           @relation(fields: [partyId], references: [id], onDelete: SetNull)
+  customerName           String?          @map("customer_name")
+  customerPhone          String?          @map("customer_phone")
+  customerGstin          String?          @map("customer_gstin")
+  customerAddress        String?          @map("customer_address")
+  customerCity           String?          @map("customer_city")
+  customerState          String?          @map("customer_state")
+  customerStateCode      String?          @map("customer_state_code")
+  customerPinCode        String?          @map("customer_pin_code")
+  customerPanNumber      String?          @map("customer_pan_number")
+  vendorName             String?          @map("vendor_name")
+  vendorPhone            String?          @map("vendor_phone")
+  vendorGstin            String?          @map("vendor_gstin")
+  vendorAddress          String?          @map("vendor_address")
+  vendorCity             String?          @map("vendor_city")
+  vendorState            String?          @map("vendor_state")
+  vendorStateCode        String?          @map("vendor_state_code")
+  vendorPinCode          String?          @map("vendor_pin_code")
+  vendorPanNumber        String?          @map("vendor_pan_number")
   /// 2-digit GST state code of the place of supply. Drives IGST vs
   /// CGST+SGST: when it differs from the shop's stateCode we charge IGST.
-  placeOfSupplyStateCode String? @map("place_of_supply_state_code")
+  placeOfSupplyStateCode String?          @map("place_of_supply_state_code")
   /// Cached at create time so legacy code paths don't have to re-derive.
-  isInterstate  Boolean       @default(false) @map("is_interstate")
-  subtotal      Decimal       @db.Decimal(12, 2)
+  isInterstate           Boolean          @default(false) @map("is_interstate")
+  subtotal               Decimal          @db.Decimal(12, 2)
   /// Sum of (qty * unitPrice - lineDiscount) across items — the GST
   /// "taxable value" before tax + cess.
-  taxableValue  Decimal       @default(0) @map("taxable_value") @db.Decimal(12, 2)
+  taxableValue           Decimal          @default(0) @map("taxable_value") @db.Decimal(12, 2)
   /// Kept for backwards-compatibility with older clients. Equals
   /// igstAmount + cgstAmount + sgstAmount + cessAmount.
-  taxAmount     Decimal       @default(0) @map("tax_amount") @db.Decimal(12, 2)
-  igstAmount    Decimal       @default(0) @map("igst_amount") @db.Decimal(12, 2)
-  cgstAmount    Decimal       @default(0) @map("cgst_amount") @db.Decimal(12, 2)
-  sgstAmount    Decimal       @default(0) @map("sgst_amount") @db.Decimal(12, 2)
-  cessAmount    Decimal       @default(0) @map("cess_amount") @db.Decimal(12, 2)
-  discount      Decimal       @default(0) @db.Decimal(12, 2)
+  taxAmount              Decimal          @default(0) @map("tax_amount") @db.Decimal(12, 2)
+  igstAmount             Decimal          @default(0) @map("igst_amount") @db.Decimal(12, 2)
+  cgstAmount             Decimal          @default(0) @map("cgst_amount") @db.Decimal(12, 2)
+  sgstAmount             Decimal          @default(0) @map("sgst_amount") @db.Decimal(12, 2)
+  cessAmount             Decimal          @default(0) @map("cess_amount") @db.Decimal(12, 2)
+  discount               Decimal          @default(0) @db.Decimal(12, 2)
   /// Delta applied to round the grand total to the nearest whole rupee.
   /// `total = sum(lineTotals) + roundOff`.
-  roundOff      Decimal       @default(0) @map("round_off") @db.Decimal(6, 2)
-  total         Decimal       @db.Decimal(12, 2)
+  roundOff               Decimal          @default(0) @map("round_off") @db.Decimal(6, 2)
+  total                  Decimal          @db.Decimal(12, 2)
   /// "Rupees X and Paise Y only" — pre-rendered for the printed PDF.
-  amountInWords String?       @map("amount_in_words")
-  note          String?
-  invoiceDate   DateTime      @default(now()) @map("invoice_date")
-  createdAt     DateTime      @default(now()) @map("created_at")
-  updatedAt     DateTime      @updatedAt @map("updated_at")
-  items         InvoiceItem[]
-  challan       Challan?
-  purchaseRequest PurchaseRequest?
-  payments      Payment[]
+  amountInWords          String?          @map("amount_in_words")
+  note                   String?
+  invoiceDate            DateTime         @default(now()) @map("invoice_date")
+  createdAt              DateTime         @default(now()) @map("created_at")
+  updatedAt              DateTime         @updatedAt @map("updated_at")
+  items                  InvoiceItem[]
+  challan                Challan?
+  purchaseRequest        PurchaseRequest?
+  payments               Payment[]
 
-  @@index([type])
-  @@index([status])
-  @@index([invoiceDate])
+  @@unique([shopId, invoiceNo])
+  @@index([shopId, type])
+  @@index([shopId, status])
+  @@index([shopId, invoiceDate])
   @@index([vendorId])
   @@index([partyId])
-  @@index([financialYear])
-  @@index([financialYear, type])
+  @@index([shopId, financialYear])
+  @@index([shopId, financialYear, type])
   @@index([placeOfSupplyStateCode])
   @@map("invoices")
 }
 
 model Challan {
   id         Int           @id @default(autoincrement())
-  challanNo  String        @unique @map("challan_no")
+  /// Owning shop. Challan numbers reset per shop.
+  shopId     Int           @map("shop_id")
+  shop       Shop          @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  challanNo  String        @map("challan_no")
   status     String        @default("PENDING")
   partyId    Int?          @map("party_id")
   party      Party?        @relation(fields: [partyId], references: [id], onDelete: SetNull)
@@ -569,48 +712,49 @@ model Challan {
   updatedAt  DateTime      @updatedAt @map("updated_at")
   items      ChallanItem[]
 
-  @@index([status])
-  @@index([createdAt])
+  @@unique([shopId, challanNo])
+  @@index([shopId, status])
+  @@index([shopId, createdAt])
   @@index([partyId])
   @@map("challans")
 }
 
 model ChallanItem {
-  id          Int      @id @default(autoincrement())
-  challanId   Int      @map("challan_id")
-  challan     Challan  @relation(fields: [challanId], references: [id], onDelete: Cascade)
-  productId   Int      @map("product_id")
-  productName String   @map("product_name")
-  productSku  String   @map("product_sku")
-  unit        String   @default("PCS")
-  quantity    Decimal  @db.Decimal(12, 3)
+  id          Int     @id @default(autoincrement())
+  challanId   Int     @map("challan_id")
+  challan     Challan @relation(fields: [challanId], references: [id], onDelete: Cascade)
+  productId   Int     @map("product_id")
+  productName String  @map("product_name")
+  productSku  String  @map("product_sku")
+  unit        String  @default("PCS")
+  quantity    Decimal @db.Decimal(12, 3)
 
   @@index([challanId])
   @@map("challan_items")
 }
 
 model InvoiceItem {
-  id         Int      @id @default(autoincrement())
-  invoiceId  Int      @map("invoice_id")
-  invoice    Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  productId  Int      @map("product_id")
-  product    Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
-  productName String  @map("product_name")
-  productSku String   @map("product_sku")
-  hsn        String?
-  unit       String   @default("PCS")
-  quantity   Decimal  @db.Decimal(12, 3)
-  unitPrice  Decimal  @map("unit_price") @db.Decimal(12, 2)
-  taxPercent Decimal  @default(0) @map("tax_percent") @db.Decimal(5, 2)
-  discount   Decimal  @default(0) @db.Decimal(12, 2)
+  id           Int     @id @default(autoincrement())
+  invoiceId    Int     @map("invoice_id")
+  invoice      Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  productId    Int     @map("product_id")
+  product      Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  productName  String  @map("product_name")
+  productSku   String  @map("product_sku")
+  hsn          String?
+  unit         String  @default("PCS")
+  quantity     Decimal @db.Decimal(12, 3)
+  unitPrice    Decimal @map("unit_price") @db.Decimal(12, 2)
+  taxPercent   Decimal @default(0) @map("tax_percent") @db.Decimal(5, 2)
+  discount     Decimal @default(0) @db.Decimal(12, 2)
   /// (quantity * unitPrice) - discount. Pre-tax, pre-cess.
   taxableValue Decimal @default(0) @map("taxable_value") @db.Decimal(12, 2)
-  igstAmount Decimal  @default(0) @map("igst_amount") @db.Decimal(12, 2)
-  cgstAmount Decimal  @default(0) @map("cgst_amount") @db.Decimal(12, 2)
-  sgstAmount Decimal  @default(0) @map("sgst_amount") @db.Decimal(12, 2)
-  cessRate   Decimal  @default(0) @map("cess_rate") @db.Decimal(5, 2)
-  cessAmount Decimal  @default(0) @map("cess_amount") @db.Decimal(12, 2)
-  total      Decimal  @db.Decimal(12, 2)
+  igstAmount   Decimal @default(0) @map("igst_amount") @db.Decimal(12, 2)
+  cgstAmount   Decimal @default(0) @map("cgst_amount") @db.Decimal(12, 2)
+  sgstAmount   Decimal @default(0) @map("sgst_amount") @db.Decimal(12, 2)
+  cessRate     Decimal @default(0) @map("cess_rate") @db.Decimal(5, 2)
+  cessAmount   Decimal @default(0) @map("cess_amount") @db.Decimal(12, 2)
+  total        Decimal @db.Decimal(12, 2)
 
   @@index([invoiceId])
   @@index([productId])
@@ -622,31 +766,36 @@ model InvoiceItem {
 /// in-app notification is created immediately; otherwise the row sits
 /// PENDING and is claimed at signup.
 model Invitation {
-  id          Int       @id @default(autoincrement())
+  id         Int    @id @default(autoincrement())
+  /// Owning shop — the shop whose address-book the invited person
+  /// gets added to on accept. Required after the multi-tenant
+  /// migration; a stale invite without a shop scope is meaningless.
+  shopId     Int    @map("shop_id")
+  shop       Shop   @relation(fields: [shopId], references: [id], onDelete: Cascade)
   /// Inviter (shop owner). Cascades on user delete.
-  fromUserId  Int       @map("from_user_id")
-  fromUser    User      @relation("InvitationsSent", fields: [fromUserId], references: [id], onDelete: Cascade)
+  fromUserId Int    @map("from_user_id")
+  fromUser   User   @relation("InvitationsSent", fields: [fromUserId], references: [id], onDelete: Cascade)
   /// Always stored lower-cased so the partial-unique pending index works.
-  toEmail     String    @map("to_email")
+  toEmail    String @map("to_email")
   /// Set once a user with this email exists (either already, or after signup).
-  toUserId    Int?      @map("to_user_id")
-  toUser      User?     @relation("InvitationsReceived", fields: [toUserId], references: [id], onDelete: SetNull)
+  toUserId   Int?   @map("to_user_id")
+  toUser     User?  @relation("InvitationsReceived", fields: [toUserId], references: [id], onDelete: SetNull)
 
   /// PARTY or VENDOR.
-  linkType    String    @map("link_type")
-  partyId     Int?      @map("party_id")
-  party       Party?    @relation(fields: [partyId], references: [id], onDelete: Cascade)
-  vendorId    Int?      @map("vendor_id")
-  vendor      Vendor?   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  linkType String  @map("link_type")
+  partyId  Int?    @map("party_id")
+  party    Party?  @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  vendorId Int?    @map("vendor_id")
+  vendor   Vendor? @relation(fields: [vendorId], references: [id], onDelete: Cascade)
 
   /// PENDING / ACCEPTED / DECLINED / CANCELLED / EXPIRED.
-  status      String    @default("PENDING")
-  message     String?
+  status       String  @default("PENDING")
+  message      String?
   /// Snapshot of the inviting shop's display name, kept independent of
   /// the user's profile mutating later.
-  fromShopName String?  @map("from_shop_name")
+  fromShopName String? @map("from_shop_name")
   /// Snapshot of the invited party/vendor name at send time.
-  displayName String?   @map("display_name")
+  displayName  String? @map("display_name")
 
   /// Opaque token used for future email deep-links.
   token       String    @unique
@@ -661,6 +810,7 @@ model Invitation {
   //   3. outbox list:     lookup by (fromUserId, status, createdAt)
   @@index([toEmail, status])
   @@index([toUserId, status, createdAt])
+  @@index([shopId, status, createdAt])
   @@index([fromUserId, status, createdAt])
   @@index([status, expiresAt])
   @@map("invitations")
@@ -693,81 +843,88 @@ model Notification {
 /// at submit time so the customer's order is stable even if the
 /// merchant later edits product details.
 model PurchaseRequest {
-  id              Int       @id @default(autoincrement())
+  id             Int    @id @default(autoincrement())
+  /// Owning merchant — which shop receives this order. Required:
+  /// every order belongs to exactly one shop, so the cart-splits-on-
+  /// checkout flow creates N rows when items span multiple shops.
+  shopId         Int    @map("shop_id")
+  shop           Shop   @relation(fields: [shopId], references: [id], onDelete: Cascade)
   /// Customer who placed the order. Cascades on user delete.
-  customerUserId  Int       @map("customer_user_id")
-  customerUser    User      @relation("CustomerPurchaseRequests", fields: [customerUserId], references: [id], onDelete: Cascade)
+  customerUserId Int    @map("customer_user_id")
+  customerUser   User   @relation("CustomerPurchaseRequests", fields: [customerUserId], references: [id], onDelete: Cascade)
   /// If the customer is a linked party, we point at the existing Party
   /// row so the merchant can correlate orders → their party ledger.
   /// Lazy-created on confirm when the customer was never invited.
-  partyId         Int?      @map("party_id")
-  party           Party?    @relation(fields: [partyId], references: [id], onDelete: SetNull)
+  partyId        Int?   @map("party_id")
+  party          Party? @relation(fields: [partyId], references: [id], onDelete: SetNull)
 
   /// Snapshots of customer identity at submit time. Survives later
   /// profile changes and lets the merchant render a usable display
   /// without a User join.
-  customerName    String    @map("customer_name")
-  customerPhone   String?   @map("customer_phone")
-  customerEmail   String?   @map("customer_email")
-  customerAddress String?   @map("customer_address")
+  customerName    String  @map("customer_name")
+  customerPhone   String? @map("customer_phone")
+  customerEmail   String? @map("customer_email")
+  customerAddress String? @map("customer_address")
 
   /// PENDING / CONFIRMED / REJECTED / CANCELLED.
   /// CONFIRMED rows always have invoiceId set.
-  status          String    @default("PENDING")
+  status String @default("PENDING")
 
   /// SALE invoice that materialised this request, if confirmed.
-  invoiceId       Int?      @unique @map("invoice_id")
-  invoice         Invoice?  @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  invoiceId Int?     @unique @map("invoice_id")
+  invoice   Invoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
 
   /// Merchant user who acted on the request. Set on confirm/reject.
-  decidedById     Int?      @map("decided_by_id")
-  decidedBy       User?     @relation("MerchantDecidedRequests", fields: [decidedById], references: [id], onDelete: SetNull)
-  decidedAt       DateTime? @map("decided_at")
-  decisionNote    String?   @map("decision_note")
+  decidedById  Int?      @map("decided_by_id")
+  decidedBy    User?     @relation("MerchantDecidedRequests", fields: [decidedById], references: [id], onDelete: SetNull)
+  decidedAt    DateTime? @map("decided_at")
+  decisionNote String?   @map("decision_note")
 
-  note            String?
+  note           String?
   /// Cached snapshot of cart subtotal (sum of item.total) at submit time.
   /// Backend recomputes from current price on confirm so this is just a
   /// preview number for the customer's order list.
-  estimatedTotal  Decimal   @default(0) @map("estimated_total") @db.Decimal(12, 2)
+  estimatedTotal Decimal @default(0) @map("estimated_total") @db.Decimal(12, 2)
 
   /// Client-supplied idempotency key. Lets the customer app retry a
   /// flaky POST /me/orders without creating duplicates — the server
   /// short-circuits to the existing row when the same (userId, key)
   /// arrives twice. Scoped per user via the partial unique below.
-  idempotencyKey  String?   @map("idempotency_key")
+  idempotencyKey String? @map("idempotency_key")
 
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
-  items           PurchaseRequestItem[]
+  createdAt DateTime              @default(now()) @map("created_at")
+  updatedAt DateTime              @updatedAt @map("updated_at")
+  items     PurchaseRequestItem[]
 
+  /// Idempotency lookup. Scoped to the placing user + shop so a retry
+  /// of the same logical cart-split (one POST per shop sharing one
+  /// key) routes correctly when the user re-tries before the first
+  /// 2xx has come back.
+  @@unique([customerUserId, shopId, idempotencyKey], name: "purchase_requests_user_shop_idempotency_key")
   /// Hot paths:
   ///   1. customer's order list: (customerUserId, createdAt DESC)
-  ///   2. merchant inbox:        (status, createdAt DESC)
+  ///   2. merchant inbox:        (shopId, status, createdAt DESC)
   @@index([customerUserId, createdAt])
-  @@index([status, createdAt])
+  @@index([shopId, status, createdAt])
   @@index([partyId])
-  /// Idempotency lookup. Scoped to the placing user so two different
-  /// customers can reuse the same client-side UUID without colliding.
-  @@unique([customerUserId, idempotencyKey], name: "purchase_requests_user_idempotency_key")
   @@map("purchase_requests")
 }
 
 model PurchaseRequestItem {
-  id          Int             @id @default(autoincrement())
-  requestId   Int             @map("request_id")
-  request     PurchaseRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
-  productId   Int             @map("product_id")
-  product     Product         @relation(fields: [productId], references: [id], onDelete: Restrict)
+  id        Int             @id @default(autoincrement())
+  requestId Int             @map("request_id")
+  request   PurchaseRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  productId Int             @map("product_id")
+  product   Product         @relation(fields: [productId], references: [id], onDelete: Restrict)
 
   /// Snapshots of product identity + price at submit time. Stable for
   /// the customer even if the merchant edits the product later.
-  productName String          @map("product_name")
-  productSku  String          @map("product_sku")
-  unit        String          @default("PCS")
-  quantity    Decimal         @db.Decimal(12, 3)
-  unitPrice   Decimal         @map("unit_price") @db.Decimal(12, 2)
-  total       Decimal         @db.Decimal(12, 2)
+  productName String  @map("product_name")
+  productSku  String  @map("product_sku")
+  unit        String  @default("PCS")
+  quantity    Decimal @db.Decimal(12, 3)
+  unitPrice   Decimal @map("unit_price") @db.Decimal(12, 2)
+  total       Decimal @db.Decimal(12, 2)
 
   @@index([requestId])
   @@index([productId])
@@ -779,33 +936,37 @@ model PurchaseRequestItem {
 /// the party/vendor detail page to drive a running balance. Optionally
 /// allocated to one invoice; otherwise treated as on-account credit.
 model Payment {
-  id              Int      @id @default(autoincrement())
+  id            Int      @id @default(autoincrement())
+  /// Owning shop. Payment reference numbers reset per shop.
+  shopId        Int      @map("shop_id")
+  shop          Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
   /// 'RECEIPT' (money in from a party) or 'PAYMENT' (money out to a vendor).
-  type            String
-  referenceNo     String   @unique @map("reference_no")
-  amount          Decimal  @db.Decimal(12, 2)
+  type          String
+  referenceNo   String   @map("reference_no")
+  amount        Decimal  @db.Decimal(12, 2)
   /// CASH | UPI | NEFT | RTGS | CHEQUE | CARD | OTHER.
-  mode            String
+  mode          String
   /// Free-form ref (UPI txn id, cheque no, etc.).
-  modeReference   String?  @map("mode_reference")
-  paymentDate     DateTime @default(now()) @map("payment_date")
+  modeReference String?  @map("mode_reference")
+  paymentDate   DateTime @default(now()) @map("payment_date")
   /// Exactly one of partyId / vendorId is set (depending on type).
-  partyId         Int?     @map("party_id")
-  party           Party?   @relation(fields: [partyId], references: [id], onDelete: SetNull)
-  vendorId        Int?     @map("vendor_id")
-  vendor          Vendor?  @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+  partyId       Int?     @map("party_id")
+  party         Party?   @relation(fields: [partyId], references: [id], onDelete: SetNull)
+  vendorId      Int?     @map("vendor_id")
+  vendor        Vendor?  @relation(fields: [vendorId], references: [id], onDelete: SetNull)
   /// Optional direct allocation to one invoice. Null = on-account credit.
-  invoiceId       Int?     @map("invoice_id")
-  invoice         Invoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
-  note            String?
+  invoiceId     Int?     @map("invoice_id")
+  invoice       Invoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  note          String?
   /// Owner who recorded the payment.
-  createdById     Int?     @map("created_by_id")
-  createdBy       User?    @relation("PaymentCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  createdById   Int?     @map("created_by_id")
+  createdBy     User?    @relation("PaymentCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
-  @@index([partyId, paymentDate])
-  @@index([vendorId, paymentDate])
+  @@unique([shopId, referenceNo])
+  @@index([shopId, partyId, paymentDate])
+  @@index([shopId, vendorId, paymentDate])
   @@index([invoiceId])
   @@map("payments")
 }
@@ -814,9 +975,445 @@ model Payment {
 /// invoice/challan numbers atomically: a Postgres UPSERT increment
 /// returns the next value in one round-trip, defeating the `count()+1`
 /// race flagged in audit C4.
+/// Monotonic counter, scoped per shop. Each merchant has their own
+/// invoice/challan/adjustment number sequence so two merchants both
+/// issuing `INV-0001` doesn't collide.
 model Counter {
-  key   String @id
-  value Int    @default(0)
+  shopId Int    @map("shop_id")
+  shop   Shop   @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  key    String
+  value  Int    @default(0)
 
+  @@id([shopId, key])
   @@map("counters")
+}
+
+/// Customer-authored review of a marketplace product. Gated server-side
+/// to users who have at least one CONFIRMED InvoiceItem for the product
+/// — see reviews.service.canReview. One row per (productId, userId)
+/// pair: editing a review = upsert on the same row, so denorms stay
+/// consistent. Denormalised aggregates live on Product (ratingAvg,
+/// ratingCount) and are rewritten in the review-write transaction.
+model ProductReview {
+  id        Int      @id @default(autoincrement())
+  productId Int      @map("product_id")
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId    Int      @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rating    Int
+  title     String?
+  body      String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([productId, userId])
+  @@index([productId, createdAt(sort: Desc)])
+  @@map("product_reviews")
+}
+
+/// Marketplace banner — one row per slot on the customer home page.
+/// Placement enum maps to the four section types built in home_v2:
+///   HERO         — top auto-rotating carousel
+///   AD_STRIP     — horizontal medium-card row under the hero
+///   PROMO        — wide gradient strip (member promos)
+///   CURATED_RAIL — editorial wedge with eyebrow + CTA
+/// ctaTarget is a tiny DSL parsed by shared/cta-target.ts:
+///   `category:<slug>` | `product:<id>` | `collection:<slug>` | `url:https://…`
+/// Optional sponsorShopId attributes the placement to a paying merchant
+/// (Phase 9 promotions) — null = platform-curated/organic.
+model Banner {
+  id            Int             @id @default(autoincrement())
+  placement     BannerPlacement
+  title         String
+  subtitle      String?
+  eyebrow       String?
+  ctaText       String?         @map("cta_text")
+  ctaTarget     String?         @map("cta_target")
+  brandLabel    String?         @map("brand_label")
+  imageUrl      String          @map("image_url")
+  bgColor       String          @map("bg_color")
+  accentColor   String?         @map("accent_color")
+  sortOrder     Int             @default(0) @map("sort_order")
+  startAt       DateTime?       @map("start_at")
+  endAt         DateTime?       @map("end_at")
+  isActive      Boolean         @default(true) @map("is_active")
+  sponsorShopId Int?            @map("sponsor_shop_id")
+  sponsorShop   Shop?           @relation(fields: [sponsorShopId], references: [id], onDelete: SetNull)
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+
+  products BannerProduct[]
+
+  @@index([placement, isActive, startAt, endAt])
+  @@index([sponsorShopId])
+  @@map("banners")
+}
+
+/// Per-slide curated product list with a display-only percent-off. The
+/// merchant editor lets the slide author pin specific products and
+/// stamp a discount per row; the customer slide-detail page renders
+/// the original `sellingPrice` struck through next to the computed
+/// sale price (`sellingPrice * (1 - discountPct/100)`). Carts and
+/// checkout still use the canonical product price — this surface is
+/// pure storefront merchandising, not a pricing override.
+model BannerProduct {
+  id          Int      @id @default(autoincrement())
+  bannerId    Int      @map("banner_id")
+  banner      Banner   @relation(fields: [bannerId], references: [id], onDelete: Cascade)
+  productId   Int      @map("product_id")
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  position    Int      @default(0)
+  /// 0..90 — capped server-side. Stored as an int (not Decimal) since
+  /// fractional percent precision adds nothing for merchandising copy
+  /// and a smallint keeps the row hot.
+  discountPct Int      @default(0) @map("discount_pct")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@unique([bannerId, productId])
+  @@index([bannerId, position])
+  @@index([productId])
+  @@map("banner_products")
+}
+
+enum BannerPlacement {
+  HERO
+  AD_STRIP
+  PROMO
+  CURATED_RAIL
+}
+
+/// Time-bound discounted offer on a single product. soldCount is the
+/// canonical persisted counter; for hot paths a Redis INCR mirror runs
+/// in front (see flash-sale.service) and is flushed back here by cron
+/// every 60s. The DB row stays the source of truth across restarts.
+///
+/// "Only one active sale per product at a time" is enforced by a
+/// partial unique index in the migration (Prisma can't model partial
+/// indexes natively as of v7) — keeping the data model simple while
+/// guaranteeing the customer-facing flash card never has two prices.
+model FlashSale {
+  id         Int      @id @default(autoincrement())
+  /// Owning shop — denormalised from product.shopId for the active-deals
+  /// homepage query, which needs to filter by isActive + window + shop
+  /// without a Product join on every request.
+  shopId     Int      @map("shop_id")
+  shop       Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  productId  Int      @map("product_id")
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  flashPrice Decimal  @map("flash_price") @db.Decimal(12, 2)
+  stockLimit Int      @map("stock_limit")
+  soldCount  Int      @default(0) @map("sold_count")
+  startAt    DateTime @map("start_at")
+  endAt      DateTime @map("end_at")
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@index([shopId, isActive])
+  @@index([productId, isActive])
+  @@index([isActive, startAt, endAt])
+  @@map("flash_sales")
+}
+
+/// Account type. OWNER = merchant (manages a shop, lists products, sees
+/// merchant-only routes). CUSTOMER = marketplace buyer. Platform-wide
+/// admin powers (cross-shop banners, taxonomy, collection curation) are
+/// gated by `User.isPlatformAdmin`, *not* by role — any OWNER can be
+/// flagged as a platform admin independently of their merchant scope.
+enum Role {
+  OWNER
+  CUSTOMER
+}
+
+/// Marketplace-visible shop owned 1:1 by a merchant User. Separate from
+/// the User.shop* fields, which exist for GST-compliant invoice header
+/// rendering (legal name, address, GSTIN) — those stay where they are.
+/// This row holds the public storefront: logo, banner, public slug,
+/// publish state, marketplace rating.
+model Shop {
+  id          Int      @id @default(autoincrement())
+  ownerUserId Int      @unique @map("owner_user_id")
+  owner       User     @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  name        String
+  slug        String   @unique
+  tagline     String?
+  logoUrl     String?  @map("logo_url")
+  bannerUrl   String?  @map("banner_url")
+  isPublished Boolean  @default(false) @map("is_published")
+  /// Denormalised aggregates updated on review write; avoid recomputing
+  /// during home-feed reads. Nullable until first rating arrives.
+  rating      Decimal? @db.Decimal(3, 2)
+  ratingCount Int      @default(0) @map("rating_count")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  products               Product[]
+  sponsoredBanners       Banner[]
+  spotlights             BrandSpotlight[]
+  promotions             Promotion[]
+  // ── Multi-tenant inverse relations (Phase 1 migration) ───────────
+  parties                Party[]
+  vendors                Vendor[]
+  invoices               Invoice[]
+  challans               Challan[]
+  purchaseRequests       PurchaseRequest[]
+  payments               Payment[]
+  stockTransactions      StockTransaction[]
+  stockAdjustments       StockAdjustment[]
+  invitations            Invitation[]
+  flashSales             FlashSale[]
+  customFieldSections    CustomFieldSection[]
+  customFieldDefinitions CustomFieldDefinition[]
+  counters               Counter[]
+
+  @@index([isPublished])
+  @@map("shops")
+}
+
+/// A merchant-requested, admin-approved "brand of the day" placement.
+/// One row per *request*: merchant submits with PENDING status; a
+/// platform admin reviews and flips it to APPROVED or REJECTED. Only
+/// APPROVED rows whose [startAt, endAt] window contains `now()` show up
+/// in `GET /brand-spotlights/active`. The actual product list rendered
+/// on the customer surface is the shop's published catalog (we don't
+/// duplicate items here — that's what Collection is for).
+model BrandSpotlight {
+  id               Int                  @id @default(autoincrement())
+  shopId           Int                  @map("shop_id")
+  shop             Shop                 @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  dealLabel        String               @map("deal_label")
+  subtitle         String?
+  heroImageUrl     String               @map("hero_image_url")
+  bgColor          String               @map("bg_color")
+  accentColor      String?              @map("accent_color")
+  ctaTarget        String?              @map("cta_target")
+  startAt          DateTime             @map("start_at")
+  endAt            DateTime             @map("end_at")
+  status           BrandSpotlightStatus @default(PENDING)
+  rejectionReason  String?              @map("rejection_reason")
+  reviewedByUserId Int?                 @map("reviewed_by_user_id")
+  reviewedBy       User?                @relation("BrandSpotlightReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  reviewedAt       DateTime?            @map("reviewed_at")
+  createdAt        DateTime             @default(now()) @map("created_at")
+  updatedAt        DateTime             @updatedAt @map("updated_at")
+
+  @@index([status, startAt, endAt])
+  @@index([shopId, status])
+  @@map("brand_spotlights")
+}
+
+enum BrandSpotlightStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+/// Editorial product list curated by a platform admin (e.g. "Wedding
+/// edit", "Monsoon must-haves"). Slug-keyed so the URL is stable across
+/// title edits. Items are stored in CollectionItem with an explicit
+/// `position` — reorder is a full-array PATCH (small N, simpler than
+/// rank-string gymnastics).
+model Collection {
+  id            Int      @id @default(autoincrement())
+  slug          String   @unique
+  title         String
+  eyebrow       String?
+  subtitle      String?
+  ctaText       String?  @map("cta_text")
+  ctaTarget     String?  @map("cta_target")
+  coverImageUrl String?  @map("cover_image_url")
+  bgColor       String?  @map("bg_color")
+  isPublished   Boolean  @default(false) @map("is_published")
+  sortOrder     Int      @default(0) @map("sort_order")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  items CollectionItem[]
+
+  @@index([isPublished, sortOrder])
+  @@map("collections")
+}
+
+model CollectionItem {
+  id           Int        @id @default(autoincrement())
+  collectionId Int        @map("collection_id")
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  productId    Int        @map("product_id")
+  product      Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  position     Int        @default(0)
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  @@unique([collectionId, productId])
+  @@index([collectionId, position])
+  @@index([productId])
+  @@map("collection_items")
+}
+
+/// Raw activity stream — every customer interaction worth attributing
+/// lands here. The id is BigInt because at scale this table grows fast
+/// (one row per IMPRESSION); the daily prune cron drops everything
+/// older than 90 days to keep it bounded. Aggregates that need to
+/// outlive the raw row land in trending / analytics tables (P6 / P7).
+///
+/// Idempotency: clients generate `clientUuid` per event and may retry;
+/// the unique index makes a re-POST a no-op (createMany skipDuplicates).
+///
+/// `userId` is nullable — pre-login impressions are still useful for
+/// trending, attributed only by sessionId. Once the user signs in the
+/// session's tail of events stays under the sessionId.
+model ProductEvent {
+  id         BigInt           @id @default(autoincrement())
+  clientUuid String           @unique @map("client_uuid")
+  eventType  ProductEventType @map("event_type")
+  productId  Int              @map("product_id")
+  product    Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId     Int?             @map("user_id")
+  user       User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  sessionId  String?          @map("session_id")
+  source     String?
+  meta       Json?
+  occurredAt DateTime         @map("occurred_at")
+  createdAt  DateTime         @default(now()) @map("created_at")
+
+  @@index([productId, eventType, occurredAt])
+  @@index([userId, occurredAt])
+  @@index([occurredAt])
+  @@map("product_events")
+}
+
+enum ProductEventType {
+  IMPRESSION
+  TAP
+  VIEW
+  ADD_TO_CART
+  PURCHASE
+  WISHLIST_ADD
+}
+
+/// Materialised "last 20 viewed" list per user. Upserted whenever a
+/// VIEW event is ingested for an authenticated user. Trimmed by an
+/// hourly cron so the cap stays soft (we tolerate a brief overshoot
+/// between ingest and trim instead of a per-write DELETE).
+model RecentlyViewed {
+  id           Int      @id @default(autoincrement())
+  userId       Int      @map("user_id")
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId    Int      @map("product_id")
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  lastViewedAt DateTime @default(now()) @map("last_viewed_at")
+
+  @@unique([userId, productId])
+  @@index([userId, lastViewedAt])
+  @@map("recently_viewed")
+}
+
+/// Per-(category, product) trending score, recomputed on a 15-minute
+/// cron from ProductEvent. categoryId = NULL is the global ("All")
+/// bucket. `windowEnd` lets the recompute leave older snapshots in
+/// place briefly (rolling read with a fall-back) while a new snapshot
+/// is being written; the cron sweeps anything older than 7d.
+///
+/// Formula (tunable in the service):
+///   score = 0.05 * impressions24h
+///         + 0.3  * taps24h
+///         + 2    * addToCart24h
+///         + 10   * purchases24h
+///         + 1    * wishlist24h
+///         - exp(-daysSinceListing / 30)
+model TrendingScore {
+  id         Int       @id @default(autoincrement())
+  categoryId Int?      @map("category_id")
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  productId  Int       @map("product_id")
+  product    Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  score      Decimal   @db.Decimal(12, 4)
+  windowEnd  DateTime  @map("window_end")
+  computedAt DateTime  @default(now()) @map("computed_at")
+
+  @@unique([categoryId, productId, windowEnd])
+  @@index([categoryId, score])
+  @@index([windowEnd])
+  @@map("trending_scores")
+}
+
+/// Per-user content-based recommendation cache. One row per (user,
+/// slot). productIds is the ordered shortlist the customer rail
+/// renders. Slot keys are open-ended ("for_you", "because_you_viewed_X")
+/// so future surfaces don't need migrations.
+model RecommendationCache {
+  id         Int      @id @default(autoincrement())
+  userId     Int      @map("user_id")
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slot       String
+  productIds Int[]    @map("product_ids")
+  computedAt DateTime @default(now()) @map("computed_at")
+
+  @@unique([userId, slot])
+  @@index([userId, slot])
+  @@map("recommendation_cache")
+}
+
+/// Distinct search queries — populated by `upsertSearchTerm` on every
+/// /search call. Used by `/search/hints` (top-N over the last 24h)
+/// and the autocomplete fall-back for queries that match no product
+/// directly. `term` is lowercased + trimmed at the service layer.
+model SearchTerm {
+  id             Int      @id @default(autoincrement())
+  term           String   @unique
+  queryCount     Int      @default(0) @map("query_count")
+  lastSearchedAt DateTime @default(now()) @map("last_searched_at")
+
+  @@index([lastSearchedAt])
+  @@index([queryCount])
+  @@map("search_terms")
+}
+
+/// Per-search analytics row. Decoupled from SearchTerm because the
+/// row-vs-term cardinality is very different (one row per request vs
+/// one row per distinct query). Powers session-replay style debugging
+/// and conversion analysis.
+model SearchEvent {
+  id          Int      @id @default(autoincrement())
+  userId      Int?     @map("user_id")
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  sessionId   String?  @map("session_id")
+  query       String
+  resultCount Int      @map("result_count")
+  occurredAt  DateTime @default(now()) @map("occurred_at")
+
+  @@index([userId, occurredAt])
+  @@index([occurredAt])
+  @@map("search_events")
+}
+
+/// Paid promotion (P9) — a merchant pays to inject `productId` into
+/// the for-you / trending rail at a configurable ratio. CPM billing:
+/// `cpmPaise` paise per 1000 impressions. Auto-paused when total
+/// `spendPaise` ≥ `budgetPaise` OR today's spend ≥ `dailyCapPaise`.
+/// `pausedReason` is set by the auto-pause path so the merchant UI can
+/// surface a human-readable status without a separate join.
+model Promotion {
+  id                   Int       @id @default(autoincrement())
+  shopId               Int       @map("shop_id")
+  shop                 Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  productId            Int       @map("product_id")
+  product              Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  budgetPaise          Int       @map("budget_paise")
+  dailyCapPaise        Int       @map("daily_cap_paise")
+  cpmPaise             Int       @map("cpm_paise")
+  startAt              DateTime  @map("start_at")
+  endAt                DateTime  @map("end_at")
+  isActive             Boolean   @default(true) @map("is_active")
+  deliveredImpressions Int       @default(0) @map("delivered_impressions")
+  spendPaise           Int       @default(0) @map("spend_paise")
+  spendTodayPaise      Int       @default(0) @map("spend_today_paise")
+  spendTodayDate       DateTime? @map("spend_today_date") @db.Date
+  pausedReason         String?   @map("paused_reason")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  @@index([shopId, isActive])
+  @@index([productId])
+  @@index([isActive, startAt, endAt])
+  @@map("promotions")
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+
 import 'package:shopxy_customer/features/orders/data/datasources/orders_remote_data_source.dart';
 import 'package:shopxy_customer/features/orders/domain/entities/customer_order.dart';
 import 'package:shopxy_customer/features/orders/presentation/providers/orders_provider.dart';
@@ -8,6 +9,11 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/constants/app_strings.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+import 'package:shopxy_customer/shared/widgets/app_app_bar.dart';
+import 'package:shopxy_customer/shared/widgets/app_button.dart';
+import 'package:shopxy_customer/shared/widgets/app_dialog.dart';
+import 'package:shopxy_customer/shared/widgets/app_price_text.dart';
+import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 
 class OrderDetailPage extends StatefulWidget {
   const OrderDetailPage({super.key, required this.orderId});
@@ -52,43 +58,43 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
     }
   }
 
-  /// Confirms before cancelling — single-tap on red button was eating
-  /// real orders.
+  /// Confirm + cancel. Designed to be reachable from the sticky bottom
+  /// CTA so the destructive path is one tap deep but still gated by an
+  /// `AppConfirmDialog`.
   Future<void> _cancel() async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text(AppStrings.cancelOrderTitle),
-        content: const Text(AppStrings.cancelOrderBody),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text(AppStrings.keepOrder),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text(AppStrings.confirmCancelOrder),
-          ),
-        ],
-      ),
+    final ok = await AppConfirmDialog.show(
+      context,
+      title: AppStrings.cancelOrderTitle,
+      message: AppStrings.cancelOrderBody,
+      confirmLabel: AppStrings.confirmCancelOrder,
+      cancelLabel: AppStrings.keepOrder,
+      danger: true,
     );
-    if (ok != true || !mounted) return;
+    if (!ok || !mounted) return;
 
     setState(() => _cancelling = true);
     try {
       await context.read<OrdersProvider>().cancel(widget.orderId);
       if (!mounted) return;
+      showAppSnackbar(
+        context,
+        message: 'Order cancelled',
+        tone: AppSnackbarTone.success,
+      );
       await _load();
     } on CancelOrderException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message)),
+      showAppSnackbar(
+        context,
+        message: e.message,
+        tone: AppSnackbarTone.error,
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+      showAppSnackbar(
+        context,
+        message: e.toString().replaceFirst('Exception: ', ''),
+        tone: AppSnackbarTone.error,
       );
     } finally {
       if (mounted) setState(() => _cancelling = false);
@@ -97,8 +103,10 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final order = _order;
     return Scaffold(
-      appBar: AppBar(title: Text('Order #${widget.orderId}')),
+      backgroundColor: AppColors.canvas,
+      appBar: AppAppBar(title: 'Order #${widget.orderId}'),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
@@ -106,281 +114,501 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
               : RefreshIndicator(
                   onRefresh: _load,
                   color: AppColors.brand,
-                  child: _Body(
-                    order: _order!,
-                    cancelling: _cancelling,
-                    onCancel: _cancel,
-                  ),
+                  child: _Body(order: order!),
                 ),
+      bottomNavigationBar: order != null && order.isPending
+          ? _CancelBar(
+              cancelling: _cancelling,
+              onCancel: _cancel,
+            )
+          : null,
     );
   }
 }
 
 class _Body extends StatelessWidget {
-  const _Body({
-    required this.order,
-    required this.cancelling,
-    required this.onCancel,
-  });
+  const _Body({required this.order});
   final CustomerOrderDetail order;
-  final bool cancelling;
-  final VoidCallback onCancel;
-
   static final _date = DateFormat('d MMM y · h:mm a');
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final (label, color, soft) = _statusVisual(order);
-
     return ListView(
-      // Always-scrollable so RefreshIndicator works even on tiny content.
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
+      padding: const EdgeInsets.only(bottom: AppSizes.huge),
       children: [
-        if (order.isConfirmed)
-          _Banner(
-            color: AppColors.success,
-            soft: AppColors.successSoft,
-            icon: Icons.check_circle_outline_rounded,
-            title: AppStrings.orderConfirmed,
-            body: order.shop != null
-                ? '${order.shop!.displayName} is preparing your order.'
-                : 'The shop is preparing your order.',
-          ),
-        if (order.isRejected)
-          _Banner(
-            color: AppColors.error,
-            soft: AppColors.errorSoft,
-            icon: Icons.cancel_outlined,
-            title: AppStrings.orderRejected,
-            body: order.decisionNote ?? 'The shop declined this order.',
-          ),
-        if (order.isPending)
-          _Banner(
-            color: AppColors.warning,
-            soft: AppColors.warningSoft,
-            icon: Icons.schedule_rounded,
-            title: AppStrings.orderPending,
-            body: order.shop != null
-                ? 'Waiting for ${order.shop!.displayName} to confirm.'
-                : 'Waiting for the shop to confirm your order.',
-          ),
-        Padding(
-          padding: const EdgeInsets.all(AppSizes.lg),
-          child: Container(
-            padding: const EdgeInsets.all(AppSizes.lg),
-            decoration: ShapeDecoration(
-              color: AppColors.white,
-              shape: AppShapes.squircle(
-                AppSizes.radiusLg,
-                side: const BorderSide(color: AppColors.hairline),
-              ),
+        _StatusHero(order: order),
+        const SizedBox(height: AppSizes.md),
+        _ShopAndDateCard(order: order, date: _date.format(order.createdAt)),
+        if (order.customerAddress != null && order.customerAddress!.isNotEmpty) ...[
+          const SizedBox(height: AppSizes.md),
+          _DeliverySnapshotCard(order: order),
+        ],
+        const SizedBox(height: AppSizes.md),
+        _ItemsCard(order: order),
+        const SizedBox(height: AppSizes.md),
+        _TotalsCard(order: order),
+        if (order.note != null && order.note!.isNotEmpty) ...[
+          const SizedBox(height: AppSizes.md),
+          _NoteCard(note: order.note!),
+        ],
+      ],
+    );
+  }
+}
+
+// ─── Sections ────────────────────────────────────────────────────────
+
+class _StatusHero extends StatelessWidget {
+  const _StatusHero({required this.order});
+  final CustomerOrderDetail order;
+  @override
+  Widget build(BuildContext context) {
+    final (label, color, soft, icon, message) = _visuals(order);
+    return Container(
+      margin: const EdgeInsets.fromLTRB(
+        AppSizes.lg, AppSizes.md, AppSizes.lg, 0,
+      ),
+      padding: const EdgeInsets.all(AppSizes.lg),
+      decoration: ShapeDecoration(
+        color: soft,
+        shape: AppShapes.squircle(AppSizes.radiusLg),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 40, height: 40,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
             ),
+            alignment: Alignment.center,
+            child: Icon(icon, color: color, size: 22),
+          ),
+          const SizedBox(width: AppSizes.md),
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Order #${order.id}',
-                            style: theme.textTheme.titleMedium
-                                ?.copyWith(fontWeight: FontWeight.w800),
-                          ),
-                          if (order.shop != null)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 2),
-                              child: Text(
-                                order.shop!.displayName,
-                                style: theme.textTheme.bodySmall
-                                    ?.copyWith(color: AppColors.muted),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 3,
-                      ),
-                      decoration: ShapeDecoration(
-                        color: soft,
-                        shape: AppShapes.squircle(AppSizes.radiusFull),
-                      ),
-                      child: Text(
-                        label,
-                        style: TextStyle(
-                          color: color,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
                 Text(
-                  _date.format(order.createdAt),
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: AppColors.muted),
+                  label,
+                  style: TextStyle(
+                    color: color,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                  ),
                 ),
-                const SizedBox(height: AppSizes.md),
-                for (final item in order.items)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
-                    child: Row(
+                const SizedBox(height: 2),
+                Text(
+                  message,
+                  style: TextStyle(color: color, fontSize: 13, height: 1.4),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static (String, Color, Color, IconData, String) _visuals(
+      CustomerOrderDetail o) {
+    if (o.isConfirmed) {
+      return (
+        AppStrings.orderConfirmed,
+        AppColors.success,
+        AppColors.successSoft,
+        Icons.check_circle_outline_rounded,
+        o.shop != null
+            ? '${o.shop!.displayName} is preparing your order.'
+            : 'The shop is preparing your order.',
+      );
+    }
+    if (o.isRejected) {
+      return (
+        AppStrings.orderRejected,
+        AppColors.error,
+        AppColors.errorSoft,
+        Icons.cancel_outlined,
+        o.decisionNote ?? 'The shop declined this order.',
+      );
+    }
+    if (o.isCancelled) {
+      return (
+        AppStrings.orderCancelled,
+        AppColors.muted,
+        AppColors.surfaceTint,
+        Icons.do_disturb_alt_rounded,
+        'This order was cancelled. No charges apply.',
+      );
+    }
+    return (
+      AppStrings.orderPending,
+      AppColors.warning,
+      AppColors.warningSoft,
+      Icons.schedule_rounded,
+      o.shop != null
+          ? 'Waiting for ${o.shop!.displayName} to confirm.'
+          : 'Waiting for the shop to confirm your order.',
+    );
+  }
+}
+
+class _ShopAndDateCard extends StatelessWidget {
+  const _ShopAndDateCard({required this.order, required this.date});
+  final CustomerOrderDetail order;
+  final String date;
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+      padding: const EdgeInsets.all(AppSizes.md),
+      decoration: ShapeDecoration(
+        color: AppColors.white,
+        shape: AppShapes.squircle(AppSizes.radiusMd),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36, height: 36,
+            decoration: ShapeDecoration(
+              color: AppColors.brandSoft,
+              shape: AppShapes.squircle(AppSizes.radiusSm),
+            ),
+            alignment: Alignment.center,
+            child: const Icon(Icons.storefront_outlined,
+                color: AppColors.brandStrong, size: 20),
+          ),
+          const SizedBox(width: AppSizes.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  order.shop?.displayName ?? 'Order placed',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  date,
+                  style: const TextStyle(color: AppColors.muted, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DeliverySnapshotCard extends StatelessWidget {
+  const _DeliverySnapshotCard({required this.order});
+  final CustomerOrderDetail order;
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+      padding: const EdgeInsets.all(AppSizes.md),
+      decoration: ShapeDecoration(
+        color: AppColors.white,
+        shape: AppShapes.squircle(AppSizes.radiusMd),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.location_on_outlined,
+                  color: AppColors.brandStrong, size: 18),
+              SizedBox(width: 6),
+              Text(
+                'Delivering to',
+                style: TextStyle(
+                  color: AppColors.muted,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 11,
+                  letterSpacing: 0.4,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSizes.sm),
+          if (order.customerName.isNotEmpty)
+            Text(
+              order.customerName,
+              style: const TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 14,
+              ),
+            ),
+          const SizedBox(height: 2),
+          Text(
+            order.customerAddress ?? '',
+            style: const TextStyle(
+              color: AppColors.black,
+              fontSize: 13,
+              height: 1.4,
+            ),
+          ),
+          if (order.customerPhone != null && order.customerPhone!.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Row(
+                children: [
+                  const Icon(Icons.phone_rounded,
+                      size: 14, color: AppColors.muted),
+                  const SizedBox(width: 4),
+                  Text(
+                    order.customerPhone!,
+                    style: const TextStyle(color: AppColors.muted, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ItemsCard extends StatelessWidget {
+  const _ItemsCard({required this.order});
+  final CustomerOrderDetail order;
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+      decoration: ShapeDecoration(
+        color: AppColors.white,
+        shape: AppShapes.squircle(AppSizes.radiusMd),
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSizes.md, AppSizes.md, AppSizes.md, AppSizes.sm,
+            ),
+            child: Row(
+              children: [
+                Text(
+                  '${order.items.length} ${order.items.length == 1 ? 'item' : 'items'}',
+                  style: const TextStyle(
+                    color: AppColors.muted,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 11,
+                    letterSpacing: 0.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          for (var i = 0; i < order.items.length; i++) ...[
+            if (i != 0) const Divider(height: 1, color: AppColors.hairline),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSizes.md,
+                vertical: AppSizes.sm,
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item.productName,
-                                style: theme.textTheme.bodyMedium
-                                    ?.copyWith(fontWeight: FontWeight.w600),
-                              ),
-                              Text(
-                                '${_qty(item.quantity)} ${item.unit} × ${AppStrings.currencySymbol}${item.unitPrice.toStringAsFixed(2)}',
-                                style: theme.textTheme.bodySmall
-                                    ?.copyWith(color: AppColors.muted),
-                              ),
-                            ],
+                        Text(
+                          order.items[i].productName,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
                           ),
                         ),
+                        const SizedBox(height: 2),
                         Text(
-                          '${AppStrings.currencySymbol}${item.total.toStringAsFixed(2)}',
-                          style: theme.textTheme.bodyMedium
-                              ?.copyWith(fontWeight: FontWeight.w700),
+                          '${_qty(order.items[i].quantity)} ${order.items[i].unit} × ${AppStrings.currencySymbol}${order.items[i].unitPrice.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            color: AppColors.muted, fontSize: 12,
+                          ),
                         ),
                       ],
                     ),
                   ),
-                const Divider(),
-                // For confirmed orders the merchant has computed real GST
-                // / discount on the invoice. Show that authoritative
-                // figure prominently — the cart estimate becomes a fine-
-                // print line below.
-                if (order.linkedInvoice != null) ...[
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          AppStrings.finalTotal,
-                          style: theme.textTheme.bodyMedium
-                              ?.copyWith(fontWeight: FontWeight.w700),
-                        ),
-                      ),
-                      Text(
-                        '${AppStrings.currencySymbol}${order.linkedInvoice!.total.toStringAsFixed(2)}',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.success,
-                        ),
-                      ),
-                    ],
+                  const SizedBox(width: AppSizes.sm),
+                  AppPriceText.precise(
+                    order.items[i].total,
+                    fontWeight: FontWeight.w800,
+                    style: const TextStyle(fontSize: 13),
                   ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          '${AppStrings.estimatedTotal} (cart)',
-                          style: theme.textTheme.bodySmall
-                              ?.copyWith(color: AppColors.muted),
-                        ),
-                      ),
-                      Text(
-                        '${AppStrings.currencySymbol}${order.estimatedTotal.toStringAsFixed(2)}',
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: AppColors.muted),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Invoice ${order.linkedInvoice!.invoiceNo}',
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: AppColors.muted),
-                  ),
-                ] else
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          AppStrings.estimatedTotal,
-                          style: theme.textTheme.bodyMedium
-                              ?.copyWith(color: AppColors.muted),
-                        ),
-                      ),
-                      Text(
-                        '${AppStrings.currencySymbol}${order.estimatedTotal.toStringAsFixed(2)}',
-                        style: theme.textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w800),
-                      ),
-                    ],
-                  ),
-                if (order.note != null && order.note!.isNotEmpty) ...[
-                  const SizedBox(height: AppSizes.md),
-                  Text(
-                    'Your note',
-                    style: theme.textTheme.labelMedium
-                        ?.copyWith(color: AppColors.muted),
-                  ),
-                  Text(order.note!, style: theme.textTheme.bodyMedium),
                 ],
-              ],
-            ),
-          ),
-        ),
-        if (order.isPending)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
-            child: OutlinedButton.icon(
-              onPressed: cancelling ? null : onCancel,
-              icon: cancelling
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppColors.error,
-                      ),
-                    )
-                  : const Icon(Icons.cancel_outlined, color: AppColors.error),
-              label: const Text(
-                AppStrings.cancelOrder,
-                style: TextStyle(color: AppColors.error),
-              ),
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size.fromHeight(48),
-                side: const BorderSide(color: AppColors.error),
               ),
             ),
-          ),
-      ],
+          ],
+        ],
+      ),
     );
   }
 
-  /// "5", "5.5", "5.25" — drops trailing zeros so units look sane.
   static String _qty(double q) =>
       q.truncateToDouble() == q ? q.toInt().toString() : q.toStringAsFixed(2);
+}
 
-  static (String, Color, Color) _statusVisual(CustomerOrder o) {
-    if (o.isConfirmed) {
-      return (AppStrings.orderConfirmed, AppColors.success, AppColors.successSoft);
-    }
-    if (o.isRejected) {
-      return (AppStrings.orderRejected, AppColors.error, AppColors.errorSoft);
-    }
-    if (o.isCancelled) {
-      return (AppStrings.orderCancelled, AppColors.muted, AppColors.surfaceTint);
-    }
-    return (AppStrings.orderPending, AppColors.warning, AppColors.warningSoft);
+class _TotalsCard extends StatelessWidget {
+  const _TotalsCard({required this.order});
+  final CustomerOrderDetail order;
+  @override
+  Widget build(BuildContext context) {
+    final invoice = order.linkedInvoice;
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+      padding: const EdgeInsets.all(AppSizes.md),
+      decoration: ShapeDecoration(
+        color: AppColors.white,
+        shape: AppShapes.squircle(AppSizes.radiusMd),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (invoice != null) ...[
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    AppStrings.finalTotal,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+                AppPriceText.precise(
+                  invoice.total,
+                  color: AppColors.success,
+                  fontWeight: FontWeight.w800,
+                  style: const TextStyle(fontSize: 16),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '${AppStrings.estimatedTotal} (cart)',
+                    style: const TextStyle(color: AppColors.muted, fontSize: 12),
+                  ),
+                ),
+                AppPriceText.precise(
+                  order.estimatedTotal,
+                  color: AppColors.muted,
+                  style: const TextStyle(fontSize: 12),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Invoice ${invoice.invoiceNo}',
+              style: const TextStyle(color: AppColors.muted, fontSize: 12),
+            ),
+          ] else ...[
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    AppStrings.estimatedTotal,
+                    style: TextStyle(
+                      color: AppColors.muted,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+                AppPriceText.precise(
+                  order.estimatedTotal,
+                  fontWeight: FontWeight.w800,
+                  style: const TextStyle(fontSize: 16),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'The shop will confirm the final amount on their invoice.',
+              style: TextStyle(color: AppColors.muted, fontSize: 11),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _NoteCard extends StatelessWidget {
+  const _NoteCard({required this.note});
+  final String note;
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+      padding: const EdgeInsets.all(AppSizes.md),
+      decoration: ShapeDecoration(
+        color: AppColors.white,
+        shape: AppShapes.squircle(AppSizes.radiusMd),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'YOUR NOTE',
+            style: TextStyle(
+              color: AppColors.muted,
+              fontWeight: FontWeight.w800,
+              fontSize: 11,
+              letterSpacing: 0.4,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            note,
+            style: const TextStyle(
+              color: AppColors.black,
+              fontSize: 13,
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CancelBar extends StatelessWidget {
+  const _CancelBar({required this.cancelling, required this.onCancel});
+  final bool cancelling;
+  final VoidCallback onCancel;
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      top: false,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(
+          AppSizes.lg, AppSizes.sm, AppSizes.lg, AppSizes.sm,
+        ),
+        decoration: const BoxDecoration(
+          color: AppColors.white,
+          border: Border(top: BorderSide(color: AppColors.hairline)),
+        ),
+        child: AppButton.danger(
+          label: AppStrings.cancelOrder,
+          icon: Icons.cancel_outlined,
+          onPressed: cancelling ? null : onCancel,
+          isLoading: cancelling,
+        ),
+      ),
+    );
   }
 }
 
@@ -388,10 +616,8 @@ class _ErrorState extends StatelessWidget {
   const _ErrorState({required this.message, required this.onRetry});
   final String message;
   final VoidCallback onRetry;
-
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(AppSizes.xl),
@@ -401,82 +627,21 @@ class _ErrorState extends StatelessWidget {
             const Icon(Icons.cloud_off_rounded,
                 size: 48, color: AppColors.muted),
             const SizedBox(height: AppSizes.md),
-            Text(
+            const Text(
               AppStrings.somethingWentWrong,
-              style: theme.textTheme.titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w700),
+              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
             ),
             const SizedBox(height: 4),
             Text(
               message,
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: AppColors.muted),
+              style: const TextStyle(color: AppColors.muted, fontSize: 13),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSizes.lg),
-            FilledButton.icon(
+            AppButton.secondary(
+              label: AppStrings.tryAgain,
+              icon: Icons.refresh_rounded,
               onPressed: onRetry,
-              icon: const Icon(Icons.refresh_rounded),
-              label: const Text(AppStrings.tryAgain),
-              style: FilledButton.styleFrom(backgroundColor: AppColors.brand),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _Banner extends StatelessWidget {
-  const _Banner({
-    required this.color,
-    required this.soft,
-    required this.icon,
-    required this.title,
-    required this.body,
-  });
-  final Color color;
-  final Color soft;
-  final IconData icon;
-  final String title;
-  final String body;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSizes.lg,
-        vertical: AppSizes.sm,
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(AppSizes.lg),
-        decoration: ShapeDecoration(
-          color: soft,
-          shape: AppShapes.squircle(
-            AppSizes.radiusLg,
-            side: BorderSide(color: color, width: 1),
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: color, size: 28),
-            const SizedBox(width: AppSizes.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: theme.textTheme.bodyLarge
-                        ?.copyWith(color: color, fontWeight: FontWeight.w800),
-                  ),
-                  Text(
-                    body,
-                    style: theme.textTheme.bodySmall?.copyWith(color: color),
-                  ),
-                ],
-              ),
             ),
           ],
         ),

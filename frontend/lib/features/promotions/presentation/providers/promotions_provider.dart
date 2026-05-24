@@ -1,0 +1,76 @@
+import 'package:flutter/foundation.dart';
+import 'package:shopxy/features/promotions/data/datasources/promotions_remote_data_source.dart';
+import 'package:shopxy/features/promotions/data/models/promotion.dart';
+
+class PromotionsProvider extends ChangeNotifier {
+  PromotionsProvider(this._ds);
+  final PromotionsRemoteDataSource _ds;
+
+  final List<Promotion> _items = [];
+  bool _isLoading = false;
+  String? _error;
+
+  List<Promotion> get items => List.unmodifiable(_items);
+  bool get isLoading => _isLoading;
+  String? get error => _error;
+
+  Future<void> load() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+    try {
+      final list = await _ds.list();
+      _items
+        ..clear()
+        ..addAll(list);
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<Promotion?> create(Map<String, dynamic> body) async {
+    try {
+      final created = await _ds.create(body);
+      _items.insert(0, created);
+      notifyListeners();
+      return created;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<Promotion?> update(int id, Map<String, dynamic> body) async {
+    try {
+      final updated = await _ds.update(id, body);
+      final i = _items.indexWhere((p) => p.id == id);
+      if (i >= 0) _items[i] = updated;
+      notifyListeners();
+      return updated;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<bool> cancel(int id) async {
+    try {
+      await _ds.cancel(id);
+      final i = _items.indexWhere((p) => p.id == id);
+      if (i >= 0) {
+        // Reflect the cancel locally without re-fetching.
+        await load();
+      }
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+}

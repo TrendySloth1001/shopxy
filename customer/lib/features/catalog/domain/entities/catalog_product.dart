@@ -15,6 +15,9 @@ class CatalogProduct {
     this.categoryId,
     this.categoryName,
     this.categoryIconName,
+    this.shopId,
+    this.shopName,
+    this.shopSlug,
   });
 
   final int id;
@@ -31,6 +34,12 @@ class CatalogProduct {
   final int? categoryId;
   final String? categoryName;
   final String? categoryIconName;
+  /// Owning shop id — required for cart-splits-on-checkout. Nullable
+  /// because legacy payloads from before the multi-tenant migration
+  /// don't carry it; the cart guards against that at placeOrder time.
+  final int? shopId;
+  final String? shopName;
+  final String? shopSlug;
 
   bool get inStock => stockQuantity > 0;
   bool get isDiscounted => mrp > 0 && mrp > sellingPrice;
@@ -49,6 +58,7 @@ class CatalogProduct {
         ? (images.first as Map<String, dynamic>)['url'] as String?
         : null;
     final category = j['category'] as Map<String, dynamic>?;
+    final shop = j['shop'] as Map<String, dynamic>?;
 
     return CatalogProduct(
       id: j['id'] as int,
@@ -65,6 +75,9 @@ class CatalogProduct {
       categoryId: j['categoryId'] as int?,
       categoryName: category?['name'] as String?,
       categoryIconName: category?['iconName'] as String?,
+      shopId: (shop?['id'] as int?) ?? (j['shopId'] as int?),
+      shopName: shop?['name'] as String?,
+      shopSlug: shop?['slug'] as String?,
     );
   }
 }

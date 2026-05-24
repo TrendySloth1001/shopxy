@@ -1,10 +1,26 @@
 import 'dart:convert';
 import 'package:shopxy_customer/core/network/api_client.dart';
 import 'package:shopxy_customer/features/shops/domain/entities/linked_shop.dart';
+import 'package:shopxy_customer/features/shops/domain/entities/linked_merchant.dart';
 
 class MeRemoteDataSource {
   const MeRemoteDataSource(this._client);
   final ApiClient _client;
+
+  /// New marketplace-shaped endpoint: returns the distinct *shops* (not
+  /// Party/Vendor rows) the user has at least one active link to, with
+  /// marketplace metadata (logo, slug, rating) so the customer app can
+  /// render a clickable rail of merchant cards.
+  Future<List<LinkedMerchant>> linkedShops() async {
+    final res = await _client.get('/me/linked-shops');
+    if (res.statusCode != 200) {
+      throw Exception('Failed to load linked shops: ${res.statusCode}');
+    }
+    final json = jsonDecode(res.body) as Map<String, dynamic>;
+    return (json['data'] as List)
+        .map((e) => LinkedMerchant.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
 
   /// Returns both lists in one round-trip. Customers may simultaneously
   /// be a party at one shop and a vendor at another.

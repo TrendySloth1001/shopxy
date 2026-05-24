@@ -272,7 +272,7 @@ class _EmptyOrders extends StatelessWidget {
             label: 'Browse products',
             icon: Icons.grid_view_rounded,
             onPressed: () => CustomerShellScope.of(context)
-                ?.select(CustomerShellTab.browse.index),
+                ?.select(CustomerShellTab.home.index),
           ),
         ),
       ],

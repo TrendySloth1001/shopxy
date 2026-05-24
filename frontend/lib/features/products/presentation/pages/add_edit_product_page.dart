@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:shopxy/core/network/image_url.dart';
 import 'package:shopxy/features/categories/presentation/providers/categories_provider.dart';
 import 'package:shopxy/features/categories/presentation/widgets/category_icon_catalog.dart';
+import 'package:shopxy/features/categories/presentation/widgets/category_picker_sheet.dart';
 import 'package:shopxy/features/custom_fields/data/datasources/custom_fields_remote_data_source.dart';
 import 'package:shopxy/features/custom_fields/presentation/widgets/custom_fields_form_section.dart';
 import 'package:shopxy/features/products/data/datasources/products_remote_data_source.dart';
@@ -14,6 +15,7 @@ import 'package:shopxy/features/products/domain/entities/product.dart';
 import 'package:shopxy/features/products/domain/entities/product_draft.dart';
 import 'package:shopxy/features/products/presentation/providers/products_provider.dart';
 import 'package:shopxy/features/products/presentation/utils/product_ocr_parser.dart';
+import 'package:shopxy/features/reviews/presentation/pages/product_reviews_page.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/constants/app_units.dart';
@@ -55,6 +57,17 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
   String _selectedUnit = 'PCS';
   int? _selectedCategoryId;
   final List<String> _imageUrls = [];
+  final List<String> _tags = [];
+  final _tagController = TextEditingController();
+
+  // V2 PDP descriptive fields. Mutable lists so the editor can add /
+  // reorder / drop rows in place. Empty lists serialise as null (DTO
+  // strips), so a merchant who doesn't touch these sections doesn't
+  // ship empty arrays.
+  final List<String> _highlights = [];
+  final _highlightController = TextEditingController();
+  final List<SpecGroup> _specs = [];
+  final List<ProductOffer> _offers = [];
   // For edit mode: maps url → existing image ID so we can call deleteImage
   final Map<String, int> _existingImageIdByUrl = {};
   final Set<int> _removedImageIds = {};
@@ -111,6 +124,12 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     );
     _selectedUnit = p?.unit ?? draft?.unit ?? 'PCS';
     _selectedCategoryId = p?.categoryId ?? draft?.categoryId;
+    if (p != null) {
+      _tags.addAll(p.tags);
+      _highlights.addAll(p.highlights);
+      _specs.addAll(p.specs);
+      _offers.addAll(p.offers);
+    }
 
     if (p != null) {
       for (final img in p.images) {
@@ -169,7 +188,34 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     _stockQuantity.dispose();
     _lowStockThreshold.dispose();
     _imageUrlController.dispose();
+    _tagController.dispose();
     super.dispose();
+  }
+
+  void _addTagFromInput() {
+    final raw = _tagController.text.trim();
+    if (raw.isEmpty) return;
+    if (_tags.length >= 20) return;
+    if (_tags.any((t) => t.toLowerCase() == raw.toLowerCase())) {
+      _tagController.clear();
+      return;
+    }
+    setState(() {
+      _tags.add(raw);
+      _dirty = true;
+      _tagController.clear();
+    });
+  }
+
+  void _addHighlight() {
+    final raw = _highlightController.text.trim();
+    if (raw.isEmpty) return;
+    if (_highlights.length >= 8) return;
+    setState(() {
+      _highlights.add(raw);
+      _dirty = true;
+      _highlightController.clear();
+    });
   }
 
   Future<void> _save() async {
@@ -224,6 +270,13 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
           lowStockThreshold: double.tryParse(_lowStockThreshold.text),
           unit: _selectedUnit,
           categoryId: _selectedCategoryId,
+          tags: _tags,
+          highlights: _highlights,
+          // Send empty list explicitly when the merchant deleted all
+          // rows so the backend can clear the JSONB column — DTO would
+          // otherwise drop the key.
+          specs: _specs,
+          offers: _offers,
         );
         await provider.updateProduct(productId, data);
         // Sync image deletions
@@ -252,6 +305,10 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
           lowStockThreshold: double.tryParse(_lowStockThreshold.text),
           unit: _selectedUnit,
           categoryId: _selectedCategoryId,
+          tags: _tags.isNotEmpty ? _tags : null,
+          highlights: _highlights.isNotEmpty ? _highlights : null,
+          specs: _specs.isNotEmpty ? _specs : null,
+          offers: _offers.isNotEmpty ? _offers : null,
         );
         productId = created.id;
       }
@@ -460,6 +517,21 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
       appBar: AppBar(
         title: Text(isEditing ? AppStrings.editProduct : AppStrings.addProduct),
         actions: [
+          if (isEditing)
+            IconButton(
+              tooltip: 'Reviews',
+              icon: const Icon(Icons.reviews_outlined),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => ProductReviewsPage(
+                    productId: widget.product!.id,
+                    productName: widget.product!.name,
+                    ratingAvg: widget.product!.ratingAvg,
+                    ratingCount: widget.product!.ratingCount,
+                  ),
+                ),
+              ),
+            ),
           IconButton(
             onPressed: _isScanning ? null : _scanLabel,
             tooltip: AppStrings.scanLabel,
@@ -670,55 +742,129 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                 const SizedBox(width: AppSizes.md),
                 Expanded(
                   child: () {
-                    // Dropdown asserts when initialValue doesn't match
-                    // any item — happens when the product references a
-                    // category that's been deleted, or when categories
-                    // haven't finished loading yet. Pin the displayed
-                    // value to null in those cases; the underlying
-                    // _selectedCategoryId stays unchanged until the
-                    // user actively picks something else.
-                    final hasMatch = _selectedCategoryId != null &&
-                        categories.any((c) => c.id == _selectedCategoryId);
-                    final dropdownValue = hasMatch ? _selectedCategoryId : null;
-                    return DropdownButtonFormField<int?>(
-                      initialValue: dropdownValue,
-                      decoration: const InputDecoration(
-                        labelText: AppStrings.category,
-                      ),
-                      items: [
-                        const DropdownMenuItem(
-                          value: null,
-                          child: Text(AppStrings.none),
+                    final selected = _selectedCategoryId == null
+                        ? null
+                        : categories
+                            .where((c) => c.id == _selectedCategoryId)
+                            .cast<dynamic>()
+                            .firstOrNull;
+                    final label = selected?.name ?? AppStrings.none;
+                    final iconData =
+                        resolveCategoryIcon(selected?.iconName as String?);
+                    return InkWell(
+                      onTap: () async {
+                        final result = await CategoryPickerSheet.show(
+                          context,
+                          currentSelectionId: _selectedCategoryId,
+                        );
+                        if (result != null) {
+                          setState(() {
+                            _selectedCategoryId = result.categoryId;
+                            _dirty = true;
+                          });
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(8),
+                      child: InputDecorator(
+                        decoration: const InputDecoration(
+                          labelText: AppStrings.category,
                         ),
-                        ...categories.map(
-                          (c) => DropdownMenuItem(
-                            value: c.id,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  resolveCategoryIcon(c.iconName),
-                                  size: 18,
-                                  color: AppColors.muted,
-                                ),
-                                const SizedBox(width: 8),
-                                Flexible(
-                                  child: Text(
-                                    c.name,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
+                        child: Row(
+                          children: [
+                            Icon(iconData, size: 18, color: AppColors.muted),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                label,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                          ),
+                            const Icon(
+                              Icons.unfold_more_rounded,
+                              size: 18,
+                              color: AppColors.muted,
+                            ),
+                          ],
                         ),
-                      ],
-                      onChanged: (v) =>
-                          setState(() => _selectedCategoryId = v),
+                      ),
                     );
                   }(),
                 ),
               ],
+            ),
+
+            const SizedBox(height: AppSizes.xxl),
+
+            // ── Tags ──────────────────────────────────────────────────
+            AppSectionHeader(
+              title: 'TAGS',
+              padding: const EdgeInsets.only(bottom: AppSizes.sm),
+            ),
+            _TagsEditor(
+              tags: _tags,
+              controller: _tagController,
+              onAdd: _addTagFromInput,
+              onRemove: (t) => setState(() {
+                _tags.remove(t);
+                _dirty = true;
+              }),
+            ),
+
+            const SizedBox(height: AppSizes.xxl),
+
+            // ── Highlights ───────────────────────────────────────────
+            AppSectionHeader(
+              title: 'HIGHLIGHTS',
+              padding: const EdgeInsets.only(bottom: AppSizes.sm),
+            ),
+            const Text(
+              'Short bullet points shown above the fold on the marketplace product page.',
+              style: TextStyle(color: AppColors.muted, fontSize: 12),
+            ),
+            const SizedBox(height: AppSizes.sm),
+            _HighlightsEditor(
+              items: _highlights,
+              controller: _highlightController,
+              onAdd: _addHighlight,
+              onRemove: (i) => setState(() {
+                _highlights.removeAt(i);
+                _dirty = true;
+              }),
+            ),
+
+            const SizedBox(height: AppSizes.xxl),
+
+            // ── Specifications ───────────────────────────────────────
+            AppSectionHeader(
+              title: 'SPECIFICATIONS',
+              padding: const EdgeInsets.only(bottom: AppSizes.sm),
+            ),
+            const Text(
+              'Group attributes by section (e.g. "Display", "Camera"). '
+              'Each row is a label + value.',
+              style: TextStyle(color: AppColors.muted, fontSize: 12),
+            ),
+            const SizedBox(height: AppSizes.sm),
+            _SpecsEditor(
+              groups: _specs,
+              onChange: () => setState(() => _dirty = true),
+            ),
+
+            const SizedBox(height: AppSizes.xxl),
+
+            // ── Offers ───────────────────────────────────────────────
+            AppSectionHeader(
+              title: 'OFFERS',
+              padding: const EdgeInsets.only(bottom: AppSizes.sm),
+            ),
+            const Text(
+              'Bank, coupon, EMI or exchange offers shown beneath the price block.',
+              style: TextStyle(color: AppColors.muted, fontSize: 12),
+            ),
+            const SizedBox(height: AppSizes.sm),
+            _OffersEditor(
+              offers: _offers,
+              onChange: () => setState(() => _dirty = true),
             ),
 
             const SizedBox(height: AppSizes.xxl),
@@ -860,3 +1006,415 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
   }
 }
 
+/// Chip-input tags editor — type a tag + comma / enter to add. Caps
+/// at 20 (server also enforces); duplicates ignored case-insensitively
+/// in `_addTagFromInput` above.
+class _TagsEditor extends StatelessWidget {
+  const _TagsEditor({
+    required this.tags,
+    required this.controller,
+    required this.onAdd,
+    required this.onRemove,
+  });
+  final List<String> tags;
+  final TextEditingController controller;
+  final VoidCallback onAdd;
+  final ValueChanged<String> onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: AppSizes.sm,
+          runSpacing: AppSizes.sm,
+          children: [
+            for (final t in tags)
+              Chip(
+                label: Text(t),
+                onDeleted: () => onRemove(t),
+                visualDensity: VisualDensity.compact,
+              ),
+          ],
+        ),
+        if (tags.isNotEmpty) const SizedBox(height: AppSizes.sm),
+        TextField(
+          controller: controller,
+          decoration: InputDecoration(
+            labelText: 'Add tag',
+            helperText: 'Up to 20. Bestseller, Eco-friendly, etc.',
+            suffixIcon: IconButton(
+              icon: const Icon(Icons.add_rounded),
+              onPressed: onAdd,
+            ),
+          ),
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => onAdd(),
+        ),
+      ],
+    );
+  }
+}
+
+
+/// Bulleted list editor for the V2 PDP highlights — drop a sentence
+/// in, hit + to add. Capped at 8 because the customer surface only
+/// renders the top few; more is just noise.
+class _HighlightsEditor extends StatelessWidget {
+  const _HighlightsEditor({
+    required this.items,
+    required this.controller,
+    required this.onAdd,
+    required this.onRemove,
+  });
+
+  final List<String> items;
+  final TextEditingController controller;
+  final VoidCallback onAdd;
+  final ValueChanged<int> onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var i = 0; i < items.length; i++)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Row(
+              children: [
+                const Text('• ', style: TextStyle(fontWeight: FontWeight.w800)),
+                Expanded(child: Text(items[i])),
+                IconButton(
+                  icon: const Icon(Icons.close_rounded, size: 18),
+                  onPressed: () => onRemove(i),
+                  tooltip: 'Remove',
+                ),
+              ],
+            ),
+          ),
+        if (items.length < 8)
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                  decoration: const InputDecoration(
+                    hintText: 'Add a highlight…',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                  onSubmitted: (_) => onAdd(),
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton.filled(
+                onPressed: onAdd,
+                icon: const Icon(Icons.add),
+              ),
+            ],
+          ),
+      ],
+    );
+  }
+}
+
+/// Stateful spec-sheet editor. Each group has a title + N rows; the
+/// inline state is intentional — wrapping a nested editor in callbacks
+/// is fiddlier than mutating in place + telling the parent the form
+/// is dirty via [onChange].
+class _SpecsEditor extends StatefulWidget {
+  const _SpecsEditor({required this.groups, required this.onChange});
+  final List<SpecGroup> groups;
+  final VoidCallback onChange;
+  @override
+  State<_SpecsEditor> createState() => _SpecsEditorState();
+}
+
+class _SpecsEditorState extends State<_SpecsEditor> {
+  void _addGroup() {
+    setState(() {
+      widget.groups.add(const SpecGroup(title: '', rows: [SpecRow(label: '', value: '')]));
+    });
+    widget.onChange();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var gi = 0; gi < widget.groups.length; gi++)
+          _GroupCard(
+            group: widget.groups[gi],
+            onChangeTitle: (t) {
+              setState(() => widget.groups[gi] = widget.groups[gi].copyWith(title: t));
+              widget.onChange();
+            },
+            onChangeRow: (ri, row) {
+              setState(() {
+                final next = List<SpecRow>.from(widget.groups[gi].rows);
+                next[ri] = row;
+                widget.groups[gi] = widget.groups[gi].copyWith(rows: next);
+              });
+              widget.onChange();
+            },
+            onAddRow: () {
+              setState(() {
+                final next = List<SpecRow>.from(widget.groups[gi].rows)
+                  ..add(const SpecRow(label: '', value: ''));
+                widget.groups[gi] = widget.groups[gi].copyWith(rows: next);
+              });
+              widget.onChange();
+            },
+            onRemoveRow: (ri) {
+              setState(() {
+                final next = List<SpecRow>.from(widget.groups[gi].rows)..removeAt(ri);
+                if (next.isEmpty) {
+                  widget.groups.removeAt(gi);
+                } else {
+                  widget.groups[gi] = widget.groups[gi].copyWith(rows: next);
+                }
+              });
+              widget.onChange();
+            },
+            onRemoveGroup: () {
+              setState(() => widget.groups.removeAt(gi));
+              widget.onChange();
+            },
+          ),
+        OutlinedButton.icon(
+          onPressed: widget.groups.length >= 10 ? null : _addGroup,
+          icon: const Icon(Icons.add),
+          label: const Text('Add spec group'),
+        ),
+      ],
+    );
+  }
+}
+
+class _GroupCard extends StatelessWidget {
+  const _GroupCard({
+    required this.group,
+    required this.onChangeTitle,
+    required this.onChangeRow,
+    required this.onAddRow,
+    required this.onRemoveRow,
+    required this.onRemoveGroup,
+  });
+  final SpecGroup group;
+  final ValueChanged<String> onChangeTitle;
+  final void Function(int, SpecRow) onChangeRow;
+  final VoidCallback onAddRow;
+  final ValueChanged<int> onRemoveRow;
+  final VoidCallback onRemoveGroup;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.black12),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: TextFormField(
+                  initialValue: group.title,
+                  onChanged: onChangeTitle,
+                  decoration: const InputDecoration(
+                    labelText: 'Group title (e.g. Display)',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline),
+                onPressed: onRemoveGroup,
+                tooltip: 'Remove group',
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          for (var i = 0; i < group.rows.length; i++)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      initialValue: group.rows[i].label,
+                      onChanged: (v) =>
+                          onChangeRow(i, group.rows[i].copyWith(label: v)),
+                      decoration: const InputDecoration(
+                        labelText: 'Label',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    flex: 2,
+                    child: TextFormField(
+                      initialValue: group.rows[i].value,
+                      onChanged: (v) =>
+                          onChangeRow(i, group.rows[i].copyWith(value: v)),
+                      decoration: const InputDecoration(
+                        labelText: 'Value',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, size: 18),
+                    onPressed: () => onRemoveRow(i),
+                  ),
+                ],
+              ),
+            ),
+          TextButton.icon(
+            onPressed: group.rows.length >= 20 ? null : onAddRow,
+            icon: const Icon(Icons.add, size: 18),
+            label: const Text('Add row'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Add/remove product offers. `kind` is a dropdown to keep merchants
+/// inside the four kinds the customer PDP knows how to render.
+class _OffersEditor extends StatefulWidget {
+  const _OffersEditor({required this.offers, required this.onChange});
+  final List<ProductOffer> offers;
+  final VoidCallback onChange;
+  @override
+  State<_OffersEditor> createState() => _OffersEditorState();
+}
+
+class _OffersEditorState extends State<_OffersEditor> {
+  static const _kinds = <String>['BANK', 'COUPON', 'EMI', 'EXCHANGE'];
+
+  void _addOffer() {
+    setState(() => widget.offers.add(const ProductOffer(kind: 'COUPON', headline: '')));
+    widget.onChange();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var i = 0; i < widget.offers.length; i++)
+          Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.black12),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    SizedBox(
+                      width: 130,
+                      child: DropdownButtonFormField<String>(
+                        initialValue: widget.offers[i].kind,
+                        decoration: const InputDecoration(
+                          labelText: 'Kind',
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                        ),
+                        items: [
+                          for (final k in _kinds)
+                            DropdownMenuItem(value: k, child: Text(k)),
+                        ],
+                        onChanged: (v) {
+                          if (v == null) return;
+                          setState(() => widget.offers[i] = widget.offers[i].copyWith(kind: v));
+                          widget.onChange();
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextFormField(
+                        initialValue: widget.offers[i].headline,
+                        onChanged: (v) {
+                          setState(() => widget.offers[i] = widget.offers[i].copyWith(headline: v));
+                          widget.onChange();
+                        },
+                        decoration: const InputDecoration(
+                          labelText: 'Headline',
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline),
+                      onPressed: () {
+                        setState(() => widget.offers.removeAt(i));
+                        widget.onChange();
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        initialValue: widget.offers[i].detail ?? '',
+                        onChanged: (v) {
+                          setState(() => widget.offers[i] = widget.offers[i].copyWith(detail: v));
+                          widget.onChange();
+                        },
+                        decoration: const InputDecoration(
+                          labelText: 'Detail (optional)',
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    SizedBox(
+                      width: 140,
+                      child: TextFormField(
+                        initialValue: widget.offers[i].code ?? '',
+                        onChanged: (v) {
+                          setState(() => widget.offers[i] = widget.offers[i].copyWith(code: v));
+                          widget.onChange();
+                        },
+                        decoration: const InputDecoration(
+                          labelText: 'Code (optional)',
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        OutlinedButton.icon(
+          onPressed: widget.offers.length >= 6 ? null : _addOffer,
+          icon: const Icon(Icons.add),
+          label: const Text('Add offer'),
+        ),
+      ],
+    );
+  }
+}

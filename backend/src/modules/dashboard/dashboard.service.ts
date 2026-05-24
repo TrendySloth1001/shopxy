@@ -1,35 +1,42 @@
 import prisma from '../../infra/db/prisma.js';
 
 export class DashboardService {
-  async getStats() {
+  /// All metrics scope to `shopId`. Pre-Phase-0 this method aggregated
+  /// across every shop — fine when there was implicitly one, broken now.
+  /// Categories are intentionally NOT scoped (they're marketplace-global
+  /// taxonomy curated by platform admins, shared across all shops).
+  async getStats(shopId: number) {
     const [
       totalProducts,
       activeProducts,
       totalCategories,
       outOfStockProducts,
+      lowStockRow,
       recentTransactions,
-      activeStockRows,
       draftInvoiceCount,
       recentDrafts,
     ] = await Promise.all([
-      prisma.product.count(),
-      prisma.product.count({ where: { isActive: true } }),
+      prisma.product.count({ where: { shopId } }),
+      prisma.product.count({ where: { shopId, isActive: true } }),
       prisma.category.count({ where: { isActive: true } }),
       prisma.product.count({
-        where: { isActive: true, stockQuantity: { lte: 0 } },
+        where: { shopId, isActive: true, stockQuantity: { lte: 0 } },
       }),
+      // Indexed SQL COUNT — replaces the previous "fetch every active
+      // product into Node, count in JS" pattern that was O(catalog size)
+      // on memory and bandwidth per dashboard hit.
+      prisma.$queryRaw<{ count: bigint }[]>`
+        SELECT COUNT(*)::bigint AS count FROM products
+         WHERE shop_id = ${shopId}
+           AND is_active = true
+           AND stock_quantity > 0
+           AND stock_quantity <= low_stock_threshold
+      `,
       prisma.stockTransaction.findMany({
+        where: { product: { shopId } },
         orderBy: { createdAt: 'desc' },
         take: 10,
         include: { product: { select: { id: true, name: true, sku: true, unit: true } } },
-      }),
-      prisma.product.findMany({
-        where: { isActive: true },
-        select: {
-          stockQuantity: true,
-          lowStockThreshold: true,
-          purchasePrice: true,
-        },
       }),
       prisma.invoice.count({ where: { status: 'DRAFT' } }),
       prisma.invoice.findMany({
@@ -48,10 +55,7 @@ export class DashboardService {
         },
       }),
     ]);
-
-    const lowStockCount = activeStockRows.reduce((count, row) => {
-      return count + (isLowStock(row.stockQuantity, row.lowStockThreshold) ? 1 : 0);
-    }, 0);
+    const lowStockCount = Number(lowStockRow[0]?.count ?? 0);
 
     // Inventory value comes from the FIFO cost layers — the real cost
     // basis for what's still on the shelf. Falls back to qty × purchase
@@ -61,7 +65,7 @@ export class DashboardService {
     >`SELECT COALESCE(SUM(cl.qty_remaining * cl.unit_cost), 0)::text AS layer_value
         FROM cost_layers cl
         JOIN products p ON p.id = cl.product_id
-       WHERE p.is_active = true AND cl.qty_remaining > 0`;
+       WHERE p.shop_id = ${shopId} AND p.is_active = true AND cl.qty_remaining > 0`;
     const layerValue = toNumber(layerSum[0]?.layer_value ?? 0);
 
     // Fallback: products that have stock but no layers (orphans from
@@ -71,7 +75,7 @@ export class DashboardService {
     >`SELECT COALESCE(SUM(p.stock_quantity * p.purchase_price), 0)::text AS fallback_value
         FROM products p
         LEFT JOIN cost_layers cl ON cl.product_id = p.id AND cl.qty_remaining > 0
-       WHERE p.is_active = true AND p.stock_quantity > 0 AND cl.id IS NULL`;
+       WHERE p.shop_id = ${shopId} AND p.is_active = true AND p.stock_quantity > 0 AND cl.id IS NULL`;
     const fallbackValue = toNumber(orphans[0]?.fallback_value ?? 0);
 
     const totalStockValue = layerValue + fallbackValue;
@@ -100,12 +104,6 @@ function toNumber(value: unknown): number {
     return (value as { toNumber: () => number }).toNumber();
   }
   return Number(value);
-}
-
-function isLowStock(quantity: unknown, threshold: unknown): boolean {
-  const qty = toNumber(quantity);
-  const limit = toNumber(threshold);
-  return qty > 0 && qty <= limit;
 }
 
 export const dashboardService = new DashboardService();

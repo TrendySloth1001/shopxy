@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy_customer/core/router/app_shell.dart';
-import 'package:shopxy_customer/features/catalog/presentation/pages/product_detail_page.dart';
 import 'package:shopxy_customer/features/catalog/presentation/widgets/catalog_product_thumbnail.dart';
+import 'package:shopxy_customer/features/marketplace/presentation/pages/product_detail_v2_page.dart';
 import 'package:shopxy_customer/features/wishlist/data/datasources/wishlist_remote_data_source.dart';
 import 'package:shopxy_customer/features/wishlist/presentation/providers/wishlist_provider.dart';
 import 'package:shopxy_customer/features/wishlist/presentation/widgets/wishlist_heart_button.dart';
@@ -16,7 +16,7 @@ import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 
 /// Saved-for-later list. Pushed from the Home page's "Saved" tile and
 /// from the profile page (not yet wired). Empty state guides the user
-/// back to Browse — explicit CTA per DESIGN.md #5.
+/// back to Home — explicit CTA per DESIGN.md #5.
 class WishlistPage extends StatefulWidget {
   const WishlistPage({super.key});
 
@@ -104,7 +104,7 @@ class _Row extends StatelessWidget {
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => ProductDetailPage(productId: p.id),
+            builder: (_) => ProductDetailV2Page(productId: p.id),
           ),
         ),
         customBorder: shape,
@@ -232,7 +232,7 @@ class _EmptyState extends StatelessWidget {
             icon: Icons.grid_view_rounded,
             onPressed: () {
               CustomerShellScope.of(context)
-                  ?.select(CustomerShellTab.browse.index);
+                  ?.select(CustomerShellTab.home.index);
               Navigator.maybePop(context);
             },
           ),

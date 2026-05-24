@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shopxy_customer/features/catalog/domain/entities/catalog_product.dart';
-import 'package:shopxy_customer/features/catalog/presentation/pages/product_detail_page.dart';
-import 'package:shopxy_customer/features/catalog/presentation/widgets/catalog_product_thumbnail.dart';
+import 'package:shopxy_customer/core/network/image_url.dart';
+import 'package:shopxy_customer/features/home_v2/presentation/widgets/network_image_box.dart';
+import 'package:shopxy_customer/features/marketplace/presentation/pages/product_detail_v2_page.dart';
+import 'package:shopxy_customer/features/marketplace/presentation/pages/shop_profile_page.dart';
+import 'package:shopxy_customer/features/search/data/datasources/marketplace_search_remote_data_source.dart';
 import 'package:shopxy_customer/features/search/presentation/providers/search_provider.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/constants/app_strings.dart';
@@ -184,7 +186,7 @@ class _Body extends StatelessWidget {
     if (provider.results.isEmpty) {
       return _NoMatches(query: provider.query);
     }
-    return _ResultsList(results: provider.results);
+    return _ResultsList(results: provider.results, semantic: provider.isSemantic);
   }
 }
 
@@ -192,12 +194,21 @@ class _IdleView extends StatelessWidget {
   const _IdleView({required this.controller});
   final TextEditingController controller;
 
+  void _apply(BuildContext context, String q) {
+    controller.text = q;
+    controller.selection = TextSelection.fromPosition(
+      TextPosition(offset: q.length),
+    );
+    context.read<SearchProvider>().applyTerm(q);
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = context.watch<SearchProvider>();
     final theme = Theme.of(context);
+    final hasContent = p.recentSearches.isNotEmpty || p.hints.isNotEmpty;
 
-    if (p.recentSearches.isEmpty) {
+    if (!hasContent) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(AppSizes.xl),
@@ -219,7 +230,9 @@ class _IdleView extends StatelessWidget {
               ),
               const SizedBox(height: AppSizes.xs),
               Text(
-                'Try a category or product name.',
+                'Search by name, brand, or what you need it for —\n'
+                'the engine understands intent, not just exact words.',
+                textAlign: TextAlign.center,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: AppColors.muted,
                 ),
@@ -238,49 +251,70 @@ class _IdleView extends StatelessWidget {
         AppSizes.huge,
       ),
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                'Recent searches',
-                style: theme.textTheme.titleSmall?.copyWith(
-                  color: AppColors.muted,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.4,
+        if (p.hints.isNotEmpty) ...[
+          Text(
+            'Trending searches',
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: AppColors.muted,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.4,
+            ),
+          ),
+          const SizedBox(height: AppSizes.sm),
+          Wrap(
+            spacing: AppSizes.sm,
+            runSpacing: AppSizes.sm,
+            children: [
+              for (final h in p.hints)
+                AppFilterChip(
+                  label: h,
+                  selected: false,
+                  icon: Icons.local_fire_department_outlined,
+                  onTap: () => _apply(context, h),
+                ),
+            ],
+          ),
+          const SizedBox(height: AppSizes.lg),
+        ],
+        if (p.recentSearches.isNotEmpty) ...[
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Recent searches',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: AppColors.muted,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.4,
+                  ),
                 ),
               ),
-            ),
-            TextButton(
-              onPressed: p.clearRecent,
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.muted,
-                visualDensity: VisualDensity.compact,
-                padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm),
+              TextButton(
+                onPressed: p.clearRecent,
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.muted,
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm),
+                ),
+                child: const Text('Clear'),
               ),
-              child: const Text('Clear'),
-            ),
-          ],
-        ),
-        const SizedBox(height: AppSizes.sm),
-        Wrap(
-          spacing: AppSizes.sm,
-          runSpacing: AppSizes.sm,
-          children: [
-            for (final q in p.recentSearches)
-              AppFilterChip(
-                label: q,
-                selected: false,
-                icon: Icons.history_rounded,
-                onTap: () {
-                  controller.text = q;
-                  controller.selection = TextSelection.fromPosition(
-                    TextPosition(offset: q.length),
-                  );
-                  p.applyRecent(q);
-                },
-              ),
-          ],
-        ),
+            ],
+          ),
+          const SizedBox(height: AppSizes.sm),
+          Wrap(
+            spacing: AppSizes.sm,
+            runSpacing: AppSizes.sm,
+            children: [
+              for (final q in p.recentSearches)
+                AppFilterChip(
+                  label: q,
+                  selected: false,
+                  icon: Icons.history_rounded,
+                  onTap: () => _apply(context, q),
+                ),
+            ],
+          ),
+        ],
       ],
     );
   }
@@ -319,8 +353,9 @@ class _LoadingResults extends StatelessWidget {
 }
 
 class _ResultsList extends StatelessWidget {
-  const _ResultsList({required this.results});
-  final List<CatalogProduct> results;
+  const _ResultsList({required this.results, required this.semantic});
+  final List<MarketplaceSearchHit> results;
+  final bool semantic;
 
   @override
   Widget build(BuildContext context) {
@@ -330,18 +365,19 @@ class _ResultsList extends StatelessWidget {
         horizontal: AppSizes.lg,
         vertical: AppSizes.md,
       ),
-      itemCount: results.length,
+      itemCount: results.length + 1,
       separatorBuilder: (_, index) =>
           const Divider(height: 1, color: AppColors.hairline),
       itemBuilder: (context, i) {
-        final p = results[i];
+        if (i == 0) return _SemanticBadge(semantic: semantic, count: results.length);
+        final p = results[i - 1];
         return InkWell(
           onTap: () {
             context.read<SearchProvider>().commitRecent();
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => ProductDetailPage(productId: p.id),
+                builder: (_) => ProductDetailV2Page(productId: p.id),
               ),
             );
           },
@@ -349,7 +385,16 @@ class _ResultsList extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
             child: Row(
               children: [
-                CatalogProductThumbnail(product: p, size: 56),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(AppSizes.radiusSm),
+                  child: Container(
+                    width: 56, height: 56,
+                    color: AppColors.heroPanel,
+                    child: p.imageUrl == null || p.imageUrl!.isEmpty
+                        ? const Icon(Icons.image_outlined, color: AppColors.muted)
+                        : NetworkImageBox(url: resolveImageUrl(p.imageUrl!)),
+                  ),
+                ),
                 const SizedBox(width: AppSizes.md),
                 Expanded(
                   child: Column(
@@ -361,16 +406,45 @@ class _ResultsList extends StatelessWidget {
                           color: AppColors.black,
                           fontWeight: FontWeight.w700,
                         ),
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 2),
-                      Text(
-                        p.categoryName ?? p.sku,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: AppColors.muted,
+                      if (p.shopName.isNotEmpty)
+                        GestureDetector(
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ShopProfilePage(slug: p.shopSlug),
+                            ),
+                          ),
+                          child: Text(
+                            'by ${p.shopName}',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: AppColors.brand,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                         ),
-                      ),
+                      if (p.ratingAvg != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.star_rounded,
+                                  color: AppColors.success, size: 12),
+                              const SizedBox(width: 2),
+                              Text(
+                                '${p.ratingAvg!.toStringAsFixed(1)} (${p.ratingCount})',
+                                style: const TextStyle(
+                                  color: AppColors.muted,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -381,6 +455,45 @@ class _ResultsList extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// Small badge above results telling the user whether the result set
+/// was ranked by the hybrid semantic + FTS engine or fell back to
+/// pure FTS (e.g. when `OPENAI_API_KEY` isn't set on the backend).
+/// Cheap honesty signal — useful both for QA and for users who care
+/// why the ranking looks the way it does.
+class _SemanticBadge extends StatelessWidget {
+  const _SemanticBadge({required this.semantic, required this.count});
+  final bool semantic;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
+      child: Row(
+        children: [
+          Icon(
+            semantic ? Icons.auto_awesome_rounded : Icons.search_rounded,
+            size: 14,
+            color: semantic ? AppColors.brand : AppColors.muted,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            semantic
+                ? '$count results · ranked by AI'
+                : '$count results',
+            style: TextStyle(
+              color: semantic ? AppColors.brand : AppColors.muted,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.3,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

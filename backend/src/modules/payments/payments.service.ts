@@ -13,6 +13,7 @@ export type PaymentMode =
   | 'OTHER';
 
 export interface CreatePaymentInput {
+  shopId: number;
   type: PaymentType;
   amount: number;
   mode: PaymentMode;
@@ -38,6 +39,7 @@ export class PaymentsService {
   /// can attribute the row.
   async createPayment(input: CreatePaymentInput) {
     const {
+      shopId,
       type,
       amount,
       mode,
@@ -72,8 +74,8 @@ export class PaymentsService {
     // If we have an invoice, validate it belongs to the counterparty and
     // doesn't over-allocate against the remaining outstanding.
     if (invoiceId != null) {
-      const invoice = await prisma.invoice.findUnique({
-        where: { id: invoiceId },
+      const invoice = await prisma.invoice.findFirst({
+        where: { id: invoiceId, shopId },
         select: {
           id: true,
           partyId: true,
@@ -92,7 +94,7 @@ export class PaymentsService {
       }
 
       const allocated = await prisma.payment.aggregate({
-        where: { invoiceId },
+        where: { invoiceId, shopId },
         _sum: { amount: true },
       });
       const alreadyApplied = toNumber(allocated._sum.amount);
@@ -106,11 +108,13 @@ export class PaymentsService {
 
     return prisma.$transaction(async (tx) => {
       const { referenceNo } = await nextPaymentRef(
+        shopId,
         type,
         paymentDate ?? new Date(),
       );
       return tx.payment.create({
         data: {
+          shopId,
           type,
           referenceNo,
           amount: new Prisma.Decimal(amount),
@@ -134,15 +138,18 @@ export class PaymentsService {
     });
   }
 
-  async listPayments(options: {
-    partyId?: number | null;
-    vendorId?: number | null;
-    invoiceId?: number | null;
-    page: number;
-    limit: number;
-    skip: number;
-  }) {
-    const where: Prisma.PaymentWhereInput = {};
+  async listPayments(
+    shopId: number,
+    options: {
+      partyId?: number | null;
+      vendorId?: number | null;
+      invoiceId?: number | null;
+      page: number;
+      limit: number;
+      skip: number;
+    },
+  ) {
+    const where: Prisma.PaymentWhereInput = { shopId };
     if (options.partyId != null) where.partyId = options.partyId;
     if (options.vendorId != null) where.vendorId = options.vendorId;
     if (options.invoiceId != null) where.invoiceId = options.invoiceId;
@@ -165,9 +172,9 @@ export class PaymentsService {
     return { payments, total };
   }
 
-  async getPaymentById(id: number) {
-    return prisma.payment.findUnique({
-      where: { id },
+  async getPaymentById(shopId: number, id: number) {
+    return prisma.payment.findFirst({
+      where: { id, shopId },
       include: {
         party: { select: { id: true, name: true } },
         vendor: { select: { id: true, name: true } },
@@ -181,13 +188,19 @@ export class PaymentsService {
   /// Hard delete — keeps schema simple. Audit history lives in the
   /// `note` field on the response so callers can show "Deleted by …"
   /// snackbars without an extra column. (Tradeoff: no recovery.)
-  async deletePayment(id: number) {
+  async deletePayment(shopId: number, id: number) {
+    const owned = await prisma.payment.findFirst({
+      where: { id, shopId },
+      select: { id: true },
+    });
+    if (!owned) return false;
     await prisma.payment.delete({ where: { id } });
+    return true;
   }
 
-  async partyLedger(partyId: number) {
-    const party = await prisma.party.findUnique({
-      where: { id: partyId },
+  async partyLedger(shopId: number, partyId: number) {
+    const party = await prisma.party.findFirst({
+      where: { id: partyId, shopId },
       select: {
         id: true,
         name: true,
@@ -202,7 +215,7 @@ export class PaymentsService {
 
     const [invoices, payments] = await Promise.all([
       prisma.invoice.findMany({
-        where: { partyId, type: 'SALE', status: 'CONFIRMED' },
+        where: { partyId, shopId, type: 'SALE', status: 'CONFIRMED' },
         orderBy: [{ invoiceDate: 'asc' }, { id: 'asc' }],
         select: {
           id: true,
@@ -214,7 +227,7 @@ export class PaymentsService {
         },
       }),
       prisma.payment.findMany({
-        where: { partyId, type: 'RECEIPT' },
+        where: { partyId, shopId, type: 'RECEIPT' },
         orderBy: [{ paymentDate: 'asc' }, { id: 'asc' }],
         select: {
           id: true,
@@ -331,9 +344,9 @@ export class PaymentsService {
     };
   }
 
-  async vendorLedger(vendorId: number) {
-    const vendor = await prisma.vendor.findUnique({
-      where: { id: vendorId },
+  async vendorLedger(shopId: number, vendorId: number) {
+    const vendor = await prisma.vendor.findFirst({
+      where: { id: vendorId, shopId },
       select: {
         id: true,
         name: true,
@@ -348,7 +361,7 @@ export class PaymentsService {
 
     const [invoices, payments] = await Promise.all([
       prisma.invoice.findMany({
-        where: { vendorId, type: 'PURCHASE', status: 'CONFIRMED' },
+        where: { vendorId, shopId, type: 'PURCHASE', status: 'CONFIRMED' },
         orderBy: [{ invoiceDate: 'asc' }, { id: 'asc' }],
         select: {
           id: true,
@@ -360,7 +373,7 @@ export class PaymentsService {
         },
       }),
       prisma.payment.findMany({
-        where: { vendorId, type: 'PAYMENT' },
+        where: { vendorId, shopId, type: 'PAYMENT' },
         orderBy: [{ paymentDate: 'asc' }, { id: 'asc' }],
         select: {
           id: true,

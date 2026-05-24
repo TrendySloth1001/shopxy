@@ -45,19 +45,35 @@ function parseId(raw: string): number | null {
   return Number.isInteger(id) && id > 0 ? id : null;
 }
 
+/// Resolve the caller's shop or 401 the request. Centralised so each
+/// controller method stays short and the "no shop yet" error message
+/// is consistent.
+function requireShopId(req: Request, res: Response): number | null {
+  const shopId = req.user?.shopId;
+  if (!shopId) {
+    res.status(403).json({ error: 'This account has no shop linked.' });
+    return null;
+  }
+  return shopId;
+}
+
 export class PartiesController {
   async create(req: Request, res: Response): Promise<void> {
+    const shopId = requireShopId(req, res);
+    if (!shopId) return;
     const payload = createPartySchema.parse(req.body);
-    const party = await partiesService.createParty(payload);
+    const party = await partiesService.createParty(shopId, payload);
     res.status(201).json(party);
   }
 
   async list(req: Request, res: Response): Promise<void> {
+    const shopId = requireShopId(req, res);
+    if (!shopId) return;
     const { page, limit, skip } = parsePagination(req);
     const search = (req.query.search as string) || '';
     const activeOnly = req.query.active !== 'false';
 
-    const { parties, total } = await partiesService.listParties({
+    const { parties, total } = await partiesService.listParties(shopId, {
       search,
       activeOnly,
       page,
@@ -69,53 +85,75 @@ export class PartiesController {
   }
 
   async getById(req: Request, res: Response): Promise<void> {
+    const shopId = requireShopId(req, res);
+    if (!shopId) return;
     const id = parseId(req.params.id);
     if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
 
-    const party = await partiesService.getPartyById(id);
+    const party = await partiesService.getPartyById(shopId, id);
     if (!party) { res.status(404).json({ error: 'Party not found' }); return; }
 
     res.json(party);
   }
 
   async overview(req: Request, res: Response): Promise<void> {
+    const shopId = requireShopId(req, res);
+    if (!shopId) return;
     const id = parseId(req.params.id);
     if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
 
-    const overview = await partiesService.getPartyOverview(id);
+    const overview = await partiesService.getPartyOverview(shopId, id);
     if (!overview) { res.status(404).json({ error: 'Party not found' }); return; }
 
     res.json(overview);
   }
 
   async update(req: Request, res: Response): Promise<void> {
+    const shopId = requireShopId(req, res);
+    if (!shopId) return;
     const id = parseId(req.params.id);
     if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
 
     const payload = updatePartySchema.parse(req.body);
-    const party = await partiesService.updateParty(id, payload, req.user?.sub ?? null);
+    const party = await partiesService.updateParty(
+      shopId,
+      id,
+      payload,
+      req.user?.sub ?? null,
+    );
+    if (!party) { res.status(404).json({ error: 'Party not found' }); return; }
     res.json(party);
   }
 
   async ledger(req: Request, res: Response): Promise<void> {
+    const shopId = requireShopId(req, res);
+    if (!shopId) return;
     const id = parseId(req.params.id);
     if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
-    const ledger = await paymentsService.partyLedger(id);
+    const ledger = await paymentsService.partyLedger(shopId, id);
     if (!ledger) { res.status(404).json({ error: 'Party not found' }); return; }
     res.json(ledger);
   }
 
   async delete(req: Request, res: Response): Promise<void> {
+    const shopId = requireShopId(req, res);
+    if (!shopId) return;
     const id = parseId(req.params.id);
     if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
 
-    await partiesService.deleteParty(id);
+    const result = await partiesService.deleteParty(shopId, id);
+    if (!result) { res.status(404).json({ error: 'Party not found' }); return; }
     res.status(204).send();
   }
 
   async changes(req: Request, res: Response): Promise<void> {
+    const shopId = requireShopId(req, res);
+    if (!shopId) return;
     const id = parseId(req.params.id);
     if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
+    // Authorize: only access the change log for parties this shop owns.
+    const owned = await partiesService.getPartyById(shopId, id);
+    if (!owned) { res.status(404).json({ error: 'Party not found' }); return; }
     const params = parsePagination(req);
     const { rows, total } = await contactChangeLogService.listForEntity({
       entityType: 'PARTY',

@@ -223,6 +223,60 @@ export class MeService {
     return { parties, vendors };
   }
 
+  /// Distinct shops the user has at least one active Party or Vendor
+  /// link to. Powers the customer-side "Your linked merchants" rail:
+  /// each result is a clickable shop tile that opens the marketplace
+  /// shop page filtered to that merchant's catalog. Returns shops
+  /// regardless of their `isPublished` flag — the merchant chose to
+  /// invite this user, so they get to browse even if the shop hasn't
+  /// gone fully public yet.
+  async linkedShops(userId: number) {
+    // Collect distinct shopIds from active party + vendor rows the
+    // user is the linked user on. One round-trip per side; UNION'd
+    // client-side because Prisma can't `distinct` across two tables.
+    const [partyShopIds, vendorShopIds] = await Promise.all([
+      prisma.party.findMany({
+        where: { linkedUserId: userId, isActive: true },
+        select: { shopId: true },
+        distinct: ['shopId'],
+      }),
+      prisma.vendor.findMany({
+        where: { linkedUserId: userId, isActive: true },
+        select: { shopId: true },
+        distinct: ['shopId'],
+      }),
+    ]);
+    const partySet = new Set(partyShopIds.map((r) => r.shopId));
+    const vendorSet = new Set(vendorShopIds.map((r) => r.shopId));
+    const allIds = [...new Set([...partySet, ...vendorSet])];
+    if (allIds.length === 0) return [];
+
+    const shops = await prisma.shop.findMany({
+      where: { id: { in: allIds } },
+      select: {
+        id: true,
+        ownerUserId: true,
+        name: true,
+        slug: true,
+        tagline: true,
+        logoUrl: true,
+        bannerUrl: true,
+        isPublished: true,
+        rating: true,
+        ratingCount: true,
+      },
+      orderBy: { name: 'asc' },
+    });
+
+    return shops.map((s) => ({
+      ...s,
+      roles: {
+        party: partySet.has(s.id),
+        vendor: vendorSet.has(s.id),
+      },
+    }));
+  }
+
   /// Authorisation gate — does this user own the party/vendor row?
   /// Returns the row itself so callers can use its name etc. without a
   /// second round-trip.
