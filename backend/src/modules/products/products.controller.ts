@@ -33,6 +33,40 @@ const createProductSchema = z.object({
   lowStockThreshold: z.number().nonnegative().optional(),
   unit: z.enum(UNITS).optional(),
   categoryId: z.number().int().positive().optional(),
+  tags: z.array(z.string().min(1).max(40)).max(20).optional(),
+  // V2 PDP descriptive fields. All optional; the customer screen
+  // hides the relevant section when the array / object is empty.
+  highlights: z.array(z.string().min(1).max(140)).max(8).optional(),
+  specs: z
+    .array(
+      z.object({
+        title: z.string().min(1).max(80),
+        rows: z
+          .array(
+            z.object({
+              label: z.string().min(1).max(80),
+              value: z.string().min(1).max(200),
+            }),
+          )
+          .min(1)
+          .max(20),
+      }),
+    )
+    .max(10)
+    .nullable()
+    .optional(),
+  offers: z
+    .array(
+      z.object({
+        kind: z.enum(['BANK', 'COUPON', 'EMI', 'EXCHANGE']),
+        headline: z.string().min(1).max(140),
+        detail: z.string().max(200).optional(),
+        code: z.string().max(40).optional(),
+      }),
+    )
+    .max(6)
+    .nullable()
+    .optional(),
 });
 
 const updateProductSchema = z
@@ -50,8 +84,43 @@ const updateProductSchema = z
     unit: z.enum(UNITS).optional(),
     categoryId: z.number().int().positive().nullable().optional(),
     isActive: z.boolean().optional(),
+    isPublished: z.boolean().optional(),
+    tags: z.array(z.string().min(1).max(40)).max(20).optional(),
+    highlights: z.array(z.string().min(1).max(140)).max(8).optional(),
+    specs: z
+      .array(
+        z.object({
+          title: z.string().min(1).max(80),
+          rows: z
+            .array(
+              z.object({
+                label: z.string().min(1).max(80),
+                value: z.string().min(1).max(200),
+              }),
+            )
+            .min(1)
+            .max(20),
+        }),
+      )
+      .max(10)
+      .nullable()
+      .optional(),
+    offers: z
+      .array(
+        z.object({
+          kind: z.enum(['BANK', 'COUPON', 'EMI', 'EXCHANGE']),
+          headline: z.string().min(1).max(140),
+          detail: z.string().max(200).optional(),
+          code: z.string().max(40).optional(),
+        }),
+      )
+      .max(6)
+      .nullable()
+      .optional(),
   })
   .refine((d) => Object.keys(d).length > 0, { message: 'At least one field is required' });
+
+const setPublishedSchema = z.object({ isPublished: z.boolean() });
 
 const addImageSchema = z.object({
   url: productImageRef,
@@ -71,7 +140,8 @@ export class ProductsController {
   async create(req: Request, res: Response): Promise<void> {
     const payload = createProductSchema.parse(req.body);
     const product = await productsService.createProduct(payload, {
-      createdById: req.user?.sub,
+      createdById: req.user!.sub,
+      shopId: req.shopId!,
     });
     res.status(201).json(product);
   }
@@ -87,6 +157,7 @@ export class ProductsController {
     const sortOrder = req.query.sortOrder === 'asc' ? 'asc' : 'desc';
 
     const { products, total } = await productsService.listProducts({
+      shopId: req.shopId!,
       activeOnly,
       lowStock,
       outOfStock,
@@ -109,7 +180,7 @@ export class ProductsController {
       return;
     }
 
-    const product = await productsService.lookupProduct(code);
+    const product = await productsService.lookupProduct(req.shopId!, code);
     if (!product) {
       res.status(404).json({ error: 'Product not found' });
       return;
@@ -122,7 +193,7 @@ export class ProductsController {
     const id = parseId(req.params.id);
     if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
 
-    const product = await productsService.getProductById(id);
+    const product = await productsService.getProductById(req.shopId!, id);
     if (!product) { res.status(404).json({ error: 'Product not found' }); return; }
 
     res.json(product);
@@ -133,7 +204,18 @@ export class ProductsController {
     if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
 
     const payload = updateProductSchema.parse(req.body);
-    const product = await productsService.updateProduct(id, payload);
+    const product = await productsService.updateProduct(req.shopId!, id, payload);
+    if (!product) { res.status(404).json({ error: 'Product not found' }); return; }
+    res.json(product);
+  }
+
+  async setPublished(req: Request, res: Response): Promise<void> {
+    const id = parseId(req.params.id);
+    if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
+
+    const { isPublished } = setPublishedSchema.parse(req.body);
+    const product = await productsService.setPublished(req.shopId!, id, isPublished);
+    if (!product) { res.status(404).json({ error: 'Product not found' }); return; }
     res.json(product);
   }
 
@@ -141,7 +223,8 @@ export class ProductsController {
     const id = parseId(req.params.id);
     if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
 
-    await productsService.deleteProduct(id);
+    const result = await productsService.deleteProduct(req.shopId!, id);
+    if (result === null) { res.status(404).json({ error: 'Product not found' }); return; }
     res.status(204).send();
   }
 
@@ -152,7 +235,8 @@ export class ProductsController {
     if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
 
     const { url, sortOrder } = addImageSchema.parse(req.body);
-    const image = await productsService.addImage(id, url, sortOrder);
+    const image = await productsService.addImage(req.shopId!, id, url, sortOrder);
+    if (image === null) { res.status(404).json({ error: 'Product not found' }); return; }
     res.status(201).json(image);
   }
 
@@ -161,7 +245,7 @@ export class ProductsController {
     const imageId = parseId(req.params.imageId);
     if (!productId || !imageId) { res.status(400).json({ error: 'Invalid id' }); return; }
 
-    const result = await productsService.deleteImage(productId, imageId);
+    const result = await productsService.deleteImage(req.shopId!, productId, imageId);
     if ('error' in result) { res.status(404).json({ error: result.error }); return; }
     res.status(204).send();
   }
@@ -171,7 +255,8 @@ export class ProductsController {
     if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
 
     const { orderedIds } = reorderImagesSchema.parse(req.body);
-    const images = await productsService.reorderImages(id, orderedIds);
+    const images = await productsService.reorderImages(req.shopId!, id, orderedIds);
+    if (images === null) { res.status(404).json({ error: 'Product not found' }); return; }
     res.json(images);
   }
 }

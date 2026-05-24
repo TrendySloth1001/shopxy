@@ -1,31 +1,41 @@
 import prisma from '../../infra/db/prisma.js';
 import { contactChangeLogService } from '../contact-change-log/contact-change-log.service.js';
 
+/// Tenant-scoped party (customer) operations. Every method takes
+/// `shopId` so reads and writes stay isolated to the calling
+/// merchant's address book; `assertOwns` is used before mutate ops to
+/// reject cross-tenant attempts with a clean 404.
 export class PartiesService {
-  async createParty(data: {
-    name: string;
-    contactName?: string;
-    phone?: string;
-    email?: string;
-    address?: string;
-    city?: string;
-    state?: string;
-    stateCode?: string;
-    pinCode?: string;
-    panNumber?: string;
-    gstin?: string;
-  }) {
-    return prisma.party.create({ data });
+  async createParty(
+    shopId: number,
+    data: {
+      name: string;
+      contactName?: string;
+      phone?: string;
+      email?: string;
+      address?: string;
+      city?: string;
+      state?: string;
+      stateCode?: string;
+      pinCode?: string;
+      panNumber?: string;
+      gstin?: string;
+    },
+  ) {
+    return prisma.party.create({ data: { ...data, shopId } });
   }
 
-  async listParties(options: {
-    search: string;
-    activeOnly: boolean;
-    page: number;
-    limit: number;
-    skip: number;
-  }) {
-    const where: Record<string, unknown> = {};
+  async listParties(
+    shopId: number,
+    options: {
+      search: string;
+      activeOnly: boolean;
+      page: number;
+      limit: number;
+      skip: number;
+    },
+  ) {
+    const where: Record<string, unknown> = { shopId };
     if (options.activeOnly) where.isActive = true;
     if (options.search) {
       where.OR = [
@@ -68,9 +78,9 @@ export class PartiesService {
     return { parties, total };
   }
 
-  async getPartyById(id: number) {
-    return prisma.party.findUnique({
-      where: { id },
+  async getPartyById(shopId: number, id: number) {
+    return prisma.party.findFirst({
+      where: { id, shopId },
       include: {
         _count: { select: { challans: true, invoices: true } },
         challans: {
@@ -92,9 +102,9 @@ export class PartiesService {
   /// recent invoices + challans, totals grouped by invoice type, and the
   /// linked-user identity in parallel. Used by the merchant-side party
   /// detail screen.
-  async getPartyOverview(id: number) {
-    const party = await prisma.party.findUnique({
-      where: { id },
+  async getPartyOverview(shopId: number, id: number) {
+    const party = await prisma.party.findFirst({
+      where: { id, shopId },
       select: {
         id: true,
         name: true,
@@ -120,23 +130,20 @@ export class PartiesService {
 
     const [counts, totalsByType, recentInvoices, recentChallans, balanceParts] =
       await Promise.all([
-        // Aggregate counts — cheap and avoids two extra queries below.
         Promise.all([
-          prisma.invoice.count({ where: { partyId: id } }),
-          prisma.challan.count({ where: { partyId: id } }),
+          prisma.invoice.count({ where: { partyId: id, shopId } }),
+          prisma.challan.count({ where: { partyId: id, shopId } }),
         ]).then(([invoices, challans]) => ({ invoices, challans })),
 
-        // Sum totals per invoice type so the detail page can show
-        // sales / returns / net side by side in a single round trip.
         prisma.invoice.groupBy({
           by: ['type'],
-          where: { partyId: id },
+          where: { partyId: id, shopId },
           _sum: { total: true },
           _count: { _all: true },
         }),
 
         prisma.invoice.findMany({
-          where: { partyId: id },
+          where: { partyId: id, shopId },
           orderBy: { invoiceDate: 'desc' },
           take: 15,
           select: {
@@ -151,7 +158,7 @@ export class PartiesService {
         }),
 
         prisma.challan.findMany({
-          where: { partyId: id },
+          where: { partyId: id, shopId },
           orderBy: { createdAt: 'desc' },
           take: 15,
           select: {
@@ -164,16 +171,13 @@ export class PartiesService {
           },
         }),
 
-        // Current outstanding = sum(SALE,CONFIRMED) − sum(RECEIPT). Two
-        // parallel aggregates is cheaper than the full ledger walk and
-        // good enough for the header tile.
         Promise.all([
           prisma.invoice.aggregate({
-            where: { partyId: id, type: 'SALE', status: 'CONFIRMED' },
+            where: { partyId: id, shopId, type: 'SALE', status: 'CONFIRMED' },
             _sum: { total: true },
           }),
           prisma.payment.aggregate({
-            where: { partyId: id, type: 'RECEIPT' },
+            where: { partyId: id, shopId, type: 'RECEIPT' },
             _sum: { amount: true },
           }),
         ]),
@@ -183,7 +187,6 @@ export class PartiesService {
     const received = Number(balanceParts[1]._sum.amount?.toString() ?? '0');
     const balance = billed - received;
 
-    // Most recent activity across both invoices and challans.
     const lastInvoice = recentInvoices[0]?.invoiceDate ?? null;
     const lastChallan = recentChallans[0]?.createdAt ?? null;
     const lastActivityAt =
@@ -209,6 +212,7 @@ export class PartiesService {
   }
 
   async updateParty(
+    shopId: number,
     id: number,
     data: {
       name?: string;
@@ -226,13 +230,9 @@ export class PartiesService {
     },
     changedById: number | null = null,
   ) {
-    // Read-then-write inside one transaction so the log never disagrees
-    // with the row. The BEFORE snapshot is restricted to the fields
-    // present in the patch — logging fields the caller didn't touch
-    // would be noise.
     return prisma.$transaction(async (tx) => {
-      const before = await tx.party.findUnique({
-        where: { id },
+      const before = await tx.party.findFirst({
+        where: { id, shopId },
         select: {
           name: true,
           contactName: true,
@@ -248,28 +248,31 @@ export class PartiesService {
           isActive: true,
         },
       });
+      if (!before) return null;
       const updated = await tx.party.update({ where: { id }, data });
-      if (before) {
-        await contactChangeLogService.recordChanges({
-          entityType: 'PARTY',
-          entityId: id,
-          before,
-          after: data,
-          changedById,
-          tx,
-        });
-      }
+      await contactChangeLogService.recordChanges({
+        entityType: 'PARTY',
+        entityId: id,
+        before,
+        after: data,
+        changedById,
+        tx,
+      });
       return updated;
     });
   }
 
-  async deleteParty(id: number) {
-    // Soft-delete when the party is referenced anywhere — invoices and
-    // challans snapshot customer identity, but keeping the party row lets
-    // users restore it later by re-activating.
+  async deleteParty(shopId: number, id: number) {
+    // First confirm ownership so a 404 (not silent success) is returned
+    // when a merchant tries to delete another shop's party.
+    const owned = await prisma.party.findFirst({
+      where: { id, shopId },
+      select: { id: true },
+    });
+    if (!owned) return null;
     const [invoiceRefs, challanRefs] = await Promise.all([
-      prisma.invoice.count({ where: { partyId: id } }),
-      prisma.challan.count({ where: { partyId: id } }),
+      prisma.invoice.count({ where: { partyId: id, shopId } }),
+      prisma.challan.count({ where: { partyId: id, shopId } }),
     ]);
     if (invoiceRefs + challanRefs > 0) {
       return prisma.party.update({ where: { id }, data: { isActive: false } });

@@ -9,6 +9,7 @@ const createCategorySchema = z.object({
   imageUrl: z.string().url().optional(),
   iconName: z.string().min(1).max(60).optional(),
   sortOrder: z.number().int().min(0).optional(),
+  parentId: z.number().int().positive().nullable().optional(),
 });
 
 const updateCategorySchema = z
@@ -19,6 +20,7 @@ const updateCategorySchema = z
     iconName: z.string().min(1).max(60).nullable().optional(),
     sortOrder: z.number().int().min(0).optional(),
     isActive: z.boolean().optional(),
+    parentId: z.number().int().positive().nullable().optional(),
   })
   .refine((d) => Object.keys(d).length > 0, {
     message: 'At least one field is required',
@@ -75,8 +77,20 @@ export class CategoriesController {
     }
 
     const payload = updateCategorySchema.parse(req.body);
-    const category = await categoriesService.updateCategory(id, payload);
-    res.json(category);
+    const result = await categoriesService.updateCategory(id, payload);
+    if ('error' in result) {
+      res.status(400).json({
+        error: 'Setting parentId would create a cycle in the taxonomy',
+      });
+      return;
+    }
+    res.json(result.category);
+  }
+
+  async tree(req: Request, res: Response): Promise<void> {
+    const activeOnly = req.query.active !== 'false';
+    const roots = await categoriesService.getTree({ activeOnly });
+    res.json({ data: roots });
   }
 
   async delete(req: Request, res: Response): Promise<void> {

@@ -114,6 +114,10 @@ class ProductsProvider extends ChangeNotifier {
     double? lowStockThreshold,
     String? unit,
     int? categoryId,
+    List<String>? tags,
+    List<String>? highlights,
+    List<SpecGroup>? specs,
+    List<ProductOffer>? offers,
   }) async {
     final data = ProductDto.toCreateJson(
       name: name,
@@ -130,6 +134,10 @@ class ProductsProvider extends ChangeNotifier {
       lowStockThreshold: lowStockThreshold,
       unit: unit,
       categoryId: categoryId,
+      tags: tags,
+      highlights: highlights,
+      specs: specs,
+      offers: offers,
     );
     final product = await _dataSource.createProduct(data);
     await loadProducts();

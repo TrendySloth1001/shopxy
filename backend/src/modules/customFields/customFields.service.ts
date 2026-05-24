@@ -171,18 +171,16 @@ export const PREDEFINED_TEMPLATES: ReadonlyArray<{
 export class CustomFieldsService {
   // ── Sections ───────────────────────────────────────────────────────
 
-  /// One round-trip pulls the whole tree (sections with their fields,
-  /// plus the ungrouped fields). The settings + product form both
-  /// render directly off this shape, no client-side joining needed.
-  async getTree({ activeOnly }: { activeOnly: boolean }) {
-    const where = activeOnly ? { isActive: true } : {};
+  async getTree(shopId: number, { activeOnly }: { activeOnly: boolean }) {
+    const where: Record<string, unknown> = { shopId };
+    if (activeOnly) where.isActive = true;
     const [sections, ungrouped] = await Promise.all([
       prisma.customFieldSection.findMany({
         where,
         orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
         include: {
           fields: {
-            where,
+            where: activeOnly ? { isActive: true } : undefined,
             orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
           },
         },
@@ -195,16 +193,17 @@ export class CustomFieldsService {
     return { sections, ungrouped };
   }
 
-  async listSections({ activeOnly }: { activeOnly: boolean }) {
+  async listSections(shopId: number, { activeOnly }: { activeOnly: boolean }) {
     return prisma.customFieldSection.findMany({
-      where: activeOnly ? { isActive: true } : {},
+      where: activeOnly ? { shopId, isActive: true } : { shopId },
       orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
     });
   }
 
-  async createSection(data: CustomFieldSectionInput) {
+  async createSection(shopId: number, data: CustomFieldSectionInput) {
     return prisma.customFieldSection.create({
       data: {
+        shopId,
         name: data.name,
         icon: data.icon ?? null,
         sortOrder: data.sortOrder ?? 0,
@@ -213,9 +212,15 @@ export class CustomFieldsService {
   }
 
   async updateSection(
+    shopId: number,
     id: number,
     data: Partial<CustomFieldSectionInput> & { isActive?: boolean },
   ) {
+    const owned = await prisma.customFieldSection.findFirst({
+      where: { id, shopId },
+      select: { id: true },
+    });
+    if (!owned) return null;
     return prisma.customFieldSection.update({
       where: { id },
       data: {
@@ -227,23 +232,28 @@ export class CustomFieldsService {
     });
   }
 
-  async softDeleteSection(id: number) {
+  async softDeleteSection(shopId: number, id: number) {
+    const owned = await prisma.customFieldSection.findFirst({
+      where: { id, shopId },
+      select: { id: true },
+    });
+    if (!owned) return null;
     return prisma.customFieldSection.update({
       where: { id },
       data: { isActive: false },
     });
   }
 
-  async reorderSections(orderedIds: number[]) {
+  async reorderSections(shopId: number, orderedIds: number[]) {
     await prisma.$transaction(
       orderedIds.map((id, i) =>
-        prisma.customFieldSection.update({
-          where: { id },
+        prisma.customFieldSection.updateMany({
+          where: { id, shopId },
           data: { sortOrder: i },
         }),
       ),
     );
-    return this.listSections({ activeOnly: false });
+    return this.listSections(shopId, { activeOnly: false });
   }
 
   // ── Templates ──────────────────────────────────────────────────────
@@ -252,19 +262,21 @@ export class CustomFieldsService {
   /// section with the same name exists, we reuse it and only create
   /// missing fields underneath. Idempotent enough that tapping the
   /// template twice doesn't pile up duplicates.
-  async applyTemplate(templateId: string) {
+  async applyTemplate(shopId: number, templateId: string) {
     const template = PREDEFINED_TEMPLATES.find((t) => t.id === templateId);
     if (!template) return { error: 'Unknown template' };
 
     let section = await prisma.customFieldSection.findUnique({
-      where: { name: template.label },
+      where: { shopId_name: { shopId, name: template.label } },
     });
     if (!section) {
       const maxOrder = await prisma.customFieldSection.aggregate({
+        where: { shopId },
         _max: { sortOrder: true },
       });
       section = await prisma.customFieldSection.create({
         data: {
+          shopId,
           name: template.label,
           icon: template.icon,
           sortOrder: (maxOrder._max.sortOrder ?? -1) + 1,
@@ -278,7 +290,7 @@ export class CustomFieldsService {
     }
 
     const existing = await prisma.customFieldDefinition.findMany({
-      where: { name: { in: template.fields.map((f) => f.name) } },
+      where: { shopId, name: { in: template.fields.map((f) => f.name) } },
     });
     const existingByName = new Map(existing.map((d) => [d.name, d]));
 
@@ -287,8 +299,6 @@ export class CustomFieldsService {
     for (const f of template.fields) {
       const existingDef = existingByName.get(f.name);
       if (existingDef) {
-        // Move into this section if it's currently un-sectioned; never
-        // hijack a definition the user has placed somewhere else.
         if (existingDef.sectionId == null) {
           await prisma.customFieldDefinition.update({
             where: { id: existingDef.id },
@@ -304,6 +314,7 @@ export class CustomFieldsService {
       }
       const def = await prisma.customFieldDefinition.create({
         data: {
+          shopId,
           name: f.name,
           type: f.type,
           options:
@@ -317,7 +328,7 @@ export class CustomFieldsService {
       created.push(def.id);
     }
 
-    return this.getTree({ activeOnly: false });
+    return this.getTree(shopId, { activeOnly: false });
   }
 
   listTemplates() {
@@ -332,20 +343,33 @@ export class CustomFieldsService {
 
   // ── Definitions ────────────────────────────────────────────────────
 
-  async listDefinitions({ activeOnly }: { activeOnly: boolean }) {
+  async listDefinitions(shopId: number, { activeOnly }: { activeOnly: boolean }) {
     return prisma.customFieldDefinition.findMany({
-      where: activeOnly ? { isActive: true } : {},
+      where: activeOnly ? { shopId, isActive: true } : { shopId },
       orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
     });
   }
 
-  getDefinitionById(id: number) {
-    return prisma.customFieldDefinition.findUnique({ where: { id } });
+  getDefinitionById(shopId: number, id: number) {
+    return prisma.customFieldDefinition.findFirst({ where: { id, shopId } });
   }
 
-  async createDefinition(data: CustomFieldDefinitionInput) {
+  async createDefinition(shopId: number, data: CustomFieldDefinitionInput) {
+    // If a sectionId is supplied, confirm it belongs to this shop —
+    // otherwise the create would silently link a field to another
+    // merchant's section.
+    if (data.sectionId != null) {
+      const ownedSection = await prisma.customFieldSection.findFirst({
+        where: { id: data.sectionId, shopId },
+        select: { id: true },
+      });
+      if (!ownedSection) {
+        return { error: 'Section not found' } as const;
+      }
+    }
     const created = await prisma.customFieldDefinition.create({
       data: {
+        shopId,
         name: data.name,
         type: data.type,
         // Prisma needs Prisma.JsonNull (not bare null) to write SQL
@@ -364,14 +388,15 @@ export class CustomFieldsService {
   }
 
   async updateDefinition(
+    shopId: number,
     id: number,
     data: Partial<CustomFieldDefinitionInput> & { isActive?: boolean },
   ) {
     // Only persist the type-shaped extras when type is the matching
     // shape, so a TEXT field doesn't accidentally carry dropdown
     // options from a stale form payload.
-    const existing = await prisma.customFieldDefinition.findUnique({
-      where: { id },
+    const existing = await prisma.customFieldDefinition.findFirst({
+      where: { id, shopId },
     });
     if (!existing) return null;
 
@@ -402,28 +427,39 @@ export class CustomFieldsService {
 
   /// Soft-delete by default — flip isActive=false so historical values
   /// remain readable. Hard-delete is exposed separately if needed.
-  async softDeleteDefinition(id: number) {
+  async softDeleteDefinition(shopId: number, id: number) {
+    const owned = await prisma.customFieldDefinition.findFirst({
+      where: { id, shopId },
+      select: { id: true },
+    });
+    if (!owned) return null;
     return prisma.customFieldDefinition.update({
       where: { id },
       data: { isActive: false },
     });
   }
 
-  async reorderDefinitions(orderedIds: number[]) {
+  async reorderDefinitions(shopId: number, orderedIds: number[]) {
     await prisma.$transaction(
       orderedIds.map((id, i) =>
-        prisma.customFieldDefinition.update({
-          where: { id },
+        prisma.customFieldDefinition.updateMany({
+          where: { id, shopId },
           data: { sortOrder: i },
         }),
       ),
     );
-    return this.listDefinitions({ activeOnly: false });
+    return this.listDefinitions(shopId, { activeOnly: false });
   }
 
   // ── Per-product values ─────────────────────────────────────────────
 
-  async listValuesForProduct(productId: number) {
+  async listValuesForProduct(shopId: number, productId: number) {
+    // Authorize: only return values for products in this shop.
+    const product = await prisma.product.findFirst({
+      where: { id: productId, shopId },
+      select: { id: true },
+    });
+    if (!product) return [];
     return prisma.productCustomFieldValue.findMany({
       where: { productId },
       include: { definition: true },
@@ -437,9 +473,19 @@ export class CustomFieldsService {
   /// Upsert a single (productId, definitionId) row. Empty/whitespace
   /// value deletes the row instead of storing a blank — keeps the
   /// table clean and the "no value" detail-row rendering simple.
-  async setValue(productId: number, definitionId: number, rawValue: string) {
-    const definition = await prisma.customFieldDefinition.findUnique({
-      where: { id: definitionId },
+  async setValue(
+    shopId: number,
+    productId: number,
+    definitionId: number,
+    rawValue: string,
+  ) {
+    const product = await prisma.product.findFirst({
+      where: { id: productId, shopId },
+      select: { id: true },
+    });
+    if (!product) return { error: 'Product not found' };
+    const definition = await prisma.customFieldDefinition.findFirst({
+      where: { id: definitionId, shopId },
     });
     if (!definition) {
       return { error: 'Definition not found' };
@@ -473,12 +519,18 @@ export class CustomFieldsService {
   /// Bulk-replace a product's values in one transaction. Empty values
   /// clear the row. Used by Add/Edit Product save path.
   async bulkSetValues(
+    shopId: number,
     productId: number,
     entries: { definitionId: number; value: string }[],
   ) {
+    const product = await prisma.product.findFirst({
+      where: { id: productId, shopId },
+      select: { id: true },
+    });
+    if (!product) return { error: 'Product not found' };
     const definitionIds = entries.map((e) => e.definitionId);
     const definitions = await prisma.customFieldDefinition.findMany({
-      where: { id: { in: definitionIds } },
+      where: { id: { in: definitionIds }, shopId },
     });
     const byId = new Map(definitions.map((d) => [d.id, d]));
 
@@ -527,10 +579,15 @@ export class CustomFieldsService {
       ),
     );
 
-    return this.listValuesForProduct(productId);
+    return this.listValuesForProduct(shopId, productId);
   }
 
-  async deleteValue(productId: number, definitionId: number) {
+  async deleteValue(shopId: number, productId: number, definitionId: number) {
+    const product = await prisma.product.findFirst({
+      where: { id: productId, shopId },
+      select: { id: true },
+    });
+    if (!product) return;
     await prisma.productCustomFieldValue.deleteMany({
       where: { productId, definitionId },
     });

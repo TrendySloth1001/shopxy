@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy_customer/features/addresses/presentation/pages/addresses_page.dart';
 import 'package:shopxy_customer/features/auth/presentation/providers/auth_provider.dart';
+import 'package:shopxy_customer/features/orders/presentation/pages/my_orders_page.dart';
+import 'package:shopxy_customer/features/profile/presentation/pages/edit_profile_page.dart';
+import 'package:shopxy_customer/features/profile/presentation/pages/info_pages.dart';
+import 'package:shopxy_customer/features/shops/presentation/pages/linked_merchants_page.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/constants/app_strings.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+import 'package:shopxy_customer/shared/widgets/app_app_bar.dart';
 import 'package:shopxy_customer/shared/widgets/app_dialog.dart';
 
 class CustomerProfilePage extends StatelessWidget {
@@ -30,7 +36,8 @@ class CustomerProfilePage extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text(AppStrings.navProfile)),
+      backgroundColor: AppColors.canvas,
+      appBar: const AppAppBar(title: AppStrings.navProfile),
       body: ListView(
         padding: const EdgeInsets.only(bottom: AppSizes.huge),
         children: [
@@ -78,20 +85,58 @@ class CustomerProfilePage extends StatelessWidget {
           ),
           const _Gap(),
           _Row(
+            icon: Icons.edit_outlined,
+            title: 'Edit profile',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const EditProfilePage()),
+            ),
+          ),
+          _Row(
+            icon: Icons.storefront_outlined,
+            title: 'Linked merchants',
+            subtitle: 'Browse shops you have a relationship with',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const LinkedMerchantsPage()),
+            ),
+          ),
+          _Row(
+            icon: Icons.location_on_outlined,
+            title: 'Delivery addresses',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const AddressesPage()),
+            ),
+          ),
+          // Orders used to live in the bottom nav; surfaced here so it
+          // stays one tap from the profile root.
+          _Row(
+            icon: Icons.receipt_long_outlined,
+            title: AppStrings.myOrders,
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const MyOrdersPage()),
+            ),
+          ),
+          const _Gap(),
+          _Row(
             icon: Icons.info_outline_rounded,
             title: AppStrings.about,
             subtitle: 'Version 1.0.0',
-            onTap: () => _comingSoon(context, AppStrings.about),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const AboutPage()),
+            ),
           ),
           _Row(
             icon: Icons.shield_outlined,
             title: AppStrings.privacyPolicy,
-            onTap: () => _comingSoon(context, AppStrings.privacyPolicy),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const PrivacyPolicyPage()),
+            ),
           ),
           _Row(
             icon: Icons.description_outlined,
             title: AppStrings.termsOfService,
-            onTap: () => _comingSoon(context, AppStrings.termsOfService),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const TermsOfServicePage()),
+            ),
           ),
           const _Gap(),
           Padding(
@@ -133,11 +178,6 @@ class CustomerProfilePage extends StatelessWidget {
     );
   }
 
-  void _comingSoon(BuildContext context, String label) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text('$label — ${AppStrings.comingSoon.toLowerCase()}')));
-  }
 }
 
 class _Avatar extends StatelessWidget {

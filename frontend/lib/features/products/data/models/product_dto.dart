@@ -41,6 +41,23 @@ class ProductDto {
       lastVendorId: (json['lastVendor'] as Map<String, dynamic>?)?['id'] as int?,
       lastVendorName:
           (json['lastVendor'] as Map<String, dynamic>?)?['name'] as String?,
+      isPublished: json['isPublished'] as bool? ?? false,
+      ratingAvg: json['ratingAvg'] == null ? null : _toDouble(json['ratingAvg']),
+      ratingCount: json['ratingCount'] as int? ?? 0,
+      tags: (json['tags'] as List<dynamic>?)?.cast<String>() ?? const [],
+      highlights:
+          (json['highlights'] as List<dynamic>?)?.cast<String>() ?? const [],
+      specs: (json['specs'] as List<dynamic>?)
+              ?.whereType<Map<String, dynamic>>()
+              .map(SpecGroup.fromJson)
+              .toList() ??
+          const [],
+      offers: (json['offers'] as List<dynamic>?)
+              ?.whereType<Map<String, dynamic>>()
+              .map(ProductOffer.fromJson)
+              .toList() ??
+          const [],
+      totalSold: json['totalSold'] as int? ?? 0,
     );
   }
 
@@ -71,6 +88,10 @@ class ProductDto {
     double? lowStockThreshold,
     String? unit,
     int? categoryId,
+    List<String>? tags,
+    List<String>? highlights,
+    List<SpecGroup>? specs,
+    List<ProductOffer>? offers,
   }) {
     final data = <String, dynamic>{
       'name': name,
@@ -87,6 +108,10 @@ class ProductDto {
       'lowStockThreshold': lowStockThreshold,
       'unit': unit,
       'categoryId': categoryId,
+      'tags': tags,
+      'highlights': highlights,
+      'specs': specs?.map(_specToJson).toList(),
+      'offers': offers?.map((o) => o.toJson()).toList(),
     };
     data.removeWhere((_, value) => value == null);
     return data;
@@ -106,6 +131,11 @@ class ProductDto {
     String? unit,
     int? categoryId,
     bool? isActive,
+    bool? isPublished,
+    List<String>? tags,
+    List<String>? highlights,
+    List<SpecGroup>? specs,
+    List<ProductOffer>? offers,
   }) {
     final data = <String, dynamic>{
       'name': name,
@@ -121,8 +151,24 @@ class ProductDto {
       'unit': unit,
       'categoryId': categoryId,
       'isActive': isActive,
+      'isPublished': isPublished,
+      'tags': tags,
+      'highlights': highlights,
+      'specs': specs?.map(_specToJson).toList(),
+      'offers': offers?.map((o) => o.toJson()).toList(),
     };
     data.removeWhere((_, value) => value == null);
     return data;
   }
+
+  /// Drops empty-row + empty-value pairs before serialising. Lets the
+  /// editor leave half-filled rows in the form without ever shipping
+  /// them.
+  static Map<String, dynamic> _specToJson(SpecGroup g) => {
+        'title': g.title.trim(),
+        'rows': g.rows
+            .where((r) => r.label.trim().isNotEmpty && r.value.trim().isNotEmpty)
+            .map((r) => {'label': r.label.trim(), 'value': r.value.trim()})
+            .toList(),
+      };
 }

@@ -8,18 +8,21 @@ export class StockService {
   /// the draft on the dashboard and confirms it to actually deduct
   /// stock. Damage / expired / shrinkage still go through
   /// /stock-adjustments.
-  async createTransaction(data: {
-    productId: number;
-    type: string; // 'STOCK_IN' | 'STOCK_OUT'
-    quantity: number;
-    unitPrice?: number;
-    vendorId?: number;
-    partyId?: number;
-    note?: string;
-    createdById?: number;
-  }) {
-    const product = await prisma.product.findUnique({
-      where: { id: data.productId },
+  async createTransaction(
+    shopId: number,
+    data: {
+      productId: number;
+      type: string; // 'STOCK_IN' | 'STOCK_OUT'
+      quantity: number;
+      unitPrice?: number;
+      vendorId?: number;
+      partyId?: number;
+      note?: string;
+      createdById?: number;
+    },
+  ) {
+    const product = await prisma.product.findFirst({
+      where: { id: data.productId, shopId },
       select: {
         id: true,
         isActive: true,
@@ -36,6 +39,7 @@ export class StockService {
     if (direction === 'IN') {
       const unitPrice = data.unitPrice ?? Number(product.purchasePrice);
       const result = await invoicesService.createInvoice({
+        shopId,
         type: 'PURCHASE',
         vendorId: data.vendorId,
         note: data.note,
@@ -52,13 +56,13 @@ export class StockService {
       return { draftInvoice: result.invoice };
     }
 
-    // OUT — sale to a party. Default to the system Walk-in Customer when
-    // none picked so the user never has to bail out of the sheet just to
-    // record a quick over-the-counter sale.
+    // OUT — sale to a party. Default to *this shop's* Walk-in Customer
+    // (the seed creates one per shop) so cross-tenant attribution can't
+    // happen via the quick-OTC path.
     let partyId = data.partyId;
     if (!partyId) {
       const walkin = await prisma.party.findFirst({
-        where: { isSystem: true, name: 'Walk-in Customer' },
+        where: { shopId, isSystem: true, name: 'Walk-in Customer' },
         select: { id: true },
       });
       if (!walkin) {
@@ -69,6 +73,7 @@ export class StockService {
 
     const unitPrice = data.unitPrice ?? Number(product.sellingPrice);
     const result = await invoicesService.createInvoice({
+      shopId,
       type: 'SALE',
       partyId,
       note: data.note,
@@ -85,14 +90,18 @@ export class StockService {
     return { draftInvoice: result.invoice };
   }
 
-  async listSuppliers(options: { query?: string; productId?: number; limit: number }) {
+  async listSuppliers(
+    shopId: number,
+    options: { query?: string; productId?: number; limit: number },
+  ) {
     const query = options.query?.trim();
 
     // 1. Structured vendors that have stock-in transactions for this product
-    const vendorTxWhere: Record<string, unknown> = { direction: 'IN' };
+    const vendorTxWhere: Record<string, unknown> = { direction: 'IN', shopId };
     if (options.productId) vendorTxWhere.productId = options.productId;
 
     const vendorWhere: Record<string, unknown> = {
+      shopId,
       stockTransactions: { some: vendorTxWhere },
       isActive: true,
     };
@@ -107,6 +116,7 @@ export class StockService {
 
     // 2. Legacy free-text supplier names (vendorId is null)
     const freeTextWhere: Record<string, unknown> = {
+      shopId,
       direction: 'IN',
       supplierName: { not: null },
       vendorId: null,
@@ -136,19 +146,22 @@ export class StockService {
     return { vendors, freeTextSuppliers };
   }
 
-  async listTransactions(options: {
-    productId?: number;
-    type?: string;
-    direction?: string;
-    reasonCode?: string;
-    sourceType?: string;
-    sourceId?: number;
-    vendorId?: number;
-    page: number;
-    limit: number;
-    skip: number;
-  }) {
-    const where: Record<string, unknown> = {};
+  async listTransactions(
+    shopId: number,
+    options: {
+      productId?: number;
+      type?: string;
+      direction?: string;
+      reasonCode?: string;
+      sourceType?: string;
+      sourceId?: number;
+      vendorId?: number;
+      page: number;
+      limit: number;
+      skip: number;
+    },
+  ) {
+    const where: Record<string, unknown> = { shopId };
     if (options.productId) where.productId = options.productId;
     if (options.type) where.type = options.type;
     if (options.direction) where.direction = options.direction;

@@ -3,18 +3,18 @@ import 'package:provider/provider.dart';
 import 'package:shopxy/features/categories/domain/entities/category.dart';
 import 'package:shopxy/features/categories/presentation/pages/category_products_page.dart';
 import 'package:shopxy/features/categories/presentation/providers/categories_provider.dart';
-import 'package:shopxy/features/categories/presentation/widgets/category_form_sheet.dart';
 import 'package:shopxy/features/categories/presentation/widgets/category_icon_catalog.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
-import 'package:shopxy/shared/widgets/app_dialog.dart';
-import 'package:shopxy/shared/widgets/app_divider.dart';
-import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
-import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
 
+/// Read-only browse of the canonical taxonomy. Merchants don't manage
+/// categories any more — the seed lives in the backend manifest. This
+/// page just lets the merchant browse "my products by category".
+/// Tapping a tile drops into [CategoryProductsPage] which lists the
+/// merchant's own products in that bucket.
 class CategoriesPage extends StatefulWidget {
   const CategoriesPage({super.key});
 
@@ -28,152 +28,119 @@ class _CategoriesPageState extends State<CategoriesPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      context.read<CategoriesProvider>().loadCategories();
+      context.read<CategoriesProvider>().loadTree();
     });
-  }
-
-  void _showAddEditSheet([Category? category]) {
-    CategoryFormSheet.show(context, category: category);
-  }
-
-  void _deleteCategory(Category category) async {
-    final confirmed = await AppConfirmDialog.show(
-      context,
-      title: 'Delete "${category.name}"?',
-      message: 'Products in this category will be uncategorized.',
-      confirmLabel: AppStrings.delete,
-      danger: true,
-    );
-
-    if (confirmed && mounted) {
-      await context.read<CategoriesProvider>().deleteCategory(category.id);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text(AppStrings.categoryDeleted)),
-        );
-      }
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<CategoriesProvider>();
+    final tree = provider.tree;
 
     return Scaffold(
       appBar: AppBar(title: const Text(AppStrings.navCategories)),
-      body: provider.isLoading && provider.categories.isEmpty
+      body: provider.isLoading && tree.isEmpty
           ? const Center(child: CircularProgressIndicator())
-          : provider.categories.isEmpty
+          : tree.isEmpty
               ? EmptyState.line(
                   kind: LineArt.productTag,
                   title: AppStrings.noCategories,
                   subtitle: AppStrings.noCategoriesHint,
                 )
               : RefreshIndicator(
-                  onRefresh: () => provider.loadCategories(),
+                  onRefresh: () => provider.loadTree(),
                   color: AppColors.black,
                   backgroundColor: AppColors.white,
-                  child: ListView.separated(
-                    padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
-                    itemCount: provider.categories.length,
-                    separatorBuilder: (_, _) => const AppDivider(),
+                  child: GridView.builder(
+                    padding: const EdgeInsets.all(AppSizes.md),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      mainAxisSpacing: AppSizes.md,
+                      crossAxisSpacing: AppSizes.md,
+                      childAspectRatio: 0.82,
+                    ),
+                    itemCount: tree.length,
                     itemBuilder: (context, index) {
-                      final cat = provider.categories[index];
-                      return _CategoryTile(
-                        category: cat,
+                      final node = tree[index];
+                      return _CategoryCard(
+                        category: node.category,
                         onTap: () => Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => CategoryProductsPage(category: cat),
+                            builder: (_) => CategoryProductsPage(
+                              category: node.category,
+                            ),
                           ),
                         ),
-                        onEdit: () => _showAddEditSheet(cat),
-                        onDelete: () => _deleteCategory(cat),
                       );
                     },
                   ),
                 ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'categories_fab',
-        onPressed: () => _showAddEditSheet(),
-        child: const Icon(Icons.add_rounded),
+    );
+  }
+}
+
+class _CategoryCard extends StatelessWidget {
+  const _CategoryCard({required this.category, required this.onTap});
+  final Category category;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AspectRatio(
+            aspectRatio: 1,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: _CategoryImage(category: category),
+            ),
+          ),
+          const SizedBox(height: AppSizes.xs),
+          Text(
+            category.name,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
       ),
     );
   }
 }
 
-class _CategoryTile extends StatelessWidget {
-  const _CategoryTile({
-    required this.category,
-    required this.onTap,
-    required this.onEdit,
-    required this.onDelete,
-  });
-
+/// Category artwork. Falls back to the iconName-derived icon over a
+/// tinted background when the network image fails or no URL is set.
+class _CategoryImage extends StatelessWidget {
+  const _CategoryImage({required this.category});
   final Category category;
-  final VoidCallback onTap;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Material(
-      color: AppColors.white,
-      child: InkWell(
-        onTap: onTap,
-        splashColor: AppColors.surfaceTint,
-        highlightColor: AppColors.surfaceTint,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSizes.lg,
-            vertical: AppSizes.md,
-          ),
-          child: Row(
-            children: [
-              AppIconAvatar.outlined(icon: resolveCategoryIcon(category.iconName)),
-              const SizedBox(width: AppSizes.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      category.name,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    if (category.description != null)
-                      Text(
-                        category.description!,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: AppColors.muted,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                  ],
-                ),
-              ),
-              if (category.productCount != null) ...[
-                const SizedBox(width: AppSizes.sm),
-                AppStatusBadge(label: '${category.productCount}', dense: true),
-              ],
-              PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert_rounded, color: AppColors.muted),
-                itemBuilder: (_) => const [
-                  PopupMenuItem(value: 'edit', child: Text(AppStrings.edit)),
-                  PopupMenuItem(value: 'delete', child: Text(AppStrings.delete)),
-                ],
-                onSelected: (value) {
-                  if (value == 'edit') onEdit();
-                  if (value == 'delete') onDelete();
-                },
-              ),
-            ],
-          ),
-        ),
+    final url = category.imageUrl;
+    final fallback = Container(
+      color: AppColors.surfaceTint,
+      alignment: Alignment.center,
+      child: Icon(
+        resolveCategoryIcon(category.iconName),
+        color: AppColors.black,
+        size: 28,
       ),
+    );
+    if (url == null || url.isEmpty) return fallback;
+    return Image.network(
+      url,
+      fit: BoxFit.cover,
+      loadingBuilder: (_, child, progress) =>
+          progress == null ? child : Container(color: AppColors.surfaceTint),
+      errorBuilder: (_, _, _) => fallback,
     );
   }
 }

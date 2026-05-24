@@ -9,6 +9,7 @@ export type InviteStatus = 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'CANCELLED' | '
 
 const inviteSelect = {
   id: true,
+  shopId: true,
   fromUserId: true,
   toEmail: true,
   toUserId: true,
@@ -38,6 +39,7 @@ export class InvitationsService {
   ///      the contact's name and the actual Party/Vendor row is created
   ///      lazily at accept time. Cuts a step out of the merchant flow.
   async sendInvite(input: {
+    shopId: number;
     fromUserId: number;
     toEmail: string;
     linkType: LinkType;
@@ -69,14 +71,14 @@ export class InvitationsService {
         select: { id: true, name: true, email: true },
       }),
       hasEntity && linkType === 'PARTY' && input.partyId
-        ? prisma.party.findUnique({
-            where: { id: input.partyId },
+        ? prisma.party.findFirst({
+            where: { id: input.partyId, shopId: input.shopId },
             select: { id: true, name: true, email: true, linkedUserId: true },
           })
         : Promise.resolve(null),
       hasEntity && linkType === 'VENDOR' && input.vendorId
-        ? prisma.vendor.findUnique({
-            where: { id: input.vendorId },
+        ? prisma.vendor.findFirst({
+            where: { id: input.vendorId, shopId: input.shopId },
             select: { id: true, name: true, email: true, linkedUserId: true },
           })
         : Promise.resolve(null),
@@ -132,6 +134,7 @@ export class InvitationsService {
     const invitation = await prisma.$transaction(async (tx) => {
       const created = await tx.invitation.create({
         data: {
+          shopId: input.shopId,
           fromUserId: input.fromUserId,
           toEmail,
           toUserId: toUser?.id ?? null,
@@ -264,6 +267,7 @@ export class InvitationsService {
             // Bare-email invite — materialise the party at accept time.
             const created = await tx.party.create({
               data: {
+                shopId: invite.shopId,
                 name: invite.displayName ?? invite.toEmail.split('@')[0],
                 email: invite.toEmail,
                 linkedUserId: opts.userId,
@@ -281,6 +285,7 @@ export class InvitationsService {
           } else {
             const created = await tx.vendor.create({
               data: {
+                shopId: invite.shopId,
                 name: invite.displayName ?? invite.toEmail.split('@')[0],
                 email: invite.toEmail,
                 linkedUserId: opts.userId,

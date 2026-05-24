@@ -10,6 +10,7 @@ import {
 import { Readable } from 'stream';
 import crypto from 'crypto';
 import path from 'path';
+import sharp from 'sharp';
 
 const MINIO_ENDPOINT = process.env.MINIO_ENDPOINT ?? 'localhost';
 const MINIO_PORT = Number(process.env.MINIO_PORT ?? 9000);
@@ -77,6 +78,84 @@ export async function uploadFile(
 
 export async function deleteFile(key: string): Promise<void> {
   await s3.send(new DeleteObjectCommand({ Bucket: MINIO_BUCKET, Key: key }));
+}
+
+/// Size variants we generate from every uploaded image. Customer list
+/// cards never need more than `md`; product detail / shop banner uses
+/// `lg`; thumbnails and category pucks use `sm`. Keeping the set small
+/// means we only pay 3× encode cost on upload, and bandwidth on the
+/// hot path shrinks ~5–10× vs serving a 4MB JPEG to every grid card.
+const VARIANTS = {
+  sm: 160,
+  md: 400,
+  lg: 800,
+} as const;
+type Variant = keyof typeof VARIANTS;
+
+export interface UploadedImage {
+  /// Default URL — caller should store this. Resolves to the `md`
+  /// variant; `urlFor(stored, 'sm' | 'lg')` derives the other sizes.
+  url: string;
+  /// Stable id shared by all 3 size variants. Useful for cleanup.
+  id: string;
+  variants: Record<Variant, string>;
+}
+
+/// Re-encode + resize the input buffer into three WebP variants and
+/// push all of them to object storage. Lossy q=75 is roughly the JPEG
+/// q=82 break-even point on visual quality but 25–35% smaller. EXIF
+/// is stripped by sharp by default — important for privacy on
+/// user-uploaded photos. Animated inputs render only their first frame
+/// (the marketplace doesn't surface video/GIF anywhere yet).
+export async function uploadImageWithVariants(
+  buffer: Buffer,
+  _originalName: string,
+): Promise<UploadedImage> {
+  const id = crypto.randomUUID();
+
+  const encoded = await Promise.all(
+    (Object.entries(VARIANTS) as [Variant, number][]).map(async ([variant, width]) => {
+      const out = await sharp(buffer, { failOn: 'truncated' })
+        .rotate() // honour EXIF orientation before we strip metadata
+        .resize({ width, withoutEnlargement: true })
+        .webp({ quality: 75, effort: 4 })
+        .toBuffer();
+      const key = `${id}-${variant}.webp`;
+      await s3.send(
+        new PutObjectCommand({
+          Bucket: MINIO_BUCKET,
+          Key: key,
+          Body: out,
+          ContentType: 'image/webp',
+        }),
+      );
+      return [variant, `/images/${key}`] as const;
+    }),
+  );
+
+  const variants = Object.fromEntries(encoded) as Record<Variant, string>;
+  return { id, url: variants.md, variants };
+}
+
+/// Derives a variant URL from any stored variant URL by string swap.
+/// Pure function: the variant suffix is part of the storage convention,
+/// so we can compute the others without re-querying. Returns input
+/// unchanged if it isn't a generated-variant URL (e.g. legacy uploads).
+export function urlFor(storedUrl: string, variant: Variant): string {
+  const match = storedUrl.match(/^(.*)-(sm|md|lg)\.webp$/);
+  if (!match) return storedUrl;
+  return `${match[1]}-${variant}.webp`;
+}
+
+/// Cleanup helper for delete flows. Removes all 3 variants for a given
+/// id. Safe to call against a partial id (e.g. one of the three failed
+/// to upload) — missing objects are tolerated by deleteFile.
+export async function deleteImageVariants(id: string): Promise<void> {
+  await Promise.all(
+    (Object.keys(VARIANTS) as Variant[]).map((v) =>
+      deleteFile(`${id}-${v}.webp`).catch(() => undefined),
+    ),
+  );
 }
 
 export async function getFileStream(

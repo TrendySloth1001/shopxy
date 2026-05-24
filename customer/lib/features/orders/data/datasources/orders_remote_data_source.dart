@@ -20,9 +20,11 @@ class OrdersRemoteDataSource {
   final ApiClient _client;
 
   Future<int> placeOrder({
+    required int shopId,
     required List<({int productId, double quantity})> items,
     String? note,
     String? idempotencyKey,
+    int? addressId,
   }) async {
     // Generate one if the caller didn't pass it in. A retry of the
     // *same* logical cart submit must reuse the *same* key — that's the
@@ -33,10 +35,12 @@ class OrdersRemoteDataSource {
       '/me/orders',
       extraHeaders: {'X-Idempotency-Key': key},
       body: {
+        'shopId': shopId,
         'items': items
             .map((i) => {'productId': i.productId, 'quantity': i.quantity})
             .toList(),
         if (note != null && note.isNotEmpty) 'note': note,
+        'addressId': ?addressId,
       },
     );
     if (res.statusCode != 200 && res.statusCode != 201) {

@@ -6,7 +6,7 @@ class AppStrings {
 
   // Navigation
   static const String navHome = 'Home';
-  static const String navBrowse = 'Browse';
+  static const String navCart = 'Cart';
   static const String navOrders = 'Orders';
   static const String navNotifications = 'Notifications';
   static const String navProfile = 'Profile';
@@ -74,7 +74,6 @@ class AppStrings {
   static const String currencySymbol = '₹';
 
   // Catalog
-  static const String browseTitle = 'Browse';
   static const String searchProducts = 'Search products';
   static const String addToCart = 'Add to cart';
   static const String inCart = 'In cart';
@@ -82,7 +81,7 @@ class AppStrings {
   static const String cart = 'Cart';
   static const String yourCart = 'Your cart';
   static const String emptyCart = 'Your cart is empty';
-  static const String emptyCartHint = 'Add products from the Browse tab.';
+  static const String emptyCartHint = 'Add products from the Home tab.';
   static const String checkout = 'Place order';
   static const String orderNotePlaceholder = 'Note for the shop (optional)';
   static const String orderPlaced = 'Order placed';

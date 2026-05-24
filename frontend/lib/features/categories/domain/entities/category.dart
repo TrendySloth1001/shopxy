@@ -10,6 +10,8 @@ class Category {
     this.productCount,
     required this.createdAt,
     required this.updatedAt,
+    this.slug,
+    this.parentId,
   });
 
   final int id;
@@ -22,4 +24,15 @@ class Category {
   final int? productCount;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final String? slug;
+  final int? parentId;
 }
+
+/// Same Category fields plus child categories — what GET /categories/tree
+/// returns. Kept separate so non-tree call-sites stay leaner.
+class CategoryNode {
+  const CategoryNode({required this.category, required this.children});
+  final Category category;
+  final List<CategoryNode> children;
+}
+

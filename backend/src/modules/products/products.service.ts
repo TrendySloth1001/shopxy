@@ -1,5 +1,7 @@
+import { Prisma } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
 import { ledgerService } from '../ledger/ledger.service.js';
+import { embeddingService } from '../search/embedding.service.js';
 
 const productSelect = {
   id: true,
@@ -16,7 +18,16 @@ const productSelect = {
   lowStockThreshold: true,
   unit: true,
   categoryId: true,
+  shopId: true,
   isActive: true,
+  isPublished: true,
+  ratingAvg: true,
+  ratingCount: true,
+  tags: true,
+  highlights: true,
+  specs: true,
+  offers: true,
+  totalSold: true,
   createdAt: true,
   updatedAt: true,
   category: true,
@@ -40,16 +51,28 @@ export class ProductsService {
       unit?: string;
       categoryId?: number;
       imageUrls?: string[];
+      tags?: string[];
+      highlights?: string[];
+      specs?: unknown;
+      offers?: unknown;
     },
-    options: { createdById?: number } = {},
+    options: { createdById?: number; shopId?: number } = {},
   ) {
-    const { imageUrls, stockQuantity, ...rest } = data;
+    const { imageUrls, stockQuantity, specs, offers, ...rest } = data;
     // Create the product with stockQuantity = 0; the ledger post below is
     // what funds it. This keeps products.stockQuantity in sync with the
     // ledger from row one — no orphan stock without a cost basis.
+    if (!options.shopId) {
+      throw new Error('createProduct requires options.shopId');
+    }
     const product = await prisma.product.create({
       data: {
         ...rest,
+        // JSONB columns need explicit `as Prisma.InputJsonValue` casts;
+        // pass through unchanged when omitted so the column stays NULL.
+        specs: specs === undefined ? undefined : (specs as Prisma.InputJsonValue),
+        offers: offers === undefined ? undefined : (offers as Prisma.InputJsonValue),
+        shopId: options.shopId,
         stockQuantity: 0,
         images: imageUrls?.length
           ? { create: imageUrls.map((url, i) => ({ url, sortOrder: i })) }
@@ -58,8 +81,14 @@ export class ProductsService {
       select: productSelect,
     });
 
+    // New product → kick off a semantic embedding so it's searchable
+    // by intent the moment it appears. Failures are swallowed
+    // inside reembedProduct + the cron retries periodically.
+    void embeddingService.reembedProduct(product.id);
+
     if (stockQuantity && stockQuantity > 0) {
       const result = await ledgerService.post({
+        shopId: options.shopId,
         direction: 'IN',
         reasonCode: 'OPENING',
         sourceType: 'OPENING',
@@ -92,6 +121,7 @@ export class ProductsService {
   }
 
   async listProducts(options: {
+    shopId: number;
     activeOnly: boolean;
     lowStock: boolean;
     outOfStock: boolean;
@@ -103,7 +133,10 @@ export class ProductsService {
     limit: number;
     skip: number;
   }) {
-    const where: Record<string, unknown> = {};
+    // EVERY product read filters by shopId — non-negotiable for multi-tenant
+    // safety. Even a search/categoryId combo without this filter would let
+    // an authenticated merchant browse competitors' catalogs.
+    const where: Record<string, unknown> = { shopId: options.shopId };
 
     if (options.activeOnly) where.isActive = true;
     if (options.categoryId) where.categoryId = options.categoryId;
@@ -141,44 +174,51 @@ export class ProductsService {
     }
 
     if (options.lowStock) {
-      // Column-to-column comparison — use raw SQL to avoid fetching all rows in memory
-      where.isActive = true;
-      const categoryFilter = options.categoryId
-        ? prisma.$queryRaw<[{ count: bigint }]>`
-            SELECT COUNT(*)::bigint AS count FROM products
-            WHERE is_active = true AND stock_quantity > 0
-              AND stock_quantity <= low_stock_threshold AND category_id = ${options.categoryId}`
-        : prisma.$queryRaw<[{ count: bigint }]>`
-            SELECT COUNT(*)::bigint AS count FROM products
-            WHERE is_active = true AND stock_quantity > 0
-              AND stock_quantity <= low_stock_threshold`;
+      // Column-to-column comparison (stock_quantity <= low_stock_threshold)
+      // can't be expressed in Prisma's typed `where` builder, so we drop
+      // to two parameterised raw queries — one for COUNT, one for the
+      // page-of-ids — and then a third typed read to hydrate. This is
+      // the indexed path: ~3 round-trips with O(rows-on-page) memory,
+      // vs the previous implementation which pulled every active row
+      // for the shop into Node memory before filtering.
+      const orderBy = { [options.sortBy]: options.sortOrder } as Record<string, 'asc' | 'desc'>;
+      const categoryClause = options.categoryId
+        ? Prisma.sql`AND category_id = ${options.categoryId}`
+        : Prisma.empty;
 
-      const countResult = await categoryFilter;
-      const total = Number(countResult[0].count);
+      const [countRow, pageRows] = await Promise.all([
+        prisma.$queryRaw<{ count: bigint }[]>`
+          SELECT COUNT(*)::bigint AS count FROM products
+           WHERE shop_id = ${options.shopId}
+             AND is_active = true
+             AND stock_quantity > 0
+             AND stock_quantity <= low_stock_threshold
+             ${categoryClause}
+        `,
+        prisma.$queryRaw<{ id: number }[]>`
+          SELECT id FROM products
+           WHERE shop_id = ${options.shopId}
+             AND is_active = true
+             AND stock_quantity > 0
+             AND stock_quantity <= low_stock_threshold
+             ${categoryClause}
+           ORDER BY updated_at DESC
+           LIMIT ${options.limit} OFFSET ${options.skip}
+        `,
+      ]);
 
-      // Fetch with include via ORM after getting IDs (simpler and type-safe)
-      const allLowStock = await prisma.product.findMany({
-        where: {
-          isActive: true,
-          ...(options.categoryId ? { categoryId: options.categoryId } : {}),
-        },
-        select: { id: true, stockQuantity: true, lowStockThreshold: true },
-      });
-
-      const lowStockIds = allLowStock
-        .filter((p) => Number(p.stockQuantity) > 0 && Number(p.stockQuantity) <= Number(p.lowStockThreshold))
-        .map((p) => p.id);
+      const total = Number(countRow[0]?.count ?? 0);
+      const pageIds = pageRows.map((r) => r.id);
+      if (pageIds.length === 0) return { products: [], total };
 
       const products = await prisma.product.findMany({
-        where: { id: { in: lowStockIds } },
-        orderBy: { [options.sortBy]: options.sortOrder } as Record<string, 'asc' | 'desc'>,
-        skip: options.skip,
-        take: options.limit,
+        where: { id: { in: pageIds } },
+        orderBy,
         select: productSelect,
       });
 
       const enriched = await this._enrichWithLastActivity(products);
-      return { products: enriched, total: lowStockIds.length };
+      return { products: enriched, total };
     }
 
     const orderBy = { [options.sortBy]: options.sortOrder } as Record<string, 'asc' | 'desc'>;
@@ -290,16 +330,16 @@ export class ProductsService {
     });
   }
 
-  lookupProduct(code: string) {
+  lookupProduct(shopId: number, code: string) {
     return prisma.product.findFirst({
-      where: { OR: [{ barcode: code }, { sku: code }] },
+      where: { shopId, OR: [{ barcode: code }, { sku: code }] },
       select: productSelect,
     });
   }
 
-  getProductById(id: number) {
-    return prisma.product.findUnique({
-      where: { id },
+  getProductById(shopId: number, id: number) {
+    return prisma.product.findFirst({
+      where: { id, shopId },
       include: {
         category: true,
         images: { orderBy: { sortOrder: 'asc' } },
@@ -312,7 +352,8 @@ export class ProductsService {
     });
   }
 
-  updateProduct(
+  async updateProduct(
+    shopId: number,
     id: number,
     data: {
       name?: string;
@@ -328,16 +369,73 @@ export class ProductsService {
       unit?: string;
       categoryId?: number | null;
       isActive?: boolean;
+      isPublished?: boolean;
+      tags?: string[];
+      highlights?: string[];
+      specs?: unknown | null;
+      offers?: unknown | null;
     },
   ) {
-    return prisma.product.update({
-      where: { id },
-      data,
-      select: productSelect,
+    // updateMany returns count instead of throwing on missing row; that
+    // lets us distinguish "wrong shop" from "wrong id" cleanly without
+    // a separate guard query. count=0 → either id doesn't exist OR
+    // belongs to another shop. Either way: 404 from the controller.
+    const { specs, offers, ...rest } = data;
+    const result = await prisma.product.updateMany({
+      where: { id, shopId },
+      data: {
+        ...rest,
+        specs: specs === undefined
+          ? undefined
+          : specs === null
+            ? Prisma.JsonNull
+            : (specs as Prisma.InputJsonValue),
+        offers: offers === undefined
+          ? undefined
+          : offers === null
+            ? Prisma.JsonNull
+            : (offers as Prisma.InputJsonValue),
+      },
     });
+    if (result.count === 0) return null;
+    // Any edit that touches the embedding source (name / description /
+    // tags / highlights / specs) invalidates the cached embedding.
+    // Cheap inline re-embed runs in the background — failures are
+    // swallowed inside reembedProduct + the cron retries.
+    const embedSourceChanged =
+      data.name !== undefined ||
+      data.description !== undefined ||
+      data.tags !== undefined ||
+      data.highlights !== undefined ||
+      data.specs !== undefined;
+    if (embedSourceChanged) {
+      await prisma.product.update({
+        where: { id },
+        data: { embeddedAt: null },
+      });
+      void embeddingService.reembedProduct(id);
+    }
+    return prisma.product.findUnique({ where: { id }, select: productSelect });
   }
 
-  async deleteProduct(id: number) {
+  async setPublished(shopId: number, id: number, isPublished: boolean) {
+    const result = await prisma.product.updateMany({
+      where: { id, shopId },
+      data: { isPublished },
+    });
+    if (result.count === 0) return null;
+    return prisma.product.findUnique({ where: { id }, select: productSelect });
+  }
+
+  async deleteProduct(shopId: number, id: number) {
+    // Guard cross-tenant deletes by scoping the ownership check itself
+    // to (id, shopId). A merchant probing another shop's ids gets 404.
+    const owned = await prisma.product.findFirst({
+      where: { id, shopId },
+      select: { id: true },
+    });
+    if (!owned) return null;
+
     // Soft-delete if the product is referenced anywhere — invoices, challans,
     // stock ledger, or adjustment lines all need the row to stay around so
     // historical documents render correctly. Otherwise hard-delete.
@@ -360,7 +458,20 @@ export class ProductsService {
 
   // ── Image management ──────────────────────────────────────────────
 
-  async addImage(productId: number, url: string, sortOrder?: number) {
+  /// Verify (productId, shopId) ownership in one query so the rest of
+  /// image management can trust the productId. Returns null when the
+  /// product doesn't exist *or* belongs to another shop — both 404 to
+  /// avoid leaking which is which.
+  private async _ownsProduct(shopId: number, productId: number): Promise<boolean> {
+    const row = await prisma.product.findFirst({
+      where: { id: productId, shopId },
+      select: { id: true },
+    });
+    return row !== null;
+  }
+
+  async addImage(shopId: number, productId: number, url: string, sortOrder?: number) {
+    if (!(await this._ownsProduct(shopId, productId))) return null;
     const maxOrder = await prisma.productImage.aggregate({
       where: { productId },
       _max: { sortOrder: true },
@@ -369,14 +480,16 @@ export class ProductsService {
     return prisma.productImage.create({ data: { productId, url, sortOrder: order } });
   }
 
-  async deleteImage(productId: number, imageId: number) {
+  async deleteImage(shopId: number, productId: number, imageId: number) {
+    if (!(await this._ownsProduct(shopId, productId))) return { error: 'Image not found' as const };
     const image = await prisma.productImage.findFirst({ where: { id: imageId, productId } });
     if (!image) return { error: 'Image not found' as const };
     await prisma.productImage.delete({ where: { id: imageId } });
     return { ok: true };
   }
 
-  async reorderImages(productId: number, orderedIds: number[]) {
+  async reorderImages(shopId: number, productId: number, orderedIds: number[]) {
+    if (!(await this._ownsProduct(shopId, productId))) return null;
     await prisma.$transaction(
       orderedIds.map((id, i) =>
         prisma.productImage.updateMany({ where: { id, productId }, data: { sortOrder: i } }),

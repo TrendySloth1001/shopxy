@@ -1,17 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:shopxy/features/categories/data/datasources/categories_remote_data_source.dart';
-import 'package:shopxy/features/categories/data/models/category_dto.dart';
 import 'package:shopxy/features/categories/domain/entities/category.dart';
 
+/// Read-only merchant-side provider. The taxonomy is canonical — it's
+/// seeded by the backend from a checked-in manifest, not user-editable.
+/// Merchants pick a category when creating a product; the
+/// platform-admin surface (a separate page) is the only writer.
 class CategoriesProvider extends ChangeNotifier {
   CategoriesProvider(this._dataSource);
   final CategoriesRemoteDataSource _dataSource;
 
   List<Category> _categories = [];
+  List<CategoryNode> _tree = [];
   bool _isLoading = false;
   String? _error;
 
   List<Category> get categories => _categories;
+  List<CategoryNode> get tree => _tree;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
@@ -30,42 +35,20 @@ class CategoriesProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> createCategory({
-    required String name,
-    String? description,
-    String? iconName,
-  }) async {
-    final data = CategoryDto.toCreateJson(
-      name: name,
-      description: description,
-      iconName: iconName,
-    );
-    await _dataSource.createCategory(data);
-    await loadCategories();
-  }
-
-  /// [clearIcon] = true sends `iconName: null` to wipe the existing icon.
-  /// [iconName] = non-null replaces the icon. Passing neither leaves it
-  /// alone. This avoids the ambiguity of a single nullable string param.
-  Future<void> updateCategory(
-    int id, {
-    String? name,
-    String? description,
-    String? iconName,
-    bool clearIcon = false,
-  }) async {
-    final data = CategoryDto.toUpdateJson(
-      name: name,
-      description: description,
-      iconName: iconName,
-      clearIcon: clearIcon,
-    );
-    await _dataSource.updateCategory(id, data);
-    await loadCategories();
-  }
-
-  Future<void> deleteCategory(int id) async {
-    await _dataSource.deleteCategory(id);
-    await loadCategories();
+  /// Tree variant used by the read-only browse page and the picker
+  /// sheet. One round-trip, server pre-nests children. Idempotent —
+  /// callers that just want a refresh can re-invoke.
+  Future<void> loadTree() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+    try {
+      _tree = await _dataSource.getTree(activeOnly: true);
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 }
