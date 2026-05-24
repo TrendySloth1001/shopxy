@@ -50,6 +50,15 @@ class AuthRemoteDataSource {
     await _client.post('/auth/logout', body: {'refreshToken': refreshToken});
   }
 
+  Future<AuthUser> updateProfile({required String name}) async {
+    final res = await _client.patch('/auth/me', body: {'name': name});
+    if (res.statusCode != 200) {
+      final body = jsonDecode(res.body) as Map<String, dynamic>;
+      throw Exception(body['error'] ?? 'Failed to update profile');
+    }
+    return AuthUser.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+  }
+
   Future<void> changePassword(String currentPassword, String newPassword) async {
     final res = await _client.post(
       '/auth/change-password',

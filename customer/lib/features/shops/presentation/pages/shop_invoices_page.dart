@@ -47,7 +47,7 @@ class _ShopInvoicesPageState extends State<ShopInvoicesPage> {
                     ? const _EmptyInvoices()
                     : ListView.separated(
                         itemCount: invoices.length,
-                        separatorBuilder: (_, __) =>
+                        separatorBuilder: (_, _) =>
                             Container(height: 1, color: AppColors.hairline),
                         itemBuilder: (_, i) => _InvoiceTile(
                           invoice: invoices[i],

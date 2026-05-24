@@ -222,12 +222,17 @@ class CustomerOrderDetail extends CustomerOrder {
     this.note,
     this.decisionNote,
     this.linkedInvoice,
+    this.customerAddress,
   });
 
   final List<CustomerOrderItem> items;
   final String? note;
   final String? decisionNote;
   final OrderInvoiceRef? linkedInvoice;
+  /// Snapshot of the delivery address at order-placement time. Multi-
+  /// line string built server-side from the UserAddress (or the linked
+  /// party as a fallback).
+  final String? customerAddress;
 
   String? get linkedInvoiceNo => linkedInvoice?.invoiceNo;
 
@@ -251,6 +256,7 @@ class CustomerOrderDetail extends CustomerOrder {
       note: j['note'] as String?,
       decisionNote: j['decisionNote'] as String?,
       linkedInvoice: OrderInvoiceRef.fromJson(j['invoice'] as Map<String, dynamic>?),
+      customerAddress: j['customerAddress'] as String?,
     );
   }
 }

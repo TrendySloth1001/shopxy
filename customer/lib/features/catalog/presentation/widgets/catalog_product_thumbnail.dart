@@ -63,7 +63,7 @@ class CatalogProductThumbnail extends StatelessWidget {
               child: Image.network(
                 resolved,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _Monogram(
+                errorBuilder: (_, _, _) => _Monogram(
                   initial: _initial,
                   bg: bg,
                   fg: fg,
