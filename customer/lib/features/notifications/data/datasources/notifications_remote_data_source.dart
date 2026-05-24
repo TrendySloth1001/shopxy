@@ -109,8 +109,8 @@ class InvitationsRemoteDataSource {
     final res = await _client.post('/invitations', body: {
       'toEmail': toEmail,
       'linkType': linkType,
-      if (partyId != null) 'partyId': partyId,
-      if (vendorId != null) 'vendorId': vendorId,
+      'partyId': ?partyId,
+      'vendorId': ?vendorId,
       if (message != null && message.isNotEmpty) 'message': message,
     });
     if (res.statusCode != 201) {

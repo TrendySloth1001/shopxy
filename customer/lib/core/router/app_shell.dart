@@ -1,21 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:shopxy_customer/features/catalog/presentation/pages/catalog_page.dart';
-import 'package:shopxy_customer/features/home/presentation/pages/home_page.dart';
-import 'package:shopxy_customer/features/notifications/presentation/pages/notifications_page.dart';
-import 'package:shopxy_customer/features/orders/presentation/pages/my_orders_page.dart';
+import 'package:provider/provider.dart';
+import 'package:shopxy_customer/features/cart_v2/presentation/pages/cart_v2_page.dart';
+import 'package:shopxy_customer/features/catalog/presentation/providers/cart_provider.dart';
+import 'package:shopxy_customer/features/home_v2/presentation/pages/home_v2_page.dart';
 import 'package:shopxy_customer/features/profile/presentation/pages/profile_page.dart';
 import 'package:shopxy_customer/shared/constants/app_strings.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 
-/// Tabs available in the customer-app shell. Indexed access via
-/// `.index` is what [CustomerShellScope.select] expects, so adding a
-/// tab here automatically gives every page a typed name to switch to.
-enum CustomerShellTab { home, browse, orders, notifications, profile }
+/// Tabs available in the customer-app shell. Browse used to live here
+/// but Home V2 already covers categories, deals and trending, so the
+/// dedicated tab was retired.
+enum CustomerShellTab { home, cart, profile }
 
 /// Exposes the tab-switching API to descendants. Pages that need to
-/// jump tabs (the Home tile that goes to Browse, the empty Cart that
-/// returns to Browse, etc.) read this scope rather than reaching into
-/// the State directly.
+/// jump tabs (the empty Cart that returns to Home, etc.) read this
+/// scope rather than reaching into the State directly.
 class CustomerShellScope extends InheritedWidget {
   const CustomerShellScope({
     super.key,
@@ -46,10 +45,8 @@ class _CustomerShellState extends State<CustomerShell> {
   int _currentIndex = 0;
 
   final _pages = const [
-    HomePage(),
-    CatalogPage(),
-    MyOrdersPage(),
-    NotificationsPage(),
+    HomeV2Page(),
+    CartV2Page(embedded: true),
     CustomerProfilePage(),
   ];
 
@@ -72,28 +69,33 @@ class _CustomerShellState extends State<CustomerShell> {
           child: NavigationBar(
             selectedIndex: _currentIndex,
             onDestinationSelected: _select,
-            destinations: const [
-              NavigationDestination(
+            destinations: [
+              const NavigationDestination(
                 icon: Icon(Icons.home_outlined),
                 selectedIcon: Icon(Icons.home_rounded),
                 label: AppStrings.navHome,
               ),
+              // Badge mirrors the cart's line count — the same source the
+              // (now-removed) header icon used to read, so the number on
+              // screen stays consistent with what's in the cart provider.
               NavigationDestination(
-                icon: Icon(Icons.grid_view_outlined),
-                selectedIcon: Icon(Icons.grid_view_rounded),
-                label: AppStrings.navBrowse,
+                icon: Selector<CartProvider, int>(
+                  selector: (_, c) => c.lineCount,
+                  builder: (_, count, _) => _BadgedIcon(
+                    icon: Icons.shopping_cart_outlined,
+                    count: count,
+                  ),
+                ),
+                selectedIcon: Selector<CartProvider, int>(
+                  selector: (_, c) => c.lineCount,
+                  builder: (_, count, _) => _BadgedIcon(
+                    icon: Icons.shopping_cart_rounded,
+                    count: count,
+                  ),
+                ),
+                label: AppStrings.navCart,
               ),
-              NavigationDestination(
-                icon: Icon(Icons.receipt_long_outlined),
-                selectedIcon: Icon(Icons.receipt_long_rounded),
-                label: AppStrings.navOrders,
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.notifications_none_rounded),
-                selectedIcon: Icon(Icons.notifications_rounded),
-                label: AppStrings.navNotifications,
-              ),
-              NavigationDestination(
+              const NavigationDestination(
                 icon: Icon(Icons.person_outline_rounded),
                 selectedIcon: Icon(Icons.person_rounded),
                 label: AppStrings.navProfile,
@@ -101,6 +103,49 @@ class _CustomerShellState extends State<CustomerShell> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _BadgedIcon extends StatelessWidget {
+  const _BadgedIcon({required this.icon, required this.count});
+  final IconData icon;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 28,
+      height: 28,
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.center,
+        children: [
+          Icon(icon, size: 24),
+          if (count > 0)
+            Positioned(
+              right: -6,
+              top: -4,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                constraints: const BoxConstraints(minWidth: 16),
+                decoration: BoxDecoration(
+                  color: AppColors.brand,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '$count',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

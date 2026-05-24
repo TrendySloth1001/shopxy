@@ -1,27 +1,34 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:shopxy_customer/features/catalog/data/datasources/catalog_remote_data_source.dart';
-import 'package:shopxy_customer/features/catalog/domain/entities/catalog_product.dart';
+import 'package:shopxy_customer/features/search/data/datasources/marketplace_search_remote_data_source.dart';
 import 'package:shopxy_customer/shared/constants/app_durations.dart';
 
-/// Global product search across the merchant's full catalog. The
-/// backend already supports `?search=` on `/me/catalog/products`, so
-/// this provider is a thin debounced wrapper around it that also
-/// keeps a small recent-searches list in memory.
+/// Marketplace product search. Hits the public `/search` endpoint
+/// (hybrid semantic + FTS ranker on the backend; falls back to
+/// pure FTS when the embedding service is disabled).
 ///
-/// Persistence: not wired yet (no `SharedPreferences` dependency in
-/// the customer app). Recent searches survive the session but reset
-/// on cold launch — fine for v1, can be promoted to disk later.
+/// The provider also prefetches `/search/hints` once per cold start
+/// so the idle state can render a "what people are searching" chip
+/// strip without paying a per-open round trip.
 class SearchProvider extends ChangeNotifier {
-  SearchProvider(this._ds);
+  SearchProvider(this._ds) {
+    // Best-effort prime — null on failure leaves the chip strip
+    // hidden rather than blowing up the page.
+    _ds.hints().then((h) {
+      _hints = h;
+      notifyListeners();
+    }).catchError((_) {});
+  }
 
-  final CatalogRemoteDataSource _ds;
+  final MarketplaceSearchRemoteDataSource _ds;
 
   String _query = '';
-  List<CatalogProduct> _results = const [];
+  List<MarketplaceSearchHit> _results = const [];
+  bool _semantic = false;
   bool _loading = false;
   String? _error;
+  List<String> _hints = const [];
   final List<String> _recent = <String>[];
 
   /// Sequence number used to discard stale responses when the user
@@ -31,17 +38,18 @@ class SearchProvider extends ChangeNotifier {
   Timer? _debounce;
 
   String get query => _query;
-  List<CatalogProduct> get results => _results;
+  List<MarketplaceSearchHit> get results => _results;
+  bool get isSemantic => _semantic;
   bool get isLoading => _loading;
   String? get error => _error;
+  List<String> get hints => _hints;
   List<String> get recentSearches => List.unmodifiable(_recent);
 
-  /// Latest non-empty query was committed (submitted via Enter or a
-  /// recent-search chip tap). Distinct from a still-typing state.
+  /// True when a non-empty query has been submitted (Enter or chip
+  /// tap). Used by the page to decide whether to render the idle
+  /// "recent + hints" panel or the results list.
   bool get hasCommittedQuery => _query.trim().isNotEmpty;
 
-  /// Update the active query and kick off a debounced search.
-  /// Empty queries clear results immediately without a network call.
   void setQuery(String q) {
     _query = q;
     notifyListeners();
@@ -57,9 +65,6 @@ class SearchProvider extends ChangeNotifier {
     _debounce = Timer(AppDurations.searchDebounce, () => _runSearch(trimmed));
   }
 
-  /// Commit the current query to the recent-searches list. Called
-  /// when the user submits (Enter, tap a result, etc.). De-dupes and
-  /// caps at 8 entries (NN/g: more than ~8 chips overwhelms scan).
   void commitRecent() {
     final t = _query.trim();
     if (t.isEmpty) return;
@@ -71,9 +76,7 @@ class SearchProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Apply one of the recent-searches chips. Skips the debounce so
-  /// the chip tap feels instant.
-  void applyRecent(String value) {
+  void applyTerm(String value) {
     _debounce?.cancel();
     _query = value;
     notifyListeners();
@@ -101,9 +104,10 @@ class SearchProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
     try {
-      final res = await _ds.listProducts(search: trimmed, limit: 40);
+      final res = await _ds.search(trimmed);
       if (seq != _seq) return;
-      _results = res.data;
+      _results = res.results;
+      _semantic = res.semantic;
     } catch (e) {
       if (seq != _seq) return;
       _error = e.toString().replaceFirst('Exception: ', '');

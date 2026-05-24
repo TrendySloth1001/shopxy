@@ -155,7 +155,22 @@ class AppButton extends StatelessWidget {
         customBorder: AppShapes.squircle(AppSizes.radiusButton, side: border),
         splashColor: fg.withValues(alpha: 0.06),
         highlightColor: fg.withValues(alpha: 0.04),
-        child: Padding(padding: _padding, child: Center(child: child)),
+        // `Align(heightFactor: 1.0)` instead of `Center` — Center has
+        // `heightFactor: null`, which Flutter's Align documentation says
+        // makes the widget expand to fill the parent's max height. When
+        // this button sits inside an Expanded in a Row inside the
+        // Scaffold.bottomNavigationBar slot (which receives
+        // BoxConstraints(maxHeight: scaffoldHeight), not infinity) the
+        // button balloons to fill the whole screen. heightFactor: 1.0
+        // pins our height to the child's intrinsic height.
+        child: Padding(
+          padding: _padding,
+          child: Align(
+            alignment: Alignment.center,
+            heightFactor: 1.0,
+            child: child,
+          ),
+        ),
       ),
     );
 

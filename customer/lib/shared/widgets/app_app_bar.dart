@@ -19,6 +19,7 @@ class AppAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.centerTitle = false,
     this.backgroundColor,
     this.bottom,
+    this.automaticallyImplyLeading = true,
   });
 
   /// Convenience for nested pages — adds a back button automatically
@@ -32,7 +33,8 @@ class AppAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.bottom,
   })  : leading = null,
         centerTitle = false,
-        backgroundColor = null;
+        backgroundColor = null,
+        automaticallyImplyLeading = true;
 
   final String title;
   final String? subtitle;
@@ -41,6 +43,9 @@ class AppAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool centerTitle;
   final Color? backgroundColor;
   final PreferredSizeWidget? bottom;
+  /// Forwarded to [AppBar]. Set false for embedded shell pages (e.g.
+  /// the Cart tab) where there's no route to pop back to.
+  final bool automaticallyImplyLeading;
 
   @override
   Size get preferredSize => Size.fromHeight(
@@ -54,6 +59,7 @@ class AppAppBar extends StatelessWidget implements PreferredSizeWidget {
 
     return AppBar(
       leading: leading,
+      automaticallyImplyLeading: automaticallyImplyLeading,
       backgroundColor: backgroundColor ?? AppColors.canvas,
       foregroundColor: AppColors.black,
       elevation: 0,
