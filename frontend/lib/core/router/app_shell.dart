@@ -11,6 +11,17 @@ import 'package:shopxy/features/parties/presentation/pages/parties_page.dart';
 import 'package:shopxy/features/products/presentation/pages/products_page.dart';
 import 'package:shopxy/features/profile/presentation/pages/profile_page.dart';
 import 'package:shopxy/features/reports/presentation/pages/reports_page.dart';
+import 'package:shopxy/features/shop/presentation/pages/shop_profile_page.dart';
+import 'package:shopxy/features/flash_deals/presentation/pages/flash_deals_page.dart';
+import 'package:shopxy/features/admin/presentation/pages/admin_banners_page.dart';
+import 'package:shopxy/features/admin/presentation/pages/admin_category_taxonomy_page.dart';
+import 'package:shopxy/features/admin/presentation/pages/admin_collections_page.dart';
+import 'package:shopxy/features/admin/presentation/pages/admin_spotlight_approval_page.dart';
+import 'package:shopxy/features/carousel/presentation/pages/my_carousel_page.dart';
+import 'package:shopxy/features/spotlight/presentation/pages/spotlight_request_page.dart';
+import 'package:shopxy/features/analytics/presentation/pages/merchant_analytics_page.dart';
+import 'package:shopxy/features/promotions/presentation/pages/promotion_manager_page.dart';
+import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/stock_adjustments/presentation/pages/stock_adjustments_page.dart';
 import 'package:shopxy/features/vendors/presentation/pages/vendors_page.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
@@ -65,6 +76,41 @@ class _Shortcut {
 
 List<_Shortcut> get _manageShortcuts => [
       _Shortcut(
+        label: 'My Shop',
+        icon: Icons.storefront_outlined,
+        accent: AppColors.brand,
+        accentSoft: AppColors.brandSoft,
+        builder: (_) => const ShopProfilePage(),
+      ),
+      _Shortcut(
+        label: 'My Carousel',
+        icon: Icons.view_carousel_outlined,
+        accent: AppColors.accentIndigo,
+        accentSoft: AppColors.accentIndigoSoft,
+        builder: (_) => const MyCarouselPage(),
+      ),
+      _Shortcut(
+        label: 'Flash deals',
+        icon: Icons.bolt_outlined,
+        accent: const Color(0xFFE05A2A),
+        accentSoft: const Color(0xFFFFE3D2),
+        builder: (_) => const FlashDealsPage(),
+      ),
+      _Shortcut(
+        label: 'Brand spotlight',
+        icon: Icons.star_outline,
+        accent: AppColors.accentAmber,
+        accentSoft: AppColors.accentAmberSoft,
+        builder: (_) => const SpotlightRequestPage(),
+      ),
+      _Shortcut(
+        label: 'Promotions',
+        icon: Icons.campaign_outlined,
+        accent: AppColors.accentRose,
+        accentSoft: AppColors.accentRoseSoft,
+        builder: (_) => const PromotionManagerPage(),
+      ),
+      _Shortcut(
         label: AppStrings.navCategories,
         icon: Icons.category_outlined,
         accent: AppColors.accentTeal,
@@ -115,6 +161,13 @@ List<_Shortcut> get _operationShortcuts => [
         accent: AppColors.brandStrong,
         accentSoft: AppColors.brandSoft,
         builder: (_) => const ReportsPage(),
+      ),
+      _Shortcut(
+        label: 'Analytics',
+        icon: Icons.bar_chart_outlined,
+        accent: AppColors.accentIndigo,
+        accentSoft: AppColors.accentIndigoSoft,
+        builder: (_) => const MerchantAnalyticsPage(),
       ),
     ];
 
@@ -203,7 +256,14 @@ class AppShellState extends State<AppShell> {
               drawer: const _NavDrawer(),
               body: body,
             )
+          // Bottom-bar mode also gets the drawer — primary destinations
+          // live in the bar, the rest (My Shop, Promotions, Spotlight,
+          // Analytics, Platform admin tools) are one tap away via the
+          // menu icon in every top-level AppBar. Without this the new
+          // features had no entry point in bottom-bar mode.
           : Scaffold(
+              key: prefs.shellScaffoldKey,
+              drawer: const _NavDrawer(),
               body: body,
               bottomNavigationBar: Container(
                 decoration: const BoxDecoration(
@@ -347,6 +407,47 @@ class _NavDrawer extends StatelessWidget {
                   const _DrawerSectionLabel(text: 'Operations'),
                   for (final s in _operationShortcuts)
                     _DrawerShortcutTile(shortcut: s),
+                  if (context.watch<AuthProvider>().user?.isPlatformAdmin ==
+                      true) ...[
+                    const SizedBox(height: 8),
+                    const _DrawerSectionLabel(text: 'Platform admin'),
+                    _DrawerShortcutTile(
+                      shortcut: _Shortcut(
+                        label: 'Banner manager',
+                        icon: Icons.view_carousel_outlined,
+                        accent: AppColors.accentIndigo,
+                        accentSoft: AppColors.accentIndigoSoft,
+                        builder: (_) => const AdminBannersPage(),
+                      ),
+                    ),
+                    _DrawerShortcutTile(
+                      shortcut: _Shortcut(
+                        label: 'Category taxonomy',
+                        icon: Icons.account_tree_outlined,
+                        accent: AppColors.accentTeal,
+                        accentSoft: AppColors.accentTealSoft,
+                        builder: (_) => const AdminCategoryTaxonomyPage(),
+                      ),
+                    ),
+                    _DrawerShortcutTile(
+                      shortcut: _Shortcut(
+                        label: 'Spotlight approvals',
+                        icon: Icons.verified_outlined,
+                        accent: AppColors.accentAmber,
+                        accentSoft: AppColors.accentAmberSoft,
+                        builder: (_) => const AdminSpotlightApprovalPage(),
+                      ),
+                    ),
+                    _DrawerShortcutTile(
+                      shortcut: _Shortcut(
+                        label: 'Collections',
+                        icon: Icons.collections_bookmark_outlined,
+                        accent: AppColors.accentRose,
+                        accentSoft: AppColors.accentRoseSoft,
+                        builder: (_) => const AdminCollectionsPage(),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 12),
                 ],
               ),
@@ -518,17 +619,16 @@ class _DrawerShortcutTile extends StatelessWidget {
   }
 }
 
-/// Leading button surfaced in every top-level page's AppBar. In
-/// bottom-bar mode it renders nothing (so Flutter doesn't insert a
-/// stray back arrow); in sidebar mode it shows a menu icon that opens
-/// the AppShell drawer.
+/// Leading button surfaced in every top-level page's AppBar. Opens the
+/// AppShell drawer in both layouts — the bottom-bar carries the four
+/// primary destinations, the drawer carries everything else (My Shop,
+/// Promotions, Spotlight, Analytics, and the Platform admin tools).
 class ShellMenuButton extends StatelessWidget {
   const ShellMenuButton({super.key});
 
   @override
   Widget build(BuildContext context) {
     final prefs = context.watch<NavigationPrefsProvider>();
-    if (!prefs.isSidebar) return const SizedBox.shrink();
     return IconButton(
       icon: const Icon(Icons.menu_rounded),
       tooltip: 'Menu',

@@ -23,6 +23,24 @@ import 'package:shopxy/features/orders/data/datasources/orders_remote_data_sourc
 import 'package:shopxy/features/orders/presentation/providers/orders_provider.dart';
 import 'package:shopxy/features/reports/data/datasources/reports_remote_data_source.dart';
 import 'package:shopxy/features/reports/presentation/providers/reports_provider.dart';
+import 'package:shopxy/features/shop/data/datasources/shop_remote_data_source.dart';
+import 'package:shopxy/features/shop/presentation/providers/shop_provider.dart';
+import 'package:shopxy/features/admin/data/datasources/admin_banners_remote_data_source.dart';
+import 'package:shopxy/features/admin/data/datasources/admin_collections_remote_data_source.dart';
+import 'package:shopxy/features/admin/data/datasources/admin_spotlight_remote_data_source.dart';
+import 'package:shopxy/features/admin/presentation/providers/admin_banners_provider.dart';
+import 'package:shopxy/features/admin/presentation/providers/admin_collections_provider.dart';
+import 'package:shopxy/features/admin/presentation/providers/admin_spotlight_provider.dart';
+import 'package:shopxy/features/carousel/data/datasources/merchant_carousel_remote_data_source.dart';
+import 'package:shopxy/features/carousel/presentation/providers/merchant_carousel_provider.dart';
+import 'package:shopxy/features/flash_deals/data/datasources/flash_deals_remote_data_source.dart';
+import 'package:shopxy/features/flash_deals/presentation/providers/flash_deals_provider.dart';
+import 'package:shopxy/features/spotlight/data/datasources/spotlight_remote_data_source.dart';
+import 'package:shopxy/features/spotlight/presentation/providers/spotlight_provider.dart';
+import 'package:shopxy/features/analytics/data/datasources/analytics_remote_data_source.dart';
+import 'package:shopxy/features/analytics/presentation/providers/analytics_provider.dart';
+import 'package:shopxy/features/promotions/data/datasources/promotions_remote_data_source.dart';
+import 'package:shopxy/features/promotions/presentation/providers/promotions_provider.dart';
 import 'package:shopxy/features/parties/data/datasources/parties_remote_data_source.dart';
 import 'package:shopxy/features/parties/presentation/providers/parties_provider.dart';
 import 'package:shopxy/features/payments/data/datasources/payments_remote_data_source.dart';
@@ -68,6 +86,15 @@ void main() async {
   final ordersDs = OrdersRemoteDataSource(apiClient);
   final ordersProvider = OrdersProvider(ordersDs);
   final paymentsDs = PaymentsRemoteDataSource(apiClient);
+  final shopDs = ShopRemoteDataSource(apiClient);
+  final adminBannersDs = AdminBannersRemoteDataSource(apiClient);
+  final merchantCarouselDs = MerchantCarouselRemoteDataSource(apiClient);
+  final adminSpotlightDs = AdminSpotlightRemoteDataSource(apiClient);
+  final adminCollectionsDs = AdminCollectionsRemoteDataSource(apiClient);
+  final flashDealsDs = FlashDealsRemoteDataSource(apiClient);
+  final spotlightDs = SpotlightRemoteDataSource(apiClient);
+  final analyticsDs = AnalyticsRemoteDataSource(apiClient);
+  final promotionsDs = PromotionsRemoteDataSource(apiClient);
 
   final notificationsProvider = NotificationsProvider(notificationsDs, invitationsDs);
 
@@ -138,6 +165,17 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ChallansProvider(challansDs)),
         ChangeNotifierProvider<NotificationsProvider>.value(value: notificationsProvider),
         ChangeNotifierProvider(create: (_) => ReportsProvider(reportsDs)),
+        ChangeNotifierProvider(create: (_) => ShopProvider(shopDs)),
+        ChangeNotifierProvider(create: (_) => AdminBannersProvider(adminBannersDs)),
+        ChangeNotifierProvider(
+          create: (_) => MerchantCarouselProvider(merchantCarouselDs),
+        ),
+        ChangeNotifierProvider(create: (_) => AdminSpotlightProvider(adminSpotlightDs)),
+        ChangeNotifierProvider(create: (_) => AdminCollectionsProvider(adminCollectionsDs)),
+        ChangeNotifierProvider(create: (_) => FlashDealsProvider(flashDealsDs)),
+        ChangeNotifierProvider(create: (_) => SpotlightProvider(spotlightDs)),
+        ChangeNotifierProvider(create: (_) => AnalyticsProvider(analyticsDs)),
+        ChangeNotifierProvider(create: (_) => PromotionsProvider(promotionsDs)),
         ChangeNotifierProvider<OrdersProvider>.value(value: ordersProvider),
       ],
       child: const ShopxyApp(),
