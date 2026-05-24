@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import { Role } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
 import { invitationsService } from '../invitations/invitations.service.js';
 import { notificationsService } from '../notifications/notifications.service.js';
@@ -21,6 +22,7 @@ const safeUserSelect = {
   email: true,
   name: true,
   role: true,
+  isPlatformAdmin: true,
   isActive: true,
   emailNotifications: true,
   shopName: true,
@@ -36,8 +38,28 @@ const safeUserSelect = {
   createdAt: true,
 } as const;
 
-function signAccess(userId: number, email: string, role: string): string {
-  return jwt.sign({ sub: userId, email, role }, ACCESS_SECRET, { expiresIn: '15m' });
+async function signAccess(
+  userId: number,
+  email: string,
+  role: Role,
+  isPlatformAdmin: boolean,
+): Promise<string> {
+  // Bake the merchant's shopId into the JWT so handlers don't pay a
+  // per-request lookup on the @unique ownerUserId index. Customer
+  // accounts (and OWNERs without a shop yet) keep `shopId` undefined.
+  let shopId: number | undefined;
+  if (role === 'OWNER') {
+    const shop = await prisma.shop.findUnique({
+      where: { ownerUserId: userId },
+      select: { id: true },
+    });
+    shopId = shop?.id;
+  }
+  return jwt.sign(
+    { sub: userId, email, role, isPlatformAdmin, shopId },
+    ACCESS_SECRET,
+    { expiresIn: '15m' },
+  );
 }
 
 const MAX_ACTIVE_REFRESH_TOKENS_PER_USER = 5;
@@ -104,7 +126,7 @@ export class AuthService {
       logger.warn({ userId: user.id, err }, 'invitation claim failed');
     }
 
-    const accessToken = signAccess(user.id, user.email, user.role);
+    const accessToken = await signAccess(user.id, user.email, user.role, user.isPlatformAdmin);
     const refreshToken = await createRefreshToken(user.id);
     return { user, accessToken, refreshToken };
   }
@@ -123,7 +145,7 @@ export class AuthService {
       return { error: 'Invalid email or password' as const };
     }
 
-    const accessToken = signAccess(user.id, user.email, user.role);
+    const accessToken = await signAccess(user.id, user.email, user.role, user.isPlatformAdmin);
     const refreshToken = await createRefreshToken(user.id);
     const { passwordHash: _p, ...safeUser } = user;
     return { user: safeUser, accessToken, refreshToken };
@@ -145,7 +167,7 @@ export class AuthService {
 
     const user = await prisma.user.findUnique({
       where: { id: payload.sub },
-      select: { id: true, email: true, role: true, isActive: true },
+      select: { id: true, email: true, role: true, isPlatformAdmin: true, isActive: true },
     });
     if (!user || !user.isActive) {
       await prisma.refreshToken.delete({ where: { id: stored.id } });
@@ -154,7 +176,7 @@ export class AuthService {
 
     // Rotate: delete old token, issue new pair
     await prisma.refreshToken.delete({ where: { id: stored.id } });
-    const accessToken = signAccess(user.id, user.email, user.role);
+    const accessToken = await signAccess(user.id, user.email, user.role, user.isPlatformAdmin);
     const refreshToken = await createRefreshToken(user.id);
     return { accessToken, refreshToken };
   }

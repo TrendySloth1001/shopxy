@@ -25,10 +25,21 @@ const listSuppliersQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(50).optional(),
 });
 
+function requireShopId(req: Request, res: Response): number | null {
+  const shopId = req.user?.shopId;
+  if (!shopId) {
+    res.status(403).json({ error: 'This account has no shop linked.' });
+    return null;
+  }
+  return shopId;
+}
+
 export class StockController {
   async createTransaction(req: Request, res: Response): Promise<void> {
+    const shopId = requireShopId(req, res);
+    if (!shopId) return;
     const payload = createTransactionSchema.parse(req.body);
-    const result = await stockService.createTransaction({
+    const result = await stockService.createTransaction(shopId, {
       ...payload,
       createdById: req.user?.sub,
     });
@@ -49,6 +60,8 @@ export class StockController {
   }
 
   async listTransactions(req: Request, res: Response): Promise<void> {
+    const shopId = requireShopId(req, res);
+    if (!shopId) return;
     const { page, limit, skip } = parsePagination(req);
     const productId = req.query.productId ? Number(req.query.productId) : undefined;
     const type = req.query.type as string | undefined;
@@ -57,7 +70,7 @@ export class StockController {
     const sourceType = req.query.sourceType as string | undefined;
     const sourceId = req.query.sourceId ? Number(req.query.sourceId) : undefined;
 
-    const { transactions, total } = await stockService.listTransactions({
+    const { transactions, total } = await stockService.listTransactions(shopId, {
       productId,
       type:
         type && STOCK_TRANSACTION_TYPES.includes(type as (typeof STOCK_TRANSACTION_TYPES)[number])
@@ -85,9 +98,11 @@ export class StockController {
   }
 
   async listSuppliers(req: Request, res: Response): Promise<void> {
+    const shopId = requireShopId(req, res);
+    if (!shopId) return;
     const query = listSuppliersQuerySchema.parse(req.query);
 
-    const { vendors, freeTextSuppliers } = await stockService.listSuppliers({
+    const { vendors, freeTextSuppliers } = await stockService.listSuppliers(shopId, {
       query: query.q,
       productId: query.productId,
       limit: query.limit ?? 12,

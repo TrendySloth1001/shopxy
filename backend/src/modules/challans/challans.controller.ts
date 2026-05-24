@@ -27,13 +27,27 @@ const convertSchema = z.object({
   note: z.string().optional(),
 });
 
+function requireShopId(req: Request, res: Response): number | null {
+  const shopId = req.user?.shopId;
+  if (!shopId) {
+    res.status(403).json({ error: 'This account has no shop linked.' });
+    return null;
+  }
+  return shopId;
+}
+
 export async function createChallan(req: Request, res: Response) {
+  const shopId = requireShopId(req, res);
+  if (!shopId) return;
   const parsed = createChallanSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.flatten() });
     return;
   }
-  const result = await challansService.createChallan({ ...parsed.data, createdById: req.user?.sub });
+  const result = await challansService.createChallan(shopId, {
+    ...parsed.data,
+    createdById: req.user?.sub,
+  });
   if ('error' in result) {
     res.status(400).json({
       error: result.error,
@@ -47,19 +61,23 @@ export async function createChallan(req: Request, res: Response) {
 }
 
 export async function listChallans(req: Request, res: Response) {
+  const shopId = requireShopId(req, res);
+  if (!shopId) return;
   const status = typeof req.query.status === 'string' ? req.query.status : undefined;
   const search = typeof req.query.search === 'string' ? req.query.search : '';
   const page = Math.max(1, Number(req.query.page) || 1);
   const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
   const skip = (page - 1) * limit;
 
-  const { challans, total } = await challansService.listChallans({ status, search, page, limit, skip });
+  const { challans, total } = await challansService.listChallans(shopId, { status, search, page, limit, skip });
   res.json({ data: challans, pagination: { total, page, limit } });
 }
 
 export async function getChallan(req: Request, res: Response) {
+  const shopId = requireShopId(req, res);
+  if (!shopId) return;
   const id = Number(req.params.id);
-  const challan = await challansService.getChallanById(id);
+  const challan = await challansService.getChallanById(shopId, id);
   if (!challan) {
     res.status(404).json({ error: 'Challan not found' });
     return;
@@ -68,8 +86,10 @@ export async function getChallan(req: Request, res: Response) {
 }
 
 export async function cancelChallan(req: Request, res: Response) {
+  const shopId = requireShopId(req, res);
+  if (!shopId) return;
   const id = Number(req.params.id);
-  const result = await challansService.cancelChallan(id, req.user?.sub);
+  const result = await challansService.cancelChallan(shopId, id, req.user?.sub);
   if ('error' in result) {
     res.status(400).json({ error: result.error });
     return;
@@ -78,13 +98,15 @@ export async function cancelChallan(req: Request, res: Response) {
 }
 
 export async function convertToInvoice(req: Request, res: Response) {
+  const shopId = requireShopId(req, res);
+  if (!shopId) return;
   const id = Number(req.params.id);
   const parsed = convertSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.flatten() });
     return;
   }
-  const result = await challansService.convertToInvoice(id, parsed.data);
+  const result = await challansService.convertToInvoice(shopId, id, parsed.data);
   if ('error' in result) {
     res.status(400).json({ error: result.error });
     return;

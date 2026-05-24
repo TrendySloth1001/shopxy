@@ -28,6 +28,9 @@ interface InvoiceItemInput {
 }
 
 interface ResolveInvoiceInput {
+  /// Owning shop — required for every read inside `resolveInvoiceFields`
+  /// (party/vendor/product lookups all scope by it).
+  shopId: number;
   type: InvoiceType;
   documentType?: DocumentType;
   placeOfSupplyStateCode?: string;
@@ -44,6 +47,7 @@ interface ResolveInvoiceInput {
 
 export class InvoicesService {
   async createInvoice(data: {
+    shopId: number;
     type: InvoiceType;
     documentType?: DocumentType;
     placeOfSupplyStateCode?: string;
@@ -71,6 +75,7 @@ export class InvoicesService {
 
     const { header, itemsData } = resolved;
     const { invoiceNo, financialYear } = await nextInvoiceNo(
+      data.shopId,
       data.type,
       header.documentType,
       header.invoiceDate,
@@ -82,6 +87,7 @@ export class InvoicesService {
       return tx.invoice.create({
         data: {
           ...header,
+          shopId: data.shopId,
           invoiceNo,
           financialYear,
           items: { create: itemsData },
@@ -99,6 +105,7 @@ export class InvoicesService {
     // keep the draft (the merchant can fix and confirm later) and
     // surface the error so the client can decide how to surface it.
     const confirmResult = await this.updateStatus(
+      data.shopId,
       invoice.id,
       'CONFIRMED',
       data.confirmedById,
@@ -208,8 +215,8 @@ export class InvoicesService {
     let vendorPanNumber: string | null = null;
 
     if (data.partyId) {
-      const party = await prisma.party.findUnique({
-        where: { id: data.partyId },
+      const party = await prisma.party.findFirst({
+        where: { id: data.partyId, shopId: data.shopId },
         select: {
           id: true, name: true, phone: true, gstin: true, isActive: true,
           address: true, city: true, state: true, stateCode: true,
@@ -232,8 +239,8 @@ export class InvoicesService {
 
     let resolvedVendorId: number | null = null;
     if (data.vendorId) {
-      const vendor = await prisma.vendor.findUnique({
-        where: { id: data.vendorId },
+      const vendor = await prisma.vendor.findFirst({
+        where: { id: data.vendorId, shopId: data.shopId },
         select: {
           id: true, name: true, phone: true, gstin: true, isActive: true,
           address: true, city: true, state: true, stateCode: true,
@@ -254,12 +261,15 @@ export class InvoicesService {
       vendorPanNumber = vendor.panNumber ?? null;
     }
 
-    // Shop owner identity drives IGST vs CGST+SGST. Read once per call.
-    const shopOwner = await prisma.user.findFirst({
-      where: { role: 'OWNER', isActive: true },
-      select: { shopStateCode: true },
+    // Shop owner identity drives IGST vs CGST+SGST. Looked up from the
+    // owning Shop's owner User row, not the global "first OWNER" — that
+    // pre-multi-tenant query went to whichever merchant was alphabetically
+    // first and was the cause of cross-tenant invoice corruption.
+    const shop = await prisma.shop.findUnique({
+      where: { id: data.shopId },
+      select: { owner: { select: { shopStateCode: true } } },
     });
-    const shopStateCode = shopOwner?.shopStateCode ?? null;
+    const shopStateCode = shop?.owner.shopStateCode ?? null;
 
     const placeOfSupplyStateCode =
       data.placeOfSupplyStateCode ??
@@ -270,7 +280,7 @@ export class InvoicesService {
     // One findMany regardless of item count — no per-line lookups.
     const productIds = [...new Set(data.items.map((i) => i.productId))];
     const products = await prisma.product.findMany({
-      where: { id: { in: productIds } },
+      where: { id: { in: productIds }, shopId: data.shopId },
       select: { id: true, name: true, sku: true, hsnCode: true, unit: true, stockQuantity: true },
     });
     const productMap = new Map(products.map((p) => [p.id, p]));
@@ -406,7 +416,7 @@ export class InvoicesService {
   ///   - 1 createMany (items)
   ///   - 1 update (header) + final include re-read
   /// Independent of item count — no N+1 fan-out.
-  async updateInvoice(id: number, data: {
+  async updateInvoice(shopId: number, id: number, data: {
     type: InvoiceType;
     documentType?: DocumentType;
     placeOfSupplyStateCode?: string;
@@ -419,8 +429,8 @@ export class InvoicesService {
     note?: string;
     items: InvoiceItemInput[];
   }) {
-    const existing = await prisma.invoice.findUnique({
-      where: { id },
+    const existing = await prisma.invoice.findFirst({
+      where: { id, shopId },
       select: { id: true, status: true, invoiceDate: true, type: true },
     });
     if (!existing) return { error: 'Invoice not found' as const };
@@ -435,6 +445,7 @@ export class InvoicesService {
 
     const resolved = await this.resolveInvoiceFields({
       ...data,
+      shopId,
       // Preserve the original creation date so the invoice number ↔ date
       // alignment from when it was minted stays consistent.
       invoiceDate: existing.invoiceDate.toISOString(),
@@ -462,7 +473,7 @@ export class InvoicesService {
     return { invoice };
   }
 
-  async listInvoices(options: {
+  async listInvoices(shopId: number, options: {
     type?: string;
     status?: string;
     documentType?: string;
@@ -474,7 +485,7 @@ export class InvoicesService {
     limit: number;
     skip: number;
   }) {
-    const where: Record<string, unknown> = {};
+    const where: Record<string, unknown> = { shopId };
     if (options.type) where.type = options.type;
     if (options.status) where.status = options.status;
     if (options.documentType) where.documentType = options.documentType;
@@ -550,9 +561,9 @@ export class InvoicesService {
     return { invoices, total };
   }
 
-  async getInvoiceById(id: number) {
-    return prisma.invoice.findUnique({
-      where: { id },
+  async getInvoiceById(shopId: number, id: number) {
+    return prisma.invoice.findFirst({
+      where: { id, shopId },
       include: {
         vendor: true,
         party: true,
@@ -563,13 +574,13 @@ export class InvoicesService {
     });
   }
 
-  async updateStatus(id: number, status: InvoiceStatus, createdById?: number) {
+  async updateStatus(shopId: number, id: number, status: InvoiceStatus, createdById?: number) {
     // Wrap header read + ledger work + status update in one transaction
     // so a half-confirm (stock moved, status not flipped) or half-cancel
     // (status flipped, reversal not posted) is impossible.
     return prisma.$transaction(async (tx) => {
-      const invoice = await tx.invoice.findUnique({
-        where: { id },
+      const invoice = await tx.invoice.findFirst({
+        where: { id, shopId },
         include: { items: true, vendor: true, party: true, challan: { select: { id: true } } },
       });
       if (!invoice) return { error: 'Invoice not found' as const };
@@ -670,6 +681,7 @@ export class InvoicesService {
             : (snapshotRefresh.vendorGstin as string | null | undefined)
               ?? invoice.vendorGstin ?? invoice.vendor?.gstin ?? null;
         const result = await ledgerService.post({
+          shopId,
           direction,
           reasonCode,
           sourceType: 'INVOICE',
@@ -703,7 +715,7 @@ export class InvoicesService {
       // ── CONFIRMED → CANCELLED: reverse ledger rows ─────────────────
       if (invoice.status === 'CONFIRMED' && status === 'CANCELLED' && !ledgerOwnedByChallan) {
         const entries = await tx.stockTransaction.findMany({
-          where: { sourceType: 'INVOICE', sourceId: invoice.id, reversesId: null },
+          where: { sourceType: 'INVOICE', sourceId: invoice.id, reversesId: null, shopId },
           select: { id: true },
         });
         for (const entry of entries) {
@@ -734,9 +746,9 @@ export class InvoicesService {
   /// all stay funnelled through one code path — the new invoice gets its
   /// own INV-prefixed number while the source row remains untouched as
   /// historical reference.
-  async convertEstimate(invoiceId: number) {
-    const source = await prisma.invoice.findUnique({
-      where: { id: invoiceId },
+  async convertEstimate(shopId: number, invoiceId: number) {
+    const source = await prisma.invoice.findFirst({
+      where: { id: invoiceId, shopId },
       include: { items: true },
     });
     if (!source) return { error: 'Invoice not found' as const };
@@ -748,6 +760,7 @@ export class InvoicesService {
     }
 
     return this.createInvoice({
+      shopId,
       type: source.type as InvoiceType,
       documentType: 'TAX_INVOICE',
       placeOfSupplyStateCode: source.placeOfSupplyStateCode ?? undefined,
@@ -769,8 +782,11 @@ export class InvoicesService {
     });
   }
 
-  async deleteInvoice(id: number) {
-    const invoice = await prisma.invoice.findUnique({ where: { id }, select: { status: true } });
+  async deleteInvoice(shopId: number, id: number) {
+    const invoice = await prisma.invoice.findFirst({
+      where: { id, shopId },
+      select: { status: true },
+    });
     if (!invoice) return { error: 'Invoice not found' as const };
     if (invoice.status === 'CONFIRMED') {
       return { error: 'Cannot delete a confirmed invoice. Cancel it first.' as const };
@@ -779,31 +795,38 @@ export class InvoicesService {
     return { ok: true };
   }
 
-  async generatePdf(id: number): Promise<Buffer | { error: string }> {
-    const invoice = await prisma.invoice.findUnique({
-      where: { id },
+  async generatePdf(shopId: number, id: number): Promise<Buffer | { error: string }> {
+    const invoice = await prisma.invoice.findFirst({
+      where: { id, shopId },
       include: { vendor: true, party: true, items: { orderBy: { id: 'asc' } } },
     });
 
     if (!invoice) return { error: 'Invoice not found' };
 
-    // Shop owner row — drives header block + UPI QR.
-    const owner = await prisma.user.findFirst({
-      where: { role: 'OWNER', isActive: true },
+    // Shop owner row — drives header block + UPI QR. Looked up via the
+    // owning Shop, not the global "first OWNER" — that pre-migration
+    // path printed Merchant A's UPI on Merchant B's invoice.
+    const shopRow = await prisma.shop.findUnique({
+      where: { id: shopId },
       select: {
-        shopName: true,
-        shopAddress: true,
-        shopCity: true,
-        shopState: true,
-        shopStateCode: true,
-        shopPinCode: true,
-        shopGstin: true,
-        shopPan: true,
-        upiVpa: true,
-        name: true,
-        email: true,
+        owner: {
+          select: {
+            shopName: true,
+            shopAddress: true,
+            shopCity: true,
+            shopState: true,
+            shopStateCode: true,
+            shopPinCode: true,
+            shopGstin: true,
+            shopPan: true,
+            upiVpa: true,
+            name: true,
+            email: true,
+          },
+        },
       },
     });
+    const owner = shopRow?.owner ?? null;
 
     // Generate the UPI QR up-front so the awaitable lives outside the
     // PDFKit promise. Only applicable to SALE invoices with a non-zero

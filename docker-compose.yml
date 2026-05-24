@@ -17,10 +17,15 @@ services:
       MINIO_ROOT_PASSWORD: shopxy_dev_password
     ports: ["9000:9000", "9001:9001"]
     volumes: [minio_data:/data]
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports: ["6379:6379"]
+    volumes: [redis_data:/data]
   backend:
     build: ./backend
     restart: unless-stopped
-    depends_on: [postgres, minio]
+    depends_on: [postgres, minio, redis]
     environment:
       DATABASE_URL: postgres://shopxy:shopxy_dev_password@postgres:5432/shopxy
       JWT_ACCESS_SECRET: change-me-access
@@ -29,9 +34,11 @@ services:
       MINIO_ACCESS_KEY: shopxy
       MINIO_SECRET_KEY: shopxy_dev_password
       MINIO_BUCKET: shopxy-uploads
+      REDIS_URL: redis://redis:6379
       PORT: 3003
       CORS_ORIGINS: ""
     ports: ["3003:3003"]
 volumes:
   postgres_data:
   minio_data:
+  redis_data:

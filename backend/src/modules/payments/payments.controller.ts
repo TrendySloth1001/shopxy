@@ -57,11 +57,23 @@ function parseId(raw: string): number | null {
   return Number.isInteger(id) && id > 0 ? id : null;
 }
 
+function requireShopId(req: Request, res: Response): number | null {
+  const shopId = req.user?.shopId;
+  if (!shopId) {
+    res.status(403).json({ error: 'This account has no shop linked.' });
+    return null;
+  }
+  return shopId;
+}
+
 export class PaymentsController {
   async create(req: Request, res: Response): Promise<void> {
+    const shopId = requireShopId(req, res);
+    if (!shopId) return;
     const payload = createPaymentSchema.parse(req.body);
     try {
       const payment = await paymentsService.createPayment({
+        shopId,
         type: payload.type,
         amount: payload.amount,
         mode: payload.mode,
@@ -84,10 +96,12 @@ export class PaymentsController {
   }
 
   async list(req: Request, res: Response): Promise<void> {
+    const shopId = requireShopId(req, res);
+    if (!shopId) return;
     const filters = listPaymentsSchema.parse(req.query);
     const { page, limit, skip } = parsePagination(req);
 
-    const { payments, total } = await paymentsService.listPayments({
+    const { payments, total } = await paymentsService.listPayments(shopId, {
       partyId: filters.partyId ?? null,
       vendorId: filters.vendorId ?? null,
       invoiceId: filters.invoiceId ?? null,
@@ -99,12 +113,14 @@ export class PaymentsController {
   }
 
   async getById(req: Request, res: Response): Promise<void> {
+    const shopId = requireShopId(req, res);
+    if (!shopId) return;
     const id = parseId(req.params.id);
     if (!id) {
       res.status(400).json({ error: 'Invalid id' });
       return;
     }
-    const payment = await paymentsService.getPaymentById(id);
+    const payment = await paymentsService.getPaymentById(shopId, id);
     if (!payment) {
       res.status(404).json({ error: 'Payment not found' });
       return;
@@ -113,12 +129,18 @@ export class PaymentsController {
   }
 
   async delete(req: Request, res: Response): Promise<void> {
+    const shopId = requireShopId(req, res);
+    if (!shopId) return;
     const id = parseId(req.params.id);
     if (!id) {
       res.status(400).json({ error: 'Invalid id' });
       return;
     }
-    await paymentsService.deletePayment(id);
+    const ok = await paymentsService.deletePayment(shopId, id);
+    if (!ok) {
+      res.status(404).json({ error: 'Payment not found' });
+      return;
+    }
     res.status(204).send();
   }
 }

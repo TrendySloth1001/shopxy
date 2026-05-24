@@ -1,31 +1,39 @@
 import prisma from '../../infra/db/prisma.js';
 import { contactChangeLogService } from '../contact-change-log/contact-change-log.service.js';
 
+/// Tenant-scoped vendor (supplier) operations. Every method takes
+/// `shopId` so reads and writes stay isolated to the calling merchant.
 export class VendorsService {
-  async createVendor(data: {
-    name: string;
-    contactName?: string;
-    phone?: string;
-    email?: string;
-    address?: string;
-    city?: string;
-    state?: string;
-    stateCode?: string;
-    pinCode?: string;
-    panNumber?: string;
-    gstin?: string;
-  }) {
-    return prisma.vendor.create({ data });
+  async createVendor(
+    shopId: number,
+    data: {
+      name: string;
+      contactName?: string;
+      phone?: string;
+      email?: string;
+      address?: string;
+      city?: string;
+      state?: string;
+      stateCode?: string;
+      pinCode?: string;
+      panNumber?: string;
+      gstin?: string;
+    },
+  ) {
+    return prisma.vendor.create({ data: { ...data, shopId } });
   }
 
-  async listVendors(options: {
-    search: string;
-    activeOnly: boolean;
-    page: number;
-    limit: number;
-    skip: number;
-  }) {
-    const where: Record<string, unknown> = {};
+  async listVendors(
+    shopId: number,
+    options: {
+      search: string;
+      activeOnly: boolean;
+      page: number;
+      limit: number;
+      skip: number;
+    },
+  ) {
+    const where: Record<string, unknown> = { shopId };
     if (options.activeOnly) where.isActive = true;
     if (options.search) {
       where.OR = [
@@ -68,13 +76,9 @@ export class VendorsService {
     return { vendors, total };
   }
 
-  /// One-shot detail payload for the vendor page. Pulls vendor header,
-  /// recent purchase invoices, recent inbound stock ledger entries,
-  /// totals grouped by invoice type and the linked-user identity in
-  /// parallel. Mirrors `partiesService.getPartyOverview`.
-  async getVendorOverview(id: number) {
-    const vendor = await prisma.vendor.findUnique({
-      where: { id },
+  async getVendorOverview(shopId: number, id: number) {
+    const vendor = await prisma.vendor.findFirst({
+      where: { id, shopId },
       select: {
         id: true,
         name: true,
@@ -100,21 +104,21 @@ export class VendorsService {
     const [counts, totalsByType, recentInvoices, recentStockIns, balanceParts] =
       await Promise.all([
         Promise.all([
-          prisma.invoice.count({ where: { vendorId: id } }),
+          prisma.invoice.count({ where: { vendorId: id, shopId } }),
           prisma.stockTransaction.count({
-            where: { vendorId: id, direction: 'IN' },
+            where: { vendorId: id, shopId, direction: 'IN' },
           }),
         ]).then(([invoices, stockIns]) => ({ invoices, stockIns })),
 
         prisma.invoice.groupBy({
           by: ['type'],
-          where: { vendorId: id },
+          where: { vendorId: id, shopId },
           _sum: { total: true },
           _count: { _all: true },
         }),
 
         prisma.invoice.findMany({
-          where: { vendorId: id },
+          where: { vendorId: id, shopId },
           orderBy: { invoiceDate: 'desc' },
           take: 15,
           select: {
@@ -129,7 +133,7 @@ export class VendorsService {
         }),
 
         prisma.stockTransaction.findMany({
-          where: { vendorId: id, direction: 'IN' },
+          where: { vendorId: id, shopId, direction: 'IN' },
           orderBy: { createdAt: 'desc' },
           take: 15,
           select: {
@@ -144,14 +148,13 @@ export class VendorsService {
           },
         }),
 
-        // Outstanding payable = sum(PURCHASE,CONFIRMED) − sum(PAYMENT).
         Promise.all([
           prisma.invoice.aggregate({
-            where: { vendorId: id, type: 'PURCHASE', status: 'CONFIRMED' },
+            where: { vendorId: id, shopId, type: 'PURCHASE', status: 'CONFIRMED' },
             _sum: { total: true },
           }),
           prisma.payment.aggregate({
-            where: { vendorId: id, type: 'PAYMENT' },
+            where: { vendorId: id, shopId, type: 'PAYMENT' },
             _sum: { amount: true },
           }),
         ]),
@@ -185,9 +188,9 @@ export class VendorsService {
     };
   }
 
-  async getVendorById(id: number) {
-    return prisma.vendor.findUnique({
-      where: { id },
+  async getVendorById(shopId: number, id: number) {
+    return prisma.vendor.findFirst({
+      where: { id, shopId },
       include: {
         _count: { select: { stockTransactions: true, invoices: true } },
         stockTransactions: {
@@ -207,6 +210,7 @@ export class VendorsService {
   }
 
   async updateVendor(
+    shopId: number,
     id: number,
     data: {
       name?: string;
@@ -225,8 +229,8 @@ export class VendorsService {
     changedById: number | null = null,
   ) {
     return prisma.$transaction(async (tx) => {
-      const before = await tx.vendor.findUnique({
-        where: { id },
+      const before = await tx.vendor.findFirst({
+        where: { id, shopId },
         select: {
           name: true,
           contactName: true,
@@ -242,28 +246,29 @@ export class VendorsService {
           isActive: true,
         },
       });
+      if (!before) return null;
       const updated = await tx.vendor.update({ where: { id }, data });
-      if (before) {
-        await contactChangeLogService.recordChanges({
-          entityType: 'VENDOR',
-          entityId: id,
-          before,
-          after: data,
-          changedById,
-          tx,
-        });
-      }
+      await contactChangeLogService.recordChanges({
+        entityType: 'VENDOR',
+        entityId: id,
+        before,
+        after: data,
+        changedById,
+        tx,
+      });
       return updated;
     });
   }
 
-  async deleteVendor(id: number) {
-    // Soft-delete when the vendor is referenced anywhere — invoices and
-    // ledger rows snapshot vendor identity now, but keeping the row lets
-    // users restore the vendor by toggling isActive back on.
+  async deleteVendor(shopId: number, id: number) {
+    const owned = await prisma.vendor.findFirst({
+      where: { id, shopId },
+      select: { id: true },
+    });
+    if (!owned) return null;
     const [invoiceRefs, stockRefs] = await Promise.all([
-      prisma.invoice.count({ where: { vendorId: id } }),
-      prisma.stockTransaction.count({ where: { vendorId: id } }),
+      prisma.invoice.count({ where: { vendorId: id, shopId } }),
+      prisma.stockTransaction.count({ where: { vendorId: id, shopId } }),
     ]);
     if (invoiceRefs + stockRefs > 0) {
       return prisma.vendor.update({ where: { id }, data: { isActive: false } });
