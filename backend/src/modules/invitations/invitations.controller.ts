@@ -31,12 +31,18 @@ function parseId(raw: string): number | null {
 
 export class InvitationsController {
   async send(req: Request, res: Response): Promise<void> {
+    const shopId = req.user?.shopId;
+    if (!shopId) {
+      res.status(403).json({ error: 'This account has no shop linked.' });
+      return;
+    }
     const parsed = sendSchema.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: parsed.error.flatten() });
       return;
     }
     const result = await invitationsService.sendInvite({
+      shopId,
       fromUserId: req.user!.sub,
       toEmail: parsed.data.toEmail,
       linkType: parsed.data.linkType,

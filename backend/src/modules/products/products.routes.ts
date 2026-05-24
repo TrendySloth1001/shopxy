@@ -10,6 +10,7 @@ router.get('/', asyncHandler(productsController.list.bind(productsController)));
 router.get('/lookup', asyncHandler(productsController.lookup.bind(productsController)));
 router.get('/:id', asyncHandler(productsController.getById.bind(productsController)));
 router.patch('/:id', asyncHandler(productsController.update.bind(productsController)));
+router.post('/:id/publish', asyncHandler(productsController.setPublished.bind(productsController)));
 router.delete('/:id', asyncHandler(productsController.delete.bind(productsController)));
 
 // Product images

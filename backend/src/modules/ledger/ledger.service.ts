@@ -20,6 +20,10 @@ export interface PostLineInput {
 }
 
 export interface PostInput {
+  /// Owning shop. Every ledger row carries it for cheap per-shop
+  /// stock-report queries — and so cross-tenant posts are physically
+  /// impossible: the shopId must match the products being mutated.
+  shopId: number;
   direction: LedgerDirection;
   reasonCode: LedgerReasonCode;
   sourceType: LedgerSourceType;
@@ -191,7 +195,7 @@ export class LedgerService {
         });
         if (alreadyReversed) throw { error: 'Already reversed' as const };
 
-        const product = await this.lockProduct(tx, original.productId);
+        const product = await this.lockProduct(tx, original.productId, original.shopId);
         if (!product) throw { error: 'Product not found' as const, productId: original.productId };
 
         const reverseDirection: LedgerDirection = original.direction === 'IN' ? 'OUT' : 'IN';
@@ -230,6 +234,9 @@ export class LedgerService {
 
         const reversal = await tx.stockTransaction.create({
           data: {
+            // Reversal inherits the original row's shopId — guarantees
+            // a cross-tenant reverse cannot land in the wrong ledger.
+            shopId: original.shopId,
             productId: original.productId,
             direction: reverseDirection,
             reasonCode: opts.reasonCode,
@@ -291,7 +298,7 @@ export class LedgerService {
     parent: PostInput,
     line: PostLineInput,
   ): Promise<PostedEntry | PostError> {
-    const product = await this.lockProduct(tx, line.productId);
+    const product = await this.lockProduct(tx, line.productId, parent.shopId);
     if (!product) return { error: 'Product not found', productId: line.productId };
 
     // Inactive products can only receive OPENING/RECOUNT writes from the
@@ -344,6 +351,7 @@ export class LedgerService {
 
     const entry = await tx.stockTransaction.create({
       data: {
+        shopId: parent.shopId,
         productId: line.productId,
         direction: parent.direction,
         reasonCode: parent.reasonCode,
@@ -417,20 +425,29 @@ export class LedgerService {
   }
 
   /// Locks the product row using SELECT … FOR UPDATE so concurrent
-  /// postings serialize. Returns null if the product doesn't exist.
-  private async lockProduct(tx: Prisma.TransactionClient, productId: number) {
+  /// postings serialize. Returns null if the product doesn't exist OR
+  /// doesn't belong to the requesting shop — that null bubbles back as
+  /// a "Product not found" error to the caller, which is the right
+  /// 404-shaped response for a cross-tenant attempt.
+  private async lockProduct(
+    tx: Prisma.TransactionClient,
+    productId: number,
+    shopId: number,
+  ) {
     const rows = await tx.$queryRaw<
       Array<{
         id: number;
+        shop_id: number;
         stock_quantity: string;
         purchase_price: string;
         is_active: boolean;
       }>
-    >`SELECT id, stock_quantity, purchase_price, is_active
-        FROM products WHERE id = ${productId} FOR UPDATE`;
+    >`SELECT id, shop_id, stock_quantity, purchase_price, is_active
+        FROM products WHERE id = ${productId} AND shop_id = ${shopId} FOR UPDATE`;
     if (rows.length === 0) return null;
     return {
       id: rows[0].id,
+      shopId: rows[0].shop_id,
       stockQuantity: rows[0].stock_quantity,
       purchasePrice: rows[0].purchase_price,
       isActive: rows[0].is_active,

@@ -6,6 +6,9 @@ import { notificationsService } from '../notifications/notifications.service.js'
 import prisma from '../../infra/db/prisma.js';
 
 const createSchema = z.object({
+  /// Owning merchant — required. The customer-side splits its cart
+  /// by shop and fires one POST per shop with that shop's items.
+  shopId: z.number().int().positive(),
   items: z
     .array(
       z.object({
@@ -15,6 +18,9 @@ const createSchema = z.object({
     )
     .min(1),
   note: z.string().max(500).optional(),
+  /// Optional UserAddress id selected at checkout. When present the
+  /// service snapshots that address into `customerAddress`.
+  addressId: z.number().int().positive().optional(),
 });
 
 const decisionSchema = z.object({ note: z.string().max(500).optional() });
@@ -77,20 +83,29 @@ export class PurchaseRequestsController {
     const idempotencyKey = readIdempotencyKey(req);
 
     const result = await purchaseRequestsService.createForCustomer({
+      shopId: payload.shopId,
       customerUserId: userId,
       items: payload.items,
       note: payload.note,
       idempotencyKey,
+      addressId: payload.addressId,
     });
     if ('error' in result) {
-      res.status(400).json({ error: result.error });
+      const status =
+        result.error === 'ADDRESS_NOT_OWNED' ? 422 :
+        result.error === 'OWN_SHOP_ITEM' ? 422 :
+        result.error === 'SHOP_NOT_FOUND' ? 404 :
+        result.error === 'CROSS_SHOP_ITEM' ? 422 :
+        400;
+      res.status(status).json({ error: result.error });
       return;
     }
 
-    // Only notify on a *new* request — deduplicated retries shouldn't
-    // page the merchant a second time.
+    // Notify *only the receiving shop's owner* — not the historical
+    // fan-out to every OWNER row in the DB, which leaked one merchant's
+    // orders to every other merchant's notification bell.
     if (!result.deduplicated) {
-      void notifyAllMerchants({
+      void notifyShopOwner(payload.shopId, {
         kind: 'ORDER_RECEIVED',
         title: 'New order',
         body: `Order #${result.request.id}`,
@@ -140,6 +155,11 @@ export class PurchaseRequestsController {
   // ── Merchant-facing ────────────────────────────────────────────────
 
   async listForMerchant(req: Request, res: Response): Promise<void> {
+    const shopId = req.user?.shopId;
+    if (!shopId) {
+      res.status(403).json({ error: 'This account has no shop linked.' });
+      return;
+    }
     const { page, limit, skip } = parsePagination(req);
     const filters = merchantListSchema.parse({
       status: req.query.status,
@@ -149,6 +169,7 @@ export class PurchaseRequestsController {
     });
     const { data, total } = await purchaseRequestsService.listForMerchant({
       ...filters,
+      shopId,
       from: filters.from ? new Date(filters.from) : undefined,
       to: filters.to ? new Date(filters.to) : undefined,
       skip,
@@ -157,33 +178,46 @@ export class PurchaseRequestsController {
     res.json(paginatedResponse(data, total, { page, limit, skip }));
   }
 
-  async pendingCount(_req: Request, res: Response): Promise<void> {
-    const count = await purchaseRequestsService.pendingCount();
+  async pendingCount(req: Request, res: Response): Promise<void> {
+    const shopId = req.user?.shopId;
+    if (!shopId) {
+      res.status(403).json({ error: 'This account has no shop linked.' });
+      return;
+    }
+    const count = await purchaseRequestsService.pendingCount(shopId);
     res.json({ count });
   }
 
   async getForMerchant(req: Request, res: Response): Promise<void> {
+    const shopId = req.user?.shopId;
+    if (!shopId) {
+      res.status(403).json({ error: 'This account has no shop linked.' });
+      return;
+    }
     const id = parseId(req.params.id);
     if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
-    const request = await purchaseRequestsService.getForMerchant(id);
+    const request = await purchaseRequestsService.getForMerchant(shopId, id);
     if (!request) { res.status(404).json({ error: 'Order not found' }); return; }
     res.json(request);
   }
 
   async confirm(req: Request, res: Response): Promise<void> {
+    const shopId = req.user?.shopId;
+    if (!shopId) {
+      res.status(403).json({ error: 'This account has no shop linked.' });
+      return;
+    }
     const id = parseId(req.params.id);
     if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
     const payload = decisionSchema.parse(req.body ?? {});
 
     const result = await purchaseRequestsService.confirmRequest({
+      shopId,
       requestId: id,
       decidedById: req.user!.sub,
       note: payload.note,
     });
     if ('error' in result) {
-      // Stock shortfalls carry productId/available/requested so the
-      // client can render an actionable message. Map the failure
-      // category to an HTTP status the client can branch on.
       const status =
         result.error === 'NOT_FOUND'
           ? 404
@@ -194,7 +228,7 @@ export class PurchaseRequestsController {
       return;
     }
 
-    const request = await purchaseRequestsService.getForMerchant(id);
+    const request = await purchaseRequestsService.getForMerchant(shopId, id);
     if (request) {
       void notificationsService
         .create({
@@ -210,11 +244,17 @@ export class PurchaseRequestsController {
   }
 
   async reject(req: Request, res: Response): Promise<void> {
+    const shopId = req.user?.shopId;
+    if (!shopId) {
+      res.status(403).json({ error: 'This account has no shop linked.' });
+      return;
+    }
     const id = parseId(req.params.id);
     if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
     const payload = decisionSchema.parse(req.body ?? {});
 
     const result = await purchaseRequestsService.rejectRequest({
+      shopId,
       requestId: id,
       decidedById: req.user!.sub,
       note: payload.note,
@@ -224,7 +264,7 @@ export class PurchaseRequestsController {
       return;
     }
 
-    const request = await purchaseRequestsService.getForMerchant(id);
+    const request = await purchaseRequestsService.getForMerchant(shopId, id);
     if (request) {
       void notificationsService
         .create({
@@ -243,20 +283,24 @@ export class PurchaseRequestsController {
 /// Fans out an in-app notification to every merchant (anyone with role
 /// OWNER). One Promise.all on the User read + creates so a 50-merchant
 /// fleet doesn't pay sequential latency for the notification storm.
-async function notifyAllMerchants(payload: {
-  kind: string;
-  title: string;
-  body?: string;
-  data?: Record<string, unknown>;
-}): Promise<void> {
-  const owners = await prisma.user.findMany({
-    where: { role: 'OWNER', isActive: true },
-    select: { id: true },
+async function notifyShopOwner(
+  shopId: number,
+  payload: {
+    kind: string;
+    title: string;
+    body?: string;
+    data?: Record<string, unknown>;
+  },
+): Promise<void> {
+  const shop = await prisma.shop.findUnique({
+    where: { id: shopId },
+    select: { ownerUserId: true },
   });
+  if (!shop) return;
   await Promise.all(
-    owners.map((o) =>
+    [shop].map((o) =>
       notificationsService.create({
-        userId: o.id,
+        userId: o.ownerUserId,
         kind: payload.kind,
         title: payload.title,
         body: payload.body,

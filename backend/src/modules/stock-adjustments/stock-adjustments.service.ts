@@ -33,7 +33,7 @@ interface CreateAdjustmentInput {
 }
 
 export class StockAdjustmentsService {
-  async create(input: CreateAdjustmentInput) {
+  async create(shopId: number, input: CreateAdjustmentInput) {
     if (!ADJUSTMENT_REASONS.includes(input.reasonCode)) {
       return { error: 'Invalid reason code for adjustment' as const };
     }
@@ -41,14 +41,12 @@ export class StockAdjustmentsService {
       return { error: 'Adjustment must have at least one item' as const };
     }
 
-    // Direction defaults: OPENING/RECOUNT can be either side; everything
-    // else is an OUT (damage, expired, shrinkage).
     const direction: LedgerDirection =
       input.direction ?? (IN_REASON_CODES.has(input.reasonCode) ? 'IN' : 'OUT');
 
     const productIds = [...new Set(input.items.map((i) => i.productId))];
     const products = await prisma.product.findMany({
-      where: { id: { in: productIds } },
+      where: { id: { in: productIds }, shopId },
       select: { id: true, name: true, sku: true, unit: true, purchasePrice: true },
     });
     const productMap = new Map(products.map((p) => [p.id, p]));
@@ -58,15 +56,13 @@ export class StockAdjustmentsService {
       }
     }
 
-    const adjustmentNo = await this.nextAdjustmentNo();
+    const { nextAdjustmentNo } = await import('../../shared/numbering/sequences.js');
+    const adjustmentNo = await nextAdjustmentNo(shopId);
 
-    // Single transaction: header + items + ledger post all-or-nothing.
-    // Previously we created the header, then on ledger failure did a
-    // best-effort delete, which left orphan rows if the delete itself
-    // failed (or the process crashed in between).
     return prisma.$transaction(async (tx) => {
       const header = await tx.stockAdjustment.create({
         data: {
+          shopId,
           adjustmentNo,
           reasonCode: input.reasonCode,
           direction,
@@ -91,6 +87,7 @@ export class StockAdjustmentsService {
       });
 
       const result = await ledgerService.post({
+        shopId,
         direction,
         reasonCode: input.reasonCode,
         sourceType: 'ADJUSTMENT',
@@ -112,9 +109,6 @@ export class StockAdjustmentsService {
       }, tx);
 
       if ('error' in result) {
-        // Throw to abort the transaction — Prisma rolls back the header
-        // and items for us. Wrap the original error so callers still see
-        // the original shape.
         throw new AdjustmentLedgerFailure(result);
       }
 
@@ -125,8 +119,8 @@ export class StockAdjustmentsService {
     });
   }
 
-  async list(options: { reasonCode?: string; page: number; limit: number; skip: number }) {
-    const where: Record<string, unknown> = {};
+  async list(shopId: number, options: { reasonCode?: string; page: number; limit: number; skip: number }) {
+    const where: Record<string, unknown> = { shopId };
     if (options.reasonCode) where.reasonCode = options.reasonCode;
     const [adjustments, total] = await Promise.all([
       prisma.stockAdjustment.findMany({
@@ -144,9 +138,9 @@ export class StockAdjustmentsService {
     return { adjustments, total };
   }
 
-  getById(id: number) {
-    return prisma.stockAdjustment.findUnique({
-      where: { id },
+  getById(shopId: number, id: number) {
+    return prisma.stockAdjustment.findFirst({
+      where: { id, shopId },
       include: {
         items: { orderBy: { id: 'asc' } },
         createdBy: { select: { id: true, name: true } },
@@ -157,15 +151,15 @@ export class StockAdjustmentsService {
   /// Post a counter-entry for every ledger row this adjustment created.
   /// The adjustment itself stays around as an audit trail; the ledger
   /// effect is what gets unwound.
-  async reverse(id: number, opts: { createdById?: number; note?: string } = {}) {
-    const adjustment = await prisma.stockAdjustment.findUnique({
-      where: { id },
+  async reverse(shopId: number, id: number, opts: { createdById?: number; note?: string } = {}) {
+    const adjustment = await prisma.stockAdjustment.findFirst({
+      where: { id, shopId },
       include: { _count: { select: { items: true } } },
     });
     if (!adjustment) return { error: 'Adjustment not found' as const };
 
     const entries = await prisma.stockTransaction.findMany({
-      where: { sourceType: 'ADJUSTMENT', sourceId: id, reversesId: null },
+      where: { sourceType: 'ADJUSTMENT', sourceId: id, reversesId: null, shopId },
       select: { id: true, direction: true },
     });
     if (entries.length === 0) {
@@ -191,12 +185,6 @@ export class StockAdjustmentsService {
     return { adjustmentId: id, reversedEntries };
   }
 
-  private async nextAdjustmentNo(): Promise<string> {
-    const count = await prisma.stockAdjustment.count();
-    const seq = String(count + 1).padStart(5, '0');
-    const ym = new Date().toISOString().slice(0, 7).replace('-', '');
-    return `ADJ-${ym}-${seq}`;
-  }
 }
 
 export const stockAdjustmentsService = new StockAdjustmentsService();

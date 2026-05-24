@@ -7,14 +7,17 @@ function round2(v: number): number {
 }
 
 export class ChallansService {
-  async createChallan(data: {
-    partyId?: number;
-    partyName?: string;
-    partyPhone?: string;
-    note?: string;
-    items: { productId: number; quantity: number }[];
-    createdById?: number;
-  }) {
+  async createChallan(
+    shopId: number,
+    data: {
+      partyId?: number;
+      partyName?: string;
+      partyPhone?: string;
+      note?: string;
+      items: { productId: number; quantity: number }[];
+      createdById?: number;
+    },
+  ) {
     if (data.items.length === 0) {
       return { error: 'Challan must have at least one item' as const };
     }
@@ -24,8 +27,8 @@ export class ChallansService {
     let partyPhone = data.partyPhone ?? null;
 
     if (data.partyId) {
-      const party = await prisma.party.findUnique({
-        where: { id: data.partyId },
+      const party = await prisma.party.findFirst({
+        where: { id: data.partyId, shopId },
         select: { id: true, name: true, phone: true, isActive: true },
       });
       if (!party) return { error: 'Party not found' as const };
@@ -39,7 +42,7 @@ export class ChallansService {
 
     const productIds = [...new Set(data.items.map((i) => i.productId))];
     const products = await prisma.product.findMany({
-      where: { id: { in: productIds } },
+      where: { id: { in: productIds }, shopId },
       select: { id: true, name: true, sku: true, unit: true },
     });
 
@@ -50,10 +53,11 @@ export class ChallansService {
       }
     }
 
-    const challanNo = await nextChallanNo();
+    const challanNo = await nextChallanNo(shopId);
 
     const challan = await prisma.challan.create({
       data: {
+        shopId,
         challanNo,
         partyId,
         partyName,
@@ -79,6 +83,7 @@ export class ChallansService {
     // the building. If posting fails (e.g. insufficient stock), unwind
     // the challan so the database stays consistent.
     const result = await ledgerService.post({
+      shopId: shopId,
       direction: 'OUT',
       reasonCode: 'SALE',
       sourceType: 'CHALLAN',
@@ -110,14 +115,17 @@ export class ChallansService {
     return { challan };
   }
 
-  async listChallans(options: {
-    status?: string;
-    search: string;
-    page: number;
-    limit: number;
-    skip: number;
-  }) {
-    const where: Record<string, unknown> = {};
+  async listChallans(
+    shopId: number,
+    options: {
+      status?: string;
+      search: string;
+      page: number;
+      limit: number;
+      skip: number;
+    },
+  ) {
+    const where: Record<string, unknown> = { shopId };
     if (options.status) where.status = options.status;
     if (options.search) {
       where.OR = [
@@ -152,9 +160,9 @@ export class ChallansService {
     return { challans, total };
   }
 
-  getChallanById(id: number) {
-    return prisma.challan.findUnique({
-      where: { id },
+  getChallanById(shopId: number, id: number) {
+    return prisma.challan.findFirst({
+      where: { id, shopId },
       include: {
         items: { orderBy: { id: 'asc' } },
         party: true,
@@ -163,8 +171,11 @@ export class ChallansService {
     });
   }
 
-  async cancelChallan(id: number, createdById?: number) {
-    const challan = await prisma.challan.findUnique({ where: { id }, select: { status: true } });
+  async cancelChallan(shopId: number, id: number, createdById?: number) {
+    const challan = await prisma.challan.findFirst({
+      where: { id, shopId },
+      select: { status: true },
+    });
     if (!challan) return { error: 'Challan not found' as const };
     if (challan.status !== 'PENDING') {
       return { error: 'Only pending challans can be cancelled' as const };
@@ -172,7 +183,7 @@ export class ChallansService {
 
     // Reverse all ledger entries posted by this challan.
     const entries = await prisma.stockTransaction.findMany({
-      where: { sourceType: 'CHALLAN', sourceId: id, reversesId: null },
+      where: { sourceType: 'CHALLAN', sourceId: id, reversesId: null, shopId },
       select: { id: true },
     });
     for (const entry of entries) {
@@ -193,11 +204,12 @@ export class ChallansService {
   }
 
   async convertToInvoice(
+    shopId: number,
     id: number,
     data?: { customerName?: string; customerGstin?: string; discount?: number; note?: string },
   ) {
-    const challan = await prisma.challan.findUnique({
-      where: { id },
+    const challan = await prisma.challan.findFirst({
+      where: { id, shopId },
       include: { items: true, party: true },
     });
 
@@ -211,7 +223,7 @@ export class ChallansService {
 
     const productIds = challan.items.map((i) => i.productId);
     const products = await prisma.product.findMany({
-      where: { id: { in: productIds } },
+      where: { id: { in: productIds }, shopId },
       select: { id: true, sellingPrice: true, taxPercent: true },
     });
     const priceMap = new Map(products.map((p) => [p.id, p]));
@@ -246,6 +258,7 @@ export class ChallansService {
     const total = round2(subtotal + taxAmount - headerDiscount);
     const invoiceDate = new Date();
     const { invoiceNo, financialYear } = await nextInvoiceNo(
+      shopId,
       'SALE',
       'TAX_INVOICE',
       invoiceDate,
@@ -254,6 +267,7 @@ export class ChallansService {
     const invoice = await prisma.$transaction(async (tx) => {
       const newInvoice = await tx.invoice.create({
         data: {
+          shopId,
           invoiceNo,
           financialYear,
           type: 'SALE',

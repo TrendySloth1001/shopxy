@@ -41,6 +41,11 @@ export class MeController {
     res.json(data);
   }
 
+  async linkedShops(req: Request, res: Response): Promise<void> {
+    const data = await meService.linkedShops(req.user!.sub);
+    res.json({ data });
+  }
+
   async partyInvoices(req: Request, res: Response): Promise<void> {
     const partyId = parseId(req.params.partyId);
     if (!partyId) { res.status(400).json({ error: 'Invalid party id' }); return; }

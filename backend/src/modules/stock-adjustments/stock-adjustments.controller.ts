@@ -23,10 +23,21 @@ function parseId(raw: string): number | null {
   return Number.isInteger(id) && id > 0 ? id : null;
 }
 
+function requireShopId(req: Request, res: Response): number | null {
+  const shopId = req.user?.shopId;
+  if (!shopId) {
+    res.status(403).json({ error: 'This account has no shop linked.' });
+    return null;
+  }
+  return shopId;
+}
+
 export class StockAdjustmentsController {
   async create(req: Request, res: Response): Promise<void> {
+    const shopId = requireShopId(req, res);
+    if (!shopId) return;
     const payload = createSchema.parse(req.body);
-    const result = await stockAdjustmentsService.create({
+    const result = await stockAdjustmentsService.create(shopId, {
       reasonCode: payload.reasonCode as never,
       direction: payload.direction,
       note: payload.note,
@@ -41,9 +52,11 @@ export class StockAdjustmentsController {
   }
 
   async list(req: Request, res: Response): Promise<void> {
+    const shopId = requireShopId(req, res);
+    if (!shopId) return;
     const { page, limit, skip } = parsePagination(req);
     const reasonCode = req.query.reasonCode as string | undefined;
-    const { adjustments, total } = await stockAdjustmentsService.list({
+    const { adjustments, total } = await stockAdjustmentsService.list(shopId, {
       reasonCode,
       page,
       limit,
@@ -53,12 +66,14 @@ export class StockAdjustmentsController {
   }
 
   async getById(req: Request, res: Response): Promise<void> {
+    const shopId = requireShopId(req, res);
+    if (!shopId) return;
     const id = parseId(req.params.id);
     if (!id) {
       res.status(400).json({ error: 'Invalid id' });
       return;
     }
-    const adjustment = await stockAdjustmentsService.getById(id);
+    const adjustment = await stockAdjustmentsService.getById(shopId, id);
     if (!adjustment) {
       res.status(404).json({ error: 'Adjustment not found' });
       return;
@@ -67,12 +82,14 @@ export class StockAdjustmentsController {
   }
 
   async reverse(req: Request, res: Response): Promise<void> {
+    const shopId = requireShopId(req, res);
+    if (!shopId) return;
     const id = parseId(req.params.id);
     if (!id) {
       res.status(400).json({ error: 'Invalid id' });
       return;
     }
-    const result = await stockAdjustmentsService.reverse(id, {
+    const result = await stockAdjustmentsService.reverse(shopId, id, {
       createdById: req.user?.sub,
       note: typeof req.body?.note === 'string' ? req.body.note : undefined,
     });

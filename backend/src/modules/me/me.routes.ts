@@ -6,6 +6,10 @@ const router = Router();
 
 router.get('/links', asyncHandler((req, res) => meController.links(req, res)));
 router.get(
+  '/linked-shops',
+  asyncHandler((req, res) => meController.linkedShops(req, res)),
+);
+router.get(
   '/catalog/products',
   asyncHandler((req, res) => meController.catalog(req, res)),
 );

@@ -25,10 +25,7 @@ const documentTypeEnum = z.enum([
 
 const createInvoiceSchema = z.object({
   type: z.enum(['SALE', 'PURCHASE']),
-  /// Defaults server-side to TAX_INVOICE when omitted.
   documentType: documentTypeEnum.optional(),
-  /// 2-digit GST state code of the place of supply. When omitted the
-  /// service derives it (customer state for SALE, shop state for PURCHASE).
   placeOfSupplyStateCode: z.string().regex(/^\d{2}$/, 'must be 2-digit GST state code').optional(),
   vendorId: z.number().int().positive().optional(),
   partyId: z.number().int().positive().optional(),
@@ -39,8 +36,6 @@ const createInvoiceSchema = z.object({
   note: z.string().max(1000).optional(),
   invoiceDate: z.string().datetime().optional(),
   items: z.array(itemSchema).min(1),
-  /// One-shot create + confirm. Saves a round-trip when the merchant
-  /// knows the invoice is final at submit time.
   confirm: z.boolean().optional(),
 });
 
@@ -48,8 +43,6 @@ const updateStatusSchema = z.object({
   status: z.enum(['DRAFT', 'CONFIRMED', 'CANCELLED']),
 });
 
-/// PATCH /invoices/:id payload. Mirrors create, but vendorId/partyId can
-/// be explicitly nulled to detach a draft from its counterparty.
 const updateInvoiceSchema = z.object({
   type: z.enum(['SALE', 'PURCHASE']),
   documentType: documentTypeEnum.optional(),
@@ -79,20 +72,29 @@ function parseId(raw: string): number | null {
   return Number.isInteger(id) && id > 0 ? id : null;
 }
 
+function requireShopId(req: Request, res: Response): number | null {
+  const shopId = req.user?.shopId;
+  if (!shopId) {
+    res.status(403).json({ error: 'This account has no shop linked.' });
+    return null;
+  }
+  return shopId;
+}
+
 export class InvoicesController {
   async create(req: Request, res: Response): Promise<void> {
+    const shopId = requireShopId(req, res);
+    if (!shopId) return;
     const payload = createInvoiceSchema.parse(req.body);
     const result = await invoicesService.createInvoice({
       ...payload,
+      shopId,
       confirmedById: payload.confirm ? req.user?.sub : undefined,
     });
     if ('error' in result) {
       res.status(400).json({ error: result.error });
       return;
     }
-    // confirmError surfaces auto-confirm failures (e.g. insufficient
-    // stock) without losing the draft we just created — client can show
-    // a snackbar and route to the draft for the merchant to resolve.
     const body: Record<string, unknown> = {
       ...result.invoice,
       confirmed: result.confirmed,
@@ -104,10 +106,12 @@ export class InvoicesController {
   }
 
   async list(req: Request, res: Response): Promise<void> {
+    const shopId = requireShopId(req, res);
+    if (!shopId) return;
     const { page, limit, skip } = parsePagination(req);
     const query = listQuerySchema.parse(req.query);
 
-    const { invoices, total } = await invoicesService.listInvoices({
+    const { invoices, total } = await invoicesService.listInvoices(shopId, {
       type: query.type,
       status: query.status,
       documentType: query.documentType,
@@ -124,10 +128,12 @@ export class InvoicesController {
   }
 
   async convert(req: Request, res: Response): Promise<void> {
+    const shopId = requireShopId(req, res);
+    if (!shopId) return;
     const id = parseId(req.params.id);
     if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
 
-    const result = await invoicesService.convertEstimate(id);
+    const result = await invoicesService.convertEstimate(shopId, id);
     if ('error' in result) {
       res.status(400).json({ error: result.error });
       return;
@@ -136,21 +142,25 @@ export class InvoicesController {
   }
 
   async getById(req: Request, res: Response): Promise<void> {
+    const shopId = requireShopId(req, res);
+    if (!shopId) return;
     const id = parseId(req.params.id);
     if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
 
-    const invoice = await invoicesService.getInvoiceById(id);
+    const invoice = await invoicesService.getInvoiceById(shopId, id);
     if (!invoice) { res.status(404).json({ error: 'Invoice not found' }); return; }
 
     res.json(invoice);
   }
 
   async update(req: Request, res: Response): Promise<void> {
+    const shopId = requireShopId(req, res);
+    if (!shopId) return;
     const id = parseId(req.params.id);
     if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
 
     const payload = updateInvoiceSchema.parse(req.body);
-    const result = await invoicesService.updateInvoice(id, payload);
+    const result = await invoicesService.updateInvoice(shopId, id, payload);
     if ('error' in result) {
       res.status(400).json({ error: result.error });
       return;
@@ -159,11 +169,13 @@ export class InvoicesController {
   }
 
   async updateStatus(req: Request, res: Response): Promise<void> {
+    const shopId = requireShopId(req, res);
+    if (!shopId) return;
     const id = parseId(req.params.id);
     if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
 
     const { status } = updateStatusSchema.parse(req.body);
-    const result = await invoicesService.updateStatus(id, status, req.user?.sub);
+    const result = await invoicesService.updateStatus(shopId, id, status, req.user?.sub);
     if ('error' in result) {
       res.status(400).json({
         error: result.error,
@@ -177,10 +189,12 @@ export class InvoicesController {
   }
 
   async delete(req: Request, res: Response): Promise<void> {
+    const shopId = requireShopId(req, res);
+    if (!shopId) return;
     const id = parseId(req.params.id);
     if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
 
-    const result = await invoicesService.deleteInvoice(id);
+    const result = await invoicesService.deleteInvoice(shopId, id);
     if ('error' in result) {
       res.status(400).json({ error: result.error });
       return;
@@ -189,16 +203,18 @@ export class InvoicesController {
   }
 
   async downloadPdf(req: Request, res: Response): Promise<void> {
+    const shopId = requireShopId(req, res);
+    if (!shopId) return;
     const id = parseId(req.params.id);
     if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
 
-    const result = await invoicesService.generatePdf(id);
+    const result = await invoicesService.generatePdf(shopId, id);
     if (!Buffer.isBuffer(result)) {
       res.status(404).json({ error: result.error });
       return;
     }
 
-    const invoice = await invoicesService.getInvoiceById(id);
+    const invoice = await invoicesService.getInvoiceById(shopId, id);
     const filename = `invoice-${invoice?.invoiceNo ?? id}.pdf`;
 
     res.setHeader('Content-Type', 'application/pdf');
