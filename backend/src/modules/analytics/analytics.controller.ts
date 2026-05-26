@@ -1,11 +1,18 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
-import { analyticsService } from './analytics.service.js';
+import {
+  analyticsService,
+  clampAnalyticsLimit,
+  parseAnalyticsCursor,
+  ANALYTICS_MAX_ESTIMATED_ROWS,
+} from './analytics.service.js';
 
 const rangeSchema = z
   .object({
     from: z.string().datetime().optional(),
     to: z.string().datetime().optional(),
+    limit: z.union([z.string(), z.number()]).optional(),
+    cursor: z.string().optional(),
   })
   .refine(
     (d) => !d.from || !d.to || new Date(d.to) > new Date(d.from),
@@ -37,7 +44,26 @@ export class AnalyticsController {
       res.status(400).json({ error: `Date range > ${MAX_RANGE_DAYS} days` });
       return;
     }
-    const data = await analyticsService.getProductAnalytics(shopId, from, to);
+
+    // Bound the request before issuing the aggregate. The estimate is
+    // the count of active products in the shop — a tight upper bound
+    // on the rowset since the aggregate groups by product.
+    const estimatedRows = await analyticsService.estimateProductRows(shopId);
+    if (estimatedRows > ANALYTICS_MAX_ESTIMATED_ROWS) {
+      res.status(400).json({
+        error: 'range_too_large',
+        estimatedRows,
+        maxEstimatedRows: ANALYTICS_MAX_ESTIMATED_ROWS,
+      });
+      return;
+    }
+
+    const limit = clampAnalyticsLimit(parsed.limit);
+    const cursorProductId = parseAnalyticsCursor(parsed.cursor);
+    const data = await analyticsService.getProductAnalytics(shopId, from, to, {
+      limit,
+      cursorProductId,
+    });
     res.json(data);
   }
 
