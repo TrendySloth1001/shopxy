@@ -16,6 +16,10 @@ class HomeFeed {
     required this.curatedRails,
     required this.collectionTiles,
     required this.trending,
+    required this.offers,
+    required this.bestValue,
+    required this.newInStock,
+    required this.sponsoredProducts,
     required this.recommended,
     required this.recentlyViewed,
   });
@@ -29,6 +33,17 @@ class HomeFeed {
   final List<CuratedRailItem> curatedRails;
   final List<CollectionTile> collectionTiles;
   final List<ProductCard> trending;
+  /// Editorial subsets derived server-side from the same trending pool
+  /// the rail uses. Each is short (max ~12) so the customer can render
+  /// it as a horizontal carousel without scroll fatigue.
+  final List<ProductCard> offers;
+  final List<ProductCard> bestValue;
+  final List<ProductCard> newInStock;
+  /// Merchant-paid sponsored rail. Every entry has `isAd = true` and a
+  /// `promotionId` set so the impression tracker can bill the right
+  /// promo. Rendered as its own section with an explicit "Sponsored"
+  /// label so users aren't confused with organic trending.
+  final List<ProductCard> sponsoredProducts;
   final List<ProductCard> recommended;
   final List<ProductCard> recentlyViewed;
 
@@ -42,6 +57,10 @@ class HomeFeed {
     curatedRails: [],
     collectionTiles: [],
     trending: [],
+    offers: [],
+    bestValue: [],
+    newInStock: [],
+    sponsoredProducts: [],
     recommended: [],
     recentlyViewed: [],
   );
@@ -60,6 +79,10 @@ class HomeFeed {
       curatedRails: curatedRails,
       collectionTiles: collectionTiles,
       trending: trending,
+      offers: offers,
+      bestValue: bestValue,
+      newInStock: newInStock,
+      sponsoredProducts: sponsoredProducts,
       recommended: recommended ?? this.recommended,
       recentlyViewed: recentlyViewed ?? this.recentlyViewed,
     );
@@ -82,7 +105,16 @@ class HomeFeedMapper {
     final spotlights = _list(json['brandSpotlights']);
     final collections = _list(json['collections']);
     final trending = _list(json['trending']);
+    final offers = _list(json['offers']);
+    final bestValue = _list(json['bestValue']);
+    final newInStock = _list(json['newInStock']);
+    final sponsored = _list(json['sponsoredProducts']);
     final pucks = _list(json['categoryPucks']);
+
+    List<ProductCard> mapTrendingList(List<dynamic> rows) => rows
+        .map(_productCardFromTrending)
+        .whereType<ProductCard>()
+        .toList();
 
     return HomeFeed(
       heroSlides: heroBanners.map(_heroFromBanner).toList(),
@@ -93,10 +125,11 @@ class HomeFeedMapper {
       flashDeals: flashDeals.map(_flashFromSale).whereType<FlashDealProduct>().toList(),
       collectionTiles: collections.map(_collectionTile).toList(),
       categoryPucks: pucks.asMap().entries.map(_categoryPuck).toList(),
-      trending: trending
-          .map((row) => _productCardFromTrending(row))
-          .whereType<ProductCard>()
-          .toList(),
+      trending: mapTrendingList(trending),
+      offers: mapTrendingList(offers),
+      bestValue: mapTrendingList(bestValue),
+      newInStock: mapTrendingList(newInStock),
+      sponsoredProducts: mapTrendingList(sponsored),
       recommended: const [],
       recentlyViewed: const [],
     );
@@ -131,6 +164,9 @@ class HomeFeedMapper {
       imageUrl: (m['imageUrl'] ?? '') as String,
       bgColor: _parseColor(m['bgColor'] as String?, fallback: AppColors.heroPanel),
       accent: _parseColor(m['accentColor'] as String?, fallback: AppColors.brand),
+      template: HeroSlideTemplate.fromWire(m['template'] as String?),
+      imageFit: HeroImageFit.fromWire(m['imageFit'] as String?),
+      ctaText: m['ctaText'] as String?,
       ctaTarget: m['ctaTarget'] as String?,
       bannerId: _asInt(m['id']),
     );
@@ -155,7 +191,9 @@ class HomeFeedMapper {
 
   static BrandSpotlight _brandFromSpotlight(dynamic raw) {
     final m = raw as Map<String, dynamic>;
-    final shop = m['shop'] as Map<String, dynamic>?;
+    final shop = m['shop'] is Map<String, dynamic>
+        ? m['shop'] as Map<String, dynamic>
+        : null;
     return BrandSpotlight(
       spotlightId: (m['id'] as num).toInt(),
       brand: (shop?['name'] ?? '') as String,
@@ -221,6 +259,9 @@ class HomeFeedMapper {
     final image = _firstImage(p);
     final ratingCount = _asInt(p['ratingCount']) ?? 0;
     final shop = p['shop'] as Map<String, dynamic>?;
+    final discountPct = (mrp != null && mrp > selling)
+        ? ((1 - selling / mrp) * 100).clamp(0, 99).round()
+        : 0;
     return ProductCard(
       productId: _asInt(p['id']) ?? 0,
       name: (p['name'] ?? '') as String,
@@ -231,11 +272,13 @@ class HomeFeedMapper {
       ratingCount: ratingCount > 999
           ? '${(ratingCount / 1000).toStringAsFixed(1)}k'
           : '$ratingCount',
+      ratingCountRaw: ratingCount,
       imageUrl: image,
       bgColor: AppColors.heroPanel,
       isAd: isAd,
       promotionId: promotionId,
       shopSlug: shop?['slug'] as String?,
+      discountPct: discountPct,
     );
   }
 

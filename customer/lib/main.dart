@@ -1,14 +1,18 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy_customer/core/app.dart';
 import 'package:shopxy_customer/core/auth/token_manager.dart';
 import 'package:shopxy_customer/core/network/api_client.dart';
+import 'package:shopxy_customer/core/share/deep_link_handler.dart';
 import 'package:shopxy_customer/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:shopxy_customer/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy_customer/features/catalog/presentation/providers/cart_provider.dart';
 import 'package:shopxy_customer/features/notifications/data/datasources/notifications_remote_data_source.dart';
 import 'package:shopxy_customer/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:shopxy_customer/features/orders/data/datasources/orders_remote_data_source.dart';
+import 'package:shopxy_customer/features/catalog/data/datasources/cart_remote_data_source.dart';
 import 'package:shopxy_customer/features/orders/presentation/providers/orders_provider.dart';
 import 'package:shopxy_customer/features/search/data/datasources/marketplace_search_remote_data_source.dart';
 import 'package:shopxy_customer/features/search/presentation/providers/search_provider.dart';
@@ -23,9 +27,14 @@ import 'package:shopxy_customer/features/home_v2/presentation/providers/tracking
 import 'package:shopxy_customer/features/addresses/data/datasources/addresses_remote_data_source.dart';
 import 'package:shopxy_customer/features/addresses/presentation/providers/addresses_provider.dart';
 import 'package:shopxy_customer/features/banner_slide/data/datasources/banner_slide_remote_data_source.dart';
+import 'package:shopxy_customer/features/reviews/data/datasources/reviews_remote_data_source.dart';
 import 'package:shopxy_customer/features/marketplace/data/datasources/marketplace_remote_data_source.dart';
 import 'package:shopxy_customer/features/categories/data/datasources/categories_remote_data_source.dart';
 import 'package:shopxy_customer/features/categories/presentation/providers/categories_provider.dart';
+import 'package:shopxy_customer/features/recently_viewed/data/datasources/recently_viewed_remote_data_source.dart';
+import 'package:shopxy_customer/features/returns/data/datasources/returns_remote_data_source.dart';
+import 'package:shopxy_customer/features/wallet/data/datasources/wallet_remote_data_source.dart';
+import 'package:shopxy_customer/features/coupons/data/datasources/coupons_remote_data_source.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,6 +49,7 @@ void main() async {
   final invitationsDs = InvitationsRemoteDataSource(apiClient);
   final meDs = MeRemoteDataSource(apiClient);
   final ordersDs = OrdersRemoteDataSource(apiClient);
+  final cartDs = CartRemoteDataSource(apiClient);
   final wishlistDs = WishlistRemoteDataSource(apiClient);
   final homeFeedDs = HomeFeedRemoteDataSource(apiClient);
   final marketplaceDs = MarketplaceRemoteDataSource(apiClient);
@@ -47,6 +57,11 @@ void main() async {
   final addressesDs = AddressesRemoteDataSource(apiClient);
   final categoriesDs = CategoriesRemoteDataSource(apiClient);
   final bannerSlideDs = BannerSlideRemoteDataSource(apiClient);
+  final reviewsDs = ReviewsRemoteDataSource(apiClient);
+  final recentlyViewedDs = RecentlyViewedRemoteDataSource(apiClient);
+  final returnsDs = ReturnsRemoteDataSource(apiClient);
+  final walletDs = WalletRemoteDataSource(apiClient);
+  final couponsDs = CouponsRemoteDataSource(apiClient);
   final trackingService = TrackingService(apiClient);
 
   final authProvider = AuthProvider(authDs, tokenManager);
@@ -55,24 +70,29 @@ void main() async {
       NotificationsProvider(notificationsDs, invitationsDs);
   final shopsProvider = ShopsProvider(meDs);
   final linkedMerchantsProvider = LinkedMerchantsProvider(meDs);
-  final cartProvider = CartProvider(ordersDs);
+  final cartProvider = CartProvider(ordersDs, cartDs);
   final ordersProvider = OrdersProvider(ordersDs);
   final wishlistProvider = WishlistProvider(wishlistDs);
   final addressesProvider = AddressesProvider(addressesDs);
   final categoriesProvider = CategoriesProvider(categoriesDs);
 
-  // Force re-login if the refresh fails and clear cached state.
-  tokenManager.onUnauthorized = () {
-    authProvider.clearAuth();
-    notificationsProvider.reset();
-    shopsProvider.reset();
-    cartProvider.clear();
-    ordersProvider.reset();
-    wishlistProvider.reset();
-    addressesProvider.reset();
-    linkedMerchantsProvider.reset();
-    homeFeedProvider.clearPersonalized();
-  };
+  // Wire user-scoped resets into AuthProvider.clearAuth() so the
+  // refresh-failure path and any future caller (e.g. an explicit
+  // "force logout" button) drop the same state. The cart's
+  // `onLoggedOut` keeps the local items but flips the server-sync
+  // flag off — see CartProvider for why we deliberately keep the
+  // basket.
+  authProvider.registerOnClear(notificationsProvider.reset);
+  authProvider.registerOnClear(shopsProvider.reset);
+  authProvider.registerOnClear(cartProvider.onLoggedOut);
+  authProvider.registerOnClear(ordersProvider.reset);
+  authProvider.registerOnClear(wishlistProvider.reset);
+  authProvider.registerOnClear(addressesProvider.reset);
+  authProvider.registerOnClear(linkedMerchantsProvider.reset);
+  authProvider.registerOnClear(homeFeedProvider.clearPersonalized);
+
+  // Force re-login if the refresh fails.
+  tokenManager.onUnauthorized = authProvider.clearAuth;
 
   // After login or app boot: prime the bell badge + pending invites so
   // the home screen can immediately surface a "you've been invited"
@@ -90,6 +110,9 @@ void main() async {
       notificationsProvider.loadIncoming(status: 'PENDING');
       // Personalized rail is part of the Home tab's first paint.
       homeFeedProvider.refreshPersonalized();
+      // Server-side cart sync — merge any guest items into /me/cart
+      // and pull the merged result back as the new authoritative state.
+      cartProvider.syncFromServer(mergeLocal: true);
 
       Future.microtask(() {
         shopsProvider.loadShops();
@@ -102,7 +125,11 @@ void main() async {
       notificationsProvider.reset();
       shopsProvider.reset();
       linkedMerchantsProvider.reset();
-      cartProvider.clear();
+      // Don't clear the local cart on logout — the items survive as a
+      // guest cart and will be re-merged on the next sign-in. Just
+      // flip the server-sync flag off so mutations stop hitting /me/cart
+      // (it would 401 with no token).
+      cartProvider.onLoggedOut();
       ordersProvider.reset();
       wishlistProvider.reset();
       addressesProvider.reset();
@@ -120,12 +147,24 @@ void main() async {
   // Independent from auth — anonymous carts survive sign-in.
   cartProvider.restore();
 
+  // Single navigator key so the deep-link handler can push routes
+  // (PDP for /p/<id>) regardless of the active tab in the shell.
+  final navigatorKey = GlobalKey<NavigatorState>();
+  final deepLinks = DeepLinkHandler(navigatorKey);
+  // Fire-and-forget: getInitialLink is awaited internally before the
+  // first frame's postFrameCallback runs, and the stream subscription
+  // survives the app lifetime.
+  unawaited(deepLinks.start());
+
   runApp(
     MultiProvider(
       providers: [
         // Data sources — needed by detail pages that construct their own
         // loads (order detail) without a parent provider.
         Provider<OrdersRemoteDataSource>.value(value: ordersDs),
+        // Token manager — needed by features (like invoice download)
+        // that build authed requests outside of ApiClient.
+        Provider<TokenManager>.value(value: tokenManager),
         // Public marketplace reads — PDP V2 + ShopProfilePage construct
         // their own loads from this DS rather than via a parent provider
         // so the data follows the productId/slug in the route arguments.
@@ -137,6 +176,18 @@ void main() async {
         // /banners/:id/slide endpoint via this DS — provided so the
         // route-scoped page doesn't need a parent provider.
         Provider<BannerSlideRemoteDataSource>.value(value: bannerSlideDs),
+        // Reviews API — PDP section + all-reviews page + write sheet
+        // all read this DS directly (no parent provider) so the page
+        // can be opened by id from anywhere.
+        Provider<ReviewsRemoteDataSource>.value(value: reviewsDs),
+        // Recently-viewed list. Page is route-scoped (opened from Profile)
+        // so it reads the DS directly instead of through a parent provider.
+        Provider<RecentlyViewedRemoteDataSource>.value(value: recentlyViewedDs),
+        // Returns + wallet — both used by route-scoped pages, so no
+        // parent ChangeNotifier provider; the pages read the DS directly.
+        Provider<ReturnsRemoteDataSource>.value(value: returnsDs),
+        Provider<WalletRemoteDataSource>.value(value: walletDs),
+        Provider<CouponsRemoteDataSource>.value(value: couponsDs),
         ChangeNotifierProvider<CategoriesProvider>.value(
             value: categoriesProvider),
         ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
@@ -159,7 +210,7 @@ void main() async {
         ChangeNotifierProvider<HomeFeedProvider>.value(value: homeFeedProvider),
         Provider<TrackingService>.value(value: trackingService),
       ],
-      child: const ShopxyCustomerApp(),
+      child: ShopxyCustomerApp(navigatorKey: navigatorKey),
     ),
   );
 

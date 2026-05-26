@@ -48,6 +48,10 @@ class ApiClient {
         () => http.patch(_buildUri(path), headers: _headers(), body: body != null ? jsonEncode(body) : null),
       );
 
+  Future<http.Response> put(String path, {Object? body}) => _withRetry(
+        () => http.put(_buildUri(path), headers: _headers(), body: body != null ? jsonEncode(body) : null),
+      );
+
   Future<http.Response> delete(String path) =>
       _withRetry(() => http.delete(_buildUri(path), headers: _headers()));
 
@@ -56,16 +60,17 @@ class ApiClient {
     String path, {
     required http.MultipartFile file,
     String fieldName = 'file',
-  }) async {
-    final request = http.MultipartRequest('POST', _buildUri(path))
-      ..headers['Authorization'] = 'Bearer ${_tokenManager.accessToken ?? ''}'
-      ..files.add(file);
-    return request.send();
-  }
+  }) =>
+      _withRetry(() {
+        final request = http.MultipartRequest('POST', _buildUri(path))
+          ..headers['Authorization'] = 'Bearer ${_tokenManager.accessToken ?? ''}'
+          ..files.add(file);
+        return request.send();
+      });
 
   // ── 401 interception + transparent token refresh ──────────────────────────
 
-  Future<http.Response> _withRetry(Future<http.Response> Function() call) async {
+  Future<T> _withRetry<T extends http.BaseResponse>(Future<T> Function() call) async {
     final response = await call();
     if (response.statusCode != 401) return response;
 
