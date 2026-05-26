@@ -62,7 +62,18 @@ import {
   marketplaceCategoryRouter,
 } from '../../modules/marketplace/marketplace.routes.js';
 import addressesRouter from '../../modules/addresses/addresses.routes.js';
+import cartRouter from '../../modules/cart/cart.routes.js';
 import analyticsRouter from '../../modules/analytics/analytics.routes.js';
+import {
+  customerReturnsRouter,
+  customerOrderReturnsSubmitRouter,
+  merchantReturnsRouter,
+} from '../../modules/returns/returns.routes.js';
+import { customerWalletRouter } from '../../modules/wallet/wallet.routes.js';
+import {
+  customerCouponsRouter,
+  merchantCouponsRouter,
+} from '../../modules/coupons/coupons.routes.js';
 import searchRouter from '../../modules/search/search.routes.js';
 import promotionsRouter from '../../modules/promotions/promotions.routes.js';
 import { requirePlatformAdmin } from '../../shared/http/requireRole.js';
@@ -105,6 +116,28 @@ export function buildApp(): express.Express {
     legacyHeaders: false,
   });
 
+  // Per-IP limiter for unauthenticated read surfaces (home feed, search,
+  // marketplace browse, public banners/flash sales/spotlights). 200/min
+  // accommodates the home feed firing ~10 parallel rail reads plus a
+  // burst of product detail pulls; abusive scrape patterns will trip.
+  const publicLimiter = rateLimit({
+    windowMs: 60_000,
+    max: 200,
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+
+  // Image reads are cached for an hour (see GET /images/:filename below),
+  // so most repeat traffic terminates at the browser/CDN. Loosen the cap
+  // here so a single product gallery with ~20 images doesn't consume the
+  // JSON budget for the visitor.
+  const imageLimiter = rateLimit({
+    windowMs: 60_000,
+    max: 1000,
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+
   app.get('/health', async (_req, res) => {
     try {
       await prisma.$queryRaw`SELECT 1`;
@@ -115,38 +148,38 @@ export function buildApp(): express.Express {
   });
 
   app.use('/auth', authLimiter, authRouter);
-  app.use('/shops', shopPublicRouter);
+  app.use('/shops', publicLimiter, shopPublicRouter);
 
   // Public read of marketplace reviews. Must be registered before the
   // OWNER-gated /products mount below so this specific sub-path wins
   // and customers / unauthenticated visitors can read reviews.
-  app.use('/products/:id/reviews', reviewsPublicRouter);
+  app.use('/products/:id/reviews', publicLimiter, reviewsPublicRouter);
 
   // Public read of marketplace banners (home feed surfaces).
-  app.use('/banners', bannersPublicRouter);
+  app.use('/banners', publicLimiter, bannersPublicRouter);
 
   // Public read of currently-running flash sales for the home feed.
-  app.use('/flash-deals', flashSalesPublicRouter);
+  app.use('/flash-deals', publicLimiter, flashSalesPublicRouter);
 
   // Public read of currently-running brand spotlights + editorial
   // collections — both surface on the unauthenticated home feed.
-  app.use('/brand-spotlights', brandSpotlightPublicRouter);
-  app.use('/collections', collectionsPublicRouter);
+  app.use('/brand-spotlights', publicLimiter, brandSpotlightPublicRouter);
+  app.use('/collections', publicLimiter, collectionsPublicRouter);
 
   // Public search — anyone can hit /search; the service attributes
   // to req.user.sub if the JWT happens to be present (we don't gate).
-  app.use('/search', searchRouter);
+  app.use('/search', publicLimiter, searchRouter);
 
   // Public trending — anyone can hit /products/trending. Mounted
   // before the OWNER-gated /products router below so this sub-path
   // takes precedence for unauthenticated callers.
-  app.use('/products', trendingPublicRouter);
+  app.use('/products', publicLimiter, trendingPublicRouter);
 
   // Customer home feed aggregator — one round trip for the whole page.
   // Mounted before requireAuth so the unauthenticated app can prime
   // the home tab and only escalate to personalised endpoints after
   // login.
-  app.use('/home', homePublicRouter);
+  app.use('/home', publicLimiter, homePublicRouter);
 
   // Public marketplace reads: product detail + per-shop product list.
   // Namespaced under /marketplace/ to avoid colliding with the
@@ -157,12 +190,12 @@ export function buildApp(): express.Express {
   // the own-shop guard can hide a logged-in merchant's own products
   // from their customer-side browse. Anonymous visitors still see
   // everything published.
-  app.use('/marketplace/products', optionalAuth, marketplaceProductRouter);
-  app.use('/marketplace/shops', optionalAuth, marketplaceShopRouter);
-  app.use('/marketplace/categories', optionalAuth, marketplaceCategoryRouter);
+  app.use('/marketplace/products', publicLimiter, optionalAuth, marketplaceProductRouter);
+  app.use('/marketplace/shops', publicLimiter, optionalAuth, marketplaceShopRouter);
+  app.use('/marketplace/categories', publicLimiter, optionalAuth, marketplaceCategoryRouter);
 
   const SAFE_FILENAME_RE = /^[a-zA-Z0-9_.-]+$/;
-  app.get('/images/:filename', async (req: Request, res: Response) => {
+  app.get('/images/:filename', imageLimiter, async (req: Request, res: Response) => {
     const { filename } = req.params;
     if (!SAFE_FILENAME_RE.test(filename)) {
       res.status(400).json({ error: 'Invalid filename' });
@@ -187,8 +220,13 @@ export function buildApp(): express.Express {
 
   app.use('/me', meRouter);
   app.use('/me/orders', customerOrdersRouter);
+  app.use('/me/orders/:parentId/returns', customerOrderReturnsSubmitRouter);
+  app.use('/me/returns', customerReturnsRouter);
+  app.use('/me/wallet', customerWalletRouter);
+  app.use('/me/coupons', customerCouponsRouter);
   app.use('/me/recently-viewed', recentlyViewedRouter);
   app.use('/me/addresses', addressesRouter);
+  app.use('/me/cart', cartRouter);
 
   // Customer event ingestion — no role gate; both OWNER (browsing
   // the marketplace) and CUSTOMER can post events. resolveShop is
@@ -229,6 +267,9 @@ export function buildApp(): express.Express {
   app.use('/me/banners', ownerOnly, resolveShop, bannersMerchantRouter);
   app.use('/me/analytics', ownerOnly, resolveShop, analyticsRouter);
   app.use('/me/promotions', ownerOnly, resolveShop, promotionsRouter);
+  // Merchant coupon CRUD. Lives at `/me/coupons-admin` so it doesn't
+  // collide with the customer-facing `/me/coupons` listing surface.
+  app.use('/me/coupons-admin', ownerOnly, resolveShop, merchantCouponsRouter);
   app.use(
     '/me/brand-spotlight',
     ownerOnly,
@@ -251,6 +292,10 @@ export function buildApp(): express.Express {
   app.use('/challans', ownerOnly, challansRouter);
   app.use('/upload', ownerOnly, uploadRouter);
   app.use('/reports', ownerOnly, reportsRouter);
+  // Merchant returns inbox + workflow — mounted BEFORE /orders so the
+  // sub-path takes precedence over the /orders/:id route registered
+  // by the parent router below.
+  app.use('/orders/returns', ownerOnly, resolveShop, merchantReturnsRouter);
   app.use('/orders', ownerOnly, ordersRouter);
   app.use('/payments', ownerOnly, paymentsRouter);
 
