@@ -1,8 +1,8 @@
 import 'dart:convert';
 
 import 'package:shopxy_customer/core/network/api_client.dart';
-import 'package:shopxy_customer/features/home_v2/data/home_feed_models.dart';
-import 'package:shopxy_customer/features/recently_viewed/data/recently_viewed_mapper.dart';
+import 'package:shopxy_customer/features/home/data/models/home_feed_models.dart';
+import 'package:shopxy_customer/features/recently_viewed/data/models/recently_viewed_mapper.dart';
 
 /// Adapter for the per-user "recently viewed" surface.
 ///

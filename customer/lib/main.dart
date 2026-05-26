@@ -22,9 +22,9 @@ import 'package:shopxy_customer/features/shops/presentation/providers/linked_mer
 import 'package:shopxy_customer/features/shops/presentation/providers/shops_provider.dart';
 import 'package:shopxy_customer/features/wishlist/data/datasources/wishlist_remote_data_source.dart';
 import 'package:shopxy_customer/features/wishlist/presentation/providers/wishlist_provider.dart';
-import 'package:shopxy_customer/features/home_v2/data/datasources/home_feed_remote_data_source.dart';
-import 'package:shopxy_customer/features/home_v2/presentation/providers/home_feed_provider.dart';
-import 'package:shopxy_customer/features/home_v2/presentation/providers/tracking_service.dart';
+import 'package:shopxy_customer/features/home/data/datasources/home_feed_remote_data_source.dart';
+import 'package:shopxy_customer/features/home/presentation/providers/home_feed_provider.dart';
+import 'package:shopxy_customer/features/home/presentation/services/tracking_service.dart';
 import 'package:shopxy_customer/features/addresses/data/datasources/addresses_remote_data_source.dart';
 import 'package:shopxy_customer/features/addresses/presentation/providers/addresses_provider.dart';
 import 'package:shopxy_customer/features/banner_slide/data/datasources/banner_slide_remote_data_source.dart';

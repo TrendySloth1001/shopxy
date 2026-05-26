@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy_customer/core/network/image_url.dart';
-import 'package:shopxy_customer/features/home_v2/presentation/widgets/network_image_box.dart';
+import 'package:shopxy_customer/features/home/presentation/widgets/network_image_box.dart';
 import 'package:shopxy_customer/features/returns/data/datasources/returns_remote_data_source.dart';
-import 'package:shopxy_customer/features/returns/domain/return_request.dart';
+import 'package:shopxy_customer/features/returns/domain/entities/return_request.dart';
 import 'package:shopxy_customer/features/returns/presentation/widgets/return_timeline.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
-import 'package:shopxy_customer/shared/widgets/app_app_bar.dart';
+import 'package:shopxy_customer/shared/widgets/app_bar.dart';
 import 'package:shopxy_customer/shared/widgets/app_dialog.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 

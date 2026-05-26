@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:shopxy_customer/core/network/api_client.dart';
-import 'package:shopxy_customer/features/returns/domain/return_request.dart';
+import 'package:shopxy_customer/features/returns/domain/entities/return_request.dart';
 
 /// Adapter for the customer-side returns endpoints.
 ///

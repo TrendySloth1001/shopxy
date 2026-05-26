@@ -7,7 +7,7 @@ import 'package:shopxy_customer/core/router/app_shell.dart';
 import 'package:shopxy_customer/features/auth/presentation/pages/login_page.dart';
 import 'package:shopxy_customer/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy_customer/features/catalog/presentation/providers/cart_provider.dart';
-import 'package:shopxy_customer/features/home_v2/presentation/providers/tracking_service.dart';
+import 'package:shopxy_customer/features/home/presentation/services/tracking_service.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/constants/app_strings.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';

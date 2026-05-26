@@ -3,13 +3,13 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import 'package:shopxy_customer/core/network/image_url.dart';
-import 'package:shopxy_customer/features/home_v2/presentation/widgets/network_image_box.dart';
-import 'package:shopxy_customer/features/marketplace/presentation/pages/product_detail_v2_page.dart';
+import 'package:shopxy_customer/features/home/presentation/widgets/network_image_box.dart';
+import 'package:shopxy_customer/features/marketplace/presentation/pages/product_detail_page.dart';
 import 'package:shopxy_customer/core/auth/token_manager.dart';
 import 'package:shopxy_customer/features/catalog/presentation/providers/cart_provider.dart';
 import 'package:shopxy_customer/features/orders/data/datasources/orders_remote_data_source.dart';
 import 'package:shopxy_customer/features/orders/domain/entities/customer_order.dart';
-import 'package:shopxy_customer/features/orders/presentation/invoice_share.dart';
+import 'package:shopxy_customer/features/orders/presentation/services/invoice_share.dart';
 import 'package:shopxy_customer/features/orders/presentation/providers/orders_provider.dart';
 import 'package:shopxy_customer/features/orders/presentation/widgets/order_timeline.dart';
 import 'package:shopxy_customer/features/returns/presentation/widgets/request_return_sheet.dart';
@@ -19,7 +19,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/constants/app_strings.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
-import 'package:shopxy_customer/shared/widgets/app_app_bar.dart';
+import 'package:shopxy_customer/shared/widgets/app_bar.dart';
 import 'package:shopxy_customer/shared/widgets/app_button.dart';
 import 'package:shopxy_customer/shared/widgets/app_dialog.dart';
 import 'package:shopxy_customer/shared/widgets/app_price_text.dart';
@@ -1091,7 +1091,7 @@ class _ItemRow extends StatelessWidget {
     return InkWell(
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) => ProductDetailV2Page(productId: item.productId),
+          builder: (_) => ProductDetailPage(productId: item.productId),
         ),
       ),
       child: Padding(

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:shopxy_customer/features/returns/domain/return_request.dart';
+import 'package:shopxy_customer/features/returns/domain/entities/return_request.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 

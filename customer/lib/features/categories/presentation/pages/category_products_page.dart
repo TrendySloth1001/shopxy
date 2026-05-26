@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy_customer/core/network/image_url.dart';
 import 'package:shopxy_customer/features/categories/data/datasources/categories_remote_data_source.dart';
-import 'package:shopxy_customer/features/categories/domain/entities/category.dart';
+import 'package:shopxy_customer/shared/domain/entities/category.dart';
 import 'package:shopxy_customer/features/marketplace/domain/entities/marketplace_product.dart';
-import 'package:shopxy_customer/features/marketplace/presentation/pages/product_detail_v2_page.dart';
+import 'package:shopxy_customer/features/marketplace/presentation/pages/product_detail_page.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 
 /// Paginated product feed for a single canonical category. Backend
@@ -158,7 +158,7 @@ class _CategoryProductsPageState extends State<CategoryProductsPage> {
                             onTap: () => Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => ProductDetailV2Page(
+                                builder: (_) => ProductDetailPage(
                                   productId: _products[index].id,
                                 ),
                               ),
