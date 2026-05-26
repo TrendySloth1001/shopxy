@@ -7,6 +7,11 @@ import { trendingService } from '../trending/trending.service.js';
 import { categoriesService } from '../categories/categories.service.js';
 import { promotionsService } from '../promotions/promotions.service.js';
 
+// Locked product decision: 1 sponsored row per 5 organic. Mirrored
+// from promotionsService.injectSponsoredIntoRail — kept here so the
+// home batch can inline the merge without an extra round-trip path.
+const SPONSORED_RATIO = 5;
+
 /// Aggregates everything the customer home feed needs into a single
 /// response so the app can render the first paint after one round-trip
 /// instead of ten. Each section is loaded in parallel; a failure in one
@@ -76,33 +81,74 @@ export class HomeService {
     };
   }
 
-  /// Wraps promotionsService.injectSponsoredIntoRail in a try/catch
-  /// so a broken promotions table never blanks the trending rail.
-  /// Returns the organic list unchanged when there's no sponsored
-  /// content or the inject helper errors.
+  /// Interleaves sponsored picks into the organic trending rail at
+  /// the locked 1-in-5 ratio. The earlier implementation routed
+  /// enrichment through promotionsService.injectSponsoredIntoRail with
+  /// an async enrich callback — that fired one findFirst per pick, so
+  /// a 30-row rail meant 6 sequential round-trips on every home
+  /// request. We now pick once, fetch every candidate product in a
+  /// single findMany, then interleave against a Map. Wrapped in
+  /// try/catch so a broken promotions table never blanks the rail.
   private async _safeInjectSponsored(
     organic: Array<{ score: number; product: { id: number; name: string; mrp: unknown; sellingPrice: unknown; ratingAvg: unknown; ratingCount: number; images: unknown[]; shop?: unknown }; id: number }>,
   ): Promise<Array<{ score: number; product: unknown; isAd?: boolean; promotionId?: number }>> {
     try {
-      return await promotionsService.injectSponsoredIntoRail(organic, async (pick) => {
-        const product = await prisma.product.findFirst({
-          where: { id: pick.productId, isActive: true, isPublished: true },
-          select: {
-            id: true, name: true, mrp: true, sellingPrice: true,
-            ratingAvg: true, ratingCount: true,
-            images: { select: { url: true, sortOrder: true }, orderBy: { sortOrder: 'asc' }, take: 1 },
-            shop: { select: { id: true, name: true, slug: true } },
-          },
-        });
-        if (!product) return null;
-        return {
+      const sponsoredSlots = Math.ceil(organic.length / SPONSORED_RATIO);
+      if (sponsoredSlots === 0) return organic;
+
+      const picks = await promotionsService.pickSponsored({
+        count: sponsoredSlots,
+        excludeProductIds: organic.map((o) => o.id),
+      });
+      if (picks.length === 0) return organic;
+
+      // ── Batch: one findMany resolves all sponsored picks ───────
+      const products = await prisma.product.findMany({
+        where: {
+          id: { in: picks.map((p) => p.productId) },
+          isActive: true,
+          isPublished: true,
+        },
+        select: {
+          id: true, name: true, mrp: true, sellingPrice: true,
+          ratingAvg: true, ratingCount: true,
+          images: { select: { url: true, sortOrder: true }, orderBy: { sortOrder: 'asc' }, take: 1 },
+          shop: { select: { id: true, name: true, slug: true } },
+        },
+      });
+      const productById = new Map(products.map((p) => [p.id, p]));
+
+      const enriched: Array<{ score: number; product: unknown; isAd: true; promotionId: number; id: number }> = [];
+      for (const pick of picks) {
+        const product = productById.get(pick.productId);
+        if (!product) continue;
+        enriched.push({
           score: 0,
           id: product.id,
           product,
-          isAd: true as const,
+          isAd: true,
           promotionId: pick.promotionId,
-        } as never;
-      });
+        });
+      }
+
+      // ── Interleave: sponsored at every SPONSORED_RATIO-th slot ──
+      const out: Array<{ score: number; product: unknown; isAd?: boolean; promotionId?: number }> = [];
+      const remainingOrganic = [...organic];
+      const remainingSponsored = [...enriched];
+      let i = 0;
+      while (remainingOrganic.length > 0 || remainingSponsored.length > 0) {
+        const sponsoredSlot =
+          i % SPONSORED_RATIO === 0 && remainingSponsored.length > 0;
+        if (sponsoredSlot) {
+          out.push(remainingSponsored.shift()!);
+        } else if (remainingOrganic.length > 0) {
+          out.push(remainingOrganic.shift()!);
+        } else {
+          out.push(remainingSponsored.shift()!);
+        }
+        i++;
+      }
+      return out;
     } catch {
       return organic;
     }
