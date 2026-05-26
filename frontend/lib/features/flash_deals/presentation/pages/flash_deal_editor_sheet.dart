@@ -156,6 +156,19 @@ class _FlashDealEditorSheetState extends State<FlashDealEditorSheet> {
     return (((mrp - _flashPriceNum!) / mrp) * 100).round();
   }
 
+  /// Inline error shown directly under the flash-price input. Returns
+  /// non-null only once both the price and the picked product are
+  /// available, so empty / not-yet-picked states don't read as errors.
+  String? get _flashPriceError {
+    if (_flashPriceNum == null) return null;
+    final mrp = _picked?.mrp;
+    if (mrp == null || mrp <= 0) return null;
+    if (_flashPriceNum! >= mrp) {
+      return 'Must be lower than MRP (₹${mrp.toStringAsFixed(2)})';
+    }
+    return null;
+  }
+
   Future<void> _save() async {
     setState(() => _error = null);
     if (!_isEdit && _picked == null) {
@@ -277,9 +290,11 @@ class _FlashDealEditorSheetState extends State<FlashDealEditorSheet> {
                       controller: _flashPrice,
                       decoration: InputDecoration(
                         labelText: 'Flash price (₹)',
-                        helperText: _discountPct != null
-                            ? '$_discountPct% off MRP'
-                            : null,
+                        helperText:
+                            _flashPriceError == null && _discountPct != null
+                                ? '$_discountPct% off MRP'
+                                : null,
+                        errorText: _flashPriceError,
                       ),
                       keyboardType:
                           const TextInputType.numberWithOptions(decimal: true),

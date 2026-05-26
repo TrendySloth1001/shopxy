@@ -66,6 +66,18 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
       imageQuality: 90,
     );
     if (picked == null || !mounted) return;
+    final file = File(picked.path);
+    const maxBytes = 5 * 1024 * 1024;
+    if (file.lengthSync() > maxBytes) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Image is larger than 5 MB. Pick a smaller image or crop tighter.',
+          ),
+        ),
+      );
+      return;
+    }
     setState(() {
       if (isLogo) {
         _uploadingLogo = true;
@@ -73,9 +85,8 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
         _uploadingBanner = true;
       }
     });
-    final url = await context
-        .read<ShopProvider>()
-        .uploadImage(File(picked.path));
+    final shop = context.read<ShopProvider>();
+    final url = await shop.uploadImage(file);
     if (!mounted) return;
     setState(() {
       if (isLogo) {
@@ -88,7 +99,7 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
     });
     if (url == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Image upload failed')),
+        SnackBar(content: Text(shop.error ?? 'Image upload failed')),
       );
     }
   }

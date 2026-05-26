@@ -16,7 +16,8 @@ class FlashDealsRemoteDataSource {
     }
     final body = jsonDecode(res.body) as Map<String, dynamic>;
     return (body['data'] as List<dynamic>)
-        .map((e) => FlashDeal.fromJson(e as Map<String, dynamic>))
+        .map((e) => FlashDeal.tryFromJson(e as Map<String, dynamic>))
+        .whereType<FlashDeal>()
         .toList();
   }
 

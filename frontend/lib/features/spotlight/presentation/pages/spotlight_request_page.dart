@@ -396,13 +396,30 @@ class _SpotlightSubmitSheetState extends State<_SpotlightSubmitSheet> {
       maxWidth: 1600,
     );
     if (picked == null || !mounted) return;
+    final file = File(picked.path);
+    const maxBytes = 5 * 1024 * 1024;
+    if (file.lengthSync() > maxBytes) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Image is larger than 5 MB. Pick a smaller image or crop tighter.',
+          ),
+        ),
+      );
+      return;
+    }
     setState(() => _busy = true);
-    final url = await context.read<ShopProvider>().uploadImage(File(picked.path));
+    final shop = context.read<ShopProvider>();
+    final url = await shop.uploadImage(file);
     if (!mounted) return;
-    setState(() {
-      _busy = false;
-      if (url != null) _imageUrl = url;
-    });
+    setState(() => _busy = false);
+    if (url == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(shop.error ?? 'Image upload failed')),
+      );
+      return;
+    }
+    setState(() => _imageUrl = url);
   }
 
   Future<void> _pickDate({required bool isStart}) async {
