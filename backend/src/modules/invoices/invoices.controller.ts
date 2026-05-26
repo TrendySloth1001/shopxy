@@ -208,19 +208,31 @@ export class InvoicesController {
     const id = parseId(req.params.id);
     if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
 
-    const result = await invoicesService.generatePdf(shopId, id);
-    if (!Buffer.isBuffer(result)) {
-      res.status(404).json({ error: result.error });
+    // Look up the invoice once so we can both (a) bail with 404 before
+    // streaming headers if it doesn't exist and (b) name the download.
+    const invoice = await invoicesService.getInvoiceById(shopId, id);
+    if (!invoice) {
+      res.status(404).json({ error: 'Invoice not found' });
       return;
     }
+    const filename = `invoice-${invoice.invoiceNo ?? id}.pdf`;
 
-    const invoice = await invoicesService.getInvoiceById(shopId, id);
-    const filename = `invoice-${invoice?.invoiceNo ?? id}.pdf`;
-
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    res.setHeader('Content-Length', result.length);
-    res.send(result);
+    // Stream PDF directly to the response — no full-buffer in memory.
+    // streamPdf invokes onReady only AFTER the invoice has been
+    // re-verified inside the renderer and right before bytes flow, so
+    // a late not-found / state error still gets a clean JSON 5xx
+    // because headers haven't been touched yet.
+    const err = await invoicesService.streamPdf(shopId, id, res, () => {
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    });
+    if (err) {
+      if (!res.headersSent) {
+        res.status(500).json({ error: err.error });
+      } else {
+        res.end();
+      }
+    }
   }
 }
 

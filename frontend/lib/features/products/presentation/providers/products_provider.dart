@@ -32,6 +32,25 @@ class ProductsProvider extends ChangeNotifier {
   bool get outOfStockOnly => _outOfStockOnly;
   bool get hasMore => _products.length < _total;
 
+  /// Drop every cached row + filter. Registered with AuthProvider so a
+  /// logout (or 401-refresh failure) returns this provider to its
+  /// post-construction state — without this, user-B sees user-A's
+  /// products list flash on screen until the next network call replaces
+  /// it.
+  void reset() {
+    _products = [];
+    _isLoading = false;
+    _isLoadingMore = false;
+    _error = null;
+    _total = 0;
+    _page = 1;
+    _search = '';
+    _categoryFilter = null;
+    _lowStockOnly = false;
+    _outOfStockOnly = false;
+    notifyListeners();
+  }
+
   void setSearch(String value) {
     _search = value;
     _page = 1;

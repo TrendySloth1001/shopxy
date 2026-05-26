@@ -43,19 +43,19 @@ Bonus: extracted shared `backend/src/shared/env.ts` (`requireEnv`/`envOr`) so fu
 - [x] **F3-4** `cancelChildForCustomer` rolls back: proportional wallet refund, flash-sale release, coupon redemption decrement when last sibling goes terminal.
 - [x] **F3-5** Same rollback for merchant `rejectRequest`.
 - [x] **F3-6** Payment over-allocation race: aggregate-check + insert inside one Serializable transaction; counters enrolled in the same tx via the new `tx` parameter on `nextCounter`/`nextPaymentRef`.
-- [-] **F3-7** Payment idempotency header (`X-Idempotency-Key`) — deferred. Requires schema migration (new column + unique index).
+- [x] **F3-7** Payment idempotency header (`X-Idempotency-Key`) — migration + service + controller wired. Replay validates payload match.
 - [x] **F3-8** Wallet idempotency keys namespaced: `wallet:checkout:<key>`, `wallet:return-refund-<id>`, `wallet:cancel-<id>`, `wallet:reject-<id>`. New `WalletSource.CANCEL`.
-- [-] **F3-9** Customer place-order price-drift guard — deferred. Requires backend contract change (`expectedSubtotal` per line) + customer-app wiring.
+- [~] **F3-9** Place-order price-drift guard — backend fully wired (`PRICE_DRIFT` with per-line corrections). Customer-app currently omits `expectedUnitPrice` because the cart doesn't persist the flash price; re-enable once F8-3 lands.
 
 ## Phase F4 — Auth & session hardening
 
 - [x] **F4-1** `jwt.verify(token, SECRET, { algorithms: ['HS256'] })` in `requireAuth` — algo confusion protection.
-- [-] **F4-2** `tokensValidFrom` — deferred (schema migration).
+- [x] **F4-2** `tokensValidFrom` — column added; `requireAuth` enforces; password change + logout-all bump. NOTE: 60s per-process cache means multi-worker deploys propagate the change with a TTL lag — track as F-multi-pod TODO.
 - [-] **F4-3** `/auth/logout` requires auth — kept public because the access token is normally expired by the time a user clicks logout (post-refresh); future hardening is to require `Authorization: Bearer <refresh>` instead.
 - [x] **F4-4** `POST /auth/logout-all` — drops every refresh token for the caller. Authed.
 - [-] **F4-5** Email verification gate — deferred (full feature: email service + schema + UI).
 - [x] **F4-6** Invitation `respond()`: detects `updateMany.count === 0` (Party already linked elsewhere), throws `InvitationAlreadyLinkedError`, surfaced as `PARTY_ALREADY_LINKED`.
-- [-] **F4-7** `@@unique([shopId, linkedUserId])` on Party/Vendor — deferred (partial-unique migration).
+- [x] **F4-7** Partial unique `(shop_id, linked_user_id) WHERE NOT NULL` on Party + Vendor — migration `20260612000000_party_vendor_linked_user_unique`.
 - [x] **F4-8** `confirmRequest` finds-or-creates Party (lookup by `(shopId, linkedUserId)` first) — repeat buyers no longer accumulate duplicate Party rows.
 
 ## Phase F5 — Backend route & infra hardening
@@ -64,11 +64,11 @@ Bonus: extracted shared `backend/src/shared/env.ts` (`requireEnv`/`envOr`) so fu
 - [x] **F5-2** Upload extension derived from mime type with allowlist (jpg/png/webp/gif/pdf); `X-Content-Type-Options: nosniff` on `/images/:filename`.
 - [x] **F5-3** Per-user rate limit on `/upload` (30/min, keyed on `req.user.sub`).
 - [x] **F5-4** Per-user rate limit on `/v1/events` (600/min).
-- [-] **F5-5** Search `_recordSearch` rate limit — deferred (the publicLimiter at 200/min/IP gives a baseline; the row-write storm is a follow-up since it requires either a separate db-write limiter or sampling).
+- [x] **F5-5** Search `_recordSearch` dedupe — in-memory 2s window per (user|session) blocks bot loops + double-fire UI bugs. Anonymous calls still record (no stable actor to key on).
 - [x] **F5-6** Invoice line cap (200) on createInvoice + updateInvoice.
-- [-] **F5-7** Stream PDFs to `res` — deferred (rewrite of `generatePdf` buffer path).
+- [x] **F5-7** Streaming PDFs via `streamPdf(shopId, id, out, onReady)`; controllers flip headers via `onReady` only after the invoice load succeeds.
 - [-] **F5-8** `Timestamptz` migration — deferred.
-- [-] **F5-9** Standard error envelope — deferred (cross-app coordination).
+- [x] **F5-9** Standard error envelope `{ code, message, details?, error (alias) }` in `errorHandler.ts`. Apps continue to read `error`; the alias is removed in a future release once both apps prefer `code`.
 - [x] **F5-10** `requireEnv` extracted to `shared/env.ts`; auth.service + requireAuth now use it.
 
 ## Phase F6 — Flutter networking parity
@@ -85,9 +85,9 @@ Bonus: extracted shared `backend/src/shared/env.ts` (`requireEnv`/`envOr`) so fu
 - [x] **F7-1** `AuthProvider.clearAuth()` is now async + awaits the storage clear.
 - [x] **F7-2** `ProductsProvider` in-flight guard on `loadProducts(loadMore: true)` — `_isLoadingMore` flag.
 - [x] **F7-3** `AppSearchBar` debounces internally (280ms default); callsites that already debounce can pass `debounce: Duration.zero`.
-- [-] **F7-4** `PopScope` dirty bit setState — deferred (per-page work).
+- [x] **F7-4** `PopScope` dirty bit calls `setState` on the merchant invoice + product forms.
 - [-] **F7-5** `cacheWidth` on every `Image.network` — deferred (sweeping change; targeted high-impact tiles get it in follow-up).
-- [-] **F7-6** Provider `.reset()` on logout — deferred (every provider is `create:` lifecycle owned, needs a registry refactor).
+- [x] **F7-6** Merchant providers (Products, Invoices, Shop, Vendors, Parties, Challans, Orders, Notifications) eager-created in `main.dart` + `reset()` wired through `AuthProvider.registerOnClear`. `deleteAccount` also fires the fan-out.
 - [x] **F7-7** `ShopProvider.uploadImage` clears `_error` at top of every call.
 - [-] **F7-8** Single source for badge fetches — deferred (refactor of three init paths).
 - [-] **F7-9** Hero tag duplicate guard — deferred (low-impact UX paper cut).
@@ -99,13 +99,13 @@ Bonus: extracted shared `backend/src/shared/env.ts` (`requireEnv`/`envOr`) so fu
 - [x] **F8-2** Cart `_capQuantity`: out-of-stock now returns 0 (was returning `double.infinity`).
 - [-] **F8-3** Cart price hydration on restore — deferred (needs a `pricedAt` field on the persisted line + revalidation pass).
 - [x] **F8-4** Explicit-logout-only callback path on AuthProvider; `cartProvider.clear` registered there. Transient 401-refresh failures keep the basket; explicit logout drops it.
-- [-] **F8-5** Deep-link auth gate + dedupe — deferred.
-- [-] **F8-6** Place-order synchronous `_submitting` + confirm dialog — deferred.
+- [x] **F8-5** Deep-link handler defers tap to post-login; replays on `authProvider` false→true. 1.5s same-product dedupe window swallows OS-side duplicate uri events.
+- [x] **F8-6** Place-order confirm dialog above ₹500 + synchronous `_submitting` guard set inside the tap handler before any await.
 - [x] **F8-7** Address delete: confirmation dialog before delete.
 - [x] **F8-8** Pincode + phone validators (Indian formats: pincode `^[1-9][0-9]{5}$`, phone `^[6-9][0-9]{9}$` with +91 strip).
 - [x] **F8-9** Search: `_loading=true` set synchronously when starting debounce — "No matches for 'ph'" flash gone.
-- [-] **F8-10** Wishlist guest-tap "Sign in to save" sheet — deferred.
-- [-] **F8-11** App-lifecycle observer — deferred.
+- [x] **F8-10** Wishlist heart shows a "Sign in to save items" bottom sheet for guests; pushes LoginPage on the root navigator so the sheet stays mounted until login returns; toggle re-runs after the auth state flips.
+- [x] **F8-11** App-lifecycle observer wraps the customer app: on resume flush analytics + re-sync cart; on pause flush analytics.
 - [x] **F8-12** Same as F8-2 (covered by `_capQuantity` fix).
 - [-] **F8-13** Orphan-bucket cart UI — deferred (UI work in checkout page).
 
@@ -119,7 +119,7 @@ Bonus: extracted shared `backend/src/shared/env.ts` (`requireEnv`/`envOr`) so fu
 
 ---
 
-## Execution log (this session, 2026-05-26)
+## Execution log (sessions on 2026-05-26)
 
 | Phase | What landed |
 |-------|-------------|
@@ -132,6 +132,12 @@ Bonus: extracted shared `backend/src/shared/env.ts` (`requireEnv`/`envOr`) so fu
 | F6 | Merchant ApiClient parity (extraHeaders, generic `_withRetry`, multipart retry); 20s timeouts both apps; refresh-completer race fix. |
 | F7 | `AuthProvider.clearAuth()` async, `ProductsProvider` in-flight guard, `AppSearchBar` debounce, `ShopProvider` error reset. |
 | F8 | Cart out-of-stock cap, explicit-logout cart clear, address delete confirm, pincode/phone validators, search loading-flash fix, customer AuthProvider `clearAuth` async. |
+| F11 | Migrations: partial unique on `(shop_id, linked_user_id)` for Party + Vendor; `users.tokens_valid_from`; `payments.idempotency_key` partial unique. `requireAuth` enforces `iat ≥ tokensValidFrom`; password change and logout-all bump it. Payment idempotency wired end-to-end (controller reads `X-Idempotency-Key`, service replays + verifies payload match). |
+| F12 | Place-order price-drift guard (server-side `expectedUnitPrice` compare; `PRICE_DRIFT` error code with per-line corrections; customer-side `PriceDriftException` parsing). Standard error envelope `{ code, message, details?, error (alias) }` in `errorHandler.ts`. |
+| F13 | PDF streaming via `Writable` instead of full-buffer; controllers flip headers via an `onReady` callback only after the invoice load succeeds. Search write dedupe (in-memory 2s window, per-user/session only — anonymous calls still record). `keyGenerator` uses `ipKeyGenerator` for IPv6. |
+| F14 | `PopScope` dirty bit calls `setState` (merchant invoice + product forms). Merchant providers gain `reset()` (Products, Invoices, Shop, Vendors, Parties, Challans, Orders); main.dart eager-creates + registers them on AuthProvider. `deleteAccount` also fires the clear callbacks. |
+| F15 | Deep-link handler defers tap to post-login; replays on auth false→true. LifecycleObserver wraps the app (resume → flush analytics, re-sync cart; pause → flush analytics). Place-order confirm dialog above ₹500 + synchronous `_submitting` guard. Wishlist heart prompts guest sign-in via bottom sheet; LoginPage pushed on the ROOT navigator so the sheet stays mounted until login returns. |
+| F16 (re-audit) | Fixed confirmRequest tx-nesting regression (createInvoice runs outside outer tx now; explicit revertToPending on every failure path). Fixed cart `expectedUnitPrice` regression (omitted until F8-3 persists the priced-at value). Fixed PDF headers-before-error regression via onReady callback. Fixed `deleteAccount` not firing clear callbacks. Payment idempotency replay validates amount/party/vendor/invoice match. Returns refund `walletShare` denominator now uses `gross − coupon`. |
 
 ### Verification
 

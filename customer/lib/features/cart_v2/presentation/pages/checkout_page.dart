@@ -203,7 +203,13 @@ class _CheckoutPageState extends State<CheckoutPage> {
     setState(() => _appliedCoupon = null);
   }
 
+  /// Synchronous guard against double-taps — `_placing` on the cart
+  /// flips inside an `await` so a fast double-tap fires twice. Setting
+  /// this synchronously inside the tap handler closes the window.
+  bool _submitting = false;
+
   Future<void> _placeOrder() async {
+    if (_submitting) return;
     if (_selectedAddressId == null) {
       showAppSnackbar(
         context,
@@ -212,13 +218,45 @@ class _CheckoutPageState extends State<CheckoutPage> {
       );
       return;
     }
+    // Confirm above a reasonable threshold so an accidental tap doesn't
+    // commit a meaningful order silently.
     final cart = context.read<CartProvider>();
+    final estimatedTotal = cart.itemsTotal;
+    if (estimatedTotal >= 500) {
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Place this order?'),
+          content: Text(
+            'Estimated total ₹${estimatedTotal.toStringAsFixed(2)}. '
+            'You can cancel a per-shop slice from the order detail page '
+            'before it\'s confirmed by the merchant.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Review'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Place order'),
+            ),
+          ],
+        ),
+      );
+      if (ok != true || !mounted) return;
+    }
+    setState(() => _submitting = true);
     final result = await cart.placeOrder(
       addressId: _selectedAddressId,
       couponCode: _appliedCoupon?.code,
       useWallet: _useWallet,
     );
-    if (!mounted) return;
+    if (!mounted) {
+      _submitting = false;
+      return;
+    }
+    setState(() => _submitting = false);
     if (!result.isSuccess) {
       showAppSnackbar(
         context,

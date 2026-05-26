@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy_customer/features/auth/presentation/pages/login_page.dart';
+import 'package:shopxy_customer/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy_customer/features/wishlist/presentation/providers/wishlist_provider.dart';
 import 'package:shopxy_customer/shared/constants/app_durations.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
@@ -76,6 +78,16 @@ class WishlistHeartButton extends StatelessWidget {
   }
 
   Future<void> _onTap(BuildContext context) async {
+    // Guests can't save — backend requires auth. Prompt them to sign in
+    // and replay the toggle after a successful login so the tap intent
+    // is preserved instead of silently dropped.
+    final auth = context.read<AuthProvider>();
+    if (!auth.isAuthenticated) {
+      final signedIn = await _promptSignIn(context);
+      if (!context.mounted) return;
+      if (signedIn != true || !auth.isAuthenticated) return;
+      // Fall through and perform the toggle now that we're signed in.
+    }
     final provider = context.read<WishlistProvider>();
     final wasSaved = provider.contains(productId);
     final ok = await provider.toggle(productId);
@@ -94,5 +106,54 @@ class WishlistHeartButton extends StatelessWidget {
         tone: wasSaved ? AppSnackbarTone.neutral : AppSnackbarTone.success,
       );
     }
+  }
+
+  Future<bool?> _promptSignIn(BuildContext context) {
+    // Use the root navigator for the LoginPage push so we don't lose
+    // the route when the bottom-sheet's local navigator dismisses.
+    final rootNavigator = Navigator.of(context, rootNavigator: true);
+    return showModalBottomSheet<bool>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Sign in to save items',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Your saved items follow you across devices when you sign in.',
+              style: TextStyle(color: AppColors.muted),
+            ),
+            const SizedBox(height: 20),
+            FilledButton(
+              onPressed: () async {
+                // Push login from the ROOT navigator first so the sheet
+                // stays on screen during the login flow. Only pop the
+                // sheet AFTER login returns. Pop with `true` only when
+                // the user actually signed in, so the caller's
+                // `auth.isAuthenticated` check sees the new state.
+                await rootNavigator.push(
+                  MaterialPageRoute(builder: (_) => const LoginPage()),
+                );
+                if (!ctx.mounted) return;
+                Navigator.of(ctx).pop(true);
+              },
+              child: const Text('Sign in'),
+            ),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Not now'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

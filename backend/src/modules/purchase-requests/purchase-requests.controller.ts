@@ -9,11 +9,22 @@ const createSchema = z.object({
   /// Full cart payload. The server groups by shop and creates one
   /// CustomerOrder parent plus one PurchaseRequest per shop the cart
   /// spans — the FE no longer splits, so a single POST per checkout.
+  ///
+  /// Each line carries `expectedUnitPrice`: the price the customer was
+  /// looking at when they tapped "Place order". The server compares
+  /// that against the live `sellingPrice` (or flash price) and aborts
+  /// with PRICE_DRIFT if any line moved — protects the buyer from
+  /// silent over-charging when a flash sale ends mid-checkout.
   items: z
     .array(
       z.object({
         productId: z.number().int().positive(),
         quantity: z.number().positive(),
+        /// Per-line price the client believes is correct. Optional for
+        /// backwards compatibility with older builds; once both apps
+        /// have shipped a build that always sends it we can make it
+        /// required.
+        expectedUnitPrice: z.number().nonnegative().optional(),
       }),
     )
     .min(1),
@@ -137,8 +148,16 @@ export class PurchaseRequestsController {
         result.error === 'SHOP_NOT_FOUND' ? 404 :
         result.error === 'CROSS_SHOP_ITEM' ? 422 :
         result.error === 'COUPON_INVALID' ? 400 :
+        result.error === 'PRICE_DRIFT' ? 409 :
         400;
-      res.status(status).json({ error: result.error });
+      res.status(status).json({
+        error: result.error,
+        // PRICE_DRIFT ships the per-line corrected price so the client
+        // can show "Item X is now ₹Y" in the toast without a refetch.
+        ...('priceDrift' in result && result.priceDrift
+          ? { details: result.priceDrift }
+          : {}),
+      });
       return;
     }
 
@@ -216,20 +235,29 @@ export class PurchaseRequestsController {
     }
     // Delegate to the invoice service. Dynamic import keeps the
     // top-level dependency graph shallow — this controller doesn't
-    // otherwise care about PDF generation.
+    // otherwise care about PDF generation. Headers flip to PDF only
+    // once the renderer has confirmed the invoice loaded, so a late
+    // error still returns a clean JSON response.
     const { invoicesService } = await import('../invoices/invoices.service.js');
-    const result = await invoicesService.generatePdf(ctx.shopId, ctx.invoiceId);
-    if (!Buffer.isBuffer(result)) {
-      res.status(404).json({ error: result.error });
-      return;
-    }
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader(
-      'Content-Disposition',
-      `attachment; filename="invoice-${ctx.invoiceNo}.pdf"`,
+    const streamErr = await invoicesService.streamPdf(
+      ctx.shopId,
+      ctx.invoiceId,
+      res,
+      () => {
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader(
+          'Content-Disposition',
+          `attachment; filename="invoice-${ctx.invoiceNo}.pdf"`,
+        );
+      },
     );
-    res.setHeader('Content-Length', result.length);
-    res.send(result);
+    if (streamErr) {
+      if (!res.headersSent) {
+        res.status(404).json({ error: streamErr.error });
+      } else {
+        res.end();
+      }
+    }
   }
 
   async cancelChildForCustomer(req: Request, res: Response): Promise<void> {

@@ -9,6 +9,13 @@ class AuthProvider extends ChangeNotifier {
   final AuthRemoteDataSource _dataSource;
   final TokenManager _tokenManager;
 
+  /// Callbacks invoked by [clearAuth] / [logout] to drop user-scoped
+  /// state held by other providers (products, orders, invoices, …).
+  /// Wired in main.dart at app start so cached lists from user A
+  /// don't leak into user B's view when they sign in on the same
+  /// device.
+  final List<VoidCallback> _onClearCallbacks = <VoidCallback>[];
+
   AuthUser? _user;
   bool _isLoading = true;
 
@@ -62,7 +69,18 @@ class AuthProvider extends ChangeNotifier {
     }
     await _tokenManager.clear();
     _user = null;
+    for (final cb in _onClearCallbacks) {
+      cb();
+    }
     notifyListeners();
+  }
+
+  /// Register a callback to run whenever auth is cleared (transient
+  /// 401-refresh failure OR explicit logout). Used by main.dart to
+  /// reset every per-user provider so user A's data never appears in
+  /// user B's session on the same device.
+  void registerOnClear(VoidCallback callback) {
+    _onClearCallbacks.add(callback);
   }
 
   Future<void> updateProfile({
@@ -111,6 +129,12 @@ class AuthProvider extends ChangeNotifier {
     await _dataSource.deleteAccount(currentPassword);
     await _tokenManager.clear();
     _user = null;
+    // Same fan-out as logout — the registered providers (Products,
+    // Invoices, Shop, …) must drop the deleted account's cached lists
+    // so the LoginPage that follows doesn't briefly show their data.
+    for (final cb in _onClearCallbacks) {
+      cb();
+    }
     notifyListeners();
   }
 
@@ -123,6 +147,9 @@ class AuthProvider extends ChangeNotifier {
   Future<void> clearAuth() async {
     await _tokenManager.clear();
     _user = null;
+    for (final cb in _onClearCallbacks) {
+      cb();
+    }
     notifyListeners();
   }
 }

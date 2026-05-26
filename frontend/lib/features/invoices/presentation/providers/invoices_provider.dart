@@ -21,6 +21,20 @@ class InvoicesProvider extends ChangeNotifier {
   String? get statusFilter => _statusFilter;
   String? get documentTypeFilter => _documentTypeFilter;
 
+  /// Returns the provider to its post-construction state. Wired to
+  /// AuthProvider.clearAuth so logout / 401-refresh failure drops the
+  /// previous user's invoices instead of flashing them at the next user.
+  void reset() {
+    _invoices = [];
+    _isLoading = false;
+    _error = null;
+    _typeFilter = null;
+    _statusFilter = null;
+    _documentTypeFilter = null;
+    _search = '';
+    notifyListeners();
+  }
+
   Future<void> loadInvoices({bool refresh = false}) async {
     if (_isLoading) return;
     _isLoading = true;

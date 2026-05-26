@@ -450,6 +450,7 @@ export class ReturnsService {
               customerOrder: {
                 select: {
                   estimatedTotal: true,
+                  couponDiscount: true,
                   walletPaid: true,
                 },
               },
@@ -471,9 +472,16 @@ export class ReturnsService {
       //   Wallet portion: refundAmount × walletShare.
       const parent = row.request?.customerOrder;
       const gross = parent ? Number(parent.estimatedTotal) : 0;
+      const coupon = parent ? Number(parent.couponDiscount) : 0;
       const walletPaid = parent ? Number(parent.walletPaid) : 0;
+      // Denominator is the buyer's ACTUAL outlay (post-coupon). With a
+      // coupon-discounted order the wallet-funded slice of what they
+      // really paid is walletPaid / (gross - coupon), not / gross.
+      // Falling back to `gross` keeps the share defined when coupon
+      // is zero.
+      const denom = Math.max(gross - coupon, 1);
       const walletShare =
-        gross > 0 && walletPaid > 0 ? Math.min(walletPaid / gross, 1) : 0;
+        walletPaid > 0 ? Math.min(walletPaid / denom, 1) : 0;
       const walletCreditAmount =
         method === 'WALLET'
           ? refundAmount

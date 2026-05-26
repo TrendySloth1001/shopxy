@@ -234,8 +234,19 @@ class CartProvider extends ChangeNotifier {
     notifyListeners();
     try {
       final response = await _ordersDs.placeOrder(
+        // We deliberately omit `expectedUnitPrice` for now: the cart
+        // stores the catalog `sellingPrice` but the user may have
+        // seen the FLASH price on a deal tile. Sending sellingPrice
+        // would trigger PRICE_DRIFT on every flash-deal checkout.
+        // Once F8-3 lands (persist `pricedAt` + the effective price
+        // on each line) we can flip this back on and exercise the
+        // PRICE_DRIFT guard the server already supports.
         items: _lines.values
-            .map((l) => (productId: l.product.id, quantity: l.quantity))
+            .map((l) => (
+                  productId: l.product.id,
+                  quantity: l.quantity,
+                  expectedUnitPrice: null,
+                ))
             .toList(),
         note: _note.isEmpty ? null : _note,
         idempotencyKey: _idempotencyKey,
@@ -258,6 +269,22 @@ class CartProvider extends ChangeNotifier {
         orderId: response.orderId,
         shopOrderCount: response.shopOrders.length,
       );
+    } on PriceDriftException catch (e) {
+      // Patch the local cart with the corrected prices so the rebuilt
+      // checkout shows the new totals immediately. The user can then
+      // re-tap Place Order with eyes open.
+      for (final drift in e.drifts) {
+        final line = _lines[drift.productId];
+        if (line == null) continue;
+        _lines[drift.productId] = CartItem(
+          product: line.product.copyWithPrice(drift.actualUnitPrice),
+          quantity: line.quantity,
+        );
+      }
+      _persist();
+      _error =
+          'Prices have changed since you viewed the cart. Please review and try again.';
+      return const PlaceOrderResult.failure('PRICE_DRIFT');
     } catch (e) {
       final msg = e.toString().replaceFirst('Exception: ', '');
       _error = msg;

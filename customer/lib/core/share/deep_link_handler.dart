@@ -15,12 +15,32 @@ import 'package:shopxy_customer/features/marketplace/presentation/pages/product_
 ///   `https://<webBaseUrl>/p/<id>`       universal / app link
 ///   `shopxy://product/<id>`             custom scheme fallback
 class DeepLinkHandler {
-  DeepLinkHandler(this._navigatorKey);
+  DeepLinkHandler(
+    this._navigatorKey, {
+    this.isAuthenticated,
+  });
 
   final GlobalKey<NavigatorState> _navigatorKey;
+  /// When supplied, a link arriving while the user is signed-out is
+  /// stashed in [_pendingLink] until [replayPendingOnLogin] is invoked
+  /// (wired to AuthProvider's auth-state listener). Without this guard
+  /// a logged-out user gets pushed into a PDP underneath the LoginPage.
+  final bool Function()? isAuthenticated;
+
   final AppLinks _appLinks = AppLinks();
   StreamSubscription<Uri>? _sub;
   bool _started = false;
+
+  /// Tracks the most recent productId we navigated to, plus the
+  /// millisecond timestamp, so consecutive identical Uri events from
+  /// the OS (which happens often on Android cold-starts) don't stack
+  /// duplicate PDPs.
+  int? _lastProductId;
+  int _lastNavigatedAtMs = 0;
+  static const _dedupeWindowMs = 1500;
+
+  /// Pending product the user wants to see, deferred until they sign in.
+  int? _pendingLink;
 
   Future<void> start() async {
     if (_started) return;
@@ -53,6 +73,29 @@ class DeepLinkHandler {
   void _handle(Uri uri) {
     final productId = _extractProductId(uri);
     if (productId == null) return;
+    _route(productId);
+  }
+
+  void _route(int productId) {
+    // Auth gate: defer the navigation until the user signs in. The
+    // AuthProvider listener in main.dart calls [replayPendingOnLogin]
+    // once auth flips true.
+    if (isAuthenticated != null && !isAuthenticated!()) {
+      _pendingLink = productId;
+      return;
+    }
+
+    // Dedupe consecutive identical taps. The OS fires the uri stream
+    // more than once on some platforms, and the AppLinks plugin
+    // re-delivers the cold-start URI alongside the live stream.
+    final now = DateTime.now().millisecondsSinceEpoch;
+    if (_lastProductId == productId &&
+        now - _lastNavigatedAtMs < _dedupeWindowMs) {
+      return;
+    }
+    _lastProductId = productId;
+    _lastNavigatedAtMs = now;
+
     final navigator = _navigatorKey.currentState;
     if (navigator == null) return;
     navigator.push(
@@ -60,6 +103,15 @@ class DeepLinkHandler {
         builder: (_) => ProductDetailV2Page(productId: productId),
       ),
     );
+  }
+
+  /// Invoked by main.dart on the false→true auth-state transition.
+  /// Drains any link the user tapped while signed out.
+  void replayPendingOnLogin() {
+    final pending = _pendingLink;
+    if (pending == null) return;
+    _pendingLink = null;
+    _route(pending);
   }
 
   /// Extracts a product id from a supported URL. Tolerant of trailing

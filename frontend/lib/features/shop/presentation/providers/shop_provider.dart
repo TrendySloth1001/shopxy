@@ -18,6 +18,16 @@ class ShopProvider extends ChangeNotifier {
   bool get isSaving => _isSaving;
   String? get error => _error;
 
+  /// Drop the cached shop on logout so user-B doesn't see user-A's
+  /// banner / tagline flash during the new session's first paint.
+  void reset() {
+    _shop = null;
+    _isLoading = false;
+    _isSaving = false;
+    _error = null;
+    notifyListeners();
+  }
+
   Future<void> load() async {
     _isLoading = true;
     _error = null;

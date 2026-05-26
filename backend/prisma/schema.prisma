@@ -31,6 +31,11 @@ model User {
   /// Policy at registration. Required by DPDP §6 — store evidence of
   /// consent. Nullable so legacy users predating the consent gate work.
   acceptedAt         DateTime?          @map("accepted_at")
+  /// Floor for access-token validity. requireAuth rejects any access
+  /// token whose `iat` is before this stamp. Bumped on password
+  /// change + logout-all so a stolen pre-change token can't survive
+  /// the 15-minute TTL window. Nullable = no floor (legacy users).
+  tokensValidFrom    DateTime?          @map("tokens_valid_from")
   createdAt          DateTime           @default(now()) @map("created_at")
   updatedAt          DateTime           @updatedAt @map("updated_at")
   refreshTokens      RefreshToken[]
@@ -1244,6 +1249,12 @@ model Payment {
   /// Owner who recorded the payment.
   createdById   Int?     @map("created_by_id")
   createdBy     User?    @relation("PaymentCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  /// Client-supplied idempotency key (via `X-Idempotency-Key`). When set
+  /// a retry from a flaky mobile network reuses the original row instead
+  /// of double-paying the invoice. Partial unique on (shop_id, type,
+  /// idempotency_key) enforced by raw migration so NULL rows (legacy +
+  /// non-keyed inserts) don't collide.
+  idempotencyKey String? @map("idempotency_key")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 

@@ -1,6 +1,32 @@
 import { Prisma } from '@prisma/client';
 import { NextFunction, Request, Response } from 'express';
 import { ZodError } from 'zod';
+import { logger } from '../logging/logger.js';
+
+/// Canonical error envelope. Every backend response with a non-2xx
+/// status code carries this shape so the Flutter apps can branch on a
+/// stable machine code instead of pattern-matching English strings.
+///
+/// `error` is kept as a redundant alias of `code` for one release to
+/// avoid breaking existing clients that look at `body.error`. After
+/// both apps have shipped a build that prefers `code`, drop the alias.
+export interface ApiErrorBody {
+  /// Machine-readable code, SCREAMING_SNAKE. Stable across releases.
+  code: string;
+  /// Human-readable message. Subject to copy changes.
+  message: string;
+  /// Optional structured payload — per-field issues for validation,
+  /// per-line corrections for PRICE_DRIFT, etc.
+  details?: unknown;
+  /// @deprecated Alias of `code`; remove once both apps prefer `code`.
+  error: string;
+}
+
+function envelope(code: string, message: string, details?: unknown): ApiErrorBody {
+  const body: ApiErrorBody = { code, message, error: code };
+  if (details !== undefined) body.details = details;
+  return body;
+}
 
 export function errorHandler(
   err: unknown,
@@ -9,13 +35,16 @@ export function errorHandler(
   _next: NextFunction
 ): void {
   if (err instanceof ZodError) {
-    res.status(400).json({
-      error: 'Validation error',
-      details: err.errors.map((issue) => ({
-        path: issue.path.join('.'),
-        message: issue.message,
-      })),
-    });
+    res.status(400).json(
+      envelope(
+        'VALIDATION_ERROR',
+        'Validation failed',
+        err.errors.map((issue) => ({
+          path: issue.path.join('.'),
+          message: issue.message,
+        })),
+      ),
+    );
     return;
   }
 
@@ -23,20 +52,28 @@ export function errorHandler(
     switch (err.code) {
       case 'P2002': {
         const target = (err.meta?.target as string[]) ?? [];
-        res.status(409).json({
-          error: `Duplicate value for: ${target.join(', ')}`,
-        });
+        res
+          .status(409)
+          .json(
+            envelope(
+              'DUPLICATE',
+              `Duplicate value for: ${target.join(', ')}`,
+              { target },
+            ),
+          );
         return;
       }
       case 'P2025':
-        res.status(404).json({ error: 'Record not found' });
+        res.status(404).json(envelope('NOT_FOUND', 'Record not found'));
         return;
       case 'P2003':
-        res.status(400).json({ error: 'Related record not found' });
+        res
+          .status(400)
+          .json(envelope('FK_VIOLATION', 'Related record not found'));
         return;
     }
   }
 
-  console.error(err);
-  res.status(500).json({ error: 'Internal server error' });
+  logger.error({ err }, 'unhandled error in request');
+  res.status(500).json(envelope('INTERNAL_ERROR', 'Internal server error'));
 }
