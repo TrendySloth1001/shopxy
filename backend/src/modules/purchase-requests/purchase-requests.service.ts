@@ -1,6 +1,30 @@
 import prisma from '../../infra/db/prisma.js';
 import type { Prisma } from '@prisma/client';
-import { invoicesService, derivePaymentSummary } from '../invoices/invoices.service.js';
+import { invoicesService } from '../invoices/invoices.service.js';
+
+/// Local helper — invoices.service doesn't expose a payment summariser
+/// (its own status flow is independent of paid-vs-total accounting), so
+/// the purchase-request response derives the shape inline. Mirrors the
+/// fields the customer/merchant apps already destructure off the invoice
+/// blob: paidAmount, balanceDue, paymentStatus.
+function derivePaymentSummary(
+  total: number,
+  paid: number,
+  status: string,
+): { paidAmount: number; balanceDue: number; paymentStatus: 'PAID' | 'PARTIAL' | 'UNPAID' } {
+  const balanceDue = Math.max(0, total - paid);
+  let paymentStatus: 'PAID' | 'PARTIAL' | 'UNPAID';
+  if (status === 'CANCELLED' || status === 'DRAFT') {
+    paymentStatus = 'UNPAID';
+  } else if (total > 0 && paid >= total) {
+    paymentStatus = 'PAID';
+  } else if (paid > 0) {
+    paymentStatus = 'PARTIAL';
+  } else {
+    paymentStatus = 'UNPAID';
+  }
+  return { paidAmount: paid, balanceDue, paymentStatus };
+}
 import { flashSalesService } from '../flash-sales/flash-sales.service.js';
 import { couponsService } from '../coupons/coupons.service.js';
 

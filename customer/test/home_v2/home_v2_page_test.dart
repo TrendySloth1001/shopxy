@@ -5,6 +5,7 @@ import 'package:shopxy_customer/core/auth/token_manager.dart';
 import 'package:shopxy_customer/core/network/api_client.dart';
 import 'package:shopxy_customer/features/addresses/data/datasources/addresses_remote_data_source.dart';
 import 'package:shopxy_customer/features/addresses/presentation/providers/addresses_provider.dart';
+import 'package:shopxy_customer/features/catalog/data/datasources/cart_remote_data_source.dart';
 import 'package:shopxy_customer/features/catalog/presentation/providers/cart_provider.dart';
 import 'package:shopxy_customer/features/categories/data/datasources/categories_remote_data_source.dart';
 import 'package:shopxy_customer/features/categories/presentation/providers/categories_provider.dart';
@@ -90,7 +91,8 @@ Widget _harness(HomeFeedProvider provider) {
           ),
         ),
         ChangeNotifierProvider<CartProvider>(
-          create: (_) => CartProvider(OrdersRemoteDataSource(apiClient)),
+          create: (_) =>
+              CartProvider(OrdersRemoteDataSource(apiClient), CartRemoteDataSource(apiClient)),
         ),
         ChangeNotifierProvider<AddressesProvider>(
           create: (_) => AddressesProvider(AddressesRemoteDataSource(apiClient)),

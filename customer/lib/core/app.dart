@@ -10,7 +10,13 @@ import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/theme/app_theme.dart';
 
 class ShopxyCustomerApp extends StatelessWidget {
-  const ShopxyCustomerApp({super.key});
+  const ShopxyCustomerApp({super.key, this.navigatorKey});
+
+  /// Shared root navigator key — wired up by `main.dart` so the
+  /// DeepLinkHandler can push routes from outside any BuildContext.
+  /// Nullable so legacy entry points (tests) can build the app without
+  /// a key.
+  final GlobalKey<NavigatorState>? navigatorKey;
 
   @override
   Widget build(BuildContext context) {
@@ -20,6 +26,7 @@ class ShopxyCustomerApp extends StatelessWidget {
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.light,
       debugShowCheckedModeBanner: false,
+      navigatorKey: navigatorKey,
       home: const _AuthGate(),
     );
   }
