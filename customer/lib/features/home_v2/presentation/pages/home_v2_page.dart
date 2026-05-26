@@ -1,19 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy_customer/features/home_v2/data/home_blocks.dart';
 import 'package:shopxy_customer/features/home_v2/data/home_feed_mapper.dart';
 import 'package:shopxy_customer/features/home_v2/presentation/providers/home_feed_provider.dart';
 import 'package:shopxy_customer/features/home_v2/presentation/providers/tracking_service.dart';
 import 'package:shopxy_customer/features/home_v2/presentation/widgets/home_v2_ad_strip.dart';
 import 'package:shopxy_customer/features/home_v2/presentation/widgets/home_v2_brand_spotlight.dart';
 import 'package:shopxy_customer/features/categories/presentation/widgets/categories_rail.dart';
-import 'package:shopxy_customer/features/home_v2/presentation/widgets/home_v2_collection_banner.dart';
-import 'package:shopxy_customer/features/home_v2/presentation/widgets/home_v2_curated_rail.dart';
+import 'package:shopxy_customer/features/home_v2/presentation/widgets/home_v2_feed_blocks.dart';
 import 'package:shopxy_customer/features/home_v2/presentation/widgets/home_v2_flash_deals.dart';
 import 'package:shopxy_customer/features/home_v2/presentation/widgets/home_v2_footer_strip.dart';
 import 'package:shopxy_customer/features/home_v2/presentation/widgets/home_v2_hero_carousel.dart';
-import 'package:shopxy_customer/features/home_v2/presentation/widgets/home_v2_product_carousel.dart';
-import 'package:shopxy_customer/features/home_v2/presentation/widgets/home_v2_recently_viewed.dart';
 import 'package:shopxy_customer/features/home_v2/presentation/widgets/home_v2_search_bar.dart';
 import 'package:shopxy_customer/features/home_v2/presentation/widgets/home_v2_top_bar.dart';
 import 'package:shopxy_customer/features/home_v2/presentation/widgets/home_v2_trust_strip.dart';
@@ -44,25 +42,27 @@ class _HomeV2PageState extends State<HomeV2Page> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<HomeFeedProvider>();
+    // Canvas-on-canvas header — no coloured band any more. The status
+    // bar reads as part of the page (dark icons on the warm parchment
+    // background), and the top bar + search pill sit on the same
+    // canvas surface as the feed below them.
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light.copyWith(
-        statusBarColor: AppColors.brand,
+      value: SystemUiOverlayStyle.dark.copyWith(
+        statusBarColor: AppColors.canvas,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
       ),
       child: Scaffold(
         backgroundColor: AppColors.canvas,
         body: Column(
           children: [
-            Container(
-              color: AppColors.brand,
-              child: SafeArea(
-                bottom: false,
-                child: Column(
-                  children: const [
-                    HomeV2TopBar(),
-                    HomeV2SearchBar(),
-                    SizedBox(height: AppSizes.sm),
-                  ],
-                ),
+            SafeArea(
+              bottom: false,
+              child: Column(
+                children: const [
+                  HomeV2TopBar(),
+                  HomeV2SearchBar(),
+                ],
               ),
             ),
             Expanded(child: _buildBody(provider)),
@@ -84,7 +84,10 @@ class _HomeV2PageState extends State<HomeV2Page> {
     }
     return RefreshIndicator(
       onRefresh: provider.refresh,
-      child: _HomeFeedList(feed: provider.feed),
+      child: _HomeFeedList(
+        feed: provider.feed,
+        feedVersion: provider.feedVersion,
+      ),
     );
   }
 }
@@ -93,18 +96,24 @@ class _HomeV2PageState extends State<HomeV2Page> {
 /// (each widget early-returns on empty input), so a backend with no
 /// banners but live flash deals still produces a coherent page.
 class _HomeFeedList extends StatefulWidget {
-  const _HomeFeedList({required this.feed});
+  const _HomeFeedList({required this.feed, required this.feedVersion});
   final HomeFeed feed;
+
+  /// Monotonic counter that ticks each time the provider successfully
+  /// refreshes. We use this as the cache key for impression tracking
+  /// so unrelated rebuilds (cart badge, theme changes) don't re-fire
+  /// the impression batch.
+  final int feedVersion;
 
   @override
   State<_HomeFeedList> createState() => _HomeFeedListState();
 }
 
 class _HomeFeedListState extends State<_HomeFeedList> {
-  /// Identity of the last feed snapshot we already fired impressions
+  /// Version of the last feed snapshot we already fired impressions
   /// for. Prevents the impression burst from re-firing on every
   /// rebuild (e.g. when the cart badge changes higher in the tree).
-  int? _trackedFeedHash;
+  int? _trackedFeedVersion;
 
   @override
   void initState() {
@@ -120,12 +129,8 @@ class _HomeFeedListState extends State<_HomeFeedList> {
 
   void _trackImpressions() {
     if (!mounted) return;
-    final hash = Object.hashAll([
-      ...widget.feed.trending.take(20).map((p) => p.productId),
-      ...widget.feed.recommended.take(20).map((p) => p.productId),
-    ]);
-    if (hash == _trackedFeedHash) return;
-    _trackedFeedHash = hash;
+    if (widget.feedVersion == _trackedFeedVersion) return;
+    _trackedFeedVersion = widget.feedVersion;
     final tracking = context.read<TrackingService>();
     // Server batches + dedupes on clientUuid, so a quick scroll-by
     // burst still stays cheap even if we fire a few extras.
@@ -140,96 +145,79 @@ class _HomeFeedListState extends State<_HomeFeedList> {
   @override
   Widget build(BuildContext context) {
     final feed = widget.feed;
-    // Slice the curated rails into two for the inline placements; the
-    // backend may return 0, 1, or many — index-safe access keeps the
-    // layout stable.
-    final rail0 = feed.curatedRails.isNotEmpty ? feed.curatedRails[0] : null;
-    final rail1 = feed.curatedRails.length > 1 ? feed.curatedRails[1] : null;
-    final collectionTitle =
-        feed.collectionTiles.isNotEmpty ? feed.collectionTiles.first : null;
+    // Everything below the brand spotlight runs through the block
+    // composer (lib/.../data/home_blocks.dart). The composer turns the
+    // raw product slices into a varied, long-scroll feed (mosaic, grid,
+    // reels, comparison, …) so we no longer have a parade of identical
+    // horizontal carousels.
+    final blocks = composeHomeBlocks(feed);
 
-    return ListView(
+    return ListView.builder(
       padding: const EdgeInsets.only(bottom: AppSizes.huge),
-      children: [
-        // 1 — Browse intent: canonical category rail right under the
-        // fold. Backed by CategoriesProvider (real taxonomy), not the
-        // legacy sample-data pucks.
-        const CategoriesRail(),
+      // The fixed prelude (categories → trust → hero → flash → ad strip
+      // → spotlight) plus one slot per composer block plus the footer.
+      // Each section is gated by a `.isNotEmpty` check inside its widget
+      // so empty payloads collapse without leaving stray gaps.
+      itemCount: 6 + blocks.length + 1,
+      itemBuilder: (context, i) {
+        switch (i) {
+          case 0:
+            // Browse intent: canonical category rail right under the
+            // fold. Backed by CategoriesProvider (real taxonomy), not
+            // the legacy sample-data pucks.
+            return const CategoriesRail();
+          case 1:
+            // Trust: lower buying anxiety before showing prices.
+            return const Padding(
+              padding: EdgeInsets.only(bottom: AppSizes.lg),
+              child: HomeV2TrustStrip(),
+            );
+          case 2:
+            // Hero ads: editorial brand discovery, auto-rotating.
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: feed.heroSlides.isNotEmpty ? AppSizes.xl : 0,
+              ),
+              child: HomeV2HeroCarousel(slides: feed.heroSlides),
+            );
+          case 3:
+            // Urgency: live countdown + sold-progress pulls scroll.
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: feed.flashDeals.isNotEmpty ? AppSizes.xl : 0,
+              ),
+              child: HomeV2FlashDeals(deals: feed.flashDeals),
+            );
+          case 4:
+            // Sponsored brand strip — three medium-size ads.
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: feed.adStrip.isNotEmpty ? AppSizes.xl : 0,
+              ),
+              child: HomeV2AdStrip(ads: feed.adStrip),
+            );
+          case 5:
+            // Brand carousel: aspirational shopping for brand-led users.
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom:
+                    feed.brandSpotlights.isNotEmpty ? AppSizes.xl : 0,
+              ),
+              child: HomeV2BrandSpotlight(brands: feed.brandSpotlights),
+            );
+        }
 
-        // 2 — Trust: lower buying anxiety before showing prices.
-        const HomeV2TrustStrip(),
-        const SizedBox(height: AppSizes.lg),
+        final blockIdx = i - 6;
+        if (blockIdx < blocks.length) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: AppSizes.xl),
+            child: HomeFeedBlock(block: blocks[blockIdx]),
+          );
+        }
 
-        // 3 — Hero ads: editorial brand discovery, auto-rotating.
-        HomeV2HeroCarousel(slides: feed.heroSlides),
-        if (feed.heroSlides.isNotEmpty) const SizedBox(height: AppSizes.xl),
-
-        // 4 — Urgency: live countdown + sold-progress pulls scroll.
-        HomeV2FlashDeals(deals: feed.flashDeals),
-        if (feed.flashDeals.isNotEmpty) const SizedBox(height: AppSizes.xl),
-
-        // 5 — Sponsored brand strip — three medium-size ads.
-        HomeV2AdStrip(ads: feed.adStrip),
-        if (feed.adStrip.isNotEmpty) const SizedBox(height: AppSizes.xl),
-
-        // 6 — Brand carousel: aspirational shopping for brand-led users.
-        HomeV2BrandSpotlight(brands: feed.brandSpotlights),
-        if (feed.brandSpotlights.isNotEmpty)
-          const SizedBox(height: AppSizes.xl),
-
-        // 7 — Personalised: for-you list lands here once the auth call
-        //      resolves; falls back to trending for cold-start users.
-        if (feed.recommended.isNotEmpty)
-          HomeV2ProductCarousel(
-            eyebrow: 'JUST FOR YOU',
-            title: 'Picked for you',
-            products: feed.recommended,
-          )
-        else if (feed.trending.isNotEmpty)
-          HomeV2ProductCarousel(
-            eyebrow: 'TRENDING NOW',
-            title: 'Trending right now',
-            products: feed.trending.take(10).toList(),
-          ),
-        const SizedBox(height: AppSizes.xl),
-
-        // 9 — Editorial collection — lifestyle storytelling.
-        if (rail0 != null) ...[
-          HomeV2CuratedRail(item: rail0),
-          const SizedBox(height: AppSizes.xl),
-        ],
-
-        // 10 — Social proof rail: trending overall.
-        if (feed.trending.length > 5)
-          HomeV2ProductCarousel(
-            eyebrow: 'TRENDING NOW',
-            title: 'Customers love these',
-            products: feed.trending.skip(5).take(10).toList(),
-          ),
-        const SizedBox(height: AppSizes.xl),
-
-        // 11 — Editorial collection — bundled tiles.
-        if (collectionTitle != null)
-          HomeV2CollectionBanner(
-            tiles: feed.collectionTiles,
-            title: collectionTitle.label,
-          ),
-        if (collectionTitle != null) const SizedBox(height: AppSizes.xl),
-
-        // 12 — Second curated rail keeps depth interesting.
-        if (rail1 != null) ...[
-          HomeV2CuratedRail(item: rail1),
-          const SizedBox(height: AppSizes.xl),
-        ],
-
-        // 13 — Re-engagement: "you were looking at this".
-        HomeV2RecentlyViewed(items: feed.recentlyViewed),
-        if (feed.recentlyViewed.isNotEmpty)
-          const SizedBox(height: AppSizes.xl),
-
-        // 14 — Trust footer: closes the page reassuring the buyer.
-        const HomeV2FooterStrip(),
-      ],
+        // Trust footer closes the page.
+        return const HomeV2FooterStrip();
+      },
     );
   }
 }

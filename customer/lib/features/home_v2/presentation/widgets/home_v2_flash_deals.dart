@@ -1,9 +1,12 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shopxy_customer/core/network/image_url.dart';
 import 'package:shopxy_customer/features/home_v2/data/home_feed_models.dart';
 import 'package:shopxy_customer/features/home_v2/presentation/widgets/network_image_box.dart';
+import 'package:shopxy_customer/features/marketplace/presentation/pages/product_detail_v2_page.dart';
+import 'package:shopxy_customer/features/search/presentation/pages/search_page.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
@@ -22,6 +25,24 @@ class _HomeV2FlashDealsState extends State<HomeV2FlashDeals> {
   @override
   void initState() {
     super.initState();
+    _startTimer();
+  }
+
+  @override
+  void didUpdateWidget(covariant HomeV2FlashDeals oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // The countdown is derived from each card's `endAt`. If the parent
+    // hands us a different deals list (different identities, or even a
+    // reordered list), kick the timer so we don't end up counting
+    // against a stale snapshot if the previous one had been paused
+    // mid-frame.
+    if (!listEquals(oldWidget.deals, widget.deals)) {
+      _timer?.cancel();
+      _startTimer();
+    }
+  }
+
+  void _startTimer() {
     // Single global tick — the countdown labels for each card derive
     // from their own `endAt`. One repaint per second is enough; no
     // need for per-card timers.
@@ -111,18 +132,28 @@ class _HomeV2FlashDealsState extends State<HomeV2FlashDeals> {
                   ),
                 ),
                 const Spacer(),
-                const Text(
-                  'See all',
-                  style: TextStyle(
-                    color: Color(0xFFE05A2A),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const SearchPage()),
                   ),
-                ),
-                const Icon(
-                  Icons.chevron_right_rounded,
-                  color: Color(0xFFE05A2A),
-                  size: 20,
+                  child: Row(
+                    children: const [
+                      Text(
+                        'See all',
+                        style: TextStyle(
+                          color: Color(0xFFE05A2A),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        color: Color(0xFFE05A2A),
+                        size: 20,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -135,8 +166,17 @@ class _HomeV2FlashDealsState extends State<HomeV2FlashDeals> {
               padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
               itemCount: widget.deals.length,
               separatorBuilder: (_, _) => const SizedBox(width: AppSizes.md),
-              itemBuilder: (context, i) =>
-                  _FlashDealCard(product: widget.deals[i]),
+              itemBuilder: (context, i) => GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => ProductDetailV2Page(
+                      productId: widget.deals[i].productId,
+                    ),
+                  ),
+                ),
+                child: _FlashDealCard(product: widget.deals[i]),
+              ),
             ),
           ),
         ],

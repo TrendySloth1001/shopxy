@@ -13,6 +13,7 @@ import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_button.dart';
 import 'package:shopxy_customer/shared/widgets/app_price_text.dart';
 import 'package:shopxy_customer/shared/widgets/app_quantity_stepper.dart';
+import 'package:shopxy_customer/shared/widgets/shop_chip.dart';
 
 /// Cart page. Rewritten from zero (May 2026, build3) because earlier
 /// iterations collapsed on certain devices — the AppBar disappeared and
@@ -29,8 +30,14 @@ class CartV2Page extends StatelessWidget {
   final bool embedded;
 
   void _goToCheckout(BuildContext context) {
+    // When the cart sits inside a tab (embedded=true) the closest
+    // Navigator is the AppShell's nested one. Pushing checkout onto
+    // it leaves the bottom tab bar visible and traps the back gesture
+    // inside the cart tab. Use the root navigator so checkout owns
+    // the screen and back returns to wherever the user came from.
     Navigator.of(
       context,
+      rootNavigator: embedded,
     ).push(MaterialPageRoute(builder: (_) => const CheckoutPage()));
   }
 
@@ -333,6 +340,13 @@ class _CartLineRow extends StatelessWidget {
                     height: 1.3,
                   ),
                 ),
+                if (product.shopName != null) ...[
+                  const SizedBox(height: 6),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: ShopChip(shopName: product.shopName, dense: true),
+                  ),
+                ],
                 const SizedBox(height: 6),
                 Wrap(
                   spacing: 6,
