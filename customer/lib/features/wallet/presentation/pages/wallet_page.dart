@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy_customer/features/wallet/data/datasources/wallet_remote_data_source.dart';
-import 'package:shopxy_customer/features/wallet/domain/wallet_entry.dart';
+import 'package:shopxy_customer/features/wallet/domain/entities/wallet_entry.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
-import 'package:shopxy_customer/shared/widgets/app_app_bar.dart';
+import 'package:shopxy_customer/shared/widgets/app_bar.dart';
 
 /// Wallet page — header balance card + ledger of credits/debits.
 /// Phase 3 ships read-only; Phase 4 (coupons) and Phase 5 (loyalty /

@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:shopxy_customer/core/network/api_client.dart';
-import 'package:shopxy_customer/features/marketplace/domain/listing_filters.dart';
+import 'package:shopxy_customer/features/marketplace/domain/entities/listing_filters.dart';
 
 /// Adapter for the public marketplace search endpoints.
 ///

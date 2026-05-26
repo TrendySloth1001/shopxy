@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shopxy_customer/features/marketplace/domain/listing_filters.dart';
+import 'package:shopxy_customer/features/marketplace/domain/entities/listing_filters.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';

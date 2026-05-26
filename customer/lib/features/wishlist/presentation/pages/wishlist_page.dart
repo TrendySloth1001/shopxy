@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy_customer/core/router/app_shell.dart';
 import 'package:shopxy_customer/features/catalog/presentation/widgets/catalog_product_thumbnail.dart';
-import 'package:shopxy_customer/features/marketplace/presentation/pages/product_detail_v2_page.dart';
+import 'package:shopxy_customer/features/marketplace/presentation/pages/product_detail_page.dart';
 import 'package:shopxy_customer/features/wishlist/data/datasources/wishlist_remote_data_source.dart';
 import 'package:shopxy_customer/features/wishlist/presentation/providers/wishlist_provider.dart';
 import 'package:shopxy_customer/features/wishlist/presentation/widgets/wishlist_heart_button.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
-import 'package:shopxy_customer/shared/widgets/app_app_bar.dart';
+import 'package:shopxy_customer/shared/widgets/app_bar.dart';
 import 'package:shopxy_customer/shared/widgets/app_button.dart';
 import 'package:shopxy_customer/shared/widgets/app_price_text.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
@@ -104,7 +104,7 @@ class _Row extends StatelessWidget {
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => ProductDetailV2Page(productId: p.id),
+            builder: (_) => ProductDetailPage(productId: p.id),
           ),
         ),
         customBorder: shape,

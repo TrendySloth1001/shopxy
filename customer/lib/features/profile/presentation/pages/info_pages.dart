@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/constants/app_strings.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
-import 'package:shopxy_customer/shared/widgets/app_app_bar.dart';
+import 'package:shopxy_customer/shared/widgets/app_bar.dart';
 
 /// Three near-identical static pages — About, Privacy, Terms — that
 /// used to be `coming soon` snackbar stubs on the profile screen.

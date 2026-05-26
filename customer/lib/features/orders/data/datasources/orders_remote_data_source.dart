@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'package:shopxy_customer/core/network/api_client.dart';
 import 'package:shopxy_customer/core/config/app_config.dart';
 import 'package:http/http.dart' as http;
-import 'package:shopxy_customer/features/catalog/domain/entities/catalog_product.dart';
+import 'package:shopxy_customer/shared/domain/entities/catalog_product.dart';
 import 'package:shopxy_customer/features/orders/domain/entities/customer_order.dart';
 
 /// Differentiated cancel failure thrown by the data source so the UI can

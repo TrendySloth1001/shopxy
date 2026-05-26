@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy_customer/features/returns/data/datasources/returns_remote_data_source.dart';
-import 'package:shopxy_customer/features/returns/domain/return_request.dart';
+import 'package:shopxy_customer/features/returns/domain/entities/return_request.dart';
 import 'package:shopxy_customer/features/returns/presentation/pages/return_detail_page.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
-import 'package:shopxy_customer/shared/widgets/app_app_bar.dart';
+import 'package:shopxy_customer/shared/widgets/app_bar.dart';
 
 /// Customer-side list of return requests. Each row links to the
 /// return detail page.

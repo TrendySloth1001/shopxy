@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy_customer/features/reviews/data/datasources/reviews_remote_data_source.dart';
-import 'package:shopxy_customer/features/reviews/domain/review.dart';
-import 'package:shopxy_customer/features/reviews/presentation/pages/write_review_sheet.dart';
+import 'package:shopxy_customer/features/reviews/domain/entities/review.dart';
+import 'package:shopxy_customer/features/reviews/presentation/widgets/write_review_sheet.dart';
 import 'package:shopxy_customer/features/reviews/presentation/widgets/review_tile.dart';
 import 'package:shopxy_customer/features/reviews/presentation/widgets/star_row.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
