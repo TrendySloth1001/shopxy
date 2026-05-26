@@ -48,14 +48,19 @@ class AddressesProvider extends ChangeNotifier {
   Future<UserAddress?> create(UserAddressInput input) async {
     try {
       final addr = await _ds.create(input);
-      _items = [addr, ..._items];
-      // The backend may have demoted prior defaults; refetch to
-      // re-sync the flags rather than guess client-side.
-      // Fire-and-forget so the caller doesn't pay round-trip latency.
-      _ds.list().then((fresh) {
-        _items = fresh;
-        notifyListeners();
-      }).catchError((_) => null);
+      // The backend may have demoted prior defaults; refetch to re-sync
+      // the flags rather than guess client-side. We await the refetch
+      // so the UI only repaints once — going through the previous
+      // optimistic prepend would flash an "is_default" stripe on the
+      // brand-new card and then immediately strip it when the refetch
+      // resolved.
+      try {
+        _items = await _ds.list();
+      } catch (_) {
+        // Refetch failed — keep an optimistic local prepend so the
+        // user at least sees the address they just created.
+        _items = [addr, ..._items];
+      }
       notifyListeners();
       return addr;
     } catch (e) {

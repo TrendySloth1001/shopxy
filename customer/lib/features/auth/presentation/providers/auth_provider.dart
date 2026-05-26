@@ -9,6 +9,12 @@ class AuthProvider extends ChangeNotifier {
   final AuthRemoteDataSource _dataSource;
   final TokenManager _tokenManager;
 
+  /// Callbacks invoked by [clearAuth] to drop user-scoped state from
+  /// other providers (orders, addresses, cart, …). Wired in main.dart
+  /// at app start; lives here so we don't sprinkle that logic across
+  /// `onUnauthorized` and `logout`.
+  final List<VoidCallback> _onClearCallbacks = <VoidCallback>[];
+
   AuthUser? _user;
   bool _isLoading = true;
 
@@ -81,10 +87,22 @@ class AuthProvider extends ChangeNotifier {
   }) =>
       _dataSource.changePassword(currentPassword, newPassword);
 
-  /// Called by ApiClient when a refresh fails — forces re-login.
+  /// Register a callback to run whenever the auth state is cleared
+  /// (refresh failure, explicit logout). Used to reset user-scoped
+  /// providers without coupling AuthProvider to their concrete types.
+  void registerOnClear(VoidCallback callback) {
+    _onClearCallbacks.add(callback);
+  }
+
+  /// Called by ApiClient when a refresh fails — forces re-login. Also
+  /// resets user-scoped providers (orders, addresses, cart, etc.) so
+  /// the next sign-in starts with a clean slate.
   void clearAuth() {
     _tokenManager.clear();
     _user = null;
+    for (final cb in _onClearCallbacks) {
+      cb();
+    }
     notifyListeners();
   }
 }

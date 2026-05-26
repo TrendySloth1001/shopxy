@@ -9,14 +9,19 @@ import 'package:shopxy_customer/features/addresses/presentation/pages/edit_addre
 import 'package:shopxy_customer/features/addresses/presentation/providers/addresses_provider.dart';
 import 'package:shopxy_customer/features/catalog/domain/entities/cart_item.dart';
 import 'package:shopxy_customer/features/catalog/presentation/providers/cart_provider.dart';
+import 'package:shopxy_customer/features/coupons/data/datasources/coupons_remote_data_source.dart';
+import 'package:shopxy_customer/features/coupons/domain/coupon.dart';
+import 'package:shopxy_customer/features/wallet/data/datasources/wallet_remote_data_source.dart';
 import 'package:shopxy_customer/features/home_v2/presentation/widgets/network_image_box.dart';
 import 'package:shopxy_customer/features/orders/presentation/pages/order_detail_page.dart';
+import 'package:shopxy_customer/features/orders/presentation/providers/orders_provider.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_button.dart';
 import 'package:shopxy_customer/shared/widgets/app_price_text.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
+import 'package:shopxy_customer/shared/widgets/shop_chip.dart';
 
 /// Checkout page — full Amazon/Flipkart-style rebuild (May 2026,
 /// build3). Built on a Column { Header, Expanded(Body), Footer }
@@ -34,6 +39,34 @@ class _CheckoutPageState extends State<CheckoutPage> {
   int? _selectedAddressId;
   static const double _deliveryStandard = 0;
   static const double _deliveryStrike = 49;
+
+  /// Validated coupon currently applied — null when no code has been
+  /// entered. The preview lives in state so the price card can show
+  /// "− ₹X coupon" before the actual place-order RPC fires.
+  CouponPreview? _appliedCoupon;
+  bool _useWallet = false;
+  double _walletBalance = 0;
+  bool _walletLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _primeWallet();
+  }
+
+  Future<void> _primeWallet() async {
+    try {
+      final snap = await context.read<WalletRemoteDataSource>().snapshot();
+      if (!mounted) return;
+      setState(() {
+        _walletBalance = snap.balance;
+        _walletLoaded = true;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _walletLoaded = true);
+    }
+  }
 
   Future<void> _pickAddress() async {
     final addresses = context.read<AddressesProvider>().items;
@@ -134,6 +167,42 @@ class _CheckoutPageState extends State<CheckoutPage> {
     }
   }
 
+  Future<void> _applyCoupon(String rawCode) async {
+    final code = rawCode.trim().toUpperCase();
+    if (code.isEmpty) return;
+    final cart = context.read<CartProvider>();
+    final ds = context.read<CouponsRemoteDataSource>();
+    final subtotal = cart.itemsTotal;
+    final shopIds = cart.shopIds;
+    try {
+      final preview = await ds.validate(
+        code: code,
+        subtotal: subtotal,
+        shopIds: shopIds,
+      );
+      if (!mounted) return;
+      setState(() => _appliedCoupon = preview.ok ? preview : null);
+      if (!preview.ok) {
+        showAppSnackbar(
+          context,
+          message: preview.message ?? 'That code isn\'t valid right now',
+          tone: AppSnackbarTone.error,
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      showAppSnackbar(
+        context,
+        message: e.toString().replaceFirst('Exception: ', ''),
+        tone: AppSnackbarTone.error,
+      );
+    }
+  }
+
+  void _removeCoupon() {
+    setState(() => _appliedCoupon = null);
+  }
+
   Future<void> _placeOrder() async {
     if (_selectedAddressId == null) {
       showAppSnackbar(
@@ -144,19 +213,62 @@ class _CheckoutPageState extends State<CheckoutPage> {
       return;
     }
     final cart = context.read<CartProvider>();
-    final id = await cart.placeOrder(addressId: _selectedAddressId);
+    final result = await cart.placeOrder(
+      addressId: _selectedAddressId,
+      couponCode: _appliedCoupon?.code,
+      useWallet: _useWallet,
+    );
     if (!mounted) return;
-    if (id == null) {
+    if (!result.isSuccess) {
       showAppSnackbar(
         context,
-        message: cart.error ?? 'Could not place order',
+        message: _friendlyError(result.error),
         tone: AppSnackbarTone.error,
       );
       return;
     }
+    // Refresh My Orders so the new parent shows up if the user pops
+    // back to the inbox later.
+    // ignore: unawaited_futures
+    context.read<OrdersProvider>().load();
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => OrderDetailPage(orderId: id)),
+      MaterialPageRoute(
+        builder: (_) => OrderDetailPage(orderId: result.orderId!),
+      ),
     );
+    if (result.shopOrderCount > 1) {
+      showAppSnackbar(
+        context,
+        message:
+            'Order placed — ${result.shopOrderCount} shops will fulfil it',
+        tone: AppSnackbarTone.success,
+      );
+    }
+  }
+
+  String _friendlyError(String? code) {
+    switch (code) {
+      case 'OWN_SHOP_ITEM':
+        return "You can't order from your own shop";
+      case 'SHOP_NOT_FOUND':
+        return 'One of the shops in your cart is no longer available';
+      case 'CROSS_SHOP_ITEM':
+        return 'Cart had a wrong shop attribution — please re-add the items';
+      case 'PRODUCT_INACTIVE':
+        return 'One of the items is no longer available';
+      case 'PRODUCT_MISSING':
+        return 'One of the items was removed by the merchant';
+      case 'ADDRESS_NOT_OWNED':
+        return "That address isn't valid for this account";
+      case 'EMPTY_CART':
+        return 'Your cart is empty';
+      case 'BAD_QTY':
+        return 'Invalid quantity';
+      case null:
+        return 'Could not place order';
+      default:
+        return code;
+    }
   }
 
   void _ensureDefault(List<UserAddress> addresses) {
@@ -187,8 +299,20 @@ class _CheckoutPageState extends State<CheckoutPage> {
     final productSavings =
         (mrpTotal - subtotal).clamp(0, double.infinity).toDouble();
     final deliverySavings = _deliveryStrike - _deliveryStandard;
-    final totalSavings = productSavings + deliverySavings;
-    final grandTotal = subtotal + _deliveryStandard;
+    // Coupon discount preview — drives the price card row + the bottom
+    // bar total. If the user has typed a code but it's no longer
+    // applicable (subtotal dropped below min, etc) we drop it from the
+    // preview here too.
+    final couponDiscount = _appliedCoupon?.ok == true
+        ? (_appliedCoupon!.discount ?? 0).clamp(0, subtotal).toDouble()
+        : 0.0;
+    final afterCoupon =
+        (subtotal + _deliveryStandard - couponDiscount).clamp(0, double.infinity).toDouble();
+    final walletApply = _useWallet
+        ? _walletBalance.clamp(0, afterCoupon).toDouble()
+        : 0.0;
+    final totalSavings = productSavings + deliverySavings + couponDiscount;
+    final grandTotal = (afterCoupon - walletApply).clamp(0, double.infinity).toDouble();
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -239,7 +363,25 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     label:
                         'ORDER ITEMS · ${cart.lineCount} ${cart.lineCount == 1 ? 'item' : 'items'}',
                   ),
-                  _ItemsCard(lines: cart.lines),
+                  if (cart.linesByShop.length > 1)
+                    _MultiShopBanner(shopCount: cart.linesByShop.length),
+                  _ItemsByShop(lines: cart.lines),
+                  const SizedBox(height: AppSizes.lg),
+                  const _SectionLabel(label: 'OFFERS'),
+                  _CouponCard(
+                    coupon: _appliedCoupon,
+                    onApply: _applyCoupon,
+                    onRemove: _removeCoupon,
+                  ),
+                  if (_walletLoaded && _walletBalance > 0) ...[
+                    const SizedBox(height: AppSizes.sm),
+                    _WalletToggleCard(
+                      balance: _walletBalance,
+                      applied: walletApply,
+                      enabled: _useWallet,
+                      onChanged: (v) => setState(() => _useWallet = v),
+                    ),
+                  ],
                   const SizedBox(height: AppSizes.lg),
                   const _SectionLabel(label: 'PAYMENT METHOD'),
                   const _PaymentCard(),
@@ -252,6 +394,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     deliveryStandard: _deliveryStandard,
                     deliveryStrike: _deliveryStrike,
                     grandTotal: grandTotal,
+                    couponDiscount: couponDiscount,
+                    walletApplied: walletApply,
                   ),
                   if (totalSavings > 0) ...[
                     const SizedBox(height: AppSizes.sm),
@@ -729,11 +873,57 @@ class _DeliveryEstimateCard extends StatelessWidget {
 
 // ─── Items ──────────────────────────────────────────────────────────
 
-class _ItemsCard extends StatelessWidget {
-  const _ItemsCard({required this.lines});
+/// Splits the cart into one card per owning shop so the customer can
+/// see — before tapping place — that they're submitting one order per
+/// shop. Each card carries the shop name, its lines, and its subtotal;
+/// the price card below still rolls everything up into a single total.
+class _ItemsByShop extends StatelessWidget {
+  const _ItemsByShop({required this.lines});
   final List<CartItem> lines;
+
   @override
   Widget build(BuildContext context) {
+    final groups = <int, List<CartItem>>{};
+    final order = <int>[];
+    for (final line in lines) {
+      final shopId = line.product.shopId ?? 0;
+      if (!groups.containsKey(shopId)) order.add(shopId);
+      (groups[shopId] ??= []).add(line);
+    }
+    return Column(
+      children: [
+        for (var i = 0; i < order.length; i++) ...[
+          if (i != 0) const SizedBox(height: AppSizes.md),
+          _ShopGroupCard(
+            shopName: groups[order[i]]!.first.product.shopName,
+            lines: groups[order[i]]!,
+            showHeader: order.length > 1,
+            orderIndex: i + 1,
+            orderCount: order.length,
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _ShopGroupCard extends StatelessWidget {
+  const _ShopGroupCard({
+    required this.shopName,
+    required this.lines,
+    required this.showHeader,
+    required this.orderIndex,
+    required this.orderCount,
+  });
+  final String? shopName;
+  final List<CartItem> lines;
+  final bool showHeader;
+  final int orderIndex;
+  final int orderCount;
+
+  @override
+  Widget build(BuildContext context) {
+    final subtotal = lines.fold<double>(0, (s, l) => s + l.lineTotal);
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
       decoration: ShapeDecoration(
@@ -742,10 +932,104 @@ class _ItemsCard extends StatelessWidget {
       ),
       child: Column(
         children: [
+          if (showHeader)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSizes.md, AppSizes.md, AppSizes.md, 0,
+              ),
+              child: Row(
+                children: [
+                  Expanded(child: ShopChip(shopName: shopName)),
+                  const SizedBox(width: AppSizes.sm),
+                  Text(
+                    'Order $orderIndex of $orderCount',
+                    style: const TextStyle(
+                      color: AppColors.muted,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 11,
+                      letterSpacing: 0.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          if (showHeader)
+            const Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: AppSizes.md, vertical: AppSizes.sm,
+              ),
+              child: Divider(height: 1, color: AppColors.hairline),
+            ),
           for (var i = 0; i < lines.length; i++) ...[
             if (i != 0) const Divider(height: 1, color: AppColors.hairline),
             _ItemRow(line: lines[i]),
           ],
+          if (showHeader) ...[
+            const Divider(height: 1, color: AppColors.hairline),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSizes.md, vertical: AppSizes.sm,
+              ),
+              child: Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Shop subtotal',
+                      style: TextStyle(
+                        color: AppColors.muted,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  AppPriceText.precise(
+                    subtotal,
+                    fontWeight: FontWeight.w800,
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _MultiShopBanner extends StatelessWidget {
+  const _MultiShopBanner({required this.shopCount});
+  final int shopCount;
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(
+        AppSizes.lg, 0, AppSizes.lg, AppSizes.md,
+      ),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.md, vertical: AppSizes.sm,
+      ),
+      decoration: ShapeDecoration(
+        color: AppColors.infoSoft,
+        shape: AppShapes.squircle(AppSizes.radiusMd),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.storefront_outlined,
+              size: 18, color: AppColors.info),
+          const SizedBox(width: AppSizes.sm),
+          Expanded(
+            child: Text(
+              'Your cart has items from $shopCount shops — '
+              "we'll create $shopCount separate orders, one per shop.",
+              style: const TextStyle(
+                color: AppColors.info,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                height: 1.3,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -792,6 +1076,13 @@ class _ItemRow extends StatelessWidget {
                     height: 1.3,
                   ),
                 ),
+                if (p.shopName != null) ...[
+                  const SizedBox(height: 4),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: ShopChip(shopName: p.shopName, dense: true),
+                  ),
+                ],
                 const SizedBox(height: 4),
                 Wrap(
                   spacing: 6,
@@ -898,6 +1189,8 @@ class _PriceCard extends StatelessWidget {
     required this.deliveryStandard,
     required this.deliveryStrike,
     required this.grandTotal,
+    this.couponDiscount = 0,
+    this.walletApplied = 0,
   });
   final double itemsTotal;
   final double mrpTotal;
@@ -905,6 +1198,8 @@ class _PriceCard extends StatelessWidget {
   final double deliveryStandard;
   final double deliveryStrike;
   final double grandTotal;
+  final double couponDiscount;
+  final double walletApplied;
 
   @override
   Widget build(BuildContext context) {
@@ -939,11 +1234,227 @@ class _PriceCard extends StatelessWidget {
             strikeBefore:
                 deliveryStrike > deliveryStandard ? deliveryStrike : null,
           ),
+          if (couponDiscount > 0)
+            _PriceRow(
+              label: 'Coupon',
+              negative: couponDiscount,
+              valueColor: AppColors.success,
+            ),
+          if (walletApplied > 0)
+            _PriceRow(
+              label: 'Wallet',
+              negative: walletApplied,
+              valueColor: AppColors.success,
+            ),
           const Divider(height: AppSizes.lg, color: AppColors.hairline),
           _PriceRow(
             label: 'Total payable',
             value: grandTotal,
             bold: true,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CouponCard extends StatefulWidget {
+  const _CouponCard({
+    required this.coupon,
+    required this.onApply,
+    required this.onRemove,
+  });
+  final CouponPreview? coupon;
+  final Future<void> Function(String code) onApply;
+  final VoidCallback onRemove;
+
+  @override
+  State<_CouponCard> createState() => _CouponCardState();
+}
+
+class _CouponCardState extends State<_CouponCard> {
+  late final TextEditingController _ctrl;
+  bool _applying = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = TextEditingController(text: widget.coupon?.code ?? '');
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _apply() async {
+    setState(() => _applying = true);
+    try {
+      await widget.onApply(_ctrl.text);
+    } finally {
+      if (mounted) setState(() => _applying = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = widget.coupon;
+    final applied = c?.ok == true;
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+      padding: const EdgeInsets.all(AppSizes.md),
+      decoration: ShapeDecoration(
+        color: AppColors.white,
+        shape: AppShapes.squircle(
+          AppSizes.radiusMd,
+          side: BorderSide(
+            color: applied ? AppColors.brand : AppColors.hairline,
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.local_offer_outlined,
+            color: applied ? AppColors.brand : AppColors.muted,
+            size: AppSizes.iconMd,
+          ),
+          const SizedBox(width: AppSizes.md),
+          Expanded(
+            child: applied
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${c!.code} applied',
+                        style: const TextStyle(
+                          color: AppColors.brand,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      if (c.discount != null)
+                        Text(
+                          '₹${c.discount!.toStringAsFixed(0)} off',
+                          style: const TextStyle(
+                            color: AppColors.success,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12,
+                          ),
+                        ),
+                    ],
+                  )
+                : TextField(
+                    controller: _ctrl,
+                    textCapitalization: TextCapitalization.characters,
+                    decoration: const InputDecoration(
+                      hintText: 'Enter coupon code',
+                      border: InputBorder.none,
+                      isCollapsed: true,
+                    ),
+                    style: const TextStyle(
+                      color: AppColors.black,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.4,
+                    ),
+                  ),
+          ),
+          applied
+              ? TextButton(
+                  onPressed: () {
+                    _ctrl.clear();
+                    widget.onRemove();
+                  },
+                  style: TextButton.styleFrom(foregroundColor: AppColors.error),
+                  child: const Text('Remove'),
+                )
+              : FilledButton(
+                  onPressed: _applying ? null : _apply,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.black,
+                    shape: AppShapes.squircle(AppSizes.radiusFull),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSizes.lg, vertical: 10,
+                    ),
+                  ),
+                  child: _applying
+                      ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Apply',
+                          style: TextStyle(fontWeight: FontWeight.w800)),
+                ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WalletToggleCard extends StatelessWidget {
+  const _WalletToggleCard({
+    required this.balance,
+    required this.applied,
+    required this.enabled,
+    required this.onChanged,
+  });
+  final double balance;
+  final double applied;
+  final bool enabled;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.md,
+        vertical: AppSizes.sm,
+      ),
+      decoration: ShapeDecoration(
+        color: AppColors.white,
+        shape: AppShapes.squircle(
+          AppSizes.radiusMd,
+          side: const BorderSide(color: AppColors.hairline),
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.account_balance_wallet_rounded,
+              color: AppColors.brand, size: AppSizes.iconMd),
+          const SizedBox(width: AppSizes.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  enabled && applied > 0
+                      ? 'Using ₹${applied.toStringAsFixed(0)} from wallet'
+                      : 'Use wallet balance',
+                  style: const TextStyle(
+                    color: AppColors.black,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                Text(
+                  'Available · ₹${balance.toStringAsFixed(0)}',
+                  style: const TextStyle(
+                    color: AppColors.muted,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Switch.adaptive(
+            value: enabled,
+            activeThumbColor: AppColors.brand,
+            onChanged: onChanged,
           ),
         ],
       ),
