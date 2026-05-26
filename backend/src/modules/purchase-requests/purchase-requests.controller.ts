@@ -1,14 +1,14 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import { parsePagination, paginatedResponse } from '../../shared/http/pagination.js';
-import { purchaseRequestsService } from './purchase-requests.service.js';
+import { purchaseRequestsService, assertShopOwnership } from './purchase-requests.service.js';
 import { notificationsService } from '../notifications/notifications.service.js';
 import prisma from '../../infra/db/prisma.js';
 
 const createSchema = z.object({
-  /// Owning merchant — required. The customer-side splits its cart
-  /// by shop and fires one POST per shop with that shop's items.
-  shopId: z.number().int().positive(),
+  /// Full cart payload. The server groups by shop and creates one
+  /// CustomerOrder parent plus one PurchaseRequest per shop the cart
+  /// spans — the FE no longer splits, so a single POST per checkout.
   items: z
     .array(
       z.object({
@@ -21,9 +21,48 @@ const createSchema = z.object({
   /// Optional UserAddress id selected at checkout. When present the
   /// service snapshots that address into `customerAddress`.
   addressId: z.number().int().positive().optional(),
+  /// Optional promo code. The server validates + redeems atomically
+  /// with the order create.
+  couponCode: z.string().max(40).optional(),
+  /// Apply wallet balance against the cart total (after coupon).
+  useWallet: z.boolean().optional(),
 });
 
 const decisionSchema = z.object({ note: z.string().max(500).optional() });
+
+/// Replaces the plain `req.user?.shopId` trust pattern in every
+/// merchant endpoint. Combines the JWT extraction with a DB-backed
+/// ownership reload so a forged or stale token carrying someone
+/// else's shopId can't be acted on. Returns the shopId on success,
+/// or null after writing a 403 — callers just `if (shopId == null) return`.
+async function requireOwnedShop(
+  req: Request,
+  res: Response,
+): Promise<number | null> {
+  const shopId = req.user?.shopId;
+  const userId = req.user?.sub;
+  if (!shopId || !userId) {
+    res.status(403).json({ error: 'This account has no shop linked.' });
+    return null;
+  }
+  const ok = await assertShopOwnership(shopId, userId);
+  if (!ok) {
+    res.status(403).json({ error: 'Shop access denied.' });
+    return null;
+  }
+  return shopId;
+}
+
+/// Merchant-recorded shipping milestone. CONFIRMED is set by the
+/// service when an invoice is issued; merchants only push milestones
+/// from packing onward.
+const shippingEventSchema = z.object({
+  type: z.enum(['PACKED', 'SHIPPED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'RETURNED']),
+  courier: z.string().max(80).optional(),
+  awb: z.string().max(80).optional(),
+  eta: z.string().datetime().optional(),
+  note: z.string().max(500).optional(),
+});
 
 /// Inbox filters. Search and date range come in as query strings; we
 /// keep the contract loose (strings) and parse defensively so a stray
@@ -83,12 +122,13 @@ export class PurchaseRequestsController {
     const idempotencyKey = readIdempotencyKey(req);
 
     const result = await purchaseRequestsService.createForCustomer({
-      shopId: payload.shopId,
       customerUserId: userId,
       items: payload.items,
       note: payload.note,
       idempotencyKey,
       addressId: payload.addressId,
+      couponCode: payload.couponCode,
+      useWallet: payload.useWallet,
     });
     if ('error' in result) {
       const status =
@@ -96,24 +136,26 @@ export class PurchaseRequestsController {
         result.error === 'OWN_SHOP_ITEM' ? 422 :
         result.error === 'SHOP_NOT_FOUND' ? 404 :
         result.error === 'CROSS_SHOP_ITEM' ? 422 :
+        result.error === 'COUPON_INVALID' ? 400 :
         400;
       res.status(status).json({ error: result.error });
       return;
     }
 
-    // Notify *only the receiving shop's owner* — not the historical
-    // fan-out to every OWNER row in the DB, which leaked one merchant's
-    // orders to every other merchant's notification bell.
+    // One bell-fan per child shop, never broader. Skip on idempotent
+    // replay so a network-retried POST doesn't double-notify.
     if (!result.deduplicated) {
-      void notifyShopOwner(payload.shopId, {
-        kind: 'ORDER_RECEIVED',
-        title: 'New order',
-        body: `Order #${result.request.id}`,
-        data: { requestId: result.request.id },
-      }).catch(() => {});
+      for (const child of result.order.shopOrders) {
+        void notifyShopOwner(child.shopId, {
+          kind: 'ORDER_RECEIVED',
+          title: 'New order',
+          body: `Order #${child.id}`,
+          data: { requestId: child.id, customerOrderId: result.order.id },
+        }).catch(() => {});
+      }
     }
 
-    res.status(result.deduplicated ? 200 : 201).json(result.request);
+    res.status(result.deduplicated ? 200 : 201).json(result.order);
   }
 
   async listForCustomer(req: Request, res: Response): Promise<void> {
@@ -137,12 +179,70 @@ export class PurchaseRequestsController {
     res.json(request);
   }
 
-  async cancelForCustomer(req: Request, res: Response): Promise<void> {
-    const id = parseId(req.params.id);
-    if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
-    const result = await purchaseRequestsService.cancelForCustomer({
+  /// Customer-side — return cart-ready items from a past order. The
+  /// client is expected to feed `items` into the cart provider; the
+  /// `skipped` list drives a "3 added · 1 unavailable" toast.
+  async reorderForCustomer(req: Request, res: Response): Promise<void> {
+    const parentId = parseId(req.params.id);
+    if (!parentId) { res.status(400).json({ error: 'Invalid id' }); return; }
+    const result = await purchaseRequestsService.reorderItems({
       userId: req.user!.sub,
-      id,
+      parentId,
+    });
+    if ('error' in result) {
+      res.status(404).json({ error: 'Order not found', code: result.error });
+      return;
+    }
+    res.json(result);
+  }
+
+  /// Customer-side PDF download — re-uses the merchant invoice
+  /// generator after a buyer-ownership check (the parent + child must
+  /// belong to the calling user and the child must be CONFIRMED with
+  /// a linked invoice).
+  async downloadCustomerInvoicePdf(req: Request, res: Response): Promise<void> {
+    const parentId = parseId(req.params.id);
+    const childId = parseId(req.params.childId);
+    if (!parentId || !childId) { res.status(400).json({ error: 'Invalid id' }); return; }
+    const ctx = await purchaseRequestsService.customerInvoiceContext({
+      userId: req.user!.sub,
+      parentId,
+      childId,
+    });
+    if ('error' in ctx) {
+      if (ctx.error === 'NOT_FOUND') res.status(404).json({ error: 'Order not found' });
+      else res.status(409).json({ error: 'No invoice has been issued for this order yet.' });
+      return;
+    }
+    // Delegate to the invoice service. Dynamic import keeps the
+    // top-level dependency graph shallow — this controller doesn't
+    // otherwise care about PDF generation.
+    const { invoicesService } = await import('../invoices/invoices.service.js');
+    const result = await invoicesService.generatePdf(ctx.shopId, ctx.invoiceId);
+    if (!Buffer.isBuffer(result)) {
+      res.status(404).json({ error: result.error });
+      return;
+    }
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="invoice-${ctx.invoiceNo}.pdf"`,
+    );
+    res.setHeader('Content-Length', result.length);
+    res.send(result);
+  }
+
+  async cancelChildForCustomer(req: Request, res: Response): Promise<void> {
+    const parentId = parseId(req.params.id);
+    const childId = parseId(req.params.childId);
+    if (!parentId || !childId) {
+      res.status(400).json({ error: 'Invalid id' });
+      return;
+    }
+    const result = await purchaseRequestsService.cancelChildForCustomer({
+      userId: req.user!.sub,
+      parentId,
+      childId,
     });
     if ('error' in result) {
       const { status, body } = cancelErrorMessage(result.error);
@@ -155,11 +255,8 @@ export class PurchaseRequestsController {
   // ── Merchant-facing ────────────────────────────────────────────────
 
   async listForMerchant(req: Request, res: Response): Promise<void> {
-    const shopId = req.user?.shopId;
-    if (!shopId) {
-      res.status(403).json({ error: 'This account has no shop linked.' });
-      return;
-    }
+    const shopId = await requireOwnedShop(req, res);
+    if (shopId == null) return;
     const { page, limit, skip } = parsePagination(req);
     const filters = merchantListSchema.parse({
       status: req.query.status,
@@ -179,21 +276,15 @@ export class PurchaseRequestsController {
   }
 
   async pendingCount(req: Request, res: Response): Promise<void> {
-    const shopId = req.user?.shopId;
-    if (!shopId) {
-      res.status(403).json({ error: 'This account has no shop linked.' });
-      return;
-    }
+    const shopId = await requireOwnedShop(req, res);
+    if (shopId == null) return;
     const count = await purchaseRequestsService.pendingCount(shopId);
     res.json({ count });
   }
 
   async getForMerchant(req: Request, res: Response): Promise<void> {
-    const shopId = req.user?.shopId;
-    if (!shopId) {
-      res.status(403).json({ error: 'This account has no shop linked.' });
-      return;
-    }
+    const shopId = await requireOwnedShop(req, res);
+    if (shopId == null) return;
     const id = parseId(req.params.id);
     if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
     const request = await purchaseRequestsService.getForMerchant(shopId, id);
@@ -202,11 +293,8 @@ export class PurchaseRequestsController {
   }
 
   async confirm(req: Request, res: Response): Promise<void> {
-    const shopId = req.user?.shopId;
-    if (!shopId) {
-      res.status(403).json({ error: 'This account has no shop linked.' });
-      return;
-    }
+    const shopId = await requireOwnedShop(req, res);
+    if (shopId == null) return;
     const id = parseId(req.params.id);
     if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
     const payload = decisionSchema.parse(req.body ?? {});
@@ -244,11 +332,8 @@ export class PurchaseRequestsController {
   }
 
   async reject(req: Request, res: Response): Promise<void> {
-    const shopId = req.user?.shopId;
-    if (!shopId) {
-      res.status(403).json({ error: 'This account has no shop linked.' });
-      return;
-    }
+    const shopId = await requireOwnedShop(req, res);
+    if (shopId == null) return;
     const id = parseId(req.params.id);
     if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
     const payload = decisionSchema.parse(req.body ?? {});
@@ -277,6 +362,54 @@ export class PurchaseRequestsController {
         .catch(() => {});
     }
     res.status(204).send();
+  }
+
+  /// Merchant-side — record a shipping milestone (PACKED, SHIPPED,
+  /// OUT_FOR_DELIVERY, DELIVERED, RETURNED). Drives the customer-facing
+  /// tracking timeline.
+  async addShippingEvent(req: Request, res: Response): Promise<void> {
+    const shopId = await requireOwnedShop(req, res);
+    if (shopId == null) return;
+    const id = parseId(req.params.id);
+    if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
+    const payload = shippingEventSchema.parse(req.body ?? {});
+    const result = await purchaseRequestsService.addShippingEvent({
+      shopId,
+      requestId: id,
+      actorId: req.user!.sub,
+      type: payload.type,
+      courier: payload.courier ?? null,
+      awb: payload.awb ?? null,
+      eta: payload.eta ? new Date(payload.eta) : null,
+      note: payload.note ?? null,
+    });
+    if ('error' in result) {
+      if (result.error === 'NOT_FOUND') res.status(404).json({ error: 'Order not found' });
+      else res.status(409).json({ error: 'Order must be confirmed before shipping events can be recorded.' });
+      return;
+    }
+    // Notify the buyer with a short status line so the bell badge
+    // updates without polling. Body uses a friendly label per type.
+    const labels: Record<string, string> = {
+      PACKED: 'Your order has been packed.',
+      SHIPPED: 'Your order is on the way.',
+      OUT_FOR_DELIVERY: 'Out for delivery today.',
+      DELIVERED: 'Your order was delivered.',
+      RETURNED: 'Your order was marked as returned.',
+    };
+    const request = await purchaseRequestsService.getForMerchant(shopId, id);
+    if (request) {
+      void notificationsService
+        .create({
+          userId: request.customerUserId,
+          kind: 'ORDER_UPDATE',
+          title: 'Order update',
+          body: labels[payload.type] ?? `Status: ${payload.type}`,
+          data: { requestId: id, type: payload.type },
+        })
+        .catch(() => {});
+    }
+    res.status(201).json(result);
   }
 }
 

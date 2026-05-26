@@ -205,6 +205,23 @@ function attachInvoicePaymentSummary<
   return { ...rest, ...summary };
 }
 
+/// Reloads the shop row and verifies that the caller actually owns
+/// it. Every merchant-facing endpoint passes `shopId` straight from
+/// the JWT, but a stale or tampered token could carry someone else's
+/// shopId — so we never act on it without a fresh DB-backed check.
+/// Returns true on success; false (the controller maps to 403) when
+/// the shop is gone or owned by a different user.
+export async function assertShopOwnership(
+  shopId: number,
+  userId: number,
+): Promise<boolean> {
+  const shop = await prisma.shop.findUnique({
+    where: { id: shopId },
+    select: { ownerUserId: true },
+  });
+  return shop != null && shop.ownerUserId === userId;
+}
+
 export class PurchaseRequestsService {
   /// Customer submits a *whole cart* — possibly spanning multiple
   /// shops. Server groups by shop and creates one [CustomerOrder]
