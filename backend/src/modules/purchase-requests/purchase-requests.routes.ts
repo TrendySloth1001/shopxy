@@ -43,7 +43,7 @@ customerRouter.get(
 );
 customerRouter.post(
   '/:id/cancel',
-  asyncHandler((req, res) => purchaseRequestsController.cancelForCustomer(req, res)),
+  asyncHandler((req, res) => purchaseRequestsController.cancelChildForCustomer(req, res)),
 );
 
 export { merchantRouter as ordersRouter, customerRouter as customerOrdersRouter };

@@ -13,6 +13,94 @@ import 'package:flutter/material.dart';
 /// `NetworkImageBox`. The legacy `imageId` field (an Unsplash photo id)
 /// is gone — anything the backend returns has a real `imageUrl`.
 
+/// Visual layout the merchant picked when authoring the slide. The
+/// renderer in home_v2_hero_carousel branches on this — older banners
+/// without a template default to `classic` for backward compatibility.
+enum HeroSlideTemplate {
+  /// Image right, gradient overlay, brand chip + title + subtitle +
+  /// shop-now button on the left. The original look.
+  classic,
+
+  /// Centered editorial: tiny accent eyebrow, large title, small "Explore"
+  /// arrow, circular image medallion on the right. Soft tinted panel.
+  minimal,
+
+  /// Full-bleed image. No eyebrow / title / subtitle / button — the
+  /// merchant supplies a ready-made banner with their own typography
+  /// baked in. We just render the picture + the "AD" badge.
+  imageOnly,
+
+  /// Clean 50/50 split — solid bg-color panel on the left holds text +
+  /// CTA, the image fills the right half with no gradient overlay.
+  split,
+
+  /// Full-bleed image with a dark scrim. Centered title + subtitle +
+  /// CTA in white. Great for dramatic product photography.
+  overlay,
+
+  /// Promo-style. Big accent "% OFF" badge in the corner, product image
+  /// hero. eyebrow becomes the deal label (e.g. "30% OFF").
+  deal,
+
+  /// Image fills the top, solid bottom panel (bgColor) holds the
+  /// title/subtitle. Like a movie poster.
+  poster;
+
+  static HeroSlideTemplate fromWire(String? v) {
+    switch (v) {
+      case 'MINIMAL':
+        return HeroSlideTemplate.minimal;
+      case 'IMAGE_ONLY':
+        return HeroSlideTemplate.imageOnly;
+      case 'SPLIT':
+        return HeroSlideTemplate.split;
+      case 'OVERLAY':
+        return HeroSlideTemplate.overlay;
+      case 'DEAL':
+        return HeroSlideTemplate.deal;
+      case 'POSTER':
+        return HeroSlideTemplate.poster;
+      case 'CLASSIC':
+      default:
+        return HeroSlideTemplate.classic;
+    }
+  }
+
+  String get wire {
+    switch (this) {
+      case HeroSlideTemplate.classic:
+        return 'CLASSIC';
+      case HeroSlideTemplate.minimal:
+        return 'MINIMAL';
+      case HeroSlideTemplate.imageOnly:
+        return 'IMAGE_ONLY';
+      case HeroSlideTemplate.split:
+        return 'SPLIT';
+      case HeroSlideTemplate.overlay:
+        return 'OVERLAY';
+      case HeroSlideTemplate.deal:
+        return 'DEAL';
+      case HeroSlideTemplate.poster:
+        return 'POSTER';
+    }
+  }
+}
+
+/// How the slide's image fills its slot. Maps to BoxFit on the
+/// renderer — COVER (default) crops to fill, CONTAIN letterboxes.
+enum HeroImageFit {
+  cover,
+  contain;
+
+  static HeroImageFit fromWire(String? v) {
+    if (v == 'CONTAIN') return HeroImageFit.contain;
+    return HeroImageFit.cover;
+  }
+
+  BoxFit get boxFit =>
+      this == HeroImageFit.contain ? BoxFit.contain : BoxFit.cover;
+}
+
 class HeroSlide {
   const HeroSlide({
     required this.brand,
@@ -21,6 +109,9 @@ class HeroSlide {
     required this.imageUrl,
     required this.bgColor,
     required this.accent,
+    this.template = HeroSlideTemplate.classic,
+    this.imageFit = HeroImageFit.cover,
+    this.ctaText,
     this.ctaTarget,
     this.bannerId,
   });
@@ -31,6 +122,11 @@ class HeroSlide {
   final String imageUrl;
   final Color bgColor;
   final Color accent;
+  final HeroSlideTemplate template;
+  final HeroImageFit imageFit;
+  /// Merchant-supplied button label. Templates that render a CTA fall
+  /// back to "Shop now" when this is null or empty.
+  final String? ctaText;
   final String? ctaTarget;
 
   /// Server-side Banner id. Present when the slide came from the
@@ -143,12 +239,15 @@ class ProductCard {
     required this.bankPrice,
     required this.rating,
     required this.ratingCount,
+    required this.ratingCountRaw,
     required this.imageUrl,
     required this.bgColor,
     this.tag,
     this.isAd = false,
     this.promotionId,
     this.shopSlug,
+    this.discountPct = 0,
+    this.freeDelivery = true,
   });
 
   final int productId;
@@ -157,7 +256,11 @@ class ProductCard {
   final String originalPrice;
   final String bankPrice;
   final double rating;
+  /// Pretty-printed count for the chip ("1.2k", "37"). Kept separate
+  /// from [ratingCountRaw] so the badge formatting doesn't lose the
+  /// underlying integer the trust-mark logic needs.
   final String ratingCount;
+  final int ratingCountRaw;
   final String imageUrl;
   final Color bgColor;
   final String? tag;
@@ -169,6 +272,23 @@ class ProductCard {
   /// Slug of the shop owning this product — lets the PDP and any
   /// inline "Visit shop" link route without a second API call.
   final String? shopSlug;
+
+  /// Integer percent-off, computed from mrp vs sellingPrice. 0 means
+  /// "show no discount chip" (either the prices match or the product
+  /// has no MRP set). Capped at 99 in the mapper so the chip stays
+  /// two-digit-clean.
+  final int discountPct;
+
+  /// Hint that this product qualifies for free delivery — drives the
+  /// "FREE Delivery" trust line under the price. True for now until a
+  /// per-shop / per-pincode shipping rule exists; flipping the default
+  /// later is the only change needed downstream.
+  final bool freeDelivery;
+
+  /// "Assured" / verified-seller-style trust mark eligibility. Cards
+  /// with both a strong rating count and a non-trivial average get
+  /// the badge — mirrors the heuristic Flipkart's "Assured" chip uses.
+  bool get isAssured => ratingCountRaw >= 50 && rating >= 4.0;
 }
 
 class CategoryTab {
