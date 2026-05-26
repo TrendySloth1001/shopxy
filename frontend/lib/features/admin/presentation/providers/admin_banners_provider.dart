@@ -37,12 +37,18 @@ class AdminBannersProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
     try {
-      // P2 keeps the list small — admin pulls everything in one page.
-      // When banner count grows past one page (~50), wire the cursor.
+      // Admin curates a small set of banners — current ceiling is 100
+      // per fetch. If the platform ever exceeds that, expose page.cursor
+      // through this provider and add a "load more" affordance; for now
+      // the response is consciously single-page and the editor warns if
+      // it sees a non-null cursor.
       final page = await _ds.list(limit: 100);
       _banners
         ..clear()
         ..addAll(page.data);
+      if (page.nextCursor != null) {
+        _error = 'Banner list truncated at 100. Wire cursor paging.';
+      }
     } catch (e) {
       _error = e.toString();
     } finally {

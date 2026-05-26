@@ -166,6 +166,14 @@ class _FlashDealEditorSheetState extends State<FlashDealEditorSheet> {
       setState(() => _error = 'Enter a valid flash price');
       return;
     }
+    // A flash price at or above MRP isn't really a flash deal — it'd
+    // show as a 0% (or negative) discount on the customer card. Reject
+    // up front rather than letting the backend surface a confusing
+    // 422 after the merchant has filled the whole form.
+    if (_picked != null && _picked!.mrp > 0 && _flashPriceNum! >= _picked!.mrp) {
+      setState(() => _error = 'Flash price must be below MRP');
+      return;
+    }
     if (_stockNum == null) {
       setState(() => _error = 'Enter a positive stock limit');
       return;

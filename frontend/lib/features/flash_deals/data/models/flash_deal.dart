@@ -98,21 +98,41 @@ class FlashDeal {
     return FlashDealStatus.active;
   }
 
-  factory FlashDeal.fromJson(Map<String, dynamic> j) => FlashDeal(
-        id: j['id'] as int,
-        productId: j['productId'] as int,
-        flashPrice: _toDouble(j['flashPrice']),
-        stockLimit: j['stockLimit'] as int,
-        soldCount: (j['soldCount'] as int?) ?? 0,
-        startAt: DateTime.parse(j['startAt'] as String),
-        endAt: DateTime.parse(j['endAt'] as String),
-        isActive: (j['isActive'] as bool?) ?? true,
-        product: j['product'] != null
-            ? FlashDealProductRef.fromJson(
-                j['product'] as Map<String, dynamic>,
-              )
-            : null,
-      );
+  /// Returns null when either timestamp is missing or unparseable so
+  /// list callers can skip the row instead of falling back to the epoch
+  /// (which mis-bucketed garbage rows as `past` and quietly hid that
+  /// the backend handed us a malformed payload).
+  static FlashDeal? tryFromJson(Map<String, dynamic> j) {
+    final start = _tryParseDate(j['startAt']);
+    final end = _tryParseDate(j['endAt']);
+    if (start == null || end == null) return null;
+    return FlashDeal(
+      id: j['id'] as int,
+      productId: j['productId'] as int,
+      flashPrice: _toDouble(j['flashPrice']),
+      stockLimit: j['stockLimit'] as int,
+      soldCount: (j['soldCount'] as int?) ?? 0,
+      startAt: start,
+      endAt: end,
+      isActive: (j['isActive'] as bool?) ?? true,
+      product: j['product'] != null
+          ? FlashDealProductRef.fromJson(j['product'] as Map<String, dynamic>)
+          : null,
+    );
+  }
+
+  factory FlashDeal.fromJson(Map<String, dynamic> j) {
+    final out = tryFromJson(j);
+    if (out == null) {
+      throw const FormatException('Invalid FlashDeal payload');
+    }
+    return out;
+  }
+}
+
+DateTime? _tryParseDate(dynamic v) {
+  if (v is! String) return null;
+  return DateTime.tryParse(v);
 }
 
 double _toDouble(dynamic v) {
