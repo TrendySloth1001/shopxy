@@ -99,10 +99,31 @@ export function buildApp(): express.Express {
   app.use(helmet());
   app.use(requestId);
 
+  // CORS must be explicit. We refuse to fall back to `origin: true` with
+  // `credentials: true` — that combination reflects ANY origin and lets a
+  // hostile page on `attacker.com` issue authenticated requests with the
+  // victim's browser session. In production we require CORS_ORIGINS;
+  // otherwise we use a fixed local-dev origin list (no wildcard).
   const corsOriginsEnv = (process.env.CORS_ORIGINS ?? '').split(',').filter(Boolean);
+  const allowedOrigins =
+    corsOriginsEnv.length > 0
+      ? corsOriginsEnv
+      : (() => {
+          if (process.env.NODE_ENV === 'production') {
+            throw new Error(
+              'CORS_ORIGINS is required in production — refusing to start with a permissive default. ' +
+                'Set CORS_ORIGINS to a comma-separated origin list.',
+            );
+          }
+          return [
+            'http://localhost:3000',
+            'http://localhost:5173',
+            'http://localhost:8080',
+          ];
+        })();
   app.use(
     cors({
-      origin: corsOriginsEnv.length > 0 ? corsOriginsEnv : true,
+      origin: allowedOrigins,
       credentials: true,
     }),
   );
@@ -136,6 +157,29 @@ export function buildApp(): express.Express {
     max: 1000,
     standardHeaders: true,
     legacyHeaders: false,
+  });
+
+  // Per-user limiter for upload. Sharp re-encode + 3 MinIO PUTs is
+  // expensive; a single merchant hammering /upload can saturate the box.
+  // Key on req.user.sub when present (post-requireAuth) so two devices
+  // sharing an IP aren't aggregated.
+  const uploadLimiter = rateLimit({
+    windowMs: 60_000,
+    max: 30,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => String(req.user?.sub ?? req.ip),
+  });
+
+  // Per-user limiter for event ingestion. Bounded at a comfortable
+  // browse-rate ceiling; bots that exceed get 429s without affecting
+  // legit users.
+  const eventsLimiter = rateLimit({
+    windowMs: 60_000,
+    max: 600,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => String(req.user?.sub ?? req.ip),
   });
 
   app.get('/health', async (_req, res) => {
@@ -194,6 +238,14 @@ export function buildApp(): express.Express {
   app.use('/marketplace/shops', publicLimiter, optionalAuth, marketplaceShopRouter);
   app.use('/marketplace/categories', publicLimiter, optionalAuth, marketplaceCategoryRouter);
 
+  // Categories taxonomy — anonymous-readable. The customer home page
+  // calls `/categories/tree` on unauthenticated boot for the categories
+  // rail; the previous behind-requireAuth mount returned 401 for guests
+  // and broke the anonymous home. Writes inside the router self-gate
+  // via requirePlatformAdmin (which fails closed when req.user is
+  // absent), so it's safe to mount before requireAuth.
+  app.use('/categories', publicLimiter, optionalAuth, categoriesRouter);
+
   const SAFE_FILENAME_RE = /^[a-zA-Z0-9_.-]+$/;
   app.get('/images/:filename', imageLimiter, async (req: Request, res: Response) => {
     const { filename } = req.params;
@@ -208,6 +260,10 @@ export function buildApp(): express.Express {
     }
     res.setHeader('Content-Type', result.contentType);
     res.setHeader('Cache-Control', 'public, max-age=3600');
+    // Prevent the browser from MIME-sniffing a misnamed payload (e.g.
+    // an SVG/HTML smuggled through a future upload path) and executing
+    // it in our origin. Belt + braces alongside upload-side allowlist.
+    res.setHeader('X-Content-Type-Options', 'nosniff');
     result.stream.pipe(res);
   });
 
@@ -231,7 +287,7 @@ export function buildApp(): express.Express {
   // Customer event ingestion — no role gate; both OWNER (browsing
   // the marketplace) and CUSTOMER can post events. resolveShop is
   // intentionally not used; events attribute to the *user*, not a shop.
-  app.use('/v1/events', eventsIngestRouter);
+  app.use('/v1/events', eventsLimiter, eventsIngestRouter);
 
   // Per-user recommendations — auth-required (the slot reads from the
   // user's RecommendationCache row).
@@ -249,10 +305,6 @@ export function buildApp(): express.Express {
   app.use('/admin/banners', requirePlatformAdmin, bannersAdminRouter);
   app.use('/admin/brand-spotlight', requirePlatformAdmin, brandSpotlightAdminRouter);
   app.use('/admin/collections', requirePlatformAdmin, collectionsAdminRouter);
-
-  // Shared categories read surface (merchant + customer). Writes are
-  // self-gated to PLATFORM_ADMIN inside categories.routes.ts.
-  app.use('/categories', categoriesRouter);
 
   const ownerOnly = requireRole('OWNER');
   app.use('/me/shop', ownerOnly, shopRouter);
@@ -290,7 +342,7 @@ export function buildApp(): express.Express {
   app.use('/parties', ownerOnly, partiesRouter);
   app.use('/invoices', ownerOnly, invoicesRouter);
   app.use('/challans', ownerOnly, challansRouter);
-  app.use('/upload', ownerOnly, uploadRouter);
+  app.use('/upload', ownerOnly, uploadLimiter, uploadRouter);
   app.use('/reports', ownerOnly, reportsRouter);
   // Merchant returns inbox + workflow — mounted BEFORE /orders so the
   // sub-path takes precedence over the /orders/:id route registered

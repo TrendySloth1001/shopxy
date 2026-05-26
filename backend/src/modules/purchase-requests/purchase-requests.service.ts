@@ -27,6 +27,7 @@ function derivePaymentSummary(
 }
 import { flashSalesService } from '../flash-sales/flash-sales.service.js';
 import { couponsService } from '../coupons/coupons.service.js';
+import { walletService } from '../wallet/wallet.service.js';
 
 /// Thrown inside the order-create transaction when coupon redemption
 /// fails — caught above to surface a normal `{ error: 'COUPON_INVALID' }`
@@ -477,6 +478,10 @@ export class PurchaseRequestsService {
     }
 
     // ── Persist parent + children in one transaction ────────────────
+    // Flash-sale claims happened above (outside the transaction) — if
+    // the persist phase fails for ANY reason we MUST release them, or
+    // the reserved stock is permanently lost until the cron sweep.
+    let orderPersisted = false;
     try {
       const order = await prisma.$transaction(async (tx) => {
         const parent = await tx.customerOrder.create({
@@ -559,7 +564,7 @@ export class PurchaseRequestsService {
                     sourceId: parent.id,
                     description: `Order #${parent.id} (wallet)`,
                     idempotencyKey: opts.idempotencyKey
-                      ? `checkout-${opts.idempotencyKey}`
+                      ? `wallet:checkout:${opts.idempotencyKey}`
                       : null,
                   },
                 });
@@ -617,6 +622,7 @@ export class PurchaseRequestsService {
           walletPaid: round2(walletPaid),
         };
       });
+      orderPersisted = true;
       return { order };
     } catch (e) {
       if (e instanceof CouponRedeemError) {
@@ -642,6 +648,10 @@ export class PurchaseRequestsService {
           },
         });
         if (existing) {
+          // Deduplicated: the prior call already holds the flash claims
+          // we'd otherwise release. Mark persisted so the finally
+          // doesn't unwind them.
+          orderPersisted = true;
           return {
             order: {
               id: existing.id,
@@ -654,6 +664,14 @@ export class PurchaseRequestsService {
         }
       }
       throw e;
+    } finally {
+      if (!orderPersisted && claimedQty.size > 0) {
+        // Best-effort release. Each release is its own Redis op; we
+        // don't fail the caller if one of them errors.
+        for (const [pid, qty] of claimedQty.entries()) {
+          await flashSalesService.release(pid, qty).catch(() => undefined);
+        }
+      }
     }
   }
 
@@ -758,25 +776,116 @@ export class PurchaseRequestsService {
     | { ok: true }
     | { error: 'NOT_FOUND' | 'NOT_OWNED' | 'NOT_PENDING' }
   > {
-    const update = await prisma.purchaseRequest.updateMany({
-      where: {
-        id: opts.childId,
-        customerOrderId: opts.parentId,
-        customerUserId: opts.userId,
-        status: 'PENDING',
-      },
-      data: { status: 'CANCELLED', decidedAt: new Date() },
-    });
-    if (update.count === 1) {
-      await prisma.purchaseRequestEvent.create({
+    // We need to release reserved inventory + refund wallet money + back
+    // out the coupon usage, all atomically with the status flip. Do
+    // everything inside one transaction so a partial failure can't
+    // leave a CANCELLED row with the customer still debited.
+    const result = await prisma.$transaction(async (tx) => {
+      const claim = await tx.purchaseRequest.updateMany({
+        where: {
+          id: opts.childId,
+          customerOrderId: opts.parentId,
+          customerUserId: opts.userId,
+          status: 'PENDING',
+        },
+        data: { status: 'CANCELLED', decidedAt: new Date() },
+      });
+      if (claim.count !== 1) {
+        return { needsDiag: true as const };
+      }
+
+      // Snapshot the cancelled child so we can refund + release.
+      const child = await tx.purchaseRequest.findUniqueOrThrow({
+        where: { id: opts.childId },
+        select: {
+          id: true,
+          estimatedTotal: true,
+          customerUserId: true,
+          customerOrderId: true,
+          items: { select: { productId: true, quantity: true } },
+        },
+      });
+
+      // Refund the cancelled slice's share of the parent's wallet
+      // payment. If this is the only/last shop in the order, the full
+      // walletPaid comes back. Otherwise the slice gets a proportional
+      // share keyed on the original split (estimatedTotal share of
+      // parent.estimatedTotal at the time of order create).
+      const parent = await tx.customerOrder.findUnique({
+        where: { id: opts.parentId },
+        select: {
+          id: true,
+          walletPaid: true,
+          estimatedTotal: true,
+          couponDiscount: true,
+        },
+      });
+      if (parent) {
+        const childTotal = Number(child.estimatedTotal);
+        const parentTotal = Number(parent.estimatedTotal);
+        const walletPaid = Number(parent.walletPaid);
+        if (walletPaid > 0 && parentTotal > 0) {
+          const share = Math.min(childTotal / parentTotal, 1);
+          const refund = Math.round(walletPaid * share * 100) / 100;
+          if (refund > 0) {
+            // Namespaced idempotency key so a cancel + return on the
+            // same childId can't collide.
+            await walletService.credit({
+              userId: child.customerUserId,
+              amount: refund,
+              source: 'CANCEL',
+              sourceId: child.id,
+              description: `Cancel refund for order #${parent.id} (slice #${child.id})`,
+              idempotencyKey: `wallet:cancel-${child.id}`,
+              tx,
+            });
+          }
+        }
+      }
+
+      // Best-effort flash-sale release. Outside Redis-aware code paths
+      // this is a no-op (the cron also reconciles).
+      for (const item of child.items) {
+        await flashSalesService
+          .release(item.productId, Math.ceil(Number(item.quantity)))
+          .catch(() => undefined);
+      }
+
+      // If THIS cancellation was the last live child, decrement the
+      // parent's coupon redemption (so the customer's per-user cap +
+      // the global totalRedemptions counter aren't permanently
+      // consumed by an order that never happened).
+      const liveSiblings = await tx.purchaseRequest.count({
+        where: {
+          customerOrderId: opts.parentId,
+          status: { notIn: ['CANCELLED', 'REJECTED'] },
+        },
+      });
+      if (liveSiblings === 0) {
+        const redemption = await tx.couponRedemption.findUnique({
+          where: { customerOrderId: opts.parentId },
+          select: { id: true, couponId: true },
+        });
+        if (redemption) {
+          await tx.coupon.update({
+            where: { id: redemption.couponId },
+            data: { totalRedemptions: { decrement: 1 } },
+          });
+          await tx.couponRedemption.delete({ where: { id: redemption.id } });
+        }
+      }
+
+      await tx.purchaseRequestEvent.create({
         data: {
           requestId: opts.childId,
           type: 'CANCELLED',
           actorId: opts.userId,
         },
       });
-      return { ok: true };
-    }
+      return { ok: true as const };
+    });
+
+    if ('ok' in result) return { ok: true };
 
     const existing = await prisma.purchaseRequest.findUnique({
       where: { id: opts.childId },
@@ -902,59 +1011,55 @@ export class PurchaseRequestsService {
         return { error: 'NO_ITEMS' as const };
       }
 
-      // ── 3. Atomic stock decrement (gated, one round-trip per product) ─
-      // Sum quantities by productId in case the same product appears on
-      // more than one line. The gated updateMany decrements iff the
-      // current row still has at least the requested quantity in stock,
-      // so two concurrent confirms can't both pass a stale pre-check
-      // and oversell. If the claim fails the outer transaction rolls
-      // back any sibling decrements we did earlier in this loop.
-      const wantByProduct = new Map<number, number>();
-      for (const it of request.items) {
-        const prev = wantByProduct.get(it.productId) ?? 0;
-        wantByProduct.set(it.productId, prev + Number(it.quantity));
-      }
-      for (const [productId, requested] of wantByProduct) {
-        const claimed = await tx.product.updateMany({
-          where: { id: productId, stockQuantity: { gte: requested } },
-          data: { stockQuantity: { decrement: requested } },
-        });
-        if (claimed.count !== 1) {
-          const current = await tx.product.findUnique({
-            where: { id: productId },
-            select: { stockQuantity: true },
-          });
-          const available = current ? Number(current.stockQuantity) : 0;
-          return {
-            error: 'INSUFFICIENT_STOCK' as const,
-            productId,
-            available,
-            requested,
-          };
-        }
-      }
+      // ── 3. Stock decrement happens inside step-5 invoice confirmation ─
+      // We used to decrement Product.stockQuantity directly here AND then
+      // create a DRAFT invoice — that produced ghost stock movements
+      // invisible to the ledger / low-stock alerts. Now the auto-confirm
+      // path of invoicesService.createInvoice (see step 5 below) runs
+      // ledgerService.post, which atomically decrements stock AND writes
+      // a matching StockTransaction row. Insufficient-stock surfaces the
+      // same error shape we used to return here, with productId /
+      // available / requested forwarded back to the caller.
 
-      // ── 4. Lazy-create Party if the customer wasn't linked yet ───
+      // ── 4. Find-or-create Party for this customer in this shop ────
+      // Reuses an existing linked Party row if one already exists, so a
+      // repeat buyer doesn't accumulate N duplicate party rows (one per
+      // order). Falls back to create on first contact.
       let partyId = request.partyId;
       if (!partyId) {
-        const created = await tx.party.create({
-          data: {
+        const existing = await tx.party.findFirst({
+          where: {
             shopId: request.shopId,
-            name: request.customerName,
-            phone: request.customerPhone,
-            email: request.customerEmail,
-            address: request.customerAddress,
             linkedUserId: request.customerUserId,
           },
           select: { id: true },
         });
-        partyId = created.id;
+        if (existing) {
+          partyId = existing.id;
+        } else {
+          const created = await tx.party.create({
+            data: {
+              shopId: request.shopId,
+              name: request.customerName,
+              phone: request.customerPhone,
+              email: request.customerEmail,
+              address: request.customerAddress,
+              linkedUserId: request.customerUserId,
+            },
+            select: { id: true },
+          });
+          partyId = created.id;
+        }
       }
 
-      // ── 5. Mint the invoice ───────────────────────────────────────
+      // ── 5. Mint + auto-confirm the invoice ────────────────────────
       // invoicesService.createInvoice opens its own $transaction; nested
       // transactions in Prisma collapse into the outer one so the whole
-      // operation remains atomic.
+      // operation remains atomic. `confirm: true` immediately posts the
+      // ledger so stock-ledger reports and low-stock alerts see the
+      // movement — without it the invoice would stay DRAFT forever and
+      // the stock decrement done in step 3 above would be invisible to
+      // downstream reporting.
       const result = await invoicesService.createInvoice({
         shopId: request.shopId,
         type: 'SALE',
@@ -967,6 +1072,8 @@ export class PurchaseRequestsService {
           quantity: Number(i.quantity),
           unitPrice: Number(i.unitPrice),
         })),
+        confirm: true,
+        confirmedById: opts.decidedById,
       });
 
       if ('error' in result) {
@@ -974,6 +1081,26 @@ export class PurchaseRequestsService {
         // outer transaction would also rollback the status flip, but
         // being explicit here matches what callers expect.
         return { error: result.error ?? 'INVOICE_FAILED' as const };
+      }
+      // Auto-confirm failed (most commonly: ledger could not decrement
+      // stock atomically). Surface the structured error so the FE can
+      // render the same "insufficient stock" copy as the legacy path.
+      if ('confirmError' in result && result.confirmError) {
+        const ce = result.confirmError as {
+          error: string;
+          productId?: number;
+          available?: number;
+          requested?: number;
+        };
+        if (ce.error === 'Insufficient stock for one or more items') {
+          return {
+            error: 'INSUFFICIENT_STOCK' as const,
+            productId: ce.productId,
+            available: ce.available,
+            requested: ce.requested,
+          };
+        }
+        return { error: ce.error };
       }
 
       // ── 6. Mark CONFIRMED + link the invoice ─────────────────────
@@ -1011,18 +1138,97 @@ export class PurchaseRequestsService {
     | { error: 'NOT_FOUND' | 'NOT_PENDING' }
     | { ok: true }
   > {
-    // Same atomic-claim trick: updateMany gated on (shopId, status='PENDING').
-    const update = await prisma.purchaseRequest.updateMany({
-      where: { id: opts.requestId, shopId: opts.shopId, status: 'PENDING' },
-      data: {
-        status: 'REJECTED',
-        decidedById: opts.decidedById,
-        decidedAt: new Date(),
-        decisionNote: opts.note ?? null,
-      },
-    });
-    if (update.count === 1) {
-      await prisma.purchaseRequestEvent.create({
+    // Atomic claim + side-effects (event, wallet refund proportional to
+    // this child's share, coupon decrement when the last sibling goes
+    // terminal). All inside a single transaction so a downstream
+    // failure can't leave a REJECTED row with the customer still
+    // debited or the coupon counter still consumed.
+    const result = await prisma.$transaction(async (tx) => {
+      const update = await tx.purchaseRequest.updateMany({
+        where: { id: opts.requestId, shopId: opts.shopId, status: 'PENDING' },
+        data: {
+          status: 'REJECTED',
+          decidedById: opts.decidedById,
+          decidedAt: new Date(),
+          decisionNote: opts.note ?? null,
+        },
+      });
+      if (update.count !== 1) {
+        return { needsDiag: true as const };
+      }
+
+      const child = await tx.purchaseRequest.findUniqueOrThrow({
+        where: { id: opts.requestId },
+        select: {
+          id: true,
+          customerUserId: true,
+          customerOrderId: true,
+          estimatedTotal: true,
+          items: { select: { productId: true, quantity: true } },
+        },
+      });
+
+      // Wallet refund proportional to this child's share, mirroring the
+      // cancel path.
+      if (child.customerOrderId !== null) {
+        const parent = await tx.customerOrder.findUnique({
+          where: { id: child.customerOrderId },
+          select: { walletPaid: true, estimatedTotal: true },
+        });
+        if (parent) {
+          const parentTotal = Number(parent.estimatedTotal);
+          const childTotal = Number(child.estimatedTotal);
+          const walletPaid = Number(parent.walletPaid);
+          if (walletPaid > 0 && parentTotal > 0) {
+            const share = Math.min(childTotal / parentTotal, 1);
+            const refund = Math.round(walletPaid * share * 100) / 100;
+            if (refund > 0) {
+              await walletService.credit({
+                userId: child.customerUserId,
+                amount: refund,
+                source: 'CANCEL',
+                sourceId: child.id,
+                description: `Merchant rejection refund for child #${child.id}`,
+                idempotencyKey: `wallet:reject-${child.id}`,
+                tx,
+              });
+            }
+          }
+        }
+      }
+
+      // Release flash-sale reservations.
+      for (const item of child.items) {
+        await flashSalesService
+          .release(item.productId, Math.ceil(Number(item.quantity)))
+          .catch(() => undefined);
+      }
+
+      // Decrement coupon redemption when this rejection drops the last
+      // live sibling.
+      if (child.customerOrderId !== null) {
+        const liveSiblings = await tx.purchaseRequest.count({
+          where: {
+            customerOrderId: child.customerOrderId,
+            status: { notIn: ['CANCELLED', 'REJECTED'] },
+          },
+        });
+        if (liveSiblings === 0) {
+          const redemption = await tx.couponRedemption.findUnique({
+            where: { customerOrderId: child.customerOrderId },
+            select: { id: true, couponId: true },
+          });
+          if (redemption) {
+            await tx.coupon.update({
+              where: { id: redemption.couponId },
+              data: { totalRedemptions: { decrement: 1 } },
+            });
+            await tx.couponRedemption.delete({ where: { id: redemption.id } });
+          }
+        }
+      }
+
+      await tx.purchaseRequestEvent.create({
         data: {
           requestId: opts.requestId,
           type: 'REJECTED',
@@ -1030,8 +1236,10 @@ export class PurchaseRequestsService {
           note: opts.note ?? null,
         },
       });
-      return { ok: true };
-    }
+      return { ok: true as const };
+    });
+
+    if ('ok' in result) return { ok: true };
 
     const probe = await prisma.purchaseRequest.findFirst({
       where: { id: opts.requestId, shopId: opts.shopId },

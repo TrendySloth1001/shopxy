@@ -9,6 +9,10 @@ class ProductsProvider extends ChangeNotifier {
 
   List<Product> _products = [];
   bool _isLoading = false;
+  /// Separate "is a paginated load in flight" flag so fast scrolling
+  /// can't fire two `loadProducts(loadMore: true)` calls that both
+  /// bump `_page` and append the same response twice.
+  bool _isLoadingMore = false;
   String? _error;
   int _total = 0;
   int _page = 1;
@@ -59,6 +63,13 @@ class ProductsProvider extends ChangeNotifier {
 
   Future<void> loadProducts({bool loadMore = false}) async {
     if (loadMore) {
+      // Drop subsequent "load next page" requests while one is already
+      // in flight. Without this guard a fast scroll triggers two
+      // post-frame callbacks before the first response returns, both
+      // bump `_page`, and we end up appending the same page twice while
+      // skipping a real page.
+      if (_isLoadingMore) return;
+      _isLoadingMore = true;
       _page++;
     } else {
       _page = 1;
@@ -87,6 +98,7 @@ class ProductsProvider extends ChangeNotifier {
       _error = e.toString();
     } finally {
       _isLoading = false;
+      _isLoadingMore = false;
       notifyListeners();
     }
   }

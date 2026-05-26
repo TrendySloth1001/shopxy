@@ -7,7 +7,10 @@ export type WalletSource =
   | 'REFERRAL'
   | 'LOYALTY'
   | 'MANUAL'
-  | 'CHECKOUT';
+  | 'CHECKOUT'
+  /// Refund for a per-shop child order the customer cancelled before
+  /// the merchant acted. Distinct from REFUND (which is post-return).
+  | 'CANCEL';
 
 /// Append-only wallet primitive. Refunds (Phase 3), coupons / manual
 /// platform credits (Phase 4), and loyalty / referral payouts (Phase 5)

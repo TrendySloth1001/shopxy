@@ -461,14 +461,14 @@ class CartProvider extends ChangeNotifier {
       };
 
   /// Cap a desired quantity by the product's stock and the hard line
-  /// limit. Stock of 0 already short-circuits earlier in [add]; this
-  /// path handles "user wants 100 of a 5-in-stock item".
+  /// limit. When the product is out of stock we deliberately return 0
+  /// (not infinity) — that lets [setQuantity] drop the line cleanly
+  /// instead of letting the user crank the stepper to kMaxLineQuantity
+  /// against a depleted SKU only to be rejected at checkout.
   double _capQuantity(double desired, CatalogProduct product) {
-    final stockCap = product.stockQuantity > 0
-        ? product.stockQuantity
-        : double.infinity;
+    if (product.stockQuantity <= 0) return 0;
     return math.min(
-      math.min(desired, stockCap),
+      math.min(desired, product.stockQuantity),
       kMaxLineQuantity.toDouble(),
     );
   }

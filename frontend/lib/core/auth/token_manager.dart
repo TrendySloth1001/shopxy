@@ -37,9 +37,14 @@ class TokenManager {
 
   Future<String?> getRefreshToken() => _storage.read(key: _keyRefresh);
 
-  /// Clear all stored tokens (logout / session expired).
+  /// Clear stored tokens (logout / session expired). Only deletes the
+  /// two token keys — other secure-storage co-tenants (nav prefs, etc.)
+  /// MUST survive a session reset.
   Future<void> clear() async {
     _accessToken = null;
-    await _storage.deleteAll();
+    await Future.wait([
+      _storage.delete(key: _keyAccess),
+      _storage.delete(key: _keyRefresh),
+    ]);
   }
 }

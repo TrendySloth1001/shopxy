@@ -115,8 +115,13 @@ class AuthProvider extends ChangeNotifier {
   }
 
   /// Called by ApiClient when a refresh fails — forces re-login.
-  void clearAuth() {
-    _tokenManager.clear();
+  ///
+  /// Returns the [Future] from the token clear so callers in `main()`
+  /// that need to know the storage write has finished can await it
+  /// (the storage delete is async; without awaiting, a rapid re-login
+  /// can race the still-pending delete).
+  Future<void> clearAuth() async {
+    await _tokenManager.clear();
     _user = null;
     notifyListeners();
   }
