@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:shopxy_customer/core/network/api_client.dart';
-import 'package:shopxy_customer/features/catalog/domain/entities/catalog_product.dart';
+import 'package:shopxy_customer/shared/domain/entities/catalog_product.dart';
 
 class WishlistEntry {
   WishlistEntry({

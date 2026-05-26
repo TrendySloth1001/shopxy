@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shopxy_customer/features/categories/domain/entities/category.dart';
+import 'package:shopxy_customer/shared/domain/entities/category.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 
 /// Shared network-image renderer for category artwork. Falls back to a

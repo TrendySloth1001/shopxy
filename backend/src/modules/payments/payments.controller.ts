@@ -71,6 +71,14 @@ export class PaymentsController {
     const shopId = requireShopId(req, res);
     if (!shopId) return;
     const payload = createPaymentSchema.parse(req.body);
+    // Honour client-supplied idempotency keys. A flaky mobile retry
+    // with the same key reuses the original row (no double-payment of
+    // the invoice, no double-debit on the party/vendor ledger).
+    const rawKey = req.get('x-idempotency-key') ?? req.get('X-Idempotency-Key');
+    const idempotencyKey =
+      typeof rawKey === 'string' && rawKey.length > 0 && rawKey.length <= 120
+        ? rawKey
+        : null;
     try {
       const payment = await paymentsService.createPayment({
         shopId,
@@ -86,6 +94,7 @@ export class PaymentsController {
         invoiceId: payload.invoiceId ?? null,
         note: payload.note ?? null,
         createdById: req.user?.sub ?? null,
+        idempotencyKey,
       });
       res.status(201).json(payment);
     } catch (err) {

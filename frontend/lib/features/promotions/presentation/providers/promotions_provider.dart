@@ -61,16 +61,20 @@ class PromotionsProvider extends ChangeNotifier {
   Future<bool> cancel(int id) async {
     try {
       await _ds.cancel(id);
-      final i = _items.indexWhere((p) => p.id == id);
-      if (i >= 0) {
-        // Reflect the cancel locally without re-fetching.
-        await load();
-      }
-      return true;
     } catch (e) {
       _error = e.toString();
       notifyListeners();
       return false;
     }
+    // Refresh in a separate try so a failed reload still surfaces an
+    // error (the cancel itself already succeeded server-side, but the
+    // user needs to know the list isn't in sync).
+    try {
+      await load();
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+    }
+    return true;
   }
 }

@@ -37,12 +37,19 @@ class AdminBannersProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
     try {
-      // P2 keeps the list small — admin pulls everything in one page.
-      // When banner count grows past one page (~50), wire the cursor.
-      final page = await _ds.list(limit: 100);
-      _banners
-        ..clear()
-        ..addAll(page.data);
+      // Walk every page so an admin platform with > 100 banners doesn't
+      // silently truncate the manager view. Capped at 50 iterations
+      // (5k banners) as a runaway-guard — past that we'd want a real
+      // virtual list anyway.
+      _banners.clear();
+      int? cursor;
+      var pages = 0;
+      do {
+        final page = await _ds.list(limit: 100, cursor: cursor);
+        _banners.addAll(page.data);
+        cursor = page.nextCursor;
+        pages++;
+      } while (cursor != null && pages < 50);
     } catch (e) {
       _error = e.toString();
     } finally {

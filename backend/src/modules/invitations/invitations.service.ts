@@ -7,6 +7,18 @@ const INVITE_TTL_DAYS = 14;
 export type LinkType = 'PARTY' | 'VENDOR';
 export type InviteStatus = 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'CANCELLED' | 'EXPIRED';
 
+/// Thrown inside `respond({ decision: 'ACCEPT' })` when the target
+/// Party/Vendor row is already linked to someone else (or was claimed
+/// by a sibling invitation between the PENDING check and the link
+/// claim). The transaction wrapper catches this and converts it into a
+/// `PARTY_ALREADY_LINKED` error so the FE can surface a clear message.
+class InvitationAlreadyLinkedError extends Error {
+  constructor() {
+    super('PARTY_ALREADY_LINKED');
+    this.name = 'InvitationAlreadyLinkedError';
+  }
+}
+
 const inviteSelect = {
   id: true,
   shopId: true,
@@ -218,7 +230,8 @@ export class InvitationsService {
     userId: number;
     decision: 'ACCEPT' | 'DECLINE';
   }) {
-    return prisma.$transaction(async (tx) => {
+    try {
+      return await prisma.$transaction(async (tx) => {
       const invite = await tx.invitation.findUnique({
         where: { id: opts.invitationId },
         select: inviteSelect,
@@ -259,10 +272,26 @@ export class InvitationsService {
       if (opts.decision === 'ACCEPT') {
         if (invite.linkType === 'PARTY') {
           if (invite.partyId) {
-            await tx.party.updateMany({
+            // Atomic claim of the Party row. updateMany returns count=0
+            // when the row already has linkedUserId set (to anyone —
+            // including this same user from a duplicate accept). We
+            // MUST treat that as a real failure and back the invitation
+            // status out, else the customer sees "accepted" but no
+            // ledger access is created.
+            const linked = await tx.party.updateMany({
               where: { id: invite.partyId, linkedUserId: null },
               data: { linkedUserId: opts.userId },
             });
+            if (linked.count === 0) {
+              // Was it already linked to THIS user (replayed accept)?
+              const existing = await tx.party.findUnique({
+                where: { id: invite.partyId },
+                select: { linkedUserId: true },
+              });
+              if (existing?.linkedUserId !== opts.userId) {
+                throw new InvitationAlreadyLinkedError();
+              }
+            }
           } else {
             // Bare-email invite — materialise the party at accept time.
             const created = await tx.party.create({
@@ -278,10 +307,19 @@ export class InvitationsService {
           }
         } else if (invite.linkType === 'VENDOR') {
           if (invite.vendorId) {
-            await tx.vendor.updateMany({
+            const linked = await tx.vendor.updateMany({
               where: { id: invite.vendorId, linkedUserId: null },
               data: { linkedUserId: opts.userId },
             });
+            if (linked.count === 0) {
+              const existing = await tx.vendor.findUnique({
+                where: { id: invite.vendorId },
+                select: { linkedUserId: true },
+              });
+              if (existing?.linkedUserId !== opts.userId) {
+                throw new InvitationAlreadyLinkedError();
+              }
+            }
           } else {
             const created = await tx.vendor.create({
               data: {
@@ -332,8 +370,14 @@ export class InvitationsService {
         },
       });
 
-      return { invitation: updated };
-    });
+        return { invitation: updated };
+      });
+    } catch (e) {
+      if (e instanceof InvitationAlreadyLinkedError) {
+        return { error: 'PARTY_ALREADY_LINKED' as const };
+      }
+      throw e;
+    }
   }
 
   /// Sender cancels an invitation they previously sent. Notifies the

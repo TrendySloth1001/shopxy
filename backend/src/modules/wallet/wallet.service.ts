@@ -1,0 +1,188 @@
+import { Prisma } from '@prisma/client';
+import prisma from '../../infra/db/prisma.js';
+
+export type WalletSource =
+  | 'REFUND'
+  | 'COUPON'
+  | 'REFERRAL'
+  | 'LOYALTY'
+  | 'MANUAL'
+  | 'CHECKOUT'
+  /// Refund for a per-shop child order the customer cancelled before
+  /// the merchant acted. Distinct from REFUND (which is post-return).
+  | 'CANCEL';
+
+/// Append-only wallet primitive. Refunds (Phase 3), coupons / manual
+/// platform credits (Phase 4), and loyalty / referral payouts (Phase 5)
+/// all flow through this module. Reads stay cheap because the
+/// per-user balance is denormalised on `users.wallet_balance` and
+/// updated inside the same transaction that writes the ledger row.
+///
+/// The service intentionally exposes a single `credit()` (positive
+/// amount = credit, negative = debit) so callers can't accidentally
+/// post a positive amount as a debit by flipping a flag — sign is the
+/// only state.
+export class WalletService {
+  /// Posts a ledger entry + bumps the denorm. The entry's
+  /// `balanceAfter` is the new running total — lets the customer-facing
+  /// ledger render without a window-function recompute.
+  ///
+  /// `idempotencyKey` is enforced via the partial unique index on
+  /// `(user_id, idempotency_key)` so a retried RPC doesn't double-credit.
+  /// When the key matches an existing row, this returns the original
+  /// entry without writing.
+  ///
+  /// Pass `tx` to enrol in an outer transaction (e.g. the return-refund
+  /// service does this so a refund + status flip + ledger entry all
+  /// commit together).
+  async credit(opts: {
+    userId: number;
+    amount: number;
+    source: WalletSource;
+    sourceId?: number | null;
+    description: string;
+    idempotencyKey?: string | null;
+    tx?: Prisma.TransactionClient;
+  }): Promise<{
+    id: number;
+    amount: number;
+    balanceAfter: number;
+    source: WalletSource;
+    description: string;
+    createdAt: Date;
+    deduplicated?: boolean;
+  }> {
+    const run = async (db: Prisma.TransactionClient) => {
+      // Insert-first idempotency: the unique index on
+      // (user_id, idempotency_key) is the only safe lock against two
+      // concurrent retries with the same key. We try to claim the row
+      // first; only after that succeeds do we touch the balance. If the
+      // insert fails with P2002 another caller already credited — we
+      // return their entry without re-incrementing.
+      if (opts.idempotencyKey) {
+        try {
+          const placeholder = await db.walletEntry.create({
+            data: {
+              userId: opts.userId,
+              amount: opts.amount,
+              balanceAfter: 0,
+              source: opts.source,
+              sourceId: opts.sourceId ?? null,
+              description: opts.description,
+              idempotencyKey: opts.idempotencyKey,
+            },
+          });
+          const user = await db.user.update({
+            where: { id: opts.userId },
+            data: { walletBalance: { increment: opts.amount } },
+            select: { walletBalance: true },
+          });
+          const balanceAfter = Number(user.walletBalance);
+          const entry = await db.walletEntry.update({
+            where: { id: placeholder.id },
+            data: { balanceAfter },
+          });
+          return {
+            id: entry.id,
+            amount: Number(entry.amount),
+            balanceAfter,
+            source: entry.source as WalletSource,
+            description: entry.description,
+            createdAt: entry.createdAt,
+          };
+        } catch (e) {
+          if ((e as { code?: string }).code === 'P2002') {
+            const original = await db.walletEntry.findUnique({
+              where: {
+                wallet_entries_user_idempotency: {
+                  userId: opts.userId,
+                  idempotencyKey: opts.idempotencyKey,
+                },
+              },
+            });
+            if (original) {
+              return {
+                id: original.id,
+                amount: Number(original.amount),
+                balanceAfter: Number(original.balanceAfter),
+                source: original.source as WalletSource,
+                description: original.description,
+                createdAt: original.createdAt,
+                deduplicated: true,
+              };
+            }
+          }
+          throw e;
+        }
+      }
+
+      // No idempotency key — straightforward increment + insert.
+      const user = await db.user.update({
+        where: { id: opts.userId },
+        data: { walletBalance: { increment: opts.amount } },
+        select: { walletBalance: true },
+      });
+      const balanceAfter = Number(user.walletBalance);
+      const entry = await db.walletEntry.create({
+        data: {
+          userId: opts.userId,
+          amount: opts.amount,
+          balanceAfter,
+          source: opts.source,
+          sourceId: opts.sourceId ?? null,
+          description: opts.description,
+          idempotencyKey: null,
+        },
+      });
+      return {
+        id: entry.id,
+        amount: Number(entry.amount),
+        balanceAfter,
+        source: entry.source as WalletSource,
+        description: entry.description,
+        createdAt: entry.createdAt,
+      };
+    };
+
+    return opts.tx ? run(opts.tx) : prisma.$transaction(run);
+  }
+
+  /// Current balance + the most recent N entries — single round-trip
+  /// for the wallet page header.
+  async snapshot(userId: number, recentLimit = 30) {
+    const [user, entries] = await Promise.all([
+      prisma.user.findUniqueOrThrow({
+        where: { id: userId },
+        select: { walletBalance: true },
+      }),
+      prisma.walletEntry.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        take: recentLimit,
+        select: {
+          id: true,
+          amount: true,
+          balanceAfter: true,
+          source: true,
+          sourceId: true,
+          description: true,
+          createdAt: true,
+        },
+      }),
+    ]);
+    return {
+      balance: Number(user.walletBalance),
+      entries: entries.map((e) => ({
+        id: e.id,
+        amount: Number(e.amount),
+        balanceAfter: Number(e.balanceAfter),
+        source: e.source,
+        sourceId: e.sourceId,
+        description: e.description,
+        createdAt: e.createdAt,
+      })),
+    };
+  }
+}
+
+export const walletService = new WalletService();

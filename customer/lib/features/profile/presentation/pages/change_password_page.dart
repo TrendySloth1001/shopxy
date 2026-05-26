@@ -5,7 +5,7 @@ import 'package:shopxy_customer/features/auth/presentation/providers/auth_provid
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/constants/app_strings.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
-import 'package:shopxy_customer/shared/widgets/app_app_bar.dart';
+import 'package:shopxy_customer/shared/widgets/app_bar.dart';
 import 'package:shopxy_customer/shared/widgets/app_button.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 import 'package:shopxy_customer/shared/widgets/app_text_field.dart';

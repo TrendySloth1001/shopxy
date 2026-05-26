@@ -26,6 +26,19 @@ class OrdersProvider extends ChangeNotifier {
   DateTime? get to => _to;
   int get pendingCount => _pendingCount;
 
+  /// Drop the cached inbox + badge on logout / 401-refresh.
+  void reset() {
+    _orders = const [];
+    _loading = false;
+    _error = null;
+    _statusFilter = null;
+    _search = '';
+    _from = null;
+    _to = null;
+    _pendingCount = 0;
+    notifyListeners();
+  }
+
   Future<void> load() async {
     _loading = true;
     notifyListeners();

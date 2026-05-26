@@ -9,6 +9,10 @@ class ProductsProvider extends ChangeNotifier {
 
   List<Product> _products = [];
   bool _isLoading = false;
+  /// Separate "is a paginated load in flight" flag so fast scrolling
+  /// can't fire two `loadProducts(loadMore: true)` calls that both
+  /// bump `_page` and append the same response twice.
+  bool _isLoadingMore = false;
   String? _error;
   int _total = 0;
   int _page = 1;
@@ -27,6 +31,25 @@ class ProductsProvider extends ChangeNotifier {
   bool get lowStockOnly => _lowStockOnly;
   bool get outOfStockOnly => _outOfStockOnly;
   bool get hasMore => _products.length < _total;
+
+  /// Drop every cached row + filter. Registered with AuthProvider so a
+  /// logout (or 401-refresh failure) returns this provider to its
+  /// post-construction state — without this, user-B sees user-A's
+  /// products list flash on screen until the next network call replaces
+  /// it.
+  void reset() {
+    _products = [];
+    _isLoading = false;
+    _isLoadingMore = false;
+    _error = null;
+    _total = 0;
+    _page = 1;
+    _search = '';
+    _categoryFilter = null;
+    _lowStockOnly = false;
+    _outOfStockOnly = false;
+    notifyListeners();
+  }
 
   void setSearch(String value) {
     _search = value;
@@ -59,6 +82,13 @@ class ProductsProvider extends ChangeNotifier {
 
   Future<void> loadProducts({bool loadMore = false}) async {
     if (loadMore) {
+      // Drop subsequent "load next page" requests while one is already
+      // in flight. Without this guard a fast scroll triggers two
+      // post-frame callbacks before the first response returns, both
+      // bump `_page`, and we end up appending the same page twice while
+      // skipping a real page.
+      if (_isLoadingMore) return;
+      _isLoadingMore = true;
       _page++;
     } else {
       _page = 1;
@@ -87,6 +117,7 @@ class ProductsProvider extends ChangeNotifier {
       _error = e.toString();
     } finally {
       _isLoading = false;
+      _isLoadingMore = false;
       notifyListeners();
     }
   }

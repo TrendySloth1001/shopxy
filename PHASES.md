@@ -1,5 +1,7 @@
 # ShopXY — Marketplace Build Phases
 
+> **2026-05-26 — Audit fixes in progress.** A brutal codebase audit produced ~100 findings across backend + merchant + customer + cross-cutting seams. The phased remediation plan lives in [AUDIT_FIXES.md](./AUDIT_FIXES.md) (phases F0–F10). Marketplace-pivot phases (0–9, C) below remain the canonical build history.
+
 Single source of truth for the marketplace-pivot work. Each phase has a defined scope, deliverables, tests, and a demo flow. Phases are sequential — each depends on its predecessor.
 
 **Product positioning** (locked in before P0): ShopXY is a **marketplace** where any logged-in customer can browse any published shop. The existing B2B per-shop relationship (invited Parties + invoice ledgers) is retained — those customers can still deal with their linked merchants — but the catalog is open to everyone.

@@ -31,6 +31,11 @@ model User {
   /// Policy at registration. Required by DPDP §6 — store evidence of
   /// consent. Nullable so legacy users predating the consent gate work.
   acceptedAt         DateTime?          @map("accepted_at")
+  /// Floor for access-token validity. requireAuth rejects any access
+  /// token whose `iat` is before this stamp. Bumped on password
+  /// change + logout-all so a stolen pre-change token can't survive
+  /// the 15-minute TTL window. Nullable = no floor (legacy users).
+  tokensValidFrom    DateTime?          @map("tokens_valid_from")
   createdAt          DateTime           @default(now()) @map("created_at")
   updatedAt          DateTime           @updatedAt @map("updated_at")
   refreshTokens      RefreshToken[]
@@ -42,11 +47,14 @@ model User {
   notifications       Notification[]
   linkedParties       Party[]
   linkedVendors       Vendor[]
+  customerOrders      CustomerOrder[]
   purchaseRequests    PurchaseRequest[]     @relation("CustomerPurchaseRequests")
   decidedRequests     PurchaseRequest[]     @relation("MerchantDecidedRequests")
+  purchaseRequestEvents PurchaseRequestEvent[] @relation("PurchaseRequestEventActor")
   paymentsCreated     Payment[]             @relation("PaymentCreatedBy")
   contactChanges      ContactChangeLog[]
   wishlistItems       WishlistItem[]
+  cartItems           CartItem[]
   shop                Shop?
   productReviews      ProductReview[]
   reviewedSpotlights  BrandSpotlight[]      @relation("BrandSpotlightReviewer")
@@ -55,6 +63,16 @@ model User {
   recommendationCache RecommendationCache[]
   searchEvents        SearchEvent[]
   addresses           UserAddress[]
+  returnsRequested    ReturnRequest[]      @relation("ReturnRequestCustomer")
+  returnEvents        ReturnRequestEvent[] @relation("ReturnRequestEventActor")
+  walletEntries       WalletEntry[]
+  couponRedemptions   CouponRedemption[]
+
+  /// Denormalised wallet balance — sum of [WalletEntry.amount] for
+  /// this user. Kept in sync inside the same transaction that writes
+  /// the entry so reads (cart "use wallet" banner, profile page) don't
+  /// have to aggregate per request. Defaults to 0 for new + legacy users.
+  walletBalance       Decimal              @default(0) @map("wallet_balance") @db.Decimal(12, 2)
 
   @@index([email])
   @@map("users")
@@ -104,6 +122,29 @@ model WishlistItem {
   @@unique([userId, productId])
   @@index([userId, createdAt])
   @@map("wishlist_items")
+}
+
+/// Server-side persistent cart. One row per (user, product); quantity
+/// is summed at write time so a "add 2" + "add 3" yields one row of 5
+/// instead of two rows. Surviving across devices is the point — the
+/// customer app reads this on app open and writes mutations through
+/// debounced PUT calls, treating SharedPreferences as best-effort
+/// pre-restore cache only (still useful for cold-open without network).
+model CartItem {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId Int      @map("product_id")
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  /// Decimal so weight-priced units (KG/L) work alongside integer
+  /// counts. Mirrors the shape used in PurchaseRequestItem.quantity.
+  quantity  Decimal  @db.Decimal(12, 3)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([userId, productId])
+  @@index([userId, updatedAt])
+  @@map("cart_items")
 }
 
 /// Append-only audit log of edits to Party/Vendor contact fields. One
@@ -256,6 +297,7 @@ model Product {
   purchaseRequestItems PurchaseRequestItem[]
   customFieldValues    ProductCustomFieldValue[]
   wishlistedBy         WishlistItem[]
+  cartedBy             CartItem[]
   reviews              ProductReview[]
   flashSales           FlashSale[]
   collectionItems      CollectionItem[]
@@ -836,14 +878,68 @@ model Notification {
   @@map("notifications")
 }
 
-/// A customer-app order: the customer browses the merchant catalog,
-/// builds a cart, and submits it as a PurchaseRequest. The merchant
-/// reviews the inbox and either confirms (which creates a SALE invoice)
-/// or rejects. PurchaseRequestItem snapshots product identity + price
-/// at submit time so the customer's order is stable even if the
-/// merchant later edits product details.
+/// One *customer-side* order = one checkout submission. Owns N
+/// [PurchaseRequest] children (one per shop the cart spans). Snapshots
+/// customer identity + delivery address once; merchants still see only
+/// their own child row in their inbox. This is the grouping that the
+/// customer thinks of as "order #123" — splitting per-vendor is an
+/// implementation detail of the marketplace fulfilment model.
+model CustomerOrder {
+  id             Int    @id @default(autoincrement())
+  customerUserId Int    @map("customer_user_id")
+  customerUser   User   @relation(fields: [customerUserId], references: [id], onDelete: Cascade)
+
+  /// Identity + delivery snapshots. Mirrored onto each child
+  /// PurchaseRequest so the merchant view stays unchanged, but the
+  /// canonical copy lives here so the customer-facing detail page can
+  /// render a single header without picking a child.
+  customerName    String  @map("customer_name")
+  customerPhone   String? @map("customer_phone")
+  customerEmail   String? @map("customer_email")
+  customerAddress String? @map("customer_address")
+
+  note           String?
+  /// Sum of children's estimatedTotal at submit time. Cached so the
+  /// orders list doesn't have to aggregate per row.
+  estimatedTotal Decimal @default(0) @map("estimated_total") @db.Decimal(12, 2)
+  /// Coupon discount applied at submit time (0 when no coupon). Stored
+  /// here so the customer order summary can render "₹X off" without a
+  /// CouponRedemption join.
+  couponDiscount Decimal @default(0) @map("coupon_discount") @db.Decimal(12, 2)
+  /// Amount paid from the user's wallet at submit time (0 when wallet
+  /// wasn't used). Mirrored as a WalletEntry with source=CHECKOUT.
+  walletPaid     Decimal @default(0) @map("wallet_paid") @db.Decimal(12, 2)
+
+  /// Idempotency now lives on the parent — one key per checkout
+  /// submission. The legacy per-PurchaseRequest unique was retired by
+  /// migration 20260606030000_drop_old_pr_idempotency_unique.
+  idempotencyKey String? @map("idempotency_key")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  shopOrders        PurchaseRequest[]
+  couponRedemption  CouponRedemption?
+
+  @@unique([customerUserId, idempotencyKey], name: "customer_orders_user_idempotency_key")
+  @@index([customerUserId, createdAt])
+  @@map("customer_orders")
+}
+
+/// A per-vendor *child* of a [CustomerOrder]. The merchant inbox row;
+/// the customer browses the merchant catalog, builds a cart, and the
+/// server creates one of these per shop the cart spans. The merchant
+/// reviews their inbox and either confirms (which creates a SALE
+/// invoice) or rejects. PurchaseRequestItem snapshots product identity
+/// + price at submit time so the customer's order is stable even if
+/// the merchant later edits product details.
 model PurchaseRequest {
   id             Int    @id @default(autoincrement())
+  /// Parent customer order. Every PurchaseRequest belongs to exactly
+  /// one CustomerOrder — single-vendor checkouts still get a parent
+  /// (a CustomerOrder with one child).
+  customerOrderId Int   @map("customer_order_id")
+  customerOrder   CustomerOrder @relation(fields: [customerOrderId], references: [id], onDelete: Cascade)
   /// Owning merchant — which shop receives this order. Required:
   /// every order belongs to exactly one shop, so the cart-splits-on-
   /// checkout flow creates N rows when items span multiple shops.
@@ -886,28 +982,218 @@ model PurchaseRequest {
   /// preview number for the customer's order list.
   estimatedTotal Decimal @default(0) @map("estimated_total") @db.Decimal(12, 2)
 
-  /// Client-supplied idempotency key. Lets the customer app retry a
-  /// flaky POST /me/orders without creating duplicates — the server
-  /// short-circuits to the existing row when the same (userId, key)
-  /// arrives twice. Scoped per user via the partial unique below.
-  idempotencyKey String? @map("idempotency_key")
-
   createdAt DateTime              @default(now()) @map("created_at")
   updatedAt DateTime              @updatedAt @map("updated_at")
   items     PurchaseRequestItem[]
+  events    PurchaseRequestEvent[]
+  returns   ReturnRequest[]
 
-  /// Idempotency lookup. Scoped to the placing user + shop so a retry
-  /// of the same logical cart-split (one POST per shop sharing one
-  /// key) routes correctly when the user re-tries before the first
-  /// 2xx has come back.
-  @@unique([customerUserId, shopId, idempotencyKey], name: "purchase_requests_user_shop_idempotency_key")
   /// Hot paths:
-  ///   1. customer's order list: (customerUserId, createdAt DESC)
-  ///   2. merchant inbox:        (shopId, status, createdAt DESC)
+  ///   1. customer's order list:     (customerUserId, createdAt DESC)
+  ///   2. merchant inbox:            (shopId, status, createdAt DESC)
+  ///   3. parent fan-out on detail:  (customerOrderId)
   @@index([customerUserId, createdAt])
   @@index([shopId, status, createdAt])
   @@index([partyId])
+  @@index([customerOrderId])
   @@map("purchase_requests")
+}
+
+/// Append-only event log for a [PurchaseRequest]. Drives the customer-
+/// side order-tracking timeline (CREATED → CONFIRMED → PACKED →
+/// SHIPPED → OUT_FOR_DELIVERY → DELIVERED) and stores courier/AWB/ETA
+/// for in-transit events so the customer sees a useful shipment
+/// summary without a courier-API integration.
+///
+/// Lifecycle transitions are emitted by the service layer (create /
+/// confirm / reject / cancel); shipping events are added by the
+/// merchant via `POST /orders/:id/events`. Once a row is written it's
+/// never updated — corrections are new events, not edits.
+model PurchaseRequestEvent {
+  id        Int                       @id @default(autoincrement())
+  requestId Int                       @map("request_id")
+  request   PurchaseRequest           @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  /// One of the values in [PurchaseRequestEventType]. Free-form on the
+  /// type column so future event kinds (e.g. RTO, REFUND_INITIATED)
+  /// can be added without a migration — the enum lives in code only.
+  type      PurchaseRequestEventType
+
+  /// Courier name / AWB / promised delivery date — populated on
+  /// SHIPPED + OUT_FOR_DELIVERY rows. Null on lifecycle events.
+  courier   String?
+  awb       String?
+  eta       DateTime?
+
+  /// Optional human note from the merchant ("Left at security gate",
+  /// "Customer was unavailable, redelivery tomorrow"). Rendered as a
+  /// secondary line under the milestone in the timeline.
+  note      String?
+
+  /// Acting user — merchant for shipping events, customer for cancel.
+  /// Nullable for system-emitted events (CREATED at submit time).
+  actorId   Int?                      @map("actor_id")
+  actor     User?                     @relation("PurchaseRequestEventActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  occurredAt DateTime @default(now()) @map("occurred_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([requestId, occurredAt])
+  @@map("purchase_request_events")
+}
+
+enum PurchaseRequestEventType {
+  CREATED
+  CONFIRMED
+  REJECTED
+  CANCELLED
+  PACKED
+  SHIPPED
+  OUT_FOR_DELIVERY
+  DELIVERED
+  RETURNED
+}
+
+/// One return request against a [PurchaseRequest]. Always scoped to a
+/// single per-shop child (you don't return "an order" — you return the
+/// items the shop fulfilled). Items are tracked at line-item
+/// granularity so a partial return doesn't poison the rest of the order.
+///
+/// State machine: REQUESTED → APPROVED → PICKED_UP → RECEIVED →
+/// REFUNDED. REJECTED + CANCELLED are terminal. The merchant drives
+/// every transition except CANCELLED (customer-only, REQUESTED stage).
+model ReturnRequest {
+  id              Int             @id @default(autoincrement())
+  /// Which child (per-shop slice) this return is against.
+  requestId       Int             @map("request_id")
+  request         PurchaseRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  /// Owning shop — denormalised from the parent so the merchant's
+  /// returns inbox can filter by shop without a join.
+  shopId          Int             @map("shop_id")
+  shop            Shop            @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  /// Customer who initiated. Always equal to request.customerUserId;
+  /// stored here for the customer's returns-list index.
+  customerUserId  Int             @map("customer_user_id")
+  customerUser    User            @relation("ReturnRequestCustomer", fields: [customerUserId], references: [id], onDelete: Cascade)
+
+  /// One of: REQUESTED, APPROVED, REJECTED, CANCELLED, PICKED_UP,
+  /// RECEIVED, REFUNDED. Free-form string to keep future state additions
+  /// out of migration land.
+  status          String          @default("REQUESTED")
+  /// Sum of refundAmount across approved items. Source of truth at
+  /// refund time — the wallet entry is for this amount.
+  refundAmount    Decimal         @default(0) @map("refund_amount") @db.Decimal(12, 2)
+  refundMethod    String?         @map("refund_method")
+  /// Customer-supplied freeform note ("Box arrived torn") shown to the
+  /// merchant on the inbox row.
+  note            String?
+  /// Merchant decision note (reason for rejection, pickup instructions).
+  decisionNote    String?         @map("decision_note")
+
+  /// Lazy-linked wallet entry — populated once the refund posts.
+  walletEntryId   Int?            @unique @map("wallet_entry_id")
+  walletEntry     WalletEntry?    @relation("ReturnRefundEntry", fields: [walletEntryId], references: [id], onDelete: SetNull)
+
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  items           ReturnRequestItem[]
+  events          ReturnRequestEvent[]
+
+  @@index([customerUserId, createdAt])
+  @@index([shopId, status, createdAt])
+  @@index([requestId])
+  @@map("return_requests")
+}
+
+/// Line-item granularity for a return. References the original
+/// PurchaseRequestItem so the merchant sees "Black T-shirt size M, qty 2"
+/// rather than reconciling SKUs by hand. `refundAmount` is snapshotted
+/// at submit time from unitPrice × quantity so a later product edit
+/// can't change what the customer expects to be refunded.
+model ReturnRequestItem {
+  id                    Int                @id @default(autoincrement())
+  returnId              Int                @map("return_id")
+  return                ReturnRequest      @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  /// Original purchase request item being returned.
+  purchaseRequestItemId Int                @map("purchase_request_item_id")
+  purchaseRequestItem   PurchaseRequestItem @relation(fields: [purchaseRequestItemId], references: [id], onDelete: Cascade)
+  /// Reason taxonomy (DAMAGED / WRONG_ITEM / NOT_AS_DESCRIBED /
+  /// SIZE_FIT / CHANGED_MIND / DEFECTIVE / OTHER). Kept as a string so
+  /// adding a category later doesn't need a migration.
+  reason                String
+  /// Quantity being returned — may be less than the line's purchased
+  /// quantity for partial returns.
+  quantity              Decimal            @db.Decimal(12, 3)
+  /// Snapshotted at submit time: unitPrice × quantity. Lets the
+  /// merchant approve without recomputing prices, and lets the customer
+  /// see the same refund amount they originally clicked.
+  refundAmount          Decimal            @map("refund_amount") @db.Decimal(12, 2)
+
+  @@index([returnId])
+  @@map("return_request_items")
+}
+
+/// Append-only event log for a [ReturnRequest]. Drives the customer-
+/// facing return timeline ("Requested → Approved → Picked up …").
+model ReturnRequestEvent {
+  id         Int            @id @default(autoincrement())
+  returnId   Int            @map("return_id")
+  return     ReturnRequest  @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  /// One of REQUESTED, APPROVED, REJECTED, CANCELLED, PICKED_UP,
+  /// RECEIVED, REFUNDED, NOTE. NOTE rows are merchant-added free-form
+  /// updates that don't change status.
+  type       String
+  note       String?
+  actorId    Int?           @map("actor_id")
+  actor      User?          @relation("ReturnRequestEventActor", fields: [actorId], references: [id], onDelete: SetNull)
+  occurredAt DateTime       @default(now()) @map("occurred_at")
+
+  @@index([returnId, occurredAt])
+  @@map("return_request_events")
+}
+
+/// Append-only wallet ledger. Positive amounts are credits (refunds,
+/// loyalty payouts, referral payouts, manual platform credits);
+/// negative amounts are debits (checkout deductions, withdrawals).
+/// The denormed [User.walletBalance] = SUM(amount) and is updated in
+/// the same transaction that writes the entry.
+///
+/// `source` describes *why* the entry exists; `sourceId` ties it back
+/// to the originating record (e.g. ReturnRequest id, Coupon id). The
+/// pair is purely informational — no FK so adding a new source kind
+/// later doesn't require a migration to extend the constraint.
+model WalletEntry {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Signed amount (positive = credit, negative = debit). Decimal so
+  /// rupee-paise arithmetic is exact.
+  amount      Decimal  @db.Decimal(12, 2)
+  /// Running balance snapshot at the moment this entry was written.
+  /// Lets ledger reads render without a window-function recompute.
+  balanceAfter Decimal @map("balance_after") @db.Decimal(12, 2)
+
+  /// One of REFUND, COUPON, REFERRAL, LOYALTY, MANUAL, CHECKOUT.
+  source      String
+  sourceId    Int?     @map("source_id")
+  /// Human-readable description shown in the ledger UI ("Refund for
+  /// order #142", "Welcome credit"). Server-built so the customer
+  /// app doesn't have to know the formatting rules.
+  description String
+
+  /// One-time bookkeeping ref. Idempotency-keyed credits set this so
+  /// retried RPC calls don't double-credit. Nullable for non-keyed
+  /// entries (e.g. manual platform top-ups).
+  idempotencyKey String? @map("idempotency_key")
+
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  returnRequest ReturnRequest? @relation("ReturnRefundEntry")
+
+  @@unique([userId, idempotencyKey], name: "wallet_entries_user_idempotency")
+  @@index([userId, createdAt])
+  @@map("wallet_entries")
 }
 
 model PurchaseRequestItem {
@@ -925,6 +1211,8 @@ model PurchaseRequestItem {
   quantity    Decimal @db.Decimal(12, 3)
   unitPrice   Decimal @map("unit_price") @db.Decimal(12, 2)
   total       Decimal @db.Decimal(12, 2)
+
+  returnItems ReturnRequestItem[]
 
   @@index([requestId])
   @@index([productId])
@@ -961,6 +1249,12 @@ model Payment {
   /// Owner who recorded the payment.
   createdById   Int?     @map("created_by_id")
   createdBy     User?    @relation("PaymentCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  /// Client-supplied idempotency key (via `X-Idempotency-Key`). When set
+  /// a retry from a flaky mobile network reuses the original row instead
+  /// of double-paying the invoice. Partial unique on (shop_id, type,
+  /// idempotency_key) enforced by raw migration so NULL rows (legacy +
+  /// non-keyed inserts) don't collide.
+  idempotencyKey String? @map("idempotency_key")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
@@ -1024,6 +1318,17 @@ model ProductReview {
 model Banner {
   id            Int             @id @default(autoincrement())
   placement     BannerPlacement
+  /// Visual template chosen by the merchant. CLASSIC renders the
+  /// original branded card; MINIMAL is a centered editorial layout
+  /// with a circular medallion; IMAGE_ONLY hides all overlays and
+  /// shows just the merchant's uploaded artwork edge-to-edge.
+  template      BannerTemplate  @default(CLASSIC)
+  /// How the slide's image should fill its slot on the rendered card.
+  /// COVER crops to fit (the default — what every banner was before
+  /// this field existed). CONTAIN letterboxes the image so nothing is
+  /// cropped — useful when the merchant uploaded ready-made artwork
+  /// with text baked in that they don't want clipped.
+  imageFit      BannerImageFit  @default(COVER) @map("image_fit")
   title         String
   subtitle      String?
   eyebrow       String?
@@ -1080,6 +1385,21 @@ enum BannerPlacement {
   AD_STRIP
   PROMO
   CURATED_RAIL
+}
+
+enum BannerTemplate {
+  CLASSIC
+  MINIMAL
+  IMAGE_ONLY
+  SPLIT
+  OVERLAY
+  DEAL
+  POSTER
+}
+
+enum BannerImageFit {
+  COVER
+  CONTAIN
 }
 
 /// Time-bound discounted offer on a single product. soldCount is the
@@ -1144,6 +1464,28 @@ model Shop {
   /// during home-feed reads. Nullable until first rating arrives.
   rating      Decimal? @db.Decimal(3, 2)
   ratingCount Int      @default(0) @map("rating_count")
+
+  /// ── Return policy ────────────────────────────────────────────────
+  /// When false, customers can't open a return at all — the request
+  /// sheet on the customer order detail page hides the button and the
+  /// submit endpoint rejects with RETURNS_DISABLED. Defaults to true so
+  /// existing shops behave the way they did before this column was added.
+  returnsEnabled    Boolean @default(true) @map("returns_enabled")
+  /// Eligibility window in days from order confirmation. 0 = no
+  /// window check (return forever); the default of 7 days matches the
+  /// platform-wide standard most Indian marketplaces use.
+  returnWindowDays  Int     @default(7) @map("return_window_days")
+  /// How the merchant refunds: WALLET = credit the customer's app
+  /// wallet (default; instant + reusable). ORIGINAL = refund to the
+  /// original payment method (handled off-platform; the merchant marks
+  /// REFUNDED manually and arranges the bank transfer). REPLACEMENT =
+  /// merchant ships a replacement instead of refunding cash.
+  refundMode        String  @default("WALLET") @map("refund_mode")
+  /// Free-form policy text shown to customers before they tap "Request
+  /// return". Lets merchants spell out exceptions ("sealed packaging
+  /// only", "no returns on innerwear") without needing schema changes.
+  returnPolicyNote  String? @map("return_policy_note")
+
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
@@ -1165,9 +1507,93 @@ model Shop {
   customFieldSections    CustomFieldSection[]
   customFieldDefinitions CustomFieldDefinition[]
   counters               Counter[]
+  returnRequests         ReturnRequest[]
+  coupons                Coupon[]
 
   @@index([isPublished])
   @@map("shops")
+}
+
+/// Customer-facing promo codes. A coupon can be platform-wide
+/// (shopId NULL — surfaces in every customer's "My coupons" list) or
+/// scoped to one shop (only redeemable on carts containing items from
+/// that shop).
+///
+/// Validation happens at preview + redemption time:
+///   * within the [validFrom, validUntil] window
+///   * min cart total met
+///   * per-user limit not exceeded
+///   * global total cap not exceeded
+///   * shop scope match (when shopId != null)
+///
+/// Discount math is platform-style — applied to the cart subtotal
+/// before delivery. PERCENT coupons honour `maxDiscount` so a 50%
+/// coupon doesn't accidentally wipe out a ₹50k order.
+model Coupon {
+  id               Int      @id @default(autoincrement())
+  /// User-facing redemption code. Stored uppercase + unique so
+  /// "WELCOME10" and "welcome10" collapse to the same row.
+  code             String   @unique
+  /// Short label rendered on the "My coupons" card ("New user offer").
+  title            String
+  /// Long-form blurb shown under the title.
+  description      String?
+  /// PERCENT or FLAT.
+  discountType     String   @map("discount_type")
+  /// For PERCENT: integer 1–100. For FLAT: rupee amount.
+  discountValue    Decimal  @map("discount_value") @db.Decimal(12, 2)
+  /// PERCENT-only — caps the absolute discount.
+  maxDiscount      Decimal? @map("max_discount") @db.Decimal(12, 2)
+  /// Minimum cart subtotal required to redeem.
+  minOrderAmount   Decimal  @default(0) @map("min_order_amount") @db.Decimal(12, 2)
+
+  validFrom        DateTime @map("valid_from")
+  validUntil       DateTime @map("valid_until")
+
+  /// Per-user redemption limit. 0 = unlimited.
+  perUserLimit     Int      @default(1) @map("per_user_limit")
+  /// Global redemption cap across all users. 0 = unlimited.
+  totalCap         Int      @default(0) @map("total_cap")
+  /// Live counter — bumped inside the redemption transaction so
+  /// concurrent checkouts can't overshoot [totalCap].
+  totalRedemptions Int      @default(0) @map("total_redemptions")
+
+  /// NULL = platform-wide. Otherwise the shop this coupon is bound to;
+  /// the cart must contain at least one item from this shop.
+  shopId           Int?     @map("shop_id")
+  shop             Shop?    @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  isActive         Boolean  @default(true) @map("is_active")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  redemptions      CouponRedemption[]
+
+  @@index([isActive, validUntil])
+  @@index([shopId, isActive])
+  @@map("coupons")
+}
+
+/// One row per (coupon, customer, order) — append-only audit.
+/// Enforces per-user limit + total cap via increment-counter logic in
+/// the service layer (both are gated inside the same transaction as
+/// the customer order insert).
+model CouponRedemption {
+  id              Int      @id @default(autoincrement())
+  couponId        Int      @map("coupon_id")
+  coupon          Coupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  userId          Int      @map("user_id")
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Parent CustomerOrder the redemption was applied to.
+  customerOrderId Int      @unique @map("customer_order_id")
+  customerOrder   CustomerOrder @relation(fields: [customerOrderId], references: [id], onDelete: Cascade)
+  /// Discount amount actually applied (after MRP / max-cap math).
+  discountAmount  Decimal  @map("discount_amount") @db.Decimal(12, 2)
+  redeemedAt      DateTime @default(now()) @map("redeemed_at")
+
+  @@index([userId, redeemedAt])
+  @@index([couponId])
+  @@map("coupon_redemptions")
 }
 
 /// A merchant-requested, admin-approved "brand of the day" placement.

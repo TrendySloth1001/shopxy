@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:shopxy_customer/core/network/api_client.dart';
+import 'package:shopxy_customer/features/marketplace/domain/entities/listing_filters.dart';
 
 /// Adapter for the public marketplace search endpoints.
 ///
@@ -20,17 +21,25 @@ class MarketplaceSearchRemoteDataSource {
     String query, {
     int? categoryId,
     int? shopId,
+    ListingFilters filters = ListingFilters.none,
+    bool includeFacets = false,
     String? sessionId,
   }) async {
-    final res = await _client.post(
-      '/search',
-      body: {
-        'q': query,
-        if (categoryId != null) 'filters': {'categoryId': categoryId},
-        if (shopId != null) 'filters': {'shopId': shopId},
-        'sessionId': ?sessionId,
-      },
-    );
+    final extraFilters = filters.toSearchPayload();
+    final hasAnyFilter =
+        categoryId != null || shopId != null || extraFilters.isNotEmpty;
+    final Map<String, dynamic> body = {
+      'q': query,
+      if (hasAnyFilter)
+        'filters': {
+          'categoryId': ?categoryId,
+          'shopId': ?shopId,
+          ...extraFilters,
+        },
+      'sessionId': ?sessionId,
+      if (includeFacets) 'includeFacets': true,
+    };
+    final res = await _client.post('/search', body: body);
     if (res.statusCode != 200) {
       throw Exception('Search failed: ${res.statusCode}');
     }
@@ -76,6 +85,7 @@ class MarketplaceSearchResult {
     required this.query,
     required this.semantic,
     required this.results,
+    this.facets,
   });
   final String query;
   /// True when the backend's hybrid semantic + FTS ranker ran. False
@@ -83,6 +93,10 @@ class MarketplaceSearchResult {
   /// the embedding call failed).
   final bool semantic;
   final List<MarketplaceSearchHit> results;
+  /// Populated only when the request set `includeFacets: true`. The
+  /// payload is computed against the unfiltered FTS candidate set so
+  /// the chips don't collapse when a filter is applied.
+  final ListingFacets? facets;
 
   factory MarketplaceSearchResult.fromJson(Map<String, dynamic> j) {
     return MarketplaceSearchResult(
@@ -91,6 +105,9 @@ class MarketplaceSearchResult {
       results: ((j['results'] as List<dynamic>?) ?? const [])
           .map((e) => MarketplaceSearchHit.fromJson(e as Map<String, dynamic>))
           .toList(),
+      facets: j['facets'] is Map<String, dynamic>
+          ? ListingFacets.fromJson(j['facets'] as Map<String, dynamic>)
+          : null,
     );
   }
 }

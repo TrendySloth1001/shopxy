@@ -140,6 +140,11 @@ export async function logout(req: Request, res: Response) {
   res.status(204).end();
 }
 
+export async function logoutAll(req: Request, res: Response) {
+  await authService.logoutAll(req.user!.sub);
+  res.status(204).end();
+}
+
 export async function getMe(req: Request, res: Response) {
   const user = await authService.getMe(req.user!.sub);
   if (!user) {

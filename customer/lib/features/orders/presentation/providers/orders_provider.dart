@@ -2,6 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:shopxy_customer/features/orders/data/datasources/orders_remote_data_source.dart';
 import 'package:shopxy_customer/features/orders/domain/entities/customer_order.dart';
 
+/// Customer-facing orders inbox + detail loader. Sits in front of
+/// [OrdersRemoteDataSource]; caches the parent list so list rows
+/// re-render after a per-shop cancel without a refetch.
 class OrdersProvider extends ChangeNotifier {
   OrdersProvider(this._ds);
   final OrdersRemoteDataSource _ds;
@@ -30,17 +33,29 @@ class OrdersProvider extends ChangeNotifier {
 
   Future<CustomerOrderDetail> loadDetail(int id) => _ds.detail(id);
 
-  /// Cancels an order and updates the cached list with the new status.
-  /// Throws [CancelOrderException] on backend rejection so the page can
-  /// surface a targeted error.
-  Future<void> cancel(int id) async {
-    await _ds.cancel(id);
-    _orders = _orders
-        .map((o) =>
-            o.id == id
-                ? o.copyWith(status: 'CANCELLED', decidedAt: DateTime.now())
-                : o)
-        .toList();
+  /// Cancel one vendor's slice of a customer order. Patches the cached
+  /// parent so the list re-renders the aggregated status. Throws
+  /// [CancelOrderException] when the backend rejects so the page can
+  /// show targeted copy.
+  Future<void> cancelShopOrder({
+    required int parentId,
+    required int childId,
+  }) async {
+    await _ds.cancelShopOrder(parentId: parentId, childId: childId);
+    // Server is the source of truth for `decidedAt`. The cancel endpoint
+    // currently returns 204 so we just flip the status here and let the
+    // next list() refresh fill in the timestamp. Once the backend starts
+    // returning the canonical row, switch this to use the returned
+    // value rather than `DateTime.now()` (clock skew + audit log mismatch).
+    _orders = _orders.map((parent) {
+      if (parent.id != parentId) return parent;
+      final updatedChildren = parent.shopOrders
+          .map((child) => child.id == childId
+              ? child.copyWith(status: 'CANCELLED')
+              : child)
+          .toList();
+      return parent.copyWith(shopOrders: updatedChildren);
+    }).toList();
     notifyListeners();
   }
 

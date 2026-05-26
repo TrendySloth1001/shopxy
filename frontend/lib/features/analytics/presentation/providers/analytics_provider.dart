@@ -33,10 +33,16 @@ class AnalyticsProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  /// Sorted view of the loaded rows. Sort happens client-side — small N
-  /// (one row per shop product) and avoids a round trip per column tap.
+  /// Memoized sorted view. Recomputed lazily when the underlying data
+  /// or the sort key/direction changes; cheap reads otherwise so list
+  /// rebuilds triggered by sibling notifyListeners() don't re-sort.
+  List<ProductAnalyticsRow>? _sortedCache;
+  Object? _sortedCacheKey;
+
   List<ProductAnalyticsRow> get sortedProducts {
     if (_data == null) return const [];
+    final key = Object.hash(identityHashCode(_data), _sortKey, _sortAsc);
+    if (_sortedCache != null && _sortedCacheKey == key) return _sortedCache!;
     final rows = [..._data!.products];
     int cmp(ProductAnalyticsRow a, ProductAnalyticsRow b) {
       int r;
@@ -69,7 +75,9 @@ class AnalyticsProvider extends ChangeNotifier {
       return _sortAsc ? r : -r;
     }
     rows.sort(cmp);
-    return rows;
+    _sortedCache = List.unmodifiable(rows);
+    _sortedCacheKey = key;
+    return _sortedCache!;
   }
 
   void setRange(DateTime from, DateTime to) {
@@ -104,7 +112,9 @@ class AnalyticsProvider extends ChangeNotifier {
 
   Future<FlashDealAnalytics?> loadFlashDeal(int id) async {
     try {
-      return await _ds.getFlashDeal(id);
+      final result = await _ds.getFlashDeal(id);
+      notifyListeners();
+      return result;
     } catch (e) {
       _error = e.toString();
       notifyListeners();

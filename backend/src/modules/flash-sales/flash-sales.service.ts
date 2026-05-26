@@ -8,6 +8,25 @@ const REDIS_SOLD_KEY = (id: number) => `flash:${id}:sold`;
 // before the next 60s flush picks it up; refreshed on every increment.
 const REDIS_SOLD_TTL_SECONDS = 60 * 60 * 24; // 24h
 
+// Atomic claim — single round-trip, single-script-execution lock.
+// Reads the current sold counter, refuses when current+qty would
+// exceed the limit, otherwise INCRBYs and refreshes TTL. Redis runs
+// each EVAL atomically so two concurrent claims can never both see
+// "room for one more" and both succeed past the cap. Returns -1 when
+// stock is exhausted, otherwise the new total.
+const CLAIM_LUA = `
+local current = tonumber(redis.call('GET', KEYS[1]) or '0')
+local qty = tonumber(ARGV[1])
+local limit = tonumber(ARGV[2])
+local ttl = tonumber(ARGV[3])
+if current + qty > limit then
+  return -1
+end
+local total = redis.call('INCRBY', KEYS[1], qty)
+redis.call('EXPIRE', KEYS[1], ttl)
+return total
+`;
+
 const publicSaleSelect = {
   id: true,
   productId: true,
@@ -220,11 +239,13 @@ export class FlashSalesService {
 
   /// Atomic claim of N units against the running sale. Two layers of
   /// protection:
-  ///   1. Redis INCRBY — single round-trip arithmetic over the
-  ///      authoritative live counter. Decremented again on overflow so
-  ///      retries don't bleed phantom inventory.
-  ///   2. Postgres SELECT … FOR UPDATE — only consulted in the rare
-  ///      "Redis offline" case; otherwise we trust Redis between flushes.
+  ///   1. Redis EVAL of CLAIM_LUA — GET + compare + INCRBY in a single
+  ///      atomic script. No overshoot window: two concurrent claimers
+  ///      can't both observe headroom and both succeed past the cap,
+  ///      so we never have to "decrement back" phantom inventory.
+  ///   2. Postgres conditional UPDATE … RETURNING — used when Redis is
+  ///      offline. The `sold_count < stock_limit` predicate makes the
+  ///      check-and-increment atomic at the row level.
   ///
   /// Returns `{ ok: true, flashPrice, soldAfter }` on success, or
   /// `{ ok: false, reason }` so the caller can map to a 409/410 without
@@ -239,25 +260,27 @@ export class FlashSalesService {
     if (redisAvailable()) {
       const key = REDIS_SOLD_KEY(sale.id);
       const client = getRedis();
-      // INCRBY returns the new total atomically. If we overshoot the
-      // cap we DECR back the same amount so other in-flight callers
-      // see the true headroom on their own attempt.
-      let newTotal: number;
+      let result: number;
       try {
-        newTotal = await client.incrby(key, qty);
-        await client.expire(key, REDIS_SOLD_TTL_SECONDS);
+        result = (await client.eval(
+          CLAIM_LUA,
+          1,
+          key,
+          String(qty),
+          String(sale.stockLimit),
+          String(REDIS_SOLD_TTL_SECONDS),
+        )) as number;
       } catch (err) {
-        logger.warn({ err: (err as Error).message }, 'flash claim redis failed; falling back to DB lock');
-        return this._claimViaDbLock(sale.id, qty, flashPrice);
+        logger.warn({ err: (err as Error).message }, 'flash claim redis failed; falling back to DB conditional update');
+        return this._claimViaDbConditional(sale.id, qty, flashPrice);
       }
-      if (newTotal > sale.stockLimit) {
-        await client.decrby(key, qty).catch(() => undefined);
+      if (result === -1) {
         return { ok: false, reason: 'out_of_stock' };
       }
-      return { ok: true, flashPrice, soldAfter: newTotal };
+      return { ok: true, flashPrice, soldAfter: result };
     }
 
-    return this._claimViaDbLock(sale.id, qty, flashPrice);
+    return this._claimViaDbConditional(sale.id, qty, flashPrice);
   }
 
   /// Releases N units back to the counter — used when a checkout that
@@ -335,31 +358,39 @@ export class FlashSalesService {
 
   // ── Private helpers ─────────────────────────────────────────────
 
-  private async _claimViaDbLock(
+  private async _claimViaDbConditional(
     saleId: number,
     qty: number,
     flashPrice: number,
   ): Promise<ClaimResult> {
-    // Pessimistic path: SELECT … FOR UPDATE inside a tx serialises
-    // concurrent claims against the same sale. Slower than the Redis
-    // path but guarantees correctness when Redis is offline.
-    return prisma.$transaction(async (tx) => {
-      const locked = await tx.$queryRaw<
-        { id: number; stock_limit: number; sold_count: number }[]
-      >`SELECT id, stock_limit, sold_count FROM flash_sales WHERE id = ${saleId} FOR UPDATE`;
-      if (locked.length === 0) {
-        return { ok: false, reason: 'not_active' } satisfies ClaimResult;
-      }
-      const next = locked[0].sold_count + qty;
-      if (next > locked[0].stock_limit) {
-        return { ok: false, reason: 'out_of_stock' } satisfies ClaimResult;
-      }
-      await tx.flashSale.update({
+    // Single-statement check-and-increment: the WHERE clause makes the
+    // "is there room?" check race-safe at the row level, so we don't
+    // need a SELECT … FOR UPDATE round-trip. Returns the new sold_count
+    // when the increment took effect, or zero rows when no headroom.
+    const rows = await prisma.$queryRaw<{ sold_count: number }[]>`
+      UPDATE flash_sales
+         SET sold_count = sold_count + ${qty}
+       WHERE id = ${saleId}
+         AND sold_count + ${qty} <= stock_limit
+      RETURNING sold_count
+    `;
+    if (rows.length === 0) {
+      // Either the row vanished (deactivated mid-claim) or stock ran
+      // out. Disambiguate with one extra read so the caller can show
+      // the right error — cheap relative to the failed write.
+      const sale = await prisma.flashSale.findUnique({
         where: { id: saleId },
-        data: { soldCount: next },
+        select: { id: true },
       });
-      return { ok: true, flashPrice, soldAfter: next } satisfies ClaimResult;
-    });
+      return sale
+        ? ({ ok: false, reason: 'out_of_stock' } satisfies ClaimResult)
+        : ({ ok: false, reason: 'not_active' } satisfies ClaimResult);
+    }
+    return {
+      ok: true,
+      flashPrice,
+      soldAfter: rows[0].sold_count,
+    } satisfies ClaimResult;
   }
 
   /// MGET the live counters for a page of sales and overwrite the

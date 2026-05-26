@@ -24,6 +24,9 @@ export interface CreatePaymentInput {
   invoiceId?: number | null;
   note?: string | null;
   createdById?: number | null;
+  /// Client-supplied retry-safe key. Unique per (shopId, type, key).
+  /// When set, a replay returns the original row instead of inserting.
+  idempotencyKey?: string | null;
 }
 
 /// Decimal helper — Prisma returns Decimal, the front-end wants double.
@@ -50,7 +53,45 @@ export class PaymentsService {
       invoiceId,
       note,
       createdById,
+      idempotencyKey,
     } = input;
+
+    // Idempotency replay: if this (shop, type, key) tuple already
+    // exists, validate the caller's other params match the row we'd
+    // return — without that check, a bug or attacker could reuse a
+    // key with a different amount/party/invoice and silently get the
+    // original row back, masking the mismatch.
+    if (idempotencyKey) {
+      const replay = await prisma.payment.findFirst({
+        where: { shopId, type, idempotencyKey },
+        include: {
+          party: { select: { id: true, name: true } },
+          vendor: { select: { id: true, name: true } },
+          invoice: {
+            select: { id: true, invoiceNo: true, total: true, status: true },
+          },
+        },
+      });
+      if (replay) {
+        const amountMatches =
+          Math.abs(toNumber(replay.amount) - amount) <= 0.005;
+        const partyMatches = (replay.partyId ?? null) === (partyId ?? null);
+        const vendorMatches = (replay.vendorId ?? null) === (vendorId ?? null);
+        const invoiceMatches =
+          (replay.invoiceId ?? null) === (invoiceId ?? null);
+        if (
+          !amountMatches ||
+          !partyMatches ||
+          !vendorMatches ||
+          !invoiceMatches
+        ) {
+          throw new Error(
+            'IDEMPOTENCY_CONFLICT: payload differs from the original payment',
+          );
+        }
+        return replay;
+      }
+    }
 
     if (type !== 'RECEIPT' && type !== 'PAYMENT') {
       throw new Error('Invalid payment type');
@@ -71,71 +112,99 @@ export class PaymentsService {
       throw new Error('PAYMENT payments must reference a vendor');
     }
 
-    // If we have an invoice, validate it belongs to the counterparty and
-    // doesn't over-allocate against the remaining outstanding.
-    if (invoiceId != null) {
-      const invoice = await prisma.invoice.findFirst({
-        where: { id: invoiceId, shopId },
-        select: {
-          id: true,
-          partyId: true,
-          vendorId: true,
-          total: true,
-          type: true,
-          status: true,
-        },
+    // Validate the counterparty belongs to this shop. Without this an
+    // authenticated merchant could `POST /payments` with another shop's
+    // partyId/vendorId — the row would be inserted with their own
+    // shopId, silently falsifying the attacker's ledger and reports.
+    if (hasParty) {
+      const owns = await prisma.party.findFirst({
+        where: { id: partyId!, shopId },
+        select: { id: true },
       });
-      if (!invoice) throw new Error('Invoice not found');
-      if (type === 'RECEIPT' && invoice.partyId !== partyId) {
-        throw new Error('Invoice does not belong to this party');
-      }
-      if (type === 'PAYMENT' && invoice.vendorId !== vendorId) {
-        throw new Error('Invoice does not belong to this vendor');
-      }
-
-      const allocated = await prisma.payment.aggregate({
-        where: { invoiceId, shopId },
-        _sum: { amount: true },
+      if (!owns) throw new Error('Party not found');
+    } else {
+      const owns = await prisma.vendor.findFirst({
+        where: { id: vendorId!, shopId },
+        select: { id: true },
       });
-      const alreadyApplied = toNumber(allocated._sum.amount);
-      const outstanding = toNumber(invoice.total) - alreadyApplied;
-      if (amount - outstanding > 0.001) {
-        throw new Error(
-          `Amount exceeds outstanding (${outstanding.toFixed(2)}) on invoice`,
-        );
-      }
+      if (!owns) throw new Error('Vendor not found');
     }
 
-    return prisma.$transaction(async (tx) => {
-      const { referenceNo } = await nextPaymentRef(
-        shopId,
-        type,
-        paymentDate ?? new Date(),
-      );
-      return tx.payment.create({
-        data: {
+    // Invoice over-allocation must be race-safe: two concurrent
+    // payments both reading `alreadyApplied` before either insert lets
+    // an invoice be paid down twice. We solve it by doing the aggregate
+    // check + insert inside a single transaction at Serializable
+    // isolation. The DB rejects one of the racing transactions with
+    // SQLSTATE 40001, which Prisma surfaces and we re-throw as the
+    // user-facing over-allocation error.
+    return prisma.$transaction(
+      async (tx) => {
+        if (invoiceId != null) {
+          const invoice = await tx.invoice.findFirst({
+            where: { id: invoiceId, shopId },
+            select: {
+              id: true,
+              partyId: true,
+              vendorId: true,
+              total: true,
+              type: true,
+              status: true,
+            },
+          });
+          if (!invoice) throw new Error('Invoice not found');
+          if (type === 'RECEIPT' && invoice.partyId !== partyId) {
+            throw new Error('Invoice does not belong to this party');
+          }
+          if (type === 'PAYMENT' && invoice.vendorId !== vendorId) {
+            throw new Error('Invoice does not belong to this vendor');
+          }
+
+          const allocated = await tx.payment.aggregate({
+            where: { invoiceId, shopId },
+            _sum: { amount: true },
+          });
+          const alreadyApplied = toNumber(allocated._sum.amount);
+          const outstanding = toNumber(invoice.total) - alreadyApplied;
+          if (amount - outstanding > 0.001) {
+            throw new Error(
+              `Amount exceeds outstanding (${outstanding.toFixed(2)}) on invoice`,
+            );
+          }
+        }
+
+        const { referenceNo } = await nextPaymentRef(
           shopId,
           type,
-          referenceNo,
-          amount: new Prisma.Decimal(amount),
-          mode,
-          modeReference: modeReference ?? null,
-          paymentDate: paymentDate ?? new Date(),
-          partyId: partyId ?? null,
-          vendorId: vendorId ?? null,
-          invoiceId: invoiceId ?? null,
-          note: note ?? null,
-          createdById: createdById ?? null,
-        },
-        include: {
-          party: { select: { id: true, name: true } },
-          vendor: { select: { id: true, name: true } },
-          invoice: {
-            select: { id: true, invoiceNo: true, total: true, status: true },
+          paymentDate ?? new Date(),
+          tx,
+        );
+        return tx.payment.create({
+          data: {
+            shopId,
+            type,
+            referenceNo,
+            amount: new Prisma.Decimal(amount),
+            mode,
+            modeReference: modeReference ?? null,
+            paymentDate: paymentDate ?? new Date(),
+            partyId: partyId ?? null,
+            vendorId: vendorId ?? null,
+            invoiceId: invoiceId ?? null,
+            note: note ?? null,
+            createdById: createdById ?? null,
+            idempotencyKey: idempotencyKey ?? null,
           },
-        },
-      });
-    });
+          include: {
+            party: { select: { id: true, name: true } },
+            vendor: { select: { id: true, name: true } },
+            invoice: {
+              select: { id: true, invoiceNo: true, total: true, status: true },
+            },
+          },
+        });
+      },
+      { isolationLevel: 'Serializable' },
+    );
   }
 
   async listPayments(

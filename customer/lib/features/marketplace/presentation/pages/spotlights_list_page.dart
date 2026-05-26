@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy_customer/core/network/image_url.dart';
-import 'package:shopxy_customer/features/home_v2/data/home_feed_models.dart';
-import 'package:shopxy_customer/features/home_v2/presentation/providers/home_feed_provider.dart';
-import 'package:shopxy_customer/features/home_v2/presentation/widgets/network_image_box.dart';
+import 'package:shopxy_customer/features/home/data/models/home_feed_models.dart';
+import 'package:shopxy_customer/features/home/presentation/providers/home_feed_provider.dart';
+import 'package:shopxy_customer/features/home/presentation/widgets/network_image_box.dart';
 import 'package:shopxy_customer/features/marketplace/presentation/pages/shop_profile_page.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shopxy_customer/features/categories/domain/entities/category.dart';
+import 'package:shopxy_customer/shared/domain/entities/category.dart';
 import 'package:shopxy_customer/features/categories/presentation/pages/categories_page.dart';
 import 'package:shopxy_customer/features/categories/presentation/pages/category_detail_page.dart';
 import 'package:shopxy_customer/features/categories/presentation/providers/categories_provider.dart';

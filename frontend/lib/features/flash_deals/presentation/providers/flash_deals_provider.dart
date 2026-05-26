@@ -86,26 +86,22 @@ class FlashDealsProvider extends ChangeNotifier {
   Future<bool> cancel(int id) async {
     try {
       await _ds.cancel(id);
-      final i = _all.indexWhere((d) => d.id == id);
-      if (i >= 0) {
-        _all[i] = FlashDeal(
-          id: _all[i].id,
-          productId: _all[i].productId,
-          flashPrice: _all[i].flashPrice,
-          stockLimit: _all[i].stockLimit,
-          soldCount: _all[i].soldCount,
-          startAt: _all[i].startAt,
-          endAt: _all[i].endAt,
-          isActive: false,
-          product: _all[i].product,
-        );
-      }
-      notifyListeners();
-      return true;
     } catch (e) {
       _error = e is FlashDealApiException ? e.friendlyMessage : e.toString();
       notifyListeners();
       return false;
     }
+    // Refetch the authoritative state. Constructing a synthetic deal
+    // with isActive=false drops any server-only fields the cancel
+    // mutation might have set (cancellation timestamps, derived flags),
+    // so re-pull the list and let the existing bucketing show the deal
+    // in `past`.
+    try {
+      await load();
+    } catch (e) {
+      _error = e is FlashDealApiException ? e.friendlyMessage : e.toString();
+      notifyListeners();
+    }
+    return true;
   }
 }

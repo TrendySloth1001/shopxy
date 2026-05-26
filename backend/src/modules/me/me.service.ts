@@ -106,7 +106,13 @@ export class MeService {
     skip: number;
     limit: number;
   }) {
-    const where: Prisma.ProductWhereInput = { isActive: true };
+    // Customer-facing catalog: only active AND published products.
+    // Without `isPublished: true` an unpublished draft from any shop
+    // would surface here, leaking work-in-progress catalog rows.
+    const where: Prisma.ProductWhereInput = {
+      isActive: true,
+      isPublished: true,
+    };
     if (opts.categoryId) where.categoryId = opts.categoryId;
     if (opts.search) {
       where.OR = [
@@ -130,7 +136,7 @@ export class MeService {
 
   async getCatalogProduct(id: number) {
     return prisma.product.findFirst({
-      where: { id, isActive: true },
+      where: { id, isActive: true, isPublished: true },
       select: catalogDetailSelect,
     });
   }

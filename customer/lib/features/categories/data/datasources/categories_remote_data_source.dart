@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:shopxy_customer/core/network/api_client.dart';
 import 'package:shopxy_customer/features/categories/data/models/category_dto.dart';
-import 'package:shopxy_customer/features/categories/domain/entities/category.dart';
+import 'package:shopxy_customer/shared/domain/entities/category.dart';
 import 'package:shopxy_customer/features/marketplace/domain/entities/marketplace_product.dart';
 
 /// Adapter for the customer-facing category surfaces:

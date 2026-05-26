@@ -17,6 +17,16 @@ class PartiesProvider extends ChangeNotifier {
   String? get error => _error;
   String get search => _search;
 
+  /// Drop cached parties on logout — keeps user A's customer ledger
+  /// from flashing in user B's session on the same device.
+  void reset() {
+    _parties = [];
+    _isLoading = false;
+    _error = null;
+    _search = '';
+    notifyListeners();
+  }
+
   Future<void> loadParties({bool refresh = false}) async {
     if (_isLoading) return;
     _isLoading = true;

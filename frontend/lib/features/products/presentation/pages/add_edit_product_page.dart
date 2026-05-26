@@ -140,8 +140,15 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
 
     // Heuristic dirty-tracker — single listener shared across the
     // representative text fields. Avoids instrumenting every input.
+    // setState the first time so PopScope.canPop reflects the flipped
+    // flag; subsequent edits skip the rebuild (already dirty).
     void markDirty() {
-      if (!_dirty) _dirty = true;
+      if (_dirty) return;
+      if (mounted) {
+        setState(() => _dirty = true);
+      } else {
+        _dirty = true;
+      }
     }
     _name.addListener(markDirty);
     _description.addListener(markDirty);
@@ -442,11 +449,23 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     final picker = ImagePicker();
     final picked = await picker.pickImage(source: source, maxWidth: 1200, imageQuality: 85);
     if (picked == null || !mounted) return;
+    final file = File(picked.path);
+    const maxBytes = 5 * 1024 * 1024;
+    if (file.lengthSync() > maxBytes) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Image is larger than 5 MB. Pick a smaller image or crop tighter.',
+          ),
+        ),
+      );
+      return;
+    }
 
     setState(() => _isUploading = true);
     try {
       final ds = context.read<ProductsRemoteDataSource>();
-      final url = await ds.uploadImage(File(picked.path));
+      final url = await ds.uploadImage(file);
 
       if (isEditing) {
         // In edit mode the image is persisted immediately so it

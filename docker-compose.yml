@@ -3,9 +3,9 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: shopxy
-      POSTGRES_PASSWORD: shopxy_dev_password
-      POSTGRES_DB: shopxy
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER must be set in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB must be set in .env}
     ports: ["5432:5432"]
     volumes: [postgres_data:/var/lib/postgresql/data]
   minio:
@@ -13,8 +13,8 @@ services:
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: shopxy
-      MINIO_ROOT_PASSWORD: shopxy_dev_password
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:?MINIO_ACCESS_KEY must be set in .env}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:?MINIO_SECRET_KEY must be set in .env}
     ports: ["9000:9000", "9001:9001"]
     volumes: [minio_data:/data]
   redis:
@@ -27,16 +27,17 @@ services:
     restart: unless-stopped
     depends_on: [postgres, minio, redis]
     environment:
-      DATABASE_URL: postgres://shopxy:shopxy_dev_password@postgres:5432/shopxy
-      JWT_ACCESS_SECRET: change-me-access
-      JWT_REFRESH_SECRET: change-me-refresh
-      MINIO_ENDPOINT: minio
-      MINIO_ACCESS_KEY: shopxy
-      MINIO_SECRET_KEY: shopxy_dev_password
-      MINIO_BUCKET: shopxy-uploads
-      REDIS_URL: redis://redis:6379
-      PORT: 3003
-      CORS_ORIGINS: ""
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL must be set in .env}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?JWT_ACCESS_SECRET must be set in .env}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?JWT_REFRESH_SECRET must be set in .env}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-minio}
+      MINIO_PORT: ${MINIO_PORT:-9000}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:?MINIO_ACCESS_KEY must be set in .env}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:?MINIO_SECRET_KEY must be set in .env}
+      MINIO_BUCKET: ${MINIO_BUCKET:-shopxy-uploads}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      PORT: ${PORT:-3003}
+      CORS_ORIGINS: ${CORS_ORIGINS:?CORS_ORIGINS must be set in .env (use a real origin list)}
     ports: ["3003:3003"]
 volumes:
   postgres_data:

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy_customer/core/network/image_url.dart';
-import 'package:shopxy_customer/features/home_v2/presentation/widgets/network_image_box.dart';
+import 'package:shopxy_customer/features/home/presentation/widgets/network_image_box.dart';
 import 'package:shopxy_customer/features/marketplace/data/datasources/marketplace_remote_data_source.dart';
 import 'package:shopxy_customer/features/marketplace/domain/entities/marketplace_product.dart';
 import 'package:shopxy_customer/features/marketplace/domain/entities/marketplace_shop.dart';
-import 'package:shopxy_customer/features/marketplace/presentation/pages/product_detail_v2_page.dart';
+import 'package:shopxy_customer/features/marketplace/presentation/pages/product_detail_page.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
@@ -289,7 +289,7 @@ class _ProductTile extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) => ProductDetailV2Page(productId: product.id),
+          builder: (_) => ProductDetailPage(productId: product.id),
         ),
       ),
       child: Column(
