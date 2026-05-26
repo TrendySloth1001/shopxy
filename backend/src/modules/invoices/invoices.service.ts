@@ -10,6 +10,12 @@ import { amountInWords } from '../../shared/numbering/amount_in_words.js';
 type InvoiceType = 'SALE' | 'PURCHASE';
 type InvoiceStatus = 'DRAFT' | 'CONFIRMED' | 'CANCELLED';
 
+/// Upper bound on lines per invoice. Above this the PDF generator
+/// becomes a memory cliff (buffered in RAM) and the ledger transaction
+/// holds row locks long enough to cascade deadlocks. 200 covers every
+/// realistic Indian-SMB invoice we've encountered.
+const MAX_INVOICE_LINES = 200;
+
 type DocumentType =
   | 'TAX_INVOICE'
   | 'BILL_OF_SUPPLY'
@@ -190,6 +196,16 @@ export class InvoicesService {
   > {
     if (data.items.length === 0) {
       return { error: 'Invoice must have at least one item' as const };
+    }
+    // Hard cap on line count. The PDF generator buffers the whole
+    // document in memory; an attacker submitting a 5000-line invoice
+    // could OOM the worker on PDF generation. 200 lines covers any
+    // realistic invoice (the longest legitimate documents we see in
+    // the wild are < 150 lines).
+    if (data.items.length > MAX_INVOICE_LINES) {
+      return {
+        error: `Invoice exceeds maximum ${MAX_INVOICE_LINES} lines` as const,
+      };
     }
     const documentType: DocumentType = data.documentType ?? 'TAX_INVOICE';
 
@@ -441,6 +457,11 @@ export class InvoicesService {
       // Type drives stock direction and number prefix — switching mid-flight
       // would corrupt both. Force cancel-and-create instead.
       return { error: 'Cannot change invoice type — cancel and create a new one' as const };
+    }
+    if (data.items.length > MAX_INVOICE_LINES) {
+      return {
+        error: `Invoice exceeds maximum ${MAX_INVOICE_LINES} lines` as const,
+      };
     }
 
     const resolved = await this.resolveInvoiceFields({

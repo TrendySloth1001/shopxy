@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { Role } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
+import { requireEnv } from '../env.js';
 
 /// JWT payload as signed at login / refresh. `shopId` is included for
 /// merchant accounts so per-request DB lookup is avoided; for customer
@@ -24,12 +25,6 @@ declare global {
       user?: AuthPayload;
     }
   }
-}
-
-function requireEnv(name: string): string {
-  const v = process.env[name];
-  if (!v) throw new Error(`${name} is required — refusing to start with a default secret`);
-  return v;
 }
 
 const ACCESS_SECRET = requireEnv('JWT_ACCESS_SECRET');
@@ -66,7 +61,7 @@ export async function requireAuth(
   const token = header.slice(7);
   let payload: AuthPayload;
   try {
-    payload = jwt.verify(token, ACCESS_SECRET) as unknown as AuthPayload;
+    payload = jwt.verify(token, ACCESS_SECRET, { algorithms: ['HS256'] }) as unknown as AuthPayload;
   } catch {
     res.status(401).json({ error: 'Token expired or invalid' });
     return;

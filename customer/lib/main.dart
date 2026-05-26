@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy_customer/core/app.dart';
 import 'package:shopxy_customer/core/auth/token_manager.dart';
+import 'package:shopxy_customer/core/config/app_config.dart';
 import 'package:shopxy_customer/core/network/api_client.dart';
 import 'package:shopxy_customer/core/share/deep_link_handler.dart';
 import 'package:shopxy_customer/features/auth/data/datasources/auth_remote_data_source.dart';
@@ -38,6 +39,9 @@ import 'package:shopxy_customer/features/coupons/data/datasources/coupons_remote
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Fail-fast in release if API_BASE_URL was missed or points at a dev host.
+  AppConfig.assertSafeForRelease();
 
   final tokenManager = TokenManager();
   await tokenManager.init();
@@ -90,6 +94,12 @@ void main() async {
   authProvider.registerOnClear(addressesProvider.reset);
   authProvider.registerOnClear(linkedMerchantsProvider.reset);
   authProvider.registerOnClear(homeFeedProvider.clearPersonalized);
+
+  // Explicit-logout-only: dump the local basket. We deliberately keep
+  // it on transient 401-refresh failures (same user about to log back
+  // in) but a user who taps "Log out" then someone else signs in on
+  // the same device should NOT inherit the prior person's items.
+  authProvider.registerOnExplicitLogout(cartProvider.clear);
 
   // Force re-login if the refresh fails.
   tokenManager.onUnauthorized = authProvider.clearAuth;

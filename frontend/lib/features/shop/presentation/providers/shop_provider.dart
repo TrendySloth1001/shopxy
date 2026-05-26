@@ -78,6 +78,9 @@ class ShopProvider extends ChangeNotifier {
   }
 
   Future<String?> uploadImage(File file) async {
+    // Reset the sticky `_error` so a previous upload failure doesn't
+    // surface alongside a fresh attempt.
+    _error = null;
     try {
       return await _ds.uploadImage(file);
     } catch (e) {

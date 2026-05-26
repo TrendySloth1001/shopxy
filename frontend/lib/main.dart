@@ -3,6 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/core/app.dart';
 import 'package:shopxy/core/auth/token_manager.dart';
+import 'package:shopxy/core/config/app_config.dart';
 import 'package:shopxy/core/network/api_client.dart';
 import 'package:shopxy/core/prefs/navigation_prefs.dart';
 import 'package:shopxy/features/auth/data/datasources/auth_remote_data_source.dart';
@@ -55,6 +56,9 @@ import 'package:shopxy/features/vendors/presentation/providers/vendors_provider.
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Fail-fast in release if API_BASE_URL was missed or points at a dev host.
+  AppConfig.assertSafeForRelease();
 
   // Load tokens from secure storage before rendering anything
   final tokenManager = TokenManager();

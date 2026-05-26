@@ -410,7 +410,7 @@ export class ReturnsService {
     method?: string;
     note?: string | null;
   }): Promise<
-    | { ok: true; walletEntryId: number; refundAmount: number }
+    | { ok: true; walletEntryId: number | null; refundAmount: number }
     | { error: 'NOT_FOUND' | 'BAD_STATE' }
   > {
     return prisma.$transaction(async (tx) => {
@@ -442,26 +442,65 @@ export class ReturnsService {
           customerUserId: true,
           refundAmount: true,
           requestId: true,
+          // Reach into the parent order so we know how much of the
+          // original payment came from wallet credit. We must credit
+          // wallet money BACK to the wallet regardless of refund method.
+          request: {
+            select: {
+              customerOrder: {
+                select: {
+                  estimatedTotal: true,
+                  walletPaid: true,
+                },
+              },
+            },
+          },
         },
       });
       const refundAmount = Number(row.refundAmount);
+      const method = (opts.method ?? 'WALLET').toUpperCase();
+
+      // Split the refund between wallet credit and off-platform refund.
+      //
+      // - WALLET mode: credit the full refundAmount back to the wallet.
+      // - ORIGINAL/CASH mode: the merchant cuts cash/cheque/UPI off
+      //   platform for the cash portion, BUT we still credit the
+      //   wallet-funded slice back to the wallet (wallet money is
+      //   reusable money — refusing to return it would be theft).
+      //   Cash portion: refundAmount × (1 − walletShare).
+      //   Wallet portion: refundAmount × walletShare.
+      const parent = row.request?.customerOrder;
+      const gross = parent ? Number(parent.estimatedTotal) : 0;
+      const walletPaid = parent ? Number(parent.walletPaid) : 0;
+      const walletShare =
+        gross > 0 && walletPaid > 0 ? Math.min(walletPaid / gross, 1) : 0;
+      const walletCreditAmount =
+        method === 'WALLET'
+          ? refundAmount
+          : Math.round(refundAmount * walletShare * 100) / 100;
 
       // Wallet credit. Idempotency keyed on the return id so a retry of
       // this RPC re-uses the original entry instead of double-crediting.
-      const entry = await walletService.credit({
-        userId: row.customerUserId,
-        amount: refundAmount,
-        source: 'REFUND',
-        sourceId: row.id,
-        description: `Refund for return #${row.id}`,
-        idempotencyKey: `return-refund-${row.id}`,
-        tx,
-      });
+      // Skip the wallet write entirely when there's nothing to credit
+      // (off-platform refund + zero wallet portion in the original).
+      const entry = walletCreditAmount > 0
+        ? await walletService.credit({
+            userId: row.customerUserId,
+            amount: walletCreditAmount,
+            source: 'REFUND',
+            sourceId: row.id,
+            description: `Refund for return #${row.id}`,
+            idempotencyKey: `wallet:return-refund-${row.id}`,
+            tx,
+          })
+        : null;
 
-      await tx.returnRequest.update({
-        where: { id: row.id },
-        data: { walletEntryId: entry.id },
-      });
+      if (entry) {
+        await tx.returnRequest.update({
+          where: { id: row.id },
+          data: { walletEntryId: entry.id },
+        });
+      }
       await tx.returnRequestEvent.create({
         data: {
           returnId: row.id,
@@ -470,7 +509,11 @@ export class ReturnsService {
           note: opts.note ?? null,
         },
       });
-      return { ok: true as const, walletEntryId: entry.id, refundAmount };
+      return {
+        ok: true as const,
+        walletEntryId: entry?.id ?? null,
+        refundAmount,
+      };
     });
   }
 }

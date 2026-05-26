@@ -57,7 +57,6 @@ class SearchProvider extends ChangeNotifier {
 
   void setQuery(String q) {
     _query = q;
-    notifyListeners();
     _debounce?.cancel();
     final trimmed = q.trim();
     if (trimmed.isEmpty) {
@@ -68,6 +67,12 @@ class SearchProvider extends ChangeNotifier {
       notifyListeners();
       return;
     }
+    // Mark `_loading` synchronously so the UI doesn't flash a stale
+    // "No matches for '<q>'" empty-state during the debounce window —
+    // [hasCommittedQuery] would already be true while [_results] is
+    // still empty if we left _loading=false.
+    _loading = true;
+    notifyListeners();
     _debounce = Timer(AppDurations.searchDebounce, () => _runSearch(trimmed));
   }
 

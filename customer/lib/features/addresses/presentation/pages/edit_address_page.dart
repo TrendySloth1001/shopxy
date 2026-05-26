@@ -87,7 +87,12 @@ class _EditAddressPageState extends State<EditAddressPage> {
             children: [
               _field(controller: _label, label: 'Label (e.g. Home, Work)', required: false),
               _field(controller: _fullName, label: 'Full name'),
-              _field(controller: _phone, label: 'Phone', keyboard: TextInputType.phone),
+              _field(
+                controller: _phone,
+                label: 'Phone',
+                keyboard: TextInputType.phone,
+                validator: _phoneValidator,
+              ),
               _field(controller: _line1, label: 'Address line 1'),
               _field(controller: _line2, label: 'Address line 2', required: false),
               Row(
@@ -99,7 +104,14 @@ class _EditAddressPageState extends State<EditAddressPage> {
               ),
               Row(
                 children: [
-                  Expanded(child: _field(controller: _pincode, label: 'Pincode', keyboard: TextInputType.number)),
+                  Expanded(
+                    child: _field(
+                      controller: _pincode,
+                      label: 'Pincode',
+                      keyboard: TextInputType.number,
+                      validator: _pincodeValidator,
+                    ),
+                  ),
                   const SizedBox(width: AppSizes.md),
                   Expanded(child: _field(controller: _landmark, label: 'Landmark', required: false)),
                 ],
@@ -129,6 +141,7 @@ class _EditAddressPageState extends State<EditAddressPage> {
     required String label,
     bool required = true,
     TextInputType? keyboard,
+    String? Function(String?)? validator,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSizes.md),
@@ -139,10 +152,37 @@ class _EditAddressPageState extends State<EditAddressPage> {
           labelText: label,
           border: const OutlineInputBorder(),
         ),
-        validator: required
-            ? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null
-            : null,
+        validator: validator ??
+            (required
+                ? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null
+                : null),
       ),
     );
+  }
+
+  /// Indian pincode: 6 digits, first digit 1–9. PIN 000000 / 100000-with-
+  /// leading-zero patterns are not valid PINs.
+  static final RegExp _kPincodeRe = RegExp(r'^[1-9][0-9]{5}$');
+  static String? _pincodeValidator(String? v) {
+    final s = v?.trim() ?? '';
+    if (s.isEmpty) return 'Required';
+    if (!_kPincodeRe.hasMatch(s)) return 'Enter a valid 6-digit pincode';
+    return null;
+  }
+
+  /// Indian mobile: 10 digits starting 6/7/8/9. Strips a leading +91 or
+  /// "91 " so the user can paste either form. Accepts dashes and spaces
+  /// while typing (they're stripped before validation).
+  static final RegExp _kPhoneRe = RegExp(r'^[6-9][0-9]{9}$');
+  static String? _phoneValidator(String? v) {
+    final raw = (v ?? '').trim().replaceAll(RegExp(r'[\s\-]'), '');
+    final stripped = raw.startsWith('+91')
+        ? raw.substring(3)
+        : raw.startsWith('91') && raw.length == 12
+            ? raw.substring(2)
+            : raw;
+    if (stripped.isEmpty) return 'Required';
+    if (!_kPhoneRe.hasMatch(stripped)) return 'Enter a valid 10-digit mobile';
+    return null;
   }
 }

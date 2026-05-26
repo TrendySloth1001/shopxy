@@ -13,7 +13,18 @@ class AuthProvider extends ChangeNotifier {
   /// other providers (orders, addresses, cart, …). Wired in main.dart
   /// at app start; lives here so we don't sprinkle that logic across
   /// `onUnauthorized` and `logout`.
+  ///
+  /// These run on EVERY session reset — including transient 401-refresh
+  /// failures where the user is the same person about to log back in.
+  /// For state that should ONLY drop on an explicit "I want to log out"
+  /// gesture (e.g. the basket, persisted recently-viewed) use
+  /// [_onExplicitLogoutCallbacks] instead.
   final List<VoidCallback> _onClearCallbacks = <VoidCallback>[];
+
+  /// Callbacks invoked ONLY when the user explicitly signs out via
+  /// [logout]. Cart, persisted preferences scoped to the previous
+  /// session, etc.
+  final List<VoidCallback> _onExplicitLogoutCallbacks = <VoidCallback>[];
 
   AuthUser? _user;
   bool _isLoading = true;
@@ -68,6 +79,15 @@ class AuthProvider extends ChangeNotifier {
     }
     await _tokenManager.clear();
     _user = null;
+    // Explicit logout: run the broader cleanup that drops the basket
+    // and any other session-scoped state we deliberately keep across
+    // transient 401-refresh failures.
+    for (final cb in _onClearCallbacks) {
+      cb();
+    }
+    for (final cb in _onExplicitLogoutCallbacks) {
+      cb();
+    }
     notifyListeners();
   }
 
@@ -94,11 +114,22 @@ class AuthProvider extends ChangeNotifier {
     _onClearCallbacks.add(callback);
   }
 
+  /// Register a callback that runs ONLY on explicit [logout], not on
+  /// transient 401-refresh failure. Use for state we deliberately keep
+  /// across a refresh hiccup (e.g. the cart).
+  void registerOnExplicitLogout(VoidCallback callback) {
+    _onExplicitLogoutCallbacks.add(callback);
+  }
+
   /// Called by ApiClient when a refresh fails — forces re-login. Also
   /// resets user-scoped providers (orders, addresses, cart, etc.) so
   /// the next sign-in starts with a clean slate.
-  void clearAuth() {
-    _tokenManager.clear();
+  ///
+  /// Async so callers (e.g. main.dart's `onUnauthorized` wiring) can
+  /// await the secure-storage delete before allowing a re-login that
+  /// would otherwise race the still-pending write.
+  Future<void> clearAuth() async {
+    await _tokenManager.clear();
     _user = null;
     for (final cb in _onClearCallbacks) {
       cb();

@@ -162,6 +162,7 @@ export async function recordTestPurchase(args: {
   const id = crypto.randomBytes(4).toString('hex');
   const party = await prisma.party.create({
     data: {
+      shopId: args.shopId,
       name: `Test Party ${id}`,
       linkedUserId: args.buyerUserId,
     },
@@ -176,6 +177,7 @@ export async function recordTestPurchase(args: {
 
   const invoice = await prisma.invoice.create({
     data: {
+      shopId: args.shopId,
       invoiceNo: `TEST/${id}`,
       type: 'SALE',
       financialYear: '25-26',
