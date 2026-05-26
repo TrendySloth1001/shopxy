@@ -44,6 +44,29 @@ class CatalogProduct {
   bool get inStock => stockQuantity > 0;
   bool get isDiscounted => mrp > 0 && mrp > sellingPrice;
 
+  /// Returns a copy with [sellingPrice] replaced. Used by the cart when
+  /// the server reports a price-drift to update the visible price
+  /// without throwing away the rest of the product snapshot.
+  CatalogProduct copyWithPrice(double newSellingPrice) => CatalogProduct(
+        id: id,
+        name: name,
+        sku: sku,
+        unit: unit,
+        sellingPrice: newSellingPrice,
+        mrp: mrp,
+        taxPercent: taxPercent,
+        stockQuantity: stockQuantity,
+        imageUrl: imageUrl,
+        description: description,
+        hsnCode: hsnCode,
+        categoryId: categoryId,
+        categoryName: categoryName,
+        categoryIconName: categoryIconName,
+        shopId: shopId,
+        shopName: shopName,
+        shopSlug: shopSlug,
+      );
+
   /// Tolerant of Prisma's `Decimal → JSON string` quirk.
   static double _d(dynamic v) {
     if (v == null) return 0;

@@ -1,6 +1,7 @@
 import prisma from '../../infra/db/prisma.js';
 import PDFDocument from 'pdfkit';
 import { Prisma } from '@prisma/client';
+import { Writable } from 'stream';
 import QRCode from 'qrcode';
 import { ledgerService } from '../ledger/ledger.service.js';
 import { nextInvoiceNo } from '../../shared/numbering/sequences.js';
@@ -816,7 +817,40 @@ export class InvoicesService {
     return { ok: true };
   }
 
+  /// Stream the rendered PDF directly to an arbitrary writable (the
+  /// HTTP response in production). Avoids buffering the entire document
+  /// in node memory — a 200-line invoice can otherwise hit tens of MB.
+  /// Returns `null` on success (output was streamed), or the same
+  /// `{ error }` shape that [generatePdf] does on failure.
+  /// Stream the rendered PDF to `out`. Calls [onReady] AFTER the
+  /// invoice has been verified to exist (so the controller can set the
+  /// PDF Content-Type / Disposition headers safely) but BEFORE any
+  /// bytes are written. Returns `null` on success, `{error}` if the
+  /// invoice can't be loaded — in which case [onReady] has not been
+  /// invoked, so the controller is free to respond with JSON instead.
+  async streamPdf(
+    shopId: number,
+    id: number,
+    out: Writable,
+    onReady?: () => void,
+  ): Promise<null | { error: string }> {
+    const result = await this._renderPdf(shopId, id, out, onReady);
+    if (Buffer.isBuffer(result)) return null;
+    if (result === null) return null;
+    return result;
+  }
+
   async generatePdf(shopId: number, id: number): Promise<Buffer | { error: string }> {
+    const result = await this._renderPdf(shopId, id, null);
+    return result as Buffer | { error: string };
+  }
+
+  private async _renderPdf(
+    shopId: number,
+    id: number,
+    out: Writable | null,
+    onReady?: () => void,
+  ): Promise<Buffer | null | { error: string }> {
     const invoice = await prisma.invoice.findFirst({
       where: { id, shopId },
       include: { vendor: true, party: true, items: { orderBy: { id: 'asc' } } },
@@ -876,9 +910,9 @@ export class InvoicesService {
       }
     }
 
-    return new Promise<Buffer>((resolve, reject) => {
+    return new Promise<Buffer | null>((resolve, reject) => {
       const doc = new PDFDocument({ margin: 40, size: 'A4' });
-      const chunks: Buffer[] = [];
+      const chunks: Buffer[] | null = out ? null : [];
       let settled = false;
       const cleanup = () => {
         // PDFKit exposes `destroy` on newer versions; fall back to `end`
@@ -891,12 +925,41 @@ export class InvoicesService {
           // best-effort — already torn down
         }
       };
-      doc.on('data', (c: Buffer) => chunks.push(c));
-      doc.on('end', () => {
-        if (settled) return;
-        settled = true;
-        resolve(Buffer.concat(chunks));
-      });
+      if (out) {
+        // Invoice loaded successfully and we're about to write bytes —
+        // let the caller flip the response headers from default JSON
+        // into application/pdf right before the body begins.
+        if (onReady) {
+          try {
+            onReady();
+          } catch (err) {
+            settled = true;
+            reject(err);
+            return;
+          }
+        }
+        // Pipe straight into the response. The `finish` event on the
+        // destination fires after the last chunk is flushed.
+        doc.pipe(out);
+        out.on('finish', () => {
+          if (settled) return;
+          settled = true;
+          resolve(null);
+        });
+        out.on('error', (err) => {
+          if (settled) return;
+          settled = true;
+          cleanup();
+          reject(err);
+        });
+      } else {
+        doc.on('data', (c: Buffer) => chunks!.push(c));
+        doc.on('end', () => {
+          if (settled) return;
+          settled = true;
+          resolve(Buffer.concat(chunks!));
+        });
+      }
       doc.on('error', (err) => {
         if (settled) return;
         settled = true;

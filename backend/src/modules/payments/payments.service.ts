@@ -24,6 +24,9 @@ export interface CreatePaymentInput {
   invoiceId?: number | null;
   note?: string | null;
   createdById?: number | null;
+  /// Client-supplied retry-safe key. Unique per (shopId, type, key).
+  /// When set, a replay returns the original row instead of inserting.
+  idempotencyKey?: string | null;
 }
 
 /// Decimal helper — Prisma returns Decimal, the front-end wants double.
@@ -50,7 +53,45 @@ export class PaymentsService {
       invoiceId,
       note,
       createdById,
+      idempotencyKey,
     } = input;
+
+    // Idempotency replay: if this (shop, type, key) tuple already
+    // exists, validate the caller's other params match the row we'd
+    // return — without that check, a bug or attacker could reuse a
+    // key with a different amount/party/invoice and silently get the
+    // original row back, masking the mismatch.
+    if (idempotencyKey) {
+      const replay = await prisma.payment.findFirst({
+        where: { shopId, type, idempotencyKey },
+        include: {
+          party: { select: { id: true, name: true } },
+          vendor: { select: { id: true, name: true } },
+          invoice: {
+            select: { id: true, invoiceNo: true, total: true, status: true },
+          },
+        },
+      });
+      if (replay) {
+        const amountMatches =
+          Math.abs(toNumber(replay.amount) - amount) <= 0.005;
+        const partyMatches = (replay.partyId ?? null) === (partyId ?? null);
+        const vendorMatches = (replay.vendorId ?? null) === (vendorId ?? null);
+        const invoiceMatches =
+          (replay.invoiceId ?? null) === (invoiceId ?? null);
+        if (
+          !amountMatches ||
+          !partyMatches ||
+          !vendorMatches ||
+          !invoiceMatches
+        ) {
+          throw new Error(
+            'IDEMPOTENCY_CONFLICT: payload differs from the original payment',
+          );
+        }
+        return replay;
+      }
+    }
 
     if (type !== 'RECEIPT' && type !== 'PAYMENT') {
       throw new Error('Invalid payment type');
@@ -151,6 +192,7 @@ export class PaymentsService {
             invoiceId: invoiceId ?? null,
             note: note ?? null,
             createdById: createdById ?? null,
+            idempotencyKey: idempotencyKey ?? null,
           },
           include: {
             party: { select: { id: true, name: true } },

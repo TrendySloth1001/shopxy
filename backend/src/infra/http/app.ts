@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import prisma from '../db/prisma.js';
 import authRouter from '../../modules/auth/auth.routes.js';
 import categoriesRouter from '../../modules/categories/categories.routes.js';
@@ -162,13 +162,17 @@ export function buildApp(): express.Express {
   // Per-user limiter for upload. Sharp re-encode + 3 MinIO PUTs is
   // expensive; a single merchant hammering /upload can saturate the box.
   // Key on req.user.sub when present (post-requireAuth) so two devices
-  // sharing an IP aren't aggregated.
+  // sharing an IP aren't aggregated. Falls back to express-rate-limit's
+  // own ipKeyGenerator for IPv6 safety when no user is on the request.
   const uploadLimiter = rateLimit({
     windowMs: 60_000,
     max: 30,
     standardHeaders: true,
     legacyHeaders: false,
-    keyGenerator: (req) => String(req.user?.sub ?? req.ip),
+    keyGenerator: (req, res) =>
+      req.user?.sub != null
+        ? `u:${req.user.sub}`
+        : ipKeyGenerator(req.ip ?? '', 56),
   });
 
   // Per-user limiter for event ingestion. Bounded at a comfortable
@@ -179,7 +183,10 @@ export function buildApp(): express.Express {
     max: 600,
     standardHeaders: true,
     legacyHeaders: false,
-    keyGenerator: (req) => String(req.user?.sub ?? req.ip),
+    keyGenerator: (req, res) =>
+      req.user?.sub != null
+        ? `u:${req.user.sub}`
+        : ipKeyGenerator(req.ip ?? '', 56),
   });
 
   app.get('/health', async (_req, res) => {

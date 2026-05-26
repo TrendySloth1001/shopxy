@@ -19,6 +19,29 @@ class CancelOrderException implements Exception {
   String toString() => message;
 }
 
+/// One line whose live price disagreed with what the customer was shown.
+class PriceDrift {
+  const PriceDrift({
+    required this.productId,
+    required this.expectedUnitPrice,
+    required this.actualUnitPrice,
+  });
+  final int productId;
+  final double expectedUnitPrice;
+  final double actualUnitPrice;
+}
+
+/// Server rejected the place-order because one or more line prices
+/// moved between cart + submit (e.g. a flash sale ended). Carries the
+/// corrected prices so the UI can re-show the cart with a clear callout.
+class PriceDriftException implements Exception {
+  PriceDriftException(this.drifts);
+  final List<PriceDrift> drifts;
+
+  @override
+  String toString() => 'Prices have changed since you viewed the cart.';
+}
+
 /// Result of placing an order — returns the parent `CustomerOrder` id
 /// and the per-vendor child slices the server created. The customer UI
 /// uses the parent id to navigate to the new order detail; the child
@@ -40,7 +63,8 @@ class OrdersRemoteDataSource {
   /// by shop and creates one parent CustomerOrder + N PurchaseRequest
   /// children in one transaction. Idempotent per [idempotencyKey].
   Future<PlaceOrderResponse> placeOrder({
-    required List<({int productId, double quantity})> items,
+    required List<({int productId, double quantity, double? expectedUnitPrice})>
+        items,
     String? note,
     String? idempotencyKey,
     int? addressId,
@@ -53,7 +77,12 @@ class OrdersRemoteDataSource {
       extraHeaders: {'X-Idempotency-Key': key},
       body: {
         'items': items
-            .map((i) => {'productId': i.productId, 'quantity': i.quantity})
+            .map((i) => {
+                  'productId': i.productId,
+                  'quantity': i.quantity,
+                  if (i.expectedUnitPrice != null)
+                    'expectedUnitPrice': i.expectedUnitPrice,
+                })
             .toList(),
         if (note != null && note.isNotEmpty) 'note': note,
         'addressId': ?addressId,
@@ -63,6 +92,22 @@ class OrdersRemoteDataSource {
     );
     if (res.statusCode != 200 && res.statusCode != 201) {
       final err = jsonDecode(res.body) as Map<String, dynamic>;
+      // PRICE_DRIFT specifically carries a per-line breakdown in
+      // `details`; surface it via a typed exception so the cart can
+      // re-quote + re-show with the corrected prices.
+      if (res.statusCode == 409 && err['error'] == 'PRICE_DRIFT') {
+        final details = ((err['details'] as List?) ?? const [])
+            .map((e) {
+              final m = e as Map<String, dynamic>;
+              return PriceDrift(
+                productId: (m['productId'] as num).toInt(),
+                expectedUnitPrice: (m['expectedUnitPrice'] as num).toDouble(),
+                actualUnitPrice: (m['actualUnitPrice'] as num).toDouble(),
+              );
+            })
+            .toList(growable: false);
+        throw PriceDriftException(details);
+      }
       throw Exception(err['error'] ?? 'Order failed');
     }
     final json = jsonDecode(res.body) as Map<String, dynamic>;

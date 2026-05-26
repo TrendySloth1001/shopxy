@@ -140,8 +140,15 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
 
     // Heuristic dirty-tracker — single listener shared across the
     // representative text fields. Avoids instrumenting every input.
+    // setState the first time so PopScope.canPop reflects the flipped
+    // flag; subsequent edits skip the rebuild (already dirty).
     void markDirty() {
-      if (!_dirty) _dirty = true;
+      if (_dirty) return;
+      if (mounted) {
+        setState(() => _dirty = true);
+      } else {
+        _dirty = true;
+      }
     }
     _name.addListener(markDirty);
     _description.addListener(markDirty);

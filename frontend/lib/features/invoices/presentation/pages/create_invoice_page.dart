@@ -70,7 +70,16 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
   final _productSearch = TextEditingController();
 
   void _markDirty() {
-    if (!_dirty) _dirty = true;
+    // Trigger a rebuild so PopScope.canPop sees the flipped flag —
+    // without setState the back gesture would still pop a dirty form
+    // because canPop was computed from the prior build.
+    if (!_dirty) {
+      if (mounted) {
+        setState(() => _dirty = true);
+      } else {
+        _dirty = true;
+      }
+    }
   }
 
   bool get _isEditing => widget.existing != null;

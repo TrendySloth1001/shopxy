@@ -7,6 +7,7 @@ import { invitationsService } from '../invitations/invitations.service.js';
 import { notificationsService } from '../notifications/notifications.service.js';
 import { logger } from '../../shared/logging/logger.js';
 import { requireEnv } from '../../shared/env.js';
+import { bumpTokensValidFromCache } from '../../shared/http/requireAuth.js';
 
 const ACCESS_SECRET = requireEnv('JWT_ACCESS_SECRET');
 const REFRESH_SECRET = requireEnv('JWT_REFRESH_SECRET');
@@ -181,12 +182,20 @@ export class AuthService {
   }
 
   /// Revoke every refresh token for this user — drops other-device
-  /// sessions in one shot. The caller's current access token is still
-  /// valid until its short TTL expires; combined with a future
-  /// `tokensValidFrom` enforcement (TODO) this becomes a true global
-  /// signout.
+  /// sessions in one shot — AND bumps `tokensValidFrom` so every
+  /// outstanding access token also rejects at next requireAuth (closes
+  /// the 15-minute TTL window that would otherwise let a stolen access
+  /// token survive logout-all).
   async logoutAll(userId: number) {
-    await prisma.refreshToken.deleteMany({ where: { userId } });
+    const stamp = new Date();
+    await prisma.$transaction([
+      prisma.refreshToken.deleteMany({ where: { userId } }),
+      prisma.user.update({
+        where: { id: userId },
+        data: { tokensValidFrom: stamp },
+      }),
+    ]);
+    bumpTokensValidFromCache(userId, stamp);
   }
 
   getMe(userId: number) {
@@ -256,9 +265,18 @@ export class AuthService {
     if (!valid) return { error: 'Current password is incorrect' as const };
 
     const passwordHash = await bcrypt.hash(newPassword, 12);
-    await prisma.user.update({ where: { id: userId }, data: { passwordHash } });
-    // Revoke all sessions after password change
-    await prisma.refreshToken.deleteMany({ where: { userId } });
+    const stamp = new Date();
+    // Atomic: password rewrite + sessions revoked + tokensValidFrom
+    // bumped so a stolen access token (issued before the change) is
+    // rejected by requireAuth even within its 15-minute TTL.
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: userId },
+        data: { passwordHash, tokensValidFrom: stamp },
+      }),
+      prisma.refreshToken.deleteMany({ where: { userId } }),
+    ]);
+    bumpTokensValidFromCache(userId, stamp);
 
     // Best-effort security alert. If the notification write fails we still
     // consider the password change successful — the user has already been

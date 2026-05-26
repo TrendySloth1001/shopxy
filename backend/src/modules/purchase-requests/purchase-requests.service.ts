@@ -177,6 +177,9 @@ const detailSelect = {
 interface CartLine {
   productId: number;
   quantity: number;
+  /// Per-line price the client believes is correct. When set, the
+  /// server rejects (PRICE_DRIFT) if the live price disagrees.
+  expectedUnitPrice?: number;
 }
 
 /// Project the embedded Shop relation into the legacy
@@ -273,7 +276,24 @@ export class PurchaseRequestsService {
     /// the order total as it covers (after any coupon discount).
     useWallet?: boolean;
   }): Promise<
-    | { error: 'EMPTY_CART' | 'PRODUCT_MISSING' | 'PRODUCT_INACTIVE' | 'BAD_QTY' | 'ADDRESS_NOT_OWNED' | 'OWN_SHOP_ITEM' | 'SHOP_NOT_FOUND' | 'CROSS_SHOP_ITEM' | 'COUPON_INVALID' }
+    | {
+        error:
+          | 'EMPTY_CART'
+          | 'PRODUCT_MISSING'
+          | 'PRODUCT_INACTIVE'
+          | 'BAD_QTY'
+          | 'ADDRESS_NOT_OWNED'
+          | 'OWN_SHOP_ITEM'
+          | 'SHOP_NOT_FOUND'
+          | 'CROSS_SHOP_ITEM'
+          | 'COUPON_INVALID'
+          | 'PRICE_DRIFT';
+        priceDrift?: {
+          productId: number;
+          expectedUnitPrice: number;
+          actualUnitPrice: number;
+        }[];
+      }
     | { order: { id: number; shopOrders: { id: number; shopId: number }[]; couponDiscount: number; walletPaid: number }; deduplicated?: true }
   > {
     if (opts.items.length === 0) return { error: 'EMPTY_CART' };
@@ -375,6 +395,37 @@ export class PurchaseRequestsService {
         await flashSalesService.release(pid, q);
       }
       return { error: 'PRODUCT_INACTIVE' };
+    }
+
+    // ── Price-drift guard ────────────────────────────────────────────
+    // Every line whose client sent `expectedUnitPrice` is compared
+    // against the effective price (flash sale > selling price). On any
+    // mismatch we roll back the flash claims and surface the corrected
+    // prices so the FE can show "₹X has changed to ₹Y" in one toast.
+    const priceDrift: {
+      productId: number;
+      expectedUnitPrice: number;
+      actualUnitPrice: number;
+    }[] = [];
+    for (const line of opts.items) {
+      if (line.expectedUnitPrice == null) continue;
+      const product = productMap.get(line.productId)!;
+      const effective =
+        flashPrices.get(line.productId) ?? Number(product.sellingPrice);
+      // 1 paisa tolerance: legit decimal jitter shouldn't trip the gate.
+      if (Math.abs(effective - line.expectedUnitPrice) > 0.01) {
+        priceDrift.push({
+          productId: line.productId,
+          expectedUnitPrice: line.expectedUnitPrice,
+          actualUnitPrice: round2(effective),
+        });
+      }
+    }
+    if (priceDrift.length > 0) {
+      for (const [pid, q] of claimedQty.entries()) {
+        await flashSalesService.release(pid, q).catch(() => undefined);
+      }
+      return { error: 'PRICE_DRIFT', priceDrift };
     }
 
     // ── Customer identity + per-shop linked-party lookup ─────────────
@@ -982,52 +1033,58 @@ export class PurchaseRequestsService {
     | { error: 'NOT_FOUND' | 'NOT_PENDING' | 'NO_ITEMS' | 'INSUFFICIENT_STOCK' | string; productId?: number; available?: number; requested?: number }
     | { invoice: { id: number; invoiceNo: string } }
   > {
-    return prisma.$transaction(async (tx) => {
-      // ── 1. Atomic claim scoped to this shop ──────────────────────
-      const claim = await tx.purchaseRequest.updateMany({
-        where: { id: opts.requestId, shopId: opts.shopId, status: 'PENDING' },
-        data: { status: 'PROCESSING' },
-      });
-      if (claim.count === 0) {
-        const probe = await tx.purchaseRequest.findFirst({
-          where: { id: opts.requestId, shopId: opts.shopId },
-          select: { id: true },
-        });
-        return { error: probe ? 'NOT_PENDING' : 'NOT_FOUND' as const };
-      }
+    // We CANNOT nest the createInvoice tx inside an outer `prisma.$transaction`
+    // here. `invoicesService.createInvoice` opens its own interactive
+    // transaction, which Prisma does not nest. The old code returning
+    // `{error}` from the outer callback would COMMIT (not roll back),
+    // leaving the row stuck in PROCESSING. We solve this by NOT using
+    // an outer tx and instead managing the rollback explicitly: every
+    // failure path below resets the row from PROCESSING back to PENDING
+    // so the merchant can retry.
 
+    // ── 1. Atomic claim scoped to this shop ──────────────────────
+    const claim = await prisma.purchaseRequest.updateMany({
+      where: { id: opts.requestId, shopId: opts.shopId, status: 'PENDING' },
+      data: { status: 'PROCESSING' },
+    });
+    if (claim.count === 0) {
+      const probe = await prisma.purchaseRequest.findFirst({
+        where: { id: opts.requestId, shopId: opts.shopId },
+        select: { id: true },
+      });
+      return { error: probe ? 'NOT_PENDING' : 'NOT_FOUND' as const };
+    }
+
+    const revertToPending = async (): Promise<void> => {
+      // Best-effort restore so a follow-up confirm can re-attempt. We
+      // gate on PROCESSING to avoid clobbering a (very unlikely) human
+      // who intervened between us.
+      await prisma.purchaseRequest
+        .updateMany({
+          where: { id: opts.requestId, status: 'PROCESSING' },
+          data: { status: 'PENDING' },
+        })
+        .catch(() => undefined);
+    };
+
+    try {
       // ── 2. Load full row (now safely ours to act on) ─────────────
-      const request = await tx.purchaseRequest.findUniqueOrThrow({
+      const request = await prisma.purchaseRequest.findUniqueOrThrow({
         where: { id: opts.requestId },
         include: { items: true },
       });
       if (request.items.length === 0) {
-        // Revert the claim so the row goes back to PENDING for
-        // whatever workflow the merchant adopts.
-        await tx.purchaseRequest.updateMany({
-          where: { id: opts.requestId, status: 'PROCESSING' },
-          data: { status: 'PENDING' },
-        });
+        await revertToPending();
         return { error: 'NO_ITEMS' as const };
       }
 
-      // ── 3. Stock decrement happens inside step-5 invoice confirmation ─
-      // We used to decrement Product.stockQuantity directly here AND then
-      // create a DRAFT invoice — that produced ghost stock movements
-      // invisible to the ledger / low-stock alerts. Now the auto-confirm
-      // path of invoicesService.createInvoice (see step 5 below) runs
-      // ledgerService.post, which atomically decrements stock AND writes
-      // a matching StockTransaction row. Insufficient-stock surfaces the
-      // same error shape we used to return here, with productId /
-      // available / requested forwarded back to the caller.
-
-      // ── 4. Find-or-create Party for this customer in this shop ────
+      // ── 3. Find-or-create Party for this customer in this shop ────
       // Reuses an existing linked Party row if one already exists, so a
       // repeat buyer doesn't accumulate N duplicate party rows (one per
       // order). Falls back to create on first contact.
       let partyId = request.partyId;
       if (!partyId) {
-        const existing = await tx.party.findFirst({
+        const existing = await prisma.party.findFirst({
           where: {
             shopId: request.shopId,
             linkedUserId: request.customerUserId,
@@ -1037,7 +1094,7 @@ export class PurchaseRequestsService {
         if (existing) {
           partyId = existing.id;
         } else {
-          const created = await tx.party.create({
+          const created = await prisma.party.create({
             data: {
               shopId: request.shopId,
               name: request.customerName,
@@ -1052,14 +1109,11 @@ export class PurchaseRequestsService {
         }
       }
 
-      // ── 5. Mint + auto-confirm the invoice ────────────────────────
-      // invoicesService.createInvoice opens its own $transaction; nested
-      // transactions in Prisma collapse into the outer one so the whole
-      // operation remains atomic. `confirm: true` immediately posts the
-      // ledger so stock-ledger reports and low-stock alerts see the
-      // movement — without it the invoice would stay DRAFT forever and
-      // the stock decrement done in step 3 above would be invisible to
-      // downstream reporting.
+      // ── 4. Mint + auto-confirm the invoice ───────────────────────
+      // Runs in its own atomic transaction inside invoicesService —
+      // both the invoice rows and the ledger entries either both
+      // succeed or both roll back. We surface failures back to the
+      // caller and revert our PROCESSING claim.
       const result = await invoicesService.createInvoice({
         shopId: request.shopId,
         type: 'SALE',
@@ -1077,14 +1131,13 @@ export class PurchaseRequestsService {
       });
 
       if ('error' in result) {
-        // Roll the row back to PENDING so the merchant can retry — the
-        // outer transaction would also rollback the status flip, but
-        // being explicit here matches what callers expect.
+        await revertToPending();
         return { error: result.error ?? 'INVOICE_FAILED' as const };
       }
       // Auto-confirm failed (most commonly: ledger could not decrement
-      // stock atomically). Surface the structured error so the FE can
-      // render the same "insufficient stock" copy as the legacy path.
+      // stock atomically). The DRAFT invoice exists but stock didn't
+      // move — caller's UI can re-render the inbox so the merchant can
+      // edit and retry. Revert our PROCESSING claim too.
       if ('confirmError' in result && result.confirmError) {
         const ce = result.confirmError as {
           error: string;
@@ -1092,6 +1145,7 @@ export class PurchaseRequestsService {
           available?: number;
           requested?: number;
         };
+        await revertToPending();
         if (ce.error === 'Insufficient stock for one or more items') {
           return {
             error: 'INSUFFICIENT_STOCK' as const,
@@ -1103,8 +1157,8 @@ export class PurchaseRequestsService {
         return { error: ce.error };
       }
 
-      // ── 6. Mark CONFIRMED + link the invoice ─────────────────────
-      await tx.purchaseRequest.update({
+      // ── 5. Mark CONFIRMED + link the invoice ─────────────────────
+      await prisma.purchaseRequest.update({
         where: { id: request.id },
         data: {
           status: 'CONFIRMED',
@@ -1126,7 +1180,12 @@ export class PurchaseRequestsService {
       return {
         invoice: { id: result.invoice.id, invoiceNo: result.invoice.invoiceNo },
       };
-    });
+    } catch (e) {
+      // Unexpected throw between claim and confirmation. Make sure
+      // we don't leak a PROCESSING row that blocks future retries.
+      await revertToPending();
+      throw e;
+    }
   }
 
   async rejectRequest(opts: {

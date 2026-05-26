@@ -1,8 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy_customer/core/lifecycle/lifecycle_observer.dart';
 import 'package:shopxy_customer/core/router/app_shell.dart';
 import 'package:shopxy_customer/features/auth/presentation/pages/login_page.dart';
 import 'package:shopxy_customer/features/auth/presentation/providers/auth_provider.dart';
+import 'package:shopxy_customer/features/catalog/presentation/providers/cart_provider.dart';
+import 'package:shopxy_customer/features/home_v2/presentation/providers/tracking_service.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/constants/app_strings.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
@@ -27,8 +32,42 @@ class ShopxyCustomerApp extends StatelessWidget {
       themeMode: ThemeMode.light,
       debugShowCheckedModeBanner: false,
       navigatorKey: navigatorKey,
-      home: const _AuthGate(),
+      home: LifecycleObserver(
+        onResumed: () async {
+          // Best-effort re-sync on foreground: drop any locally-queued
+          // analytics events so a kill from now on doesn't lose them,
+          // and pull a fresh cart snapshot (server may have removed
+          // out-of-stock lines or changed prices).
+          final tracking = _maybeRead<TrackingService>(context);
+          if (tracking != null) {
+            unawaited(tracking.flush());
+          }
+          final cart = _maybeRead<CartProvider>(context);
+          final auth = _maybeRead<AuthProvider>(context);
+          if (cart != null && auth != null && auth.isAuthenticated) {
+            unawaited(cart.syncFromServer(mergeLocal: false));
+          }
+        },
+        onPaused: () async {
+          final tracking = _maybeRead<TrackingService>(context);
+          if (tracking != null) {
+            unawaited(tracking.flush());
+          }
+        },
+        child: const _AuthGate(),
+      ),
     );
+  }
+
+  /// Tolerant Provider.of lookup — returns null when the type isn't
+  /// registered (mostly relevant for widget tests that only mount a
+  /// subset of providers).
+  static T? _maybeRead<T>(BuildContext context) {
+    try {
+      return Provider.of<T>(context, listen: false);
+    } catch (_) {
+      return null;
+    }
   }
 }
 

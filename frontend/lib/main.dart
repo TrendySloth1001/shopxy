@@ -105,11 +105,30 @@ void main() async {
   // Auth provider (created before runApp so we can wire the callback)
   final authProvider = AuthProvider(authDs, tokenManager);
 
+  // Eagerly-created user-scoped providers — registered with
+  // AuthProvider.registerOnClear so logout / 401-refresh drops the
+  // previous user's cached lists. Without these, user B sees A's
+  // products/invoices/etc. flash on screen for a frame.
+  final productsProvider = ProductsProvider(productsDs);
+  final invoicesProvider = InvoicesProvider(invoicesDs);
+  final vendorsProvider = VendorsProvider(vendorsDs);
+  final partiesProvider = PartiesProvider(partiesDs);
+  final challansProvider = ChallansProvider(challansDs);
+  final shopProvider = ShopProvider(shopDs);
+
+  authProvider.registerOnClear(notificationsProvider.reset);
+  authProvider.registerOnClear(productsProvider.reset);
+  authProvider.registerOnClear(invoicesProvider.reset);
+  authProvider.registerOnClear(vendorsProvider.reset);
+  authProvider.registerOnClear(partiesProvider.reset);
+  authProvider.registerOnClear(challansProvider.reset);
+  authProvider.registerOnClear(shopProvider.reset);
+  authProvider.registerOnClear(ordersProvider.reset);
+
   // When ApiClient can't recover a 401 (refresh failed), force re-login
-  // and clear any stale notifications/invitations cached in memory.
+  // — the registered callbacks fan out via clearAuth().
   tokenManager.onUnauthorized = () {
     authProvider.clearAuth();
-    notificationsProvider.reset();
   };
 
   // Keep the pending-orders badge fresh on session change.
@@ -160,16 +179,16 @@ void main() async {
         ChangeNotifierProvider(
           create: (_) => CustomFieldsProvider(customFieldsDs),
         ),
-        ChangeNotifierProvider(create: (_) => ProductsProvider(productsDs)),
+        ChangeNotifierProvider<ProductsProvider>.value(value: productsProvider),
         ChangeNotifierProvider(create: (_) => StockProvider(stockDs)),
-        ChangeNotifierProvider(create: (_) => InvoicesProvider(invoicesDs)),
-        ChangeNotifierProvider(create: (_) => VendorsProvider(vendorsDs)),
-        ChangeNotifierProvider(create: (_) => PartiesProvider(partiesDs)),
+        ChangeNotifierProvider<InvoicesProvider>.value(value: invoicesProvider),
+        ChangeNotifierProvider<VendorsProvider>.value(value: vendorsProvider),
+        ChangeNotifierProvider<PartiesProvider>.value(value: partiesProvider),
         ChangeNotifierProvider(create: (_) => PaymentsProvider(paymentsDs)),
-        ChangeNotifierProvider(create: (_) => ChallansProvider(challansDs)),
+        ChangeNotifierProvider<ChallansProvider>.value(value: challansProvider),
         ChangeNotifierProvider<NotificationsProvider>.value(value: notificationsProvider),
         ChangeNotifierProvider(create: (_) => ReportsProvider(reportsDs)),
-        ChangeNotifierProvider(create: (_) => ShopProvider(shopDs)),
+        ChangeNotifierProvider<ShopProvider>.value(value: shopProvider),
         ChangeNotifierProvider(create: (_) => AdminBannersProvider(adminBannersDs)),
         ChangeNotifierProvider(
           create: (_) => MerchantCarouselProvider(merchantCarouselDs),
