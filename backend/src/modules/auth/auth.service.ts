@@ -6,12 +6,8 @@ import prisma from '../../infra/db/prisma.js';
 import { invitationsService } from '../invitations/invitations.service.js';
 import { notificationsService } from '../notifications/notifications.service.js';
 import { logger } from '../../shared/logging/logger.js';
-
-function requireEnv(name: string): string {
-  const v = process.env[name];
-  if (!v) throw new Error(`${name} is required — refusing to start with a default secret`);
-  return v;
-}
+import { requireEnv } from '../../shared/env.js';
+import { bumpTokensValidFromCache } from '../../shared/http/requireAuth.js';
 
 const ACCESS_SECRET = requireEnv('JWT_ACCESS_SECRET');
 const REFRESH_SECRET = requireEnv('JWT_REFRESH_SECRET');
@@ -185,6 +181,23 @@ export class AuthService {
     await prisma.refreshToken.deleteMany({ where: { token } });
   }
 
+  /// Revoke every refresh token for this user — drops other-device
+  /// sessions in one shot — AND bumps `tokensValidFrom` so every
+  /// outstanding access token also rejects at next requireAuth (closes
+  /// the 15-minute TTL window that would otherwise let a stolen access
+  /// token survive logout-all).
+  async logoutAll(userId: number) {
+    const stamp = new Date();
+    await prisma.$transaction([
+      prisma.refreshToken.deleteMany({ where: { userId } }),
+      prisma.user.update({
+        where: { id: userId },
+        data: { tokensValidFrom: stamp },
+      }),
+    ]);
+    bumpTokensValidFromCache(userId, stamp);
+  }
+
   getMe(userId: number) {
     return prisma.user.findUnique({ where: { id: userId }, select: safeUserSelect });
   }
@@ -252,9 +265,18 @@ export class AuthService {
     if (!valid) return { error: 'Current password is incorrect' as const };
 
     const passwordHash = await bcrypt.hash(newPassword, 12);
-    await prisma.user.update({ where: { id: userId }, data: { passwordHash } });
-    // Revoke all sessions after password change
-    await prisma.refreshToken.deleteMany({ where: { userId } });
+    const stamp = new Date();
+    // Atomic: password rewrite + sessions revoked + tokensValidFrom
+    // bumped so a stolen access token (issued before the change) is
+    // rejected by requireAuth even within its 15-minute TTL.
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: userId },
+        data: { passwordHash, tokensValidFrom: stamp },
+      }),
+      prisma.refreshToken.deleteMany({ where: { userId } }),
+    ]);
+    bumpTokensValidFromCache(userId, stamp);
 
     // Best-effort security alert. If the notification write fails we still
     // consider the password change successful — the user has already been
@@ -322,49 +344,71 @@ export class AuthService {
     };
 
     if (user.role === 'OWNER') {
-      // Full shop dump — owners are the data fiduciary for these rows,
-      // so they're entitled to a full copy on request. We fetch each
-      // table separately to keep the include tree shallow.
-      const [
-        products,
-        categories,
-        parties,
-        vendors,
-        invoices,
-        payments,
-        challans,
-        customFieldDefinitions,
-        customFieldSections,
-        stockTransactions,
-        stockAdjustments,
-      ] = await Promise.all([
-        prisma.product.findMany({
-          include: { images: true, customFieldValues: true },
-        }),
-        prisma.category.findMany(),
-        prisma.party.findMany(),
-        prisma.vendor.findMany(),
-        prisma.invoice.findMany({ include: { items: true } }),
-        prisma.payment.findMany(),
-        prisma.challan.findMany({ include: { items: true } }),
-        prisma.customFieldDefinition.findMany(),
-        prisma.customFieldSection.findMany(),
-        prisma.stockTransaction.findMany(),
-        prisma.stockAdjustment.findMany({ include: { items: true } }),
-      ]);
-      blob.shop = {
-        products,
-        categories,
-        parties,
-        vendors,
-        invoices,
-        payments,
-        challans,
-        customFieldDefinitions,
-        customFieldSections,
-        stockTransactions,
-        stockAdjustments,
-      };
+      // Full shop dump — owners are the data fiduciary for THEIR shop's
+      // rows. Every findMany MUST be scoped by shopId; without that
+      // scoping, one merchant's export returns every other merchant's
+      // data (DPDP/multi-tenant breach).
+      const ownedShop = await prisma.shop.findUnique({
+        where: { ownerUserId: userId },
+        select: { id: true },
+      });
+      const shopId = ownedShop?.id;
+      if (shopId !== undefined) {
+        const [
+          products,
+          categories,
+          parties,
+          vendors,
+          invoices,
+          payments,
+          challans,
+          customFieldDefinitions,
+          customFieldSections,
+          stockTransactions,
+          stockAdjustments,
+        ] = await Promise.all([
+          prisma.product.findMany({
+            where: { shopId },
+            include: { images: true, customFieldValues: true },
+          }),
+          // Categories are a global taxonomy shared across shops; not
+          // scoped by shopId, so we return the full list as reference
+          // data (not per-tenant content).
+          prisma.category.findMany(),
+          prisma.party.findMany({ where: { shopId } }),
+          prisma.vendor.findMany({ where: { shopId } }),
+          prisma.invoice.findMany({
+            where: { shopId },
+            include: { items: true },
+          }),
+          prisma.payment.findMany({ where: { shopId } }),
+          prisma.challan.findMany({
+            where: { shopId },
+            include: { items: true },
+          }),
+          prisma.customFieldDefinition.findMany({ where: { shopId } }),
+          prisma.customFieldSection.findMany({ where: { shopId } }),
+          prisma.stockTransaction.findMany({ where: { shopId } }),
+          prisma.stockAdjustment.findMany({
+            where: { shopId },
+            include: { items: true },
+          }),
+        ]);
+        blob.shop = {
+          shopId,
+          products,
+          categories,
+          parties,
+          vendors,
+          invoices,
+          payments,
+          challans,
+          customFieldDefinitions,
+          customFieldSections,
+          stockTransactions,
+          stockAdjustments,
+        };
+      }
     }
 
     return blob;
@@ -384,16 +428,26 @@ export class AuthService {
 
     if (user.role === 'OWNER') {
       // Companies Act §128 + GST §36: books of account must be kept
-      // for 8 financial years. If any CONFIRMED invoice falls inside
-      // that window we refuse the delete and surface a stable error
-      // code the UI can match on.
-      const cutoff = new Date();
-      cutoff.setFullYear(cutoff.getFullYear() - 8);
-      const protectedInvoices = await prisma.invoice.count({
-        where: { status: 'CONFIRMED', invoiceDate: { gte: cutoff } },
+      // for 8 financial years. The check MUST be scoped to this user's
+      // own shop — otherwise one merchant's retained invoices would
+      // block every other merchant's account deletion.
+      const ownedShop = await prisma.shop.findUnique({
+        where: { ownerUserId: userId },
+        select: { id: true },
       });
-      if (protectedInvoices > 0) {
-        return { error: 'cannot_delete_with_active_records' as const };
+      if (ownedShop) {
+        const cutoff = new Date();
+        cutoff.setFullYear(cutoff.getFullYear() - 8);
+        const protectedInvoices = await prisma.invoice.count({
+          where: {
+            shopId: ownedShop.id,
+            status: 'CONFIRMED',
+            invoiceDate: { gte: cutoff },
+          },
+        });
+        if (protectedInvoices > 0) {
+          return { error: 'cannot_delete_with_active_records' as const };
+        }
       }
     }
 

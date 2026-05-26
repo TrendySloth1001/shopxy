@@ -17,6 +17,15 @@ class VendorsProvider extends ChangeNotifier {
   String? get error => _error;
   String get search => _search;
 
+  /// Drop cached vendors on logout so user-B doesn't briefly see A's list.
+  void reset() {
+    _vendors = [];
+    _isLoading = false;
+    _error = null;
+    _search = '';
+    notifyListeners();
+  }
+
   Future<void> loadVendors({bool refresh = false}) async {
     if (_isLoading) return;
     _isLoading = true;

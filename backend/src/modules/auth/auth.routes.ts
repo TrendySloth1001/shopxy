@@ -6,6 +6,7 @@ import {
   login,
   refresh,
   logout,
+  logoutAll,
   getMe,
   updateProfile,
   changePassword,
@@ -22,6 +23,7 @@ router.post('/refresh', asyncHandler(refresh));
 router.post('/logout', asyncHandler(logout));
 
 // Protected — token required
+router.post('/logout-all', requireAuth, asyncHandler(logoutAll));
 router.get('/me', requireAuth, asyncHandler(getMe));
 router.patch('/me', requireAuth, asyncHandler(updateProfile));
 router.post('/change-password', requireAuth, asyncHandler(changePassword));

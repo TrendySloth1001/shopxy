@@ -49,6 +49,45 @@ export interface ProductAnalyticsResponse {
     cvr: number;
   };
   products: ProductAnalyticsRow[];
+  /// Opaque pagination cursor — caller passes back via ?cursor=… to
+  /// fetch the next page. Null when there are no more rows.
+  nextCursor: string | null;
+}
+
+export type AnalyticsRangeTooLarge = {
+  error: 'range_too_large';
+  estimatedRows: number;
+};
+
+// Cheap upper-bound estimate: number of products in the caller's
+// shop. The per-product aggregate is bounded by that count, so we
+// short-circuit any request that would group beyond MAX_ESTIMATED_ROWS
+// before ever issuing the heavy aggregate query.
+export const ANALYTICS_MAX_ESTIMATED_ROWS = 10_000;
+export const ANALYTICS_DEFAULT_LIMIT = 100;
+export const ANALYTICS_MAX_LIMIT = 1000;
+
+export function clampAnalyticsLimit(raw: unknown): number {
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return ANALYTICS_DEFAULT_LIMIT;
+  return Math.min(ANALYTICS_MAX_LIMIT, Math.max(1, Math.trunc(n)));
+}
+
+/// Cursor format: positive integer id, base64-url encoded so the
+/// client can treat it as opaque. Returns null for malformed input.
+export function parseAnalyticsCursor(raw: unknown): number | null {
+  if (typeof raw !== 'string' || raw.length === 0) return null;
+  try {
+    const decoded = Buffer.from(raw, 'base64url').toString('utf8');
+    const n = Number(decoded);
+    return Number.isInteger(n) && n > 0 ? n : null;
+  } catch {
+    return null;
+  }
+}
+
+export function encodeAnalyticsCursor(productId: number): string {
+  return Buffer.from(String(productId), 'utf8').toString('base64url');
 }
 
 interface FlashSeriesRow {
@@ -59,14 +98,33 @@ interface FlashSeriesRow {
 }
 
 export class AnalyticsService {
+  /// Estimate how many product rows the per-product aggregate would
+  /// emit for this shop. The aggregate groups by product, so the
+  /// number of *active* products is the tight upper bound. Cheap
+  /// indexed count — much faster than running the aggregate just to
+  /// discover it returns 50k rows.
+  async estimateProductRows(shopId: number): Promise<number> {
+    return prisma.product.count({
+      where: { shopId, isActive: true },
+    });
+  }
+
   /// Per-product aggregate for the caller's shop in the given window.
   /// Includes products that received zero events in the window so the
   /// merchant table can show "no traffic" for stale SKUs explicitly.
+  ///
+  /// Paginated by product id ascending after the cursor. Returns
+  /// `nextCursor` when more rows exist for the next page.
   async getProductAnalytics(
     shopId: number,
     from: Date,
     to: Date,
+    opts: { limit?: number; cursorProductId?: number | null } = {},
   ): Promise<ProductAnalyticsResponse> {
+    const limit = clampAnalyticsLimit(opts.limit ?? ANALYTICS_DEFAULT_LIMIT);
+    const cursor = opts.cursorProductId ?? null;
+    // Fetch limit+1 so we can detect "there's more" without an extra
+    // count round-trip; the +1 row gets sliced off before returning.
     const rows = await prisma.$queryRaw<PerProductRow[]>`
       SELECT
         p.id          AS product_id,
@@ -84,11 +142,19 @@ export class AnalyticsService {
         AND pe.occurred_at <  ${to}
       WHERE p.shop_id = ${shopId}
         AND p.is_active = true
+        AND (${cursor}::int IS NULL OR p.id > ${cursor}::int)
       GROUP BY p.id, p.name
-      ORDER BY purchases DESC, taps DESC, p.name ASC
+      ORDER BY p.id ASC
+      LIMIT ${limit + 1}
     `;
 
-    const products: ProductAnalyticsRow[] = rows.map((r) => {
+    const hasMore = rows.length > limit;
+    const sliced = hasMore ? rows.slice(0, limit) : rows;
+    const nextCursor = hasMore
+      ? encodeAnalyticsCursor(sliced[sliced.length - 1].product_id)
+      : null;
+
+    const products: ProductAnalyticsRow[] = sliced.map((r) => {
       const ctr = r.impressions > 0 ? r.taps / r.impressions : 0;
       const cvr = r.views > 0 ? r.purchases / r.views : 0;
       return {
@@ -136,6 +202,7 @@ export class AnalyticsService {
       to: to.toISOString(),
       totals,
       products,
+      nextCursor,
     };
   }
 

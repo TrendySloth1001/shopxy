@@ -4,6 +4,12 @@ import 'package:http/http.dart' as http;
 import 'package:shopxy_customer/core/auth/token_manager.dart';
 import 'package:shopxy_customer/core/config/app_config.dart';
 
+/// Default timeout for every HTTP call. A hung connection on a flaky
+/// mobile network would otherwise wedge save buttons + PopScope
+/// indefinitely. 20s is comfortably above the slowest legit response
+/// we expect, while still bounded.
+const Duration _kDefaultTimeout = Duration(seconds: 20);
+
 class ApiClient {
   ApiClient(this._tokenManager);
 
@@ -26,7 +32,9 @@ class ApiClient {
   // ── Public HTTP methods ───────────────────────────────────────────────────
 
   Future<http.Response> get(String path, {Map<String, String>? queryParameters}) =>
-      _withRetry(() => http.get(_buildUri(path, queryParameters), headers: _headers()));
+      _withRetry(() => http
+          .get(_buildUri(path, queryParameters), headers: _headers())
+          .timeout(_kDefaultTimeout));
 
   /// [extraHeaders] are merged on top of the defaults — used for things
   /// like `X-Idempotency-Key` on cart submit so a flaky retry doesn't
@@ -37,35 +45,57 @@ class ApiClient {
     Map<String, String>? extraHeaders,
   }) =>
       _withRetry(
-        () => http.post(
-          _buildUri(path),
-          headers: _headers(extraHeaders),
-          body: body != null ? jsonEncode(body) : null,
-        ),
+        () => http
+            .post(
+              _buildUri(path),
+              headers: _headers(extraHeaders),
+              body: body != null ? jsonEncode(body) : null,
+            )
+            .timeout(_kDefaultTimeout),
       );
 
   Future<http.Response> patch(String path, {Object? body}) => _withRetry(
-        () => http.patch(_buildUri(path), headers: _headers(), body: body != null ? jsonEncode(body) : null),
+        () => http
+            .patch(
+              _buildUri(path),
+              headers: _headers(),
+              body: body != null ? jsonEncode(body) : null,
+            )
+            .timeout(_kDefaultTimeout),
       );
 
-  Future<http.Response> delete(String path) =>
-      _withRetry(() => http.delete(_buildUri(path), headers: _headers()));
+  Future<http.Response> put(String path, {Object? body}) => _withRetry(
+        () => http
+            .put(
+              _buildUri(path),
+              headers: _headers(),
+              body: body != null ? jsonEncode(body) : null,
+            )
+            .timeout(_kDefaultTimeout),
+      );
+
+  Future<http.Response> delete(String path) => _withRetry(
+        () => http
+            .delete(_buildUri(path), headers: _headers())
+            .timeout(_kDefaultTimeout),
+      );
 
   /// Multipart file upload — includes auth header.
   Future<http.StreamedResponse> multipart(
     String path, {
     required http.MultipartFile file,
     String fieldName = 'file',
-  }) async {
-    final request = http.MultipartRequest('POST', _buildUri(path))
-      ..headers['Authorization'] = 'Bearer ${_tokenManager.accessToken ?? ''}'
-      ..files.add(file);
-    return request.send();
-  }
+  }) =>
+      _withRetry(() {
+        final request = http.MultipartRequest('POST', _buildUri(path))
+          ..headers['Authorization'] = 'Bearer ${_tokenManager.accessToken ?? ''}'
+          ..files.add(file);
+        return request.send().timeout(const Duration(seconds: 60));
+      });
 
   // ── 401 interception + transparent token refresh ──────────────────────────
 
-  Future<http.Response> _withRetry(Future<http.Response> Function() call) async {
+  Future<T> _withRetry<T extends http.BaseResponse>(Future<T> Function() call) async {
     final response = await call();
     if (response.statusCode != 401) return response;
 
@@ -74,28 +104,33 @@ class ApiClient {
       _tokenManager.onUnauthorized?.call();
       return response;
     }
-    // Retry original call once with the new token
+    // Retry original call once with the new token.
     return call();
   }
 
   Future<bool> _tryRefresh() async {
-    // Deduplicate concurrent refresh calls
-    if (_refreshCompleter != null) return _refreshCompleter!.future;
+    // Deduplicate concurrent refresh calls — only one network round-trip
+    // even when N waiting requests all hit 401 at once.
+    final pending = _refreshCompleter;
+    if (pending != null) return pending.future;
 
-    _refreshCompleter = Completer<bool>();
+    final completer = Completer<bool>();
+    _refreshCompleter = completer;
     try {
       final rt = await _tokenManager.getRefreshToken();
       if (rt == null) {
-        _refreshCompleter!.complete(false);
+        completer.complete(false);
         return false;
       }
 
       final uri = Uri.parse('${AppConfig.apiBaseUrl}auth/refresh');
-      final res = await http.post(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'refreshToken': rt}),
-      );
+      final res = await http
+          .post(
+            uri,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'refreshToken': rt}),
+          )
+          .timeout(_kDefaultTimeout);
 
       if (res.statusCode == 200) {
         final body = jsonDecode(res.body) as Map<String, dynamic>;
@@ -103,18 +138,20 @@ class ApiClient {
           accessToken: body['accessToken'] as String,
           refreshToken: body['refreshToken'] as String,
         );
-        _refreshCompleter!.complete(true);
+        completer.complete(true);
         return true;
       } else {
         await _tokenManager.clear();
-        _refreshCompleter!.complete(false);
+        completer.complete(false);
         return false;
       }
     } catch (_) {
-      _refreshCompleter?.complete(false);
+      if (!completer.isCompleted) completer.complete(false);
       return false;
     } finally {
-      _refreshCompleter = null;
+      if (identical(_refreshCompleter, completer)) {
+        _refreshCompleter = null;
+      }
     }
   }
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shopxy_customer/features/categories/data/datasources/categories_remote_data_source.dart';
-import 'package:shopxy_customer/features/categories/domain/entities/category.dart';
+import 'package:shopxy_customer/shared/domain/entities/category.dart';
 
 /// Holds the canonical taxonomy in memory for the customer app. Loaded
 /// once at app launch (cheap — single network round-trip, server pre-

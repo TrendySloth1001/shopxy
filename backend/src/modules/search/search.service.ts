@@ -350,12 +350,53 @@ export class SearchService {
 
   // ── Internal ─────────────────────────────────────────────────────
 
+  /// In-memory dedupe key → lastSeen. A bot or runaway tab firing the
+  /// same query in a loop won't accumulate `SearchTerm` upserts or
+  /// SearchEvent rows. Map is bounded (10k entries) and pruned LRU-ish
+  /// to keep its footprint constant.
+  private readonly _recentSearches = new Map<string, number>();
+  private static readonly _SEARCH_DEDUPE_MS = 2_000;
+  private static readonly _SEARCH_DEDUPE_MAX = 10_000;
+
+  private _shouldRecordSearch(key: string): boolean {
+    const now = Date.now();
+    const last = this._recentSearches.get(key);
+    if (last && now - last < SearchService._SEARCH_DEDUPE_MS) {
+      return false;
+    }
+    if (this._recentSearches.size >= SearchService._SEARCH_DEDUPE_MAX) {
+      // Drop the oldest 10% — Map preserves insertion order so the
+      // first N entries are the stalest.
+      const drop = Math.floor(SearchService._SEARCH_DEDUPE_MAX / 10);
+      const iter = this._recentSearches.keys();
+      for (let i = 0; i < drop; i++) {
+        const k = iter.next();
+        if (k.done) break;
+        this._recentSearches.delete(k.value);
+      }
+    }
+    this._recentSearches.set(key, now);
+    return true;
+  }
+
   private async _recordSearch(opts: {
     query: string;
     resultCount: number;
     userId: number | null;
     sessionId: string | null;
   }): Promise<void> {
+    // Per-(user/session) dedupe — bot loops + double-fire UI bugs no
+    // longer cost us an upsert + insert per call. We DON'T dedupe
+    // anonymous calls because there's no stable actor to key on (every
+    // anonymous request would collapse onto the same bucket, masking
+    // distinct visitors).
+    if (opts.userId !== null || opts.sessionId !== null) {
+      const actorKey =
+        opts.userId !== null ? `u:${opts.userId}` : `s:${opts.sessionId}`;
+      const dedupeKey = `${actorKey}|${opts.query}`;
+      if (!this._shouldRecordSearch(dedupeKey)) return;
+    }
+
     await Promise.all([
       prisma.searchEvent.create({
         data: {

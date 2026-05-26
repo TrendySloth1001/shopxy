@@ -14,6 +14,15 @@
 -- ── Resolve the backfill default ────────────────────────────────────
 -- All pre-migration data belongs to the singular published OWNER's
 -- shop. Stored in a session-local temp so all later UPDATEs share it.
+--
+-- Originally we RAISE EXCEPTION when no OWNER shop existed, but that
+-- breaks Prisma's shadow-database replay (the shadow DB is empty so
+-- there are no users or shops). For the shadow / fresh-install case the
+-- tenant tables are also empty, so the entire backfill is a no-op — we
+-- pick a synthetic sentinel id, the UPDATE statements affect zero rows,
+-- and the subsequent ALTER … SET NOT NULL trivially holds. The DDL
+-- (ADD COLUMN / CREATE INDEX / FK) still runs end-to-end so the schema
+-- shape after replay matches a real prod-migrated database.
 DO $$
 DECLARE
   v_default_shop_id INT;
@@ -25,8 +34,17 @@ BEGIN
   ORDER BY s.is_published DESC, s.id ASC
   LIMIT 1;
 
+  -- Sentinel id for the empty-DB case. We also clear out the only
+  -- system-seeded row (the Walk-in Customer party from migration
+  -- 20260522110000_walkin_customer_and_legacy_backfill) so the FK
+  -- creation later in this script doesn't trip on a row pointing at
+  -- shop_id=0. On a real fresh prod install the seed migration will
+  -- re-insert the Walk-in Customer on first use; on shadow replay
+  -- the schema-only outcome is what matters and the data is thrown
+  -- away anyway.
   IF v_default_shop_id IS NULL THEN
-    RAISE EXCEPTION 'No published OWNER shop found; cannot backfill multi-tenant columns.';
+    v_default_shop_id := 0;
+    DELETE FROM parties WHERE is_system = true AND name = 'Walk-in Customer';
   END IF;
 
   -- ── parties ───────────────────────────────────────────────────────

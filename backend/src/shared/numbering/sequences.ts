@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
 import { financialYearForDate } from '../validation/indian.js';
 
@@ -5,8 +6,18 @@ import { financialYearForDate } from '../validation/indian.js';
 /// keyed on (shop_id, key) — two merchants running concurrent invoice
 /// allocations never collide, and the same shop's two concurrent
 /// inserts upsert via the composite primary key.
-async function nextCounter(shopId: number, key: string): Promise<number> {
-  const rows = await prisma.$queryRaw<Array<{ value: number }>>`
+///
+/// Accepts an optional `tx` so callers running inside an outer
+/// transaction can enroll the counter bump in the same atomic unit
+/// (matters for Serializable-isolation flows that need to see a
+/// consistent snapshot of related rows).
+async function nextCounter(
+  shopId: number,
+  key: string,
+  tx?: Prisma.TransactionClient,
+): Promise<number> {
+  const db = tx ?? prisma;
+  const rows = await db.$queryRaw<Array<{ value: number }>>`
     INSERT INTO "counters" ("shop_id", "key", "value") VALUES (${shopId}, ${key}, 1)
     ON CONFLICT ("shop_id", "key") DO UPDATE SET "value" = "counters"."value" + 1
     RETURNING "value"
@@ -67,10 +78,11 @@ export async function nextPaymentRef(
   shopId: number,
   type: 'RECEIPT' | 'PAYMENT',
   paymentDate: Date = new Date(),
+  tx?: Prisma.TransactionClient,
 ): Promise<{ referenceNo: string; financialYear: string }> {
   const fy = financialYearForDate(paymentDate);
   const prefix = type === 'RECEIPT' ? 'RCT' : 'PAY';
-  const seq = await nextCounter(shopId, `${prefix}-${fy}`);
+  const seq = await nextCounter(shopId, `${prefix}-${fy}`, tx);
   return {
     referenceNo: `${prefix}/${fy}/${String(seq).padStart(5, '0')}`,
     financialYear: fy,

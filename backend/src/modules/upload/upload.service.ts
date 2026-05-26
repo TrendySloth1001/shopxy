@@ -12,10 +12,37 @@ import crypto from 'crypto';
 import path from 'path';
 import sharp from 'sharp';
 
+// MinIO/S3 credentials must come from the environment. We refuse to bake
+// well-known defaults (`shopxy` / `shopxy123`) into the source — those
+// shipped to every deployment and gave any reader of this repo full
+// read/write on prod buckets.
+function readMinioCreds(): { accessKey: string; secretKey: string } {
+  const accessKey = process.env.MINIO_ACCESS_KEY;
+  const secretKey = process.env.MINIO_SECRET_KEY;
+  if (!accessKey || !secretKey) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(
+        'MINIO_ACCESS_KEY and MINIO_SECRET_KEY are required in production. ' +
+          'Refusing to fall back to default credentials.',
+      );
+    }
+    // Dev/test convenience only — the production startup above throws,
+    // so the same module loaded against a prod NODE_ENV refuses these
+    // values. Strings match the docker-compose dev defaults so a fresh
+    // checkout + `docker-compose up` works without extra env wiring.
+    // eslint-disable-next-line no-console
+    console.warn(
+      '[upload] MINIO_ACCESS_KEY/SECRET unset; using dev defaults. ' +
+        'Production startup will refuse this.',
+    );
+    return { accessKey: 'shopxy', secretKey: 'shopxy123' };
+  }
+  return { accessKey, secretKey };
+}
+
 const MINIO_ENDPOINT = process.env.MINIO_ENDPOINT ?? 'localhost';
 const MINIO_PORT = Number(process.env.MINIO_PORT ?? 9000);
-const MINIO_ACCESS_KEY = process.env.MINIO_ACCESS_KEY ?? 'shopxy';
-const MINIO_SECRET_KEY = process.env.MINIO_SECRET_KEY ?? 'shopxy123';
+const { accessKey: MINIO_ACCESS_KEY, secretKey: MINIO_SECRET_KEY } = readMinioCreds();
 export const MINIO_BUCKET = process.env.MINIO_BUCKET ?? 'shopxy-images';
 
 export const s3 = new S3Client({
@@ -49,12 +76,28 @@ export async function ensureBucket(): Promise<void> {
   }
 }
 
+// Allowed (mimeType → extension) map for legacy `uploadFile`. We never
+// trust the client filename's extension — that lets an attacker store
+// `evil.svg` (with a JS payload) under a uuid `.svg` key served from
+// our origin. Force-derive the extension from the (already-validated
+// upstream) mime type, and refuse anything we don't recognise.
+const ALLOWED_UPLOAD_EXTENSIONS: Record<string, string> = {
+  'image/jpeg': '.jpg',
+  'image/png': '.png',
+  'image/webp': '.webp',
+  'image/gif': '.gif',
+  'application/pdf': '.pdf',
+};
+
 export async function uploadFile(
   buffer: Buffer,
-  originalName: string,
+  _originalName: string,
   mimeType: string,
 ): Promise<{ key: string; url: string }> {
-  const ext = path.extname(originalName).toLowerCase() || '.bin';
+  const ext = ALLOWED_UPLOAD_EXTENSIONS[mimeType];
+  if (!ext) {
+    throw new Error(`Unsupported upload content-type: ${mimeType}`);
+  }
   const key = `${crypto.randomUUID()}${ext}`;
 
   await s3.send(

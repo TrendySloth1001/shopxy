@@ -43,6 +43,35 @@ class _AddressesPageState extends State<AddressesPage> {
     }
   }
 
+  Future<void> _confirmDelete(
+    BuildContext context,
+    AddressesProvider provider,
+    int id,
+  ) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete this address?'),
+        content: const Text(
+          'You can add it again later, but any in-flight order is already tied to '
+          'the existing snapshot — it won\'t be affected.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) await provider.delete(id);
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = context.watch<AddressesProvider>();
@@ -67,7 +96,7 @@ class _AddressesPageState extends State<AddressesPage> {
                         _AddressTile(
                           address: a,
                           onDefault: () => p.setDefault(a.id),
-                          onDelete: () => p.delete(a.id),
+                          onDelete: () => _confirmDelete(context, p, a.id),
                         ),
                     ],
                   ),

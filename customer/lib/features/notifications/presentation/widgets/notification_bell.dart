@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy_customer/features/notifications/presentation/providers/notifications_provider.dart';
-import 'package:shopxy_customer/features/notifications_v2/presentation/pages/notifications_v2_page.dart';
+import 'package:shopxy_customer/features/notifications/presentation/pages/notifications_page.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 
 /// AppBar action that opens the notifications inbox and surfaces a
@@ -16,7 +16,7 @@ class NotificationBell extends StatelessWidget {
       tooltip: 'Notifications',
       onPressed: () => Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => const NotificationsV2Page()),
+        MaterialPageRoute(builder: (_) => const NotificationsPage()),
       ),
       icon: SizedBox(
         width: 28,
