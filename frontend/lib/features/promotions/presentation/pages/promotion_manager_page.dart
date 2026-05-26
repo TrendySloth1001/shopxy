@@ -357,6 +357,17 @@ class _CreatePromotionSheetState extends State<_CreatePromotionSheet> {
     return (n * 100).round();
   }
 
+  /// Inline error shown directly under the daily-cap field. Returns
+  /// non-null only when both budget and daily-cap parse successfully so
+  /// half-typed values don't read as errors.
+  String? get _dailyCapError {
+    final budget = _toPaise(_budgetRupees.text);
+    final cap = _toPaise(_dailyCapRupees.text);
+    if (budget == null || cap == null) return null;
+    if (cap > budget) return 'Cannot exceed total budget';
+    return null;
+  }
+
   Future<void> _submit() async {
     final product = _product;
     final budget = _toPaise(_budgetRupees.text);
@@ -501,15 +512,21 @@ class _CreatePromotionSheetState extends State<_CreatePromotionSheet> {
                   labelText: 'Total budget (₹)',
                   helperText: 'Lifetime spend cap',
                 ),
+                // Recompute the daily-cap error when the budget changes.
+                onChanged: (_) => setState(() {}),
               ),
               const SizedBox(height: AppSizes.md),
               TextField(
                 controller: _dailyCapRupees,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Daily cap (₹)',
-                  helperText: 'Auto-pause when reached',
+                  helperText: _dailyCapError == null
+                      ? 'Auto-pause when reached'
+                      : null,
+                  errorText: _dailyCapError,
                 ),
+                onChanged: (_) => setState(() {}),
               ),
               const SizedBox(height: AppSizes.md),
               TextField(

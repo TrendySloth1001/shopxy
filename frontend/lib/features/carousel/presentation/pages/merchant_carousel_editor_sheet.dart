@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -132,13 +133,39 @@ class _MerchantCarouselEditorSheetState
     final picked =
         await picker.pickImage(source: ImageSource.gallery, maxWidth: 1600);
     if (picked == null || !mounted) return;
+    final file = File(picked.path);
+    if (!_validateImageSize(file)) return;
     setState(() => _busy = true);
-    final url = await context.read<ShopProvider>().uploadImage(File(picked.path));
+    final shop = context.read<ShopProvider>();
+    final url = await shop.uploadImage(file);
     if (!mounted) return;
-    setState(() {
-      _busy = false;
-      if (url != null) _imageUrl = url;
-    });
+    setState(() => _busy = false);
+    if (url == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(shop.error ?? 'Image upload failed')),
+      );
+      return;
+    }
+    setState(() => _imageUrl = url);
+  }
+
+  /// Hard 5 MB ceiling — anything bigger usually means the merchant
+  /// uploaded a raw camera capture, which both blows past the backend
+  /// limit and stalls the request on slow connections. Reject early
+  /// with a snackbar instead of failing midway through the POST.
+  bool _validateImageSize(File file) {
+    const maxBytes = 5 * 1024 * 1024;
+    if (file.lengthSync() > maxBytes) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Image is larger than 5 MB. Pick a smaller image or crop tighter.',
+          ),
+        ),
+      );
+      return false;
+    }
+    return true;
   }
 
   Future<void> _pickDate({required bool isStart}) async {
@@ -209,6 +236,12 @@ class _MerchantCarouselEditorSheetState
     );
     if (added == null || !mounted) return;
     setState(() {
+      // Position must come from the max existing position + 1 (and
+      // increment per-row in the batch) — `_linkedProducts.length`
+      // collides when a slide has gaps from earlier removals or when
+      // the merchant adds multiple products in a single tap.
+      var nextPosition =
+          _linkedProducts.map((l) => l.position).fold<int>(-1, max) + 1;
       _linkedProducts = [
         ..._linkedProducts,
         ...added.map(
@@ -222,7 +255,7 @@ class _MerchantCarouselEditorSheetState
               sellingPrice: p.sellingPrice,
               imageUrl: img,
               discountPct: 0,
-              position: _linkedProducts.length,
+              position: nextPosition++,
             );
           },
         ),

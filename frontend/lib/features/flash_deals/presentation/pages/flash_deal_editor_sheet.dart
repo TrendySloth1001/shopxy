@@ -156,6 +156,19 @@ class _FlashDealEditorSheetState extends State<FlashDealEditorSheet> {
     return (((mrp - _flashPriceNum!) / mrp) * 100).round();
   }
 
+  /// Inline error shown directly under the flash-price input. Returns
+  /// non-null only once both the price and the picked product are
+  /// available, so empty / not-yet-picked states don't read as errors.
+  String? get _flashPriceError {
+    if (_flashPriceNum == null) return null;
+    final mrp = _picked?.mrp;
+    if (mrp == null || mrp <= 0) return null;
+    if (_flashPriceNum! >= mrp) {
+      return 'Must be lower than MRP (₹${mrp.toStringAsFixed(2)})';
+    }
+    return null;
+  }
+
   Future<void> _save() async {
     setState(() => _error = null);
     if (!_isEdit && _picked == null) {
@@ -164,6 +177,14 @@ class _FlashDealEditorSheetState extends State<FlashDealEditorSheet> {
     }
     if (_flashPriceNum == null) {
       setState(() => _error = 'Enter a valid flash price');
+      return;
+    }
+    // A flash price at or above MRP isn't really a flash deal — it'd
+    // show as a 0% (or negative) discount on the customer card. Reject
+    // up front rather than letting the backend surface a confusing
+    // 422 after the merchant has filled the whole form.
+    if (_picked != null && _picked!.mrp > 0 && _flashPriceNum! >= _picked!.mrp) {
+      setState(() => _error = 'Flash price must be below MRP');
       return;
     }
     if (_stockNum == null) {
@@ -269,9 +290,11 @@ class _FlashDealEditorSheetState extends State<FlashDealEditorSheet> {
                       controller: _flashPrice,
                       decoration: InputDecoration(
                         labelText: 'Flash price (₹)',
-                        helperText: _discountPct != null
-                            ? '$_discountPct% off MRP'
-                            : null,
+                        helperText:
+                            _flashPriceError == null && _discountPct != null
+                                ? '$_discountPct% off MRP'
+                                : null,
+                        errorText: _flashPriceError,
                       ),
                       keyboardType:
                           const TextInputType.numberWithOptions(decimal: true),
