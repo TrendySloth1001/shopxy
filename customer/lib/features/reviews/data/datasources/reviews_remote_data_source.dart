@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:shopxy_customer/core/network/api_client.dart';
-import 'package:shopxy_customer/features/reviews/domain/review.dart';
+import 'package:shopxy_customer/features/reviews/domain/entities/review.dart';
 
 /// HTTP wrapper around /products/:id/reviews + /summary. Stays thin —
 /// no caching, no provider — so individual pages can decide how to

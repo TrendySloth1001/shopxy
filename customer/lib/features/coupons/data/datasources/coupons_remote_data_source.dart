@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:shopxy_customer/core/network/api_client.dart';
-import 'package:shopxy_customer/features/coupons/domain/coupon.dart';
+import 'package:shopxy_customer/features/coupons/domain/entities/coupon.dart';
 
 class CouponsRemoteDataSource {
   const CouponsRemoteDataSource(this._client);

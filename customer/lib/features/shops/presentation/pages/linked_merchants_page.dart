@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:shopxy_customer/core/network/image_url.dart';
-import 'package:shopxy_customer/features/home_v2/presentation/widgets/network_image_box.dart';
+import 'package:shopxy_customer/features/home/presentation/widgets/network_image_box.dart';
 import 'package:shopxy_customer/features/marketplace/presentation/pages/shop_profile_page.dart';
 import 'package:shopxy_customer/features/shops/domain/entities/linked_merchant.dart';
 import 'package:shopxy_customer/features/shops/presentation/providers/linked_merchants_provider.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
-import 'package:shopxy_customer/shared/widgets/app_app_bar.dart';
+import 'package:shopxy_customer/shared/widgets/app_bar.dart';
 
 /// Customer-side directory of merchants the user has an active Party
 /// or Vendor link with. Each card opens the marketplace `ShopProfilePage`

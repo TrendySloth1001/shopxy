@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
-import 'package:shopxy_customer/features/cart_v2/presentation/pages/cart_v2_page.dart';
+import 'package:shopxy_customer/features/cart/presentation/pages/cart_page.dart';
 import 'package:shopxy_customer/features/catalog/presentation/providers/cart_provider.dart';
-import 'package:shopxy_customer/features/home_v2/presentation/pages/home_v2_page.dart';
+import 'package:shopxy_customer/features/home/presentation/pages/home_page.dart';
 import 'package:shopxy_customer/features/orders/presentation/pages/my_orders_page.dart';
 import 'package:shopxy_customer/features/profile/presentation/pages/profile_page.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
@@ -56,8 +56,8 @@ class _CustomerShellState extends State<CustomerShell> {
   final _navVisible = ValueNotifier<bool>(true);
 
   final _pages = const [
-    HomeV2Page(),
-    CartV2Page(embedded: true),
+    HomePage(),
+    CartPage(embedded: true),
     MyOrdersPage(),
     CustomerProfilePage(),
   ];

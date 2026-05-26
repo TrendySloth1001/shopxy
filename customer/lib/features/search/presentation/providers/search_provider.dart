@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:shopxy_customer/features/marketplace/domain/listing_filters.dart';
+import 'package:shopxy_customer/features/marketplace/domain/entities/listing_filters.dart';
 import 'package:shopxy_customer/features/search/data/datasources/marketplace_search_remote_data_source.dart';
 import 'package:shopxy_customer/shared/constants/app_durations.dart';
 

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy_customer/core/network/image_url.dart';
-import 'package:shopxy_customer/features/home_v2/presentation/widgets/network_image_box.dart';
-import 'package:shopxy_customer/features/marketplace/presentation/pages/product_detail_v2_page.dart';
+import 'package:shopxy_customer/features/home/presentation/widgets/network_image_box.dart';
+import 'package:shopxy_customer/features/marketplace/presentation/pages/product_detail_page.dart';
 import 'package:shopxy_customer/features/marketplace/presentation/pages/shop_profile_page.dart';
 import 'package:shopxy_customer/features/search/data/datasources/marketplace_search_remote_data_source.dart';
 import 'package:shopxy_customer/features/search/presentation/providers/search_provider.dart';
@@ -377,7 +377,7 @@ class _ResultsList extends StatelessWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => ProductDetailV2Page(productId: p.id),
+                builder: (_) => ProductDetailPage(productId: p.id),
               ),
             );
           },

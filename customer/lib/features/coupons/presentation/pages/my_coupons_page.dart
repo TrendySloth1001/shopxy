@@ -3,11 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy_customer/features/coupons/data/datasources/coupons_remote_data_source.dart';
-import 'package:shopxy_customer/features/coupons/domain/coupon.dart';
+import 'package:shopxy_customer/features/coupons/domain/entities/coupon.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
-import 'package:shopxy_customer/shared/widgets/app_app_bar.dart';
+import 'package:shopxy_customer/shared/widgets/app_bar.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 
 /// "My coupons" — read-only list of redeemable promo codes. Customers

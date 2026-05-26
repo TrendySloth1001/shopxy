@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:shopxy_customer/core/config/app_config.dart';
-import 'package:shopxy_customer/features/marketplace/presentation/pages/product_detail_v2_page.dart';
+import 'package:shopxy_customer/features/marketplace/presentation/pages/product_detail_page.dart';
 
 /// Listens for incoming app links + the launching URL and routes the
 /// supported paths to in-app pages. Lives at app boot (instantiated in
@@ -100,7 +100,7 @@ class DeepLinkHandler {
     if (navigator == null) return;
     navigator.push(
       MaterialPageRoute(
-        builder: (_) => ProductDetailV2Page(productId: productId),
+        builder: (_) => ProductDetailPage(productId: productId),
       ),
     );
   }
