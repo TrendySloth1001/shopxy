@@ -1,4 +1,4 @@
-import 'package:shopxy_customer/features/categories/domain/entities/category.dart';
+import 'package:shopxy_customer/shared/domain/entities/category.dart';
 
 class CategoryDto {
   static Category fromJson(Map<String, dynamic> json) => Category(

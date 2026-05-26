@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shopxy_customer/features/catalog/data/datasources/cart_remote_data_source.dart';
 import 'package:shopxy_customer/features/catalog/domain/entities/cart_item.dart';
-import 'package:shopxy_customer/features/catalog/domain/entities/catalog_product.dart';
+import 'package:shopxy_customer/shared/domain/entities/catalog_product.dart';
 import 'package:shopxy_customer/features/orders/data/datasources/orders_remote_data_source.dart';
 
 /// Outcome of [CartProvider.placeOrder]. On success [orderId] is the

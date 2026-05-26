@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:shopxy_customer/core/network/api_client.dart';
-import 'package:shopxy_customer/features/wallet/domain/wallet_entry.dart';
+import 'package:shopxy_customer/features/wallet/domain/entities/wallet_entry.dart';
 
 class WalletRemoteDataSource {
   const WalletRemoteDataSource(this._client);
