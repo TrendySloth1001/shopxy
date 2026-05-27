@@ -215,17 +215,52 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
     );
   }
 
+  /// Returns true when the user confirms they want to discard
+  /// unsaved edits. Used by PopScope to guard the back gesture.
+  Future<bool> _confirmDiscard(BuildContext context) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Discard changes?'),
+        content: const Text(
+          "You have unsaved edits. Leaving now drops them.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Keep editing'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Discard'),
+          ),
+        ],
+      ),
+    );
+    return ok ?? false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<ShopProvider>();
     final shop = provider.shop;
+    final dirty = shop != null && _isDirty(shop);
 
-    return Scaffold(
+    return PopScope(
+      canPop: !dirty,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        if (!mounted) return;
+        final discard = await _confirmDiscard(context);
+        if (discard && mounted) Navigator.of(context).pop();
+      },
+      child: Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
         title: const Text('My Shop'),
         actions: [
-          if (shop != null && _isDirty(shop))
+          if (dirty)
             TextButton(
               onPressed: provider.isSaving ? null : () => _save(shop),
               child: Text(provider.isSaving ? 'Saving…' : 'Save'),
@@ -245,6 +280,7 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
                   ),
                 )
               : _buildForm(shop),
+      ),
     );
   }
 
