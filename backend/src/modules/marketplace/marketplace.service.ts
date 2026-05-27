@@ -174,12 +174,25 @@ export class MarketplaceService {
   /// with any of its children — so "Electronics" surfaces laptops,
   /// cameras, headphones, etc. without forcing the customer to drill
   /// down first. Returns null for an unknown slug.
+  ///
+  /// Filter axes (all optional, all server-validated upstream by the
+  /// controller's zod-equivalent guards): price range, rating floor,
+  /// in-stock-only toggle, shop id allowlist. `includeFacets` returns
+  /// an additional aggregate payload describing the un-filtered set so
+  /// the customer's filter sheet can show price-range bounds, rating
+  /// histogram and brand list without a second round-trip.
   async listCategoryProducts(opts: {
     slug: string;
     skip: number;
     limit: number;
     sort?: 'popular' | 'newest' | 'price_asc' | 'price_desc';
     viewerUserId?: number;
+    priceMin?: number;
+    priceMax?: number;
+    ratingMin?: number;
+    inStock?: boolean;
+    shopIds?: number[];
+    includeFacets?: boolean;
   }) {
     const category = await prisma.category.findUnique({
       where: { slug: opts.slug },
@@ -198,7 +211,10 @@ export class MarketplaceService {
       : opts.sort === 'price_desc' ? { sellingPrice: 'desc' }
       :                              { totalSold: 'desc' };
 
-    const where: Prisma.ProductWhereInput = {
+    // Base where (visibility + viewer-own-shop exclusion + category).
+    // Filters are layered on top via destructured spreads so an unset
+    // axis becomes a no-op rather than an explicit "match all" clause.
+    const baseWhere: Prisma.ProductWhereInput = {
       categoryId: { in: ids },
       isActive: true,
       isPublished: true,
@@ -206,14 +222,88 @@ export class MarketplaceService {
         ? { shop: { ownerUserId: { not: opts.viewerUserId } } }
         : {}),
     };
+    const filterWhere: Prisma.ProductWhereInput = {
+      ...baseWhere,
+      ...((opts.priceMin !== undefined || opts.priceMax !== undefined) && {
+        sellingPrice: {
+          ...(opts.priceMin !== undefined ? { gte: opts.priceMin } : {}),
+          ...(opts.priceMax !== undefined ? { lte: opts.priceMax } : {}),
+        },
+      }),
+      // Important: Prisma maps `gte` against a NULL column to "not
+      // matching" (null < anything is false), so this is the desired
+      // behaviour even though it looks too permissive at first glance.
+      ...(opts.ratingMin !== undefined && {
+        ratingAvg: { gte: opts.ratingMin },
+      }),
+      ...(opts.inStock && { stockQuantity: { gt: 0 } }),
+      ...(opts.shopIds && opts.shopIds.length > 0 && {
+        shopId: { in: opts.shopIds },
+      }),
+    };
+
     const [data, total] = await Promise.all([
       prisma.product.findMany({
-        where, select: listSelect, orderBy,
+        where: filterWhere, select: listSelect, orderBy,
         skip: opts.skip, take: opts.limit,
       }),
-      prisma.product.count({ where }),
+      prisma.product.count({ where: filterWhere }),
     ]);
-    return { category, data, total };
+
+    // Facets reflect the BASE set (un-filtered) so the customer can
+    // see "if I drop this filter, here's what comes back." Computed in
+    // one parallel block to keep the cold-cache hit cheap.
+    let facets: {
+      priceMin: number;
+      priceMax: number;
+      ratingBuckets: { ge1: number; ge2: number; ge3: number; ge4: number; ge5: number };
+      inStockCount: number;
+      brands: Array<{ brand: string; count: number }>;
+    } | undefined;
+    if (opts.includeFacets) {
+      const [priceAgg, ratingRows, inStockCount, brandRows] = await Promise.all([
+        prisma.product.aggregate({
+          where: baseWhere,
+          _min: { sellingPrice: true },
+          _max: { sellingPrice: true },
+        }),
+        prisma.product.findMany({
+          where: { ...baseWhere, ratingAvg: { not: null } },
+          select: { ratingAvg: true },
+        }),
+        prisma.product.count({
+          where: { ...baseWhere, stockQuantity: { gt: 0 } },
+        }),
+        prisma.product.groupBy({
+          by: ['brand'],
+          where: { ...baseWhere, brand: { not: null } },
+          _count: { brand: true },
+          orderBy: { _count: { brand: 'desc' } },
+          take: 25,
+        }),
+      ]);
+      const bucket = (floor: number) =>
+        ratingRows.filter(
+          (r) => Number(r.ratingAvg ?? 0) >= floor,
+        ).length;
+      facets = {
+        priceMin: Number(priceAgg._min.sellingPrice ?? 0),
+        priceMax: Number(priceAgg._max.sellingPrice ?? 0),
+        ratingBuckets: {
+          ge1: bucket(1),
+          ge2: bucket(2),
+          ge3: bucket(3),
+          ge4: bucket(4),
+          ge5: bucket(5),
+        },
+        inStockCount,
+        brands: brandRows
+          .filter((b): b is typeof b & { brand: string } => b.brand !== null)
+          .map((b) => ({ brand: b.brand, count: b._count.brand })),
+      };
+    }
+
+    return { category, data, total, facets };
   }
 
   /// Phase G — recompute the "frequently bought together" cache for

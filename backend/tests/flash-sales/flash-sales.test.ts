@@ -133,6 +133,7 @@ describe('flash-sales — merchant CRUD scoping', () => {
       // active
       await prisma.flashSale.create({
         data: {
+          shopId: merchant.shopId,
           productId: p1.id, flashPrice: 50, stockLimit: 5,
           startAt: minutes(-1), endAt: minutes(60),
         },
@@ -140,6 +141,7 @@ describe('flash-sales — merchant CRUD scoping', () => {
       // scheduled
       await prisma.flashSale.create({
         data: {
+          shopId: merchant.shopId,
           productId: p2.id, flashPrice: 50, stockLimit: 5,
           startAt: minutes(60), endAt: minutes(120),
         },
@@ -147,6 +149,7 @@ describe('flash-sales — merchant CRUD scoping', () => {
       // past
       await prisma.flashSale.create({
         data: {
+          shopId: merchant.shopId,
           productId: p3.id, flashPrice: 50, stockLimit: 5,
           startAt: minutes(-120), endAt: minutes(-60),
         },
@@ -177,12 +180,14 @@ describe('flash-sales — public read', () => {
       const p2 = await createTestProduct(merchant.shopId);
       await prisma.flashSale.create({
         data: {
+          shopId: merchant.shopId,
           productId: p1.id, flashPrice: 50, stockLimit: 5,
           startAt: minutes(-1), endAt: minutes(60),
         },
       });
       await prisma.flashSale.create({
         data: {
+          shopId: merchant.shopId,
           productId: p2.id, flashPrice: 50, stockLimit: 5,
           startAt: minutes(60), endAt: minutes(120),
         },
@@ -215,6 +220,7 @@ describe('flash-sales — atomic claim', () => {
       const product = await createTestProduct(merchant.shopId);
       await prisma.flashSale.create({
         data: {
+          shopId: merchant.shopId,
           productId: product.id, flashPrice: 50, stockLimit: 5,
           startAt: minutes(-1), endAt: minutes(60),
         },
@@ -234,6 +240,7 @@ describe('flash-sales — atomic claim', () => {
       const product = await createTestProduct(merchant.shopId);
       await prisma.flashSale.create({
         data: {
+          shopId: merchant.shopId,
           productId: product.id, flashPrice: 50, stockLimit: 3,
           startAt: minutes(-1), endAt: minutes(60),
         },
@@ -255,6 +262,7 @@ describe('flash-sales — atomic claim', () => {
       const product = await createTestProduct(merchant.shopId);
       await prisma.flashSale.create({
         data: {
+          shopId: merchant.shopId,
           productId: product.id, flashPrice: 50, stockLimit: 20,
           startAt: minutes(-1), endAt: minutes(60),
         },
@@ -281,6 +289,7 @@ describe('flash-sales — atomic claim', () => {
       const product = await createTestProduct(merchant.shopId);
       await prisma.flashSale.create({
         data: {
+          shopId: merchant.shopId,
           productId: product.id, flashPrice: 50, stockLimit: 2,
           startAt: minutes(-1), endAt: minutes(60),
         },
@@ -305,6 +314,7 @@ describe('flash-sales — atomic claim', () => {
       const product = await createTestProduct(merchant.shopId);
       const sale = await prisma.flashSale.create({
         data: {
+          shopId: merchant.shopId,
           productId: product.id, flashPrice: 50, stockLimit: 10,
           startAt: minutes(-1), endAt: minutes(60),
         },
@@ -324,6 +334,7 @@ describe('flash-sales — atomic claim', () => {
       const product = await createTestProduct(merchant.shopId);
       const sale = await prisma.flashSale.create({
         data: {
+          shopId: merchant.shopId,
           productId: product.id, flashPrice: 50, stockLimit: 5,
           startAt: minutes(-120), endAt: minutes(-60),
         },

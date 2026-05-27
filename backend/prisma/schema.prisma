@@ -350,11 +350,23 @@ model Product {
 
   /// Watermark for the embed-pending cron — `NULL` means the row has
   /// never been embedded. The embedding column itself is a
-  /// `vector(1536)` column (text-embedding-3-small dims). Prisma can't
+  /// `vector(768)` column (Ollama nomic-embed-text dims). Prisma can't
   /// model the type natively, so it's accessed through raw SQL in the
   /// search service; we only carry the timestamp here so cron picks
   /// can be expressed in regular Prisma queries.
   embeddedAt DateTime? @map("embedded_at")
+
+  /// pgvector(768) embedding for semantic search. Modelled here as
+  /// Unsupported so Prisma sees the column and does NOT autogen a
+  /// DROP COLUMN the next time someone runs `migrate dev` — that's
+  /// exactly what 20260615000000_pdp_phase_b_brand_sold30_systemtags
+  /// did, silently breaking search until 20260617010000 restored it.
+  /// Read/written exclusively via raw SQL in the search service.
+  embedding Unsupported("vector(768)")? @map("embedding")
+
+  /// Generated tsvector for FTS. Same self-protection rationale as
+  /// `embedding` above — present in the schema so Prisma respects it.
+  searchVector Unsupported("tsvector")? @map("search_vector")
   createdAt  DateTime  @default(now()) @map("created_at")
   updatedAt  DateTime  @updatedAt @map("updated_at")
 
