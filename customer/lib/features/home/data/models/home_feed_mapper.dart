@@ -157,6 +157,14 @@ class HomeFeedMapper {
 
   static HeroSlide _heroFromBanner(dynamic raw) {
     final m = raw as Map<String, dynamic>;
+    final blocksRaw = m['textBlocks'];
+    final blocks = blocksRaw is List
+        ? blocksRaw
+            .whereType<Map<String, dynamic>>()
+            .map(HeroSlideTextBlock.fromJson)
+            .toList()
+        : const <HeroSlideTextBlock>[];
+    final transformRaw = m['imageTransform'];
     return HeroSlide(
       brand: (m['brandLabel'] ?? m['eyebrow'] ?? '') as String,
       title: (m['title'] ?? '') as String,
@@ -166,6 +174,14 @@ class HomeFeedMapper {
       accent: _parseColor(m['accentColor'] as String?, fallback: AppColors.brand),
       template: HeroSlideTemplate.fromWire(m['template'] as String?),
       imageFit: HeroImageFit.fromWire(m['imageFit'] as String?),
+      // Phase 6 — freeform payload. Defaults to templated when absent,
+      // so legacy clients that don't know about FREEFORM still render
+      // the slide the merchant's templated fallback would have produced.
+      mode: HeroSlideMode.fromWire(m['mode'] as String?),
+      textBlocks: blocks,
+      imageTransform: transformRaw is Map<String, dynamic>
+          ? HeroSlideImageTransform.fromJson(transformRaw)
+          : null,
       ctaText: m['ctaText'] as String?,
       ctaTarget: m['ctaTarget'] as String?,
       bannerId: _asInt(m['id']),
