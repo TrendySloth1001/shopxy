@@ -161,9 +161,17 @@ class _TextBlockView extends StatelessWidget {
   }
 
   Color get _color {
+    // The wire shape constrains color to #RRGGBB / #RRGGBBAA, but a
+    // mid-edit merchant payload (typed letter-by-letter on the
+    // editor's hex field) can briefly send a 3-char or non-hex value
+    // through the live preview. Fall back to white instead of throwing
+    // a FormatException — a red error box flashing while the merchant
+    // types is worse than the wrong shade for one frame.
     final raw = block.color.replaceFirst('#', '');
+    if (raw.length != 6 && raw.length != 8) return Colors.white;
     final normalised = raw.length == 6 ? 'FF$raw' : raw;
-    return Color(int.parse(normalised, radix: 16));
+    final parsed = int.tryParse(normalised, radix: 16);
+    return parsed == null ? Colors.white : Color(parsed);
   }
 
   @override
