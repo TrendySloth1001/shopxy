@@ -17,6 +17,11 @@ export default defineConfig({
         singleFork: true,
       },
     },
+    // singleFork keeps everything in one worker but vitest still runs
+    // test FILES concurrently inside that worker by default. Disable
+    // file parallelism so suites that do global `deleteMany` cleanups
+    // (banners, carousels) don't nuke each other's in-flight fixtures.
+    fileParallelism: false,
     hookTimeout: 30_000,
     testTimeout: 30_000,
   },

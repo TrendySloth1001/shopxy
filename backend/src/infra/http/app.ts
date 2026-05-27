@@ -33,6 +33,10 @@ import {
   bannersMerchantRouter,
 } from '../../modules/banners/banners.routes.js';
 import {
+  carouselsAdminRouter,
+  carouselsMerchantRouter,
+} from '../../modules/carousels/carousels.routes.js';
+import {
   flashSalesMerchantRouter,
   flashSalesPublicRouter,
 } from '../../modules/flash-sales/flash-sales.routes.js';
@@ -191,6 +195,23 @@ export function buildApp(): express.Express {
         : ipKeyGenerator(req.ip ?? '', 56),
   });
 
+  // Per-user limiter for merchant carousel writes (and the legacy
+  // /me/banners shim during the Phase 1→7 deprecation window). 60/min
+  // is well above what an editor session realistically produces — a
+  // merchant typing into the slide form fires PATCHes on save only —
+  // and the cap catches scripted abuse without affecting humans.
+  // Reads share the budget too; that's fine, the editor reads infrequently.
+  const carouselWriteLimiter = rateLimit({
+    windowMs: 60_000,
+    max: 60,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req, res) =>
+      req.user?.sub != null
+        ? `u:${req.user.sub}`
+        : ipKeyGenerator(req.ip ?? '', 56),
+  });
+
   app.get('/health', async (_req, res) => {
     try {
       await prisma.$queryRaw`SELECT 1`;
@@ -316,6 +337,7 @@ export function buildApp(): express.Express {
   // category taxonomy, collections). Gated by User.isPlatformAdmin,
   // independent of merchant/customer role.
   app.use('/admin/banners', requirePlatformAdmin, bannersAdminRouter);
+  app.use('/admin/carousels', requirePlatformAdmin, carouselsAdminRouter);
   app.use('/admin/brand-spotlight', requirePlatformAdmin, brandSpotlightAdminRouter);
   app.use('/admin/collections', requirePlatformAdmin, collectionsAdminRouter);
   app.use(
@@ -331,11 +353,29 @@ export function buildApp(): express.Express {
   // service scopes every read/write through Product.shopId so a wrong
   // ownerId can't reach into another shop's promotions.
   app.use('/me/flash-deals', ownerOnly, resolveShop, flashSalesMerchantRouter);
-  // Merchant-owned carousel banners — every shop can publish their own
-  // hero slides; service scopes by sponsorShopId = req.shopId. Slides
-  // surface on the customer home feed through the existing public
-  // /banners reader (no separate customer wiring needed).
-  app.use('/me/banners', ownerOnly, resolveShop, bannersMerchantRouter);
+  // Merchant carousels (Phase 2) — named carousel groups + nested
+  // slides. carouselWriteLimiter caps the per-user write rate. Every
+  // slide endpoint resolves :carouselId to its shopId before any DB
+  // mutation, so cross-shop probes return 404.
+  app.use(
+    '/me/carousels',
+    ownerOnly,
+    resolveShop,
+    carouselWriteLimiter,
+    carouselsMerchantRouter,
+  );
+  // Legacy merchant slide CRUD — kept as a thin shim during the
+  // Phase 1→7 deprecation window so existing merchant builds keep
+  // working. New writes should target /me/carousels/:cid/slides
+  // instead. carouselWriteLimiter retrofitted to close the gap
+  // identified in the Phase 1 security audit.
+  app.use(
+    '/me/banners',
+    ownerOnly,
+    resolveShop,
+    carouselWriteLimiter,
+    bannersMerchantRouter,
+  );
   app.use('/me/analytics', ownerOnly, resolveShop, analyticsRouter);
   app.use('/me/promotions', ownerOnly, resolveShop, promotionsRouter);
   // Merchant coupon CRUD. Lives at `/me/coupons-admin` so it doesn't
