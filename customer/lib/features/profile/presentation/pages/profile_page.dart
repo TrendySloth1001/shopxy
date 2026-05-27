@@ -3,10 +3,18 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy_customer/features/addresses/presentation/pages/addresses_page.dart';
 import 'package:shopxy_customer/features/auth/presentation/providers/auth_provider.dart';
-import 'package:shopxy_customer/features/orders/presentation/pages/my_orders_page.dart';
+import 'package:shopxy_customer/features/profile/presentation/pages/amazon_pdp_demo_page.dart';
 import 'package:shopxy_customer/features/profile/presentation/pages/edit_profile_page.dart';
+import 'package:shopxy_customer/features/profile/presentation/pages/help_page.dart';
 import 'package:shopxy_customer/features/profile/presentation/pages/info_pages.dart';
+import 'package:shopxy_customer/features/profile/presentation/pages/notification_preferences_page.dart';
+import 'package:shopxy_customer/features/recently_viewed/presentation/pages/recently_viewed_page.dart';
+import 'package:shopxy_customer/features/returns/presentation/pages/my_returns_page.dart';
+import 'package:shopxy_customer/features/reviews/presentation/pages/my_reviews_page.dart';
 import 'package:shopxy_customer/features/shops/presentation/pages/linked_merchants_page.dart';
+import 'package:shopxy_customer/features/profile/presentation/widgets/profile_avatar.dart';
+import 'package:shopxy_customer/features/wallet/presentation/pages/wallet_page.dart';
+import 'package:shopxy_customer/features/wishlist/presentation/pages/wishlist_page.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/constants/app_strings.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
@@ -47,7 +55,11 @@ class CustomerProfilePage extends StatelessWidget {
             ),
             child: Row(
               children: [
-                _Avatar(name: user?.name ?? '?', size: 72),
+                ProfileAvatar(
+                  name: user?.name ?? '?',
+                  avatarUrl: user?.avatarUrl,
+                  size: 72,
+                ),
                 const SizedBox(width: AppSizes.lg),
                 Expanded(
                   child: Column(
@@ -106,13 +118,75 @@ class CustomerProfilePage extends StatelessWidget {
               MaterialPageRoute(builder: (_) => const AddressesPage()),
             ),
           ),
-          // Orders used to live in the bottom nav; surfaced here so it
-          // stays one tap from the profile root.
+          // Orders deliberately omitted — it lives in the bottom nav as
+          // its own tab. Keeping it here too made the profile redundant
+          // and confused which surface is the source of truth.
+          const _SectionLabel(label: 'Activity'),
           _Row(
-            icon: Icons.receipt_long_outlined,
-            title: AppStrings.myOrders,
+            icon: Icons.favorite_border_rounded,
+            title: 'Wishlist',
+            subtitle: 'Items you saved for later',
             onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const MyOrdersPage()),
+              MaterialPageRoute(builder: (_) => const WishlistPage()),
+            ),
+          ),
+          _Row(
+            icon: Icons.rate_review_outlined,
+            title: 'My reviews',
+            subtitle: 'Ratings and reviews you wrote',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const MyReviewsPage()),
+            ),
+          ),
+          _Row(
+            icon: Icons.assignment_return_outlined,
+            title: 'Returns',
+            subtitle: 'Track your return requests',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const MyReturnsPage()),
+            ),
+          ),
+          _Row(
+            icon: Icons.history_rounded,
+            title: 'Recently viewed',
+            subtitle: 'Pick up where you left off',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const RecentlyViewedPage()),
+            ),
+          ),
+          _Row(
+            icon: Icons.account_balance_wallet_outlined,
+            title: 'Wallet',
+            subtitle: 'Refunds, rewards and credits',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const WalletPage()),
+            ),
+          ),
+          const _SectionLabel(label: 'Settings'),
+          _Row(
+            icon: Icons.notifications_active_outlined,
+            title: 'Notification preferences',
+            subtitle: 'Order updates, deals, account alerts',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                  builder: (_) => const NotificationPreferencesPage()),
+            ),
+          ),
+          _Row(
+            icon: Icons.help_outline_rounded,
+            title: 'Help & FAQ',
+            subtitle: 'Common questions + email support',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const HelpAndFaqPage()),
+            ),
+          ),
+          const _Gap(),
+          _Row(
+            icon: Icons.science_outlined,
+            title: 'Amazon PDP — demo',
+            subtitle: 'Static reference screen for the PDP redesign',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const AmazonPdpDemoPage()),
             ),
           ),
           const _Gap(),
@@ -180,34 +254,6 @@ class CustomerProfilePage extends StatelessWidget {
 
 }
 
-class _Avatar extends StatelessWidget {
-  const _Avatar({required this.name, required this.size});
-  final String name;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    final letter = name.trim().isEmpty ? '?' : name.trim()[0].toUpperCase();
-    return Container(
-      width: size,
-      height: size,
-      decoration: const BoxDecoration(
-        color: AppColors.brandSoft,
-        shape: BoxShape.circle,
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        letter,
-        style: TextStyle(
-          color: AppColors.brandStrong,
-          fontSize: size * 0.4,
-          fontWeight: FontWeight.w800,
-        ),
-      ),
-    );
-  }
-}
-
 class _Gap extends StatelessWidget {
   const _Gap();
   @override
@@ -216,6 +262,29 @@ class _Gap extends StatelessWidget {
           horizontal: AppSizes.lg, vertical: AppSizes.xl,
         ),
         child: Container(height: 1, color: AppColors.hairline),
+      );
+}
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel({required this.label});
+  final String label;
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSizes.lg,
+          AppSizes.lg,
+          AppSizes.lg,
+          AppSizes.xs,
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(
+            color: AppColors.muted,
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.8,
+          ),
+        ),
       );
 }
 

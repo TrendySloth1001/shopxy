@@ -11,6 +11,10 @@ customerCouponsRouter.post(
   '/validate',
   asyncHandler((req, res) => couponsController.validate(req, res)),
 );
+customerCouponsRouter.post(
+  '/auto-apply',
+  asyncHandler((req, res) => couponsController.autoApply(req, res)),
+);
 
 /// Merchant-scoped admin surface. Mounted under `/me/coupons-admin` so
 /// the customer-facing `/me/coupons` path stays clean (the customer

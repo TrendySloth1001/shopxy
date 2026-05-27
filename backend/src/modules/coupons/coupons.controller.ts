@@ -17,6 +17,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   SHOP_NOT_IN_CART: 'This coupon only applies to specific sellers.',
   PER_USER_LIMIT_REACHED: 'You\'ve already used this coupon.',
   TOTAL_CAP_REACHED: 'This coupon has run out.',
+  NOT_FIRST_ORDER: 'This coupon is only for first-time customers.',
 };
 
 export class CouponsController {
@@ -24,6 +25,26 @@ export class CouponsController {
   async listAvailable(req: Request, res: Response): Promise<void> {
     const data = await couponsService.listAvailableForUser(req.user!.sub);
     res.json({ data });
+  }
+
+  /// POST /me/coupons/auto-apply — given the current cart context,
+  /// returns the single best PUBLIC coupon (if any) so the checkout
+  /// page can pre-apply it without the customer typing a code. Public
+  /// coupons are the "everyone-gets-this" use-case; making the
+  /// customer copy a code that's already in their carousel was the
+  /// "coupons not working" complaint.
+  async autoApply(req: Request, res: Response): Promise<void> {
+    const payload = autoApplySchema.parse(req.body);
+    const result = await couponsService.pickBestPublicForCart({
+      userId: req.user!.sub,
+      subtotal: payload.subtotal,
+      shopIds: payload.shopIds,
+    });
+    if (result == null) {
+      res.json({ ok: false });
+      return;
+    }
+    res.json({ ok: true, coupon: result.coupon });
   }
 
   /// POST /me/coupons/validate — preview the discount without applying.
@@ -137,8 +158,15 @@ const writeSchema = z.object({
   validUntil: z.string().datetime(),
   perUserLimit: z.number().int().min(0).max(1000).optional(),
   totalCap: z.number().int().min(0).optional(),
+  isPublic: z.boolean().optional(),
+  firstOrderOnly: z.boolean().optional(),
   isActive: z.boolean().optional(),
 });
 const patchSchema = writeSchema.partial();
+
+const autoApplySchema = z.object({
+  subtotal: z.number().nonnegative(),
+  shopIds: z.array(z.number().int().positive()).max(40).default([]),
+});
 
 export const couponsController = new CouponsController();

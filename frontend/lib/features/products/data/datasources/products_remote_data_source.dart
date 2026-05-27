@@ -79,6 +79,20 @@ class ProductsRemoteDataSource {
     await _client.delete('/products/$id');
   }
 
+  /// Toggle the marketplace visibility flag. Backend exposes this as a
+  /// distinct endpoint (`POST /products/:id/publish`) rather than a
+  /// generic patch so the action can be audit-logged separately from
+  /// editorial edits.
+  Future<Product> setPublished(int id, bool isPublished) async {
+    final response = await _client.post(
+      '/products/$id/publish',
+      body: {'isPublished': isPublished},
+    );
+    return ProductDto.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+
   /// Returns the created image record so callers can track its id
   /// (used by the edit form to mark the image as "already persisted"
   /// and avoid double-adding it during the next save).
@@ -105,7 +119,7 @@ class ProductsRemoteDataSource {
   Future<String> uploadImage(File file) async {
     final streamed = await _client.multipart(
       '/upload',
-      file: await http.MultipartFile.fromPath('file', file.path),
+      makeFile: () => http.MultipartFile.fromPath('file', file.path),
     );
     final body = await streamed.stream.bytesToString();
     if (streamed.statusCode != 201) throw Exception('Upload failed: $body');

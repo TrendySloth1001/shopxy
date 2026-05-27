@@ -57,6 +57,33 @@ export class ReviewsController {
     res.status(204).send();
   }
 
+  /// GET /products/:id/reviews/summary — public. One-shot histogram +
+  /// recent reviews payload that drives the PDP reviews block without
+  /// a follow-up list call.
+  async summary(req: Request, res: Response): Promise<void> {
+    const productId = parseId(req.params.id);
+    if (!productId) {
+      res.status(400).json({ error: 'Invalid product id' });
+      return;
+    }
+    const result = await reviewsService.getSummary(productId);
+    res.json(result);
+  }
+
+  /// GET /me/reviews — every review the caller has written, with
+  /// product join so the profile "My reviews" page can render
+  /// thumbnails without a second round trip.
+  async listMine(req: Request, res: Response): Promise<void> {
+    const cursorRaw = req.query.cursor as string | undefined;
+    const cursor = cursorRaw ? Number(cursorRaw) : undefined;
+    const limit = req.query.limit ? Number(req.query.limit) : undefined;
+    const result = await reviewsService.listForUser(req.user!.sub, {
+      cursor: Number.isInteger(cursor) ? cursor : undefined,
+      limit,
+    });
+    res.json(result);
+  }
+
   /// GET /products/:id/reviews — public.
   async list(req: Request, res: Response): Promise<void> {
     const productId = parseId(req.params.id);

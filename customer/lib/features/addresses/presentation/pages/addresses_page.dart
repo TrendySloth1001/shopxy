@@ -26,6 +26,7 @@ class _AddressesPageState extends State<AddressesPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       context.read<AddressesProvider>().load();
     });
   }

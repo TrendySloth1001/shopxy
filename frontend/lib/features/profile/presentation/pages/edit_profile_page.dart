@@ -1,6 +1,12 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
+import 'package:shopxy/features/profile/presentation/pages/profile_page.dart'
+    show ProfileAvatar;
+import 'package:shopxy/features/shop/presentation/providers/shop_provider.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/constants/indian.dart';
@@ -12,6 +18,8 @@ class EditProfilePage extends StatefulWidget {
   @override
   State<EditProfilePage> createState() => _EditProfilePageState();
 }
+
+enum _PhotoAction { camera, gallery, remove }
 
 class _EditProfilePageState extends State<EditProfilePage> {
   final _formKey = GlobalKey<FormState>();
@@ -27,6 +35,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   late final TextEditingController _upiVpa;
   String? _shopStateCode;
   bool _busy = false;
+  bool _uploadingAvatar = false;
 
   @override
   void initState() {
@@ -54,6 +63,81 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _shopPan.dispose();
     _upiVpa.dispose();
     super.dispose();
+  }
+
+  Future<void> _changePhoto() async {
+    final user = context.read<AuthProvider>().user;
+    final hasAvatar = user?.avatarUrl != null && user!.avatarUrl!.isNotEmpty;
+    final source = await showModalBottomSheet<_PhotoAction>(
+      context: context,
+      backgroundColor: AppColors.white,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined),
+              title: const Text('Take a photo'),
+              onTap: () => Navigator.of(ctx).pop(_PhotoAction.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Pick from gallery'),
+              onTap: () => Navigator.of(ctx).pop(_PhotoAction.gallery),
+            ),
+            if (hasAvatar)
+              ListTile(
+                leading: const Icon(Icons.delete_outline,
+                    color: AppColors.error),
+                title: const Text('Remove photo',
+                    style: TextStyle(color: AppColors.error)),
+                onTap: () => Navigator.of(ctx).pop(_PhotoAction.remove),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (source == null || !mounted) return;
+    if (source == _PhotoAction.remove) {
+      await _setAvatar(null);
+      return;
+    }
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(
+      source: source == _PhotoAction.camera
+          ? ImageSource.camera
+          : ImageSource.gallery,
+      maxWidth: 1024,
+      imageQuality: 85,
+    );
+    if (picked == null || !mounted) return;
+    setState(() => _uploadingAvatar = true);
+    try {
+      final url = await context
+          .read<ShopProvider>()
+          .uploadImage(File(picked.path));
+      if (url == null) throw Exception('Upload failed');
+      if (!mounted) return;
+      await _setAvatar(url);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+      );
+    } finally {
+      if (mounted) setState(() => _uploadingAvatar = false);
+    }
+  }
+
+  Future<void> _setAvatar(String? url) async {
+    try {
+      await context.read<AuthProvider>().updateAvatar(url);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+      );
+    }
   }
 
   Future<void> _save() async {
@@ -143,6 +227,48 @@ class _EditProfilePageState extends State<EditProfilePage> {
         child: ListView(
           padding: const EdgeInsets.all(AppSizes.lg),
           children: [
+            Center(
+              child: Stack(
+                children: [
+                  ProfileAvatar(
+                    name: user?.name ?? '',
+                    imageUrl: user?.avatarUrl,
+                    size: 96,
+                  ),
+                  Positioned(
+                    right: 0,
+                    bottom: 0,
+                    child: Material(
+                      color: AppColors.black,
+                      shape: const CircleBorder(),
+                      elevation: 1,
+                      child: InkWell(
+                        customBorder: const CircleBorder(),
+                        onTap: _uploadingAvatar ? null : _changePhoto,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: _uploadingAvatar
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppColors.white,
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.camera_alt_outlined,
+                                  color: AppColors.white,
+                                  size: 16,
+                                ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSizes.xl),
             TextFormField(
               controller: _name,
               decoration: const InputDecoration(labelText: 'Name'),

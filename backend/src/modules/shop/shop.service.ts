@@ -9,12 +9,21 @@ const publicShopSelect = {
   bannerUrl: true,
   rating: true,
   ratingCount: true,
+  isVerified: true,
+  locationCity: true,
+  locationState: true,
+  returnPolicy: true,
+  shippingPolicy: true,
+  refundPolicy: true,
+  vacationMode: true,
+  vacationMessage: true,
+  operatingHours: true,
+  createdAt: true,
 } as const;
 
 const merchantShopSelect = {
   ...publicShopSelect,
   isPublished: true,
-  createdAt: true,
   updatedAt: true,
 } as const;
 
@@ -65,6 +74,14 @@ export class ShopService {
       tagline?: string | null;
       logoUrl?: string | null;
       bannerUrl?: string | null;
+      locationCity?: string | null;
+      locationState?: string | null;
+      returnPolicy?: string | null;
+      shippingPolicy?: string | null;
+      refundPolicy?: string | null;
+      vacationMode?: boolean;
+      vacationMessage?: string | null;
+      operatingHours?: Record<string, [string, string]> | null;
     },
   ) {
     const existing = await prisma.shop.findUnique({
@@ -91,7 +108,69 @@ export class ShopService {
         tagline: data.tagline === undefined ? undefined : data.tagline,
         logoUrl: data.logoUrl === undefined ? undefined : data.logoUrl,
         bannerUrl: data.bannerUrl === undefined ? undefined : data.bannerUrl,
+        locationCity: data.locationCity === undefined
+            ? undefined
+            : data.locationCity,
+        locationState: data.locationState === undefined
+            ? undefined
+            : data.locationState,
+        returnPolicy: data.returnPolicy === undefined
+            ? undefined
+            : data.returnPolicy,
+        shippingPolicy: data.shippingPolicy === undefined
+            ? undefined
+            : data.shippingPolicy,
+        refundPolicy: data.refundPolicy === undefined
+            ? undefined
+            : data.refundPolicy,
+        vacationMode: data.vacationMode === undefined
+            ? undefined
+            : data.vacationMode,
+        vacationMessage: data.vacationMessage === undefined
+            ? undefined
+            : data.vacationMessage,
+        operatingHours: data.operatingHours === undefined
+            ? undefined
+            : (data.operatingHours as object | null) ?? undefined,
       },
+      select: merchantShopSelect,
+    });
+  }
+
+  /// Platform-admin verified toggle. Independent of any merchant
+  /// surface — the merchant cannot self-verify. Returns the updated
+  /// shop or null if the id doesn't resolve.
+  async setVerified(shopId: number, isVerified: boolean) {
+    const existing = await prisma.shop.findUnique({
+      where: { id: shopId },
+      select: { id: true },
+    });
+    if (!existing) return null;
+    return prisma.shop.update({
+      where: { id: shopId },
+      data: { isVerified },
+      select: merchantShopSelect,
+    });
+  }
+
+  /// Platform-admin listing — every shop regardless of publish state
+  /// so the verification UI can show drafts too. Ordered isVerified
+  /// desc → newest, so the admin sees freshly-flipped shops first
+  /// and the unverified backlog stays visible.
+  async listForAdmin(opts: { search?: string; limit?: number }) {
+    const limit = Math.min(100, Math.max(1, opts.limit ?? 50));
+    const search = (opts.search ?? '').trim();
+    return prisma.shop.findMany({
+      where: search.length > 0
+        ? {
+            OR: [
+              { name: { contains: search, mode: 'insensitive' } },
+              { slug: { contains: search, mode: 'insensitive' } },
+            ],
+          }
+        : undefined,
+      orderBy: [{ isVerified: 'desc' }, { id: 'desc' }],
+      take: limit,
       select: merchantShopSelect,
     });
   }

@@ -13,9 +13,11 @@ import 'package:shopxy/features/profile/presentation/pages/profile_page.dart';
 import 'package:shopxy/features/reports/presentation/pages/reports_page.dart';
 import 'package:shopxy/features/shop/presentation/pages/shop_profile_page.dart';
 import 'package:shopxy/features/flash_deals/presentation/pages/flash_deals_page.dart';
+import 'package:shopxy/features/admin/presentation/pages/admin_bank_offers_page.dart';
 import 'package:shopxy/features/admin/presentation/pages/admin_banners_page.dart';
 import 'package:shopxy/features/admin/presentation/pages/admin_category_taxonomy_page.dart';
 import 'package:shopxy/features/admin/presentation/pages/admin_collections_page.dart';
+import 'package:shopxy/features/admin/presentation/pages/admin_shops_page.dart';
 import 'package:shopxy/features/admin/presentation/pages/admin_spotlight_approval_page.dart';
 import 'package:shopxy/features/carousel/presentation/pages/my_carousel_page.dart';
 import 'package:shopxy/features/spotlight/presentation/pages/spotlight_request_page.dart';
@@ -445,6 +447,24 @@ class _NavDrawer extends StatelessWidget {
                         accent: AppColors.accentRose,
                         accentSoft: AppColors.accentRoseSoft,
                         builder: (_) => const AdminCollectionsPage(),
+                      ),
+                    ),
+                    _DrawerShortcutTile(
+                      shortcut: _Shortcut(
+                        label: 'Bank offers',
+                        icon: Icons.account_balance_outlined,
+                        accent: AppColors.info,
+                        accentSoft: AppColors.infoSoft,
+                        builder: (_) => const AdminBankOffersPage(),
+                      ),
+                    ),
+                    _DrawerShortcutTile(
+                      shortcut: _Shortcut(
+                        label: 'Shop verification',
+                        icon: Icons.verified_user_outlined,
+                        accent: AppColors.brandStrong,
+                        accentSoft: AppColors.brandSoft,
+                        builder: (_) => const AdminShopsPage(),
                       ),
                     ),
                   ],

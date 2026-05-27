@@ -26,9 +26,12 @@ import 'package:shopxy/features/reports/data/datasources/reports_remote_data_sou
 import 'package:shopxy/features/reports/presentation/providers/reports_provider.dart';
 import 'package:shopxy/features/shop/data/datasources/shop_remote_data_source.dart';
 import 'package:shopxy/features/shop/presentation/providers/shop_provider.dart';
+import 'package:shopxy/features/admin/data/datasources/admin_bank_offers_remote_data_source.dart';
 import 'package:shopxy/features/admin/data/datasources/admin_banners_remote_data_source.dart';
+import 'package:shopxy/features/admin/data/datasources/admin_shops_remote_data_source.dart';
 import 'package:shopxy/features/admin/data/datasources/admin_collections_remote_data_source.dart';
 import 'package:shopxy/features/admin/data/datasources/admin_spotlight_remote_data_source.dart';
+import 'package:shopxy/features/admin/presentation/providers/admin_bank_offers_provider.dart';
 import 'package:shopxy/features/admin/presentation/providers/admin_banners_provider.dart';
 import 'package:shopxy/features/admin/presentation/providers/admin_collections_provider.dart';
 import 'package:shopxy/features/admin/presentation/providers/admin_spotlight_provider.dart';
@@ -95,6 +98,8 @@ void main() async {
   final merchantCarouselDs = MerchantCarouselRemoteDataSource(apiClient);
   final adminSpotlightDs = AdminSpotlightRemoteDataSource(apiClient);
   final adminCollectionsDs = AdminCollectionsRemoteDataSource(apiClient);
+  final adminBankOffersDs = AdminBankOffersRemoteDataSource(apiClient);
+  final adminShopsDs = AdminShopsRemoteDataSource(apiClient);
   final flashDealsDs = FlashDealsRemoteDataSource(apiClient);
   final spotlightDs = SpotlightRemoteDataSource(apiClient);
   final analyticsDs = AnalyticsRemoteDataSource(apiClient);
@@ -195,6 +200,8 @@ void main() async {
         ),
         ChangeNotifierProvider(create: (_) => AdminSpotlightProvider(adminSpotlightDs)),
         ChangeNotifierProvider(create: (_) => AdminCollectionsProvider(adminCollectionsDs)),
+        ChangeNotifierProvider(create: (_) => AdminBankOffersProvider(adminBankOffersDs)),
+        Provider<AdminShopsRemoteDataSource>.value(value: adminShopsDs),
         ChangeNotifierProvider(create: (_) => FlashDealsProvider(flashDealsDs)),
         ChangeNotifierProvider(create: (_) => SpotlightProvider(spotlightDs)),
         ChangeNotifierProvider(create: (_) => AnalyticsProvider(analyticsDs)),

@@ -10,6 +10,10 @@ import { marketplaceController } from './marketplace.controller.js';
 ///   GET /marketplace/shops/:slug/products → paginated products inside a shop
 const productRouter = Router();
 productRouter.get('/:id', asyncHandler(marketplaceController.getProduct.bind(marketplaceController)));
+productRouter.get(
+  '/:id/frequently-bought-together',
+  asyncHandler(marketplaceController.getFbt.bind(marketplaceController)),
+);
 
 const shopRouter = Router();
 shopRouter.get('/:slug/products', asyncHandler(marketplaceController.listShopProducts.bind(marketplaceController)));

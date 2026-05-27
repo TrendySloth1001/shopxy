@@ -8,24 +8,36 @@ import {
   UPI_VPA_REGEX,
 } from '../../shared/validation/indian.js';
 
-const registerSchema = z.object({
-  name: z.string().trim().min(2).max(80),
-  email: z.string().trim().email(),
-  password: z
-    .string()
-    .min(8, 'Password must be at least 8 characters')
-    .max(128)
-    .regex(/[A-Za-z]/, 'Password must contain at least one letter')
-    .regex(/[0-9]/, 'Password must contain at least one number'),
-  // DPDP consent gate. We require both checkboxes to be true at the
-  // wire level too, so a malicious client can't bypass the UI ticks.
-  acceptedTerms: z.literal(true, {
-    errorMap: () => ({ message: 'You must accept the terms of service' }),
-  }),
-  acceptedPrivacy: z.literal(true, {
-    errorMap: () => ({ message: 'You must accept the privacy policy' }),
-  }),
-});
+const registerSchema = z
+  .object({
+    name: z.string().trim().min(2).max(80),
+    email: z.string().trim().email(),
+    password: z
+      .string()
+      .min(8, 'Password must be at least 8 characters')
+      .max(128)
+      .regex(/[A-Za-z]/, 'Password must contain at least one letter')
+      .regex(/[0-9]/, 'Password must contain at least one number'),
+    // App-origin role. Merchant app sends OWNER (and a shopName);
+    // customer app sends CUSTOMER. Defaults to CUSTOMER so any
+    // pre-existing client that omits the field stays on the safer side.
+    role: z.enum(['OWNER', 'CUSTOMER']).optional().default('CUSTOMER'),
+    // Required when role is OWNER. The Shop row is created in the same
+    // transaction as the user and a unique slug is generated from this.
+    shopName: z.string().trim().min(2).max(200).optional(),
+    // DPDP consent gate. We require both checkboxes to be true at the
+    // wire level too, so a malicious client can't bypass the UI ticks.
+    acceptedTerms: z.literal(true, {
+      errorMap: () => ({ message: 'You must accept the terms of service' }),
+    }),
+    acceptedPrivacy: z.literal(true, {
+      errorMap: () => ({ message: 'You must accept the privacy policy' }),
+    }),
+  })
+  .refine((d) => d.role !== 'OWNER' || (d.shopName && d.shopName.length >= 2), {
+    message: 'shopName is required when registering as a merchant',
+    path: ['shopName'],
+  });
 
 const deleteAccountSchema = z.object({
   currentPassword: z.string().min(1),
@@ -87,6 +99,34 @@ const updateProfileSchema = z.object({
     .regex(UPI_VPA_REGEX, 'invalid UPI VPA')
     .nullable()
     .optional(),
+  // Avatar comes from the existing upload service — accept any URL
+  // shape (http(s) or server-relative). null = clear the photo.
+  avatarUrl: z
+    .string()
+    .trim()
+    .max(2048)
+    .refine(
+      (v) => /^https?:\/\//i.test(v) || v.startsWith('/'),
+      'must be an http(s) URL or server-relative path',
+    )
+    .nullable()
+    .optional(),
+  // Phone: E.164 family — '+' optional prefix, then 7–15 digits.
+  // Loose enough to accept Indian numbers with or without the +91.
+  phoneNumber: z
+    .string()
+    .trim()
+    .regex(/^\+?[0-9\s\-]{7,20}$/, 'invalid phone number')
+    .transform((v) => v.replace(/[\s\-]/g, ''))
+    .nullable()
+    .optional(),
+  // Granular notification preferences (Phase 5).
+  notifyOrders: z.boolean().optional(),
+  notifyDeals: z.boolean().optional(),
+  notifyAccount: z.boolean().optional(),
+  notifyMessages: z.boolean().optional(),
+  pushEnabled: z.boolean().optional(),
+  smsEnabled: z.boolean().optional(),
 });
 
 export async function register(req: Request, res: Response) {

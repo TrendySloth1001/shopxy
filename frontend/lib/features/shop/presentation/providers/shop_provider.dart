@@ -50,6 +50,14 @@ class ShopProvider extends ChangeNotifier {
     Object? tagline = _absent,
     Object? logoUrl = _absent,
     Object? bannerUrl = _absent,
+    Object? locationCity = _absent,
+    Object? locationState = _absent,
+    Object? returnPolicy = _absent,
+    Object? shippingPolicy = _absent,
+    Object? refundPolicy = _absent,
+    Object? vacationMode = _absent,
+    Object? vacationMessage = _absent,
+    Object? operatingHours = _absent,
   }) async {
     _isSaving = true;
     _error = null;
@@ -60,6 +68,14 @@ class ShopProvider extends ChangeNotifier {
         tagline: tagline,
         logoUrl: logoUrl,
         bannerUrl: bannerUrl,
+        locationCity: locationCity,
+        locationState: locationState,
+        returnPolicy: returnPolicy,
+        shippingPolicy: shippingPolicy,
+        refundPolicy: refundPolicy,
+        vacationMode: vacationMode,
+        vacationMessage: vacationMessage,
+        operatingHours: operatingHours,
       );
       return true;
     } catch (e) {

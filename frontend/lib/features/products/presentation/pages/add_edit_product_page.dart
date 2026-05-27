@@ -15,6 +15,8 @@ import 'package:shopxy/features/products/domain/entities/product.dart';
 import 'package:shopxy/features/products/domain/entities/product_draft.dart';
 import 'package:shopxy/features/products/presentation/providers/products_provider.dart';
 import 'package:shopxy/features/products/presentation/utils/product_ocr_parser.dart';
+import 'package:shopxy/features/products/presentation/widgets/content_blocks_editor.dart';
+import 'package:shopxy/features/products/presentation/widgets/variants_editor.dart';
 import 'package:shopxy/features/reviews/presentation/pages/product_reviews_page.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
@@ -47,6 +49,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
   late final TextEditingController _sku;
   late final TextEditingController _barcode;
   late final TextEditingController _hsnCode;
+  late final TextEditingController _brand;
   late final TextEditingController _mrp;
   late final TextEditingController _sellingPrice;
   late final TextEditingController _purchasePrice;
@@ -68,6 +71,16 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
   final _highlightController = TextEditingController();
   final List<SpecGroup> _specs = [];
   final List<ProductOffer> _offers = [];
+  // Phase C — A+ content blocks. Empty list serialises as null (DTO
+  // strips), so a merchant who never opens the section ships no
+  // payload. Block types are HERO/FEATURE/COMPARISON/GALLERY/TEXT;
+  // see backend `contentBlockSchema` for the per-kind shape.
+  final List<ContentBlock> _contentBlocks = [];
+  // Phase E — variant axes + variants. The default variant is created
+  // server-side on first product create, so [_variants] is empty until
+  // an existing product is being edited.
+  final List<VariantAxis> _variantAxes = [];
+  final List<ProductVariant> _variants = [];
   // For edit mode: maps url → existing image ID so we can call deleteImage
   final Map<String, int> _existingImageIdByUrl = {};
   final Set<int> _removedImageIds = {};
@@ -94,6 +107,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     _sku = TextEditingController(text: p?.sku ?? draft?.sku ?? '');
     _barcode = TextEditingController(text: p?.barcode ?? draft?.barcode ?? '');
     _hsnCode = TextEditingController(text: p?.hsnCode ?? draft?.hsnCode ?? '');
+    _brand = TextEditingController(text: p?.brand ?? '');
     _mrp = TextEditingController(
       text: p?.mrp.toStringAsFixed(2) ?? _formatDouble(draft?.mrp),
     );
@@ -129,6 +143,9 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
       _highlights.addAll(p.highlights);
       _specs.addAll(p.specs);
       _offers.addAll(p.offers);
+      _contentBlocks.addAll(p.contentBlocks);
+      _variantAxes.addAll(p.variantAxes);
+      _variants.addAll(p.variants);
     }
 
     if (p != null) {
@@ -188,6 +205,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     _sku.dispose();
     _barcode.dispose();
     _hsnCode.dispose();
+    _brand.dispose();
     _mrp.dispose();
     _sellingPrice.dispose();
     _purchasePrice.dispose();
@@ -270,6 +288,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
           sku: _sku.text,
           barcode: _barcode.text.isNotEmpty ? _barcode.text : null,
           hsnCode: _hsnCode.text.isNotEmpty ? _hsnCode.text : null,
+          brand: _brand.text.trim().isNotEmpty ? _brand.text.trim() : null,
           mrp: double.parse(_mrp.text),
           sellingPrice: double.parse(_sellingPrice.text),
           purchasePrice: double.parse(_purchasePrice.text),
@@ -284,6 +303,11 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
           // otherwise drop the key.
           specs: _specs,
           offers: _offers,
+          contentBlocks: _contentBlocks,
+          variantAxes: _variantAxes,
+          // Send the full variants array — backend diffs by id and
+          // soft-deletes (isActive=false) variants we drop.
+          variants: _variants,
         );
         await provider.updateProduct(productId, data);
         // Sync image deletions
@@ -306,6 +330,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
           description: _description.text,
           barcode: _barcode.text.isNotEmpty ? _barcode.text : null,
           hsnCode: _hsnCode.text.isNotEmpty ? _hsnCode.text : null,
+          brand: _brand.text.trim().isNotEmpty ? _brand.text.trim() : null,
           imageUrls: _imageUrls.isNotEmpty ? _imageUrls : null,
           taxPercent: double.tryParse(_taxPercent.text),
           stockQuantity: double.tryParse(_stockQuantity.text),
@@ -316,6 +341,9 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
           highlights: _highlights.isNotEmpty ? _highlights : null,
           specs: _specs.isNotEmpty ? _specs : null,
           offers: _offers.isNotEmpty ? _offers : null,
+          contentBlocks: _contentBlocks.isNotEmpty ? _contentBlocks : null,
+          variantAxes: _variantAxes.isNotEmpty ? _variantAxes : null,
+          variants: _variants.isNotEmpty ? _variants : null,
         );
         productId = created.id;
       }
@@ -444,11 +472,20 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
         : value.toStringAsFixed(2);
   }
 
-  Future<void> _pickAndUploadImage(ImageSource source) async {
-    if (_isUploading) return;
+  /// Pick + upload an image and return its stored URL. Used by the
+  /// variants editor — it doesn't want to mutate the page's
+  /// `_imageUrls` list, just attach the returned URL to its own
+  /// variant row. Returns null on cancel / failure so the caller can
+  /// no-op gracefully.
+  Future<String?> _pickAndUploadVariantImage(ImageSource source) async {
+    if (_isUploading) return null;
     final picker = ImagePicker();
-    final picked = await picker.pickImage(source: source, maxWidth: 1200, imageQuality: 85);
-    if (picked == null || !mounted) return;
+    final picked = await picker.pickImage(
+      source: source,
+      maxWidth: 1200,
+      imageQuality: 85,
+    );
+    if (picked == null || !mounted) return null;
     final file = File(picked.path);
     const maxBytes = 5 * 1024 * 1024;
     if (file.lengthSync() > maxBytes) {
@@ -459,10 +496,135 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
           ),
         ),
       );
+      return null;
+    }
+    setState(() => _isUploading = true);
+    try {
+      final ds = context.read<ProductsRemoteDataSource>();
+      return await ds.uploadImage(file);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+      return null;
+    } finally {
+      if (mounted) setState(() => _isUploading = false);
+    }
+  }
+
+  /// Cap on what the product gallery can carry — mirrors the backend
+  /// `imageUrls.max(10)` validator on createProductSchema.
+  static const int _maxGalleryImages = 10;
+
+  Future<void> _pickAndUploadImage(ImageSource source) async {
+    if (_isUploading) return;
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: source, maxWidth: 1200, imageQuality: 85);
+    if (picked == null || !mounted) return;
+    await _uploadOne(File(picked.path));
+  }
+
+  /// Multi-pick path for the gallery — most merchants want to drop
+  /// 5–8 product shots in a single tap, not babysit a one-at-a-time
+  /// picker. iOS/Android both support multi-select natively. Files are
+  /// uploaded sequentially so a slow connection produces visible
+  /// progress, and one failure doesn't abort the rest of the batch.
+  Future<void> _pickAndUploadMultiple() async {
+    if (_isUploading) return;
+    final picker = ImagePicker();
+    final remaining = _maxGalleryImages - _imageUrls.length;
+    if (remaining <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'You can attach at most $_maxGalleryImages images per product. '
+            'Remove some to add more.',
+          ),
+        ),
+      );
       return;
     }
+    final List<XFile> picked = await picker.pickMultiImage(
+      // Match the single-pick path's compression so multi vs single
+      // produce identically sized assets.
+      maxWidth: 1200,
+      imageQuality: 85,
+      // Available on iOS — caps the system picker so the user can't
+      // overshoot remaining capacity. Android falls back to client-
+      // side trimming below.
+      limit: remaining,
+    );
+    if (picked.isEmpty || !mounted) return;
 
+    final batch = picked.take(remaining).toList();
+    if (picked.length > batch.length) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Selected ${picked.length}, but only $remaining more fit. '
+            'Skipping the extras.',
+          ),
+        ),
+      );
+    }
     setState(() => _isUploading = true);
+    int succeeded = 0;
+    final failures = <String>[];
+    for (final x in batch) {
+      final file = File(x.path);
+      if (file.lengthSync() > 5 * 1024 * 1024) {
+        failures.add('${x.name}: larger than 5 MB');
+        continue;
+      }
+      final ok = await _uploadOne(file, externallyManaged: true);
+      if (ok) {
+        succeeded += 1;
+      } else {
+        failures.add(x.name);
+      }
+    }
+    if (mounted) setState(() => _isUploading = false);
+    if (succeeded > 0 && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Uploaded $succeeded image${succeeded == 1 ? '' : 's'}.')),
+      );
+    }
+    if (failures.isNotEmpty && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Skipped ${failures.length}: ${failures.take(3).join(', ')}'
+            '${failures.length > 3 ? '…' : ''}',
+          ),
+        ),
+      );
+    }
+  }
+
+  /// Upload one file and attach its URL to the gallery. Shared by
+  /// single, multi, and camera paths. Returns true on success.
+  ///
+  /// `externallyManaged` lets the multi-batch caller drive the
+  /// `_isUploading` flag itself (it wraps the whole batch in one busy
+  /// window); the single-shot callers leave it false and we toggle
+  /// inline.
+  Future<bool> _uploadOne(
+    File file, {
+    bool externallyManaged = false,
+  }) async {
+    const maxBytes = 5 * 1024 * 1024;
+    if (file.lengthSync() > maxBytes) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Image is larger than 5 MB. Pick a smaller image or crop tighter.',
+          ),
+        ),
+      );
+      return false;
+    }
+    if (!externallyManaged) setState(() => _isUploading = true);
     try {
       final ds = context.read<ProductsRemoteDataSource>();
       final url = await ds.uploadImage(file);
@@ -476,12 +638,17 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
         _existingImageIdByUrl[url] = image.id;
       }
       setState(() => _imageUrls.add(url));
+      return true;
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.toString())));
       }
+      return false;
     } finally {
-      if (mounted) setState(() => _isUploading = false);
+      if (!externallyManaged && mounted) {
+        setState(() => _isUploading = false);
+      }
     }
   }
 
@@ -649,13 +816,14 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
               const SizedBox(height: AppSizes.md),
             ],
             // ── Pick from gallery / camera ────────────────────────────
+            // Gallery uses pickMultiImage so the merchant can drop a
+            // whole product shoot in one tap; camera stays single
+            // because you can't capture a batch in one shutter press.
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: _isUploading
-                        ? null
-                        : () => _pickAndUploadImage(ImageSource.gallery),
+                    onPressed: _isUploading ? null : _pickAndUploadMultiple,
                     icon: const Icon(Icons.photo_library_rounded, size: 18),
                     label: const Text(AppStrings.pickFromGallery),
                   ),
@@ -671,6 +839,15 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                   ),
                 ),
               ],
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                _imageUrls.isEmpty
+                    ? 'Tap "Pick from gallery" to select multiple images at once. Up to $_maxGalleryImages per product.'
+                    : '${_imageUrls.length}/$_maxGalleryImages images added.',
+                style: const TextStyle(color: AppColors.muted, fontSize: 12),
+              ),
             ),
             if (_isUploading) ...[
               const SizedBox(height: AppSizes.sm),
@@ -723,6 +900,19 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
               ),
               maxLines: 2,
               textCapitalization: TextCapitalization.sentences,
+            ),
+            const SizedBox(height: AppSizes.md),
+            // Phase B — brand surfaces on the customer PDP under the
+            // product title and powers a future brand-filter facet.
+            // Free-text; promotion to FK happens later, when ≥3
+            // features key off it.
+            TextFormField(
+              controller: _brand,
+              decoration: const InputDecoration(
+                labelText: 'Brand',
+                hintText: 'e.g. Portronics, boAt — optional',
+              ),
+              textCapitalization: TextCapitalization.words,
             ),
             const SizedBox(height: AppSizes.md),
             Row(
@@ -884,6 +1074,50 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
             _OffersEditor(
               offers: _offers,
               onChange: () => setState(() => _dirty = true),
+            ),
+
+            const SizedBox(height: AppSizes.xxl),
+
+            // ── A+ content blocks (Phase C) ─────────────────────────
+            AppSectionHeader(
+              title: 'PRODUCT DESCRIPTION (A+ BLOCKS)',
+              padding: const EdgeInsets.only(bottom: AppSizes.sm),
+            ),
+            const Text(
+              'Hero image, feature tiles, comparison table, gallery or text. '
+              'Up to 8 blocks; renders inside the customer PDP Details tab.',
+              style: TextStyle(color: AppColors.muted, fontSize: 12),
+            ),
+            const SizedBox(height: AppSizes.sm),
+            ContentBlocksEditor(
+              blocks: _contentBlocks,
+              onChange: () => setState(() => _dirty = true),
+            ),
+
+            const SizedBox(height: AppSizes.xxl),
+
+            // ── Variants (Phase E) ───────────────────────────────────
+            AppSectionHeader(
+              title: 'VARIANTS',
+              padding: const EdgeInsets.only(bottom: AppSizes.sm),
+            ),
+            const Text(
+              'Optional. Declare axes (Colour, Size, …) and add one '
+              'variant per combination. The first product save creates '
+              'a default variant automatically; multi-variant editing '
+              'lands here.',
+              style: TextStyle(color: AppColors.muted, fontSize: 12),
+            ),
+            const SizedBox(height: AppSizes.sm),
+            VariantsEditor(
+              axes: _variantAxes,
+              variants: _variants,
+              defaultMrp: double.tryParse(_mrp.text) ?? 0,
+              defaultSellingPrice: double.tryParse(_sellingPrice.text) ?? 0,
+              defaultPurchasePrice: double.tryParse(_purchasePrice.text) ?? 0,
+              defaultSku: _sku.text,
+              onChange: () => setState(() => _dirty = true),
+              onUploadImage: _pickAndUploadVariantImage,
             ),
 
             const SizedBox(height: AppSizes.xxl),
@@ -1171,6 +1405,12 @@ class _SpecsEditorState extends State<_SpecsEditor> {
               setState(() => widget.groups[gi] = widget.groups[gi].copyWith(title: t));
               widget.onChange();
             },
+            onChangeTab: (t) {
+              setState(() => widget.groups[gi] = widget.groups[gi].copyWith(
+                    tab: t.trim().isEmpty ? null : t.trim(),
+                  ));
+              widget.onChange();
+            },
             onChangeRow: (ri, row) {
               setState(() {
                 final next = List<SpecRow>.from(widget.groups[gi].rows);
@@ -1217,6 +1457,7 @@ class _GroupCard extends StatelessWidget {
   const _GroupCard({
     required this.group,
     required this.onChangeTitle,
+    required this.onChangeTab,
     required this.onChangeRow,
     required this.onAddRow,
     required this.onRemoveRow,
@@ -1224,6 +1465,7 @@ class _GroupCard extends StatelessWidget {
   });
   final SpecGroup group;
   final ValueChanged<String> onChangeTitle;
+  final ValueChanged<String> onChangeTab;
   final void Function(int, SpecRow) onChangeRow;
   final VoidCallback onAddRow;
   final ValueChanged<int> onRemoveRow;
@@ -1260,6 +1502,20 @@ class _GroupCard extends StatelessWidget {
                 tooltip: 'Remove group',
               ),
             ],
+          ),
+          const SizedBox(height: 8),
+          // Optional subtab — when any group on a product carries one,
+          // the customer PDP chips the unique tabs above the spec
+          // table and filters groups by selection. Leave blank for a
+          // flat spec list (the default).
+          TextFormField(
+            initialValue: group.tab ?? '',
+            onChanged: onChangeTab,
+            decoration: const InputDecoration(
+              labelText: 'Tab (optional — e.g. Features & Specs)',
+              border: OutlineInputBorder(),
+              isDense: true,
+            ),
           ),
           const SizedBox(height: 8),
           for (var i = 0; i < group.rows.length; i++)
@@ -1311,8 +1567,14 @@ class _GroupCard extends StatelessWidget {
   }
 }
 
-/// Add/remove product offers. `kind` is a dropdown to keep merchants
-/// inside the four kinds the customer PDP knows how to render.
+/// Add/remove per-product offers. Coupon / EMI / Exchange — bank
+/// offers deliberately omitted: those are platform-wide tie-ups
+/// curated centrally by admins (see `PlatformBankOffer` on the
+/// backend). Letting individual merchants invent their own bank
+/// offers would (a) let them promise discounts a bank never agreed
+/// to fund, and (b) force them to re-type the same HDFC strip on
+/// every product. The PDP merges these merchant-scoped offers with
+/// the platform bank feed at render time.
 class _OffersEditor extends StatefulWidget {
   const _OffersEditor({required this.offers, required this.onChange});
   final List<ProductOffer> offers;
@@ -1322,7 +1584,7 @@ class _OffersEditor extends StatefulWidget {
 }
 
 class _OffersEditorState extends State<_OffersEditor> {
-  static const _kinds = <String>['BANK', 'COUPON', 'EMI', 'EXCHANGE'];
+  static const _kinds = <String>['COUPON', 'EMI', 'EXCHANGE'];
 
   void _addOffer() {
     setState(() => widget.offers.add(const ProductOffer(kind: 'COUPON', headline: '')));
@@ -1331,102 +1593,48 @@ class _OffersEditorState extends State<_OffersEditor> {
 
   @override
   Widget build(BuildContext context) {
+    // Bank offers were removed from this editor — surface that to the
+    // merchant explicitly so they don't go looking for the option.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: AppColors.infoSoft,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.account_balance_outlined,
+                  size: 16, color: AppColors.info),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Bank offers are platform-wide and managed centrally. '
+                  'Customers will still see HDFC / ICICI / SBI etc. on this '
+                  'product\'s page if a platform offer is active.',
+                  style: TextStyle(color: AppColors.info, fontSize: 12),
+                ),
+              ),
+            ],
+          ),
+        ),
         for (var i = 0; i < widget.offers.length; i++)
-          Container(
-            margin: const EdgeInsets.only(bottom: 10),
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.black12),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    SizedBox(
-                      width: 130,
-                      child: DropdownButtonFormField<String>(
-                        initialValue: widget.offers[i].kind,
-                        decoration: const InputDecoration(
-                          labelText: 'Kind',
-                          border: OutlineInputBorder(),
-                          isDense: true,
-                        ),
-                        items: [
-                          for (final k in _kinds)
-                            DropdownMenuItem(value: k, child: Text(k)),
-                        ],
-                        onChanged: (v) {
-                          if (v == null) return;
-                          setState(() => widget.offers[i] = widget.offers[i].copyWith(kind: v));
-                          widget.onChange();
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: TextFormField(
-                        initialValue: widget.offers[i].headline,
-                        onChanged: (v) {
-                          setState(() => widget.offers[i] = widget.offers[i].copyWith(headline: v));
-                          widget.onChange();
-                        },
-                        decoration: const InputDecoration(
-                          labelText: 'Headline',
-                          border: OutlineInputBorder(),
-                          isDense: true,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline),
-                      onPressed: () {
-                        setState(() => widget.offers.removeAt(i));
-                        widget.onChange();
-                      },
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        initialValue: widget.offers[i].detail ?? '',
-                        onChanged: (v) {
-                          setState(() => widget.offers[i] = widget.offers[i].copyWith(detail: v));
-                          widget.onChange();
-                        },
-                        decoration: const InputDecoration(
-                          labelText: 'Detail (optional)',
-                          border: OutlineInputBorder(),
-                          isDense: true,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    SizedBox(
-                      width: 140,
-                      child: TextFormField(
-                        initialValue: widget.offers[i].code ?? '',
-                        onChanged: (v) {
-                          setState(() => widget.offers[i] = widget.offers[i].copyWith(code: v));
-                          widget.onChange();
-                        },
-                        decoration: const InputDecoration(
-                          labelText: 'Code (optional)',
-                          border: OutlineInputBorder(),
-                          isDense: true,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+          _OfferRow(
+            key: ValueKey('offer-$i-${widget.offers[i].kind}'),
+            offer: widget.offers[i],
+            onChange: (next) {
+              setState(() => widget.offers[i] = next);
+              widget.onChange();
+            },
+            onRemove: () {
+              setState(() => widget.offers.removeAt(i));
+              widget.onChange();
+            },
+            kinds: _kinds,
           ),
         OutlinedButton.icon(
           onPressed: widget.offers.length >= 6 ? null : _addOffer,
@@ -1434,6 +1642,143 @@ class _OffersEditorState extends State<_OffersEditor> {
           label: const Text('Add offer'),
         ),
       ],
+    );
+  }
+}
+
+/// One offer row in the editor — freeform headline / detail / code.
+/// Kept as its own widget (rather than inlined into the editor's
+/// build) so each row owns its TextEditingControllers and the kind
+/// dropdown doesn't fight other rows for focus on rebuild.
+class _OfferRow extends StatefulWidget {
+  const _OfferRow({
+    super.key,
+    required this.offer,
+    required this.onChange,
+    required this.onRemove,
+    required this.kinds,
+  });
+  final ProductOffer offer;
+  final ValueChanged<ProductOffer> onChange;
+  final VoidCallback onRemove;
+  final List<String> kinds;
+
+  @override
+  State<_OfferRow> createState() => _OfferRowState();
+}
+
+class _OfferRowState extends State<_OfferRow> {
+  late TextEditingController _headline;
+  late TextEditingController _detail;
+  late TextEditingController _code;
+
+  @override
+  void initState() {
+    super.initState();
+    _headline = TextEditingController(text: widget.offer.headline);
+    _detail = TextEditingController(text: widget.offer.detail ?? '');
+    _code = TextEditingController(text: widget.offer.code ?? '');
+  }
+
+  @override
+  void dispose() {
+    _headline.dispose();
+    _detail.dispose();
+    _code.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.black12),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              SizedBox(
+                width: 130,
+                child: DropdownButtonFormField<String>(
+                  // Legacy BANK rows fall back to COUPON in the picker
+                  // (the on-wire `kind` stays as-is until the merchant
+                  // picks something explicitly). The PDP filters BANK
+                  // out of per-product offers regardless.
+                  initialValue: widget.kinds.contains(widget.offer.kind)
+                      ? widget.offer.kind
+                      : 'COUPON',
+                  decoration: const InputDecoration(
+                    labelText: 'Kind',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                  items: [
+                    for (final k in widget.kinds)
+                      DropdownMenuItem(value: k, child: Text(k)),
+                  ],
+                  onChanged: (v) {
+                    if (v == null) return;
+                    widget.onChange(widget.offer.copyWith(kind: v));
+                  },
+                ),
+              ),
+              const Spacer(),
+              IconButton(
+                icon: const Icon(Icons.delete_outline),
+                onPressed: widget.onRemove,
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          TextFormField(
+            controller: _headline,
+            onChanged: (v) =>
+                widget.onChange(widget.offer.copyWith(headline: v)),
+            decoration: const InputDecoration(
+              labelText: 'Headline',
+              hintText: 'e.g. ₹2000 off with code WELCOME',
+              border: OutlineInputBorder(),
+              isDense: true,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Expanded(
+                child: TextFormField(
+                  controller: _detail,
+                  onChanged: (v) =>
+                      widget.onChange(widget.offer.copyWith(detail: v)),
+                  decoration: const InputDecoration(
+                    labelText: 'Detail (optional)',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              SizedBox(
+                width: 140,
+                child: TextFormField(
+                  controller: _code,
+                  onChanged: (v) =>
+                      widget.onChange(widget.offer.copyWith(code: v)),
+                  decoration: const InputDecoration(
+                    labelText: 'Code (optional)',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

@@ -16,6 +16,8 @@ class AuthUser {
     this.shopGstin,
     this.shopPan,
     this.upiVpa,
+    this.avatarUrl,
+    this.phoneNumber,
   });
 
   final int id;
@@ -38,6 +40,10 @@ class AuthUser {
   final String? shopGstin;
   final String? shopPan;
   final String? upiVpa;
+  /// Profile photo URL (upload-service path). Null = initial fallback.
+  final String? avatarUrl;
+  /// Merchant phone number, editable from Edit Profile.
+  final String? phoneNumber;
 
   factory AuthUser.fromJson(Map<String, dynamic> j) => AuthUser(
         id: j['id'] as int,
@@ -56,6 +62,12 @@ class AuthUser {
         shopGstin: j['shopGstin'] as String?,
         shopPan: j['shopPan'] as String?,
         upiVpa: j['upiVpa'] as String?,
+        avatarUrl: (j['avatarUrl'] as String?)?.trim().isEmpty == false
+            ? (j['avatarUrl'] as String).trim()
+            : null,
+        phoneNumber: (j['phoneNumber'] as String?)?.trim().isEmpty == false
+            ? (j['phoneNumber'] as String).trim()
+            : null,
       );
 
   bool get isOwner => role == 'OWNER';
@@ -72,6 +84,8 @@ class AuthUser {
     String? shopGstin,
     String? shopPan,
     String? upiVpa,
+    String? avatarUrl,
+    String? phoneNumber,
   }) =>
       AuthUser(
         id: id,
@@ -90,5 +104,7 @@ class AuthUser {
         shopGstin: shopGstin ?? this.shopGstin,
         shopPan: shopPan ?? this.shopPan,
         upiVpa: upiVpa ?? this.upiVpa,
+        avatarUrl: avatarUrl ?? this.avatarUrl,
+        phoneNumber: phoneNumber ?? this.phoneNumber,
       );
 }
