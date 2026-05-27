@@ -36,9 +36,7 @@ import 'package:shopxy/features/admin/presentation/providers/admin_banners_provi
 import 'package:shopxy/features/admin/presentation/providers/admin_collections_provider.dart';
 import 'package:shopxy/features/admin/presentation/providers/admin_spotlight_provider.dart';
 import 'package:shopxy/features/carousel/data/datasources/carousels_remote_data_source.dart';
-import 'package:shopxy/features/carousel/data/datasources/merchant_carousel_remote_data_source.dart';
 import 'package:shopxy/features/carousel/presentation/providers/carousels_provider.dart';
-import 'package:shopxy/features/carousel/presentation/providers/merchant_carousel_provider.dart';
 import 'package:shopxy/features/flash_deals/data/datasources/flash_deals_remote_data_source.dart';
 import 'package:shopxy/features/flash_deals/presentation/providers/flash_deals_provider.dart';
 import 'package:shopxy/features/spotlight/data/datasources/spotlight_remote_data_source.dart';
@@ -97,7 +95,6 @@ void main() async {
   final paymentsDs = PaymentsRemoteDataSource(apiClient);
   final shopDs = ShopRemoteDataSource(apiClient);
   final adminBannersDs = AdminBannersRemoteDataSource(apiClient);
-  final merchantCarouselDs = MerchantCarouselRemoteDataSource(apiClient);
   final carouselsDs = CarouselsRemoteDataSource(apiClient);
   final carouselsProvider = CarouselsProvider(carouselsDs);
   final adminSpotlightDs = AdminSpotlightRemoteDataSource(apiClient);
@@ -200,9 +197,6 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ReportsProvider(reportsDs)),
         ChangeNotifierProvider<ShopProvider>.value(value: shopProvider),
         ChangeNotifierProvider(create: (_) => AdminBannersProvider(adminBannersDs)),
-        ChangeNotifierProvider(
-          create: (_) => MerchantCarouselProvider(merchantCarouselDs),
-        ),
         ChangeNotifierProvider<CarouselsProvider>.value(value: carouselsProvider),
         ChangeNotifierProvider(create: (_) => AdminSpotlightProvider(adminSpotlightDs)),
         ChangeNotifierProvider(create: (_) => AdminCollectionsProvider(adminCollectionsDs)),
