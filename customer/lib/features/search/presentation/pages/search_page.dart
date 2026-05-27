@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:shopxy_customer/core/network/image_url.dart';
 import 'package:shopxy_customer/features/home/presentation/widgets/network_image_box.dart';
 import 'package:shopxy_customer/features/marketplace/presentation/pages/product_detail_page.dart';
+import 'package:shopxy_customer/features/marketplace/presentation/widgets/filter_sheet.dart';
 import 'package:shopxy_customer/features/marketplace/presentation/pages/shop_profile_page.dart';
 import 'package:shopxy_customer/features/search/data/datasources/marketplace_search_remote_data_source.dart';
 import 'package:shopxy_customer/features/search/presentation/providers/search_provider.dart';
@@ -369,7 +370,31 @@ class _ResultsList extends StatelessWidget {
       separatorBuilder: (_, index) =>
           const Divider(height: 1, color: AppColors.hairline),
       itemBuilder: (context, i) {
-        if (i == 0) return _SemanticBadge(semantic: semantic, count: results.length);
+        if (i == 0) {
+          return Row(
+            children: [
+              Expanded(
+                child:
+                    _SemanticBadge(semantic: semantic, count: results.length),
+              ),
+              _FilterButton(
+                onTap: () async {
+                  final p = context.read<SearchProvider>();
+                  final facets = p.facets;
+                  if (facets == null) return;
+                  final next = await showFilterSheet(
+                    context: context,
+                    initial: p.filters,
+                    facets: facets,
+                  );
+                  if (next != null) p.setFilters(next);
+                },
+                activeCount: context.watch<SearchProvider>().filters.activeCount,
+                disabled: context.watch<SearchProvider>().facets == null,
+              ),
+            ],
+          );
+        }
         final p = results[i - 1];
         return InkWell(
           onTap: () {
@@ -568,6 +593,42 @@ class _ErrorBlock extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _FilterButton extends StatelessWidget {
+  const _FilterButton({
+    required this.onTap,
+    required this.activeCount,
+    required this.disabled,
+  });
+  final VoidCallback onTap;
+  final int activeCount;
+  final bool disabled;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasActive = activeCount > 0;
+    return TextButton.icon(
+      onPressed: disabled ? null : onTap,
+      icon: Icon(
+        Icons.tune_rounded,
+        size: 18,
+        color: hasActive ? AppColors.brand : AppColors.muted,
+      ),
+      label: Text(
+        hasActive ? 'Filters · $activeCount' : 'Filters',
+        style: TextStyle(
+          color: hasActive ? AppColors.brand : AppColors.muted,
+          fontWeight: FontWeight.w700,
+          fontSize: 12,
+        ),
+      ),
+      style: TextButton.styleFrom(
+        visualDensity: VisualDensity.compact,
+        padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm),
       ),
     );
   }

@@ -11,7 +11,9 @@ import 'package:shopxy_customer/features/profile/presentation/pages/notification
 import 'package:shopxy_customer/features/recently_viewed/presentation/pages/recently_viewed_page.dart';
 import 'package:shopxy_customer/features/returns/presentation/pages/my_returns_page.dart';
 import 'package:shopxy_customer/features/reviews/presentation/pages/my_reviews_page.dart';
+import 'package:shopxy_customer/features/coupons/presentation/pages/my_coupons_page.dart';
 import 'package:shopxy_customer/features/shops/presentation/pages/linked_merchants_page.dart';
+import 'package:shopxy_customer/features/shops/presentation/pages/my_shops_page.dart';
 import 'package:shopxy_customer/features/profile/presentation/widgets/profile_avatar.dart';
 import 'package:shopxy_customer/features/wallet/presentation/pages/wallet_page.dart';
 import 'package:shopxy_customer/features/wishlist/presentation/pages/wishlist_page.dart';
@@ -112,6 +114,14 @@ class CustomerProfilePage extends StatelessWidget {
             ),
           ),
           _Row(
+            icon: Icons.receipt_long_outlined,
+            title: 'Invoices from shops',
+            subtitle: 'Tap a shop to see the invoices it sent you',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const MyShopsPage()),
+            ),
+          ),
+          _Row(
             icon: Icons.location_on_outlined,
             title: 'Delivery addresses',
             onTap: () => Navigator.of(context).push(
@@ -128,6 +138,14 @@ class CustomerProfilePage extends StatelessWidget {
             subtitle: 'Items you saved for later',
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const WishlistPage()),
+            ),
+          ),
+          _Row(
+            icon: Icons.local_offer_outlined,
+            title: 'My coupons',
+            subtitle: 'Redeemable promo codes from your shops',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const MyCouponsPage()),
             ),
           ),
           _Row(
