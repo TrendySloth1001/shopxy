@@ -89,24 +89,6 @@ const updateBannerSchema = createBannerSchema
     message: 'At least one field is required',
   });
 
-// Merchant-side schemas — same shape as the admin ones but with
-// `sponsorShopId` dropped (the service stamps it from req.shopId).
-//
-// `carouselId` is also stripped from /me/banners writes: that legacy
-// route stays as a thin shim during the Phase 1→7 deprecation window,
-// and carousel ownership is properly validated on the Phase 2
-// /me/carousels/:cid/slides routes (which resolve cid → shopId and
-// reject cross-shop probes).
-const merchantCreateBannerSchema = createBannerSchema.omit({
-  sponsorShopId: true,
-  carouselId: true,
-});
-const merchantUpdateBannerSchema = merchantCreateBannerSchema
-  .partial()
-  .refine((d) => Object.keys(d).length > 0, {
-    message: 'At least one field is required',
-  });
-
 // Replace-the-list payload for /me/banners/:id/products. Empty `items`
 // is allowed — that clears the slide's linked products.
 const replaceBannerProductsSchema = z.object({
@@ -246,50 +228,12 @@ export class BannersController {
     res.json(banner);
   }
 
-  async createForShop(req: Request, res: Response): Promise<void> {
-    const payload = merchantCreateBannerSchema.parse(req.body);
-    const banner = await bannersService.createForShop(req.shopId!, {
-      ...payload,
-      startAt: toDate(payload.startAt),
-      endAt: toDate(payload.endAt),
-    });
-    res.status(201).json(banner);
-  }
-
-  async updateForShop(req: Request, res: Response): Promise<void> {
-    const id = parseId(req.params.id);
-    if (!id) {
-      res.status(400).json({ error: 'Invalid id' });
-      return;
-    }
-    const payload = merchantUpdateBannerSchema.parse(req.body);
-    const banner = await bannersService.updateForShop(req.shopId!, id, {
-      ...payload,
-      startAt: toDate(payload.startAt),
-      endAt: toDate(payload.endAt),
-    });
-    if (!banner) {
-      res.status(404).json({ error: 'Banner not found' });
-      return;
-    }
-    res.json(banner);
-  }
-
-  async deleteForShop(req: Request, res: Response): Promise<void> {
-    const id = parseId(req.params.id);
-    if (!id) {
-      res.status(400).json({ error: 'Invalid id' });
-      return;
-    }
-    const ok = await bannersService.deleteForShop(req.shopId!, id);
-    if (!ok) {
-      res.status(404).json({ error: 'Banner not found' });
-      return;
-    }
-    res.status(204).send();
-  }
-
   // ── Per-slide linked products (merchant + public) ────────────────
+  //
+  // POST/PATCH/DELETE on /me/banners returned 410 GONE in Phase 7;
+  // new writes go through /me/carousels/:cid/slides. The linked-
+  // products PUT/GET below survive the deprecation because the new
+  // slide editor doesn't yet host its own product picker.
 
   async listProductsForShopBanner(
     req: Request,

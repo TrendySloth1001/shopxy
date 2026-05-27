@@ -13,10 +13,9 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 /// editor; the "+ New carousel" FAB creates a new one and pushes
 /// straight into its editor.
 ///
-/// Replaces `MyCarouselPage` (the bottom-sheet host) — once Phase 7
-/// runs, the old page + its bottom-sheet editor get deleted. Both
-/// surfaces coexist until then so the merchant can still fall back if
-/// the new editor has issues.
+/// Replaced the legacy `MyCarouselPage` + bottom-sheet editor in
+/// Phase 7. The merchant has one canonical surface now; new shop
+/// builds go straight here from the drawer shortcut.
 class MyCarouselsPage extends StatefulWidget {
   const MyCarouselsPage({super.key});
 

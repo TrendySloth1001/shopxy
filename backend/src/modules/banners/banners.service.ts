@@ -302,34 +302,11 @@ export class BannersService {
     });
   }
 
-  async createForShop(
-    shopId: number,
-    input: Omit<CreateBannerInput, 'sponsorShopId'>,
-  ) {
-    return this.create({ ...input, sponsorShopId: shopId });
-  }
-
-  async updateForShop(shopId: number, id: number, input: UpdateBannerInput) {
-    // Existence + ownership check in one query — keeps the merchant
-    // from updating somebody else's banner even with a guessed id.
-    const owned = await prisma.banner.findFirst({
-      where: { id, sponsorShopId: shopId },
-      select: { id: true },
-    });
-    if (!owned) return null;
-    // Never let the merchant re-parent a banner onto another shop.
-    const { sponsorShopId: _ignored, ...rest } = input;
-    return this.update(id, rest);
-  }
-
-  async deleteForShop(shopId: number, id: number) {
-    const owned = await prisma.banner.findFirst({
-      where: { id, sponsorShopId: shopId },
-      select: { id: true },
-    });
-    if (!owned) return false;
-    return this.delete(id);
-  }
+  // createForShop / updateForShop / deleteForShop were removed in
+  // Phase 7. New merchant writes go through carouselsService.{create,
+  // update,delete}Slide which already scopes by carousel ownership.
+  // listForShop / getByIdForShop survive as read-only shims so older
+  // merchant builds can still list the slides from /me/banners.
 
   // ── Per-slide linked products (BannerProduct) ────────────────────
   //
