@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shopxy_customer/features/banner_slide/presentation/pages/banner_slide_detail_page.dart';
 import 'package:shopxy_customer/features/home/data/models/home_feed_models.dart';
+import 'package:shopxy_customer/features/home/presentation/widgets/freeform_slide_card.dart';
 import 'package:shopxy_customer/features/home/presentation/widgets/hero_slide_templates.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
@@ -111,9 +112,13 @@ class _HeroSlideCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final body = switch (slide.mode) {
+      HeroSlideMode.freeform => FreeformSlideCard(slide: slide),
+      HeroSlideMode.templated => HeroSlideTemplateRenderer(slide: slide),
+    };
     return Stack(
       children: [
-        HeroSlideTemplateRenderer(slide: slide),
+        body,
         const Positioned(
           right: 6,
           bottom: 6,
