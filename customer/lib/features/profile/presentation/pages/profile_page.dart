@@ -12,6 +12,7 @@ import 'package:shopxy_customer/features/recently_viewed/presentation/pages/rece
 import 'package:shopxy_customer/features/returns/presentation/pages/my_returns_page.dart';
 import 'package:shopxy_customer/features/reviews/presentation/pages/my_reviews_page.dart';
 import 'package:shopxy_customer/features/shops/presentation/pages/linked_merchants_page.dart';
+import 'package:shopxy_customer/features/shops/presentation/pages/my_shops_page.dart';
 import 'package:shopxy_customer/features/profile/presentation/widgets/profile_avatar.dart';
 import 'package:shopxy_customer/features/wallet/presentation/pages/wallet_page.dart';
 import 'package:shopxy_customer/features/wishlist/presentation/pages/wishlist_page.dart';
@@ -109,6 +110,14 @@ class CustomerProfilePage extends StatelessWidget {
             subtitle: 'Browse shops you have a relationship with',
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const LinkedMerchantsPage()),
+            ),
+          ),
+          _Row(
+            icon: Icons.receipt_long_outlined,
+            title: 'Invoices from shops',
+            subtitle: 'Tap a shop to see the invoices it sent you',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const MyShopsPage()),
             ),
           ),
           _Row(
