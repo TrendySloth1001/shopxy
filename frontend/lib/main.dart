@@ -35,7 +35,9 @@ import 'package:shopxy/features/admin/presentation/providers/admin_bank_offers_p
 import 'package:shopxy/features/admin/presentation/providers/admin_banners_provider.dart';
 import 'package:shopxy/features/admin/presentation/providers/admin_collections_provider.dart';
 import 'package:shopxy/features/admin/presentation/providers/admin_spotlight_provider.dart';
+import 'package:shopxy/features/carousel/data/datasources/carousels_remote_data_source.dart';
 import 'package:shopxy/features/carousel/data/datasources/merchant_carousel_remote_data_source.dart';
+import 'package:shopxy/features/carousel/presentation/providers/carousels_provider.dart';
 import 'package:shopxy/features/carousel/presentation/providers/merchant_carousel_provider.dart';
 import 'package:shopxy/features/flash_deals/data/datasources/flash_deals_remote_data_source.dart';
 import 'package:shopxy/features/flash_deals/presentation/providers/flash_deals_provider.dart';
@@ -96,6 +98,8 @@ void main() async {
   final shopDs = ShopRemoteDataSource(apiClient);
   final adminBannersDs = AdminBannersRemoteDataSource(apiClient);
   final merchantCarouselDs = MerchantCarouselRemoteDataSource(apiClient);
+  final carouselsDs = CarouselsRemoteDataSource(apiClient);
+  final carouselsProvider = CarouselsProvider(carouselsDs);
   final adminSpotlightDs = AdminSpotlightRemoteDataSource(apiClient);
   final adminCollectionsDs = AdminCollectionsRemoteDataSource(apiClient);
   final adminBankOffersDs = AdminBankOffersRemoteDataSource(apiClient);
@@ -129,6 +133,7 @@ void main() async {
   authProvider.registerOnClear(challansProvider.reset);
   authProvider.registerOnClear(shopProvider.reset);
   authProvider.registerOnClear(ordersProvider.reset);
+  authProvider.registerOnClear(carouselsProvider.reset);
 
   // When ApiClient can't recover a 401 (refresh failed), force re-login
   // — the registered callbacks fan out via clearAuth().
@@ -198,6 +203,7 @@ void main() async {
         ChangeNotifierProvider(
           create: (_) => MerchantCarouselProvider(merchantCarouselDs),
         ),
+        ChangeNotifierProvider<CarouselsProvider>.value(value: carouselsProvider),
         ChangeNotifierProvider(create: (_) => AdminSpotlightProvider(adminSpotlightDs)),
         ChangeNotifierProvider(create: (_) => AdminCollectionsProvider(adminCollectionsDs)),
         ChangeNotifierProvider(create: (_) => AdminBankOffersProvider(adminBankOffersDs)),

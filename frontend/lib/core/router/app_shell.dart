@@ -19,7 +19,7 @@ import 'package:shopxy/features/admin/presentation/pages/admin_category_taxonomy
 import 'package:shopxy/features/admin/presentation/pages/admin_collections_page.dart';
 import 'package:shopxy/features/admin/presentation/pages/admin_shops_page.dart';
 import 'package:shopxy/features/admin/presentation/pages/admin_spotlight_approval_page.dart';
-import 'package:shopxy/features/carousel/presentation/pages/my_carousel_page.dart';
+import 'package:shopxy/features/carousel/presentation/pages/my_carousels_page.dart';
 import 'package:shopxy/features/coupons/presentation/pages/merchant_coupons_page.dart';
 import 'package:shopxy/features/returns/presentation/pages/merchant_returns_page.dart';
 import 'package:shopxy/features/spotlight/presentation/pages/spotlight_request_page.dart';
@@ -87,11 +87,11 @@ List<_Shortcut> get _manageShortcuts => [
         builder: (_) => const ShopProfilePage(),
       ),
       _Shortcut(
-        label: 'My Carousel',
+        label: 'My Carousels',
         icon: Icons.view_carousel_outlined,
         accent: AppColors.accentIndigo,
         accentSoft: AppColors.accentIndigoSoft,
-        builder: (_) => const MyCarouselPage(),
+        builder: (_) => const MyCarouselsPage(),
       ),
       _Shortcut(
         label: 'Flash deals',
