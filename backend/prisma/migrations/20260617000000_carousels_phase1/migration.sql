@@ -34,7 +34,10 @@ CREATE TABLE IF NOT EXISTS "carousels" (
   "end_at"     TIMESTAMP(3),
   "sort_order" INTEGER NOT NULL DEFAULT 0,
   "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  -- No DEFAULT on updated_at: Prisma's @updatedAt directive manages
+  -- this field in app code; a SQL-level DEFAULT trips `migrate dev`
+  -- into auto-generating a follow-up ALTER on every regen.
+  "updated_at" TIMESTAMP(3) NOT NULL,
   CONSTRAINT "carousels_shop_id_fkey"
     FOREIGN KEY ("shop_id") REFERENCES "shops"("id")
     ON DELETE CASCADE ON UPDATE CASCADE

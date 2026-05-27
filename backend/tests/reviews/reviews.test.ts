@@ -68,10 +68,15 @@ describe('product reviews — gating', () => {
       const product = await createTestProduct(merchant.shopId);
       // Backdoor: write a DRAFT invoice directly. Service must reject.
       const party = await prisma.party.create({
-        data: { name: 'Draft buyer', linkedUserId: buyer.userId },
+        data: {
+          shopId: merchant.shopId,
+          name: 'Draft buyer',
+          linkedUserId: buyer.userId,
+        },
       });
       await prisma.invoice.create({
         data: {
+          shopId: merchant.shopId,
           invoiceNo: 'DRAFT/TEST',
           type: 'SALE',
           financialYear: '25-26',
