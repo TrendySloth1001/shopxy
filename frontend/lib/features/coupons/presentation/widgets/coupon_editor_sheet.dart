@@ -157,10 +157,12 @@ class _CouponEditorSheetState extends State<_CouponEditorSheet> {
       }
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
-      if (mounted) setState(() {
+      if (mounted) {
+        setState(() {
         _saving = false;
         _error = e.toString().replaceFirst('Exception: ', '');
       });
+      }
     }
   }
 

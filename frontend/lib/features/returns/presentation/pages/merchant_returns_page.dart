@@ -48,15 +48,19 @@ class _MerchantReturnsPageState extends State<MerchantReturnsPage> {
     try {
       final ds = context.read<MerchantReturnsRemoteDataSource>();
       final res = await ds.list(status: _tabs[_index].status);
-      if (mounted) setState(() {
+      if (mounted) {
+        setState(() {
         _rows = res.data;
         _loading = false;
       });
+      }
     } catch (e) {
-      if (mounted) setState(() {
+      if (mounted) {
+        setState(() {
         _loading = false;
         _error = e.toString().replaceFirst('Exception: ', '');
       });
+      }
     }
   }
 

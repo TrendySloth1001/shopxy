@@ -41,15 +41,19 @@ class _MerchantCouponsPageState extends State<MerchantCouponsPage> {
     try {
       final ds = context.read<MerchantCouponsRemoteDataSource>();
       final rows = await ds.list();
-      if (mounted) setState(() {
+      if (mounted) {
+        setState(() {
         _rows = rows;
         _loading = false;
       });
+      }
     } catch (e) {
-      if (mounted) setState(() {
+      if (mounted) {
+        setState(() {
         _loading = false;
         _error = e.toString().replaceFirst('Exception: ', '');
       });
+      }
     }
   }
 
@@ -62,6 +66,11 @@ class _MerchantCouponsPageState extends State<MerchantCouponsPage> {
   }
 
   Future<void> _deactivate(MerchantCoupon c) async {
+    // Snapshot the data source + messenger BEFORE any await so we
+    // don't read from `context` after an async gap (lint
+    // use_build_context_synchronously).
+    final ds = context.read<MerchantCouponsRemoteDataSource>();
+    final messenger = ScaffoldMessenger.of(context);
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -85,11 +94,11 @@ class _MerchantCouponsPageState extends State<MerchantCouponsPage> {
     );
     if (ok != true) return;
     try {
-      await context.read<MerchantCouponsRemoteDataSource>().deactivate(c.id);
+      await ds.deactivate(c.id);
+      if (!mounted) return;
       _load();
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
       );
     }
