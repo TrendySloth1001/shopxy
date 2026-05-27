@@ -252,8 +252,11 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
       onPopInvokedWithResult: (didPop, _) async {
         if (didPop) return;
         if (!mounted) return;
+        // Snapshot the Navigator BEFORE the dialog await so we don't
+        // touch context after the gap (lint use_build_context_sync).
+        final nav = Navigator.of(context);
         final discard = await _confirmDiscard(context);
-        if (discard && mounted) Navigator.of(context).pop();
+        if (discard && mounted) nav.pop();
       },
       child: Scaffold(
       backgroundColor: AppColors.canvas,

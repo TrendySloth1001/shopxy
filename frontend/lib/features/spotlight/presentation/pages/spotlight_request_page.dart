@@ -484,7 +484,7 @@ class _SpotlightSubmitSheetState extends State<_SpotlightSubmitSheet> {
       'bgColor': _bgColor.text.trim(),
       if (_accentColor.text.trim().isNotEmpty)
         'accentColor': _accentColor.text.trim(),
-      if (ctaTarget != null) 'ctaTarget': ctaTarget,
+      'ctaTarget': ?ctaTarget,
       'startAt': _startAt!.toUtc().toIso8601String(),
       'endAt': _endAt!.toUtc().toIso8601String(),
     };
