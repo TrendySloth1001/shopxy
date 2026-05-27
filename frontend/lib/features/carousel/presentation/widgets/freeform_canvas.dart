@@ -310,9 +310,14 @@ class _TextBlockView extends StatelessWidget {
   }
 
   Color get _color {
+    // The hex inspector field accepts free-form input; mid-edit values
+    // ('#FFF', '#zz0000') reach us before the merchant finishes typing.
+    // Fall back to white so the preview never throws while typing.
     final raw = block.color.replaceFirst('#', '');
+    if (raw.length != 6 && raw.length != 8) return Colors.white;
     final normalised = raw.length == 6 ? 'FF$raw' : raw;
-    return Color(int.parse(normalised, radix: 16));
+    final parsed = int.tryParse(normalised, radix: 16);
+    return parsed == null ? Colors.white : Color(parsed);
   }
 
   @override

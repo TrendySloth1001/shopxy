@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/core/network/image_url.dart';
 import 'package:shopxy/features/admin/data/models/banner.dart';
 import 'package:shopxy/features/carousel/data/models/carousel.dart';
 import 'package:shopxy/features/carousel/presentation/providers/carousels_provider.dart';
@@ -377,24 +378,31 @@ class _SlideEditorPageState extends State<SlideEditorPage>
           ],
         ),
       ),
-      body: Column(
+      // The Templated preview sits inside the Templated tab so it
+      // doesn't waste vertical real estate on the Freeform tab — there,
+      // the editable canvas IS the preview (any drag on it moves the
+      // block on the customer-rendered slide too).
+      body: TabBarView(
+        controller: _tab,
         children: [
-          _PreviewHeader(
-            template: _template,
-            title: _title.text.isEmpty ? 'Your slide title' : _title.text,
-            subtitle: _subtitle.text.isEmpty ? null : _subtitle.text,
-            brandLabel: _brandLabel.text.isEmpty ? null : _brandLabel.text,
-            ctaText: _ctaText.text.isEmpty ? null : _ctaText.text,
-            imageUrl: _imageUrl,
-            imageFit: _imageFit,
-            bgColor: _parseColor(_bgColor.text),
-            accent: _parseColor(_accentColor.text, fallback: AppColors.black),
-          ),
-          Expanded(
-            child: TabBarView(
-              controller: _tab,
-              children: [
-                _TemplatedTab(
+          Column(
+            children: [
+              _PreviewHeader(
+                template: _template,
+                title:
+                    _title.text.isEmpty ? 'Your slide title' : _title.text,
+                subtitle: _subtitle.text.isEmpty ? null : _subtitle.text,
+                brandLabel:
+                    _brandLabel.text.isEmpty ? null : _brandLabel.text,
+                ctaText: _ctaText.text.isEmpty ? null : _ctaText.text,
+                imageUrl: _imageUrl,
+                imageFit: _imageFit,
+                bgColor: _parseColor(_bgColor.text),
+                accent:
+                    _parseColor(_accentColor.text, fallback: AppColors.black),
+              ),
+              Expanded(
+                child: _TemplatedTab(
                   template: _template,
                   onTemplate: (t) => setState(() => _template = t),
                   imageFit: _imageFit,
@@ -414,29 +422,29 @@ class _SlideEditorPageState extends State<SlideEditorPage>
                   parseColor: _parseColor,
                   onAnyChange: () => setState(() {}),
                 ),
-                _FreeformTab(
-                  imageUrl: _imageUrl,
-                  imageFit: _imageFit,
-                  onImageFit: (f) => setState(() => _imageFit = f),
-                  onPickImage: _busy ? null : _pickImage,
-                  bgColor: _parseColor(_bgColor.text),
-                  bgColorHex: _bgColor,
-                  onBgChange: () => setState(() {}),
-                  transform: _imageTransform,
-                  onTransform: (t) => setState(() => _imageTransform = t),
-                  blocks: _textBlocks,
-                  selectedBlockId: _selectedBlockId,
-                  onSelect: (id) => setState(() => _selectedBlockId = id),
-                  onBlockChanged: _patchBlock,
-                  onAddBlock: _addTextBlock,
-                  onDeleteBlock: _deleteSelectedBlock,
-                  selectedBlock: _selectedBlock,
-                  sortOrder: _sortOrder,
-                  isActive: _isActive,
-                  onActiveChanged: (v) => setState(() => _isActive = v),
-                ),
-              ],
-            ),
+              ),
+            ],
+          ),
+          _FreeformTab(
+            imageUrl: _imageUrl,
+            imageFit: _imageFit,
+            onImageFit: (f) => setState(() => _imageFit = f),
+            onPickImage: _busy ? null : _pickImage,
+            bgColor: _parseColor(_bgColor.text),
+            bgColorHex: _bgColor,
+            onBgChange: () => setState(() {}),
+            transform: _imageTransform,
+            onTransform: (t) => setState(() => _imageTransform = t),
+            blocks: _textBlocks,
+            selectedBlockId: _selectedBlockId,
+            onSelect: (id) => setState(() => _selectedBlockId = id),
+            onBlockChanged: _patchBlock,
+            onAddBlock: _addTextBlock,
+            onDeleteBlock: _deleteSelectedBlock,
+            selectedBlock: _selectedBlock,
+            sortOrder: _sortOrder,
+            isActive: _isActive,
+            onActiveChanged: (v) => setState(() => _isActive = v),
           ),
         ],
       ),
@@ -805,7 +813,10 @@ class _ImageRow extends StatelessWidget {
           child: imageUrl == null
               ? const Icon(Icons.image_outlined, color: AppColors.muted)
               : Image.network(
-                  imageUrl!,
+                  // Server-relative URLs ('/images/abc.webp') reach us
+                  // straight from /me/upload; resolveImageUrl prefixes
+                  // the API base so they actually load.
+                  resolveImageUrl(imageUrl!),
                   fit: imageFit == BannerImageFit.contain
                       ? BoxFit.contain
                       : BoxFit.cover,
