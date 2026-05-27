@@ -9,6 +9,7 @@ import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/custom_fields/presentation/pages/custom_fields_settings_page.dart';
 import 'package:shopxy/features/profile/presentation/pages/change_password_page.dart';
 import 'package:shopxy/features/profile/presentation/pages/edit_profile_page.dart';
+import 'package:shopxy/features/shop/presentation/pages/shop_operations_page.dart';
 import 'package:shopxy/features/profile/presentation/pages/legal_page.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';

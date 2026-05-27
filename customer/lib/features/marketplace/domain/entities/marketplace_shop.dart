@@ -18,6 +18,9 @@ class MarketplaceShop {
     this.shippingPolicy,
     this.refundPolicy,
     this.joinedAt,
+    this.vacationMode = false,
+    this.vacationMessage,
+    this.operatingHours,
   });
 
   final int id;
@@ -41,6 +44,12 @@ class MarketplaceShop {
   /// When the shop was first created — surfaced as "Selling since …"
   /// on the public shop page. Backend exposes this as `createdAt`.
   final DateTime? joinedAt;
+  /// When true, the shop is on vacation — the customer PDP shows a
+  /// banner and add-to-cart is muted with a snackbar.
+  final bool vacationMode;
+  final String? vacationMessage;
+  /// `mon` → ['09:00', '21:00']. Days not in the map = closed.
+  final Map<String, List<String>>? operatingHours;
 
   /// Composed "City, State" or just whichever half is present.
   String? get locationLabel {
@@ -77,6 +86,21 @@ class MarketplaceShop {
       joinedAt: j['createdAt'] == null
           ? null
           : DateTime.tryParse(j['createdAt'] as String),
+      vacationMode: (j['vacationMode'] as bool?) ?? false,
+      vacationMessage: j['vacationMessage'] as String?,
+      operatingHours: _parseHours(j['operatingHours']),
     );
+  }
+
+  static Map<String, List<String>>? _parseHours(dynamic raw) {
+    if (raw is! Map) return null;
+    final out = <String, List<String>>{};
+    for (final e in raw.entries) {
+      final v = e.value;
+      if (v is List && v.length == 2) {
+        out[e.key.toString()] = [v[0].toString(), v[1].toString()];
+      }
+    }
+    return out.isEmpty ? null : out;
   }
 }
