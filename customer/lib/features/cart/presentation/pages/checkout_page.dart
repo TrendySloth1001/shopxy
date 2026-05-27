@@ -52,6 +52,35 @@ class _CheckoutPageState extends State<CheckoutPage> {
   void initState() {
     super.initState();
     _primeWallet();
+    // Public coupons should auto-apply without a code entry — the
+    // "your coupon code doesn't work" complaint was almost always
+    // about a store-wide coupon the customer expected to be applied
+    // for them already. Fire-and-forget after the first frame so the
+    // checkout UI doesn't block on a network round-trip.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _tryAutoApply());
+  }
+
+  Future<void> _tryAutoApply() async {
+    if (!mounted) return;
+    // Don't override a manual entry — if the customer typed a code
+    // first, leave it. The auto-apply call only ever upgrades the
+    // empty-coupon state.
+    if (_appliedCoupon?.ok == true) return;
+    final cart = context.read<CartProvider>();
+    if (cart.isEmpty) return;
+    try {
+      final preview = await context.read<CouponsRemoteDataSource>().autoApply(
+            subtotal: cart.itemsTotal,
+            shopIds: cart.shopIds,
+          );
+      if (!mounted) return;
+      if (preview.ok) {
+        setState(() => _appliedCoupon = preview);
+      }
+    } catch (_) {
+      // Best-effort — a failure here just means the customer falls
+      // back to typing a code, same as before.
+    }
   }
 
   Future<void> _primeWallet() async {
@@ -1364,12 +1393,40 @@ class _CouponCardState extends State<_CouponCard> {
                 ? Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '${c!.code} applied',
-                        style: const TextStyle(
-                          color: AppColors.brand,
-                          fontWeight: FontWeight.w800,
-                        ),
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              c!.autoApplied
+                                  ? 'Auto-applied · ${c.code}'
+                                  : '${c.code} applied',
+                              style: const TextStyle(
+                                color: AppColors.brand,
+                                fontWeight: FontWeight.w800,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (c.autoApplied)
+                            Container(
+                              margin: const EdgeInsets.only(left: 6),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: AppColors.brand,
+                                borderRadius: BorderRadius.circular(3),
+                              ),
+                              child: const Text(
+                                'OFFER',
+                                style: TextStyle(
+                                  color: AppColors.white,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.6,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                       if (c.discount != null)
                         Text(

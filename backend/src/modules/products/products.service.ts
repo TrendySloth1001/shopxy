@@ -3,6 +3,28 @@ import prisma from '../../infra/db/prisma.js';
 import { ledgerService } from '../ledger/ledger.service.js';
 import { embeddingService } from '../search/embedding.service.js';
 
+/// Strip the obvious script-injection vectors from TEXT block markdown
+/// before it lands in the DB. We trust the Zod schema to enforce shape;
+/// this just makes sure the DB column never holds a payload that could
+/// turn into XSS if the customer renderer ever switches to HTML mode.
+/// Whitelist-rendering on the client (no raw HTML) is the real defence
+/// — this is the second line.
+function sanitizeContentBlocks(blocks: unknown): unknown {
+  if (!Array.isArray(blocks)) return blocks;
+  const stripTags = /<\s*\/?\s*(script|iframe|object|embed|style)[^>]*>/gi;
+  const stripEvents = /\son\w+\s*=\s*"[^"]*"|\son\w+\s*=\s*'[^']*'/gi;
+  return blocks.map((b) => {
+    if (b && typeof b === 'object' && (b as { kind?: string }).kind === 'TEXT') {
+      const cur = b as { kind: 'TEXT'; markdown: string };
+      return {
+        ...cur,
+        markdown: cur.markdown.replace(stripTags, '').replace(stripEvents, ''),
+      };
+    }
+    return b;
+  });
+}
+
 const productSelect = {
   id: true,
   name: true,
@@ -28,11 +50,39 @@ const productSelect = {
   specs: true,
   offers: true,
   totalSold: true,
+  // Phase B fields — merchant editor sets brand; soldLast30d and
+  // systemTags are read-only from the editor's perspective (set by
+  // scheduler / admin).
+  brand: true,
+  soldLast30d: true,
+  systemTags: true,
+  // Phase C — A+ content blocks edited by the merchant, rendered in
+  // the customer PDP Details tab.
+  contentBlocks: true,
+  // Phase E — variant axes + variants list.
+  variantAxes: true,
+  variants: {
+    orderBy: { sortOrder: 'asc' as const },
+    select: {
+      id: true,
+      sku: true,
+      barcode: true,
+      attributes: true,
+      mrp: true,
+      sellingPrice: true,
+      purchasePrice: true,
+      stockQuantity: true,
+      imageUrls: true,
+      isDefault: true,
+      isActive: true,
+      sortOrder: true,
+    },
+  },
   createdAt: true,
   updatedAt: true,
   category: true,
   images: { orderBy: { sortOrder: 'asc' as const } },
-} as const;
+} satisfies Prisma.ProductSelect;
 
 export class ProductsService {
   async createProduct(
@@ -42,6 +92,7 @@ export class ProductsService {
       sku: string;
       barcode?: string;
       hsnCode?: string;
+      brand?: string;
       mrp: number;
       sellingPrice: number;
       purchasePrice: number;
@@ -55,10 +106,33 @@ export class ProductsService {
       highlights?: string[];
       specs?: unknown;
       offers?: unknown;
+      contentBlocks?: unknown;
+      variantAxes?: unknown;
+      variants?: Array<{
+        sku: string;
+        barcode?: string | null;
+        attributes: Record<string, string>;
+        mrp: number;
+        sellingPrice: number;
+        purchasePrice: number;
+        stockQuantity?: number;
+        imageUrls?: string[];
+        isActive?: boolean;
+        sortOrder?: number;
+      }>;
     },
     options: { createdById?: number; shopId?: number } = {},
   ) {
-    const { imageUrls, stockQuantity, specs, offers, ...rest } = data;
+    const {
+      imageUrls,
+      stockQuantity,
+      specs,
+      offers,
+      contentBlocks,
+      variantAxes,
+      variants,
+      ...rest
+    } = data;
     // Create the product with stockQuantity = 0; the ledger post below is
     // what funds it. This keeps products.stockQuantity in sync with the
     // ledger from row one — no orphan stock without a cost basis.
@@ -72,11 +146,48 @@ export class ProductsService {
         // pass through unchanged when omitted so the column stays NULL.
         specs: specs === undefined ? undefined : (specs as Prisma.InputJsonValue),
         offers: offers === undefined ? undefined : (offers as Prisma.InputJsonValue),
+        contentBlocks: contentBlocks === undefined
+          ? undefined
+          : (sanitizeContentBlocks(contentBlocks) as Prisma.InputJsonValue),
+        variantAxes: variantAxes === undefined
+          ? undefined
+          : (variantAxes as Prisma.InputJsonValue),
         shopId: options.shopId,
         stockQuantity: 0,
         images: imageUrls?.length
           ? { create: imageUrls.map((url, i) => ({ url, sortOrder: i })) }
           : undefined,
+        // Phase E — variants. When the merchant supplied a variants
+        // list we create those directly (and skip the default). When
+        // they didn't, we create exactly one default variant that
+        // inherits product-level pricing — every product has ≥1
+        // variant so the customer client always has a variantId to
+        // attach to add-to-cart.
+        variants: {
+          create: (variants && variants.length > 0)
+            ? variants.map((v, i) => ({
+                sku: v.sku,
+                barcode: v.barcode ?? null,
+                attributes: v.attributes as Prisma.InputJsonValue,
+                mrp: v.mrp,
+                sellingPrice: v.sellingPrice,
+                purchasePrice: v.purchasePrice,
+                stockQuantity: v.stockQuantity ?? 0,
+                imageUrls: v.imageUrls ?? [],
+                isActive: v.isActive ?? true,
+                sortOrder: v.sortOrder ?? i,
+                isDefault: i === 0,
+              }))
+            : [{
+                sku: `${data.sku}-DEFAULT`,
+                attributes: {},
+                mrp: data.mrp,
+                sellingPrice: data.sellingPrice,
+                purchasePrice: data.purchasePrice,
+                stockQuantity: 0,
+                isDefault: true,
+              }],
+        },
       },
       select: productSelect,
     });
@@ -109,6 +220,15 @@ export class ProductsService {
         await prisma.product.delete({ where: { id: product.id } });
         throw new Error(`Failed to post opening balance: ${result.error}`);
       }
+
+      // Phase E v1 — keep the default variant's stockQuantity in sync
+      // with the product-level ledger total. The PDP swatch picker
+      // reads variant stock for display; the ledger remains the
+      // source of truth.
+      await prisma.productVariant.updateMany({
+        where: { productId: product.id, isDefault: true },
+        data: { stockQuantity: stockQuantity },
+      });
 
       // Re-read so the response reflects the funded stock quantity.
       return prisma.product.findUniqueOrThrow({
@@ -361,6 +481,7 @@ export class ProductsService {
       sku?: string;
       barcode?: string | null;
       hsnCode?: string | null;
+      brand?: string | null;
       mrp?: number;
       sellingPrice?: number;
       purchasePrice?: number;
@@ -374,13 +495,28 @@ export class ProductsService {
       highlights?: string[];
       specs?: unknown | null;
       offers?: unknown | null;
+      contentBlocks?: unknown | null;
+      variantAxes?: unknown | null;
+      variants?: Array<{
+        id?: number;
+        sku: string;
+        barcode?: string | null;
+        attributes: Record<string, string>;
+        mrp: number;
+        sellingPrice: number;
+        purchasePrice: number;
+        stockQuantity?: number;
+        imageUrls?: string[];
+        isActive?: boolean;
+        sortOrder?: number;
+      }>;
     },
   ) {
     // updateMany returns count instead of throwing on missing row; that
     // lets us distinguish "wrong shop" from "wrong id" cleanly without
     // a separate guard query. count=0 → either id doesn't exist OR
     // belongs to another shop. Either way: 404 from the controller.
-    const { specs, offers, ...rest } = data;
+    const { specs, offers, contentBlocks, variantAxes, variants, ...rest } = data;
     const result = await prisma.product.updateMany({
       where: { id, shopId },
       data: {
@@ -395,9 +531,80 @@ export class ProductsService {
           : offers === null
             ? Prisma.JsonNull
             : (offers as Prisma.InputJsonValue),
+        contentBlocks: contentBlocks === undefined
+          ? undefined
+          : contentBlocks === null
+            ? Prisma.JsonNull
+            : (sanitizeContentBlocks(contentBlocks) as Prisma.InputJsonValue),
+        variantAxes: variantAxes === undefined
+          ? undefined
+          : variantAxes === null
+            ? Prisma.JsonNull
+            : (variantAxes as Prisma.InputJsonValue),
       },
     });
     if (result.count === 0) return null;
+
+    // Phase E — when the merchant ships a full variants array, replace
+    // the product's variants in place. Diff-by-id keeps stable rows so
+    // CartItem.variantId references survive an edit. Bare-minimum
+    // implementation: existing variants not listed are soft-deleted
+    // (isActive=false) so historical references don't break.
+    if (variants !== undefined) {
+      const existing = await prisma.productVariant.findMany({
+        where: { productId: id },
+        select: { id: true },
+      });
+      const incomingIds = new Set(
+        variants.filter((v) => v.id != null).map((v) => v.id!),
+      );
+      const toDeactivate = existing
+        .filter((e) => !incomingIds.has(e.id))
+        .map((e) => e.id);
+      if (toDeactivate.length > 0) {
+        await prisma.productVariant.updateMany({
+          where: { id: { in: toDeactivate } },
+          data: { isActive: false },
+        });
+      }
+      for (let i = 0; i < variants.length; i++) {
+        const v = variants[i];
+        if (v.id) {
+          await prisma.productVariant.update({
+            where: { id: v.id },
+            data: {
+              sku: v.sku,
+              barcode: v.barcode ?? null,
+              attributes: v.attributes as Prisma.InputJsonValue,
+              mrp: v.mrp,
+              sellingPrice: v.sellingPrice,
+              purchasePrice: v.purchasePrice,
+              stockQuantity: v.stockQuantity ?? 0,
+              imageUrls: v.imageUrls ?? [],
+              isActive: v.isActive ?? true,
+              sortOrder: v.sortOrder ?? i,
+            },
+          });
+        } else {
+          await prisma.productVariant.create({
+            data: {
+              productId: id,
+              sku: v.sku,
+              barcode: v.barcode ?? null,
+              attributes: v.attributes as Prisma.InputJsonValue,
+              mrp: v.mrp,
+              sellingPrice: v.sellingPrice,
+              purchasePrice: v.purchasePrice,
+              stockQuantity: v.stockQuantity ?? 0,
+              imageUrls: v.imageUrls ?? [],
+              isActive: v.isActive ?? true,
+              sortOrder: v.sortOrder ?? i,
+              isDefault: false,
+            },
+          });
+        }
+      }
+    }
     // Any edit that touches the embedding source (name / description /
     // tags / highlights / specs) invalidates the cached embedding.
     // Cheap inline re-embed runs in the background — failures are
@@ -496,6 +703,34 @@ export class ProductsService {
       ),
     );
     return prisma.productImage.findMany({ where: { productId }, orderBy: { sortOrder: 'asc' } });
+  }
+
+  /// Refresh the `soldLast30d` denorm on every product from the
+  /// trailing-30-day window of CONFIRMED invoice items. Runs nightly
+  /// from the scheduler; idempotent — safe to invoke on demand from a
+  /// debug endpoint while developing. One UPDATE … FROM (SELECT …)
+  /// statement so it stays O(rows in window) regardless of catalogue
+  /// size, and the zero-out branch resets products that fell out of
+  /// the window since the last tick.
+  async refreshSoldLast30d(): Promise<{ updated: number }> {
+    const result = await prisma.$executeRaw`
+      WITH agg AS (
+        SELECT ii.product_id,
+               COALESCE(SUM(ii.quantity), 0)::int AS sold
+          FROM invoice_items ii
+          JOIN invoices i ON i.id = ii.invoice_id
+         WHERE i.status = 'CONFIRMED'
+           AND i.created_at >= NOW() - INTERVAL '30 days'
+         GROUP BY ii.product_id
+      )
+      UPDATE products p
+         SET sold_last_30d = COALESCE(agg.sold, 0)
+        FROM (SELECT id FROM products) ids
+        LEFT JOIN agg ON agg.product_id = ids.id
+       WHERE p.id = ids.id
+         AND p.sold_last_30d IS DISTINCT FROM COALESCE(agg.sold, 0)
+    `;
+    return { updated: Number(result) };
   }
 }
 

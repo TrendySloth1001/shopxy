@@ -165,6 +165,26 @@ class _SettingsPageState extends State<SettingsPage> {
 
           const _Gap(),
 
+          // ── Shop operations ─────────────────────────────────
+          const _Eyebrow('SHOP OPERATIONS'),
+          const SizedBox(height: AppSizes.sm),
+          _SettingRow(
+            icon: Icons.tune_rounded,
+            title: 'Shop operations',
+            subtitle: 'Hours, vacation mode, payouts, KYC, team',
+            trailing: const Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.subtle,
+            ),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => const ShopOperationsPage()),
+            ),
+          ),
+
+          const _Gap(),
+
           // ── Appearance ──────────────────────────────────────
           const _Eyebrow('APPEARANCE'),
           const SizedBox(height: AppSizes.sm),

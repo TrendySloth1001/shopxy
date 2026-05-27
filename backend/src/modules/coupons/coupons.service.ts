@@ -41,7 +41,8 @@ export type ValidateError =
   | 'MIN_ORDER_NOT_MET'
   | 'SHOP_NOT_IN_CART'
   | 'PER_USER_LIMIT_REACHED'
-  | 'TOTAL_CAP_REACHED';
+  | 'TOTAL_CAP_REACHED'
+  | 'NOT_FIRST_ORDER';
 
 function canon(code: string): string {
   return code.trim().toUpperCase().slice(0, 40);
@@ -88,6 +89,8 @@ export interface CouponWriteInput {
   perUserLimit?: number;
   totalCap?: number;
   isActive?: boolean;
+  isPublic?: boolean;
+  firstOrderOnly?: boolean;
 }
 
 export class CouponsService {
@@ -121,6 +124,8 @@ export class CouponsService {
         perUserLimit: true,
         totalCap: true,
         totalRedemptions: true,
+        isPublic: true,
+        firstOrderOnly: true,
         shopId: true,
         shop: { select: { id: true, name: true, slug: true } },
       },
@@ -137,11 +142,22 @@ export class CouponsService {
     });
     const usedByCoupon = new Map(counts.map((c) => [c.couponId, c._count._all]));
 
+    // Is the caller a first-order customer? We need this exactly once,
+    // not per row — every firstOrderOnly check below reads the same
+    // boolean. Counted across CustomerOrder rather than redemption
+    // history so a partial / abandoned redemption doesn't lock the
+    // user out of their welcome offer.
+    const priorOrders = await prisma.customerOrder.count({
+      where: { customerUserId: userId },
+    });
+    const isFirstOrder = priorOrders === 0;
+
     return rows
       .filter((r) => r.totalCap === 0 || r.totalRedemptions < r.totalCap)
       .map((r) => {
         const used = usedByCoupon.get(r.id) ?? 0;
-        const exhausted = r.perUserLimit > 0 && used >= r.perUserLimit;
+        const perUserExhausted = r.perUserLimit > 0 && used >= r.perUserLimit;
+        const firstOrderBlocked = r.firstOrderOnly && !isFirstOrder;
         return {
           id: r.id,
           code: r.code,
@@ -153,12 +169,116 @@ export class CouponsService {
           minOrderAmount: Number(r.minOrderAmount),
           validFrom: r.validFrom,
           validUntil: r.validUntil,
+          isPublic: r.isPublic,
+          firstOrderOnly: r.firstOrderOnly,
           shop: r.shop,
           alreadyUsed: used,
           perUserLimit: r.perUserLimit,
-          exhausted,
+          exhausted: perUserExhausted || firstOrderBlocked,
         };
       });
+  }
+
+  /// Returns the single best PUBLIC coupon for the given cart context,
+  /// or null if none apply. Lets the checkout page pre-apply a coupon
+  /// without the customer typing anything — public coupons are the
+  /// "store-wide sale" use-case, and forcing the customer to copy/paste
+  /// a code that's already on their carousel is bad UX.
+  ///
+  /// Tie-breaker: deepest computed discount wins. Ties further broken
+  /// by soonest expiry (use-it-or-lose-it).
+  async pickBestPublicForCart(opts: {
+    userId: number;
+    subtotal: number;
+    shopIds: number[];
+  }): Promise<
+    | { coupon: ValidatedCoupon & { firstOrderOnly: boolean } }
+    | null
+  > {
+    const now = new Date();
+    const rows = await prisma.coupon.findMany({
+      where: {
+        isActive: true,
+        isPublic: true,
+        validFrom: { lte: now },
+        validUntil: { gte: now },
+        // Shop scope match — null shopId = platform-wide, else cart
+        // must contain at least one item from that shop.
+        OR: [
+          { shopId: null },
+          ...(opts.shopIds.length > 0
+            ? [{ shopId: { in: opts.shopIds } }]
+            : []),
+        ],
+      },
+      select: {
+        id: true,
+        code: true,
+        title: true,
+        description: true,
+        discountType: true,
+        discountValue: true,
+        maxDiscount: true,
+        minOrderAmount: true,
+        validUntil: true,
+        perUserLimit: true,
+        totalCap: true,
+        totalRedemptions: true,
+        firstOrderOnly: true,
+      },
+    });
+    if (rows.length === 0) return null;
+
+    // Eligibility filter — anything the customer can't redeem
+    // (subtotal too low, cap reached, already redeemed) shouldn't
+    // auto-apply even if it would otherwise be the "best" offer.
+    const candidateIds = rows.map((r) => r.id);
+    const [usedRows, priorOrders] = await Promise.all([
+      prisma.couponRedemption.groupBy({
+        by: ['couponId'],
+        where: { userId: opts.userId, couponId: { in: candidateIds } },
+        _count: { _all: true },
+      }),
+      prisma.customerOrder.count({
+        where: { customerUserId: opts.userId },
+      }),
+    ]);
+    const usedByCoupon = new Map(
+      usedRows.map((c) => [c.couponId, c._count._all]),
+    );
+    const isFirstOrder = priorOrders === 0;
+
+    let best:
+      | (typeof rows)[number] & { discount: number }
+      | null = null;
+    for (const r of rows) {
+      if (Number(r.minOrderAmount) > opts.subtotal) continue;
+      if (r.totalCap > 0 && r.totalRedemptions >= r.totalCap) continue;
+      const used = usedByCoupon.get(r.id) ?? 0;
+      if (r.perUserLimit > 0 && used >= r.perUserLimit) continue;
+      if (r.firstOrderOnly && !isFirstOrder) continue;
+      const discount = computeDiscount(r, opts.subtotal);
+      if (discount <= 0) continue;
+      if (
+        best == null ||
+        discount > best.discount ||
+        (discount === best.discount && r.validUntil < best.validUntil)
+      ) {
+        best = { ...r, discount };
+      }
+    }
+    if (best == null) return null;
+    return {
+      coupon: {
+        id: best.id,
+        code: best.code,
+        title: best.title,
+        description: best.description,
+        discountType: best.discountType as DiscountType,
+        discount: best.discount,
+        firstOrderOnly: best.firstOrderOnly,
+      },
+    };
   }
 
   /// Preview path — given a code + cart context, returns the discount
@@ -192,6 +312,7 @@ export class CouponsService {
         perUserLimit: true,
         totalCap: true,
         totalRedemptions: true,
+        firstOrderOnly: true,
         shopId: true,
       },
     });
@@ -214,6 +335,16 @@ export class CouponsService {
         where: { couponId: row.id, userId: opts.userId },
       });
       if (used >= row.perUserLimit) return { error: 'PER_USER_LIMIT_REACHED' };
+    }
+    if (row.firstOrderOnly) {
+      // First-order check — gated on CustomerOrder count, not coupon
+      // redemption history. The customer's prior abandoned-then-retried
+      // checkout shouldn't block them from a welcome offer they never
+      // actually consumed.
+      const priorOrders = await prisma.customerOrder.count({
+        where: { customerUserId: opts.userId },
+      });
+      if (priorOrders > 0) return { error: 'NOT_FIRST_ORDER' };
     }
     const discount = computeDiscount(row, opts.context.subtotal);
     return {
@@ -264,6 +395,7 @@ export class CouponsService {
         isActive: true,
         perUserLimit: true,
         totalCap: true,
+        firstOrderOnly: true,
         shopId: true,
       },
     });
@@ -283,6 +415,19 @@ export class CouponsService {
         where: { couponId: row.id, userId: opts.userId },
       });
       if (used >= row.perUserLimit) return { error: 'PER_USER_LIMIT_REACHED' };
+    }
+    if (row.firstOrderOnly) {
+      // The redemption row we're about to write belongs to
+      // `opts.customerOrderId`, so the order itself exists already
+      // (in the same transaction). Exclude it from the prior-order
+      // count or every first-order redemption would self-veto.
+      const priorOrders = await opts.tx.customerOrder.count({
+        where: {
+          customerUserId: opts.userId,
+          id: { not: opts.customerOrderId },
+        },
+      });
+      if (priorOrders > 0) return { error: 'NOT_FIRST_ORDER' };
     }
 
     // Atomic counter bump for totalCap. `updateMany` lets us gate on
@@ -339,6 +484,8 @@ export class CouponsService {
         perUserLimit: true,
         totalCap: true,
         totalRedemptions: true,
+        isPublic: true,
+        firstOrderOnly: true,
         isActive: true,
         createdAt: true,
         updatedAt: true,
@@ -377,6 +524,8 @@ export class CouponsService {
           validUntil: input.validUntil,
           perUserLimit: input.perUserLimit ?? 1,
           totalCap: input.totalCap ?? 0,
+          isPublic: input.isPublic ?? false,
+          firstOrderOnly: input.firstOrderOnly ?? false,
           isActive: input.isActive ?? true,
           shopId,
         },
@@ -421,6 +570,8 @@ export class CouponsService {
     if (patch.validUntil != null) data.validUntil = patch.validUntil;
     if (patch.perUserLimit != null) data.perUserLimit = patch.perUserLimit;
     if (patch.totalCap != null) data.totalCap = patch.totalCap;
+    if (patch.isPublic != null) data.isPublic = patch.isPublic;
+    if (patch.firstOrderOnly != null) data.firstOrderOnly = patch.firstOrderOnly;
     if (patch.isActive != null) data.isActive = patch.isActive;
 
     const claim = await prisma.coupon.updateMany({

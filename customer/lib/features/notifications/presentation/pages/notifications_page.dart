@@ -257,52 +257,56 @@ class _NotificationTile extends StatelessWidget {
   }
 
   static _IconSpec _kindSpec(String kind) {
+    // All accents go through AppColors tokens so a future theme
+    // swap (dark mode, brand re-skin) flows through. Map per kind:
+    // orders → info, deals → warning/amber, refunds → success,
+    // invites → indigo, restock → rose, default → muted.
     if (kind.startsWith('ORDER_') || kind.startsWith('PURCHASE_REQUEST_')) {
       return const _IconSpec(
         icon: Icons.local_shipping_outlined,
-        tint: Color(0xFFDBE6FF),
-        accent: Color(0xFF1D4ED8),
+        tint: AppColors.infoSoft,
+        accent: AppColors.info,
       );
     }
     if (kind == 'PRICE_DROP' || kind == 'WISHLIST_DEAL') {
       return const _IconSpec(
         icon: Icons.trending_down_rounded,
-        tint: Color(0xFFDCFCE7),
-        accent: Color(0xFF16A34A),
+        tint: AppColors.successSoft,
+        accent: AppColors.success,
       );
     }
     if (kind == 'FLASH_DEAL' || kind == 'DEAL') {
       return const _IconSpec(
         icon: Icons.bolt_rounded,
-        tint: Color(0xFFFFE3D2),
-        accent: Color(0xFFE05A2A),
+        tint: AppColors.accentAmberSoft,
+        accent: AppColors.accentAmber,
       );
     }
     if (kind.startsWith('INVITE_')) {
       return const _IconSpec(
         icon: Icons.mail_outline_rounded,
-        tint: Color(0xFFEDE9FE),
-        accent: Color(0xFF6D28D9),
+        tint: AppColors.accentIndigoSoft,
+        accent: AppColors.accentIndigo,
       );
     }
     if (kind == 'PAYMENT_SUCCESS' || kind == 'REFUND') {
       return const _IconSpec(
         icon: Icons.payments_outlined,
-        tint: Color(0xFFDCFCE7),
-        accent: Color(0xFF16A34A),
+        tint: AppColors.successSoft,
+        accent: AppColors.success,
       );
     }
     if (kind == 'BACK_IN_STOCK') {
       return const _IconSpec(
         icon: Icons.inventory_2_outlined,
-        tint: Color(0xFFFCE7F3),
-        accent: Color(0xFFB83A6F),
+        tint: AppColors.accentRoseSoft,
+        accent: AppColors.accentRose,
       );
     }
     return const _IconSpec(
       icon: Icons.notifications_none_rounded,
-      tint: Color(0xFFEFE9DD),
-      accent: Color(0xFF6A707A),
+      tint: AppColors.surfaceTint,
+      accent: AppColors.muted,
     );
   }
 }

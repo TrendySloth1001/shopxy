@@ -117,22 +117,31 @@ class _CouponCard extends StatelessWidget {
                     ),
                   ),
                 ),
+                if (coupon.firstOrderOnly)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 6),
+                    child: _CouponPill(
+                      label: 'First order only',
+                      bg: AppColors.accentAmberSoft,
+                      fg: AppColors.accentAmber,
+                    ),
+                  ),
+                if (coupon.isPublic)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 6),
+                    child: _CouponPill(
+                      label: 'Auto-applies',
+                      bg: AppColors.brandSoft,
+                      fg: AppColors.brandStrong,
+                    ),
+                  ),
                 if (exhausted)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 3,
-                    ),
-                    decoration: ShapeDecoration(
-                      color: AppColors.surfaceTint,
-                      shape: AppShapes.squircle(AppSizes.radiusFull),
-                    ),
-                    child: const Text(
-                      'Used',
-                      style: TextStyle(
-                        color: AppColors.muted,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 10,
-                      ),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 6),
+                    child: _CouponPill(
+                      label: 'Used',
+                      bg: AppColors.surfaceTint,
+                      fg: AppColors.muted,
                     ),
                   ),
               ],
@@ -209,6 +218,37 @@ class _CouponCard extends StatelessWidget {
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CouponPill extends StatelessWidget {
+  const _CouponPill({
+    required this.label,
+    required this.bg,
+    required this.fg,
+  });
+  final String label;
+  final Color bg;
+  final Color fg;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: ShapeDecoration(
+        color: bg,
+        shape: AppShapes.squircle(AppSizes.radiusFull),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: fg,
+          fontWeight: FontWeight.w800,
+          fontSize: 10,
+          letterSpacing: 0.4,
         ),
       ),
     );

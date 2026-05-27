@@ -30,6 +30,23 @@ class MarketplaceRemoteDataSource {
     );
   }
 
+  /// Phase G — frequently-bought-together rail. Returns the slim card
+  /// list (id/name/image/price/mrp/ratingAvg). The endpoint returns
+  /// an empty array (not 404) when no cohort exists, so the caller
+  /// just hides the rail.
+  Future<List<MarketplaceFbtCard>> frequentlyBoughtTogether(int productId) async {
+    final res = await _client.get(
+      '/marketplace/products/$productId/frequently-bought-together',
+    );
+    if (res.statusCode != 200) {
+      throw Exception('Failed to load FBT: ${res.statusCode}');
+    }
+    final json = jsonDecode(res.body) as Map<String, dynamic>;
+    return (json['data'] as List<dynamic>)
+        .map((e) => MarketplaceFbtCard.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
   Future<({MarketplaceShop shop, List<MarketplaceProduct> products, int total})>
       shopProducts(
     String slug, {

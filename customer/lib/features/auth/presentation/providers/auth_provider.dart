@@ -99,6 +99,54 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Updates the user's avatar URL. Pass `null` to clear it (e.g. a
+  /// future "Remove photo" button). The fresh AuthUser carries the
+  /// new url so we can re-render without a follow-up GET.
+  Future<void> updateAvatar(String? avatarUrl) async {
+    final fresh = await _dataSource.updateProfile(
+      avatarUrl: avatarUrl,
+      clearAvatar: avatarUrl == null,
+    );
+    _user = fresh;
+    notifyListeners();
+  }
+
+  /// Updates the user's phone number. P5 surface; lives here so the
+  /// edit profile page has one save path. Pass null/empty to clear.
+  Future<void> updatePhone(String? phoneNumber) async {
+    final clean = phoneNumber?.trim();
+    final fresh = await _dataSource.updateProfile(
+      phoneNumber: (clean?.isEmpty ?? true) ? null : clean,
+      clearPhone: clean == null || clean.isEmpty,
+    );
+    _user = fresh;
+    notifyListeners();
+  }
+
+  /// Patches one or more notification preference flags. Only the
+  /// passed-in values are sent; everything else stays put on the
+  /// server. Returns the fresh AuthUser so the prefs page can pick up
+  /// the new state without a follow-up GET.
+  Future<void> updateNotificationPrefs({
+    bool? notifyOrders,
+    bool? notifyDeals,
+    bool? notifyAccount,
+    bool? notifyMessages,
+    bool? pushEnabled,
+    bool? smsEnabled,
+  }) async {
+    final fresh = await _dataSource.updateProfile(
+      notifyOrders: notifyOrders,
+      notifyDeals: notifyDeals,
+      notifyAccount: notifyAccount,
+      notifyMessages: notifyMessages,
+      pushEnabled: pushEnabled,
+      smsEnabled: smsEnabled,
+    );
+    _user = fresh;
+    notifyListeners();
+  }
+
   /// Wraps the password-change endpoint. Surfaces backend errors so
   /// the caller can render them inline.
   Future<void> changePassword({

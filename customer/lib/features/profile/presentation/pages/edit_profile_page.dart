@@ -1,8 +1,13 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import 'package:shopxy_customer/features/auth/presentation/providers/auth_provider.dart';
+import 'package:shopxy_customer/features/profile/data/datasources/avatar_remote_data_source.dart';
 import 'package:shopxy_customer/features/profile/presentation/pages/change_password_page.dart';
+import 'package:shopxy_customer/features/profile/presentation/widgets/profile_avatar.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/constants/app_strings.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
@@ -23,25 +28,130 @@ class EditProfilePage extends StatefulWidget {
 
 class _EditProfilePageState extends State<EditProfilePage> {
   late final TextEditingController _name;
+  late final TextEditingController _email;
+  late final TextEditingController _phone;
   bool _saving = false;
+  bool _uploadingAvatar = false;
   String? _error;
 
   @override
   void initState() {
     super.initState();
-    _name = TextEditingController(text: context.read<AuthProvider>().user?.name ?? '');
+    final user = context.read<AuthProvider>().user;
+    _name = TextEditingController(text: user?.name ?? '');
+    // Email is read-only on this surface but still needs a controller
+    // so the field renders. Building it per-rebuild leaked one
+    // controller per setState; initState binds it once.
+    _email = TextEditingController(text: user?.email ?? '');
+    _phone = TextEditingController(text: user?.phoneNumber ?? '');
   }
 
   @override
   void dispose() {
     _name.dispose();
+    _email.dispose();
+    _phone.dispose();
     super.dispose();
   }
 
+  Future<void> _changePhoto() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: AppColors.white,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined),
+              title: const Text('Take a photo'),
+              onTap: () => Navigator.of(ctx).pop(ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Pick from gallery'),
+              onTap: () => Navigator.of(ctx).pop(ImageSource.gallery),
+            ),
+            if (context.read<AuthProvider>().user?.avatarUrl != null)
+              ListTile(
+                leading: const Icon(Icons.delete_outline,
+                    color: AppColors.error),
+                title: const Text('Remove photo',
+                    style: TextStyle(color: AppColors.error)),
+                onTap: () => Navigator.of(ctx).pop(null),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (!mounted) return;
+    // null result from the sheet means either user dismissed it OR
+    // tapped "Remove photo". Disambiguate by checking if user already
+    // had an avatar — if yes, "remove" was the intent.
+    if (source == null) {
+      final user = context.read<AuthProvider>().user;
+      if (user?.avatarUrl == null) return; // user just dismissed
+      await _removePhoto();
+      return;
+    }
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(
+      source: source,
+      maxWidth: 1024,
+      imageQuality: 85,
+    );
+    if (picked == null || !mounted) return;
+    setState(() {
+      _uploadingAvatar = true;
+      _error = null;
+    });
+    try {
+      final url = await context
+          .read<AvatarRemoteDataSource>()
+          .upload(File(picked.path));
+      if (!mounted) return;
+      await context.read<AuthProvider>().updateAvatar(url);
+      if (!mounted) return;
+      showAppSnackbar(
+        context,
+        message: 'Photo updated',
+        tone: AppSnackbarTone.success,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _uploadingAvatar = false);
+    }
+  }
+
+  Future<void> _removePhoto() async {
+    setState(() {
+      _uploadingAvatar = true;
+      _error = null;
+    });
+    try {
+      await context.read<AuthProvider>().updateAvatar(null);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _uploadingAvatar = false);
+    }
+  }
+
   Future<void> _save() async {
-    final trimmed = _name.text.trim();
-    if (trimmed.length < 2) {
+    final trimmedName = _name.text.trim();
+    final trimmedPhone = _phone.text.trim();
+    if (trimmedName.length < 2) {
       setState(() => _error = AppStrings.nameTooShort);
+      return;
+    }
+    // Loose-validate the phone: empty (clear) or +country & digits is OK.
+    if (trimmedPhone.isNotEmpty &&
+        !RegExp(r'^\+?[0-9\s\-]{7,20}$').hasMatch(trimmedPhone)) {
+      setState(() => _error =
+          'Phone number should be 7–15 digits with an optional + prefix.');
       return;
     }
     setState(() {
@@ -49,7 +159,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
       _error = null;
     });
     try {
-      await context.read<AuthProvider>().updateName(trimmed);
+      final auth = context.read<AuthProvider>();
+      // Save name first, then phone — both are independent PATCHes
+      // and the failure mode of either is the same recoverable
+      // toast, so keeping them sequential avoids partial-save logic.
+      if (trimmedName != (auth.user?.name ?? '')) {
+        await auth.updateName(trimmedName);
+      }
+      final currentPhone = auth.user?.phoneNumber ?? '';
+      if (trimmedPhone != currentPhone) {
+        await auth.updatePhone(trimmedPhone);
+      }
       if (!mounted) return;
       showAppSnackbar(
         context,
@@ -75,6 +195,49 @@ class _EditProfilePageState extends State<EditProfilePage> {
         child: ListView(
             padding: const EdgeInsets.all(AppSizes.lg),
             children: [
+              Center(
+                child: Stack(
+                  children: [
+                    ProfileAvatar(
+                      name: user?.name ?? '',
+                      avatarUrl: user?.avatarUrl,
+                      size: 96,
+                      borderColor: AppColors.canvas,
+                    ),
+                    Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: Material(
+                        color: AppColors.brand,
+                        shape: const CircleBorder(),
+                        elevation: 1,
+                        child: InkWell(
+                          customBorder: const CircleBorder(),
+                          onTap: _uploadingAvatar ? null : _changePhoto,
+                          child: Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: _uploadingAvatar
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: AppColors.white,
+                                    ),
+                                  )
+                                : const Icon(
+                                    Icons.camera_alt_outlined,
+                                    color: AppColors.white,
+                                    size: 16,
+                                  ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSizes.xl),
               AppTextField(
                 controller: _name,
                 label: AppStrings.fullName,
@@ -82,10 +245,19 @@ class _EditProfilePageState extends State<EditProfilePage> {
               ),
               const SizedBox(height: AppSizes.lg),
               AppTextField(
-                controller: TextEditingController(text: user?.email ?? ''),
+                controller: _email,
                 label: AppStrings.email,
                 enabled: false,
                 helper: 'Contact support to change your email.',
+              ),
+              const SizedBox(height: AppSizes.lg),
+              AppTextField(
+                controller: _phone,
+                label: 'Phone number',
+                helper:
+                    'Used for delivery updates. Include country code, '
+                    'e.g. +91 98765 43210.',
+                keyboardType: TextInputType.phone,
               ),
               if (_error != null) ...[
                 const SizedBox(height: AppSizes.md),

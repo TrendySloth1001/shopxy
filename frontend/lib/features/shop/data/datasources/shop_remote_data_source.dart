@@ -25,12 +25,44 @@ class ShopRemoteDataSource {
     Object? tagline = _absent,
     Object? logoUrl = _absent,
     Object? bannerUrl = _absent,
+    Object? locationCity = _absent,
+    Object? locationState = _absent,
+    Object? returnPolicy = _absent,
+    Object? shippingPolicy = _absent,
+    Object? refundPolicy = _absent,
+    Object? vacationMode = _absent,
+    Object? vacationMessage = _absent,
+    Object? operatingHours = _absent,
   }) async {
     final body = <String, dynamic>{};
     if (name != null) body['name'] = name;
     if (!identical(tagline, _absent)) body['tagline'] = tagline;
     if (!identical(logoUrl, _absent)) body['logoUrl'] = logoUrl;
     if (!identical(bannerUrl, _absent)) body['bannerUrl'] = bannerUrl;
+    if (!identical(locationCity, _absent)) {
+      body['locationCity'] = locationCity;
+    }
+    if (!identical(locationState, _absent)) {
+      body['locationState'] = locationState;
+    }
+    if (!identical(returnPolicy, _absent)) {
+      body['returnPolicy'] = returnPolicy;
+    }
+    if (!identical(shippingPolicy, _absent)) {
+      body['shippingPolicy'] = shippingPolicy;
+    }
+    if (!identical(refundPolicy, _absent)) {
+      body['refundPolicy'] = refundPolicy;
+    }
+    if (!identical(vacationMode, _absent)) {
+      body['vacationMode'] = vacationMode;
+    }
+    if (!identical(vacationMessage, _absent)) {
+      body['vacationMessage'] = vacationMessage;
+    }
+    if (!identical(operatingHours, _absent)) {
+      body['operatingHours'] = operatingHours;
+    }
     final res = await _client.put('/me/shop', body: body);
     if (res.statusCode != 200) {
       throw Exception('Failed to save shop: ${res.body}');
@@ -56,7 +88,7 @@ class ShopRemoteDataSource {
   Future<String> uploadImage(File file) async {
     final streamed = await _client.multipart(
       '/upload',
-      file: await http.MultipartFile.fromPath('file', file.path),
+      makeFile: () => http.MultipartFile.fromPath('file', file.path),
     );
     final body = await streamed.stream.bytesToString();
     if (streamed.statusCode != 201) {

@@ -196,6 +196,29 @@ class _CouponRow extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(row.title,
                     style: theme.textTheme.bodyMedium),
+                if (row.isPublic || row.firstOrderOnly) ...[
+                  const SizedBox(height: 4),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: [
+                      if (row.isPublic)
+                        const AppStatusBadge(
+                          label: 'Public · auto-applies',
+                          tone: AppStatusTone.info,
+                          weight: AppStatusWeight.soft,
+                          dense: true,
+                        ),
+                      if (row.firstOrderOnly)
+                        const AppStatusBadge(
+                          label: 'First order only',
+                          tone: AppStatusTone.warning,
+                          weight: AppStatusWeight.soft,
+                          dense: true,
+                        ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 4),
                 Text(
                   'Valid ${dateFormat.format(row.validFrom)} – '

@@ -15,8 +15,8 @@ import 'package:shopxy_customer/shared/widgets/app_price_text.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 
 /// Saved-for-later list. Pushed from the Home page's "Saved" tile and
-/// from the profile page (not yet wired). Empty state guides the user
-/// back to Home — explicit CTA per DESIGN.md #5.
+/// from the profile page's "Wishlist" entry. Empty state guides the
+/// user back to Home — explicit CTA per DESIGN.md #5.
 class WishlistPage extends StatefulWidget {
   const WishlistPage({super.key});
 

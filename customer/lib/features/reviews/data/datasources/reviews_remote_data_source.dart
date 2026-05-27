@@ -67,6 +67,25 @@ class ReviewsRemoteDataSource {
       throw Exception('Delete failed: ${res.body}');
     }
   }
+
+  /// `/me/reviews` — every review the caller has written, with
+  /// product join. Used by the profile "My reviews" page.
+  Future<MyReviewsPage> listMine({int? cursor, int limit = 20}) async {
+    final params = <String, String>{'limit': '$limit'};
+    if (cursor != null) params['cursor'] = '$cursor';
+    final res = await _client.get('/me/reviews', queryParameters: params);
+    if (res.statusCode != 200) {
+      throw Exception('Failed to load your reviews: ${res.body}');
+    }
+    final body = jsonDecode(res.body) as Map<String, dynamic>;
+    return MyReviewsPage(
+      data: ((body['data'] as List<dynamic>?) ?? const [])
+          .whereType<Map<String, dynamic>>()
+          .map(MyReview.fromJson)
+          .toList(),
+      nextCursor: (body['nextCursor'] as num?)?.toInt(),
+    );
+  }
 }
 
 /// Carries the server message + status so the write-review sheet can
