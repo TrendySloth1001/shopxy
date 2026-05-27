@@ -1,13 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:shopxy_customer/core/network/image_url.dart';
 import 'package:shopxy_customer/features/banner_slide/presentation/pages/banner_slide_detail_page.dart';
 import 'package:shopxy_customer/features/home/data/models/home_feed_models.dart';
-import 'package:shopxy_customer/features/home/presentation/widgets/network_image_box.dart';
+import 'package:shopxy_customer/features/home/presentation/widgets/freeform_slide_card.dart';
+import 'package:shopxy_customer/features/home/presentation/widgets/hero_slide_templates.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
-import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 
 class HomeHeroCarousel extends StatefulWidget {
   const HomeHeroCarousel({super.key, required this.slides});
@@ -101,141 +100,54 @@ class _HomeHeroCarouselState extends State<HomeHeroCarousel> {
   }
 }
 
+/// Renders one slide using the template the merchant picked. The
+/// previous version hardcoded the classic look and silently dropped
+/// `slide.template` even though the wire payload + the local
+/// HeroSlideTemplate enum + the fromWire mapper had been in place for
+/// months — that disconnect is what made the templated work feel
+/// "missing" in the merchant editor.
 class _HeroSlideCard extends StatelessWidget {
   const _HeroSlideCard({required this.slide});
   final HeroSlide slide;
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(AppSizes.radiusLg),
-      child: Container(
-        decoration: ShapeDecoration(
-          color: slide.bgColor,
-          shape: AppShapes.squircle(AppSizes.radiusLg),
+    final body = switch (slide.mode) {
+      HeroSlideMode.freeform => FreeformSlideCard(slide: slide),
+      HeroSlideMode.templated => HeroSlideTemplateRenderer(slide: slide),
+    };
+    return Stack(
+      children: [
+        body,
+        const Positioned(
+          right: 6,
+          bottom: 6,
+          child: _AdBadge(),
         ),
-        child: Stack(
-          children: [
-            Positioned.fill(
-              left: null,
-              right: 0,
-              child: SizedBox(
-                width: 200,
-                child: NetworkImageBox(
-                  url: resolveImageUrl(slide.imageUrl),
-                  placeholderColor: slide.bgColor,
-                ),
-              ),
-            ),
-            Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                    colors: [
-                      slide.bgColor,
-                      slide.bgColor.withValues(alpha: 0.85),
-                      slide.bgColor.withValues(alpha: 0.0),
-                    ],
-                    stops: const [0.0, 0.5, 0.9],
-                  ),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(AppSizes.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSizes.sm,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: slide.accent,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                    child: Text(
-                      slide.brand,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 10,
-                        letterSpacing: 0.6,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: AppSizes.sm),
-                  SizedBox(
-                    width: 200,
-                    child: Text(
-                      slide.title,
-                      style: const TextStyle(
-                        color: AppColors.black,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 22,
-                        height: 1.1,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  SizedBox(
-                    width: 200,
-                    child: Text(
-                      slide.subtitle,
-                      style: const TextStyle(
-                        color: AppColors.black,
-                        fontSize: 12,
-                        height: 1.3,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: AppSizes.sm),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSizes.md,
-                      vertical: 6,
-                    ),
-                    decoration: ShapeDecoration(
-                      color: AppColors.black,
-                      shape: AppShapes.squircle(AppSizes.radiusFull),
-                    ),
-                    child: const Text(
-                      'Shop now',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Positioned(
-              right: 6,
-              bottom: 6,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.7),
-                  borderRadius: BorderRadius.circular(3),
-                ),
-                child: const Text(
-                  'AD',
-                  style: TextStyle(
-                    color: AppColors.muted,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ),
-            ),
-          ],
+      ],
+    );
+  }
+}
+
+/// Small "AD" affordance over the bottom-right of every hero slide so
+/// the merchant's paid placement is disclosed to the shopper.
+class _AdBadge extends StatelessWidget {
+  const _AdBadge();
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(3),
+      ),
+      child: const Text(
+        'AD',
+        style: TextStyle(
+          color: AppColors.muted,
+          fontSize: 9,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.5,
         ),
       ),
     );
