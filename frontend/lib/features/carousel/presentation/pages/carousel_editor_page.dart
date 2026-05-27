@@ -250,30 +250,13 @@ class _MetaCardState extends State<_MetaCard> {
     _endAt = widget.carousel.endAt;
   }
 
-  @override
-  void didUpdateWidget(covariant _MetaCard old) {
-    super.didUpdateWidget(old);
-    // Sync local controllers if the upstream carousel changed (e.g.
-    // after a save invalidated our cached row). We only push down on
-    // identity-different rows so the merchant's in-progress edit isn't
-    // clobbered mid-keystroke.
-    if (old.carousel.id != widget.carousel.id ||
-        old.carousel.name != widget.carousel.name) {
-      _name.text = widget.carousel.name;
-    }
-    if (old.carousel.placement != widget.carousel.placement) {
-      _placement = widget.carousel.placement;
-    }
-    if (old.carousel.isActive != widget.carousel.isActive) {
-      _isActive = widget.carousel.isActive;
-    }
-    if (old.carousel.startAt != widget.carousel.startAt) {
-      _startAt = widget.carousel.startAt;
-    }
-    if (old.carousel.endAt != widget.carousel.endAt) {
-      _endAt = widget.carousel.endAt;
-    }
-  }
+  // No didUpdateWidget: the State is rebuilt fresh whenever the
+  // merchant navigates back into the editor, and CarouselsProvider
+  // updates fire here as Provider rebuilds — but we *don't* want to
+  // re-sync controllers mid-edit. Resyncing on every save round-trip
+  // races with in-flight keystrokes ("Spring" typed → save fires →
+  // user types " sale" → save response stomps it back to "Spring").
+  // The fields are merchant-authoritative until they leave the page.
 
   @override
   void dispose() {
