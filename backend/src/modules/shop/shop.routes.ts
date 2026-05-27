@@ -12,3 +12,16 @@ router.put('/', asyncHandler(shopController.updateMine.bind(shopController)));
 router.post('/publish', asyncHandler(shopController.setPublished.bind(shopController)));
 
 export default router;
+
+/// Platform-admin verified toggle. Mounted at /admin/shops/:id with
+/// `requirePlatformAdmin` upstream. Self-serve verification is not
+/// allowed — only platform admins can flip this flag.
+export const adminShopRouter = Router();
+adminShopRouter.get(
+  '/',
+  asyncHandler(shopController.listAdmin.bind(shopController)),
+);
+adminShopRouter.post(
+  '/:id/verified',
+  asyncHandler(shopController.setVerified.bind(shopController)),
+);

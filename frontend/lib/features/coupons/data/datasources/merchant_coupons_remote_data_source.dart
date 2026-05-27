@@ -34,6 +34,8 @@ class MerchantCouponsRemoteDataSource {
     required DateTime validUntil,
     int perUserLimit = 1,
     int totalCap = 0,
+    bool isPublic = false,
+    bool firstOrderOnly = false,
     bool isActive = true,
   }) async {
     final res = await _client.post('/me/coupons-admin', body: {
@@ -49,6 +51,8 @@ class MerchantCouponsRemoteDataSource {
       'validUntil': validUntil.toUtc().toIso8601String(),
       'perUserLimit': perUserLimit,
       'totalCap': totalCap,
+      'isPublic': isPublic,
+      'firstOrderOnly': firstOrderOnly,
       'isActive': isActive,
     });
     if (res.statusCode == 201) {
@@ -70,6 +74,8 @@ class MerchantCouponsRemoteDataSource {
     DateTime? validUntil,
     int? perUserLimit,
     int? totalCap,
+    bool? isPublic,
+    bool? firstOrderOnly,
     bool? isActive,
   }) async {
     final res = await _client.patch('/me/coupons-admin/$id', body: {
@@ -85,6 +91,8 @@ class MerchantCouponsRemoteDataSource {
         'validUntil': validUntil.toUtc().toIso8601String(),
       if (perUserLimit != null) 'perUserLimit': perUserLimit,
       if (totalCap != null) 'totalCap': totalCap,
+      if (isPublic != null) 'isPublic': isPublic,
+      if (firstOrderOnly != null) 'firstOrderOnly': firstOrderOnly,
       if (isActive != null) 'isActive': isActive,
     });
     if (res.statusCode == 204) return;

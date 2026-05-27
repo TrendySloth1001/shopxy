@@ -13,18 +13,19 @@ import vendorsRouter from '../../modules/vendors/vendors.routes.js';
 import partiesRouter from '../../modules/parties/parties.routes.js';
 import invoicesRouter from '../../modules/invoices/invoices.routes.js';
 import challansRouter from '../../modules/challans/challans.routes.js';
-import uploadRouter from '../../modules/upload/upload.routes.js';
+import uploadRouter, { avatarUploadRouter } from '../../modules/upload/upload.routes.js';
 import invitationsRouter from '../../modules/invitations/invitations.routes.js';
 import notificationsRouter from '../../modules/notifications/notifications.routes.js';
 import reportsRouter from '../../modules/reports/reports.routes.js';
 import meRouter from '../../modules/me/me.routes.js';
 import paymentsRouter from '../../modules/payments/payments.routes.js';
 import customFieldsRouter from '../../modules/customFields/customFields.routes.js';
-import shopRouter from '../../modules/shop/shop.routes.js';
+import shopRouter, { adminShopRouter } from '../../modules/shop/shop.routes.js';
 import shopPublicRouter from '../../modules/shop/shop.public.routes.js';
 import {
   reviewsPublicRouter,
   reviewsAuthRouter,
+  myReviewsRouter,
 } from '../../modules/reviews/reviews.routes.js';
 import {
   bannersPublicRouter,
@@ -44,6 +45,7 @@ import {
   collectionsPublicRouter,
   collectionsAdminRouter,
 } from '../../modules/collections/collections.routes.js';
+import { platformBankOffersAdminRouter } from '../../modules/platform-bank-offers/platform-bank-offers.routes.js';
 import {
   eventsIngestRouter,
   recentlyViewedRouter,
@@ -288,8 +290,12 @@ export function buildApp(): express.Express {
   app.use('/me/wallet', customerWalletRouter);
   app.use('/me/coupons', customerCouponsRouter);
   app.use('/me/recently-viewed', recentlyViewedRouter);
+  app.use('/me/reviews', myReviewsRouter);
   app.use('/me/addresses', addressesRouter);
   app.use('/me/cart', cartRouter);
+  // Auth-only avatar upload — shares the merchant uploader but lives
+  // outside `ownerOnly` so customers can upload a profile photo too.
+  app.use('/me/upload', uploadLimiter, avatarUploadRouter);
 
   // Customer event ingestion — no role gate; both OWNER (browsing
   // the marketplace) and CUSTOMER can post events. resolveShop is
@@ -312,6 +318,12 @@ export function buildApp(): express.Express {
   app.use('/admin/banners', requirePlatformAdmin, bannersAdminRouter);
   app.use('/admin/brand-spotlight', requirePlatformAdmin, brandSpotlightAdminRouter);
   app.use('/admin/collections', requirePlatformAdmin, collectionsAdminRouter);
+  app.use(
+    '/admin/platform-bank-offers',
+    requirePlatformAdmin,
+    platformBankOffersAdminRouter,
+  );
+  app.use('/admin/shops', requirePlatformAdmin, adminShopRouter);
 
   const ownerOnly = requireRole('OWNER');
   app.use('/me/shop', ownerOnly, shopRouter);

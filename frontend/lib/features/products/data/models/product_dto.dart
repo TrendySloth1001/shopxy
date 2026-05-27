@@ -21,6 +21,7 @@ class ProductDto {
       sku: json['sku'] as String,
       barcode: json['barcode'] as String?,
       hsnCode: json['hsnCode'] as String?,
+      brand: json['brand'] as String?,
       mrp: _toDouble(json['mrp']),
       sellingPrice: _toDouble(json['sellingPrice']),
       purchasePrice: _toDouble(json['purchasePrice']),
@@ -58,6 +59,24 @@ class ProductDto {
               .toList() ??
           const [],
       totalSold: json['totalSold'] as int? ?? 0,
+      soldLast30d: json['soldLast30d'] as int? ?? 0,
+      systemTags:
+          (json['systemTags'] as List<dynamic>?)?.cast<String>() ?? const [],
+      contentBlocks: (json['contentBlocks'] as List<dynamic>?)
+              ?.whereType<Map<String, dynamic>>()
+              .map(ContentBlock.fromJson)
+              .toList() ??
+          const [],
+      variantAxes: (json['variantAxes'] as List<dynamic>?)
+              ?.whereType<Map<String, dynamic>>()
+              .map(VariantAxis.fromJson)
+              .toList() ??
+          const [],
+      variants: (json['variants'] as List<dynamic>?)
+              ?.whereType<Map<String, dynamic>>()
+              .map(ProductVariant.fromJson)
+              .toList() ??
+          const [],
     );
   }
 
@@ -79,6 +98,7 @@ class ProductDto {
     required String sku,
     String? barcode,
     String? hsnCode,
+    String? brand,
     List<String>? imageUrls,
     required double mrp,
     required double sellingPrice,
@@ -92,6 +112,9 @@ class ProductDto {
     List<String>? highlights,
     List<SpecGroup>? specs,
     List<ProductOffer>? offers,
+    List<ContentBlock>? contentBlocks,
+    List<VariantAxis>? variantAxes,
+    List<ProductVariant>? variants,
   }) {
     final data = <String, dynamic>{
       'name': name,
@@ -99,6 +122,7 @@ class ProductDto {
       'sku': sku,
       'barcode': (barcode != null && barcode.isNotEmpty) ? barcode : null,
       'hsnCode': (hsnCode != null && hsnCode.isNotEmpty) ? hsnCode : null,
+      'brand': (brand != null && brand.isNotEmpty) ? brand : null,
       'imageUrls': (imageUrls != null && imageUrls.isNotEmpty) ? imageUrls : null,
       'mrp': mrp,
       'sellingPrice': sellingPrice,
@@ -112,6 +136,9 @@ class ProductDto {
       'highlights': highlights,
       'specs': specs?.map(_specToJson).toList(),
       'offers': offers?.map((o) => o.toJson()).toList(),
+      'contentBlocks': contentBlocks?.map((b) => b.toJson()).toList(),
+      'variantAxes': variantAxes?.map((a) => a.toJson()).toList(),
+      'variants': variants?.map((v) => v.toJson()).toList(),
     };
     data.removeWhere((_, value) => value == null);
     return data;
@@ -123,6 +150,7 @@ class ProductDto {
     String? sku,
     String? barcode,
     String? hsnCode,
+    String? brand,
     double? mrp,
     double? sellingPrice,
     double? purchasePrice,
@@ -136,6 +164,9 @@ class ProductDto {
     List<String>? highlights,
     List<SpecGroup>? specs,
     List<ProductOffer>? offers,
+    List<ContentBlock>? contentBlocks,
+    List<VariantAxis>? variantAxes,
+    List<ProductVariant>? variants,
   }) {
     final data = <String, dynamic>{
       'name': name,
@@ -143,6 +174,7 @@ class ProductDto {
       'sku': sku,
       'barcode': barcode,
       'hsnCode': hsnCode,
+      'brand': brand,
       'mrp': mrp,
       'sellingPrice': sellingPrice,
       'purchasePrice': purchasePrice,
@@ -156,6 +188,9 @@ class ProductDto {
       'highlights': highlights,
       'specs': specs?.map(_specToJson).toList(),
       'offers': offers?.map((o) => o.toJson()).toList(),
+      'contentBlocks': contentBlocks?.map((b) => b.toJson()).toList(),
+      'variantAxes': variantAxes?.map((a) => a.toJson()).toList(),
+      'variants': variants?.map((v) => v.toJson()).toList(),
     };
     data.removeWhere((_, value) => value == null);
     return data;
@@ -163,9 +198,10 @@ class ProductDto {
 
   /// Drops empty-row + empty-value pairs before serialising. Lets the
   /// editor leave half-filled rows in the form without ever shipping
-  /// them.
+  /// them. Phase D: serialises the optional `tab` bucket when set.
   static Map<String, dynamic> _specToJson(SpecGroup g) => {
         'title': g.title.trim(),
+        if (g.tab != null && g.tab!.trim().isNotEmpty) 'tab': g.tab!.trim(),
         'rows': g.rows
             .where((r) => r.label.trim().isNotEmpty && r.value.trim().isNotEmpty)
             .map((r) => {'label': r.label.trim(), 'value': r.value.trim()})

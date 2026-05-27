@@ -24,13 +24,22 @@ class AuthRemoteDataSource {
     );
   }
 
-  Future<AuthResult> register(String name, String email, String password) async {
+  Future<AuthResult> register(
+    String name,
+    String email,
+    String password, {
+    required String shopName,
+  }) async {
     final res = await _client.post(
       '/auth/register',
       body: {
         'name': name,
         'email': email,
         'password': password,
+        // Merchant app — every signup creates an OWNER + their Shop on
+        // the backend, atomically. The customer app sends 'CUSTOMER'.
+        'role': 'OWNER',
+        'shopName': shopName,
         // DPDP consent gate — both literals required by the backend
         // schema. The register page disables submit until the user
         // ticks both boxes, so reaching this line implies acceptance.
@@ -71,6 +80,10 @@ class AuthRemoteDataSource {
     String? shopGstin,
     String? shopPan,
     String? upiVpa,
+    String? avatarUrl,
+    bool clearAvatar = false,
+    String? phoneNumber,
+    bool clearPhone = false,
   }) async {
     final body = <String, dynamic>{};
     if (name != null) body['name'] = name;
@@ -94,6 +107,18 @@ class AuthRemoteDataSource {
     put('shopGstin', shopGstin);
     put('shopPan', shopPan);
     put('upiVpa', upiVpa);
+    // Avatar + phone — explicit clear flag because the empty-string
+    // convention above conflicts with multi-step upload UX.
+    if (clearAvatar) {
+      body['avatarUrl'] = null;
+    } else if (avatarUrl != null) {
+      body['avatarUrl'] = avatarUrl;
+    }
+    if (clearPhone) {
+      body['phoneNumber'] = null;
+    } else if (phoneNumber != null) {
+      body['phoneNumber'] = phoneNumber;
+    }
 
     final res = await _client.patch('/auth/me', body: body);
     if (res.statusCode != 200) {

@@ -25,6 +25,11 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _name;
   late final TextEditingController _tagline;
+  late final TextEditingController _locationCity;
+  late final TextEditingController _locationState;
+  late final TextEditingController _returnPolicy;
+  late final TextEditingController _shippingPolicy;
+  late final TextEditingController _refundPolicy;
   String? _logoUrl;
   String? _bannerUrl;
   bool _uploadingLogo = false;
@@ -36,6 +41,11 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
     super.initState();
     _name = TextEditingController();
     _tagline = TextEditingController();
+    _locationCity = TextEditingController();
+    _locationState = TextEditingController();
+    _returnPolicy = TextEditingController();
+    _shippingPolicy = TextEditingController();
+    _refundPolicy = TextEditingController();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       context.read<ShopProvider>().load();
@@ -47,6 +57,11 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
     _initialised = true;
     _name.text = shop.name;
     _tagline.text = shop.tagline ?? '';
+    _locationCity.text = shop.locationCity ?? '';
+    _locationState.text = shop.locationState ?? '';
+    _returnPolicy.text = shop.returnPolicy ?? '';
+    _shippingPolicy.text = shop.shippingPolicy ?? '';
+    _refundPolicy.text = shop.refundPolicy ?? '';
     _logoUrl = shop.logoUrl;
     _bannerUrl = shop.bannerUrl;
   }
@@ -55,6 +70,11 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
   void dispose() {
     _name.dispose();
     _tagline.dispose();
+    _locationCity.dispose();
+    _locationState.dispose();
+    _returnPolicy.dispose();
+    _shippingPolicy.dispose();
+    _refundPolicy.dispose();
     super.dispose();
   }
 
@@ -104,10 +124,24 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
     }
   }
 
+  /// Helper — null when the controller's text matches the stored
+  /// value (so we don't send a no-op), or the canonical normalised
+  /// value (empty string → null clear) when it differs.
+  String? _diffText(TextEditingController c, String? stored) {
+    final next = c.text.trim().isEmpty ? null : c.text.trim();
+    final prev = stored?.trim().isEmpty == true ? null : stored?.trim();
+    if (next == prev) return null;
+    return next;
+  }
+
   bool _isDirty(Shop shop) {
     return _name.text.trim() != shop.name ||
-        (_tagline.text.trim().isEmpty ? null : _tagline.text.trim()) !=
-            shop.tagline ||
+        _diffText(_tagline, shop.tagline) != null ||
+        _diffText(_locationCity, shop.locationCity) != null ||
+        _diffText(_locationState, shop.locationState) != null ||
+        _diffText(_returnPolicy, shop.returnPolicy) != null ||
+        _diffText(_shippingPolicy, shop.shippingPolicy) != null ||
+        _diffText(_refundPolicy, shop.refundPolicy) != null ||
         _logoUrl != shop.logoUrl ||
         _bannerUrl != shop.bannerUrl;
   }
@@ -116,12 +150,25 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
     if (!_formKey.currentState!.validate()) return;
     final provider = context.read<ShopProvider>();
     final newName = _name.text.trim();
-    final newTagline = _tagline.text.trim().isEmpty ? null : _tagline.text.trim();
+
+    // For each text field: send the new value when changed, the
+    // sentinel `_absent` when not. `_diffText` returns null only when
+    // unchanged, so a non-null value means "send this" (including the
+    // explicit-null sentinel for clears).
+    Object? maybe(String? diff) => diff ?? const Object();
+
     final ok = await provider.save(
       name: newName == current.name ? null : newName,
-      tagline: newTagline == current.tagline ? const Object() : newTagline,
+      tagline: maybe(_diffText(_tagline, current.tagline)),
       logoUrl: _logoUrl == current.logoUrl ? const Object() : _logoUrl,
-      bannerUrl: _bannerUrl == current.bannerUrl ? const Object() : _bannerUrl,
+      bannerUrl:
+          _bannerUrl == current.bannerUrl ? const Object() : _bannerUrl,
+      locationCity: maybe(_diffText(_locationCity, current.locationCity)),
+      locationState: maybe(_diffText(_locationState, current.locationState)),
+      returnPolicy: maybe(_diffText(_returnPolicy, current.returnPolicy)),
+      shippingPolicy:
+          maybe(_diffText(_shippingPolicy, current.shippingPolicy)),
+      refundPolicy: maybe(_diffText(_refundPolicy, current.refundPolicy)),
     );
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -168,17 +215,52 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
     );
   }
 
+  /// Returns true when the user confirms they want to discard
+  /// unsaved edits. Used by PopScope to guard the back gesture.
+  Future<bool> _confirmDiscard(BuildContext context) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Discard changes?'),
+        content: const Text(
+          "You have unsaved edits. Leaving now drops them.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Keep editing'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Discard'),
+          ),
+        ],
+      ),
+    );
+    return ok ?? false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<ShopProvider>();
     final shop = provider.shop;
+    final dirty = shop != null && _isDirty(shop);
 
-    return Scaffold(
+    return PopScope(
+      canPop: !dirty,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        if (!mounted) return;
+        final discard = await _confirmDiscard(context);
+        if (discard && mounted) Navigator.of(context).pop();
+      },
+      child: Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
         title: const Text('My Shop'),
         actions: [
-          if (shop != null && _isDirty(shop))
+          if (dirty)
             TextButton(
               onPressed: provider.isSaving ? null : () => _save(shop),
               child: Text(provider.isSaving ? 'Saving…' : 'Save'),
@@ -198,6 +280,7 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
                   ),
                 )
               : _buildForm(shop),
+      ),
     );
   }
 
@@ -304,6 +387,89 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
                   maxLength: 140,
                   onChanged: (_) => setState(() {}),
                 ),
+                const SizedBox(height: AppSizes.lg),
+                _SectionHeader(
+                  title: 'Location',
+                  subtitle:
+                      'Optional. Surfaces a "Based in …" line on your '
+                      'public shop page.',
+                ),
+                const SizedBox(height: AppSizes.md),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _locationCity,
+                        decoration: const InputDecoration(
+                          labelText: 'City',
+                        ),
+                        textCapitalization: TextCapitalization.words,
+                        onChanged: (_) => setState(() {}),
+                      ),
+                    ),
+                    const SizedBox(width: AppSizes.md),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _locationState,
+                        decoration: const InputDecoration(
+                          labelText: 'State',
+                        ),
+                        textCapitalization: TextCapitalization.words,
+                        onChanged: (_) => setState(() {}),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSizes.xl),
+                _SectionHeader(
+                  title: 'Policies',
+                  subtitle:
+                      'Customers see these on your shop page and as a '
+                      '"Policies" pill on every PDP. Plain text. Up to '
+                      '4 KB each.',
+                ),
+                const SizedBox(height: AppSizes.md),
+                TextFormField(
+                  controller: _returnPolicy,
+                  decoration: const InputDecoration(
+                    labelText: 'Return policy',
+                    hintText:
+                        'e.g. 7-day return on unused items. Original '
+                        'packaging required.',
+                  ),
+                  minLines: 2,
+                  maxLines: 6,
+                  maxLength: 4096,
+                  onChanged: (_) => setState(() {}),
+                ),
+                const SizedBox(height: AppSizes.md),
+                TextFormField(
+                  controller: _shippingPolicy,
+                  decoration: const InputDecoration(
+                    labelText: 'Shipping policy',
+                    hintText:
+                        'e.g. Ships within 24 hours from Bengaluru. '
+                        '3–5 business days delivery.',
+                  ),
+                  minLines: 2,
+                  maxLines: 6,
+                  maxLength: 4096,
+                  onChanged: (_) => setState(() {}),
+                ),
+                const SizedBox(height: AppSizes.md),
+                TextFormField(
+                  controller: _refundPolicy,
+                  decoration: const InputDecoration(
+                    labelText: 'Refund policy',
+                    hintText:
+                        'e.g. Refunds processed within 5 business days '
+                        'to the original payment method.',
+                  ),
+                  minLines: 2,
+                  maxLines: 6,
+                  maxLength: 4096,
+                  onChanged: (_) => setState(() {}),
+                ),
               ],
             ),
           ),
@@ -311,6 +477,36 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
           _PublishCard(shop: shop, onToggle: () => _togglePublish(shop)),
         ],
       ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title, this.subtitle});
+  final String title;
+  final String? subtitle;
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.4,
+          ),
+        ),
+        if (subtitle != null) ...[
+          const SizedBox(height: 2),
+          Text(
+            subtitle!,
+            style:
+                theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
+          ),
+        ],
+      ],
     );
   }
 }

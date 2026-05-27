@@ -18,6 +18,8 @@ class MerchantCoupon {
     required this.perUserLimit,
     required this.totalCap,
     required this.totalRedemptions,
+    required this.isPublic,
+    required this.firstOrderOnly,
     required this.isActive,
     required this.createdAt,
     required this.updatedAt,
@@ -39,6 +41,13 @@ class MerchantCoupon {
   final int perUserLimit;
   final int totalCap;
   final int totalRedemptions;
+  /// Public coupons auto-apply at checkout and surface on the
+  /// customer's coupon carousel. Private coupons (the default) are
+  /// only redeemed by typing the code — useful for influencer drops,
+  /// B2B deals, and refer-a-friend links.
+  final bool isPublic;
+  /// Only redeemable on the customer's first confirmed order.
+  final bool firstOrderOnly;
   final bool isActive;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -61,6 +70,8 @@ class MerchantCoupon {
       perUserLimit: (j['perUserLimit'] as num).toInt(),
       totalCap: (j['totalCap'] as num).toInt(),
       totalRedemptions: (j['totalRedemptions'] as num).toInt(),
+      isPublic: (j['isPublic'] as bool?) ?? false,
+      firstOrderOnly: (j['firstOrderOnly'] as bool?) ?? false,
       isActive: j['isActive'] as bool,
       createdAt: DateTime.parse(j['createdAt'] as String),
       updatedAt: DateTime.parse(j['updatedAt'] as String),

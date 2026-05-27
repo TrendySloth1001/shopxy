@@ -9,6 +9,7 @@ import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/custom_fields/presentation/pages/custom_fields_settings_page.dart';
 import 'package:shopxy/features/profile/presentation/pages/change_password_page.dart';
 import 'package:shopxy/features/profile/presentation/pages/edit_profile_page.dart';
+import 'package:shopxy/features/shop/presentation/pages/shop_operations_page.dart';
 import 'package:shopxy/features/profile/presentation/pages/legal_page.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
@@ -161,6 +162,26 @@ class _SettingsPageState extends State<SettingsPage> {
             icon: Icons.alternate_email_rounded,
             title: AppStrings.email,
             subtitle: user?.email ?? '—',
+          ),
+
+          const _Gap(),
+
+          // ── Shop operations ─────────────────────────────────
+          const _Eyebrow('SHOP OPERATIONS'),
+          const SizedBox(height: AppSizes.sm),
+          _SettingRow(
+            icon: Icons.tune_rounded,
+            title: 'Shop operations',
+            subtitle: 'Hours, vacation mode, payouts, KYC, team',
+            trailing: const Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.subtle,
+            ),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => const ShopOperationsPage()),
+            ),
           ),
 
           const _Gap(),

@@ -28,6 +28,8 @@ class Coupon {
     required this.minOrderAmount,
     required this.validUntil,
     required this.exhausted,
+    required this.isPublic,
+    required this.firstOrderOnly,
     this.description,
     this.maxDiscount,
     this.shop,
@@ -49,6 +51,12 @@ class Coupon {
   /// card stays on the list (with a "Used" badge) so the customer
   /// knows the coupon exists but is no longer redeemable for them.
   final bool exhausted;
+  /// Public coupons auto-apply on checkout — no manual code entry.
+  /// Private coupons (default) require typing the code.
+  final bool isPublic;
+  /// Restricted to first-time customers. Surfaces a "First order only"
+  /// pill on the card.
+  final bool firstOrderOnly;
 
   /// "10% off (max ₹200)" / "Flat ₹100 off"
   String get headline {
@@ -80,15 +88,20 @@ class Coupon {
         minOrderAmount: _d(j['minOrderAmount']),
         validUntil: DateTime.parse(j['validUntil'] as String),
         exhausted: (j['exhausted'] as bool?) ?? false,
+        isPublic: (j['isPublic'] as bool?) ?? false,
+        firstOrderOnly: (j['firstOrderOnly'] as bool?) ?? false,
         shop: j['shop'] == null
             ? null
             : CouponShop.fromJson(j['shop'] as Map<String, dynamic>),
       );
 }
 
-/// Result of `POST /me/coupons/validate` — either an `ok: true` row
-/// carrying the effective discount or an `ok: false` row with a
-/// human-readable reason.
+/// Result of `POST /me/coupons/validate` and `…/auto-apply` — either
+/// an `ok: true` row carrying the effective discount or an `ok: false`
+/// row with a human-readable reason. `autoApplied` is true when the
+/// coupon came from the auto-apply endpoint (a public coupon picked
+/// for the customer without a code entry); UI uses it to show the
+/// "Auto-applied" badge instead of the manual chip.
 class CouponPreview {
   const CouponPreview({
     required this.ok,
@@ -99,6 +112,8 @@ class CouponPreview {
     this.discount,
     this.errorCode,
     this.message,
+    this.autoApplied = false,
+    this.firstOrderOnly = false,
   });
 
   final bool ok;
@@ -109,6 +124,21 @@ class CouponPreview {
   final double? discount;
   final String? errorCode;
   final String? message;
+  final bool autoApplied;
+  final bool firstOrderOnly;
+
+  CouponPreview copyWith({bool? autoApplied}) => CouponPreview(
+        ok: ok,
+        couponId: couponId,
+        code: code,
+        title: title,
+        discountType: discountType,
+        discount: discount,
+        errorCode: errorCode,
+        message: message,
+        autoApplied: autoApplied ?? this.autoApplied,
+        firstOrderOnly: firstOrderOnly,
+      );
 
   factory CouponPreview.fromJson(Map<String, dynamic> j) {
     if (j['ok'] == true) {
@@ -120,6 +150,7 @@ class CouponPreview {
         title: c['title'] as String,
         discountType: c['discountType'] as String,
         discount: _d(c['discount']),
+        firstOrderOnly: (c['firstOrderOnly'] as bool?) ?? false,
       );
     }
     return CouponPreview(

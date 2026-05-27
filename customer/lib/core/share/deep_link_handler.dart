@@ -4,6 +4,7 @@ import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:shopxy_customer/core/config/app_config.dart';
 import 'package:shopxy_customer/features/marketplace/presentation/pages/product_detail_page.dart';
+import 'package:shopxy_customer/features/marketplace/presentation/pages/shop_profile_page.dart';
 
 /// Listens for incoming app links + the launching URL and routes the
 /// supported paths to in-app pages. Lives at app boot (instantiated in
@@ -12,8 +13,10 @@ import 'package:shopxy_customer/features/marketplace/presentation/pages/product_
 /// (getInitialAppLink).
 ///
 /// Supported URL shapes:
-///   `https://<webBaseUrl>/p/<id>`       universal / app link
-///   `shopxy://product/<id>`             custom scheme fallback
+///   `https://<webBaseUrl>/p/<id>`       product (universal / app link)
+///   `shopxy://product/<id>`             product (custom scheme)
+///   `https://<webBaseUrl>/s/<slug>`     shop (universal / app link)
+///   `shopxy://shop/<slug>`              shop (custom scheme)
 class DeepLinkHandler {
   DeepLinkHandler(
     this._navigatorKey, {
@@ -31,16 +34,18 @@ class DeepLinkHandler {
   StreamSubscription<Uri>? _sub;
   bool _started = false;
 
-  /// Tracks the most recent productId we navigated to, plus the
+  /// Tracks the most recent destination we navigated to plus the
   /// millisecond timestamp, so consecutive identical Uri events from
   /// the OS (which happens often on Android cold-starts) don't stack
-  /// duplicate PDPs.
-  int? _lastProductId;
+  /// duplicate pages. The key is `"p:<id>"` for products and
+  /// `"s:<slug>"` for shops.
+  String? _lastKey;
   int _lastNavigatedAtMs = 0;
   static const _dedupeWindowMs = 1500;
 
-  /// Pending product the user wants to see, deferred until they sign in.
-  int? _pendingLink;
+  /// Pending destination the user wants to see, deferred until they
+  /// sign in. Tagged with the same `p:` / `s:` prefix as `_lastKey`.
+  String? _pendingLink;
 
   Future<void> start() async {
     if (_started) return;
@@ -71,17 +76,17 @@ class DeepLinkHandler {
   }
 
   void _handle(Uri uri) {
-    final productId = _extractProductId(uri);
-    if (productId == null) return;
-    _route(productId);
+    final key = _extractTarget(uri);
+    if (key == null) return;
+    _route(key);
   }
 
-  void _route(int productId) {
+  void _route(String key) {
     // Auth gate: defer the navigation until the user signs in. The
     // AuthProvider listener in main.dart calls [replayPendingOnLogin]
     // once auth flips true.
     if (isAuthenticated != null && !isAuthenticated!()) {
-      _pendingLink = productId;
+      _pendingLink = key;
       return;
     }
 
@@ -89,20 +94,32 @@ class DeepLinkHandler {
     // more than once on some platforms, and the AppLinks plugin
     // re-delivers the cold-start URI alongside the live stream.
     final now = DateTime.now().millisecondsSinceEpoch;
-    if (_lastProductId == productId &&
-        now - _lastNavigatedAtMs < _dedupeWindowMs) {
+    if (_lastKey == key && now - _lastNavigatedAtMs < _dedupeWindowMs) {
       return;
     }
-    _lastProductId = productId;
+    _lastKey = key;
     _lastNavigatedAtMs = now;
 
     final navigator = _navigatorKey.currentState;
     if (navigator == null) return;
-    navigator.push(
-      MaterialPageRoute(
-        builder: (_) => ProductDetailPage(productId: productId),
-      ),
-    );
+
+    if (key.startsWith('p:')) {
+      final productId = int.tryParse(key.substring(2));
+      if (productId == null) return;
+      navigator.push(
+        MaterialPageRoute(
+          builder: (_) => ProductDetailPage(productId: productId),
+        ),
+      );
+    } else if (key.startsWith('s:')) {
+      final slug = key.substring(2);
+      if (slug.isEmpty) return;
+      navigator.push(
+        MaterialPageRoute(
+          builder: (_) => ShopProfilePage(slug: slug),
+        ),
+      );
+    }
   }
 
   /// Invoked by main.dart on the false→true auth-state transition.
@@ -114,27 +131,36 @@ class DeepLinkHandler {
     _route(pending);
   }
 
-  /// Extracts a product id from a supported URL. Tolerant of trailing
-  /// slashes and query strings; returns null for anything else so the
-  /// listener can safely ignore unrelated links the OS might deliver
-  /// (e.g. a future deeplink for shop, collection, etc).
-  int? _extractProductId(Uri uri) {
-    // https://shopxy.app/p/<id>
+  /// Extracts a `"p:<id>"` (product) or `"s:<slug>"` (shop) target
+  /// from a supported URL. Tolerant of trailing slashes and query
+  /// strings; returns null for anything else so the listener can
+  /// safely ignore unrelated links the OS might deliver.
+  String? _extractTarget(Uri uri) {
     if (uri.scheme == 'https' || uri.scheme == 'http') {
       final expectedHost = Uri.parse(AppConfig.webBaseUrl).host;
       if (uri.host != expectedHost) return null;
       final segs = uri.pathSegments;
       if (segs.length >= 2 && segs[0] == 'p') {
-        return int.tryParse(segs[1]);
+        final id = int.tryParse(segs[1]);
+        return id == null ? null : 'p:$id';
+      }
+      if (segs.length >= 2 && segs[0] == 's') {
+        final slug = segs[1].trim();
+        return slug.isEmpty ? null : 's:$slug';
       }
       return null;
     }
-    // shopxy://product/<id>
     if (uri.scheme == AppConfig.appScheme) {
       // Custom schemes put the "host" before the path, so
       //   shopxy://product/12  → host=product, pathSegments=[12]
+      //   shopxy://shop/foo    → host=shop,    pathSegments=[foo]
       if (uri.host == 'product' && uri.pathSegments.isNotEmpty) {
-        return int.tryParse(uri.pathSegments.first);
+        final id = int.tryParse(uri.pathSegments.first);
+        return id == null ? null : 'p:$id';
+      }
+      if (uri.host == 'shop' && uri.pathSegments.isNotEmpty) {
+        final slug = uri.pathSegments.first.trim();
+        return slug.isEmpty ? null : 's:$slug';
       }
     }
     return null;

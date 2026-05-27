@@ -24,6 +24,7 @@ class Product {
     required this.sku,
     this.barcode,
     this.hsnCode,
+    this.brand,
     required this.mrp,
     required this.sellingPrice,
     required this.purchasePrice,
@@ -49,6 +50,11 @@ class Product {
     this.specs = const [],
     this.offers = const [],
     this.totalSold = 0,
+    this.soldLast30d = 0,
+    this.systemTags = const [],
+    this.contentBlocks = const [],
+    this.variantAxes = const [],
+    this.variants = const [],
   });
 
   final int id;
@@ -57,6 +63,9 @@ class Product {
   final String sku;
   final String? barcode;
   final String? hsnCode;
+  /// Free-text brand name surfaced on the PDP under the title. Null
+  /// for merchants who don't carry branded inventory.
+  final String? brand;
   final double mrp;
   final double sellingPrice;
   final double purchasePrice;
@@ -113,6 +122,29 @@ class Product {
   /// (in a later phase) on every CONFIRMED invoice.
   final int totalSold;
 
+  /// Trailing-30-day sold quantity, refreshed nightly by the scheduler.
+  /// Drives the "X bought in past month" line on the PDP.
+  final int soldLast30d;
+
+  /// Curated, system-managed tags (BESTSELLER, EDITORS_PICK, etc).
+  /// Merchants can't write these — they're set by admin or the
+  /// trending job. Mirrors the backend `system_tags` column.
+  final List<String> systemTags;
+
+  /// A+ content blocks rendered in the customer PDP Details tab.
+  /// Empty when the merchant hasn't authored any.
+  final List<ContentBlock> contentBlocks;
+
+  /// Phase E — variant axis definitions ([{name, values}]). Empty
+  /// when the product is single-variant (still has one default
+  /// variant under the hood).
+  final List<VariantAxis> variantAxes;
+
+  /// Phase E — purchasable SKUs under this product. Always has at
+  /// least one row (the default variant). Multi-variant products
+  /// surface a swatch picker on the PDP.
+  final List<ProductVariant> variants;
+
   String? get primaryImageUrl => images.isNotEmpty ? images.first.url : null;
   bool get isLowStock => stockQuantity <= lowStockThreshold && stockQuantity > 0;
   bool get isOutOfStock => stockQuantity <= 0;
@@ -124,20 +156,32 @@ class Product {
 /// pairs. Empty rows are allowed mid-edit; the DTO trims them before
 /// posting so we never round-trip useless data.
 class SpecGroup {
-  const SpecGroup({required this.title, required this.rows});
+  const SpecGroup({required this.title, this.tab, required this.rows});
   final String title;
+
+  /// Phase D — optional subtab bucket. When any group on a product
+  /// declares a tab, the PDP renders a chip row above the spec table
+  /// and filters by selection. Null on every group ⇒ legacy flat list.
+  final String? tab;
   final List<SpecRow> rows;
 
-  SpecGroup copyWith({String? title, List<SpecRow>? rows}) =>
-      SpecGroup(title: title ?? this.title, rows: rows ?? this.rows);
+  SpecGroup copyWith({String? title, String? tab, List<SpecRow>? rows}) =>
+      SpecGroup(
+          title: title ?? this.title,
+          tab: tab ?? this.tab,
+          rows: rows ?? this.rows);
 
   Map<String, dynamic> toJson() => {
         'title': title,
+        if (tab != null && tab!.isNotEmpty) 'tab': tab,
         'rows': rows.map((r) => r.toJson()).toList(),
       };
 
   factory SpecGroup.fromJson(Map<String, dynamic> j) => SpecGroup(
         title: (j['title'] as String?) ?? '',
+        tab: (j['tab'] as String?)?.trim().isEmpty ?? true
+            ? null
+            : (j['tab'] as String).trim(),
         rows: ((j['rows'] as List<dynamic>?) ?? const [])
             .whereType<Map<String, dynamic>>()
             .map(SpecRow.fromJson)
@@ -196,4 +240,162 @@ class ProductOffer {
         detail: j['detail'] as String?,
         code: j['code'] as String?,
       );
+}
+
+/// Phase E — variant axis definition. [name] is the axis label
+/// ("Color"), [values] are the picker options ("Red", "Blue", ...).
+class VariantAxis {
+  const VariantAxis({required this.name, required this.values});
+  final String name;
+  final List<String> values;
+
+  VariantAxis copyWith({String? name, List<String>? values}) =>
+      VariantAxis(name: name ?? this.name, values: values ?? this.values);
+
+  Map<String, dynamic> toJson() => {'name': name, 'values': values};
+
+  factory VariantAxis.fromJson(Map<String, dynamic> j) => VariantAxis(
+        name: (j['name'] as String?) ?? '',
+        values: ((j['values'] as List<dynamic>?) ?? const []).cast<String>(),
+      );
+}
+
+/// Phase E — a single purchasable SKU under a product. Carries its own
+/// pricing/stock/images plus a free-form [attributes] map keyed by the
+/// owning product's [VariantAxis] names.
+class ProductVariant {
+  const ProductVariant({
+    this.id,
+    required this.sku,
+    this.barcode,
+    required this.attributes,
+    required this.mrp,
+    required this.sellingPrice,
+    required this.purchasePrice,
+    this.stockQuantity = 0,
+    this.imageUrls = const [],
+    this.isDefault = false,
+    this.isActive = true,
+    this.sortOrder = 0,
+  });
+
+  /// Null for a not-yet-saved variant; the backend assigns on first save.
+  final int? id;
+  final String sku;
+  final String? barcode;
+  final Map<String, String> attributes;
+  final double mrp;
+  final double sellingPrice;
+  final double purchasePrice;
+  final double stockQuantity;
+  final List<String> imageUrls;
+  final bool isDefault;
+  final bool isActive;
+  final int sortOrder;
+
+  ProductVariant copyWith({
+    int? id,
+    String? sku,
+    String? barcode,
+    Map<String, String>? attributes,
+    double? mrp,
+    double? sellingPrice,
+    double? purchasePrice,
+    double? stockQuantity,
+    List<String>? imageUrls,
+    bool? isDefault,
+    bool? isActive,
+    int? sortOrder,
+  }) =>
+      ProductVariant(
+        id: id ?? this.id,
+        sku: sku ?? this.sku,
+        barcode: barcode ?? this.barcode,
+        attributes: attributes ?? this.attributes,
+        mrp: mrp ?? this.mrp,
+        sellingPrice: sellingPrice ?? this.sellingPrice,
+        purchasePrice: purchasePrice ?? this.purchasePrice,
+        stockQuantity: stockQuantity ?? this.stockQuantity,
+        imageUrls: imageUrls ?? this.imageUrls,
+        isDefault: isDefault ?? this.isDefault,
+        isActive: isActive ?? this.isActive,
+        sortOrder: sortOrder ?? this.sortOrder,
+      );
+
+  Map<String, dynamic> toJson() => {
+        if (id != null) 'id': id,
+        'sku': sku,
+        if (barcode != null && barcode!.isNotEmpty) 'barcode': barcode,
+        'attributes': attributes,
+        'mrp': mrp,
+        'sellingPrice': sellingPrice,
+        'purchasePrice': purchasePrice,
+        'stockQuantity': stockQuantity,
+        'imageUrls': imageUrls,
+        'isActive': isActive,
+        'sortOrder': sortOrder,
+      };
+
+  factory ProductVariant.fromJson(Map<String, dynamic> j) {
+    final attrs = (j['attributes'] as Map?) ?? const {};
+    return ProductVariant(
+      id: (j['id'] as num?)?.toInt(),
+      sku: (j['sku'] as String?) ?? '',
+      barcode: j['barcode'] as String?,
+      attributes: <String, String>{
+        for (final e in attrs.entries) e.key.toString(): e.value.toString(),
+      },
+      mrp: _toDouble(j['mrp']),
+      sellingPrice: _toDouble(j['sellingPrice']),
+      purchasePrice: _toDouble(j['purchasePrice']),
+      stockQuantity: _toDouble(j['stockQuantity']),
+      imageUrls:
+          ((j['imageUrls'] as List<dynamic>?) ?? const []).cast<String>(),
+      isDefault: (j['isDefault'] as bool?) ?? false,
+      isActive: (j['isActive'] as bool?) ?? true,
+      sortOrder: (j['sortOrder'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  static double _toDouble(dynamic v) {
+    if (v == null) return 0;
+    if (v is num) return v.toDouble();
+    if (v is String) return double.tryParse(v) ?? 0;
+    return 0;
+  }
+}
+
+/// Phase C — A+ content block. Discriminated by [kind]; per-kind fields
+/// live in [data]. Kept as a single class (rather than a sealed
+/// hierarchy) so adding a new kind is a server-side change only — the
+/// merchant editor + customer renderer use a `kind`-based switch and
+/// fall back to a "Untitled" block when they see something newer than
+/// they ship with. Same forward-compat strategy as [ProductOffer].
+class ContentBlock {
+  const ContentBlock({required this.kind, required this.data});
+
+  /// 'HERO' | 'FEATURE' | 'COMPARISON' | 'GALLERY' | 'TEXT'
+  final String kind;
+
+  /// Per-kind payload — see backend `contentBlockSchema` for shapes.
+  final Map<String, dynamic> data;
+
+  ContentBlock copyWith({String? kind, Map<String, dynamic>? data}) =>
+      ContentBlock(kind: kind ?? this.kind, data: data ?? this.data);
+
+  /// Strips keys starting with `_` (editor-local scratch fields like
+  /// `_draft` used by the COMPARISON textarea) before serialising.
+  Map<String, dynamic> toJson() {
+    final clean = <String, dynamic>{};
+    data.forEach((k, v) {
+      if (!k.startsWith('_')) clean[k] = v;
+    });
+    return {'kind': kind, ...clean};
+  }
+
+  factory ContentBlock.fromJson(Map<String, dynamic> j) {
+    final data = Map<String, dynamic>.from(j);
+    final kind = (data.remove('kind') as String?) ?? 'TEXT';
+    return ContentBlock(kind: kind, data: data);
+  }
 }

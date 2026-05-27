@@ -80,16 +80,22 @@ class ApiClient {
             .timeout(_kDefaultTimeout),
       );
 
-  /// Multipart file upload — includes auth header.
+  /// Multipart file upload — includes auth header. Takes a *factory*
+  /// (not a built [http.MultipartFile]) because [_withRetry] may invoke
+  /// this closure twice — once for the original request, once after a
+  /// silent token refresh. A MultipartFile's stream is consumed by
+  /// `request.send()`, so reusing the same instance on a retry would
+  /// throw "Stream has already been listened to" and surface as a
+  /// generic multipart failure to the user. Rebuilding per attempt
+  /// keeps the retry path safe.
   Future<http.StreamedResponse> multipart(
     String path, {
-    required http.MultipartFile file,
-    String fieldName = 'file',
+    required Future<http.MultipartFile> Function() makeFile,
   }) =>
-      _withRetry(() {
+      _withRetry(() async {
         final request = http.MultipartRequest('POST', _buildUri(path))
           ..headers['Authorization'] = 'Bearer ${_tokenManager.accessToken ?? ''}'
-          ..files.add(file);
+          ..files.add(await makeFile());
         return request.send().timeout(const Duration(seconds: 60));
       });
 
