@@ -20,7 +20,7 @@ class _ShopPayoutsPageState extends State<ShopPayoutsPage> {
   final _account = TextEditingController();
   final _ifsc = TextEditingController();
   final _upi = TextEditingController();
-  String _payoutFrequency = 'WEEKLY';
+  final String _payoutFrequency = 'WEEKLY';
 
   @override
   void dispose() {
