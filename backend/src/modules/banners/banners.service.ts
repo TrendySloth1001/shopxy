@@ -95,6 +95,13 @@ export class BannersService {
     }
 
     const now = new Date();
+    // Slide-level AND carousel-level gating: a slide is visible only if
+    // its own isActive + schedule pass AND its carousel (when present)
+    // is also active + in-window. carouselId IS NULL is grandfathered
+    // through for pre-migration legacy rows that haven't been backfilled
+    // yet (the Phase 1 migration backfills them, but a fresh
+    // schema-only deploy might race; this keeps reads correct in that
+    // window).
     const rows = await prisma.banner.findMany({
       where: {
         placement,
@@ -102,9 +109,27 @@ export class BannersService {
         AND: [
           { OR: [{ startAt: null }, { startAt: { lte: now } }] },
           { OR: [{ endAt: null }, { endAt: { gte: now } }] },
+          {
+            OR: [
+              { carouselId: null },
+              {
+                carousel: {
+                  isActive: true,
+                  AND: [
+                    { OR: [{ startAt: null }, { startAt: { lte: now } }] },
+                    { OR: [{ endAt: null }, { endAt: { gte: now } }] },
+                  ],
+                },
+              },
+            ],
+          },
         ],
       },
-      orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
+      orderBy: [
+        { carousel: { sortOrder: 'asc' } },
+        { sortOrder: 'asc' },
+        { id: 'asc' },
+      ],
       select: publicBannerSelect,
     });
 
