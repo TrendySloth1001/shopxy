@@ -350,11 +350,23 @@ model Product {
 
   /// Watermark for the embed-pending cron — `NULL` means the row has
   /// never been embedded. The embedding column itself is a
-  /// `vector(1536)` column (text-embedding-3-small dims). Prisma can't
+  /// `vector(768)` column (Ollama nomic-embed-text dims). Prisma can't
   /// model the type natively, so it's accessed through raw SQL in the
   /// search service; we only carry the timestamp here so cron picks
   /// can be expressed in regular Prisma queries.
   embeddedAt DateTime? @map("embedded_at")
+
+  /// pgvector(768) embedding for semantic search. Modelled here as
+  /// Unsupported so Prisma sees the column and does NOT autogen a
+  /// DROP COLUMN the next time someone runs `migrate dev` — that's
+  /// exactly what 20260615000000_pdp_phase_b_brand_sold30_systemtags
+  /// did, silently breaking search until 20260617010000 restored it.
+  /// Read/written exclusively via raw SQL in the search service.
+  embedding Unsupported("vector(768)")? @map("embedding")
+
+  /// Generated tsvector for FTS. Same self-protection rationale as
+  /// `embedding` above — present in the schema so Prisma respects it.
+  searchVector Unsupported("tsvector")? @map("search_vector")
   createdAt  DateTime  @default(now()) @map("created_at")
   updatedAt  DateTime  @updatedAt @map("updated_at")
 
@@ -1469,6 +1481,27 @@ model Banner {
   isActive      Boolean         @default(true) @map("is_active")
   sponsorShopId Int?            @map("sponsor_shop_id")
   sponsorShop   Shop?           @relation(fields: [sponsorShopId], references: [id], onDelete: SetNull)
+
+  /// Carousels Phase 1 — discriminator between the legacy templated
+  /// renderer (existing 7 BannerTemplate variants) and the freeform
+  /// canvas (textBlocks + imageTransform). Defaults to TEMPLATED so
+  /// every pre-migration row keeps rendering exactly as before.
+  mode          BannerSlideMode @default(TEMPLATED)
+  /// Parent carousel. Nullable so the migration can run before the
+  /// backfill stamps every row. After the backfill no row should have
+  /// carouselId IS NULL; Phase 7 will enforce that with NOT NULL.
+  carouselId    Int?            @map("carousel_id")
+  carousel      Carousel?       @relation(fields: [carouselId], references: [id], onDelete: SetNull)
+  /// Array of `{id, text, xPct, yPct, widthPct, fontSize, color,
+  /// weight, align}` for FREEFORM slides. Positioning is percent-of-
+  /// canvas so the renderer is resolution-independent. Validated +
+  /// bounded server-side (max 8 blocks per slide, see zod schema).
+  textBlocks    Json?           @map("text_blocks")
+  /// `{focalXPct, focalYPct, scale, rotateDeg, flipH, flipV,
+  /// brightness, contrast, saturation}` for FREEFORM slides. Each
+  /// numeric axis is range-checked server-side before write.
+  imageTransform Json?          @map("image_transform")
+
   createdAt     DateTime        @default(now()) @map("created_at")
   updatedAt     DateTime        @updatedAt @map("updated_at")
 
@@ -1476,7 +1509,37 @@ model Banner {
 
   @@index([placement, isActive, startAt, endAt])
   @@index([sponsorShopId])
+  @@index([carouselId, sortOrder])
   @@map("banners")
+}
+
+/// Named container for a sequence of slides (`Banner` rows). A merchant
+/// can own multiple carousels — typically one per campaign — and each
+/// carousel targets a single placement (HERO / AD_STRIP / PROMO /
+/// CURATED_RAIL). The carousel-level `isActive` + schedule gate every
+/// slide inside it: if the carousel is off or outside its window, the
+/// public reader hides every slide regardless of each slide's own flags.
+///
+/// `shopId IS NULL` means a platform-curated carousel (replaces the
+/// cross-shop banner pool the platform-admin tool manages today).
+model Carousel {
+  id        Int             @id @default(autoincrement())
+  shopId    Int?            @map("shop_id")
+  shop      Shop?           @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  name      String          @db.VarChar(80)
+  placement BannerPlacement
+  isActive  Boolean         @default(true) @map("is_active")
+  startAt   DateTime?       @map("start_at")
+  endAt     DateTime?       @map("end_at")
+  sortOrder Int             @default(0) @map("sort_order")
+  createdAt DateTime        @default(now()) @map("created_at")
+  updatedAt DateTime        @updatedAt @map("updated_at")
+
+  slides Banner[]
+
+  @@index([shopId, placement, isActive])
+  @@index([placement, isActive])
+  @@map("carousels")
 }
 
 /// Per-slide curated product list with a display-only percent-off. The
@@ -1525,6 +1588,15 @@ enum BannerTemplate {
 enum BannerImageFit {
   COVER
   CONTAIN
+}
+
+/// Slide-level discriminator. TEMPLATED renders with one of the
+/// `BannerTemplate` layouts and ignores `textBlocks` / `imageTransform`.
+/// FREEFORM uses the positioned text blocks + image transform and
+/// ignores `template`. The customer renderer branches on this enum.
+enum BannerSlideMode {
+  TEMPLATED
+  FREEFORM
 }
 
 /// Time-bound discounted offer on a single product. soldCount is the
@@ -1656,6 +1728,7 @@ model Shop {
 
   products               Product[]
   sponsoredBanners       Banner[]
+  carousels              Carousel[]
   spotlights             BrandSpotlight[]
   promotions             Promotion[]
   // ── Multi-tenant inverse relations (Phase 1 migration) ───────────
