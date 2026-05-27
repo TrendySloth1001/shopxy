@@ -1,4 +1,10 @@
-import { BannerPlacement, Prisma } from '@prisma/client';
+import {
+  BannerImageFit,
+  BannerPlacement,
+  BannerSlideMode,
+  BannerTemplate,
+  Prisma,
+} from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
 import { getRedis, redisAvailable } from '../../infra/redis.js';
 import { logger } from '../../shared/logging/logger.js';
@@ -12,6 +18,14 @@ function activeCacheKey(placement: BannerPlacement): string {
 const publicBannerSelect = {
   id: true,
   placement: true,
+  /// Phase 1 — wire through. Customer renderer branches on `mode` and
+  /// then on either `template` (TEMPLATED) or textBlocks + imageTransform
+  /// (FREEFORM). Without these, the client always falls back to CLASSIC.
+  mode: true,
+  template: true,
+  imageFit: true,
+  textBlocks: true,
+  imageTransform: true,
   title: true,
   subtitle: true,
   eyebrow: true,
@@ -23,6 +37,7 @@ const publicBannerSelect = {
   accentColor: true,
   sortOrder: true,
   sponsorShopId: true,
+  carouselId: true,
 } as const;
 
 const adminBannerSelect = {
@@ -36,6 +51,15 @@ const adminBannerSelect = {
 
 export interface CreateBannerInput {
   placement: BannerPlacement;
+  /// Phase 1 — discriminator. Defaults to TEMPLATED.
+  mode?: BannerSlideMode;
+  template?: BannerTemplate;
+  imageFit?: BannerImageFit;
+  /// Validated + bounded by the controller's zod schema. Service stores
+  /// as-is; the customer renderer parses these into typed widgets.
+  textBlocks?: Prisma.InputJsonValue | null;
+  imageTransform?: Prisma.InputJsonValue | null;
+  carouselId?: number | null;
   title: string;
   subtitle?: string | null;
   eyebrow?: string | null;
@@ -134,6 +158,12 @@ export class BannersService {
     const row = await prisma.banner.create({
       data: {
         placement: input.placement,
+        mode: input.mode ?? 'TEMPLATED',
+        template: input.template ?? 'CLASSIC',
+        imageFit: input.imageFit ?? 'COVER',
+        textBlocks: input.textBlocks ?? Prisma.JsonNull,
+        imageTransform: input.imageTransform ?? Prisma.JsonNull,
+        carouselId: input.carouselId ?? null,
         title: input.title,
         subtitle: input.subtitle ?? null,
         eyebrow: input.eyebrow ?? null,
@@ -167,6 +197,16 @@ export class BannersService {
       where: { id },
       data: {
         ...(input.placement !== undefined && { placement: input.placement }),
+        ...(input.mode !== undefined && { mode: input.mode }),
+        ...(input.template !== undefined && { template: input.template }),
+        ...(input.imageFit !== undefined && { imageFit: input.imageFit }),
+        ...(input.textBlocks !== undefined && {
+          textBlocks: input.textBlocks ?? Prisma.JsonNull,
+        }),
+        ...(input.imageTransform !== undefined && {
+          imageTransform: input.imageTransform ?? Prisma.JsonNull,
+        }),
+        ...(input.carouselId !== undefined && { carouselId: input.carouselId }),
         ...(input.title !== undefined && { title: input.title }),
         ...(input.subtitle !== undefined && { subtitle: input.subtitle }),
         ...(input.eyebrow !== undefined && { eyebrow: input.eyebrow }),
