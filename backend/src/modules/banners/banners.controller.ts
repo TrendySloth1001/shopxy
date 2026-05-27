@@ -1,14 +1,40 @@
 import { Request, Response } from 'express';
-import { BannerPlacement } from '@prisma/client';
+import {
+  BannerImageFit,
+  BannerPlacement,
+  BannerSlideMode,
+  BannerTemplate,
+} from '@prisma/client';
 import { z } from 'zod';
 import { bannersService } from './banners.service.js';
 import { isValidCtaTarget } from '../../shared/cta-target.js';
+import {
+  imageTransformSchema,
+  textBlocksSchema,
+} from './freeform-payload.js';
 
 const PLACEMENTS: [BannerPlacement, ...BannerPlacement[]] = [
   'HERO',
   'AD_STRIP',
   'PROMO',
   'CURATED_RAIL',
+];
+
+const TEMPLATES: [BannerTemplate, ...BannerTemplate[]] = [
+  'CLASSIC',
+  'MINIMAL',
+  'IMAGE_ONLY',
+  'SPLIT',
+  'OVERLAY',
+  'DEAL',
+  'POSTER',
+];
+
+const IMAGE_FITS: [BannerImageFit, ...BannerImageFit[]] = ['COVER', 'CONTAIN'];
+
+const SLIDE_MODES: [BannerSlideMode, ...BannerSlideMode[]] = [
+  'TEMPLATED',
+  'FREEFORM',
 ];
 
 // 7-char `#RRGGBB` or 9-char `#RRGGBBAA` so the merchant UI doesn't
@@ -32,6 +58,15 @@ const imageRef = z
 
 const createBannerSchema = z.object({
   placement: z.enum(PLACEMENTS),
+  /// Phase 1 — discriminator + freeform payload now flow through. Mode
+  /// defaults to TEMPLATED so legacy clients (without `mode` in the
+  /// body) keep producing rows that render via the existing templates.
+  mode: z.enum(SLIDE_MODES).optional(),
+  template: z.enum(TEMPLATES).optional(),
+  imageFit: z.enum(IMAGE_FITS).optional(),
+  textBlocks: textBlocksSchema.nullable().optional(),
+  imageTransform: imageTransformSchema.nullable().optional(),
+  carouselId: z.number().int().positive().nullable().optional(),
   title: z.string().min(1).max(120),
   subtitle: z.string().max(240).nullable().optional(),
   eyebrow: z.string().max(60).nullable().optional(),
@@ -56,8 +91,15 @@ const updateBannerSchema = createBannerSchema
 
 // Merchant-side schemas — same shape as the admin ones but with
 // `sponsorShopId` dropped (the service stamps it from req.shopId).
+//
+// `carouselId` is also stripped from /me/banners writes: that legacy
+// route stays as a thin shim during the Phase 1→7 deprecation window,
+// and carousel ownership is properly validated on the Phase 2
+// /me/carousels/:cid/slides routes (which resolve cid → shopId and
+// reject cross-shop probes).
 const merchantCreateBannerSchema = createBannerSchema.omit({
   sponsorShopId: true,
+  carouselId: true,
 });
 const merchantUpdateBannerSchema = merchantCreateBannerSchema
   .partial()

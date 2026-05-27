@@ -69,6 +69,7 @@ describe('home feed', () => {
     const now = new Date();
     const sale = await prisma.flashSale.create({
       data: {
+        shopId: ctx.shopId,
         productId: product.id,
         flashPrice: 99,
         stockLimit: 10,

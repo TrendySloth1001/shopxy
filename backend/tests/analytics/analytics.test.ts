@@ -132,6 +132,7 @@ describe('analytics — /me/analytics/flash-deals/:id', () => {
       const end = new Date(Date.now() + 3 * 3_600_000);
       const sale = await prisma.flashSale.create({
         data: {
+          shopId: merchant.shopId,
           productId: product.id,
           flashPrice: 50,
           stockLimit: 5,
@@ -167,6 +168,7 @@ describe('analytics — /me/analytics/flash-deals/:id', () => {
       const productOfA = await createTestProduct(a.shopId);
       const sale = await prisma.flashSale.create({
         data: {
+          shopId: a.shopId,
           productId: productOfA.id,
           flashPrice: 50,
           stockLimit: 5,

@@ -19,9 +19,19 @@ describe('marketplace — filters & facets', () => {
     merchant = await createTestUser();
     // Use any existing category — the test only cares that we can
     // hit /marketplace/categories/:slug/products with our fixture
-    // products attached. Picks the first canonical category.
-    const cat = await prisma.category.findFirst({ select: { id: true, slug: true } });
-    if (!cat) throw new Error('no categories seeded');
+    // products attached. Picks the first canonical category if seeded,
+    // otherwise materialises a throwaway one so a fresh DB still runs.
+    let cat = await prisma.category.findFirst({ select: { id: true, slug: true } });
+    if (!cat) {
+      const made = await prisma.category.create({
+        data: {
+          name: `Filter Fixture Cat ${Date.now()}`,
+          slug: `filter-fixture-${Date.now()}`,
+        },
+        select: { id: true, slug: true },
+      });
+      cat = made;
+    }
     categorySlug = cat.slug;
 
     // Fixture spread: prices 50/200/500/1500, ratings 0/2.5/4.2/4.8,
