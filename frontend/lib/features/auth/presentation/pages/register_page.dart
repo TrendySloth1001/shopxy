@@ -18,6 +18,7 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
   final _name = TextEditingController();
+  final _shopName = TextEditingController();
   final _email = TextEditingController();
   final _password = TextEditingController();
   final _confirm = TextEditingController();
@@ -36,6 +37,7 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   void dispose() {
     _name.dispose();
+    _shopName.dispose();
     _email.dispose();
     _password.dispose();
     _confirm.dispose();
@@ -56,9 +58,12 @@ class _RegisterPageState extends State<RegisterPage> {
       _error = null;
     });
     try {
-      await context
-          .read<AuthProvider>()
-          .register(_name.text.trim(), _email.text.trim(), _password.text);
+      await context.read<AuthProvider>().register(
+            _name.text.trim(),
+            _email.text.trim(),
+            _password.text,
+            shopName: _shopName.text.trim(),
+          );
     } catch (e) {
       if (mounted) {
         setState(
@@ -95,6 +100,23 @@ class _RegisterPageState extends State<RegisterPage> {
               decoration: const InputDecoration(
                 labelText: AppStrings.fullName,
                 prefixIcon: Icon(Icons.person_outline_rounded),
+              ),
+              textCapitalization: TextCapitalization.words,
+              textInputAction: TextInputAction.next,
+              validator: (v) {
+                if (v == null || v.trim().isEmpty) return AppStrings.fieldRequired;
+                if (v.trim().length < 2) return AppStrings.nameTooShort;
+                return null;
+              },
+            ),
+            const SizedBox(height: AppSizes.md),
+            TextFormField(
+              controller: _shopName,
+              decoration: const InputDecoration(
+                labelText: 'Shop name',
+                helperText:
+                    'Shown to customers in the marketplace. You can rename it later.',
+                prefixIcon: Icon(Icons.storefront_outlined),
               ),
               textCapitalization: TextCapitalization.words,
               textInputAction: TextInputAction.next,

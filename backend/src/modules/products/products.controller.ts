@@ -18,12 +18,112 @@ const productImageRef = z
     message: 'Must be an http(s) URL or a server-relative path',
   });
 
+// Phase D — optional `tab` key per spec group. When any group declares
+// a tab the customer PDP renders a chip row above the spec sheet and
+// filters groups by selection. Empty/absent keeps the legacy flat-list
+// render so existing products are unaffected.
+// Phase C — A+ content blocks. Five fixed kinds with per-kind payloads,
+// hard cap of 8 blocks per product. Markdown sanitisation for TEXT
+// blocks happens in the service layer so the DB never sees raw <script>.
+const contentBlockSchema = z.discriminatedUnion('kind', [
+  z.object({
+    kind: z.literal('HERO'),
+    imageUrl: z.string().min(1).max(2048),
+    headline: z.string().min(1).max(120),
+    subtext: z.string().max(240).optional(),
+  }),
+  z.object({
+    kind: z.literal('FEATURE'),
+    imageUrl: z.string().min(1).max(2048),
+    side: z.enum(['LEFT', 'RIGHT']),
+    title: z.string().min(1).max(120),
+    body: z.string().min(1).max(500),
+  }),
+  z.object({
+    kind: z.literal('COMPARISON'),
+    columns: z
+      .array(
+        z.object({
+          label: z.string().min(1).max(80),
+          values: z.array(z.string().max(120)).min(1).max(10),
+        }),
+      )
+      .min(2)
+      .max(4),
+    rows: z.array(z.string().min(1).max(80)).min(1).max(10),
+  }),
+  z.object({
+    kind: z.literal('GALLERY'),
+    images: z
+      .array(
+        z.object({
+          url: z.string().min(1).max(2048),
+          caption: z.string().max(140).optional(),
+        }),
+      )
+      .min(1)
+      .max(6),
+  }),
+  z.object({
+    kind: z.literal('TEXT'),
+    // Restricted markdown subset — the service strips any <script> /
+    // <iframe> before saving so the DB column stays render-safe.
+    markdown: z.string().min(1).max(2000),
+  }),
+]);
+
+const contentBlocksSchema = z.array(contentBlockSchema).max(8);
+
+// Phase E — axis definitions and per-variant payloads. Each variant
+// must include all axis attributes; missing keys would lead to undefined
+// behaviour in the swatch picker. Stock is decimal-shaped to match the
+// product table.
+const variantAxesSchema = z
+  .array(
+    z.object({
+      name: z.string().min(1).max(40),
+      values: z.array(z.string().min(1).max(40)).min(1).max(20),
+    }),
+  )
+  .max(3);
+
+const variantSchema = z.object({
+  id: z.number().int().positive().optional(),
+  sku: z.string().min(1).max(60),
+  barcode: z.string().max(60).nullable().optional(),
+  attributes: z.record(z.string(), z.string()),
+  mrp: z.number().positive(),
+  sellingPrice: z.number().positive(),
+  purchasePrice: z.number().nonnegative(),
+  stockQuantity: z.number().nonnegative().default(0),
+  imageUrls: z.array(z.string().min(1).max(2048)).max(8).optional(),
+  isActive: z.boolean().optional(),
+  sortOrder: z.number().int().nonnegative().optional(),
+});
+const variantsSchema = z.array(variantSchema).max(50);
+
+const specGroupSchema = z.object({
+  title: z.string().min(1).max(80),
+  tab: z.string().min(1).max(40).optional(),
+  rows: z
+    .array(
+      z.object({
+        label: z.string().min(1).max(80),
+        value: z.string().min(1).max(200),
+      }),
+    )
+    .min(1)
+    .max(20),
+});
+
 const createProductSchema = z.object({
   name: z.string().min(1).max(200),
   description: z.string().max(1000).optional(),
   sku: z.string().min(1).max(50),
   barcode: z.string().max(50).optional(),
   hsnCode: z.string().max(20).optional(),
+  // Phase B — free-text brand surfaced under the PDP title.
+  brand: z.string().min(1).max(80).optional(),
   imageUrls: z.array(productImageRef).max(10).optional(),
   mrp: z.number().positive(),
   sellingPrice: z.number().positive(),
@@ -38,20 +138,7 @@ const createProductSchema = z.object({
   // hides the relevant section when the array / object is empty.
   highlights: z.array(z.string().min(1).max(140)).max(8).optional(),
   specs: z
-    .array(
-      z.object({
-        title: z.string().min(1).max(80),
-        rows: z
-          .array(
-            z.object({
-              label: z.string().min(1).max(80),
-              value: z.string().min(1).max(200),
-            }),
-          )
-          .min(1)
-          .max(20),
-      }),
-    )
+    .array(specGroupSchema)
     .max(10)
     .nullable()
     .optional(),
@@ -67,6 +154,9 @@ const createProductSchema = z.object({
     .max(6)
     .nullable()
     .optional(),
+  contentBlocks: contentBlocksSchema.nullable().optional(),
+  variantAxes: variantAxesSchema.nullable().optional(),
+  variants: variantsSchema.optional(),
 });
 
 const updateProductSchema = z
@@ -76,6 +166,7 @@ const updateProductSchema = z
     sku: z.string().min(1).max(50).optional(),
     barcode: z.string().max(50).nullable().optional(),
     hsnCode: z.string().max(20).nullable().optional(),
+    brand: z.string().min(1).max(80).nullable().optional(),
     mrp: z.number().positive().optional(),
     sellingPrice: z.number().positive().optional(),
     purchasePrice: z.number().nonnegative().optional(),
@@ -88,20 +179,7 @@ const updateProductSchema = z
     tags: z.array(z.string().min(1).max(40)).max(20).optional(),
     highlights: z.array(z.string().min(1).max(140)).max(8).optional(),
     specs: z
-      .array(
-        z.object({
-          title: z.string().min(1).max(80),
-          rows: z
-            .array(
-              z.object({
-                label: z.string().min(1).max(80),
-                value: z.string().min(1).max(200),
-              }),
-            )
-            .min(1)
-            .max(20),
-        }),
-      )
+      .array(specGroupSchema)
       .max(10)
       .nullable()
       .optional(),
@@ -117,6 +195,9 @@ const updateProductSchema = z
       .max(6)
       .nullable()
       .optional(),
+    contentBlocks: contentBlocksSchema.nullable().optional(),
+    variantAxes: variantAxesSchema.nullable().optional(),
+    variants: variantsSchema.optional(),
   })
   .refine((d) => Object.keys(d).length > 0, { message: 'At least one field is required' });
 

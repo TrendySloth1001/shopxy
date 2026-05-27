@@ -30,6 +30,14 @@ const safeUserSelect = {
   shopGstin: true,
   shopPan: true,
   upiVpa: true,
+  avatarUrl: true,
+  phoneNumber: true,
+  notifyOrders: true,
+  notifyDeals: true,
+  notifyAccount: true,
+  notifyMessages: true,
+  pushEnabled: true,
+  smsEnabled: true,
   acceptedAt: true,
   createdAt: true,
 } as const;
@@ -84,29 +92,100 @@ async function createRefreshToken(userId: number): Promise<string> {
   return token;
 }
 
+/// Lower-cases, collapses non-alphanumerics to single dashes, trims
+/// leading/trailing dashes. Mirrors shop.service.ts's slugify — kept
+/// inline here so auth doesn't cross-depend on the shop module.
+function slugifyShop(input: string): string {
+  return input
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+/// Returns `base`, `base-2`, `base-3`, … until a slug is free. Same
+/// algorithm as shop.service.ts's `uniqueSlug`; duplicated rather than
+/// imported to keep the auth module standalone.
+async function uniqueShopSlug(base: string): Promise<string> {
+  let candidate = base || 'shop';
+  let suffix = 1;
+  for (;;) {
+    const existing = await prisma.shop.findUnique({
+      where: { slug: candidate },
+      select: { id: true },
+    });
+    if (!existing) return candidate;
+    suffix += 1;
+    candidate = `${base}-${suffix}`;
+  }
+}
+
 export class AuthService {
-  async register(data: { email: string; name: string; password: string }) {
+  async register(data: {
+    email: string;
+    name: string;
+    password: string;
+    role: Role;
+    shopName?: string;
+  }) {
     const email = data.email.toLowerCase().trim();
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) return { error: 'Email already registered' as const };
 
     const passwordHash = await bcrypt.hash(data.password, 12);
-    // Self-signup defaults to CUSTOMER. OWNER accounts must be created
-    // out-of-band (seed script or admin endpoint) — otherwise anyone hitting
-    // /auth/register gets full merchant access (audit C1).
-    const user = await prisma.user.create({
-      data: {
-        email,
-        name: data.name.trim(),
-        passwordHash,
-        role: 'CUSTOMER',
-        // DPDP §6: record the moment of consent. The controller enforces
-        // that both terms + privacy were ticked before reaching the
-        // service, so reaching here implies a freely-given consent.
-        acceptedAt: new Date(),
-      },
-      select: safeUserSelect,
-    });
+    // App-origin signup: merchant app sends role=OWNER + a shopName so
+    // we can create the User and their Shop in one transaction; the
+    // customer app sends role=CUSTOMER. The legacy "OWNER must be
+    // created out-of-band" stance (audit C1) is intentionally relaxed
+    // here — the merchant app is the primary OWNER signup surface, and
+    // ownership only gains anything when paired with a Shop, which we
+    // create atomically below.
+    const name = data.name.trim();
+    const acceptedAt = new Date();
+
+    let user;
+    if (data.role === 'OWNER') {
+      const shopName = (data.shopName ?? '').trim();
+      const slug = await uniqueShopSlug(slugifyShop(shopName));
+      user = await prisma.$transaction(async (tx) => {
+        const created = await tx.user.create({
+          data: {
+            email,
+            name,
+            passwordHash,
+            role: 'OWNER',
+            // Mirror the shop name into the User so invoice headers /
+            // GST footers have a value to render without a follow-up
+            // Shop lookup. The merchant can later refine the legal name
+            // separately from the public shop name in settings.
+            shopName,
+            acceptedAt,
+          },
+          select: safeUserSelect,
+        });
+        await tx.shop.create({
+          data: {
+            ownerUserId: created.id,
+            name: shopName,
+            slug,
+          },
+        });
+        return created;
+      });
+    } else {
+      user = await prisma.user.create({
+        data: {
+          email,
+          name,
+          passwordHash,
+          role: 'CUSTOMER',
+          // DPDP §6: record the moment of consent. The controller enforces
+          // that both terms + privacy were ticked before reaching the
+          // service, so reaching here implies a freely-given consent.
+          acceptedAt,
+        },
+        select: safeUserSelect,
+      });
+    }
 
     // Attach any pending invitations addressed to this email so the new
     // user sees them on first login. Best-effort — a failure here must
@@ -219,6 +298,18 @@ export class AuthService {
       shopGstin?: string | null;
       shopPan?: string | null;
       upiVpa?: string | null;
+      // Profile photo URL (upload-service path). Editable from both
+      // the customer Edit Profile page and the merchant Settings page.
+      avatarUrl?: string | null;
+      // E.164-format phone, surfaced on customer Edit Profile.
+      phoneNumber?: string | null;
+      // Granular notification preferences (Phase 5).
+      notifyOrders?: boolean;
+      notifyDeals?: boolean;
+      notifyAccount?: boolean;
+      notifyMessages?: boolean;
+      pushEnabled?: boolean;
+      smsEnabled?: boolean;
     },
   ) {
     const updates: {
@@ -233,6 +324,14 @@ export class AuthService {
       shopGstin?: string | null;
       shopPan?: string | null;
       upiVpa?: string | null;
+      avatarUrl?: string | null;
+      phoneNumber?: string | null;
+      notifyOrders?: boolean;
+      notifyDeals?: boolean;
+      notifyAccount?: boolean;
+      notifyMessages?: boolean;
+      pushEnabled?: boolean;
+      smsEnabled?: boolean;
     } = {};
     if (data.name !== undefined) updates.name = data.name;
     if (data.emailNotifications !== undefined) {
@@ -247,6 +346,14 @@ export class AuthService {
     if (data.shopGstin !== undefined) updates.shopGstin = data.shopGstin;
     if (data.shopPan !== undefined) updates.shopPan = data.shopPan;
     if (data.upiVpa !== undefined) updates.upiVpa = data.upiVpa;
+    if (data.avatarUrl !== undefined) updates.avatarUrl = data.avatarUrl;
+    if (data.phoneNumber !== undefined) updates.phoneNumber = data.phoneNumber;
+    if (data.notifyOrders !== undefined) updates.notifyOrders = data.notifyOrders;
+    if (data.notifyDeals !== undefined) updates.notifyDeals = data.notifyDeals;
+    if (data.notifyAccount !== undefined) updates.notifyAccount = data.notifyAccount;
+    if (data.notifyMessages !== undefined) updates.notifyMessages = data.notifyMessages;
+    if (data.pushEnabled !== undefined) updates.pushEnabled = data.pushEnabled;
+    if (data.smsEnabled !== undefined) updates.smsEnabled = data.smsEnabled;
     if (Object.keys(updates).length === 0) {
       return prisma.user.findUnique({ where: { id: userId }, select: safeUserSelect });
     }

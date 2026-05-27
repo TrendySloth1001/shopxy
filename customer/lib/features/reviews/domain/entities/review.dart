@@ -80,3 +80,50 @@ class ReviewsPage {
   final List<Review> data;
   final int? nextCursor;
 }
+
+/// One row in the customer's "My reviews" page — a review plus the
+/// product it's attached to, so the profile feed can render a
+/// thumbnail-and-name card without a second product fetch.
+class MyReview {
+  const MyReview({
+    required this.review,
+    required this.productId,
+    required this.productName,
+    this.productImage,
+    required this.productSellingPrice,
+  });
+
+  final Review review;
+  final int productId;
+  final String productName;
+  final String? productImage;
+  final double productSellingPrice;
+
+  static double _asDouble(dynamic v) {
+    if (v == null) return 0;
+    if (v is num) return v.toDouble();
+    if (v is String) return double.tryParse(v) ?? 0;
+    return 0;
+  }
+
+  factory MyReview.fromJson(Map<String, dynamic> j) {
+    final product = (j['product'] as Map<String, dynamic>?) ?? const {};
+    final imgs = (product['images'] as List<dynamic>?) ?? const [];
+    final firstUrl = imgs.isEmpty
+        ? null
+        : (imgs.first as Map<String, dynamic>)['url'] as String?;
+    return MyReview(
+      review: Review.fromJson(j),
+      productId: (product['id'] as num?)?.toInt() ?? 0,
+      productName: (product['name'] as String?) ?? '—',
+      productImage: firstUrl,
+      productSellingPrice: _asDouble(product['sellingPrice']),
+    );
+  }
+}
+
+class MyReviewsPage {
+  const MyReviewsPage({required this.data, required this.nextCursor});
+  final List<MyReview> data;
+  final int? nextCursor;
+}

@@ -93,18 +93,38 @@ export class CartService {
 
     const capped = Math.min(quantity, stock, MAX_LINE_QUANTITY);
 
-    const row = await prisma.cartItem.upsert({
-      where: { userId_productId: { userId, productId } },
-      create: { userId, productId, quantity: capped },
-      update: { quantity: capped },
-      select: {
-        id: true,
-        productId: true,
-        quantity: true,
-        updatedAt: true,
-        product: { select: cartProductSelect },
-      },
+    // Phase E v1 — variantId stays null on the cart line for now; the
+    // customer app sets it on the new add-with-variant endpoint that
+    // lands in v2. The (userId, productId, variantId) unique key
+    // treats NULL as distinct in Postgres, so the explicit findFirst
+    // + create/update pair is safer than upsert here (Prisma's
+    // upsert.where can't carry a NULL on a unique-tuple key).
+    const existing = await prisma.cartItem.findFirst({
+      where: { userId, productId, variantId: null },
+      select: { id: true },
     });
+    const row = existing
+      ? await prisma.cartItem.update({
+          where: { id: existing.id },
+          data: { quantity: capped },
+          select: {
+            id: true,
+            productId: true,
+            quantity: true,
+            updatedAt: true,
+            product: { select: cartProductSelect },
+          },
+        })
+      : await prisma.cartItem.create({
+          data: { userId, productId, quantity: capped },
+          select: {
+            id: true,
+            productId: true,
+            quantity: true,
+            updatedAt: true,
+            product: { select: cartProductSelect },
+          },
+        });
 
     return {
       id: row.id,
@@ -168,11 +188,22 @@ export class CartService {
       const base = existingById.get(productId) ?? 0;
       const merged = Math.min(base + addQty, stock, MAX_LINE_QUANTITY);
       if (merged <= 0) continue;
-      await prisma.cartItem.upsert({
-        where: { userId_productId: { userId, productId } },
-        create: { userId, productId, quantity: merged },
-        update: { quantity: merged },
+      // Phase E v1 — merge into the variantId=null line; per-variant
+      // merging lands in v2 alongside the cart-with-variant endpoint.
+      const existingLine = await prisma.cartItem.findFirst({
+        where: { userId, productId, variantId: null },
+        select: { id: true },
       });
+      if (existingLine) {
+        await prisma.cartItem.update({
+          where: { id: existingLine.id },
+          data: { quantity: merged },
+        });
+      } else {
+        await prisma.cartItem.create({
+          data: { userId, productId, quantity: merged },
+        });
+      }
     }
 
     return await this.list(userId);

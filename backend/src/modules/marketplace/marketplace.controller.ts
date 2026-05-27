@@ -16,6 +16,22 @@ export class MarketplaceController {
     res.json(product);
   }
 
+  /// GET /marketplace/products/:id/frequently-bought-together
+  /// Returns up to 5 slim product cards. Empty array (not 404) when no
+  /// cohort exists — the rail's empty state just renders nothing.
+  async getFbt(req: Request, res: Response): Promise<void> {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      res.status(400).json({ error: 'Invalid product id' });
+      return;
+    }
+    const data = await marketplaceService.getFrequentlyBoughtTogether(
+      id,
+      req.user?.sub,
+    );
+    res.json({ data });
+  }
+
   async listShopProducts(req: Request, res: Response): Promise<void> {
     const slug = String(req.params.slug || '').toLowerCase();
     if (!/^[a-z0-9-]{1,80}$/.test(slug)) {

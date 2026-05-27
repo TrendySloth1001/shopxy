@@ -139,6 +139,7 @@ class ProductsProvider extends ChangeNotifier {
     String? description,
     String? barcode,
     String? hsnCode,
+    String? brand,
     List<String>? imageUrls,
     double? taxPercent,
     double? stockQuantity,
@@ -149,6 +150,9 @@ class ProductsProvider extends ChangeNotifier {
     List<String>? highlights,
     List<SpecGroup>? specs,
     List<ProductOffer>? offers,
+    List<ContentBlock>? contentBlocks,
+    List<VariantAxis>? variantAxes,
+    List<ProductVariant>? variants,
   }) async {
     final data = ProductDto.toCreateJson(
       name: name,
@@ -159,6 +163,7 @@ class ProductsProvider extends ChangeNotifier {
       description: description,
       barcode: barcode,
       hsnCode: hsnCode,
+      brand: brand,
       imageUrls: imageUrls,
       taxPercent: taxPercent,
       stockQuantity: stockQuantity,
@@ -169,6 +174,9 @@ class ProductsProvider extends ChangeNotifier {
       highlights: highlights,
       specs: specs,
       offers: offers,
+      contentBlocks: contentBlocks,
+      variantAxes: variantAxes,
+      variants: variants,
     );
     final product = await _dataSource.createProduct(data);
     await loadProducts();

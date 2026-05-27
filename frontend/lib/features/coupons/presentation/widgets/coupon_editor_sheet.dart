@@ -46,6 +46,8 @@ class _CouponEditorSheetState extends State<_CouponEditorSheet> {
   late DateTime _validFrom;
   late DateTime _validUntil;
   bool _isActive = true;
+  bool _isPublic = false;
+  bool _firstOrderOnly = false;
   bool _saving = false;
   String? _error;
 
@@ -71,6 +73,8 @@ class _CouponEditorSheetState extends State<_CouponEditorSheet> {
     _validUntil =
         e?.validUntil ?? DateTime.now().add(const Duration(days: 30));
     _isActive = e?.isActive ?? true;
+    _isPublic = e?.isPublic ?? false;
+    _firstOrderOnly = e?.firstOrderOnly ?? false;
   }
 
   @override
@@ -128,6 +132,8 @@ class _CouponEditorSheetState extends State<_CouponEditorSheet> {
           validUntil: _validUntil,
           perUserLimit: perUser,
           totalCap: totalCap,
+          isPublic: _isPublic,
+          firstOrderOnly: _firstOrderOnly,
           isActive: _isActive,
         );
       } else {
@@ -144,6 +150,8 @@ class _CouponEditorSheetState extends State<_CouponEditorSheet> {
           validUntil: _validUntil,
           perUserLimit: perUser,
           totalCap: totalCap,
+          isPublic: _isPublic,
+          firstOrderOnly: _firstOrderOnly,
           isActive: _isActive,
         );
       }
@@ -311,6 +319,26 @@ class _CouponEditorSheetState extends State<_CouponEditorSheet> {
               ],
             ),
             const SizedBox(height: AppSizes.sm),
+            SwitchListTile(
+              value: _isPublic,
+              onChanged: (v) => setState(() => _isPublic = v),
+              title: const Text('Public — auto-applies'),
+              subtitle: const Text(
+                'Anyone can see and use it. Auto-applies at checkout when '
+                'the cart matches — no code typing needed. Keep off for '
+                'private codes shared with specific people.',
+              ),
+            ),
+            SwitchListTile(
+              value: _firstOrderOnly,
+              onChanged: (v) => setState(() => _firstOrderOnly = v),
+              title: const Text('First-order only'),
+              subtitle: const Text(
+                'Restricts redemption to customers with no prior confirmed '
+                'orders. Pair with "per-user limit = 1" for a single-shot '
+                'welcome offer.',
+              ),
+            ),
             SwitchListTile(
               value: _isActive,
               onChanged: (v) => setState(() => _isActive = v),

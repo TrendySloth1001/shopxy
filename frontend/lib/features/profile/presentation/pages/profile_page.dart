@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/core/network/image_url.dart';
 import 'package:shopxy/core/router/app_shell.dart';
 import 'package:shopxy/features/auth/domain/entities/auth_user.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
@@ -243,7 +244,11 @@ class _ProfileHero extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: ProfileAvatar(name: name, size: 76),
+                child: ProfileAvatar(
+                  name: name,
+                  imageUrl: user?.avatarUrl,
+                  size: 76,
+                ),
               ),
               const SizedBox(width: AppSizes.lg),
               Expanded(
@@ -627,6 +632,9 @@ class ProfileAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final letter = name.trim().isEmpty ? '?' : name.trim()[0].toUpperCase();
     final pair = _paletteFor(name);
+    final resolved = (imageUrl == null || imageUrl!.isEmpty)
+        ? null
+        : resolveImageUrl(imageUrl!);
     return Container(
       width: size,
       height: size,
@@ -634,15 +642,15 @@ class ProfileAvatar extends StatelessWidget {
         color: pair.$1,
         shape: BoxShape.circle,
         border: Border.all(color: AppColors.hairline, width: 1),
-        image: imageUrl != null && imageUrl!.isNotEmpty
+        image: resolved != null
             ? DecorationImage(
-                image: NetworkImage(imageUrl!),
+                image: NetworkImage(resolved),
                 fit: BoxFit.cover,
               )
             : null,
       ),
       alignment: Alignment.center,
-      child: imageUrl == null || imageUrl!.isEmpty
+      child: resolved == null
           ? Text(
               letter,
               style: TextStyle(

@@ -5,6 +5,8 @@ import { eventsService } from '../modules/events/events.service.js';
 import { trendingService } from '../modules/trending/trending.service.js';
 import { promotionsService } from '../modules/promotions/promotions.service.js';
 import { embeddingService } from '../modules/search/embedding.service.js';
+import { productsService } from '../modules/products/products.service.js';
+import { marketplaceService } from '../modules/marketplace/marketplace.service.js';
 
 /// Lightweight in-process cron registry. We deliberately stay on
 /// node-cron (rather than BullMQ) until durability matters — every
@@ -88,6 +90,30 @@ export function startScheduler(): void {
   jobs.push(
     cron.schedule('0 3 * * *', () =>
       runSafely('events:prune-old', () => eventsService.pruneOldEvents()),
+    ),
+  );
+
+  // Daily at 03:00 server-local — refresh the soldLast30d denorm from
+  // the trailing-30-day confirmed-invoice window. Shares the 03:00 slot
+  // with events:prune-old; both are SQL-heavy, idempotent, and tolerate
+  // running in parallel.
+  jobs.push(
+    cron.schedule('0 3 * * *', () =>
+      runSafely('products:refresh-sold-last-30d', () =>
+        productsService.refreshSoldLast30d(),
+      ),
+    ),
+  );
+
+  // Daily at 03:30 server-local — recompute the frequently-bought-
+  // together cache from 90 days of confirmed-invoice co-occurrence.
+  // Offset from the 03:00 batch so the two big SQL passes don't fight
+  // for the same connection slot.
+  jobs.push(
+    cron.schedule('30 3 * * *', () =>
+      runSafely('marketplace:recompute-fbt', () =>
+        marketplaceService.recomputeFbtCache(),
+      ),
     ),
   );
 

@@ -36,6 +36,7 @@ import 'package:shopxy_customer/features/recently_viewed/data/datasources/recent
 import 'package:shopxy_customer/features/returns/data/datasources/returns_remote_data_source.dart';
 import 'package:shopxy_customer/features/wallet/data/datasources/wallet_remote_data_source.dart';
 import 'package:shopxy_customer/features/coupons/data/datasources/coupons_remote_data_source.dart';
+import 'package:shopxy_customer/features/profile/data/datasources/avatar_remote_data_source.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -66,6 +67,7 @@ void main() async {
   final returnsDs = ReturnsRemoteDataSource(apiClient);
   final walletDs = WalletRemoteDataSource(apiClient);
   final couponsDs = CouponsRemoteDataSource(apiClient);
+  final avatarDs = AvatarRemoteDataSource(apiClient);
   final trackingService = TrackingService(apiClient);
 
   final authProvider = AuthProvider(authDs, tokenManager);
@@ -211,6 +213,7 @@ void main() async {
         Provider<ReturnsRemoteDataSource>.value(value: returnsDs),
         Provider<WalletRemoteDataSource>.value(value: walletDs),
         Provider<CouponsRemoteDataSource>.value(value: couponsDs),
+        Provider<AvatarRemoteDataSource>.value(value: avatarDs),
         ChangeNotifierProvider<CategoriesProvider>.value(
             value: categoriesProvider),
         ChangeNotifierProvider<AuthProvider>.value(value: authProvider),

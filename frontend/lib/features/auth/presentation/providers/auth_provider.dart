@@ -50,8 +50,18 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> register(String name, String email, String password) async {
-    final result = await _dataSource.register(name, email, password);
+  Future<void> register(
+    String name,
+    String email,
+    String password, {
+    required String shopName,
+  }) async {
+    final result = await _dataSource.register(
+      name,
+      email,
+      password,
+      shopName: shopName,
+    );
     await _tokenManager.saveTokens(
       accessToken: result.accessToken,
       refreshToken: result.refreshToken,
@@ -95,6 +105,10 @@ class AuthProvider extends ChangeNotifier {
     String? shopGstin,
     String? shopPan,
     String? upiVpa,
+    String? avatarUrl,
+    bool clearAvatar = false,
+    String? phoneNumber,
+    bool clearPhone = false,
   }) async {
     final updated = await _dataSource.updateProfile(
       name: name,
@@ -108,10 +122,19 @@ class AuthProvider extends ChangeNotifier {
       shopGstin: shopGstin,
       shopPan: shopPan,
       upiVpa: upiVpa,
+      avatarUrl: avatarUrl,
+      clearAvatar: clearAvatar,
+      phoneNumber: phoneNumber,
+      clearPhone: clearPhone,
     );
     _user = updated;
     notifyListeners();
   }
+
+  /// Convenience wrapper used by the avatar tile on Edit Profile.
+  /// Pass `null` to clear the photo, a URL to set it.
+  Future<void> updateAvatar(String? avatarUrl) =>
+      updateProfile(avatarUrl: avatarUrl, clearAvatar: avatarUrl == null);
 
   Future<void> changePassword(String current, String next) async {
     await _dataSource.changePassword(current, next);

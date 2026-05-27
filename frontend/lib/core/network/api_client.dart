@@ -86,15 +86,23 @@ class ApiClient {
   /// Multipart file upload — includes auth header AND benefits from the
   /// same 401-retry flow as the JSON helpers. Uploads use a longer
   /// timeout since the body is sent before any response can arrive.
+  ///
+  /// The file is provided as a *factory* rather than a built
+  /// [http.MultipartFile] because [_withRetry] may invoke this closure
+  /// twice (the original request + one retry after a token refresh).
+  /// A `MultipartFile` is backed by a stream that's consumed by
+  /// `request.send()`; reusing the same instance on a retry would throw
+  /// "Stream has already been listened to" and surface as a generic
+  /// multipart failure to the user. Building a fresh file per attempt
+  /// makes the retry path safe.
   Future<http.StreamedResponse> multipart(
     String path, {
-    required http.MultipartFile file,
-    String fieldName = 'file',
+    required Future<http.MultipartFile> Function() makeFile,
   }) =>
-      _withRetry(() {
+      _withRetry(() async {
         final request = http.MultipartRequest('POST', _buildUri(path))
           ..headers['Authorization'] = 'Bearer ${_tokenManager.accessToken ?? ''}'
-          ..files.add(file);
+          ..files.add(await makeFile());
         return request.send().timeout(const Duration(seconds: 60));
       });
 

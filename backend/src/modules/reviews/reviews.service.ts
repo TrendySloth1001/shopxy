@@ -118,6 +118,57 @@ export class ReviewsService {
     });
   }
 
+  /// One-shot summary payload for the PDP review block: average,
+  /// total count, per-star histogram (always 1..5 keyed and
+  /// zero-filled so the client doesn't need to guard for missing
+  /// keys), how many of those came from CONFIRMED-invoice buyers
+  /// (today every review is purchase-gated, so verifiedCount equals
+  /// ratingCount — but we surface the field so a future "anonymous
+  /// review" feature wouldn't break the wire shape), and the three
+  /// most recent reviews so the section can render without a
+  /// follow-up list call.
+  async getSummary(productId: number) {
+    const [agg, buckets, recent] = await Promise.all([
+      prisma.productReview.aggregate({
+        where: { productId },
+        _avg: { rating: true },
+        _count: { _all: true },
+      }),
+      prisma.productReview.groupBy({
+        by: ['rating'],
+        where: { productId },
+        _count: { _all: true },
+      }),
+      prisma.productReview.findMany({
+        where: { productId },
+        orderBy: { id: 'desc' },
+        take: 3,
+        select: reviewSelect,
+      }),
+    ]);
+
+    const histogram: Record<string, number> = {
+      '1': 0, '2': 0, '3': 0, '4': 0, '5': 0,
+    };
+    for (const row of buckets) {
+      const key = String(row.rating);
+      if (key in histogram) histogram[key] = row._count._all;
+    }
+
+    const ratingCount = agg._count._all;
+    return {
+      ratingAvg: agg._avg.rating,
+      ratingCount,
+      // Today reviews are gated to CONFIRMED-invoice buyers via
+      // canReview, so verifiedCount mirrors ratingCount. We still
+      // surface the field so a future "anonymous review" surface can
+      // diverge the two without a wire-shape change.
+      verifiedCount: ratingCount,
+      histogram,
+      recent,
+    };
+  }
+
   /// Cursor-paginated public listing — id-based cursor for stable
   /// ordering when reviews land mid-scroll. Newest first.
   async listForProduct(
@@ -131,6 +182,42 @@ export class ReviewsService {
       ...(opts.cursor ? { cursor: { id: opts.cursor }, skip: 1 } : {}),
       take: limit + 1,
       select: reviewSelect,
+    });
+    const hasMore = rows.length > limit;
+    const data = hasMore ? rows.slice(0, limit) : rows;
+    const nextCursor = hasMore ? data[data.length - 1].id : null;
+    return { data, nextCursor };
+  }
+
+  /// "My reviews" feed — every review the caller has written, with
+  /// the product (name + first image) joined so the profile page
+  /// can render a card per row without a second fetch. Cursor on
+  /// id for stable ordering when the user edits an old review.
+  async listForUser(
+    userId: number,
+    opts: { cursor?: number; limit?: number },
+  ) {
+    const limit = Math.min(50, Math.max(1, opts.limit ?? 20));
+    const rows = await prisma.productReview.findMany({
+      where: { userId },
+      orderBy: { id: 'desc' },
+      ...(opts.cursor ? { cursor: { id: opts.cursor }, skip: 1 } : {}),
+      take: limit + 1,
+      select: {
+        ...reviewSelect,
+        product: {
+          select: {
+            id: true,
+            name: true,
+            sellingPrice: true,
+            images: {
+              select: { url: true, sortOrder: true },
+              orderBy: { sortOrder: 'asc' },
+              take: 1,
+            },
+          },
+        },
+      },
     });
     const hasMore = rows.length > limit;
     const data = hasMore ? rows.slice(0, limit) : rows;

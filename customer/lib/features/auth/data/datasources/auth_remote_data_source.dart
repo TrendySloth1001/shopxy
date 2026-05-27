@@ -27,7 +27,18 @@ class AuthRemoteDataSource {
   Future<AuthResult> register(String name, String email, String password) async {
     final res = await _client.post(
       '/auth/register',
-      body: {'name': name, 'email': email, 'password': password},
+      body: {
+        'name': name,
+        'email': email,
+        'password': password,
+        // Customer app — explicitly tag the signup so the backend never
+        // defaults a merchant-app submission to CUSTOMER by accident.
+        'role': 'CUSTOMER',
+        // DPDP consent gate — the register page disables submit until
+        // both boxes are ticked, so reaching this line implies consent.
+        'acceptedTerms': true,
+        'acceptedPrivacy': true,
+      },
     );
     final body = jsonDecode(res.body) as Map<String, dynamic>;
     if (res.statusCode != 201) {
@@ -50,11 +61,45 @@ class AuthRemoteDataSource {
     await _client.post('/auth/logout', body: {'refreshToken': refreshToken});
   }
 
-  Future<AuthUser> updateProfile({required String name}) async {
-    final res = await _client.patch('/auth/me', body: {'name': name});
+  /// PATCH /auth/me. Send only the fields the user changed —
+  /// undefined keys are dropped so we don't accidentally clear
+  /// values the user hasn't touched. Pass an explicit `null` for a
+  /// field to clear it (e.g. removing the avatar).
+  Future<AuthUser> updateProfile({
+    String? name,
+    String? avatarUrl,
+    bool clearAvatar = false,
+    String? phoneNumber,
+    bool clearPhone = false,
+    bool? notifyOrders,
+    bool? notifyDeals,
+    bool? notifyAccount,
+    bool? notifyMessages,
+    bool? pushEnabled,
+    bool? smsEnabled,
+  }) async {
+    final body = <String, dynamic>{};
+    if (name != null) body['name'] = name;
+    if (clearAvatar) {
+      body['avatarUrl'] = null;
+    } else if (avatarUrl != null) {
+      body['avatarUrl'] = avatarUrl;
+    }
+    if (clearPhone) {
+      body['phoneNumber'] = null;
+    } else if (phoneNumber != null) {
+      body['phoneNumber'] = phoneNumber;
+    }
+    if (notifyOrders != null) body['notifyOrders'] = notifyOrders;
+    if (notifyDeals != null) body['notifyDeals'] = notifyDeals;
+    if (notifyAccount != null) body['notifyAccount'] = notifyAccount;
+    if (notifyMessages != null) body['notifyMessages'] = notifyMessages;
+    if (pushEnabled != null) body['pushEnabled'] = pushEnabled;
+    if (smsEnabled != null) body['smsEnabled'] = smsEnabled;
+    final res = await _client.patch('/auth/me', body: body);
     if (res.statusCode != 200) {
-      final body = jsonDecode(res.body) as Map<String, dynamic>;
-      throw Exception(body['error'] ?? 'Failed to update profile');
+      final decoded = jsonDecode(res.body) as Map<String, dynamic>;
+      throw Exception(decoded['error'] ?? 'Failed to update profile');
     }
     return AuthUser.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
