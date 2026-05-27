@@ -43,11 +43,13 @@ bannersAdminRouter.delete(
 );
 
 /// Merchant CRUD — mounted under /me/banners with requireAuth +
-/// requireRole(OWNER) + resolveShop. Every endpoint is scoped to
-/// req.shopId, so a merchant only ever sees / mutates their own
-/// hero-carousel slides. Read goes straight to Postgres (no Redis cache)
-/// because merchants edit infrequently and want their saves to land
-/// without a 60s lag in the editor list.
+/// requireRole(OWNER) + resolveShop. Phase 7: writes are deprecated;
+/// new merchant flows use /me/carousels/:cid/slides which validates
+/// carousel ownership before any DB mutation. The GET endpoints stay
+/// as a read-only shim so older client builds keep listing the
+/// merchant's slides (sorted oldest-first across all their carousels)
+/// without breaking on missing endpoints. Writes return 410 GONE with
+/// a Location header pointing at the new surface.
 export const bannersMerchantRouter = Router();
 bannersMerchantRouter.get(
   '/',
@@ -57,21 +59,28 @@ bannersMerchantRouter.get(
   '/:id',
   asyncHandler(bannersController.getOneForShop.bind(bannersController)),
 );
-bannersMerchantRouter.post(
-  '/',
-  asyncHandler(bannersController.createForShop.bind(bannersController)),
-);
-bannersMerchantRouter.patch(
-  '/:id',
-  asyncHandler(bannersController.updateForShop.bind(bannersController)),
-);
-bannersMerchantRouter.delete(
-  '/:id',
-  asyncHandler(bannersController.deleteForShop.bind(bannersController)),
-);
 
-// Per-slide linked products. PUT replaces the whole list — simpler
-// than per-row CRUD for a small N (max 60 products per slide).
+function gone(req: import('express').Request, res: import('express').Response) {
+  res
+    .status(410)
+    .set('Location', '/me/carousels')
+    .json({
+      error:
+        'POST/PATCH/DELETE on /me/banners is deprecated. Use ' +
+        '/me/carousels/:carouselId/slides instead.',
+    });
+}
+
+bannersMerchantRouter.post('/', gone);
+bannersMerchantRouter.patch('/:id', gone);
+bannersMerchantRouter.delete('/:id', gone);
+
+// Per-slide linked-product CRUD stays on this surface for now — the
+// new slide editor doesn't ship its own product picker yet, so the
+// legacy /me/banners/:id/products PUT is still the canonical write
+// for the BannerProduct join table. Lifting it onto /me/carousels is
+// a follow-up; until then keeping these wired here avoids losing the
+// feature entirely. Ownership is enforced server-side via shopId.
 bannersMerchantRouter.get(
   '/:id/products',
   asyncHandler(
