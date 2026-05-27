@@ -45,7 +45,7 @@ class MerchantCouponsRemoteDataSource {
         'description': description,
       'discountType': discountType,
       'discountValue': discountValue,
-      if (maxDiscount != null) 'maxDiscount': maxDiscount,
+      'maxDiscount': ?maxDiscount,
       'minOrderAmount': minOrderAmount,
       'validFrom': validFrom.toUtc().toIso8601String(),
       'validUntil': validUntil.toUtc().toIso8601String(),
@@ -79,21 +79,21 @@ class MerchantCouponsRemoteDataSource {
     bool? isActive,
   }) async {
     final res = await _client.patch('/me/coupons-admin/$id', body: {
-      if (code != null) 'code': code,
-      if (title != null) 'title': title,
-      if (description != null) 'description': description,
-      if (discountType != null) 'discountType': discountType,
-      if (discountValue != null) 'discountValue': discountValue,
-      if (maxDiscount != null) 'maxDiscount': maxDiscount,
-      if (minOrderAmount != null) 'minOrderAmount': minOrderAmount,
+      'code': ?code,
+      'title': ?title,
+      'description': ?description,
+      'discountType': ?discountType,
+      'discountValue': ?discountValue,
+      'maxDiscount': ?maxDiscount,
+      'minOrderAmount': ?minOrderAmount,
       if (validFrom != null) 'validFrom': validFrom.toUtc().toIso8601String(),
       if (validUntil != null)
         'validUntil': validUntil.toUtc().toIso8601String(),
-      if (perUserLimit != null) 'perUserLimit': perUserLimit,
-      if (totalCap != null) 'totalCap': totalCap,
-      if (isPublic != null) 'isPublic': isPublic,
-      if (firstOrderOnly != null) 'firstOrderOnly': firstOrderOnly,
-      if (isActive != null) 'isActive': isActive,
+      'perUserLimit': ?perUserLimit,
+      'totalCap': ?totalCap,
+      'isPublic': ?isPublic,
+      'firstOrderOnly': ?firstOrderOnly,
+      'isActive': ?isActive,
     });
     if (res.statusCode == 204) return;
     throw Exception(_decodeError(res.body));
