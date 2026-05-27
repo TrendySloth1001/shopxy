@@ -20,6 +20,8 @@ import 'package:shopxy/features/admin/presentation/pages/admin_collections_page.
 import 'package:shopxy/features/admin/presentation/pages/admin_shops_page.dart';
 import 'package:shopxy/features/admin/presentation/pages/admin_spotlight_approval_page.dart';
 import 'package:shopxy/features/carousel/presentation/pages/my_carousel_page.dart';
+import 'package:shopxy/features/coupons/presentation/pages/merchant_coupons_page.dart';
+import 'package:shopxy/features/returns/presentation/pages/merchant_returns_page.dart';
 import 'package:shopxy/features/spotlight/presentation/pages/spotlight_request_page.dart';
 import 'package:shopxy/features/analytics/presentation/pages/merchant_analytics_page.dart';
 import 'package:shopxy/features/promotions/presentation/pages/promotion_manager_page.dart';
@@ -113,6 +115,13 @@ List<_Shortcut> get _manageShortcuts => [
         builder: (_) => const PromotionManagerPage(),
       ),
       _Shortcut(
+        label: 'Coupons',
+        icon: Icons.local_offer_outlined,
+        accent: AppColors.accentAmber,
+        accentSoft: AppColors.accentAmberSoft,
+        builder: (_) => const MerchantCouponsPage(),
+      ),
+      _Shortcut(
         label: AppStrings.navCategories,
         icon: Icons.category_outlined,
         accent: AppColors.accentTeal,
@@ -156,6 +165,13 @@ List<_Shortcut> get _operationShortcuts => [
         accent: AppColors.brand,
         accentSoft: AppColors.brandSoft,
         builder: (_) => const StockAdjustmentsPage(),
+      ),
+      _Shortcut(
+        label: 'Returns',
+        icon: Icons.assignment_return_outlined,
+        accent: AppColors.accentRose,
+        accentSoft: AppColors.accentRoseSoft,
+        builder: (_) => const MerchantReturnsPage(),
       ),
       _Shortcut(
         label: 'Reports',
