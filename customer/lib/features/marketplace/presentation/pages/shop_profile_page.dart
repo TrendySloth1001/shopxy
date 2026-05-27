@@ -362,6 +362,17 @@ class _Body extends StatelessWidget {
             ),
           ),
         ),
+        if (shop.vacationMode)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                  AppSizes.lg, 0, AppSizes.lg, AppSizes.sm),
+              child: _VacationBanner(
+                message: shop.vacationMessage ??
+                    'This shop is on vacation. New orders are paused.',
+              ),
+            ),
+          ),
         if (shop.returnPolicy != null ||
             shop.shippingPolicy != null ||
             shop.refundPolicy != null)
@@ -430,6 +441,51 @@ class _Body extends StatelessWidget {
             const SliverToBoxAdapter(child: SizedBox(height: AppSizes.xl)),
         ],
       ],
+    );
+  }
+}
+
+class _VacationBanner extends StatelessWidget {
+  const _VacationBanner({required this.message});
+  final String message;
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.warningSoft,
+      shape: AppShapes.squircle(AppSizes.radiusMd),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSizes.md),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(Icons.beach_access_rounded, color: AppColors.warning),
+            const SizedBox(width: AppSizes.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'On vacation',
+                    style: TextStyle(
+                      color: AppColors.warning,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    message,
+                    style: const TextStyle(
+                      color: AppColors.black,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
