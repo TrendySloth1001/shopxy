@@ -97,14 +97,6 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  void _stub(String label) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(content: Text('$label — ${AppStrings.comingSoon.toLowerCase()}')),
-      );
-  }
-
   Future<void> _toggleEmailNotifications(bool value) async {
     if (_savingEmailNotifications) return;
     setState(() => _savingEmailNotifications = true);
@@ -189,12 +181,15 @@ class _SettingsPageState extends State<SettingsPage> {
           // ── Appearance ──────────────────────────────────────
           const _Eyebrow('APPEARANCE'),
           const SizedBox(height: AppSizes.sm),
+          // Theme / language are placeholder rows — no `onTap` so
+          // they don't pretend to be live. The "Coming soon" chip
+          // signals the future surface without inviting taps that
+          // do nothing.
           _SettingRow(
             icon: Icons.palette_outlined,
             title: AppStrings.theme,
             subtitle: AppStrings.themeLight,
             trailing: _comingSoonChip(context),
-            onTap: () => _stub(AppStrings.theme),
           ),
           _SettingRow(
             icon: Icons.currency_rupee_rounded,
@@ -206,7 +201,6 @@ class _SettingsPageState extends State<SettingsPage> {
             title: AppStrings.language,
             subtitle: 'English',
             trailing: _comingSoonChip(context),
-            onTap: () => _stub(AppStrings.language),
           ),
           const _NavigationStyleRow(),
           const _DensityRow(),

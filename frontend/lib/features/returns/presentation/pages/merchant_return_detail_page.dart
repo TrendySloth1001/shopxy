@@ -45,15 +45,19 @@ class _MerchantReturnDetailPageState extends State<MerchantReturnDetailPage> {
     try {
       final ds = context.read<MerchantReturnsRemoteDataSource>();
       final r = await ds.getById(widget.returnId);
-      if (mounted) setState(() {
+      if (mounted) {
+        setState(() {
         _row = r;
         _loading = false;
       });
+      }
     } catch (e) {
-      if (mounted) setState(() {
+      if (mounted) {
+        setState(() {
         _loading = false;
         _error = e.toString().replaceFirst('Exception: ', '');
       });
+      }
     }
   }
 
@@ -411,7 +415,7 @@ class _ItemsCard extends StatelessWidget {
                             width: 56,
                             height: 56,
                             fit: BoxFit.cover,
-                            errorWidget: (_, __, ___) => Container(
+                            errorWidget: (_, _, _) => Container(
                               width: 56,
                               height: 56,
                               color: AppColors.surfaceTint,
