@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:shopxy/features/carousel/data/datasources/carousels_remote_data_source.dart';
+import 'package:shopxy/features/carousel/data/models/banner_product.dart';
 import 'package:shopxy/features/carousel/data/models/carousel.dart';
 
 /// State for the merchant's carousels list + the currently-open
@@ -189,6 +190,30 @@ class CarouselsProvider extends ChangeNotifier {
       _error = e.toString();
       notifyListeners();
       return false;
+    }
+  }
+
+  // ── Slide products ──────────────────────────────────────────────────
+  //
+  // Uncached. The slide editor maintains its own working list (reorder,
+  // type/value edits) and round-trips through these on save. Caching
+  // here would just create stale-list bugs when two editors save in
+  // sequence and the second one's stale copy clobbers the first.
+
+  Future<List<BannerProductLink>> fetchSlideProducts(int slideId) {
+    return _ds.listSlideProducts(slideId);
+  }
+
+  Future<List<BannerProductLink>?> saveSlideProducts(
+    int slideId,
+    List<BannerProductLink> items,
+  ) async {
+    try {
+      return await _ds.replaceSlideProducts(slideId, items);
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return null;
     }
   }
 }

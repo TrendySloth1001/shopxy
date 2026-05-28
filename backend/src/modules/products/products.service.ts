@@ -153,6 +153,13 @@ export class ProductsService {
           ? undefined
           : (variantAxes as Prisma.InputJsonValue),
         shopId: options.shopId,
+        // Default new products to published so they're immediately
+        // visible on the customer side. Schema default is false (kept
+        // that way for historical imports and bulk seeds); the merchant
+        // editor has no draft/publish toggle yet, so leaving it false
+        // here meant every freshly created product silently failed to
+        // appear in the customer feed.
+        isPublished: true,
         stockQuantity: 0,
         images: imageUrls?.length
           ? { create: imageUrls.map((url, i) => ({ url, sortOrder: i })) }
@@ -616,13 +623,16 @@ export class ProductsService {
       data.highlights !== undefined ||
       data.specs !== undefined;
     if (embedSourceChanged) {
-      await prisma.product.update({
-        where: { id },
+      await prisma.product.updateMany({
+        where: { id, shopId },
         data: { embeddedAt: null },
       });
       void embeddingService.reembedProduct(id);
     }
-    return prisma.product.findUnique({ where: { id }, select: productSelect });
+    return prisma.product.findFirst({
+      where: { id, shopId },
+      select: productSelect,
+    });
   }
 
   async setPublished(shopId: number, id: number, isPublished: boolean) {
@@ -631,7 +641,10 @@ export class ProductsService {
       data: { isPublished },
     });
     if (result.count === 0) return null;
-    return prisma.product.findUnique({ where: { id }, select: productSelect });
+    return prisma.product.findFirst({
+      where: { id, shopId },
+      select: productSelect,
+    });
   }
 
   async deleteProduct(shopId: number, id: number) {

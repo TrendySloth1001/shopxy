@@ -1472,6 +1472,16 @@ model Banner {
   ctaText       String?         @map("cta_text")
   ctaTarget     String?         @map("cta_target")
   brandLabel    String?         @map("brand_label")
+  /// Optional shop logo / brand mark shown alongside (or instead of)
+  /// `brandLabel` on every template card that renders the brand chip.
+  /// Merchant uploads via the slide editor; same /me/upload pipeline
+  /// as the main slide image so the URL is either http(s) or a
+  /// server-relative path.
+  brandImageUrl String?         @map("brand_image_url")
+  /// COVER (crop to fit the chip) or CONTAIN (letterbox into the chip).
+  /// Stored as the existing BannerImageFit enum so the merchant editor
+  /// can reuse the same segmented toggle as the main slide image.
+  brandImageFit BannerImageFit  @default(COVER) @map("brand_image_fit")
   imageUrl      String          @map("image_url")
   bgColor       String          @map("bg_color")
   accentColor   String?         @map("accent_color")
@@ -1482,25 +1492,11 @@ model Banner {
   sponsorShopId Int?            @map("sponsor_shop_id")
   sponsorShop   Shop?           @relation(fields: [sponsorShopId], references: [id], onDelete: SetNull)
 
-  /// Carousels Phase 1 — discriminator between the legacy templated
-  /// renderer (existing 7 BannerTemplate variants) and the freeform
-  /// canvas (textBlocks + imageTransform). Defaults to TEMPLATED so
-  /// every pre-migration row keeps rendering exactly as before.
-  mode          BannerSlideMode @default(TEMPLATED)
   /// Parent carousel. Nullable so the migration can run before the
   /// backfill stamps every row. After the backfill no row should have
   /// carouselId IS NULL; Phase 7 will enforce that with NOT NULL.
   carouselId    Int?            @map("carousel_id")
   carousel      Carousel?       @relation(fields: [carouselId], references: [id], onDelete: SetNull)
-  /// Array of `{id, text, xPct, yPct, widthPct, fontSize, color,
-  /// weight, align}` for FREEFORM slides. Positioning is percent-of-
-  /// canvas so the renderer is resolution-independent. Validated +
-  /// bounded server-side (max 8 blocks per slide, see zod schema).
-  textBlocks    Json?           @map("text_blocks")
-  /// `{focalXPct, focalYPct, scale, rotateDeg, flipH, flipV,
-  /// brightness, contrast, saturation}` for FREEFORM slides. Each
-  /// numeric axis is range-checked server-side before write.
-  imageTransform Json?          @map("image_transform")
 
   createdAt     DateTime        @default(now()) @map("created_at")
   updatedAt     DateTime        @updatedAt @map("updated_at")
@@ -1542,30 +1538,44 @@ model Carousel {
   @@map("carousels")
 }
 
-/// Per-slide curated product list with a display-only percent-off. The
-/// merchant editor lets the slide author pin specific products and
-/// stamp a discount per row; the customer slide-detail page renders
-/// the original `sellingPrice` struck through next to the computed
-/// sale price (`sellingPrice * (1 - discountPct/100)`). Carts and
-/// checkout still use the canonical product price — this surface is
-/// pure storefront merchandising, not a pricing override.
+/// Per-slide curated product list with a real promotional discount.
+/// The merchant editor pins specific products to a slide and stamps a
+/// discount per row — either a percentage off the canonical
+/// sellingPrice or a flat rupee amount per unit. Carousel promos flow
+/// through to BOTH the customer order pricing and the merchant-created
+/// invoice: when an InvoiceItem is built for a product that has an
+/// active carousel promo, the discount is auto-stamped onto the line
+/// unless the merchant typed their own discount, which always wins.
+///
+/// Best-promo resolution: a product can sit in multiple active slides;
+/// the resolver picks the row giving the largest per-unit discount at
+/// the product's current sellingPrice.
 model BannerProduct {
-  id          Int      @id @default(autoincrement())
-  bannerId    Int      @map("banner_id")
-  banner      Banner   @relation(fields: [bannerId], references: [id], onDelete: Cascade)
-  productId   Int      @map("product_id")
-  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  position    Int      @default(0)
-  /// 0..90 — capped server-side. Stored as an int (not Decimal) since
-  /// fractional percent precision adds nothing for merchandising copy
-  /// and a smallint keeps the row hot.
-  discountPct Int      @default(0) @map("discount_pct")
-  createdAt   DateTime @default(now()) @map("created_at")
+  id            Int      @id @default(autoincrement())
+  bannerId      Int      @map("banner_id")
+  banner        Banner   @relation(fields: [bannerId], references: [id], onDelete: Cascade)
+  productId     Int      @map("product_id")
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  position      Int      @default(0)
+  /// PERCENT: discountValue is a percent 0..90 off sellingPrice.
+  /// AMOUNT:  discountValue is a flat rupee discount per unit.
+  /// Both forms are clamped on write so the line can never go negative.
+  discountType  BannerProductDiscountType @default(PERCENT) @map("discount_type")
+  /// Merchant-entered number, server-clamped. For PERCENT in [0, 90];
+  /// for AMOUNT in [0, sellingPrice - 0.01]. Decimal so AMOUNT rows can
+  /// carry rupee precision without re-parsing through ints.
+  discountValue Decimal  @default(0) @map("discount_value") @db.Decimal(12, 2)
+  createdAt     DateTime @default(now()) @map("created_at")
 
   @@unique([bannerId, productId])
   @@index([bannerId, position])
   @@index([productId])
   @@map("banner_products")
+}
+
+enum BannerProductDiscountType {
+  PERCENT
+  AMOUNT
 }
 
 enum BannerPlacement {
@@ -1588,15 +1598,6 @@ enum BannerTemplate {
 enum BannerImageFit {
   COVER
   CONTAIN
-}
-
-/// Slide-level discriminator. TEMPLATED renders with one of the
-/// `BannerTemplate` layouts and ignores `textBlocks` / `imageTransform`.
-/// FREEFORM uses the positioned text blocks + image transform and
-/// ignores `template`. The customer renderer branches on this enum.
-enum BannerSlideMode {
-  TEMPLATED
-  FREEFORM
 }
 
 /// Time-bound discounted offer on a single product. soldCount is the

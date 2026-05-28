@@ -529,7 +529,7 @@ class _PreviewCard extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFFFFE3D2), Color(0xFFFFD2D2)],
+          colors: [AppColors.flashDealSoft, AppColors.flashDealSoftAlt],
         ),
         shape: AppShapes.squircle(AppSizes.radiusLg),
       ),
@@ -565,7 +565,7 @@ class _PreviewCard extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFE05A2A),
+                        color: AppColors.flashDeal,
                         borderRadius: BorderRadius.circular(2),
                       ),
                       child: Text(
@@ -588,12 +588,12 @@ class _PreviewCard extends StatelessWidget {
               children: [
                 const Row(
                   children: [
-                    Icon(Icons.bolt_rounded, color: Color(0xFFE05A2A), size: 16),
+                    Icon(Icons.bolt_rounded, color: AppColors.flashDeal, size: 16),
                     SizedBox(width: 2),
                     Text(
                       'Flash deal preview',
                       style: TextStyle(
-                        color: Color(0xFFE05A2A),
+                        color: AppColors.flashDeal,
                         fontWeight: FontWeight.w700,
                         fontSize: 11,
                       ),
@@ -618,7 +618,7 @@ class _PreviewCard extends StatelessWidget {
                     Text(
                       '₹${flashPrice.toStringAsFixed(2)}',
                       style: const TextStyle(
-                        color: Color(0xFFE05A2A),
+                        color: AppColors.flashDeal,
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
                       ),

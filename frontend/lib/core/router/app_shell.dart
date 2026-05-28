@@ -96,8 +96,8 @@ List<_Shortcut> get _manageShortcuts => [
       _Shortcut(
         label: 'Flash deals',
         icon: Icons.bolt_outlined,
-        accent: const Color(0xFFE05A2A),
-        accentSoft: const Color(0xFFFFE3D2),
+        accent: AppColors.flashDeal,
+        accentSoft: AppColors.flashDealSoft,
         builder: (_) => const FlashDealsPage(),
       ),
       _Shortcut(

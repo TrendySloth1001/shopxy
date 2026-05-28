@@ -1,9 +1,12 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import { parsePagination, paginatedResponse } from '../../shared/http/pagination.js';
-import { purchaseRequestsService, assertShopOwnership } from './purchase-requests.service.js';
+import {
+  purchaseRequestsService,
+  assertShopOwnership,
+  notifyShopOwner,
+} from './purchase-requests.service.js';
 import { notificationsService } from '../notifications/notifications.service.js';
-import prisma from '../../infra/db/prisma.js';
 
 const createSchema = z.object({
   /// Full cart payload. The server groups by shop and creates one
@@ -439,36 +442,6 @@ export class PurchaseRequestsController {
     }
     res.status(201).json(result);
   }
-}
-
-/// Fans out an in-app notification to every merchant (anyone with role
-/// OWNER). One Promise.all on the User read + creates so a 50-merchant
-/// fleet doesn't pay sequential latency for the notification storm.
-async function notifyShopOwner(
-  shopId: number,
-  payload: {
-    kind: string;
-    title: string;
-    body?: string;
-    data?: Record<string, unknown>;
-  },
-): Promise<void> {
-  const shop = await prisma.shop.findUnique({
-    where: { id: shopId },
-    select: { ownerUserId: true },
-  });
-  if (!shop) return;
-  await Promise.all(
-    [shop].map((o) =>
-      notificationsService.create({
-        userId: o.ownerUserId,
-        kind: payload.kind,
-        title: payload.title,
-        body: payload.body,
-        data: payload.data,
-      }),
-    ),
-  );
 }
 
 export const purchaseRequestsController = new PurchaseRequestsController();

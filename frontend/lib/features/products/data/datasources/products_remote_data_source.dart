@@ -9,6 +9,17 @@ class ProductsRemoteDataSource {
   const ProductsRemoteDataSource(this._client);
   final ApiClient _client;
 
+  /// Throw with the backend's actual error text on any non-2xx. Without
+  /// this guard, parsing an error body like `{error: "Validation failed"}`
+  /// as a Product would crash with "null is not a subtype of int" on
+  /// the strict `id: json['id'] as int` cast, hiding the real failure
+  /// behind a useless Dart cast error.
+  static void _expectOk(http.Response response, String action) {
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('$action failed (${response.statusCode}): ${response.body}');
+    }
+  }
+
   Future<({List<Product> products, int total})> getProducts({
     String? search,
     int? categoryId,
@@ -31,6 +42,7 @@ class ProductsRemoteDataSource {
     if (outOfStock == true) params['outOfStock'] = 'true';
 
     final response = await _client.get('/products', queryParameters: params);
+    _expectOk(response, 'List products');
     final body = jsonDecode(response.body) as Map<String, dynamic>;
     final data = body['data'] as List;
     final pagination = body['pagination'] as Map<String, dynamic>;
@@ -45,6 +57,7 @@ class ProductsRemoteDataSource {
 
   Future<Product> getProduct(int id) async {
     final response = await _client.get('/products/$id');
+    _expectOk(response, 'Load product');
     return ProductDto.fromJson(
       jsonDecode(response.body) as Map<String, dynamic>,
     );
@@ -56,6 +69,7 @@ class ProductsRemoteDataSource {
       queryParameters: {'code': code},
     );
     if (response.statusCode == 404) return null;
+    _expectOk(response, 'Lookup product');
     return ProductDto.fromJson(
       jsonDecode(response.body) as Map<String, dynamic>,
     );
@@ -63,6 +77,7 @@ class ProductsRemoteDataSource {
 
   Future<Product> createProduct(Map<String, dynamic> data) async {
     final response = await _client.post('/products', body: data);
+    _expectOk(response, 'Create product');
     return ProductDto.fromJson(
       jsonDecode(response.body) as Map<String, dynamic>,
     );
@@ -70,13 +85,15 @@ class ProductsRemoteDataSource {
 
   Future<Product> updateProduct(int id, Map<String, dynamic> data) async {
     final response = await _client.patch('/products/$id', body: data);
+    _expectOk(response, 'Update product');
     return ProductDto.fromJson(
       jsonDecode(response.body) as Map<String, dynamic>,
     );
   }
 
   Future<void> deleteProduct(int id) async {
-    await _client.delete('/products/$id');
+    final response = await _client.delete('/products/$id');
+    _expectOk(response, 'Delete product');
   }
 
   /// Toggle the marketplace visibility flag. Backend exposes this as a
@@ -88,6 +105,7 @@ class ProductsRemoteDataSource {
       '/products/$id/publish',
       body: {'isPublished': isPublished},
     );
+    _expectOk(response, 'Publish product');
     return ProductDto.fromJson(
       jsonDecode(response.body) as Map<String, dynamic>,
     );
@@ -99,20 +117,15 @@ class ProductsRemoteDataSource {
   Future<ProductImage> addImage(int productId, String url) async {
     final response =
         await _client.post('/products/$productId/images', body: {'url': url});
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      // Surface the backend's actual error rather than letting the
-      // parse-as-Map cast blow up on `{error: "..."}`.
-      throw Exception(
-        'Add image failed (${response.statusCode}): ${response.body}',
-      );
-    }
+    _expectOk(response, 'Add image');
     return ProductDto.imageFromJson(
       jsonDecode(response.body) as Map<String, dynamic>,
     );
   }
 
   Future<void> deleteImage(int productId, int imageId) async {
-    await _client.delete('/products/$productId/images/$imageId');
+    final response = await _client.delete('/products/$productId/images/$imageId');
+    _expectOk(response, 'Delete image');
   }
 
   /// Uploads [file] to MinIO via the backend and returns the stored URL.

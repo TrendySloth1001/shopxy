@@ -2,16 +2,11 @@ import { Request, Response } from 'express';
 import {
   BannerImageFit,
   BannerPlacement,
-  BannerSlideMode,
   BannerTemplate,
 } from '@prisma/client';
 import { z } from 'zod';
 import { carouselsService } from './carousels.service.js';
 import { isValidCtaTarget } from '../../shared/cta-target.js';
-import {
-  imageTransformSchema,
-  textBlocksSchema,
-} from '../banners/freeform-payload.js';
 
 const PLACEMENTS: [BannerPlacement, ...BannerPlacement[]] = [
   'HERO',
@@ -31,11 +26,6 @@ const TEMPLATES: [BannerTemplate, ...BannerTemplate[]] = [
 ];
 
 const IMAGE_FITS: [BannerImageFit, ...BannerImageFit[]] = ['COVER', 'CONTAIN'];
-
-const SLIDE_MODES: [BannerSlideMode, ...BannerSlideMode[]] = [
-  'TEMPLATED',
-  'FREEFORM',
-];
 
 const hexColor = z
   .string()
@@ -70,17 +60,16 @@ const updateCarouselSchema = createCarouselSchema
   });
 
 const createSlideSchema = z.object({
-  mode: z.enum(SLIDE_MODES).optional(),
   template: z.enum(TEMPLATES).optional(),
   imageFit: z.enum(IMAGE_FITS).optional(),
-  textBlocks: textBlocksSchema.nullable().optional(),
-  imageTransform: imageTransformSchema.nullable().optional(),
   title: z.string().min(1).max(120),
   subtitle: z.string().max(240).nullable().optional(),
   eyebrow: z.string().max(60).nullable().optional(),
   ctaText: z.string().max(40).nullable().optional(),
   ctaTarget: ctaTargetSchema.nullable().optional(),
   brandLabel: z.string().max(40).nullable().optional(),
+  brandImageUrl: imageRef.nullable().optional(),
+  brandImageFit: z.enum(IMAGE_FITS).optional(),
   imageUrl: imageRef,
   bgColor: hexColor,
   accentColor: hexColor.nullable().optional(),

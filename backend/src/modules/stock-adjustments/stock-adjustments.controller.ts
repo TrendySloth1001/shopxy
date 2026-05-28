@@ -18,6 +18,10 @@ const createSchema = z.object({
   items: z.array(itemSchema).min(1),
 });
 
+const reverseSchema = z.object({
+  note: z.string().max(1000).optional(),
+});
+
 function parseId(raw: string): number | null {
   const id = Number(raw);
   return Number.isInteger(id) && id > 0 ? id : null;
@@ -89,9 +93,14 @@ export class StockAdjustmentsController {
       res.status(400).json({ error: 'Invalid id' });
       return;
     }
+    const parsed = reverseSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      res.status(400).json({ error: 'Invalid payload', issues: parsed.error.issues });
+      return;
+    }
     const result = await stockAdjustmentsService.reverse(shopId, id, {
       createdById: req.user?.sub,
-      note: typeof req.body?.note === 'string' ? req.body.note : undefined,
+      note: parsed.data.note,
     });
     if ('error' in result) {
       res.status(400).json({ error: result.error });

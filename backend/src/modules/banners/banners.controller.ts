@@ -2,16 +2,11 @@ import { Request, Response } from 'express';
 import {
   BannerImageFit,
   BannerPlacement,
-  BannerSlideMode,
   BannerTemplate,
 } from '@prisma/client';
 import { z } from 'zod';
 import { bannersService } from './banners.service.js';
 import { isValidCtaTarget } from '../../shared/cta-target.js';
-import {
-  imageTransformSchema,
-  textBlocksSchema,
-} from './freeform-payload.js';
 
 const PLACEMENTS: [BannerPlacement, ...BannerPlacement[]] = [
   'HERO',
@@ -31,11 +26,6 @@ const TEMPLATES: [BannerTemplate, ...BannerTemplate[]] = [
 ];
 
 const IMAGE_FITS: [BannerImageFit, ...BannerImageFit[]] = ['COVER', 'CONTAIN'];
-
-const SLIDE_MODES: [BannerSlideMode, ...BannerSlideMode[]] = [
-  'TEMPLATED',
-  'FREEFORM',
-];
 
 // 7-char `#RRGGBB` or 9-char `#RRGGBBAA` so the merchant UI doesn't
 // have to handle named colors / rgb(). Keeps the serialiser happy too.
@@ -58,14 +48,8 @@ const imageRef = z
 
 const createBannerSchema = z.object({
   placement: z.enum(PLACEMENTS),
-  /// Phase 1 — discriminator + freeform payload now flow through. Mode
-  /// defaults to TEMPLATED so legacy clients (without `mode` in the
-  /// body) keep producing rows that render via the existing templates.
-  mode: z.enum(SLIDE_MODES).optional(),
   template: z.enum(TEMPLATES).optional(),
   imageFit: z.enum(IMAGE_FITS).optional(),
-  textBlocks: textBlocksSchema.nullable().optional(),
-  imageTransform: imageTransformSchema.nullable().optional(),
   carouselId: z.number().int().positive().nullable().optional(),
   title: z.string().min(1).max(120),
   subtitle: z.string().max(240).nullable().optional(),
@@ -73,6 +57,8 @@ const createBannerSchema = z.object({
   ctaText: z.string().max(40).nullable().optional(),
   ctaTarget: ctaTargetSchema.nullable().optional(),
   brandLabel: z.string().max(40).nullable().optional(),
+  brandImageUrl: imageRef.nullable().optional(),
+  brandImageFit: z.enum(IMAGE_FITS).optional(),
   imageUrl: imageRef,
   bgColor: hexColor,
   accentColor: hexColor.nullable().optional(),
@@ -91,11 +77,23 @@ const updateBannerSchema = createBannerSchema
 
 // Replace-the-list payload for /me/banners/:id/products. Empty `items`
 // is allowed — that clears the slide's linked products.
+//
+// Accepts both the new typed shape (discountType + discountValue) AND
+// the legacy `discountPct` int from older merchant builds. Legacy keys
+// are remapped to {type: PERCENT, value} in the service before the
+// server-side clamp runs; that way one client release cycle can roll
+// out without the API rejecting old payloads.
 const replaceBannerProductsSchema = z.object({
   items: z
     .array(
       z.object({
         productId: z.number().int().positive(),
+        discountType: z.enum(['PERCENT', 'AMOUNT']).optional(),
+        // Generous upper bound — the real ceiling is per-product
+        // (sellingPrice for AMOUNT, MAX_PERCENT for PERCENT) and lives
+        // in the service-side clamp. We just reject obvious junk here.
+        discountValue: z.number().min(0).max(1_000_000).optional(),
+        // Legacy: pre-typed clients sent an int percent.
         discountPct: z.number().int().min(0).max(90).optional(),
         position: z.number().int().min(0).max(10_000).optional(),
       }),
@@ -265,32 +263,32 @@ export class BannersController {
       return;
     }
     const payload = replaceBannerProductsSchema.parse(req.body);
-    try {
-      const rows = await bannersService.replaceProductsForShopBanner(
-        req.shopId!,
-        id,
-        payload.items.map((it, idx) => ({
+    const rows = await bannersService.replaceProductsForShopBanner(
+      req.shopId!,
+      id,
+      payload.items.map((it, idx) => {
+        // Normalize the wire shape: typed fields win, legacy
+        // discountPct is a fallback. Service clamps per-product.
+        const hasTyped = it.discountType !== undefined || it.discountValue !== undefined;
+        const type = it.discountType ?? 'PERCENT';
+        const rawValue = hasTyped
+          ? (it.discountValue ?? 0)
+          : (it.discountPct ?? 0);
+        return {
           productId: it.productId,
-          discountPct: it.discountPct ?? 0,
+          discountType: type,
+          discountValueRaw: rawValue,
           // Default position to the array index so the merchant can
           // skip filling it and still get a stable list order.
           position: it.position ?? idx,
-        })),
-      );
-      if (rows === null) {
-        res.status(404).json({ error: 'Banner not found' });
-        return;
-      }
-      res.json({ data: rows });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Save failed';
-      // Cross-shop product attempt is a 400 (client mistake), not 500.
-      if (message.includes('does not belong to this shop')) {
-        res.status(400).json({ error: message });
-        return;
-      }
-      throw err;
+        };
+      }),
+    );
+    if (rows === null) {
+      res.status(404).json({ error: 'Banner not found' });
+      return;
     }
+    res.json({ data: rows });
   }
 
   /// GET /banners/:id/slide — public. Returns the live banner + its

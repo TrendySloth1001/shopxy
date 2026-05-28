@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:shopxy/core/network/api_client.dart';
+import 'package:shopxy/features/carousel/data/models/banner_product.dart';
 import 'package:shopxy/features/carousel/data/models/carousel.dart';
 
 /// Talks to /me/carousels — the merchant-scoped carousel CRUD plus the
@@ -111,5 +112,44 @@ class CarouselsRemoteDataSource {
     if (res.statusCode != 204) {
       throw Exception('Delete slide failed: ${res.body}');
     }
+  }
+
+  // ── Slide products ──────────────────────────────────────────────────
+  //
+  // Per-slide curated products with a real promotional discount. The
+  // route lives under /me/banners/:id/products (Banner is the slide row
+  // — the new carousel API kept the table name for FK stability). When
+  // the merchant doesn't type a per-line discount on the matching
+  // invoice, the backend auto-fills from these.
+
+  Future<List<BannerProductLink>> listSlideProducts(int slideId) async {
+    final res = await _client.get('/me/banners/$slideId/products');
+    if (res.statusCode != 200) {
+      throw Exception('Failed to load slide products: ${res.body}');
+    }
+    final body = jsonDecode(res.body) as Map<String, dynamic>;
+    return (body['data'] as List<dynamic>)
+        .map((e) => BannerProductLink.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<List<BannerProductLink>> replaceSlideProducts(
+    int slideId,
+    List<BannerProductLink> items,
+  ) async {
+    final payload = {
+      'items': [
+        for (var i = 0; i < items.length; i++) items[i].toReplaceItem(i),
+      ],
+    };
+    final res =
+        await _client.put('/me/banners/$slideId/products', body: payload);
+    if (res.statusCode != 200) {
+      throw Exception('Save slide products failed: ${res.body}');
+    }
+    final body = jsonDecode(res.body) as Map<String, dynamic>;
+    return (body['data'] as List<dynamic>)
+        .map((e) => BannerProductLink.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 }

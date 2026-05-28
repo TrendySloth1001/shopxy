@@ -52,7 +52,7 @@ class HomeFeedBlock extends StatelessWidget {
             products: b.products,
           ),
         ),
-      CuratedRailBlock b => HomeCuratedRail(item: b.item),
+      CuratedRailBlock b => HomeCuratedRail(slide: b.slide),
       CollectionBannerBlock b =>
         HomeCollectionBanner(tiles: b.tiles, title: b.title),
       SponsoredCarouselBlock b => HomeProductCarousel(
