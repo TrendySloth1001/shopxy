@@ -26,9 +26,21 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  /// Owned here so both the scrollable feed AND the header can read
+  /// the same offset. Header morphs between expanded ↔ collapsed
+  /// based on `_shrink`, 0..1, derived from `_scroll.offset`.
+  final ScrollController _scroll = ScrollController();
+  double _shrink = 0.0;
+
+  /// Pixels of scroll required to fully collapse the header. Smaller
+  /// = snappier collapse; larger = lazier. 80 lands near the natural
+  /// "I started scrolling" feel.
+  static const double _collapseDistance = 80;
+
   @override
   void initState() {
     super.initState();
+    _scroll.addListener(_onScroll);
     // Provider boot already kicks off on app start; this guarantees a
     // refresh whenever the home tab is re-mounted after a long pause
     // (e.g. user came back to the app after an hour).
@@ -37,6 +49,20 @@ class _HomePageState extends State<HomePage> {
       final p = context.read<HomeFeedProvider>();
       if (p.isInitial && !p.isLoading) p.load();
     });
+  }
+
+  @override
+  void dispose() {
+    _scroll.removeListener(_onScroll);
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scroll.hasClients) return;
+    final next = (_scroll.offset / _collapseDistance).clamp(0.0, 1.0);
+    if ((next - _shrink).abs() < 0.01) return;
+    setState(() => _shrink = next);
   }
 
   @override
@@ -60,8 +86,8 @@ class _HomePageState extends State<HomePage> {
               bottom: false,
               child: Column(
                 children: [
-                  const HomeTopBar(),
-                  const HomeSearchBar(),
+                  HomeTopBar(shrink: _shrink),
+                  HomeSearchBar(shrink: _shrink),
                   Container(
                     height: 0.6,
                     margin: const EdgeInsets.symmetric(
@@ -69,9 +95,6 @@ class _HomePageState extends State<HomePage> {
                     ),
                     color: AppColors.hairline,
                   ),
-                  // Pinned above the scroll view so a pending invite is
-                  // unmissable — the user can't scroll past it.
-                  const HomePendingInviteCallout(),
                 ],
               ),
             ),
@@ -102,6 +125,7 @@ class _HomePageState extends State<HomePage> {
         isExhausted: provider.endlessExhausted,
         loadMore: provider.loadMore,
         endlessError: provider.endlessError,
+        scroll: _scroll,
       ),
     );
   }
@@ -119,8 +143,10 @@ class _HomeFeedList extends StatefulWidget {
     required this.isExhausted,
     required this.loadMore,
     required this.endlessError,
+    required this.scroll,
   });
   final HomeFeed feed;
+  final ScrollController scroll;
 
   /// Monotonic counter that ticks each time the provider successfully
   /// refreshes. We use this as the cache key for impression tracking
@@ -145,7 +171,6 @@ class _HomeFeedListState extends State<_HomeFeedList> {
   /// for. Prevents the impression burst from re-firing on every
   /// rebuild (e.g. when the cart badge changes higher in the tree).
   int? _trackedFeedVersion;
-  final ScrollController _scroll = ScrollController();
   // Track how many blocks we'd already counted impressions for so a
   // newly-appended endless page only fires impressions for its own
   // products, not the entire growing list.
@@ -154,21 +179,20 @@ class _HomeFeedListState extends State<_HomeFeedList> {
   @override
   void initState() {
     super.initState();
-    _scroll.addListener(_maybeLoadMore);
+    widget.scroll.addListener(_maybeLoadMore);
     WidgetsBinding.instance.addPostFrameCallback((_) => _trackImpressions());
   }
 
   @override
   void dispose() {
-    _scroll.removeListener(_maybeLoadMore);
-    _scroll.dispose();
+    widget.scroll.removeListener(_maybeLoadMore);
     super.dispose();
   }
 
   void _maybeLoadMore() {
     if (widget.isExhausted || widget.isLoadingMore) return;
-    if (!_scroll.hasClients) return;
-    final pos = _scroll.position;
+    if (!widget.scroll.hasClients) return;
+    final pos = widget.scroll.position;
     // Fire when within ~1.5 screens of the bottom so the next page is
     // already on the wire by the time the user gets there.
     if (pos.pixels >= pos.maxScrollExtent - pos.viewportDimension * 1.5) {
@@ -190,8 +214,8 @@ class _HomeFeedListState extends State<_HomeFeedList> {
     // manually until the page fills up.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      if (!_scroll.hasClients) return;
-      final pos = _scroll.position;
+      if (!widget.scroll.hasClients) return;
+      final pos = widget.scroll.position;
       if (pos.maxScrollExtent <= 0 &&
           !widget.isLoadingMore &&
           !widget.isExhausted) {
@@ -260,6 +284,10 @@ class _HomeFeedListState extends State<_HomeFeedList> {
     // viewed) → freshness (new arrivals) → then the endless cycle.
     // Empty slots collapse so the layout doesn't leave a hole.
     final preludeSlots = <Widget>[
+      // Invite preview sits at the top of the scroll so a pending
+      // invite reads as the first card the user sees, but still
+      // scrolls away with the rest of the feed.
+      const HomePendingInviteCallout(),
       const CategoriesRail(),
       const Padding(
         padding: EdgeInsets.only(bottom: AppSizes.lg),
@@ -282,7 +310,7 @@ class _HomeFeedListState extends State<_HomeFeedList> {
     ];
 
     return ListView.builder(
-      controller: _scroll,
+      controller: widget.scroll,
       padding: const EdgeInsets.only(bottom: AppSizes.huge),
       // Prelude (variable, depending on which conditional slots have
       // data) + composed blocks + tail sentinel (loader / footer).

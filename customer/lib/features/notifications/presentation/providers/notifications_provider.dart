@@ -30,6 +30,22 @@ class NotificationsProvider extends ChangeNotifier {
   List<Invitation> get pendingIncoming =>
       _incoming.where((i) => i.isPending).toList(growable: false);
 
+  /// Session-local dismissals for the home-screen invite preview. Hides
+  /// the card without calling decline — the invite stays pending on the
+  /// server and the user can still find it on the Invitations page.
+  /// Cleared on logout / app cold start.
+  final Set<int> _dismissedFromHome = <int>{};
+  bool isDismissedFromHome(int id) => _dismissedFromHome.contains(id);
+  void dismissFromHome(int id) {
+    if (_dismissedFromHome.add(id)) notifyListeners();
+  }
+
+  /// Pending invites filtered by [_dismissedFromHome] — the list the
+  /// home page's preview card should render against.
+  List<Invitation> get pendingIncomingForHome => _incoming
+      .where((i) => i.isPending && !_dismissedFromHome.contains(i.id))
+      .toList(growable: false);
+
   List<Invitation> _outgoing = const [];
   List<Invitation> get outgoing => _outgoing;
 

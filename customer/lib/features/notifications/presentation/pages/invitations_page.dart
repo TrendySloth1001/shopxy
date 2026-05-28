@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy_customer/features/notifications/domain/entities/invitation.dart';
 import 'package:shopxy_customer/features/notifications/presentation/providers/notifications_provider.dart';
+import 'package:shopxy_customer/features/notifications/presentation/widgets/invite_card.dart';
 import 'package:shopxy_customer/features/shops/presentation/providers/shops_provider.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
-import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 
 /// Dedicated screen for invitations addressed to the current user. Two
 /// tabs — Pending (actionable) and History — both read from
 /// [NotificationsProvider]'s `incoming` list. Tapping an INVITE
-/// notification in the inbox routes here.
+/// notification in the inbox routes here. Each row renders via the
+/// shared [InviteCard], same as the home preview, so the visual
+/// language stays consistent across surfaces.
 class InvitationsPage extends StatefulWidget {
   const InvitationsPage({super.key});
 
@@ -57,7 +58,10 @@ class _InvitationsPageState extends State<InvitationsPage>
         bottom: TabBar(
           controller: _tabs,
           tabs: [
-            Tab(text: pending.isEmpty ? 'Pending' : 'Pending (${pending.length})'),
+            Tab(
+              text:
+                  pending.isEmpty ? 'Pending' : 'Pending (${pending.length})',
+            ),
             const Tab(text: 'History'),
           ],
         ),
@@ -148,7 +152,7 @@ class _InvitationList extends StatelessWidget {
       ),
       itemCount: items.length,
       separatorBuilder: (_, _) => const SizedBox(height: AppSizes.md),
-      itemBuilder: (_, i) => _InvitationCard(
+      itemBuilder: (_, i) => _ActionableInviteRow(
         invite: items[i],
         actionable: isActionable,
       ),
@@ -156,16 +160,19 @@ class _InvitationList extends StatelessWidget {
   }
 }
 
-class _InvitationCard extends StatefulWidget {
-  const _InvitationCard({required this.invite, required this.actionable});
+class _ActionableInviteRow extends StatefulWidget {
+  const _ActionableInviteRow({
+    required this.invite,
+    required this.actionable,
+  });
   final Invitation invite;
   final bool actionable;
 
   @override
-  State<_InvitationCard> createState() => _InvitationCardState();
+  State<_ActionableInviteRow> createState() => _ActionableInviteRowState();
 }
 
-class _InvitationCardState extends State<_InvitationCard> {
+class _ActionableInviteRowState extends State<_ActionableInviteRow> {
   bool _busy = false;
 
   Future<void> _act(bool accept) async {
@@ -208,293 +215,14 @@ class _InvitationCardState extends State<_InvitationCard> {
 
   @override
   Widget build(BuildContext context) {
-    final inv = widget.invite;
-    final isParty = inv.isParty;
-    final accent = isParty ? AppColors.accentRose : AppColors.accentIndigo;
-    final accentSoft = isParty ? AppColors.accentRoseSoft : AppColors.accentIndigoSoft;
-    final shopName = inv.fromShopName ?? inv.fromUserName ?? 'A shop';
-    final roleLabel = isParty ? 'Customer' : 'Supplier';
-
-    return Container(
-      padding: const EdgeInsets.all(AppSizes.lg),
-      decoration: ShapeDecoration(
-        color: AppColors.white,
-        shape: AppShapes.squircle(
-          AppSizes.radiusLg,
-          side: const BorderSide(color: AppColors.hairline),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: ShapeDecoration(
-                  color: accentSoft,
-                  shape: AppShapes.squircle(AppSizes.radiusMd),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  shopName.isEmpty ? '?' : shopName[0].toUpperCase(),
-                  style: TextStyle(
-                    color: accent,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 18,
-                  ),
-                ),
-              ),
-              const SizedBox(width: AppSizes.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      shopName,
-                      style: const TextStyle(
-                        color: AppColors.black,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 15,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 1,
-                          ),
-                          decoration: ShapeDecoration(
-                            color: accentSoft,
-                            shape: AppShapes.squircle(AppSizes.radiusFull),
-                          ),
-                          child: Text(
-                            'as $roleLabel',
-                            style: TextStyle(
-                              color: accent,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 10,
-                              letterSpacing: 0.3,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: AppSizes.sm),
-                        Flexible(
-                          child: Text(
-                            _formatDate(inv.createdAt),
-                            style: const TextStyle(
-                              color: AppColors.muted,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              if (!widget.actionable) _StatusChip(status: inv.status),
-            ],
-          ),
-          if (inv.displayName != null) ...[
-            const SizedBox(height: AppSizes.md),
-            _DetailRow(
-              icon: Icons.badge_outlined,
-              label: 'You\'ll be linked as',
-              value: inv.displayName!,
-            ),
-          ],
-          if (inv.message != null && inv.message!.trim().isNotEmpty) ...[
-            const SizedBox(height: AppSizes.sm),
-            Container(
-              padding: const EdgeInsets.all(AppSizes.md),
-              decoration: ShapeDecoration(
-                color: AppColors.heroPanel,
-                shape: AppShapes.squircle(AppSizes.radiusSm),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(
-                    Icons.format_quote_rounded,
-                    size: 16,
-                    color: AppColors.muted,
-                  ),
-                  const SizedBox(width: AppSizes.xs),
-                  Expanded(
-                    child: Text(
-                      inv.message!,
-                      style: const TextStyle(
-                        color: AppColors.black,
-                        fontSize: 13,
-                        height: 1.4,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-          if (widget.actionable) ...[
-            const SizedBox(height: AppSizes.md),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: _busy ? null : () => _act(false),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.black,
-                      side: const BorderSide(color: AppColors.hairline),
-                      padding: const EdgeInsets.symmetric(
-                        vertical: AppSizes.md,
-                      ),
-                      shape: AppShapes.squircle(AppSizes.radiusMd),
-                    ),
-                    child: const Text(
-                      'Decline',
-                      style: TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: AppSizes.sm),
-                Expanded(
-                  child: FilledButton(
-                    onPressed: _busy ? null : () => _act(true),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.brand,
-                      padding: const EdgeInsets.symmetric(
-                        vertical: AppSizes.md,
-                      ),
-                      shape: AppShapes.squircle(AppSizes.radiusMd),
-                    ),
-                    child: _busy
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppColors.white,
-                            ),
-                          )
-                        : const Text(
-                            'Accept',
-                            style: TextStyle(fontWeight: FontWeight.w800),
-                          ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSizes.xs),
-            Text(
-              'Expires ${_formatExpiry(inv.expiresAt)}',
-              style: const TextStyle(
-                color: AppColors.muted,
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  static String _formatDate(DateTime t) {
-    final now = DateTime.now();
-    final diff = now.difference(t);
-    if (diff.inMinutes < 1) return 'just now';
-    if (diff.inHours < 1) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    if (diff.inDays < 7) return '${diff.inDays}d ago';
-    if (now.year == t.year) return DateFormat('d MMM').format(t);
-    return DateFormat('d MMM yyyy').format(t);
-  }
-
-  static String _formatExpiry(DateTime t) {
-    final diff = t.difference(DateTime.now());
-    if (diff.isNegative) return 'expired';
-    if (diff.inDays >= 2) return 'in ${diff.inDays} days';
-    if (diff.inHours >= 2) return 'in ${diff.inHours} hours';
-    return 'soon';
-  }
-}
-
-class _DetailRow extends StatelessWidget {
-  const _DetailRow({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-  final IconData icon;
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 16, color: AppColors.muted),
-        const SizedBox(width: AppSizes.xs),
-        Expanded(
-          child: RichText(
-            text: TextSpan(
-              style: const TextStyle(
-                color: AppColors.muted,
-                fontSize: 12.5,
-                fontWeight: FontWeight.w600,
-              ),
-              children: [
-                TextSpan(text: '$label '),
-                TextSpan(
-                  text: value,
-                  style: const TextStyle(
-                    color: AppColors.black,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _StatusChip extends StatelessWidget {
-  const _StatusChip({required this.status});
-  final InviteStatus status;
-
-  @override
-  Widget build(BuildContext context) {
-    final (label, color, soft) = switch (status) {
-      InviteStatus.accepted => ('Accepted', AppColors.success, AppColors.successSoft),
-      InviteStatus.declined => ('Declined', AppColors.muted, AppColors.heroPanel),
-      InviteStatus.cancelled => ('Cancelled', AppColors.muted, AppColors.heroPanel),
-      InviteStatus.expired => ('Expired', AppColors.warning, AppColors.warningSoft),
-      InviteStatus.pending => ('Pending', AppColors.info, AppColors.infoSoft),
-    };
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: ShapeDecoration(
-        color: soft,
-        shape: AppShapes.squircle(AppSizes.radiusFull),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: color,
-          fontSize: 10,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 0.4,
-        ),
-      ),
+    return InviteCard(
+      invite: widget.invite,
+      busy: _busy,
+      actionable: widget.actionable,
+      showExpiry: widget.actionable,
+      showNewBadge: false,
+      onAccept: widget.actionable ? () => _act(true) : null,
+      onDecline: widget.actionable ? () => _act(false) : null,
     );
   }
 }
