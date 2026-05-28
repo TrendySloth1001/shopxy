@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:shopxy_customer/shared/domain/entities/catalog_product.dart';
 import 'package:shopxy_customer/features/orders/data/datasources/orders_remote_data_source.dart';
 import 'package:shopxy_customer/features/orders/domain/entities/customer_order.dart';
 
@@ -32,6 +33,33 @@ class OrdersProvider extends ChangeNotifier {
   }
 
   Future<CustomerOrderDetail> loadDetail(int id) => _ds.detail(id);
+
+  /// Fetch the invoice PDF for one shop-order child. Token is passed
+  /// from the page (it lives in TokenManager, which the provider
+  /// shouldn't take as a dependency) so the page → provider → DS
+  /// boundary stays intact without the page reading the DS directly.
+  Future<Uint8List> downloadInvoicePdf({
+    required int parentId,
+    required int childId,
+    required String accessToken,
+  }) {
+    return _ds.downloadInvoicePdf(
+      parentId: parentId,
+      childId: childId,
+      accessToken: accessToken,
+    );
+  }
+
+  /// Reorder a previous customer order. Returns the cart-ready items
+  /// the page can pass to CartProvider plus any items skipped by the
+  /// server (out-of-stock / own-shop).
+  Future<
+      ({
+        List<({CatalogProduct product, double quantity})> items,
+        List<({int productId, String productName, String reason})> skipped,
+      })> reorder(int parentId) {
+    return _ds.reorder(parentId);
+  }
 
   /// Cancel one vendor's slice of a customer order. Patches the cached
   /// parent so the list re-renders the aggregated status. Throws

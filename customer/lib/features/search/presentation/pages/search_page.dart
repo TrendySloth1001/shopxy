@@ -26,7 +26,11 @@ import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 /// * No matches → empty state with the typed query echoed back.
 /// * Error → AppErrorView-style block with retry.
 class SearchPage extends StatefulWidget {
-  const SearchPage({super.key});
+  const SearchPage({super.key, this.initialQuery});
+
+  // Pre-seeds the search box + provider when a caller wants to land
+  // straight on results (e.g. tapping a curated home-feed rail).
+  final String? initialQuery;
 
   @override
   State<SearchPage> createState() => _SearchPageState();
@@ -39,10 +43,16 @@ class _SearchPageState extends State<SearchPage> {
   @override
   void initState() {
     super.initState();
-    _ctrl = TextEditingController();
+    _ctrl = TextEditingController(text: widget.initialQuery ?? '');
     _focus = FocusNode();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _focus.requestFocus();
+      if (!mounted) return;
+      final q = widget.initialQuery;
+      if (q != null && q.isNotEmpty) {
+        context.read<SearchProvider>().setQuery(q);
+      } else {
+        _focus.requestFocus();
+      }
     });
   }
 

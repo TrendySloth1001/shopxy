@@ -29,6 +29,19 @@ const refundSchema = z.object({
   note: z.string().max(500).optional(),
 });
 
+const RETURN_STATUSES = [
+  'REQUESTED',
+  'APPROVED',
+  'REJECTED',
+  'PICKED_UP',
+  'RECEIVED',
+  'REFUNDED',
+  'CANCELLED',
+] as const;
+const listQuerySchema = z.object({
+  status: z.enum(RETURN_STATUSES).optional(),
+});
+
 function parseId(raw: string): number | null {
   const id = Number(raw);
   return Number.isInteger(id) && id > 0 ? id : null;
@@ -113,11 +126,15 @@ export class ReturnsController {
       res.status(403).json({ error: 'This account has no shop linked.' });
       return;
     }
-    const status = typeof req.query.status === 'string' ? req.query.status : undefined;
+    const parsedQ = listQuerySchema.safeParse(req.query);
+    if (!parsedQ.success) {
+      res.status(400).json({ error: 'Invalid status', issues: parsedQ.error.issues });
+      return;
+    }
     const { page, limit, skip } = parsePagination(req);
     const { data, total } = await returnsService.listForMerchant({
       shopId,
-      status,
+      status: parsedQ.data.status,
       skip,
       limit,
     });

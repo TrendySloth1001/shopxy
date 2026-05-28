@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/features/dashboard/domain/entities/dashboard_stats.dart';
 import 'package:shopxy/features/dashboard/presentation/providers/dashboard_provider.dart';
+import 'package:shopxy/features/challans/presentation/pages/challan_detail_page.dart';
 import 'package:shopxy/features/invoices/presentation/pages/invoice_detail_page.dart';
 import 'package:shopxy/features/notifications/presentation/pages/notifications_page.dart';
 import 'package:shopxy/features/notifications/presentation/providers/notifications_provider.dart';
@@ -720,6 +721,27 @@ class _TransactionRow extends StatelessWidget {
   const _TransactionRow({required this.transaction});
   final StockTransaction transaction;
 
+  /// Tap → the document that posted this ledger row. MANUAL/OPENING
+  /// have no source, so the row stays unactionable. Mirrors the
+  /// stock_ledger_page._openSource branching so dashboard + ledger
+  /// stay consistent.
+  void _openSource(BuildContext context) {
+    if (!transaction.hasSourceDocument) return;
+    final id = transaction.sourceId!;
+    Widget page;
+    switch (transaction.sourceType) {
+      case 'INVOICE':
+        page = InvoiceDetailPage(invoiceId: id);
+        break;
+      case 'CHALLAN':
+        page = ChallanDetailPage(challanId: id);
+        break;
+      default:
+        return;
+    }
+    Navigator.push(context, MaterialPageRoute(builder: (_) => page));
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -747,8 +769,11 @@ class _TransactionRow extends StatelessWidget {
         ? qty.toStringAsFixed(0)
         : qty.toStringAsFixed(2);
     final timeFormat = DateFormat('d MMM · hh:mm a');
+    final actionable = transaction.hasSourceDocument;
 
-    return Container(
+    return InkWell(
+      onTap: actionable ? () => _openSource(context) : null,
+      child: Container(
       decoration: const BoxDecoration(
         border: Border(top: BorderSide(color: AppColors.hairline)),
       ),
@@ -802,8 +827,14 @@ class _TransactionRow extends StatelessWidget {
               fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),
+          if (actionable) ...[
+            const SizedBox(width: AppSizes.xs),
+            const Icon(Icons.chevron_right_rounded,
+                color: AppColors.muted, size: 18),
+          ],
         ],
       ),
+    ),
     );
   }
 }

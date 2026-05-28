@@ -85,4 +85,15 @@ class AppColors {
 
   static const Color accentRose = Color(0xFFB83A6F);
   static const Color accentRoseSoft = Color(0xFFFADFEB);
+
+  /// Flash-deal palette — warm orange/peach pair used by the flash
+  /// deals editor, list page, and the app-shell tile accent. Centralised
+  /// so a brand colour update lands everywhere at once.
+  static const Color flashDeal = Color(0xFFE05A2A);
+  static const Color flashDealSoft = Color(0xFFFFE3D2);
+  static const Color flashDealSoftAlt = Color(0xFFFFD2D2);
+
+  /// WhatsApp green — used by the share/WhatsApp CTA on invoices. Kept
+  /// as a brand colour so it doesn't drift across views.
+  static const Color whatsapp = Color(0xFF25D366);
 }

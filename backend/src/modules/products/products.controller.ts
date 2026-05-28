@@ -203,6 +203,22 @@ const updateProductSchema = z
 
 const setPublishedSchema = z.object({ isPublished: z.boolean() });
 
+// All query-string params coerced + bounded here so the service trusts
+// its inputs and clients get 400s instead of weird db queries.
+const listProductsQuerySchema = z.object({
+  search: z.string().max(200).optional(),
+  categoryId: z.coerce.number().int().positive().optional(),
+  lowStock: z.enum(['true', 'false']).optional(),
+  outOfStock: z.enum(['true', 'false']).optional(),
+  active: z.enum(['true', 'false']).optional(),
+  sortBy: z.enum(['updatedAt', 'name', 'sellingPrice', 'createdAt']).optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional(),
+});
+
+const lookupQuerySchema = z.object({
+  code: z.string().min(1).max(120),
+});
+
 const addImageSchema = z.object({
   url: productImageRef,
   sortOrder: z.number().int().nonnegative().optional(),
@@ -228,24 +244,23 @@ export class ProductsController {
   }
 
   async list(req: Request, res: Response): Promise<void> {
+    const parsed = listProductsQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      res.status(400).json({ error: 'Invalid query', issues: parsed.error.issues });
+      return;
+    }
+    const q = parsed.data;
     const { page, limit, skip } = parsePagination(req);
-    const search = (req.query.search as string) || '';
-    const categoryId = req.query.categoryId ? Number(req.query.categoryId) : undefined;
-    const lowStock = req.query.lowStock === 'true';
-    const outOfStock = req.query.outOfStock === 'true';
-    const activeOnly = req.query.active !== 'false';
-    const sortBy = (req.query.sortBy as string) || 'updatedAt';
-    const sortOrder = req.query.sortOrder === 'asc' ? 'asc' : 'desc';
 
     const { products, total } = await productsService.listProducts({
       shopId: req.shopId!,
-      activeOnly,
-      lowStock,
-      outOfStock,
-      categoryId,
-      search,
-      sortBy,
-      sortOrder,
+      activeOnly: q.active !== 'false',
+      lowStock: q.lowStock === 'true',
+      outOfStock: q.outOfStock === 'true',
+      categoryId: q.categoryId,
+      search: q.search ?? '',
+      sortBy: q.sortBy ?? 'updatedAt',
+      sortOrder: q.sortOrder ?? 'desc',
       page,
       limit,
       skip,
@@ -255,13 +270,12 @@ export class ProductsController {
   }
 
   async lookup(req: Request, res: Response): Promise<void> {
-    const code = req.query.code as string;
-    if (!code) {
+    const parsed = lookupQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
       res.status(400).json({ error: 'Query parameter "code" is required' });
       return;
     }
-
-    const product = await productsService.lookupProduct(req.shopId!, code);
+    const product = await productsService.lookupProduct(req.shopId!, parsed.data.code);
     if (!product) {
       res.status(404).json({ error: 'Product not found' });
       return;

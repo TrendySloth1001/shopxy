@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
 import { getRedis, redisAvailable } from '../../infra/redis.js';
 import { logger } from '../../shared/logging/logger.js';
+import { CLAIM_FLASH_SALE_LUA } from '../../infra/redis/scripts/claim-flash-sale.js';
 
 const REDIS_SOLD_KEY = (id: number) => `flash:${id}:sold`;
 // Long TTL so a long-running sale's counter doesn't expire under us
@@ -9,23 +10,9 @@ const REDIS_SOLD_KEY = (id: number) => `flash:${id}:sold`;
 const REDIS_SOLD_TTL_SECONDS = 60 * 60 * 24; // 24h
 
 // Atomic claim — single round-trip, single-script-execution lock.
-// Reads the current sold counter, refuses when current+qty would
-// exceed the limit, otherwise INCRBYs and refreshes TTL. Redis runs
-// each EVAL atomically so two concurrent claims can never both see
-// "room for one more" and both succeed past the cap. Returns -1 when
-// stock is exhausted, otherwise the new total.
-const CLAIM_LUA = `
-local current = tonumber(redis.call('GET', KEYS[1]) or '0')
-local qty = tonumber(ARGV[1])
-local limit = tonumber(ARGV[2])
-local ttl = tonumber(ARGV[3])
-if current + qty > limit then
-  return -1
-end
-local total = redis.call('INCRBY', KEYS[1], qty)
-redis.call('EXPIRE', KEYS[1], ttl)
-return total
-`;
+// Source lives in infra/redis/scripts/claim-flash-sale.ts so the same
+// script can be shared with other modules that need it.
+const CLAIM_LUA = CLAIM_FLASH_SALE_LUA;
 
 const publicSaleSelect = {
   id: true,
@@ -167,8 +154,8 @@ export class FlashSalesService {
     const endAt = input.endAt ?? existing.endAt;
     if (endAt <= startAt) return { error: 'invalid_window' as const };
 
-    const updated = await prisma.flashSale.update({
-      where: { id },
+    const writeResult = await prisma.flashSale.updateMany({
+      where: { id, product: { shopId } },
       data: {
         ...(input.flashPrice !== undefined && { flashPrice: input.flashPrice }),
         ...(input.stockLimit !== undefined && { stockLimit: input.stockLimit }),
@@ -176,8 +163,13 @@ export class FlashSalesService {
         ...(input.endAt !== undefined && { endAt: input.endAt }),
         ...(input.isActive !== undefined && { isActive: input.isActive }),
       },
+    });
+    if (writeResult.count === 0) return null;
+    const updated = await prisma.flashSale.findFirst({
+      where: { id, product: { shopId } },
       select: merchantSaleSelect,
     });
+    if (!updated) return null;
     const merged = await this._mergeRedisSold([updated]);
     return { sale: merged[0] };
   }

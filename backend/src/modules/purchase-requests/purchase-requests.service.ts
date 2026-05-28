@@ -26,8 +26,10 @@ function derivePaymentSummary(
   return { paidAmount: paid, balanceDue, paymentStatus };
 }
 import { flashSalesService } from '../flash-sales/flash-sales.service.js';
+import { resolveActiveProductPromos } from '../banners/promo-pricing.js';
 import { couponsService } from '../coupons/coupons.service.js';
 import { walletService } from '../wallet/wallet.service.js';
+import { notificationsService } from '../notifications/notifications.service.js';
 
 /// Thrown inside the order-create transaction when coupon redemption
 /// fails — caught above to surface a normal `{ error: 'COUPON_INVALID' }`
@@ -250,6 +252,32 @@ export async function assertShopOwnership(
   return shop != null && shop.ownerUserId === userId;
 }
 
+/// Push a notification to the owner of `shopId`. Lives here (not in the
+/// controller) so controllers stay free of direct Prisma access — the
+/// service is the single layer that talks to the DB.
+export async function notifyShopOwner(
+  shopId: number,
+  payload: {
+    kind: string;
+    title: string;
+    body?: string;
+    data?: Record<string, unknown>;
+  },
+): Promise<void> {
+  const shop = await prisma.shop.findUnique({
+    where: { id: shopId },
+    select: { ownerUserId: true },
+  });
+  if (!shop) return;
+  await notificationsService.create({
+    userId: shop.ownerUserId,
+    kind: payload.kind,
+    title: payload.title,
+    body: payload.body,
+    data: payload.data,
+  });
+}
+
 export class PurchaseRequestsService {
   /// Customer submits a *whole cart* — possibly spanning multiple
   /// shops. Server groups by shop and creates one [CustomerOrder]
@@ -298,33 +326,14 @@ export class PurchaseRequestsService {
   > {
     if (opts.items.length === 0) return { error: 'EMPTY_CART' };
 
-    // ── Idempotency short-circuit on the parent ──────────────────────
+    // Idempotency short-circuit on the parent — returns the existing
+    // order so a retried POST never double-creates.
     if (opts.idempotencyKey) {
-      const existing = await prisma.customerOrder.findUnique({
-        where: {
-          customer_orders_user_idempotency_key: {
-            customerUserId: opts.customerUserId,
-            idempotencyKey: opts.idempotencyKey,
-          },
-        },
-        select: {
-          id: true,
-          couponDiscount: true,
-          walletPaid: true,
-          shopOrders: { select: { id: true, shopId: true } },
-        },
-      });
-      if (existing) {
-        return {
-          order: {
-            id: existing.id,
-            shopOrders: existing.shopOrders,
-            couponDiscount: Number(existing.couponDiscount),
-            walletPaid: Number(existing.walletPaid),
-          },
-          deduplicated: true,
-        };
-      }
+      const replay = await this._replayIdempotentOrder(
+        opts.customerUserId,
+        opts.idempotencyKey,
+      );
+      if (replay) return replay;
     }
 
     // ── Load products + validate shop ownership / activity ──────────
@@ -397,11 +406,28 @@ export class PurchaseRequestsService {
       return { error: 'PRODUCT_INACTIVE' };
     }
 
+    // ── Carousel-promo lookup (per product, cross-shop) ──────────────
+    // Customer carts can span many shops; we resolve the best active
+    // promo for every product in one round-trip and use it as the
+    // fallback effective price when no flash sale is claimed. Flash
+    // sales always win over carousel promos — flash is explicit,
+    // stock-bounded, and the customer already saw the flash badge.
+    const carouselPromos = await resolveActiveProductPromos(null, productIds);
+    const effectiveUnitPrice = (productId: number): number => {
+      const flash = flashPrices.get(productId);
+      if (flash !== undefined) return flash;
+      const product = productMap.get(productId)!;
+      const selling = Number(product.sellingPrice);
+      const promo = carouselPromos.get(productId);
+      return promo ? round2(selling - promo.perUnit) : selling;
+    };
+
     // ── Price-drift guard ────────────────────────────────────────────
     // Every line whose client sent `expectedUnitPrice` is compared
-    // against the effective price (flash sale > selling price). On any
-    // mismatch we roll back the flash claims and surface the corrected
-    // prices so the FE can show "₹X has changed to ₹Y" in one toast.
+    // against the effective price (flash sale > carousel promo > selling
+    // price). On any mismatch we roll back the flash claims and surface
+    // the corrected prices so the FE can show "₹X has changed to ₹Y"
+    // in one toast.
     const priceDrift: {
       productId: number;
       expectedUnitPrice: number;
@@ -409,9 +435,7 @@ export class PurchaseRequestsService {
     }[] = [];
     for (const line of opts.items) {
       if (line.expectedUnitPrice == null) continue;
-      const product = productMap.get(line.productId)!;
-      const effective =
-        flashPrices.get(line.productId) ?? Number(product.sellingPrice);
+      const effective = effectiveUnitPrice(line.productId);
       // 1 paisa tolerance: legit decimal jitter shouldn't trip the gate.
       if (Math.abs(effective - line.expectedUnitPrice) > 0.01) {
         priceDrift.push({
@@ -503,7 +527,7 @@ export class PurchaseRequestsService {
       let childTotal = 0;
       const items = lines.map((line) => {
         const p = productMap.get(line.productId)!;
-        const price = flashPrices.get(line.productId) ?? Number(p.sellingPrice);
+        const price = effectiveUnitPrice(line.productId);
         const lineTotal = round2(line.quantity * price);
         childTotal += lineTotal;
         return {
@@ -1482,6 +1506,52 @@ export class PurchaseRequestsService {
       invoiceId: child.invoiceId,
       shopId: child.shopId,
       invoiceNo: child.invoice.invoiceNo,
+    };
+  }
+
+  /// Idempotency replay helper — returns the existing order envelope
+  /// when (customerUserId, idempotencyKey) already exists, or null when
+  /// it doesn't. Pulled out of createForCustomer so that 463-line
+  /// method starts with the actual checkout flow rather than ~30 lines
+  /// of bookkeeping.
+  private async _replayIdempotentOrder(
+    customerUserId: number,
+    idempotencyKey: string,
+  ): Promise<
+    | {
+        order: {
+          id: number;
+          shopOrders: { id: number; shopId: number }[];
+          couponDiscount: number;
+          walletPaid: number;
+        };
+        deduplicated: true;
+      }
+    | null
+  > {
+    const existing = await prisma.customerOrder.findUnique({
+      where: {
+        customer_orders_user_idempotency_key: {
+          customerUserId,
+          idempotencyKey,
+        },
+      },
+      select: {
+        id: true,
+        couponDiscount: true,
+        walletPaid: true,
+        shopOrders: { select: { id: true, shopId: true } },
+      },
+    });
+    if (!existing) return null;
+    return {
+      order: {
+        id: existing.id,
+        shopOrders: existing.shopOrders,
+        couponDiscount: Number(existing.couponDiscount),
+        walletPaid: Number(existing.walletPaid),
+      },
+      deduplicated: true,
     };
   }
 }

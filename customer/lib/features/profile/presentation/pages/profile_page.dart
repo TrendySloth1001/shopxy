@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy_customer/features/addresses/presentation/pages/addresses_page.dart';
 import 'package:shopxy_customer/features/auth/presentation/providers/auth_provider.dart';
-import 'package:shopxy_customer/features/profile/presentation/pages/amazon_pdp_demo_page.dart';
 import 'package:shopxy_customer/features/profile/presentation/pages/edit_profile_page.dart';
 import 'package:shopxy_customer/features/profile/presentation/pages/help_page.dart';
 import 'package:shopxy_customer/features/profile/presentation/pages/info_pages.dart';
@@ -196,15 +195,6 @@ class CustomerProfilePage extends StatelessWidget {
             subtitle: 'Common questions + email support',
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const HelpAndFaqPage()),
-            ),
-          ),
-          const _Gap(),
-          _Row(
-            icon: Icons.science_outlined,
-            title: 'Amazon PDP — demo',
-            subtitle: 'Static reference screen for the PDP redesign',
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const AmazonPdpDemoPage()),
             ),
           ),
           const _Gap(),

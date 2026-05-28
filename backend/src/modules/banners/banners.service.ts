@@ -1,13 +1,18 @@
 import {
   BannerImageFit,
   BannerPlacement,
-  BannerSlideMode,
   BannerTemplate,
   Prisma,
 } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
 import { getRedis, redisAvailable } from '../../infra/redis.js';
 import { logger } from '../../shared/logging/logger.js';
+import { HttpError } from '../../shared/http/errorHandler.js';
+import {
+  clampDiscountValue,
+  discountPerUnit,
+  type DiscountType,
+} from './promo-pricing.js';
 
 const ACTIVE_CACHE_TTL_SECONDS = 60;
 
@@ -18,20 +23,16 @@ function activeCacheKey(placement: BannerPlacement): string {
 const publicBannerSelect = {
   id: true,
   placement: true,
-  /// Phase 1 — wire through. Customer renderer branches on `mode` and
-  /// then on either `template` (TEMPLATED) or textBlocks + imageTransform
-  /// (FREEFORM). Without these, the client always falls back to CLASSIC.
-  mode: true,
   template: true,
   imageFit: true,
-  textBlocks: true,
-  imageTransform: true,
   title: true,
   subtitle: true,
   eyebrow: true,
   ctaText: true,
   ctaTarget: true,
   brandLabel: true,
+  brandImageUrl: true,
+  brandImageFit: true,
   imageUrl: true,
   bgColor: true,
   accentColor: true,
@@ -51,14 +52,8 @@ const adminBannerSelect = {
 
 export interface CreateBannerInput {
   placement: BannerPlacement;
-  /// Phase 1 — discriminator. Defaults to TEMPLATED.
-  mode?: BannerSlideMode;
   template?: BannerTemplate;
   imageFit?: BannerImageFit;
-  /// Validated + bounded by the controller's zod schema. Service stores
-  /// as-is; the customer renderer parses these into typed widgets.
-  textBlocks?: Prisma.InputJsonValue | null;
-  imageTransform?: Prisma.InputJsonValue | null;
   carouselId?: number | null;
   title: string;
   subtitle?: string | null;
@@ -66,6 +61,8 @@ export interface CreateBannerInput {
   ctaText?: string | null;
   ctaTarget?: string | null;
   brandLabel?: string | null;
+  brandImageUrl?: string | null;
+  brandImageFit?: BannerImageFit;
   imageUrl: string;
   bgColor: string;
   accentColor?: string | null;
@@ -183,11 +180,8 @@ export class BannersService {
     const row = await prisma.banner.create({
       data: {
         placement: input.placement,
-        mode: input.mode ?? 'TEMPLATED',
         template: input.template ?? 'CLASSIC',
         imageFit: input.imageFit ?? 'COVER',
-        textBlocks: input.textBlocks ?? Prisma.JsonNull,
-        imageTransform: input.imageTransform ?? Prisma.JsonNull,
         carouselId: input.carouselId ?? null,
         title: input.title,
         subtitle: input.subtitle ?? null,
@@ -195,6 +189,8 @@ export class BannersService {
         ctaText: input.ctaText ?? null,
         ctaTarget: input.ctaTarget ?? null,
         brandLabel: input.brandLabel ?? null,
+        brandImageUrl: input.brandImageUrl ?? null,
+        brandImageFit: input.brandImageFit ?? 'COVER',
         imageUrl: input.imageUrl,
         bgColor: input.bgColor,
         accentColor: input.accentColor ?? null,
@@ -222,15 +218,8 @@ export class BannersService {
       where: { id },
       data: {
         ...(input.placement !== undefined && { placement: input.placement }),
-        ...(input.mode !== undefined && { mode: input.mode }),
         ...(input.template !== undefined && { template: input.template }),
         ...(input.imageFit !== undefined && { imageFit: input.imageFit }),
-        ...(input.textBlocks !== undefined && {
-          textBlocks: input.textBlocks ?? Prisma.JsonNull,
-        }),
-        ...(input.imageTransform !== undefined && {
-          imageTransform: input.imageTransform ?? Prisma.JsonNull,
-        }),
         ...(input.carouselId !== undefined && { carouselId: input.carouselId }),
         ...(input.title !== undefined && { title: input.title }),
         ...(input.subtitle !== undefined && { subtitle: input.subtitle }),
@@ -238,6 +227,12 @@ export class BannersService {
         ...(input.ctaText !== undefined && { ctaText: input.ctaText }),
         ...(input.ctaTarget !== undefined && { ctaTarget: input.ctaTarget }),
         ...(input.brandLabel !== undefined && { brandLabel: input.brandLabel }),
+        ...(input.brandImageUrl !== undefined && {
+          brandImageUrl: input.brandImageUrl,
+        }),
+        ...(input.brandImageFit !== undefined && {
+          brandImageFit: input.brandImageFit,
+        }),
         ...(input.imageUrl !== undefined && { imageUrl: input.imageUrl }),
         ...(input.bgColor !== undefined && { bgColor: input.bgColor }),
         ...(input.accentColor !== undefined && { accentColor: input.accentColor }),
@@ -324,14 +319,15 @@ export class BannersService {
       select: { id: true },
     });
     if (!owned) return null;
-    return prisma.bannerProduct.findMany({
+    const rows = await prisma.bannerProduct.findMany({
       where: { bannerId },
       orderBy: [{ position: 'asc' }, { id: 'asc' }],
       select: {
         id: true,
         productId: true,
         position: true,
-        discountPct: true,
+        discountType: true,
+        discountValue: true,
         product: {
           select: {
             id: true,
@@ -350,6 +346,19 @@ export class BannersService {
         },
       },
     });
+    return rows.map((r) => {
+      const value = Number(r.discountValue);
+      const selling = Number(r.product.sellingPrice);
+      const perUnit = discountPerUnit(r.discountType, value, selling);
+      return {
+        ...r,
+        discountValue: value,
+        // Computed convenience fields so the merchant editor can render
+        // the effective sale price without re-implementing the math.
+        salePrice: +(selling - perUnit).toFixed(2),
+        perUnitDiscount: perUnit,
+      };
+    });
   }
 
   /// Full-list replace. Validates that every productId belongs to the
@@ -359,7 +368,12 @@ export class BannersService {
   async replaceProductsForShopBanner(
     shopId: number,
     bannerId: number,
-    items: Array<{ productId: number; discountPct: number; position: number }>,
+    items: Array<{
+      productId: number;
+      discountType: DiscountType;
+      discountValueRaw: number;
+      position: number;
+    }>,
   ) {
     const owned = await prisma.banner.findFirst({
       where: { id: bannerId, sponsorShopId: shopId },
@@ -367,21 +381,26 @@ export class BannersService {
     });
     if (!owned) return null;
 
+    // One product lookup serves both the cross-shop check and the
+    // per-product clamp ceiling (AMOUNT can't exceed sellingPrice).
+    let priceByProduct = new Map<number, number>();
     if (items.length > 0) {
-      // Cross-check every productId belongs to this shop — stops a
-      // merchant from injecting another shop's listings into their slide.
       const productIds = items.map((i) => i.productId);
       const owns = await prisma.product.findMany({
         where: { id: { in: productIds }, shopId },
-        select: { id: true },
+        select: { id: true, sellingPrice: true },
       });
       const ownedSet = new Set(owns.map((p) => p.id));
       const stranger = productIds.find((id) => !ownedSet.has(id));
       if (stranger !== undefined) {
-        throw new Error(
+        throw new HttpError(
+          400,
+          'CROSS_SHOP_PRODUCT',
           `Product ${stranger} does not belong to this shop`,
+          { productId: stranger },
         );
       }
+      priceByProduct = new Map(owns.map((p) => [p.id, Number(p.sellingPrice)]));
     }
 
     await prisma.$transaction(async (tx) => {
@@ -391,7 +410,12 @@ export class BannersService {
         data: items.map((i) => ({
           bannerId,
           productId: i.productId,
-          discountPct: Math.max(0, Math.min(90, Math.round(i.discountPct))),
+          discountType: i.discountType,
+          discountValue: clampDiscountValue(
+            i.discountType,
+            i.discountValueRaw,
+            priceByProduct.get(i.productId) ?? 0,
+          ),
           position: i.position,
         })),
       });
@@ -427,7 +451,8 @@ export class BannersService {
       },
       orderBy: [{ position: 'asc' }, { id: 'asc' }],
       select: {
-        discountPct: true,
+        discountType: true,
+        discountValue: true,
         position: true,
         product: {
           select: {
@@ -449,10 +474,18 @@ export class BannersService {
 
     const products = rows.map((r) => {
       const selling = Number(r.product.sellingPrice);
-      const salePrice = +(selling * (1 - r.discountPct / 100)).toFixed(2);
+      const value = Number(r.discountValue);
+      const perUnit = discountPerUnit(r.discountType, value, selling);
+      const salePrice = +(selling - perUnit).toFixed(2);
+      // discountPct is a derived field kept for older customer builds
+      // that branch on a percent integer. New builds should read
+      // discountType + discountValue + salePrice.
+      const derivedPct = selling > 0 ? Math.round((perUnit / selling) * 100) : 0;
       return {
         ...r.product,
-        discountPct: r.discountPct,
+        discountType: r.discountType,
+        discountValue: value,
+        discountPct: derivedPct,
         // Returned as a string to match Prisma's Decimal serialisation
         // shape — the customer mapper accepts both, but staying
         // consistent avoids special-case parsing.

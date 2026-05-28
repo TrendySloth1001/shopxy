@@ -101,105 +101,6 @@ enum HeroImageFit {
       this == HeroImageFit.contain ? BoxFit.contain : BoxFit.cover;
 }
 
-/// Discriminator for which renderer claims this slide. TEMPLATED uses
-/// one of the 7 `HeroSlideTemplate` cards in `hero_slide_templates.dart`;
-/// FREEFORM uses `freeform_slide_card.dart` to render positioned text
-/// blocks over a transform-applied image.
-enum HeroSlideMode {
-  templated,
-  freeform;
-
-  static HeroSlideMode fromWire(String? v) {
-    if (v == 'FREEFORM') return HeroSlideMode.freeform;
-    return HeroSlideMode.templated;
-  }
-}
-
-/// One freeform text block. Percent-of-canvas coordinates so the
-/// payload renders identically across screen densities.
-class HeroSlideTextBlock {
-  const HeroSlideTextBlock({
-    required this.id,
-    required this.text,
-    required this.xPct,
-    required this.yPct,
-    required this.widthPct,
-    required this.fontSize,
-    required this.color,
-    required this.weight,
-    required this.align,
-  });
-
-  final String id;
-  final String text;
-  final double xPct;
-  final double yPct;
-  final double widthPct;
-  final int fontSize;
-  /// `#RRGGBB` or `#RRGGBBAA`.
-  final String color;
-  /// FontWeight integer (400/500/600/700/800/900).
-  final int weight;
-  /// 'left' | 'center' | 'right'.
-  final String align;
-
-  factory HeroSlideTextBlock.fromJson(Map<String, dynamic> j) =>
-      HeroSlideTextBlock(
-        id: j['id'] as String,
-        text: j['text'] as String,
-        xPct: (j['xPct'] as num).toDouble(),
-        yPct: (j['yPct'] as num).toDouble(),
-        widthPct: (j['widthPct'] as num).toDouble(),
-        fontSize: (j['fontSize'] as num).toInt(),
-        color: j['color'] as String,
-        weight: (j['weight'] as num).toInt(),
-        align: j['align'] as String,
-      );
-}
-
-/// Freeform image transform. Mirrors the backend zod bounds: focal
-/// [0,100], scale [0.25,4], rotateDeg [-180,180], filter axes
-/// [0.5,1.5]. Defaults are neutral so an absent / malformed payload
-/// renders as if no transform were applied.
-class HeroSlideImageTransform {
-  const HeroSlideImageTransform({
-    this.focalXPct = 50,
-    this.focalYPct = 50,
-    this.scale = 1,
-    this.rotateDeg = 0,
-    this.flipH = false,
-    this.flipV = false,
-    this.brightness = 1,
-    this.contrast = 1,
-    this.saturation = 1,
-  });
-
-  final double focalXPct;
-  final double focalYPct;
-  final double scale;
-  final double rotateDeg;
-  final bool flipH;
-  final bool flipV;
-  final double brightness;
-  final double contrast;
-  final double saturation;
-
-  static const identity = HeroSlideImageTransform();
-
-  factory HeroSlideImageTransform.fromJson(Map<String, dynamic> j) =>
-      HeroSlideImageTransform(
-        focalXPct: (j['focalXPct'] as num?)?.toDouble() ?? 50,
-        focalYPct: (j['focalYPct'] as num?)?.toDouble() ?? 50,
-        scale: (j['scale'] as num?)?.toDouble() ?? 1,
-        rotateDeg: (j['rotateDeg'] as num?)?.toDouble() ?? 0,
-        flipH: (j['flipH'] as bool?) ?? false,
-        flipV: (j['flipV'] as bool?) ?? false,
-        brightness: (j['brightness'] as num?)?.toDouble() ?? 1,
-        contrast: (j['contrast'] as num?)?.toDouble() ?? 1,
-        saturation: (j['saturation'] as num?)?.toDouble() ?? 1,
-      );
-}
-
 class HeroSlide {
   const HeroSlide({
     required this.brand,
@@ -210,11 +111,11 @@ class HeroSlide {
     required this.accent,
     this.template = HeroSlideTemplate.classic,
     this.imageFit = HeroImageFit.cover,
-    this.mode = HeroSlideMode.templated,
-    this.textBlocks = const [],
-    this.imageTransform,
+    this.brandImageUrl,
+    this.brandImageFit = HeroImageFit.cover,
     this.ctaText,
     this.ctaTarget,
+    this.eyebrow,
     this.bannerId,
   });
 
@@ -226,21 +127,16 @@ class HeroSlide {
   final Color accent;
   final HeroSlideTemplate template;
   final HeroImageFit imageFit;
-  /// Phase 6 — discriminator. TEMPLATED renders one of the seven
-  /// HeroSlideTemplate cards; FREEFORM renders the freeform canvas with
-  /// the positioned text blocks + image transform applied. Defaults to
-  /// templated so legacy banners without the new fields keep rendering.
-  final HeroSlideMode mode;
-  /// FREEFORM payload — empty list for templated slides. Each entry is
-  /// rendered as a Positioned widget using percent-of-canvas coords.
-  final List<HeroSlideTextBlock> textBlocks;
-  /// FREEFORM image transform. Null falls through to the identity
-  /// transform (no crop shift, no scale, no rotate, no filters).
-  final HeroSlideImageTransform? imageTransform;
+  /// Optional shop logo. Empty/null falls back to the text brand chip.
+  final String? brandImageUrl;
+  final HeroImageFit brandImageFit;
   /// Merchant-supplied button label. Templates that render a CTA fall
   /// back to "Shop now" when this is null or empty.
   final String? ctaText;
   final String? ctaTarget;
+  /// Tiny tagline above the title. Separate from `brand` so a slide can
+  /// display both at once instead of one clobbering the other.
+  final String? eyebrow;
 
   /// Server-side Banner id. Present when the slide came from the
   /// /home/feed payload; null for any locally-seeded fallback slides.
@@ -268,12 +164,6 @@ class CategoryPuck {
   final Color tint;
 }
 
-class TrustItem {
-  const TrustItem({required this.icon, required this.label});
-  final IconData icon;
-  final String label;
-}
-
 class FlashDealProduct {
   const FlashDealProduct({
     required this.productId,
@@ -296,26 +186,6 @@ class FlashDealProduct {
   final String imageUrl;
   final double soldPct;
   final DateTime endAt;
-}
-
-class AdCard {
-  const AdCard({
-    required this.bannerId,
-    required this.brand,
-    required this.headline,
-    required this.cta,
-    required this.imageUrl,
-    required this.bgColor,
-    this.ctaTarget,
-  });
-
-  final int bannerId;
-  final String brand;
-  final String headline;
-  final String cta;
-  final String imageUrl;
-  final Color bgColor;
-  final String? ctaTarget;
 }
 
 class BrandSpotlight {
@@ -422,30 +292,6 @@ class CollectionTile {
   final String imageUrl;
 }
 
-class CuratedRailItem {
-  const CuratedRailItem({
-    this.collectionSlug,
-    required this.eyebrow,
-    required this.title,
-    required this.subtitle,
-    required this.cta,
-    required this.imageUrl,
-    required this.bgColor,
-    required this.accentColor,
-    this.ctaTarget,
-  });
-
-  final String? collectionSlug;
-  final String eyebrow;
-  final String title;
-  final String subtitle;
-  final String cta;
-  final String imageUrl;
-  final Color bgColor;
-  final Color accentColor;
-  final String? ctaTarget;
-}
-
 /// Static UI scaffolding — these aren't backed by API endpoints.
 /// Category tabs and the trust strip are part of the design, not the
 /// catalogue, so they live here as constants rather than chasing a
@@ -475,10 +321,4 @@ class HomeStaticData {
     CategoryTab('Travel'),
   ];
 
-  static const List<TrustItem> trustItems = [
-    TrustItem(icon: Icons.local_shipping_outlined, label: 'Free delivery'),
-    TrustItem(icon: Icons.replay_outlined, label: '7-day returns'),
-    TrustItem(icon: Icons.verified_outlined, label: '100% authentic'),
-    TrustItem(icon: Icons.savings_outlined, label: 'Lowest prices'),
-  ];
 }

@@ -74,9 +74,18 @@ class ApiClient {
             .timeout(_kDefaultTimeout),
       );
 
-  Future<http.Response> delete(String path) => _withRetry(
+  // Body-bearing DELETE kept in sync with the merchant ApiClient even
+  // though the customer app doesn't currently use the body slot —
+  // CLAUDE.md's "duplicate, don't extract" rule says the two clients
+  // stay structurally identical so a future caller doesn't trip on
+  // missing parity.
+  Future<http.Response> delete(String path, {Object? body}) => _withRetry(
         () => http
-            .delete(_buildUri(path), headers: _headers())
+            .delete(
+              _buildUri(path),
+              headers: _headers(),
+              body: body != null ? jsonEncode(body) : null,
+            )
             .timeout(_kDefaultTimeout),
       );
 

@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
-import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
+import { buildLimiters } from './limiters.js';
 import prisma from '../db/prisma.js';
 import authRouter from '../../modules/auth/auth.routes.js';
 import categoriesRouter from '../../modules/categories/categories.routes.js';
@@ -13,7 +13,8 @@ import vendorsRouter from '../../modules/vendors/vendors.routes.js';
 import partiesRouter from '../../modules/parties/parties.routes.js';
 import invoicesRouter from '../../modules/invoices/invoices.routes.js';
 import challansRouter from '../../modules/challans/challans.routes.js';
-import uploadRouter, { avatarUploadRouter } from '../../modules/upload/upload.routes.js';
+import uploadRouter from '../../modules/upload/upload.routes.js';
+import avatarUploadRouter from '../../modules/upload/upload-avatar.routes.js';
 import invitationsRouter from '../../modules/invitations/invitations.routes.js';
 import notificationsRouter from '../../modules/notifications/notifications.routes.js';
 import reportsRouter from '../../modules/reports/reports.routes.js';
@@ -136,81 +137,16 @@ export function buildApp(): express.Express {
 
   app.use(express.json({ limit: '2mb' }));
 
-  const authLimiter = rateLimit({
-    windowMs: 60_000,
-    max: 10,
-    standardHeaders: true,
-    legacyHeaders: false,
-  });
-
-  // Per-IP limiter for unauthenticated read surfaces (home feed, search,
-  // marketplace browse, public banners/flash sales/spotlights). 200/min
-  // accommodates the home feed firing ~10 parallel rail reads plus a
-  // burst of product detail pulls; abusive scrape patterns will trip.
-  const publicLimiter = rateLimit({
-    windowMs: 60_000,
-    max: 200,
-    standardHeaders: true,
-    legacyHeaders: false,
-  });
-
-  // Image reads are cached for an hour (see GET /images/:filename below),
-  // so most repeat traffic terminates at the browser/CDN. Loosen the cap
-  // here so a single product gallery with ~20 images doesn't consume the
-  // JSON budget for the visitor.
-  const imageLimiter = rateLimit({
-    windowMs: 60_000,
-    max: 1000,
-    standardHeaders: true,
-    legacyHeaders: false,
-  });
-
-  // Per-user limiter for upload. Sharp re-encode + 3 MinIO PUTs is
-  // expensive; a single merchant hammering /upload can saturate the box.
-  // Key on req.user.sub when present (post-requireAuth) so two devices
-  // sharing an IP aren't aggregated. Falls back to express-rate-limit's
-  // own ipKeyGenerator for IPv6 safety when no user is on the request.
-  const uploadLimiter = rateLimit({
-    windowMs: 60_000,
-    max: 30,
-    standardHeaders: true,
-    legacyHeaders: false,
-    keyGenerator: (req, res) =>
-      req.user?.sub != null
-        ? `u:${req.user.sub}`
-        : ipKeyGenerator(req.ip ?? '', 56),
-  });
-
-  // Per-user limiter for event ingestion. Bounded at a comfortable
-  // browse-rate ceiling; bots that exceed get 429s without affecting
-  // legit users.
-  const eventsLimiter = rateLimit({
-    windowMs: 60_000,
-    max: 600,
-    standardHeaders: true,
-    legacyHeaders: false,
-    keyGenerator: (req, res) =>
-      req.user?.sub != null
-        ? `u:${req.user.sub}`
-        : ipKeyGenerator(req.ip ?? '', 56),
-  });
-
-  // Per-user limiter for merchant carousel writes (and the legacy
-  // /me/banners shim during the Phase 1→7 deprecation window). 60/min
-  // is well above what an editor session realistically produces — a
-  // merchant typing into the slide form fires PATCHes on save only —
-  // and the cap catches scripted abuse without affecting humans.
-  // Reads share the budget too; that's fine, the editor reads infrequently.
-  const carouselWriteLimiter = rateLimit({
-    windowMs: 60_000,
-    max: 60,
-    standardHeaders: true,
-    legacyHeaders: false,
-    keyGenerator: (req, res) =>
-      req.user?.sub != null
-        ? `u:${req.user.sub}`
-        : ipKeyGenerator(req.ip ?? '', 56),
-  });
+  // All rate limiters live in ./limiters so this file stays focused on
+  // middleware order + route mounting. Tune limits there, not here.
+  const {
+    auth: authLimiter,
+    public: publicLimiter,
+    image: imageLimiter,
+    upload: uploadLimiter,
+    events: eventsLimiter,
+    carouselWrite: carouselWriteLimiter,
+  } = buildLimiters();
 
   app.get('/health', async (_req, res) => {
     try {

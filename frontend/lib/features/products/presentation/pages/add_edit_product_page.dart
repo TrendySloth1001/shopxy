@@ -236,8 +236,11 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     final raw = _highlightController.text.trim();
     if (raw.isEmpty) return;
     if (_highlights.length >= 8) return;
+    // Backend caps each highlight at 140 chars; truncate so a long
+    // entry doesn't turn into a 400 at save time.
+    final entry = raw.length > 140 ? raw.substring(0, 140) : raw;
     setState(() {
-      _highlights.add(raw);
+      _highlights.add(entry);
       _dirty = true;
       _highlightController.clear();
     });
@@ -1353,10 +1356,12 @@ class _HighlightsEditor extends StatelessWidget {
               Expanded(
                 child: TextField(
                   controller: controller,
+                  maxLength: 140,
                   decoration: const InputDecoration(
                     hintText: 'Add a highlight…',
                     border: OutlineInputBorder(),
                     isDense: true,
+                    counterText: '',
                   ),
                   onSubmitted: (_) => onAdd(),
                 ),

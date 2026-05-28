@@ -1,7 +1,6 @@
 import {
   BannerImageFit,
   BannerPlacement,
-  BannerSlideMode,
   BannerTemplate,
   Prisma,
 } from '@prisma/client';
@@ -50,17 +49,16 @@ const slideSelect = {
   id: true,
   carouselId: true,
   placement: true,
-  mode: true,
   template: true,
   imageFit: true,
-  textBlocks: true,
-  imageTransform: true,
   title: true,
   subtitle: true,
   eyebrow: true,
   ctaText: true,
   ctaTarget: true,
   brandLabel: true,
+  brandImageUrl: true,
+  brandImageFit: true,
   imageUrl: true,
   bgColor: true,
   accentColor: true,
@@ -85,17 +83,16 @@ export interface CreateCarouselInput {
 export interface UpdateCarouselInput extends Partial<CreateCarouselInput> {}
 
 export interface CreateSlideInput {
-  mode?: BannerSlideMode;
   template?: BannerTemplate;
   imageFit?: BannerImageFit;
-  textBlocks?: Prisma.InputJsonValue | null;
-  imageTransform?: Prisma.InputJsonValue | null;
   title: string;
   subtitle?: string | null;
   eyebrow?: string | null;
   ctaText?: string | null;
   ctaTarget?: string | null;
   brandLabel?: string | null;
+  brandImageUrl?: string | null;
+  brandImageFit?: BannerImageFit;
   imageUrl: string;
   bgColor: string;
   accentColor?: string | null;
@@ -238,17 +235,16 @@ export class CarouselsService {
         carouselId,
         placement: owned.placement,
         sponsorShopId: shopId,
-        mode: input.mode ?? 'TEMPLATED',
         template: input.template ?? 'CLASSIC',
         imageFit: input.imageFit ?? 'COVER',
-        textBlocks: input.textBlocks ?? Prisma.JsonNull,
-        imageTransform: input.imageTransform ?? Prisma.JsonNull,
         title: input.title,
         subtitle: input.subtitle ?? null,
         eyebrow: input.eyebrow ?? null,
         ctaText: input.ctaText ?? null,
         ctaTarget: input.ctaTarget ?? null,
         brandLabel: input.brandLabel ?? null,
+        brandImageUrl: input.brandImageUrl ?? null,
+        brandImageFit: input.brandImageFit ?? 'COVER',
         imageUrl: input.imageUrl,
         bgColor: input.bgColor,
         accentColor: input.accentColor ?? null,
@@ -279,21 +275,20 @@ export class CarouselsService {
     const row = await prisma.banner.update({
       where: { id: slideId },
       data: {
-        ...(input.mode !== undefined && { mode: input.mode }),
         ...(input.template !== undefined && { template: input.template }),
         ...(input.imageFit !== undefined && { imageFit: input.imageFit }),
-        ...(input.textBlocks !== undefined && {
-          textBlocks: input.textBlocks ?? Prisma.JsonNull,
-        }),
-        ...(input.imageTransform !== undefined && {
-          imageTransform: input.imageTransform ?? Prisma.JsonNull,
-        }),
         ...(input.title !== undefined && { title: input.title }),
         ...(input.subtitle !== undefined && { subtitle: input.subtitle }),
         ...(input.eyebrow !== undefined && { eyebrow: input.eyebrow }),
         ...(input.ctaText !== undefined && { ctaText: input.ctaText }),
         ...(input.ctaTarget !== undefined && { ctaTarget: input.ctaTarget }),
         ...(input.brandLabel !== undefined && { brandLabel: input.brandLabel }),
+        ...(input.brandImageUrl !== undefined && {
+          brandImageUrl: input.brandImageUrl,
+        }),
+        ...(input.brandImageFit !== undefined && {
+          brandImageFit: input.brandImageFit,
+        }),
         ...(input.imageUrl !== undefined && { imageUrl: input.imageUrl }),
         ...(input.bgColor !== undefined && { bgColor: input.bgColor }),
         ...(input.accentColor !== undefined && {

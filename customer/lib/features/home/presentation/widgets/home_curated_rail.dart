@@ -1,131 +1,58 @@
 import 'package:flutter/material.dart';
-import 'package:shopxy_customer/core/network/image_url.dart';
+import 'package:shopxy_customer/features/banner_slide/presentation/pages/banner_slide_detail_page.dart';
 import 'package:shopxy_customer/features/home/data/models/home_feed_models.dart';
-import 'package:shopxy_customer/features/home/presentation/widgets/network_image_box.dart';
+import 'package:shopxy_customer/features/home/presentation/widgets/hero_slide_templates.dart';
+import 'package:shopxy_customer/features/search/presentation/pages/search_page.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
-import 'package:shopxy_customer/shared/theme/app_colors.dart';
-import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 
+/// Full-width templated card used by the composer's curated-rail slot.
+/// Reuses `HeroSlideTemplateRenderer` so the rail honours the same
+/// Classic/Minimal/Split/… layout the merchant authored — no separate
+/// half-image-half-text card to maintain.
 class HomeCuratedRail extends StatelessWidget {
-  const HomeCuratedRail({super.key, required this.item});
-  final CuratedRailItem item;
+  const HomeCuratedRail({super.key, required this.slide});
+  final HeroSlide slide;
+
+  void _onTap(BuildContext context) {
+    final id = slide.bannerId;
+    if (id != null) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => BannerSlideDetailPage(bannerId: id)),
+      );
+      return;
+    }
+    // Collection-sourced rails arrive without a bannerId; fall back to a
+    // search keyed off the ctaTarget's collection slug (`collection:foo`)
+    // or, failing that, the rail's title.
+    final target = slide.ctaTarget ?? '';
+    final collectionSlug = target.startsWith('collection:')
+        ? target.substring('collection:'.length)
+        : null;
+    final query = (collectionSlug != null && collectionSlug.isNotEmpty)
+        ? collectionSlug
+        : slide.title;
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => SearchPage(initialQuery: query)),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
-      child: Container(
-        height: 160,
-        decoration: ShapeDecoration(
-          color: item.bgColor,
-          shape: AppShapes.squircle(AppSizes.radiusLg),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              left: null,
-              right: 0,
-              child: SizedBox(
-                width: 180,
-                child: NetworkImageBox(
-                  url: resolveImageUrl(item.imageUrl),
-                  placeholderColor: item.bgColor,
-                ),
-              ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth - (AppSizes.sm * 2);
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm),
+          child: SizedBox(
+            width: width,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => _onTap(context),
+              child: HeroSlideTemplateRenderer(slide: slide),
             ),
-            Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                    colors: [
-                      item.bgColor,
-                      item.bgColor.withValues(alpha: 0.7),
-                      item.bgColor.withValues(alpha: 0.0),
-                    ],
-                    stops: const [0.0, 0.55, 0.85],
-                  ),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(AppSizes.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    item.eyebrow,
-                    style: TextStyle(
-                      color: item.accentColor,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 10,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  SizedBox(
-                    width: 200,
-                    child: Text(
-                      item.title,
-                      style: const TextStyle(
-                        color: AppColors.black,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 20,
-                        height: 1.1,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  SizedBox(
-                    width: 200,
-                    child: Text(
-                      item.subtitle,
-                      style: const TextStyle(
-                        color: AppColors.black,
-                        fontSize: 12,
-                        height: 1.3,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: AppSizes.sm),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSizes.md,
-                      vertical: 6,
-                    ),
-                    decoration: ShapeDecoration(
-                      color: AppColors.black,
-                      shape: AppShapes.squircle(AppSizes.radiusFull),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          item.cta,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        const Icon(
-                          Icons.arrow_forward_rounded,
-                          color: Colors.white,
-                          size: 14,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

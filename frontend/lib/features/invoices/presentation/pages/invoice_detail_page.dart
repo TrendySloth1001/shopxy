@@ -544,7 +544,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
             child: ListTile(
               leading: const Icon(
                 Icons.chat_rounded,
-                color: Color(0xFF25D366),
+                color: AppColors.whatsapp,
               ),
               title: const Text('Send via WhatsApp'),
               subtitle: Text(

@@ -122,7 +122,7 @@ describe('carousels — merchant CRUD + tenant scoping', () => {
     }
   });
 
-  it('creates a templated slide and a freeform slide under the same carousel', async () => {
+  it('creates a slide under a carousel and inherits the carousel placement', async () => {
     const merchant = await createTestUser();
     try {
       const c = await createCarousel(merchant.accessToken);
@@ -134,7 +134,6 @@ describe('carousels — merchant CRUD + tenant scoping', () => {
         imageFit: 'CONTAIN',
       });
       expect(templated.status).toBe(201);
-      expect(templated.body.mode).toBe('TEMPLATED');
       expect(templated.body.template).toBe('DEAL');
       expect(templated.body.imageFit).toBe('CONTAIN');
       // Placement should be inherited from the carousel.
@@ -142,106 +141,17 @@ describe('carousels — merchant CRUD + tenant scoping', () => {
       // Slide auto-stamped with the merchant's sponsorShopId.
       expect(templated.body.sponsorShopId).toBe(merchant.shopId);
 
-      const freeform = await createSlide(merchant.accessToken, cid, {
-        title: 'Freeform',
-        mode: 'FREEFORM',
-        textBlocks: [
-          {
-            id: 'b1',
-            text: 'Hello',
-            xPct: 10,
-            yPct: 20,
-            widthPct: 40,
-            fontSize: 24,
-            color: '#000000',
-            weight: 700,
-            align: 'left',
-          },
-        ],
-        imageTransform: {
-          focalXPct: 50,
-          focalYPct: 50,
-          scale: 1.2,
-          rotateDeg: 0,
-          flipH: false,
-          flipV: false,
-          brightness: 1,
-          contrast: 1,
-          saturation: 1,
-        },
+      const second = await createSlide(merchant.accessToken, cid, {
+        title: 'Second',
+        template: 'MINIMAL',
       });
-      expect(freeform.status).toBe(201);
-      expect(freeform.body.mode).toBe('FREEFORM');
-      expect(Array.isArray(freeform.body.textBlocks)).toBe(true);
-      expect(freeform.body.textBlocks[0].text).toBe('Hello');
-      expect(freeform.body.imageTransform.scale).toBe(1.2);
+      expect(second.status).toBe(201);
 
       const list = await request(app)
         .get(`/me/carousels/${cid}/slides`)
         .set('Authorization', `Bearer ${merchant.accessToken}`);
       expect(list.status).toBe(200);
       expect(list.body.data).toHaveLength(2);
-    } finally {
-      await prisma.carousel.deleteMany({ where: { shopId: merchant.shopId } });
-      await cleanupTestUser(merchant);
-    }
-  });
-
-  it('rejects oversized payloads with 400', async () => {
-    const merchant = await createTestUser();
-    try {
-      const c = await createCarousel(merchant.accessToken);
-      const cid = c.body.id;
-
-      const tooManyBlocks = await createSlide(merchant.accessToken, cid, {
-        mode: 'FREEFORM',
-        textBlocks: Array.from({ length: 9 }, (_, i) => ({
-          id: `b${i}`,
-          text: 'x',
-          xPct: 0,
-          yPct: 0,
-          widthPct: 10,
-          fontSize: 12,
-          color: '#000000',
-          weight: 400,
-          align: 'left',
-        })),
-      });
-      expect(tooManyBlocks.status).toBe(400);
-
-      const badScale = await createSlide(merchant.accessToken, cid, {
-        mode: 'FREEFORM',
-        imageTransform: {
-          focalXPct: 50,
-          focalYPct: 50,
-          scale: 99, // > 4
-          rotateDeg: 0,
-          flipH: false,
-          flipV: false,
-          brightness: 1,
-          contrast: 1,
-          saturation: 1,
-        },
-      });
-      expect(badScale.status).toBe(400);
-
-      const badColor = await createSlide(merchant.accessToken, cid, {
-        mode: 'FREEFORM',
-        textBlocks: [
-          {
-            id: 'b1',
-            text: 'Hi',
-            xPct: 0,
-            yPct: 0,
-            widthPct: 10,
-            fontSize: 12,
-            color: 'red', // not hex
-            weight: 400,
-            align: 'left',
-          },
-        ],
-      });
-      expect(badColor.status).toBe(400);
     } finally {
       await prisma.carousel.deleteMany({ where: { shopId: merchant.shopId } });
       await cleanupTestUser(merchant);

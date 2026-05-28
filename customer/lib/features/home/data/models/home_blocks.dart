@@ -117,8 +117,8 @@ class CarouselBlock extends HomeBlock {
 }
 
 class CuratedRailBlock extends HomeBlock {
-  const CuratedRailBlock(this.item);
-  final CuratedRailItem item;
+  const CuratedRailBlock(this.slide);
+  final HeroSlide slide;
 }
 
 class CollectionBannerBlock extends HomeBlock {

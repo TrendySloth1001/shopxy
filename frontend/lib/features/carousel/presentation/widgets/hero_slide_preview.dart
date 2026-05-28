@@ -20,6 +20,9 @@ class HeroSlidePreviewData {
     required this.title,
     this.subtitle,
     this.brandLabel,
+    this.brandImageUrl,
+    this.brandImageFit = BannerImageFit.cover,
+    this.eyebrow,
     this.ctaText,
     this.imageUrl,
     required this.bgColor,
@@ -31,6 +34,14 @@ class HeroSlidePreviewData {
   final String title;
   final String? subtitle;
   final String? brandLabel;
+  /// Optional shop logo — when set, every templated card swaps the
+  /// brand text chip for this image. Null falls back to the text label.
+  final String? brandImageUrl;
+  final BannerImageFit brandImageFit;
+  /// Tiny copy above the title — used to be silently dropped because
+  /// the data class didn't include it. Every templated card that has
+  /// room for tagline-style copy renders this when non-empty.
+  final String? eyebrow;
   final String? ctaText;
   final String? imageUrl;
   final Color bgColor;
@@ -46,6 +57,8 @@ class HeroSlidePreviewData {
 
   String get _resolvedBrand => brandLabel?.trim() ?? '';
   String get _resolvedSubtitle => subtitle?.trim() ?? '';
+  String get _resolvedEyebrow => eyebrow?.trim() ?? '';
+  bool get _hasBrandImage => (brandImageUrl ?? '').isNotEmpty;
 }
 
 class HeroSlidePreview extends StatelessWidget {
@@ -169,6 +182,86 @@ class _Image extends StatelessWidget {
         errorBuilder: (_, _, _) => const SizedBox.shrink(),
       ),
     );
+  }
+}
+
+/// Renders the brand mark on a templated card. Three modes:
+///   * logo only — when only `brandImageUrl` is set
+///   * label only — when only `brandLabel` is set (caller's chip)
+///   * logo + label — when BOTH are set (logo circle on the left, the
+///     template's existing label chip on the right, with a small gap)
+///
+/// Returns `SizedBox.shrink()` when neither is present so callers can
+/// emit `_BrandMark(...)` unconditionally without `if` guards.
+///
+/// `centerInRow: true` switches the row layout to centred alignment
+/// for templates like Overlay where the whole content stack is centred.
+class _BrandMark extends StatelessWidget {
+  const _BrandMark({
+    required this.data,
+    required this.fallbackBuilder,
+    this.size = 28,
+    this.centerInRow = false,
+  });
+  final HeroSlidePreviewData data;
+  /// Renders the text chip when the slide has a brand label. Each
+  /// template has its own treatment (pill on Classic, uppercase
+  /// tracked on Minimal, etc.) so the caller passes a builder.
+  final Widget Function(BuildContext) fallbackBuilder;
+  /// Diameter of the circular logo crop.
+  final double size;
+  /// Set true for Overlay-style centred templates so the logo+label
+  /// row sits centred horizontally instead of left-aligned.
+  final bool centerInRow;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasImage = data._hasBrandImage;
+    final hasLabel = data._resolvedBrand.isNotEmpty;
+    if (!hasImage && !hasLabel) return const SizedBox.shrink();
+
+    final logo = hasImage
+        ? Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Image.network(
+              resolveImageUrl(data.brandImageUrl!),
+              fit: data.brandImageFit == BannerImageFit.contain
+                  ? BoxFit.contain
+                  : BoxFit.cover,
+              errorBuilder: (_, _, _) => const SizedBox.shrink(),
+            ),
+          )
+        : null;
+
+    final label = hasLabel ? fallbackBuilder(context) : null;
+
+    if (logo != null && label != null) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment:
+            centerInRow ? MainAxisAlignment.center : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          logo,
+          const SizedBox(width: 8),
+          Flexible(child: label),
+        ],
+      );
+    }
+    return logo ?? label!;
   }
 }
 
@@ -493,15 +586,28 @@ class _ClassicCard extends StatelessWidget {
     final fg = _autoFg(data.bgColor);
     final brand = data._resolvedBrand;
     final subtitle = data._resolvedSubtitle;
+    final eyebrow = data._resolvedEyebrow;
     return _SlideFrame(
       bgColor: data.bgColor,
+      // StackFit.expand pins the Stack to the parent constraints so
+      // we don't need a non-positioned intrinsic-sized child. The
+      // Row+Expanded+Spacer body never gets intrinsic-queried (the
+      // _debugDoingThisLayout crash) because non-positioned children
+      // receive tight constraints under StackFit.expand.
       child: Stack(
+        fit: StackFit.expand,
         children: [
+          // Right-anchored image. FractionallySizedBox keeps the image
+          // at 62% of the card width so Classic scales the same way as
+          // the other right-image templates (Deal, Split) — the
+          // previous hardcoded 220 px made the image look bigger on
+          // narrow cards and smaller on wide ones.
           Positioned.fill(
             left: null,
             right: 0,
-            child: SizedBox(
-              width: 220,
+            child: FractionallySizedBox(
+              widthFactor: 0.62,
+              alignment: Alignment.centerRight,
               child: _Image(url: data.imageUrl, placeholderColor: data.bgColor, fit: data.boxFit),
             ),
           ),
@@ -523,13 +629,18 @@ class _ClassicCard extends StatelessWidget {
           ),
           Padding(
             padding: const EdgeInsets.all(AppSizes.lg),
-            child: Column(
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 11,
+                  child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (brand.isNotEmpty)
-                  Container(
+                _BrandMark(
+                  data: data,
+                  fallbackBuilder: (_) => Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: AppSizes.sm,
                       vertical: 3,
@@ -557,35 +668,44 @@ class _ClassicCard extends StatelessWidget {
                       ),
                     ),
                   ),
+                ),
                 const SizedBox(height: AppSizes.sm),
-                SizedBox(
-                  width: 200,
-                  child: Text(
-                    data.title,
-                    maxLines: 2,
+                if (eyebrow.isNotEmpty) ...[
+                  Text(
+                    eyebrow,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: fg,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 26,
-                      height: 1.0,
-                      letterSpacing: -0.5,
+                      color: fg.withValues(alpha: 0.72),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.2,
                     ),
+                  ),
+                  const SizedBox(height: 2),
+                ],
+                Text(
+                  data.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: fg,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 26,
+                    height: 1.0,
+                    letterSpacing: -0.5,
                   ),
                 ),
                 if (subtitle.isNotEmpty) ...[
                   const SizedBox(height: 4),
-                  SizedBox(
-                    width: 200,
-                    child: Text(
-                      subtitle,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: fg.withValues(alpha: 0.78),
-                        fontSize: 12,
-                        height: 1.3,
-                      ),
+                  Text(
+                    subtitle,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: fg.withValues(alpha: 0.78),
+                      fontSize: 12,
+                      height: 1.3,
                     ),
                   ),
                 ],
@@ -595,6 +715,10 @@ class _ClassicCard extends StatelessWidget {
                   bg: AppColors.black,
                   fg: Colors.white,
                 ),
+              ],
+                  ),
+                ),
+                const Spacer(flex: 9),
               ],
             ),
           ),
@@ -613,6 +737,7 @@ class _MinimalCard extends StatelessWidget {
     final fg = _autoFg(data.bgColor);
     final brand = data._resolvedBrand;
     final subtitle = data._resolvedSubtitle;
+    final eyebrow = data._resolvedEyebrow;
     return _SlideFrame(
       bgColor: data.bgColor,
       child: Padding(
@@ -626,8 +751,10 @@ class _MinimalCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (brand.isNotEmpty)
-                    Text(
+                  _BrandMark(
+                    data: data,
+                    size: 24,
+                    fallbackBuilder: (_) => Text(
                       brand.toUpperCase(),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -638,6 +765,20 @@ class _MinimalCard extends StatelessWidget {
                         letterSpacing: 1.4,
                       ),
                     ),
+                  ),
+                  if (eyebrow.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      eyebrow,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: fg.withValues(alpha: 0.6),
+                        fontSize: 11,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: AppSizes.xs),
                   Text(
                     data.title,
@@ -665,60 +806,55 @@ class _MinimalCard extends StatelessWidget {
                     ),
                   ],
                   const SizedBox(height: AppSizes.sm),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Explore',
-                        style: TextStyle(
-                          color: data.accent,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        Icons.arrow_forward_rounded,
-                        size: 14,
-                        color: data.accent,
-                      ),
-                    ],
+                  // Same CTA pill shape as the other templates so the
+                  // merchant's "Button label" field actually drives what
+                  // they see on every card. Previously this was a
+                  // hardcoded "Explore" text + arrow, which silently
+                  // ignored the editor field.
+                  _PillCta(
+                    label: data._resolvedCta,
+                    bg: data.accent,
+                    fg: Colors.white,
                   ),
                 ],
               ),
             ),
             const SizedBox(width: AppSizes.md),
-            Container(
-              width: 140,
-              height: 140,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.12),
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: ClipOval(
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    _Image(url: data.imageUrl, placeholderColor: data.bgColor, fit: data.boxFit),
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: RadialGradient(
-                          center: const Alignment(-0.4, -0.5),
-                          radius: 0.95,
-                          colors: [
-                            Colors.white.withValues(alpha: 0.18),
-                            Colors.transparent,
-                          ],
-                        ),
-                      ),
+            // Square circular medallion sized off the card height so
+            // it scales together with the parent. AspectRatio keeps it
+            // a perfect circle regardless of card width.
+            AspectRatio(
+              aspectRatio: 1,
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.12),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
                     ),
                   ],
+                ),
+                child: ClipOval(
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      _Image(url: data.imageUrl, placeholderColor: data.bgColor, fit: data.boxFit),
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: RadialGradient(
+                            center: const Alignment(-0.4, -0.5),
+                            radius: 0.95,
+                            colors: [
+                              Colors.white.withValues(alpha: 0.18),
+                              Colors.transparent,
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -761,6 +897,7 @@ class _SplitCard extends StatelessWidget {
     final fg = _autoFg(data.bgColor);
     final brand = data._resolvedBrand;
     final subtitle = data._resolvedSubtitle;
+    final eyebrow = data._resolvedEyebrow;
     return _SlideFrame(
       bgColor: data.bgColor,
       useGradient: false,
@@ -781,8 +918,10 @@ class _SplitCard extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (brand.isNotEmpty)
-                        Text(
+                      _BrandMark(
+                        data: data,
+                        size: 24,
+                        fallbackBuilder: (_) => Text(
                           brand.toUpperCase(),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -793,6 +932,20 @@ class _SplitCard extends StatelessWidget {
                             letterSpacing: 1.4,
                           ),
                         ),
+                      ),
+                      if (eyebrow.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          eyebrow,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: fg.withValues(alpha: 0.6),
+                            fontSize: 11,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 4),
                       Text(
                         data.title,
@@ -872,6 +1025,7 @@ class _OverlayCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final brand = data._resolvedBrand;
     final subtitle = data._resolvedSubtitle;
+    final eyebrow = data._resolvedEyebrow;
     return _SlideFrame(
       bgColor: data.bgColor,
       useGradient: false,
@@ -912,14 +1066,17 @@ class _OverlayCard extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(AppSizes.lg),
+            padding: const EdgeInsets.all(AppSizes.md),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (brand.isNotEmpty)
-                  Text(
+                _BrandMark(
+                  data: data,
+                  size: 26,
+                  centerInRow: true,
+                  fallbackBuilder: (_) => Text(
                     brand.toUpperCase(),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -931,7 +1088,22 @@ class _OverlayCard extends StatelessWidget {
                       letterSpacing: 1.6,
                     ),
                   ),
-                const SizedBox(height: 6),
+                ),
+                if (eyebrow.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    eyebrow,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.88),
+                      fontSize: 11,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 4),
                 Text(
                   data.title,
                   maxLines: 2,
@@ -940,9 +1112,9 @@ class _OverlayCard extends StatelessWidget {
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w900,
-                    fontSize: 32,
-                    height: 1.0,
-                    letterSpacing: -0.8,
+                    fontSize: 22,
+                    height: 1.05,
+                    letterSpacing: -0.5,
                     shadows: [
                       Shadow(
                         color: Colors.black.withValues(alpha: 0.4),
@@ -952,19 +1124,19 @@ class _OverlayCard extends StatelessWidget {
                   ),
                 ),
                 if (subtitle.isNotEmpty) ...[
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    maxLines: 2,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.92),
-                      fontSize: 12,
+                      fontSize: 11,
                     ),
                   ),
                 ],
-                const SizedBox(height: AppSizes.sm),
+                const SizedBox(height: AppSizes.xs),
                 _ShimmerPill(
                   label: data._resolvedCta,
                   bg: Colors.white,
@@ -989,16 +1161,21 @@ class _DealCard extends StatelessWidget {
     final brand = data._resolvedBrand;
     final dealText = brand.isEmpty ? 'DEAL' : brand.toUpperCase();
     final subtitle = data._resolvedSubtitle;
+    final eyebrow = data._resolvedEyebrow;
     return _SlideFrame(
       bgColor: data.bgColor,
       child: Stack(
+        fit: StackFit.expand,
         children: [
-          Positioned(
-            right: -20,
-            top: 10,
-            bottom: 10,
-            child: SizedBox(
-              width: 200,
+          // Right-anchored image. Same widthFactor as Classic so the
+          // right-image templates render at a consistent visual size
+          // regardless of card width.
+          Positioned.fill(
+            left: null,
+            right: 0,
+            child: FractionallySizedBox(
+              widthFactor: 0.62,
+              alignment: Alignment.centerRight,
               child: _Image(url: data.imageUrl, placeholderColor: data.bgColor, fit: data.boxFit),
             ),
           ),
@@ -1027,41 +1204,64 @@ class _DealCard extends StatelessWidget {
           ),
           Padding(
             padding: const EdgeInsets.all(AppSizes.lg),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.end,
-              mainAxisSize: MainAxisSize.max,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                SizedBox(
-                  width: 200,
-                  child: Text(
-                    data.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: fg,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 26,
-                      height: 1.0,
-                      letterSpacing: -0.5,
-                    ),
+                Expanded(
+                  flex: 11,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.max,
+                    children: [
+                      if (eyebrow.isNotEmpty) ...[
+                        Text(
+                          eyebrow,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: fg.withValues(alpha: 0.72),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                      ],
+                      Text(
+                        data.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: fg,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 26,
+                          height: 1.0,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      if (subtitle.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          subtitle,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: fg.withValues(alpha: 0.8),
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: AppSizes.sm),
+                      _PillCta(
+                        label: data._resolvedCta,
+                        bg: data.accent,
+                        fg: Colors.white,
+                      ),
+                    ],
                   ),
                 ),
-                if (subtitle.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  SizedBox(
-                    width: 200,
-                    child: Text(
-                      subtitle,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: fg.withValues(alpha: 0.8),
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ],
+                const Spacer(flex: 9),
               ],
             ),
           ),
@@ -1080,6 +1280,7 @@ class _PosterCard extends StatelessWidget {
     final fg = _autoFg(data.bgColor);
     final brand = data._resolvedBrand;
     final subtitle = data._resolvedSubtitle;
+    final eyebrow = data._resolvedEyebrow;
     return _SlideFrame(
       bgColor: data.bgColor,
       useGradient: false,
@@ -1134,8 +1335,10 @@ class _PosterCard extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        if (brand.isNotEmpty)
-                          Text(
+                        _BrandMark(
+                          data: data,
+                          size: 22,
+                          fallbackBuilder: (_) => Text(
                             brand.toUpperCase(),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -1144,6 +1347,18 @@ class _PosterCard extends StatelessWidget {
                               fontWeight: FontWeight.w800,
                               fontSize: 10,
                               letterSpacing: 1.2,
+                            ),
+                          ),
+                        ),
+                        if (eyebrow.isNotEmpty)
+                          Text(
+                            eyebrow,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: fg.withValues(alpha: 0.6),
+                              fontSize: 10,
+                              fontStyle: FontStyle.italic,
                             ),
                           ),
                         Text(
@@ -1171,27 +1386,14 @@ class _PosterCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSizes.sm,
-                      vertical: 8,
-                    ),
-                    decoration: ShapeDecoration(
-                      color: data.accent,
-                      shape: AppShapes.squircle(AppSizes.radiusFull),
-                      shadows: [
-                        BoxShadow(
-                          color: data.accent.withValues(alpha: 0.35),
-                          blurRadius: 10,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.arrow_forward_rounded,
-                      size: 14,
-                      color: Colors.white,
-                    ),
+                  // Same pill CTA shape as the other templates instead
+                  // of the arrow-only icon — the merchant's button label
+                  // now reads consistently across all 6 text-bearing
+                  // templates.
+                  _PillCta(
+                    label: data._resolvedCta,
+                    bg: data.accent,
+                    fg: Colors.white,
                   ),
                 ],
               ),

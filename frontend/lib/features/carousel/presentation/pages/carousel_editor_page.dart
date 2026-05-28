@@ -401,9 +401,6 @@ class _SlideRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final modeColor = slide.mode == CarouselSlideMode.freeform
-        ? AppColors.accentIndigo
-        : AppColors.brand;
     return Material(
       color: AppColors.white,
       shape: AppShapes.squircle(
@@ -452,35 +449,14 @@ class _SlideRow extends StatelessWidget {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 1,
-                          ),
-                          decoration: BoxDecoration(
-                            color: modeColor.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(3),
-                          ),
-                          child: Text(
-                            slide.mode.label,
-                            style: TextStyle(
-                              color: modeColor,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.4,
-                            ),
+                        Text(
+                          slide.template.label,
+                          style: const TextStyle(
+                            color: AppColors.muted,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                        const SizedBox(width: 6),
-                        if (slide.mode == CarouselSlideMode.templated)
-                          Text(
-                            slide.template.label,
-                            style: const TextStyle(
-                              color: AppColors.muted,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
                         const Spacer(),
                         if (!slide.isActive)
                           const Text(

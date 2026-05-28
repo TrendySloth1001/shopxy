@@ -1,14 +1,29 @@
 import 'package:flutter/material.dart';
-import 'package:shopxy_customer/features/home/data/models/home_feed_models.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
+
+/// Presentation-only view-data for the trust strip. Carries `IconData`,
+/// so it lives next to the widget that renders it rather than in
+/// features/home/data/models/ (where it polluted a pure-data layer).
+class TrustItem {
+  const TrustItem({required this.icon, required this.label});
+  final IconData icon;
+  final String label;
+}
+
+const List<TrustItem> _kTrustItems = [
+  TrustItem(icon: Icons.local_shipping_outlined, label: 'Free delivery'),
+  TrustItem(icon: Icons.replay_outlined, label: '7-day returns'),
+  TrustItem(icon: Icons.verified_outlined, label: '100% authentic'),
+  TrustItem(icon: Icons.savings_outlined, label: 'Lowest prices'),
+];
 
 class HomeTrustStrip extends StatelessWidget {
   const HomeTrustStrip({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final items = HomeStaticData.trustItems;
+    const items = _kTrustItems;
     return Container(
       color: AppColors.brandSoft,
       padding: const EdgeInsets.symmetric(

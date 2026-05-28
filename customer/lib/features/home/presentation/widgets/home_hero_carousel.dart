@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shopxy_customer/features/banner_slide/presentation/pages/banner_slide_detail_page.dart';
 import 'package:shopxy_customer/features/home/data/models/home_feed_models.dart';
-import 'package:shopxy_customer/features/home/presentation/widgets/freeform_slide_card.dart';
 import 'package:shopxy_customer/features/home/presentation/widgets/hero_slide_templates.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
@@ -17,7 +16,11 @@ class HomeHeroCarousel extends StatefulWidget {
 }
 
 class _HomeHeroCarouselState extends State<HomeHeroCarousel> {
-  final _controller = PageController(viewportFraction: 0.92);
+  // Full-width pages: a fractional viewport leaks the next slide's bg
+  // colour into the right margin and reads as a dead strip when the
+  // adjacent slide is light. Symmetric breathing room comes from the
+  // itemBuilder padding instead.
+  final _controller = PageController();
   int _page = 0;
   Timer? _autoPlay;
 
@@ -48,77 +51,78 @@ class _HomeHeroCarouselState extends State<HomeHeroCarousel> {
   Widget build(BuildContext context) {
     final slides = widget.slides;
     if (slides.isEmpty) return const SizedBox.shrink();
-    return Column(
-      children: [
-        SizedBox(
-          height: 188,
-          child: PageView.builder(
-            controller: _controller,
-            itemCount: slides.length,
-            onPageChanged: (i) => setState(() => _page = i),
-            itemBuilder: (context, i) {
-              final slide = slides[i];
-              final card = _HeroSlideCard(slide: slide);
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSizes.xs),
-                child: slide.bannerId == null
-                    ? card
-                    : GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => BannerSlideDetailPage(
-                              bannerId: slide.bannerId!,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // PageView needs a definite height. Compute it from the
+        // template card's aspect ratio so the carousel matches the
+        // exact size each templated slide will render at — eliminates
+        // the overflow that a hard-coded 188 used to cause.
+        final cardWidth = constraints.maxWidth - (AppSizes.sm * 2);
+        final pageHeight = cardWidth / HeroSlideTemplateRenderer.aspectRatio;
+        return Column(
+          children: [
+            SizedBox(
+              height: pageHeight,
+              child: PageView.builder(
+                controller: _controller,
+                itemCount: slides.length,
+                onPageChanged: (i) => setState(() => _page = i),
+                itemBuilder: (context, i) {
+                  final slide = slides[i];
+                  final card = _HeroSlideCard(slide: slide);
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm),
+                    child: slide.bannerId == null
+                        ? card
+                        : GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => BannerSlideDetailPage(
+                                  bannerId: slide.bannerId!,
+                                ),
+                              ),
                             ),
+                            child: card,
                           ),
-                        ),
-                        child: card,
-                      ),
-              );
-            },
-          ),
-        ),
-        const SizedBox(height: AppSizes.sm),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(slides.length, (i) {
-            final active = i == _page;
-            return AnimatedContainer(
-              duration: const Duration(milliseconds: 220),
-              margin: const EdgeInsets.symmetric(horizontal: 3),
-              height: 6,
-              width: active ? 18 : 6,
-              decoration: BoxDecoration(
-                color: active ? AppColors.brand : AppColors.disabled,
-                borderRadius: BorderRadius.circular(3),
+                  );
+                },
               ),
-            );
-          }),
-        ),
-      ],
+            ),
+            const SizedBox(height: AppSizes.sm),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(slides.length, (i) {
+                final active = i == _page;
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 220),
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  height: 6,
+                  width: active ? 18 : 6,
+                  decoration: BoxDecoration(
+                    color: active ? AppColors.brand : AppColors.disabled,
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                );
+              }),
+            ),
+          ],
+        );
+      },
     );
   }
 }
 
-/// Renders one slide using the template the merchant picked. The
-/// previous version hardcoded the classic look and silently dropped
-/// `slide.template` even though the wire payload + the local
-/// HeroSlideTemplate enum + the fromWire mapper had been in place for
-/// months — that disconnect is what made the templated work feel
-/// "missing" in the merchant editor.
+/// Renders one slide using the template the merchant picked.
 class _HeroSlideCard extends StatelessWidget {
   const _HeroSlideCard({required this.slide});
   final HeroSlide slide;
 
   @override
   Widget build(BuildContext context) {
-    final body = switch (slide.mode) {
-      HeroSlideMode.freeform => FreeformSlideCard(slide: slide),
-      HeroSlideMode.templated => HeroSlideTemplateRenderer(slide: slide),
-    };
     return Stack(
       children: [
-        body,
+        HeroSlideTemplateRenderer(slide: slide),
         const Positioned(
           right: 6,
           bottom: 6,

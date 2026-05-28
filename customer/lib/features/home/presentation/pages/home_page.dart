@@ -155,10 +155,10 @@ class _HomeFeedListState extends State<_HomeFeedList> {
     return ListView.builder(
       padding: const EdgeInsets.only(bottom: AppSizes.huge),
       // The fixed prelude (categories → trust → hero → flash → ad strip
-      // → spotlight) plus one slot per composer block plus the footer.
-      // Each section is gated by a `.isNotEmpty` check inside its widget
-      // so empty payloads collapse without leaving stray gaps.
-      itemCount: 6 + blocks.length + 1,
+      // → spotlight → promo) plus one slot per composer block plus the
+      // footer. Each section is gated by a `.isNotEmpty` check inside
+      // its widget so empty payloads collapse without leaving stray gaps.
+      itemCount: 7 + blocks.length + 1,
       itemBuilder: (context, i) {
         switch (i) {
           case 0:
@@ -194,7 +194,7 @@ class _HomeFeedListState extends State<_HomeFeedList> {
               padding: EdgeInsets.only(
                 bottom: feed.adStrip.isNotEmpty ? AppSizes.xl : 0,
               ),
-              child: HomeAdStrip(ads: feed.adStrip),
+              child: HomeAdStrip(slides: feed.adStrip),
             );
           case 5:
             // Brand carousel: aspirational shopping for brand-led users.
@@ -205,9 +205,18 @@ class _HomeFeedListState extends State<_HomeFeedList> {
               ),
               child: HomeBrandSpotlight(brands: feed.brandSpotlights),
             );
+          case 6:
+            // Promo banners: merchandised editorial offers. Same card
+            // shape as the ad strip so layout reads consistently.
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: feed.promoBanners.isNotEmpty ? AppSizes.xl : 0,
+              ),
+              child: HomeAdStrip(slides: feed.promoBanners),
+            );
         }
 
-        final blockIdx = i - 6;
+        final blockIdx = i - 7;
         if (blockIdx < blocks.length) {
           return Padding(
             padding: const EdgeInsets.only(bottom: AppSizes.xl),

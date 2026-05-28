@@ -7,9 +7,9 @@ import 'package:shopxy_customer/features/home/presentation/widgets/network_image
 import 'package:shopxy_customer/features/marketplace/presentation/pages/product_detail_page.dart';
 import 'package:shopxy_customer/core/auth/token_manager.dart';
 import 'package:shopxy_customer/features/catalog/presentation/providers/cart_provider.dart';
-import 'package:shopxy_customer/features/orders/data/datasources/orders_remote_data_source.dart';
 import 'package:shopxy_customer/features/orders/domain/entities/customer_order.dart';
 import 'package:shopxy_customer/features/orders/presentation/services/invoice_share.dart';
+import 'package:shopxy_customer/features/orders/data/datasources/orders_remote_data_source.dart' show CancelOrderException;
 import 'package:shopxy_customer/features/orders/presentation/providers/orders_provider.dart';
 import 'package:shopxy_customer/features/orders/presentation/widgets/order_timeline.dart';
 import 'package:shopxy_customer/features/returns/presentation/widgets/request_return_sheet.dart';
@@ -94,16 +94,15 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
     if (invoice == null) return;
     setState(() => _downloadingChildId = child.id);
     try {
-      final ds = context.read<OrdersRemoteDataSource>();
       final token = context.read<TokenManager>().accessToken;
       if (token == null) {
         throw Exception('Please sign in to download invoices.');
       }
-      final bytes = await ds.downloadInvoicePdf(
-        parentId: widget.orderId,
-        childId: child.id,
-        accessToken: token,
-      );
+      final bytes = await context.read<OrdersProvider>().downloadInvoicePdf(
+            parentId: widget.orderId,
+            childId: child.id,
+            accessToken: token,
+          );
       if (!mounted) return;
       await shareInvoicePdf(
         context: context,
@@ -125,8 +124,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
   Future<void> _reorder() async {
     setState(() => _reordering = true);
     try {
-      final ds = context.read<OrdersRemoteDataSource>();
-      final result = await ds.reorder(widget.orderId);
+      final result = await context.read<OrdersProvider>().reorder(widget.orderId);
       if (!mounted) return;
       if (result.items.isEmpty) {
         showAppSnackbar(

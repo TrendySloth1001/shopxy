@@ -227,7 +227,7 @@ class _DealTile extends StatelessWidget {
                               Text(
                                 '₹${deal.flashPrice.toStringAsFixed(2)}',
                                 style: const TextStyle(
-                                  color: Color(0xFFE05A2A),
+                                  color: AppColors.flashDeal,
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
@@ -246,7 +246,7 @@ class _DealTile extends StatelessWidget {
                                   Text(
                                     '${deal.discountPct}% off',
                                     style: const TextStyle(
-                                      color: Color(0xFFE05A2A),
+                                      color: AppColors.flashDeal,
                                       fontWeight: FontWeight.w700,
                                       fontSize: 12,
                                     ),
@@ -313,7 +313,7 @@ class _SoldBar extends StatelessWidget {
             Container(
               height: 6,
               decoration: BoxDecoration(
-                color: const Color(0xFFFFE3D2),
+                color: AppColors.flashDealSoft,
                 borderRadius: BorderRadius.circular(3),
               ),
             ),
@@ -322,7 +322,7 @@ class _SoldBar extends StatelessWidget {
               child: Container(
                 height: 6,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE05A2A),
+                  color: AppColors.flashDeal,
                   borderRadius: BorderRadius.circular(3),
                 ),
               ),
@@ -333,7 +333,7 @@ class _SoldBar extends StatelessWidget {
         Text(
           '$sold / $limit claimed  ·  ${(soldPct * 100).round()}%',
           style: const TextStyle(
-            color: Color(0xFFE05A2A),
+            color: AppColors.flashDeal,
             fontSize: 11,
             fontWeight: FontWeight.w700,
           ),

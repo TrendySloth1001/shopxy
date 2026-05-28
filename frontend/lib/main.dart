@@ -44,6 +44,7 @@ import 'package:shopxy/features/spotlight/presentation/providers/spotlight_provi
 import 'package:shopxy/features/analytics/data/datasources/analytics_remote_data_source.dart';
 import 'package:shopxy/features/analytics/presentation/providers/analytics_provider.dart';
 import 'package:shopxy/features/promotions/data/datasources/promotions_remote_data_source.dart';
+import 'package:shopxy/features/reviews/data/datasources/reviews_remote_data_source.dart';
 import 'package:shopxy/features/promotions/presentation/providers/promotions_provider.dart';
 import 'package:shopxy/features/parties/data/datasources/parties_remote_data_source.dart';
 import 'package:shopxy/features/parties/presentation/providers/parties_provider.dart';
@@ -105,6 +106,7 @@ void main() async {
   final spotlightDs = SpotlightRemoteDataSource(apiClient);
   final analyticsDs = AnalyticsRemoteDataSource(apiClient);
   final promotionsDs = PromotionsRemoteDataSource(apiClient);
+  final reviewsDs = ReviewsRemoteDataSource(apiClient);
 
   final notificationsProvider = NotificationsProvider(notificationsDs, invitationsDs);
 
@@ -179,6 +181,7 @@ void main() async {
         Provider<StockAdjustmentsRemoteDataSource>.value(value: stockAdjustmentsDs),
         Provider<CategoriesRemoteDataSource>.value(value: categoriesDs),
         Provider<CustomFieldsRemoteDataSource>.value(value: customFieldsDs),
+        Provider<ReviewsRemoteDataSource>.value(value: reviewsDs),
 
         // Feature state providers
         ChangeNotifierProvider(create: (_) => DashboardProvider(dashboardDs)),

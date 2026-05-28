@@ -27,10 +27,14 @@ class HomeFeed {
   final List<HeroSlide> heroSlides;
   final List<CategoryPuck> categoryPucks;
   final List<FlashDealProduct> flashDeals;
-  final List<AdCard> adStrip;
+  // adStrip / promoBanners / curatedRails are all banner placements
+  // authored with the same template editor as `heroSlides`; we render
+  // every one of them with the templated card system so the merchant's
+  // chosen layout (Classic, Minimal, Split, …) survives the round-trip.
+  final List<HeroSlide> adStrip;
   final List<BrandSpotlight> brandSpotlights;
-  final List<AdCard> promoBanners;
-  final List<CuratedRailItem> curatedRails;
+  final List<HeroSlide> promoBanners;
+  final List<HeroSlide> curatedRails;
   final List<CollectionTile> collectionTiles;
   final List<ProductCard> trending;
   /// Editorial subsets derived server-side from the same trending pool
@@ -118,8 +122,8 @@ class HomeFeedMapper {
 
     return HomeFeed(
       heroSlides: heroBanners.map(_heroFromBanner).toList(),
-      adStrip: adStrip.map(_adCardFromBanner).toList(),
-      promoBanners: promoBanners.map(_adCardFromBanner).toList(),
+      adStrip: adStrip.map(_heroFromBanner).toList(),
+      promoBanners: promoBanners.map(_heroFromBanner).toList(),
       curatedRails: _curatedRails(curatedRailBanners, collections),
       brandSpotlights: spotlights.map(_brandFromSpotlight).toList(),
       flashDeals: flashDeals.map(_flashFromSale).whereType<FlashDealProduct>().toList(),
@@ -157,15 +161,10 @@ class HomeFeedMapper {
 
   static HeroSlide _heroFromBanner(dynamic raw) {
     final m = raw as Map<String, dynamic>;
-    final blocksRaw = m['textBlocks'];
-    final blocks = blocksRaw is List
-        ? blocksRaw
-            .whereType<Map<String, dynamic>>()
-            .map(HeroSlideTextBlock.fromJson)
-            .toList()
-        : const <HeroSlideTextBlock>[];
-    final transformRaw = m['imageTransform'];
     return HeroSlide(
+      // brand still carries brandLabel (or eyebrow as a fallback for
+      // legacy templates that read off `brand`); eyebrow now flows
+      // separately so templates can show both at once.
       brand: (m['brandLabel'] ?? m['eyebrow'] ?? '') as String,
       title: (m['title'] ?? '') as String,
       subtitle: (m['subtitle'] ?? '') as String,
@@ -174,32 +173,12 @@ class HomeFeedMapper {
       accent: _parseColor(m['accentColor'] as String?, fallback: AppColors.brand),
       template: HeroSlideTemplate.fromWire(m['template'] as String?),
       imageFit: HeroImageFit.fromWire(m['imageFit'] as String?),
-      // Phase 6 — freeform payload. Defaults to templated when absent,
-      // so legacy clients that don't know about FREEFORM still render
-      // the slide the merchant's templated fallback would have produced.
-      mode: HeroSlideMode.fromWire(m['mode'] as String?),
-      textBlocks: blocks,
-      imageTransform: transformRaw is Map<String, dynamic>
-          ? HeroSlideImageTransform.fromJson(transformRaw)
-          : null,
+      brandImageUrl: m['brandImageUrl'] as String?,
+      brandImageFit: HeroImageFit.fromWire(m['brandImageFit'] as String?),
       ctaText: m['ctaText'] as String?,
       ctaTarget: m['ctaTarget'] as String?,
+      eyebrow: m['eyebrow'] as String?,
       bannerId: _asInt(m['id']),
-    );
-  }
-
-  // ── Banner → AdCard ───────────────────────────────────────────────
-
-  static AdCard _adCardFromBanner(dynamic raw) {
-    final m = raw as Map<String, dynamic>;
-    return AdCard(
-      bannerId: (m['id'] as num).toInt(),
-      brand: (m['brandLabel'] ?? m['eyebrow'] ?? '') as String,
-      headline: (m['title'] ?? '') as String,
-      cta: (m['ctaText'] ?? m['subtitle'] ?? '') as String,
-      imageUrl: (m['imageUrl'] ?? '') as String,
-      bgColor: _parseColor(m['bgColor'] as String?, fallback: AppColors.heroPanel),
-      ctaTarget: m['ctaTarget'] as String?,
     );
   }
 
@@ -310,38 +289,28 @@ class HomeFeedMapper {
     );
   }
 
-  static List<CuratedRailItem> _curatedRails(
+  static List<HeroSlide> _curatedRails(
     List<dynamic> bannerRows,
     List<dynamic> collectionRows,
   ) {
-    final fromBanners = bannerRows.map((raw) {
-      final m = raw as Map<String, dynamic>;
-      return CuratedRailItem(
-        eyebrow: ((m['eyebrow'] ?? '') as String).toUpperCase(),
-        title: (m['title'] ?? '') as String,
-        subtitle: (m['subtitle'] ?? '') as String,
-        cta: (m['ctaText'] ?? 'Shop now') as String,
-        imageUrl: (m['imageUrl'] ?? '') as String,
-        bgColor: _parseColor(m['bgColor'] as String?, fallback: AppColors.heroPanel),
-        accentColor: _parseColor(m['accentColor'] as String?, fallback: AppColors.brand),
-        ctaTarget: m['ctaTarget'] as String?,
-      );
-    });
+    final fromBanners = bannerRows.map(_heroFromBanner);
     // Collections become curated rails when there's no banner content
     // — guarantees the section has something to show even before a
-    // platform admin has curated the home page.
+    // platform admin has curated the home page. Defaults to Classic
+    // template; merchants can later override per-collection.
     final fromCollections = collectionRows.take(4).map((raw) {
       final m = raw as Map<String, dynamic>;
-      return CuratedRailItem(
-        collectionSlug: (m['slug'] ?? '') as String,
-        eyebrow: ((m['eyebrow'] ?? 'EDITORIAL') as String).toUpperCase(),
+      final slug = (m['slug'] ?? '') as String;
+      return HeroSlide(
+        brand: ((m['eyebrow'] ?? 'EDITORIAL') as String).toUpperCase(),
         title: (m['title'] ?? '') as String,
         subtitle: (m['subtitle'] ?? '') as String,
-        cta: (m['ctaText'] ?? 'Explore') as String,
         imageUrl: (m['coverImageUrl'] ?? '') as String,
         bgColor: _parseColor(m['bgColor'] as String?, fallback: AppColors.heroPanel),
-        accentColor: AppColors.brand,
-        ctaTarget: (m['ctaTarget'] ?? 'collection:${m['slug']}') as String,
+        accent: AppColors.brand,
+        ctaText: (m['ctaText'] ?? 'Explore') as String,
+        ctaTarget: (m['ctaTarget'] ?? 'collection:$slug') as String,
+        eyebrow: (m['eyebrow'] ?? 'EDITORIAL') as String,
       );
     });
     return [...fromBanners, ...fromCollections];

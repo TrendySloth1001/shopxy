@@ -12,10 +12,11 @@ void main() {
       expect(feed.heroSlides.first.imageUrl, '/images/hero-md.webp');
       expect(feed.heroSlides.first.ctaTarget, 'category:fashion');
 
-      // Ad strip banner → AdCard.
+      // Ad strip banner → HeroSlide (same templated card system as
+      // the hero placement; the `brandLabel` flows through `brand`).
       expect(feed.adStrip, hasLength(1));
       expect(feed.adStrip.first.brand, 'MYNTRA');
-      expect(feed.adStrip.first.headline, 'EOSS — flat 70%');
+      expect(feed.adStrip.first.title, 'EOSS — flat 70%');
 
       // Brand spotlight → BrandSpotlight.
       expect(feed.brandSpotlights, hasLength(1));

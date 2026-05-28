@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:shopxy/core/network/api_client.dart';
 import 'package:shopxy/features/reviews/data/datasources/reviews_remote_data_source.dart';
 import 'package:shopxy/features/reviews/data/models/product_review.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
@@ -39,7 +38,7 @@ class _ProductReviewsPageState extends State<ProductReviewsPage> {
   @override
   void initState() {
     super.initState();
-    _ds = ReviewsRemoteDataSource(context.read<ApiClient>());
+    _ds = context.read<ReviewsRemoteDataSource>();
     _load();
   }
 

@@ -19,7 +19,8 @@ class HomeBrandSpotlight extends StatefulWidget {
 }
 
 class _HomeBrandSpotlightState extends State<HomeBrandSpotlight> {
-  final _controller = PageController(viewportFraction: 0.92);
+  // Full-width pages — see home_hero_carousel.dart for the rationale.
+  final _controller = PageController();
   int _page = 0;
   Timer? _autoPlay;
 
@@ -101,7 +102,7 @@ class _HomeBrandSpotlightState extends State<HomeBrandSpotlight> {
             itemCount: brands.length,
             onPageChanged: (i) => setState(() => _page = i),
             itemBuilder: (context, i) => Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSizes.xs),
+              padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
               child: _BrandCard(brand: brands[i]),
             ),
           ),

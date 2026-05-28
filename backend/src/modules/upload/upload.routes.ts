@@ -4,17 +4,11 @@ import { fromBuffer as fileTypeFromBuffer } from 'file-type';
 import asyncHandler from '../../shared/http/asyncHandler.js';
 import { uploadImageWithVariants } from './upload.service.js';
 
-const router = Router();
-/// Auth-only avatar upload router. Same uploader + magic-byte sniffing
-/// as the merchant `/upload` route, but routed to a path the customer
-/// app can reach (mounted at `/me/upload/avatar` with requireAuth
-/// upstream, no ownerOnly gate). Single endpoint per the avatar use
-/// case — no list / delete needed.
-export const avatarUploadRouter = Router();
+/// Merchant image upload. Mounted under `/upload` with `ownerOnly`
+/// upstream so only shop owners can hit it. The companion avatar route
+/// (customer-facing, requireAuth only) lives in upload-avatar.routes.ts.
 
-// Accept the same three input formats we did before. Sharp will decode
-// any of them and re-encode to WebP for storage, so the on-disk format
-// is uniform regardless of what the client sent.
+const router = Router();
 const ALLOWED_MIMES = new Set<string>(['image/jpeg', 'image/png', 'image/webp']);
 
 const upload = multer({
@@ -24,30 +18,30 @@ const upload = multer({
   // We validate the actual bytes below via file-type's magic-byte sniffing.
 });
 
-const uploadHandler = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.file) {
-    res.status(400).json({ error: 'No file uploaded' });
-    return;
-  }
-  const sniffed = await fileTypeFromBuffer(req.file.buffer);
-  if (!sniffed || !ALLOWED_MIMES.has(sniffed.mime)) {
-    res
-      .status(400)
-      .json({ error: 'Only JPEG, PNG, or WebP images are allowed' });
-    return;
-  }
-  // Re-encode + resize on upload so the storage layer is uniform
-  // WebP at 3 widths. Response includes both the default url (md)
-  // and the variant map so clients can request the size they need.
-  const result = await uploadImageWithVariants(
-    req.file.buffer,
-    req.file.originalname,
-  );
-  res.status(201).json(result);
-});
-
-router.post('/', upload.single('file'), uploadHandler);
-
-avatarUploadRouter.post('/avatar', upload.single('file'), uploadHandler);
+router.post(
+  '/',
+  upload.single('file'),
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!req.file) {
+      res.status(400).json({ error: 'No file uploaded' });
+      return;
+    }
+    const sniffed = await fileTypeFromBuffer(req.file.buffer);
+    if (!sniffed || !ALLOWED_MIMES.has(sniffed.mime)) {
+      res
+        .status(400)
+        .json({ error: 'Only JPEG, PNG, or WebP images are allowed' });
+      return;
+    }
+    // Re-encode + resize on upload so the storage layer is uniform WebP
+    // at 3 widths. Response includes the default (md) url plus the
+    // variant map so clients can request the size they need.
+    const result = await uploadImageWithVariants(
+      req.file.buffer,
+      req.file.originalname,
+    );
+    res.status(201).json(result);
+  }),
+);
 
 export default router;

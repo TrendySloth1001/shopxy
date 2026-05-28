@@ -30,16 +30,27 @@ extension _SlideAccessors on HeroSlide {
 
   String get _resolvedBrand => brand.trim();
   String get _resolvedSubtitle => subtitle.trim();
+  String get _resolvedEyebrow => eyebrow?.trim() ?? '';
+  bool get _hasBrandImage => (brandImageUrl ?? '').isNotEmpty;
 }
 
 class HeroSlideTemplateRenderer extends StatelessWidget {
   const HeroSlideTemplateRenderer({super.key, required this.slide});
   final HeroSlide slide;
 
+  /// Width-to-height ratio for templated banner cards. 16:10 matches
+  /// the proportions the merchant editor previews and gives each
+  /// template enough vertical room for two-line titles + an eyebrow +
+  /// a CTA pill without overflowing. The renderer needs a bounded
+  /// height (Stack templates use `Positioned.fill`), so we derive it
+  /// from the parent's width rather than hard-coding a fixed pixel
+  /// value that breaks on narrow / wide devices.
+  static const double aspectRatio = 16 / 10;
+
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 188,
+    return AspectRatio(
+      aspectRatio: aspectRatio,
       child: _routeFor(slide),
     );
   }
@@ -153,6 +164,69 @@ class _Image extends StatelessWidget {
         errorBuilder: (_, _, _) => const SizedBox.shrink(),
       ),
     );
+  }
+}
+
+/// Render the brand mark on a templated card. Logo + label show
+/// together when both are set; either alone otherwise. Mirrors the
+/// merchant-side `_BrandMark` exactly (per the project's "duplicate,
+/// don't extract" rule for shared customer/merchant code).
+class _BrandMark extends StatelessWidget {
+  const _BrandMark({
+    required this.data,
+    required this.fallbackBuilder,
+    this.size = 28,
+    this.centerInRow = false,
+  });
+  final HeroSlide data;
+  final Widget Function(BuildContext) fallbackBuilder;
+  final double size;
+  final bool centerInRow;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasImage = data._hasBrandImage;
+    final hasLabel = data._resolvedBrand.isNotEmpty;
+    if (!hasImage && !hasLabel) return const SizedBox.shrink();
+
+    final logo = hasImage
+        ? Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Image.network(
+              resolveImageUrl(data.brandImageUrl!),
+              fit: data.brandImageFit.boxFit,
+              errorBuilder: (_, _, _) => const SizedBox.shrink(),
+            ),
+          )
+        : null;
+    final label = hasLabel ? fallbackBuilder(context) : null;
+    if (logo != null && label != null) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment:
+            centerInRow ? MainAxisAlignment.center : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          logo,
+          const SizedBox(width: 8),
+          Flexible(child: label),
+        ],
+      );
+    }
+    return logo ?? label!;
   }
 }
 
@@ -477,16 +551,29 @@ class _ClassicCard extends StatelessWidget {
     final fg = _autoFg(data.bgColor);
     final brand = data._resolvedBrand;
     final subtitle = data._resolvedSubtitle;
+    final eyebrow = data._resolvedEyebrow;
     return _SlideFrame(
       bgColor: data.bgColor,
+      // StackFit.expand pins the Stack to parent constraints so we
+      // don't need a non-positioned intrinsic-sized child to give it
+      // dimensions. Without this the Stack would collapse to 0×0 in
+      // the customer's PageView (loose width) and nothing would render.
       child: Stack(
+        fit: StackFit.expand,
         children: [
+          // Right-anchored image at a fraction of card width. Wrapping
+          // the FractionallySizedBox in an Align inside a proper
+          // Positioned.fill gives it bounded constraints — the older
+          // `left: null, right: 0` form left width unbounded and crashed
+          // any time Classic was rendered outside a PageView slot.
           Positioned.fill(
-            left: null,
-            right: 0,
-            child: SizedBox(
-              width: 220,
-              child: _Image(url: data.imageUrl, placeholderColor: data.bgColor, fit: data.boxFit),
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: FractionallySizedBox(
+                widthFactor: 0.62,
+                heightFactor: 1.0,
+                child: _Image(url: data.imageUrl, placeholderColor: data.bgColor, fit: data.boxFit),
+              ),
             ),
           ),
           Positioned.fill(
@@ -507,13 +594,18 @@ class _ClassicCard extends StatelessWidget {
           ),
           Padding(
             padding: const EdgeInsets.all(AppSizes.lg),
-            child: Column(
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 11,
+                  child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (brand.isNotEmpty)
-                  Container(
+                _BrandMark(
+                  data: data,
+                  fallbackBuilder: (_) => Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: AppSizes.sm,
                       vertical: 3,
@@ -541,35 +633,44 @@ class _ClassicCard extends StatelessWidget {
                       ),
                     ),
                   ),
+                ),
                 const SizedBox(height: AppSizes.sm),
-                SizedBox(
-                  width: 200,
-                  child: Text(
-                    data.title,
-                    maxLines: 2,
+                if (eyebrow.isNotEmpty) ...[
+                  Text(
+                    eyebrow,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: fg,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 26,
-                      height: 1.0,
-                      letterSpacing: -0.5,
+                      color: fg.withValues(alpha: 0.72),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.2,
                     ),
+                  ),
+                  const SizedBox(height: 2),
+                ],
+                Text(
+                  data.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: fg,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 26,
+                    height: 1.0,
+                    letterSpacing: -0.5,
                   ),
                 ),
                 if (subtitle.isNotEmpty) ...[
                   const SizedBox(height: 4),
-                  SizedBox(
-                    width: 200,
-                    child: Text(
-                      subtitle,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: fg.withValues(alpha: 0.78),
-                        fontSize: 12,
-                        height: 1.3,
-                      ),
+                  Text(
+                    subtitle,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: fg.withValues(alpha: 0.78),
+                      fontSize: 12,
+                      height: 1.3,
                     ),
                   ),
                 ],
@@ -579,6 +680,10 @@ class _ClassicCard extends StatelessWidget {
                   bg: AppColors.black,
                   fg: Colors.white,
                 ),
+              ],
+                  ),
+                ),
+                const Spacer(flex: 9),
               ],
             ),
           ),
@@ -597,6 +702,7 @@ class _MinimalCard extends StatelessWidget {
     final fg = _autoFg(data.bgColor);
     final brand = data._resolvedBrand;
     final subtitle = data._resolvedSubtitle;
+    final eyebrow = data._resolvedEyebrow;
     return _SlideFrame(
       bgColor: data.bgColor,
       child: Padding(
@@ -610,8 +716,10 @@ class _MinimalCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (brand.isNotEmpty)
-                    Text(
+                  _BrandMark(
+                    data: data,
+                    size: 24,
+                    fallbackBuilder: (_) => Text(
                       brand.toUpperCase(),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -622,6 +730,20 @@ class _MinimalCard extends StatelessWidget {
                         letterSpacing: 1.4,
                       ),
                     ),
+                  ),
+                  if (eyebrow.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      eyebrow,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: fg.withValues(alpha: 0.6),
+                        fontSize: 11,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: AppSizes.xs),
                   Text(
                     data.title,
@@ -649,60 +771,49 @@ class _MinimalCard extends StatelessWidget {
                     ),
                   ],
                   const SizedBox(height: AppSizes.sm),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Explore',
-                        style: TextStyle(
-                          color: data.accent,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        Icons.arrow_forward_rounded,
-                        size: 14,
-                        color: data.accent,
-                      ),
-                    ],
+                  _PillCta(
+                    label: data._resolvedCta,
+                    bg: data.accent,
+                    fg: Colors.white,
                   ),
                 ],
               ),
             ),
             const SizedBox(width: AppSizes.md),
-            Container(
-              width: 140,
-              height: 140,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.12),
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: ClipOval(
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    _Image(url: data.imageUrl, placeholderColor: data.bgColor, fit: data.boxFit),
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: RadialGradient(
-                          center: const Alignment(-0.4, -0.5),
-                          radius: 0.95,
-                          colors: [
-                            Colors.white.withValues(alpha: 0.18),
-                            Colors.transparent,
-                          ],
-                        ),
-                      ),
+            // Square circular medallion sized off card height so it
+            // scales together with the parent — no more fixed 140 px.
+            AspectRatio(
+              aspectRatio: 1,
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.12),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
                     ),
                   ],
+                ),
+                child: ClipOval(
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      _Image(url: data.imageUrl, placeholderColor: data.bgColor, fit: data.boxFit),
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: RadialGradient(
+                            center: const Alignment(-0.4, -0.5),
+                            radius: 0.95,
+                            colors: [
+                              Colors.white.withValues(alpha: 0.18),
+                              Colors.transparent,
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -722,12 +833,14 @@ class _ImageOnlyCard extends StatelessWidget {
     return _SlideFrame(
       bgColor: data.bgColor,
       useGradient: false,
+      // StackFit.expand: all children are Positioned.fill, so without
+      // expand the Stack would collapse to 0×0 and the slide would
+      // render as a zero-width strip.
       child: Stack(
+        fit: StackFit.expand,
         children: [
-          Positioned.fill(
-            child: _KenBurns(
-              child: _Image(url: data.imageUrl, placeholderColor: data.bgColor, fit: data.boxFit),
-            ),
+          _KenBurns(
+            child: _Image(url: data.imageUrl, placeholderColor: data.bgColor, fit: data.boxFit),
           ),
           const _CornerVignette(),
         ],
@@ -745,15 +858,18 @@ class _SplitCard extends StatelessWidget {
     final fg = _autoFg(data.bgColor);
     final brand = data._resolvedBrand;
     final subtitle = data._resolvedSubtitle;
+    final eyebrow = data._resolvedEyebrow;
     return _SlideFrame(
       bgColor: data.bgColor,
       useGradient: false,
+      // StackFit.expand pins the Stack to the slide-frame constraints;
+      // without it the Stack would size to the Row's intrinsic width
+      // when the Row's bounded behaviour fails on loose constraints.
       child: Stack(
+        fit: StackFit.expand,
         children: [
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(gradient: _panelGradient(data.bgColor)),
-            ),
+          DecoratedBox(
+            decoration: BoxDecoration(gradient: _panelGradient(data.bgColor)),
           ),
           Row(
             children: [
@@ -765,8 +881,10 @@ class _SplitCard extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (brand.isNotEmpty)
-                        Text(
+                      _BrandMark(
+                        data: data,
+                        size: 24,
+                        fallbackBuilder: (_) => Text(
                           brand.toUpperCase(),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -777,6 +895,20 @@ class _SplitCard extends StatelessWidget {
                             letterSpacing: 1.4,
                           ),
                         ),
+                      ),
+                      if (eyebrow.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          eyebrow,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: fg.withValues(alpha: 0.6),
+                            fontSize: 11,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 4),
                       Text(
                         data.title,
@@ -856,54 +988,57 @@ class _OverlayCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final brand = data._resolvedBrand;
     final subtitle = data._resolvedSubtitle;
+    final eyebrow = data._resolvedEyebrow;
     return _SlideFrame(
       bgColor: data.bgColor,
       useGradient: false,
+      // StackFit.expand: without it, the lone non-positioned child
+      // (the centered Padding/Column with MainAxisSize.min) sizes the
+      // Stack to its text intrinsic width — collapsing the whole slide
+      // to ~250 px regardless of the page slot.
       child: Stack(
+        fit: StackFit.expand,
         children: [
-          Positioned.fill(
-            child: _KenBurns(
-              child: _Image(url: data.imageUrl, placeholderColor: data.bgColor, fit: data.boxFit),
-            ),
+          _KenBurns(
+            child: _Image(url: data.imageUrl, placeholderColor: data.bgColor, fit: data.boxFit),
           ),
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment.center,
-                  radius: 0.9,
-                  colors: [
-                    Colors.black.withValues(alpha: 0.50),
-                    Colors.black.withValues(alpha: 0.20),
-                  ],
-                ),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: RadialGradient(
+                center: Alignment.center,
+                radius: 0.9,
+                colors: [
+                  Colors.black.withValues(alpha: 0.50),
+                  Colors.black.withValues(alpha: 0.20),
+                ],
               ),
             ),
           ),
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.transparent,
-                    Colors.black.withValues(alpha: 0.35),
-                  ],
-                  stops: const [0.55, 1.0],
-                ),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.transparent,
+                  Colors.black.withValues(alpha: 0.35),
+                ],
+                stops: const [0.55, 1.0],
               ),
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(AppSizes.lg),
+            padding: const EdgeInsets.all(AppSizes.md),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (brand.isNotEmpty)
-                  Text(
+                _BrandMark(
+                  data: data,
+                  size: 26,
+                  centerInRow: true,
+                  fallbackBuilder: (_) => Text(
                     brand.toUpperCase(),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -915,7 +1050,22 @@ class _OverlayCard extends StatelessWidget {
                       letterSpacing: 1.6,
                     ),
                   ),
-                const SizedBox(height: 6),
+                ),
+                if (eyebrow.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    eyebrow,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.88),
+                      fontSize: 11,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 4),
                 Text(
                   data.title,
                   maxLines: 2,
@@ -924,9 +1074,9 @@ class _OverlayCard extends StatelessWidget {
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w900,
-                    fontSize: 32,
-                    height: 1.0,
-                    letterSpacing: -0.8,
+                    fontSize: 22,
+                    height: 1.05,
+                    letterSpacing: -0.5,
                     shadows: [
                       Shadow(
                         color: Colors.black.withValues(alpha: 0.4),
@@ -936,19 +1086,19 @@ class _OverlayCard extends StatelessWidget {
                   ),
                 ),
                 if (subtitle.isNotEmpty) ...[
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    maxLines: 2,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.92),
-                      fontSize: 12,
+                      fontSize: 11,
                     ),
                   ),
                 ],
-                const SizedBox(height: AppSizes.sm),
+                const SizedBox(height: AppSizes.xs),
                 _ShimmerPill(
                   label: data._resolvedCta,
                   bg: Colors.white,
@@ -973,17 +1123,24 @@ class _DealCard extends StatelessWidget {
     final brand = data._resolvedBrand;
     final dealText = brand.isEmpty ? 'DEAL' : brand.toUpperCase();
     final subtitle = data._resolvedSubtitle;
+    final eyebrow = data._resolvedEyebrow;
     return _SlideFrame(
       bgColor: data.bgColor,
       child: Stack(
+        fit: StackFit.expand,
         children: [
-          Positioned(
-            right: -20,
-            top: 10,
-            bottom: 10,
-            child: SizedBox(
-              width: 200,
-              child: _Image(url: data.imageUrl, placeholderColor: data.bgColor, fit: data.boxFit),
+          // Right-anchored image at the same fractional width as
+          // Classic so the two right-image templates render with
+          // matching proportions. See _ClassicCard for the rationale
+          // behind Align + Positioned.fill over `left: null, right: 0`.
+          Positioned.fill(
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: FractionallySizedBox(
+                widthFactor: 0.62,
+                heightFactor: 1.0,
+                child: _Image(url: data.imageUrl, placeholderColor: data.bgColor, fit: data.boxFit),
+              ),
             ),
           ),
           Positioned.fill(
@@ -1011,41 +1168,64 @@ class _DealCard extends StatelessWidget {
           ),
           Padding(
             padding: const EdgeInsets.all(AppSizes.lg),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.end,
-              mainAxisSize: MainAxisSize.max,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                SizedBox(
-                  width: 200,
-                  child: Text(
-                    data.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: fg,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 26,
-                      height: 1.0,
-                      letterSpacing: -0.5,
-                    ),
+                Expanded(
+                  flex: 11,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.max,
+                    children: [
+                      if (eyebrow.isNotEmpty) ...[
+                        Text(
+                          eyebrow,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: fg.withValues(alpha: 0.72),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                      ],
+                      Text(
+                        data.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: fg,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 26,
+                          height: 1.0,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      if (subtitle.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          subtitle,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: fg.withValues(alpha: 0.8),
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: AppSizes.sm),
+                      _PillCta(
+                        label: data._resolvedCta,
+                        bg: data.accent,
+                        fg: Colors.white,
+                      ),
+                    ],
                   ),
                 ),
-                if (subtitle.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  SizedBox(
-                    width: 200,
-                    child: Text(
-                      subtitle,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: fg.withValues(alpha: 0.8),
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ],
+                const Spacer(flex: 9),
               ],
             ),
           ),
@@ -1064,6 +1244,7 @@ class _PosterCard extends StatelessWidget {
     final fg = _autoFg(data.bgColor);
     final brand = data._resolvedBrand;
     final subtitle = data._resolvedSubtitle;
+    final eyebrow = data._resolvedEyebrow;
     return _SlideFrame(
       bgColor: data.bgColor,
       useGradient: false,
@@ -1118,8 +1299,10 @@ class _PosterCard extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        if (brand.isNotEmpty)
-                          Text(
+                        _BrandMark(
+                          data: data,
+                          size: 22,
+                          fallbackBuilder: (_) => Text(
                             brand.toUpperCase(),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -1128,6 +1311,18 @@ class _PosterCard extends StatelessWidget {
                               fontWeight: FontWeight.w800,
                               fontSize: 10,
                               letterSpacing: 1.2,
+                            ),
+                          ),
+                        ),
+                        if (eyebrow.isNotEmpty)
+                          Text(
+                            eyebrow,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: fg.withValues(alpha: 0.6),
+                              fontSize: 10,
+                              fontStyle: FontStyle.italic,
                             ),
                           ),
                         Text(
@@ -1155,27 +1350,10 @@ class _PosterCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSizes.sm,
-                      vertical: 8,
-                    ),
-                    decoration: ShapeDecoration(
-                      color: data.accent,
-                      shape: AppShapes.squircle(AppSizes.radiusFull),
-                      shadows: [
-                        BoxShadow(
-                          color: data.accent.withValues(alpha: 0.35),
-                          blurRadius: 10,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.arrow_forward_rounded,
-                      size: 14,
-                      color: Colors.white,
-                    ),
+                  _PillCta(
+                    label: data._resolvedCta,
+                    bg: data.accent,
+                    fg: Colors.white,
                   ),
                 ],
               ),

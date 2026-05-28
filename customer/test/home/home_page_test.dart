@@ -134,7 +134,13 @@ void main() {
 
     // Hero brand label is rendered (uppercased by the widget).
     expect(find.text('Festive Edit'), findsOneWidget);
-    // Flash deal name from the seed lands on a card.
+    // Flash-deal section sits below the hero — scroll it into view so
+    // ListView.builder builds the lazy item before we assert on its text.
+    await tester.dragUntilVisible(
+      find.text('Wireless Earbuds'),
+      find.byType(ListView).first,
+      const Offset(0, -120),
+    );
     expect(find.text('Wireless Earbuds'), findsOneWidget);
   });
 
