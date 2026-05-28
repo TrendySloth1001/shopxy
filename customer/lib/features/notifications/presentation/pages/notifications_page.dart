@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy_customer/features/notifications/domain/entities/notification.dart';
+import 'package:shopxy_customer/features/notifications/presentation/pages/invitations_page.dart';
 import 'package:shopxy_customer/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
@@ -29,7 +30,11 @@ class _NotificationsPageState extends State<NotificationsPage>
     _tabs = TabController(length: _NotificationBucket.values.length, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      context.read<NotificationsProvider>().loadInbox();
+      final p = context.read<NotificationsProvider>();
+      p.loadInbox();
+      // Pull pending invites alongside so the top-of-inbox callout shows
+      // even when the user lands on the bell before opening MyShops.
+      p.loadIncoming(status: 'PENDING');
     });
   }
 
@@ -64,12 +69,24 @@ class _NotificationsPageState extends State<NotificationsPage>
         ),
       ),
       body: RefreshIndicator(
-        onRefresh: () => p.loadInbox(),
-        child: TabBarView(
-          controller: _tabs,
+        onRefresh: () async {
+          await Future.wait([
+            p.loadInbox(),
+            p.loadIncoming(status: 'PENDING'),
+          ]);
+        },
+        child: Column(
           children: [
-            for (final bucket in _NotificationBucket.values)
-              _TabView(items: bucket.filter(p.items), provider: p),
+            const _PendingInviteBanner(),
+            Expanded(
+              child: TabBarView(
+                controller: _tabs,
+                children: [
+                  for (final bucket in _NotificationBucket.values)
+                    _TabView(items: bucket.filter(p.items), provider: p),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -178,6 +195,14 @@ class _NotificationTile extends StatelessWidget {
     return InkWell(
       onTap: () {
         if (item.isUnread) provider.markRead(item.id);
+        // Invite notifications are actionable — route to the dedicated
+        // page where the user can accept/decline rather than leaving
+        // the tile as an informational dead-end.
+        if (item.isInvite) {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const InvitationsPage()),
+          );
+        }
       },
       child: Container(
         color: item.isUnread ? AppColors.brandSoft.withValues(alpha: 0.25) : null,
@@ -316,4 +341,91 @@ class _IconSpec {
   final IconData icon;
   final Color tint;
   final Color accent;
+}
+
+/// Persistent callout at the top of the inbox while the user has
+/// unanswered invites. Tapping opens the full InvitationsPage where
+/// they can accept/decline each one.
+class _PendingInviteBanner extends StatelessWidget {
+  const _PendingInviteBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final pending = context.select<NotificationsProvider, int>(
+      (p) => p.pendingIncoming.length,
+    );
+    if (pending == 0) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.md,
+        AppSizes.lg,
+        0,
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const InvitationsPage()),
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(AppSizes.md),
+          decoration: ShapeDecoration(
+            color: AppColors.brandSoft,
+            shape: AppShapes.squircle(
+              AppSizes.radiusLg,
+              side: const BorderSide(color: AppColors.brand, width: 1),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: const BoxDecoration(
+                  color: AppColors.brand,
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.mark_email_unread_rounded,
+                  color: AppColors.white,
+                  size: 16,
+                ),
+              ),
+              const SizedBox(width: AppSizes.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      pending == 1
+                          ? 'You have 1 pending invitation'
+                          : 'You have $pending pending invitations',
+                      style: const TextStyle(
+                        color: AppColors.brandStrong,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 1),
+                    const Text(
+                      'Tap to review and accept',
+                      style: TextStyle(
+                        color: AppColors.brandStrong,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.brandStrong,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

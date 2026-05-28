@@ -4,7 +4,6 @@ import 'package:shopxy_customer/features/addresses/domain/entities/user_address.
 import 'package:shopxy_customer/features/addresses/presentation/pages/addresses_page.dart';
 import 'package:shopxy_customer/features/addresses/presentation/pages/edit_address_page.dart';
 import 'package:shopxy_customer/features/addresses/presentation/providers/addresses_provider.dart';
-import 'package:shopxy_customer/features/home/data/models/home_feed_models.dart';
 import 'package:shopxy_customer/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:shopxy_customer/features/notifications/presentation/pages/notifications_page.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
@@ -23,87 +22,191 @@ class HomeTopBar extends StatelessWidget {
         AppSizes.lg,
         AppSizes.sm,
       ),
-      child: Row(
+      child: Column(
         children: [
           Row(
-            mainAxisSize: MainAxisSize.min,
-            children: const [
-              Text(
-                'shop',
-                style: TextStyle(
-                  color: AppColors.black,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.5,
-                ),
-              ),
-              Text(
-                'xy',
-                style: TextStyle(
-                  color: AppColors.brand,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.5,
+            children: [
+              const _BrandWordmark(),
+              const Spacer(),
+              Selector<NotificationsProvider, int>(
+                selector: (_, p) => p.unread,
+                builder: (_, unread, _) => _TopBarIcon(
+                  icon: Icons.notifications_none_rounded,
+                  count: unread,
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const NotificationsPage()),
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(width: AppSizes.md),
-          Expanded(
-            child: Consumer<AddressesProvider>(
-              builder: (context, addr, _) {
-                final defaultAddr = addr.defaultAddress;
-                final label = defaultAddr == null
-                    ? HomeStaticData.defaultLocation
-                    : 'Deliver to: ${defaultAddr.city} ${defaultAddr.pincode}';
-                return GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => _showAddressSheet(context),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.location_on_outlined,
-                        color: AppColors.brand,
-                        size: AppSizes.iconMd,
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          label,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: AppColors.black,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      const Icon(
-                        Icons.keyboard_arrow_down_rounded,
-                        color: AppColors.muted,
-                        size: 18,
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-          const SizedBox(width: AppSizes.sm),
-          // Real unread count from NotificationsProvider — was a
-          // hardcoded `3` in the original mock.
-          Selector<NotificationsProvider, int>(
-            selector: (_, p) => p.unread,
-            builder: (_, unread, _) => _TopBarIcon(
-              icon: Icons.notifications_none_rounded,
-              count: unread,
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const NotificationsPage()),
-              ),
-            ),
+          const SizedBox(height: AppSizes.md),
+          Consumer<AddressesProvider>(
+            builder: (context, addr, _) {
+              final defaultAddr = addr.defaultAddress;
+              final cityLine = defaultAddr == null
+                  ? 'New Delhi 110001'
+                  : '${defaultAddr.city} ${defaultAddr.pincode}';
+              return _LocationPill(
+                cityLine: cityLine,
+                onTap: () => _showAddressSheet(context),
+              );
+            },
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _BrandWordmark extends StatelessWidget {
+  const _BrandWordmark();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Container(
+          width: 28,
+          height: 28,
+          decoration: ShapeDecoration(
+            color: AppColors.brand,
+            shape: AppShapes.squircle(AppSizes.radiusSm),
+          ),
+          alignment: Alignment.center,
+          child: const Text(
+            'S',
+            style: TextStyle(
+              color: AppColors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -0.4,
+              height: 1,
+            ),
+          ),
+        ),
+        const SizedBox(width: AppSizes.sm),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: const [
+            Text(
+              'shop',
+              style: TextStyle(
+                color: AppColors.black,
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.6,
+                height: 1,
+              ),
+            ),
+            Text(
+              'xy',
+              style: TextStyle(
+                color: AppColors.brand,
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.6,
+                height: 1,
+              ),
+            ),
+            SizedBox(width: 2),
+            Text(
+              '.',
+              style: TextStyle(
+                color: AppColors.brand,
+                fontSize: 22,
+                fontWeight: FontWeight.w900,
+                height: 1,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _LocationPill extends StatelessWidget {
+  const _LocationPill({required this.cityLine, required this.onTap});
+  final String cityLine;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSizes.md,
+          vertical: AppSizes.sm + 2,
+        ),
+        decoration: ShapeDecoration(
+          color: AppColors.heroPanel,
+          shape: AppShapes.squircle(
+            AppSizes.radiusMd,
+            side: const BorderSide(color: AppColors.hairline, width: 0.6),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 28,
+              height: 28,
+              decoration: const BoxDecoration(
+                color: AppColors.brandSoft,
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: const Icon(
+                Icons.location_on_rounded,
+                color: AppColors.brand,
+                size: 16,
+              ),
+            ),
+            const SizedBox(width: AppSizes.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'DELIVER TO',
+                    style: TextStyle(
+                      color: AppColors.muted,
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.9,
+                      height: 1.1,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    cityLine,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppColors.black,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      height: 1.15,
+                      letterSpacing: -0.1,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: AppColors.muted,
+              size: 20,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -405,38 +508,55 @@ class _TopBarIcon extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: SizedBox(
-      width: 26,
-      height: 26,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Icon(icon, color: AppColors.black, size: 24),
-          if (count != null && count! > 0)
-            Positioned(
-              right: -4,
-              top: -2,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                decoration: BoxDecoration(
-                  color: AppColors.brand,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.canvas, width: 1.5),
-                ),
-                constraints: const BoxConstraints(minWidth: 16),
-                child: Text(
-                  '$count',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: AppColors.white,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w800,
+        width: 40,
+        height: 40,
+        child: Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.center,
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: ShapeDecoration(
+                color: AppColors.white,
+                shape: AppShapes.squircle(
+                  AppSizes.radiusMd,
+                  side: const BorderSide(
+                    color: AppColors.hairline,
+                    width: 0.6,
                   ),
                 ),
               ),
+              alignment: Alignment.center,
+              child: Icon(icon, color: AppColors.black, size: 20),
             ),
-        ],
+            if (count != null && count! > 0)
+              Positioned(
+                right: -2,
+                top: -2,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: AppColors.brand,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.canvas, width: 1.5),
+                  ),
+                  constraints: const BoxConstraints(minWidth: 16),
+                  child: Text(
+                    '$count',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: AppColors.white,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
-    ),
     );
   }
 }

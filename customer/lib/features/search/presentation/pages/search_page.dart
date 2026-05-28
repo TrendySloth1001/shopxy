@@ -11,7 +11,6 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/constants/app_strings.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
-import 'package:shopxy_customer/shared/widgets/app_filter_chip.dart';
 import 'package:shopxy_customer/shared/widgets/app_price_text.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 
@@ -74,28 +73,26 @@ class _SearchPageState extends State<SearchPage> {
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(64),
+        preferredSize: const Size.fromHeight(76),
         child: SafeArea(
           bottom: false,
           child: Container(
             decoration: const BoxDecoration(
               color: AppColors.canvas,
               border: Border(
-                bottom: BorderSide(color: AppColors.hairline),
+                bottom: BorderSide(color: AppColors.hairline, width: 0.6),
               ),
             ),
             padding: const EdgeInsets.fromLTRB(
-              AppSizes.sm,
-              AppSizes.sm,
               AppSizes.lg,
               AppSizes.sm,
+              AppSizes.lg,
+              AppSizes.md,
             ),
             child: Row(
               children: [
-                IconButton(
-                  icon: const Icon(Icons.arrow_back_rounded),
-                  onPressed: () => Navigator.pop(context),
-                ),
+                _BackChip(onTap: () => Navigator.pop(context)),
+                const SizedBox(width: AppSizes.sm),
                 Expanded(
                   child: _SearchField(
                     controller: _ctrl,
@@ -120,6 +117,36 @@ class _SearchPageState extends State<SearchPage> {
   }
 }
 
+class _BackChip extends StatelessWidget {
+  const _BackChip({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: ShapeDecoration(
+          color: AppColors.white,
+          shape: AppShapes.squircle(
+            AppSizes.radiusMd,
+            side: const BorderSide(color: AppColors.hairline, width: 0.6),
+          ),
+        ),
+        alignment: Alignment.center,
+        child: const Icon(
+          Icons.arrow_back_rounded,
+          color: AppColors.black,
+          size: 20,
+        ),
+      ),
+    );
+  }
+}
+
 class _SearchField extends StatelessWidget {
   const _SearchField({
     required this.controller,
@@ -138,41 +165,79 @@ class _SearchField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      height: 44,
       decoration: ShapeDecoration(
         color: AppColors.white,
         shape: AppShapes.squircle(
-          AppSizes.radiusInput,
-          side: const BorderSide(color: AppColors.hairline),
+          AppSizes.radiusMd,
+          side: const BorderSide(color: AppColors.hairline, width: 0.6),
         ),
       ),
-      child: TextField(
-        controller: controller,
-        focusNode: focusNode,
-        textInputAction: TextInputAction.search,
-        onChanged: onChanged,
-        onSubmitted: onSubmitted,
-        decoration: InputDecoration(
-          hintText: AppStrings.searchProducts,
-          isDense: true,
-          border: InputBorder.none,
-          enabledBorder: InputBorder.none,
-          focusedBorder: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: AppSizes.md,
-            vertical: AppSizes.md + 2,
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm),
+      child: Row(
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            decoration: ShapeDecoration(
+              color: AppColors.brand,
+              shape: AppShapes.squircle(AppSizes.radiusSm),
+            ),
+            alignment: Alignment.center,
+            child: const Icon(
+              Icons.search_rounded,
+              color: AppColors.white,
+              size: 16,
+            ),
           ),
-          prefixIcon: const Icon(
-            Icons.search_rounded,
-            color: AppColors.muted,
-          ),
-          suffixIcon: onClear == null
-              ? null
-              : IconButton(
-                  icon: const Icon(Icons.close_rounded, size: 18),
-                  onPressed: onClear,
-                  tooltip: AppStrings.cancel,
+          const SizedBox(width: AppSizes.sm),
+          Expanded(
+            child: TextField(
+              controller: controller,
+              focusNode: focusNode,
+              textInputAction: TextInputAction.search,
+              onChanged: onChanged,
+              onSubmitted: onSubmitted,
+              style: const TextStyle(
+                color: AppColors.black,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+              decoration: InputDecoration(
+                hintText: AppStrings.searchProducts,
+                hintStyle: const TextStyle(
+                  color: AppColors.muted,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
                 ),
-        ),
+                isDense: true,
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+          ),
+          if (onClear != null)
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: onClear,
+              child: Container(
+                width: 26,
+                height: 26,
+                decoration: const BoxDecoration(
+                  color: AppColors.heroPanel,
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.close_rounded,
+                  color: AppColors.muted,
+                  size: 14,
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -226,10 +291,19 @@ class _IdleView extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
-                Icons.search_rounded,
-                size: 48,
-                color: AppColors.muted,
+              Container(
+                width: 64,
+                height: 64,
+                decoration: const BoxDecoration(
+                  color: AppColors.brandSoft,
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.search_rounded,
+                  size: 28,
+                  color: AppColors.brand,
+                ),
               ),
               const SizedBox(height: AppSizes.md),
               Text(
@@ -263,70 +337,250 @@ class _IdleView extends StatelessWidget {
       ),
       children: [
         if (p.hints.isNotEmpty) ...[
-          Text(
-            'Trending searches',
-            style: theme.textTheme.titleSmall?.copyWith(
-              color: AppColors.muted,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.4,
-            ),
+          const _SectionHeading(
+            eyebrow: 'POPULAR RIGHT NOW',
+            title: 'Trending searches',
+            icon: Icons.local_fire_department_rounded,
           ),
-          const SizedBox(height: AppSizes.sm),
+          const SizedBox(height: AppSizes.md),
           Wrap(
             spacing: AppSizes.sm,
             runSpacing: AppSizes.sm,
             children: [
               for (final h in p.hints)
-                AppFilterChip(
+                _TrendingChip(
                   label: h,
-                  selected: false,
-                  icon: Icons.local_fire_department_outlined,
                   onTap: () => _apply(context, h),
                 ),
             ],
           ),
-          const SizedBox(height: AppSizes.lg),
+          const SizedBox(height: AppSizes.xl),
         ],
         if (p.recentSearches.isNotEmpty) ...[
           Row(
             children: [
-              Expanded(
-                child: Text(
-                  'Recent searches',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    color: AppColors.muted,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.4,
+              const Expanded(
+                child: _SectionHeading(
+                  eyebrow: 'YOUR HISTORY',
+                  title: 'Recent searches',
+                  icon: Icons.history_rounded,
+                ),
+              ),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: p.clearRecent,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSizes.sm + 2,
+                    vertical: 6,
+                  ),
+                  decoration: ShapeDecoration(
+                    color: Colors.transparent,
+                    shape: AppShapes.squircle(
+                      AppSizes.radiusSm,
+                      side: const BorderSide(
+                        color: AppColors.hairline,
+                        width: 0.6,
+                      ),
+                    ),
+                  ),
+                  child: const Text(
+                    'Clear',
+                    style: TextStyle(
+                      color: AppColors.muted,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 11.5,
+                      letterSpacing: 0.2,
+                    ),
                   ),
                 ),
               ),
-              TextButton(
-                onPressed: p.clearRecent,
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.muted,
-                  visualDensity: VisualDensity.compact,
-                  padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm),
-                ),
-                child: const Text('Clear'),
-              ),
             ],
           ),
-          const SizedBox(height: AppSizes.sm),
-          Wrap(
-            spacing: AppSizes.sm,
-            runSpacing: AppSizes.sm,
+          const SizedBox(height: AppSizes.md),
+          Column(
             children: [
-              for (final q in p.recentSearches)
-                AppFilterChip(
-                  label: q,
-                  selected: false,
-                  icon: Icons.history_rounded,
-                  onTap: () => _apply(context, q),
+              for (var i = 0; i < p.recentSearches.length; i++) ...[
+                _RecentRow(
+                  label: p.recentSearches[i],
+                  onTap: () => _apply(context, p.recentSearches[i]),
                 ),
+                if (i < p.recentSearches.length - 1)
+                  const Divider(
+                    height: 1,
+                    thickness: 0.6,
+                    color: AppColors.hairline,
+                  ),
+              ],
             ],
           ),
         ],
       ],
+    );
+  }
+}
+
+class _SectionHeading extends StatelessWidget {
+  const _SectionHeading({
+    required this.eyebrow,
+    required this.title,
+    required this.icon,
+  });
+  final String eyebrow;
+  final String title;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          eyebrow,
+          style: const TextStyle(
+            color: AppColors.brand,
+            fontSize: 9.5,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.9,
+            height: 1.1,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Row(
+          children: [
+            Icon(icon, color: AppColors.black, size: 18),
+            const SizedBox(width: 6),
+            Text(
+              title,
+              style: const TextStyle(
+                color: AppColors.black,
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.2,
+                height: 1.15,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _TrendingChip extends StatelessWidget {
+  const _TrendingChip({required this.label, required this.onTap});
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.white,
+      shape: AppShapes.squircle(
+        AppSizes.radiusFull,
+        side: const BorderSide(color: AppColors.hairline, width: 0.6),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        customBorder: AppShapes.squircle(AppSizes.radiusFull),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSizes.sm,
+            AppSizes.xs + 2,
+            AppSizes.md,
+            AppSizes.xs + 2,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 22,
+                height: 22,
+                decoration: const BoxDecoration(
+                  color: AppColors.brandSoft,
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.local_fire_department_rounded,
+                  color: AppColors.brand,
+                  size: 13,
+                ),
+              ),
+              const SizedBox(width: 6),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 200),
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppColors.black,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.1,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RecentRow extends StatelessWidget {
+  const _RecentRow({required this.label, required this.onTap});
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
+        child: Row(
+          children: [
+            Container(
+              width: 28,
+              height: 28,
+              decoration: const BoxDecoration(
+                color: AppColors.heroPanel,
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: const Icon(
+                Icons.history_rounded,
+                color: AppColors.muted,
+                size: 14,
+              ),
+            ),
+            const SizedBox(width: AppSizes.sm + 2),
+            Expanded(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: AppColors.black,
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.1,
+                ),
+              ),
+            ),
+            const SizedBox(width: AppSizes.sm),
+            const Icon(
+              Icons.north_west_rounded,
+              color: AppColors.muted,
+              size: 16,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

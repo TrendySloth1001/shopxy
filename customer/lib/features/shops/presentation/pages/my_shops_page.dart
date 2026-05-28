@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy_customer/features/notifications/presentation/pages/invitations_page.dart';
 import 'package:shopxy_customer/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:shopxy_customer/features/notifications/presentation/widgets/notification_bell.dart';
 import 'package:shopxy_customer/features/shops/domain/entities/linked_shop.dart';
@@ -251,7 +252,9 @@ class _PendingInviteCallout extends StatelessWidget {
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(AppSizes.radiusLg),
-        onTap: () => DefaultTabController.of(context).animateTo(1),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const InvitationsPage()),
+        ),
         child: Container(
           padding: const EdgeInsets.all(AppSizes.lg),
           decoration: ShapeDecoration(

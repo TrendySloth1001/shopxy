@@ -37,39 +37,67 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: AppColors.brand,
+    return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSizes.lg,
-        AppSizes.xs,
+        AppSizes.sm,
         AppSizes.lg,
         AppSizes.md,
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const SearchPage()),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const SearchPage()),
+        ),
+        child: Container(
+          height: 56,
+          decoration: ShapeDecoration(
+            color: AppColors.white,
+            shape: AppShapes.squircle(
+              AppSizes.radiusLg,
+              side: const BorderSide(color: AppColors.hairline, width: 0.8),
+            ),
+          ),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.sm,
+            vertical: AppSizes.xs + 2,
+          ),
+          child: Row(
+            children: [
+              // Filled brand affordance — anchors the bar and reads as
+              // the primary entry point (vs. mic/camera as secondaries).
+              Container(
+                width: 36,
+                height: 36,
+                decoration: ShapeDecoration(
+                  color: AppColors.brand,
+                  shape: AppShapes.squircle(AppSizes.radiusSm),
+                ),
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.search_rounded,
+                  color: AppColors.white,
+                  size: 18,
+                ),
               ),
-              child: Container(
-              height: 46,
-              decoration: ShapeDecoration(
-                color: AppColors.white,
-                shape: AppShapes.squircle(AppSizes.radiusSm),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: AppSizes.md),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.search_rounded,
-                    color: AppColors.muted,
-                    size: AppSizes.iconMd,
-                  ),
-                  const SizedBox(width: AppSizes.sm),
-                  Expanded(
-                    child: AnimatedSwitcher(
+              const SizedBox(width: AppSizes.sm + 2),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'SEARCH SHOPXY',
+                      style: TextStyle(
+                        color: AppColors.brand,
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.9,
+                        height: 1.1,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    AnimatedSwitcher(
                       duration: const Duration(milliseconds: 300),
                       transitionBuilder: (child, anim) => SlideTransition(
                         position: Tween<Offset>(
@@ -84,37 +112,60 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          color: AppColors.muted,
+                          color: AppColors.black,
                           fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          height: 1.15,
+                          letterSpacing: -0.1,
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: AppSizes.xs),
-                  Container(
-                    width: 1,
-                    height: 18,
-                    color: AppColors.hairline,
-                  ),
-                  const SizedBox(width: AppSizes.sm),
-                  const Icon(
-                    Icons.mic_none_rounded,
-                    color: AppColors.brand,
-                    size: AppSizes.iconMd,
-                  ),
-                  const SizedBox(width: AppSizes.sm),
-                  const Icon(
-                    Icons.camera_alt_outlined,
-                    color: AppColors.brand,
-                    size: AppSizes.iconMd,
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            ),
+              const SizedBox(width: AppSizes.xs),
+              Container(
+                width: 1,
+                height: 24,
+                color: AppColors.hairline,
+              ),
+              const SizedBox(width: AppSizes.xs),
+              const _SearchAction(
+                icon: Icons.mic_none_rounded,
+                filled: false,
+              ),
+              const SizedBox(width: 2),
+              const _SearchAction(
+                icon: Icons.qr_code_scanner_rounded,
+                filled: true,
+              ),
+            ],
           ),
-        ],
+        ),
       ),
+    );
+  }
+}
+
+class _SearchAction extends StatelessWidget {
+  const _SearchAction({required this.icon, required this.filled});
+  final IconData icon;
+
+  /// Filled = brand-soft fill (primary secondary action — scan).
+  /// Outlined = transparent (tertiary action — voice).
+  final bool filled;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        color: filled ? AppColors.brandSoft : Colors.transparent,
+        shape: BoxShape.circle,
+      ),
+      alignment: Alignment.center,
+      child: Icon(icon, color: AppColors.brand, size: 18),
     );
   }
 }
