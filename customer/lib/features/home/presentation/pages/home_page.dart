@@ -9,6 +9,7 @@ import 'package:shopxy_customer/features/home/presentation/services/tracking_ser
 import 'package:shopxy_customer/features/categories/presentation/widgets/categories_rail.dart';
 import 'package:shopxy_customer/features/home/presentation/widgets/home_feed_blocks.dart';
 import 'package:shopxy_customer/features/home/presentation/widgets/home_footer_strip.dart';
+import 'package:shopxy_customer/features/home/presentation/widgets/home_pending_invite_callout.dart';
 import 'package:shopxy_customer/features/home/presentation/widgets/home_product_carousel.dart';
 import 'package:shopxy_customer/features/home/presentation/widgets/home_recently_viewed.dart';
 import 'package:shopxy_customer/features/home/presentation/widgets/home_search_bar.dart';
@@ -58,9 +59,19 @@ class _HomePageState extends State<HomePage> {
             SafeArea(
               bottom: false,
               child: Column(
-                children: const [
-                  HomeTopBar(),
-                  HomeSearchBar(),
+                children: [
+                  const HomeTopBar(),
+                  const HomeSearchBar(),
+                  Container(
+                    height: 0.6,
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: AppSizes.lg,
+                    ),
+                    color: AppColors.hairline,
+                  ),
+                  // Pinned above the scroll view so a pending invite is
+                  // unmissable — the user can't scroll past it.
+                  const HomePendingInviteCallout(),
                 ],
               ),
             ),
