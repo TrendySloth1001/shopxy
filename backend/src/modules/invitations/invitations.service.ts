@@ -36,7 +36,19 @@ const inviteSelect = {
   respondedAt: true,
   createdAt: true,
   updatedAt: true,
-  fromUser: { select: { id: true, name: true, email: true } },
+  fromUser: { select: { id: true, name: true, email: true, avatarUrl: true } },
+  // Shop branding for the customer-side invite card — logo + banner
+  // render the inviting shop visually so the card is recognisable at a
+  // glance, not just a string of text.
+  shop: {
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      logoUrl: true,
+      bannerUrl: true,
+    },
+  },
   party: { select: { id: true, name: true, email: true } },
   vendor: { select: { id: true, name: true, email: true } },
 } satisfies Prisma.InvitationSelect;

@@ -6,15 +6,26 @@ import 'package:shopxy_customer/features/addresses/presentation/pages/edit_addre
 import 'package:shopxy_customer/features/addresses/presentation/providers/addresses_provider.dart';
 import 'package:shopxy_customer/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:shopxy_customer/features/notifications/presentation/pages/notifications_page.dart';
+import 'package:shopxy_customer/features/search/presentation/pages/search_page.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 
 class HomeTopBar extends StatelessWidget {
-  const HomeTopBar({super.key});
+  const HomeTopBar({super.key, this.shrink = 0.0});
+
+  /// 0.0 = fully expanded (brand row + location pill below), 1.0 =
+  /// fully collapsed (only the brand row, now with compact city +
+  /// search substitutes that have faded in beside the bell).
+  final double shrink;
 
   @override
   Widget build(BuildContext context) {
+    // Ease the visibility so the compact substitutes finish fading in
+    // before the user has scrolled too far — linear `t` would feel
+    // sluggish at the top of the curve.
+    final t = Curves.easeOut.transform(shrink.clamp(0.0, 1.0));
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSizes.lg,
@@ -28,6 +39,32 @@ class HomeTopBar extends StatelessWidget {
             children: [
               const _BrandWordmark(),
               const Spacer(),
+              // Compact substitutes fade in (and claim width) as the
+              // full-row pill + search bar collapse away below.
+              Consumer<AddressesProvider>(
+                builder: (context, addr, _) {
+                  final defaultAddr = addr.defaultAddress;
+                  final city = defaultAddr?.city ?? 'New Delhi';
+                  return _CollapsedSlot(
+                    t: t,
+                    fullWidth: 110,
+                    child: _CompactCityChip(
+                      city: city,
+                      onTap: () => _showAddressSheet(context),
+                    ),
+                  );
+                },
+              ),
+              _CollapsedSlot(
+                t: t,
+                fullWidth: 44,
+                child: _TopBarIcon(
+                  icon: Icons.search_rounded,
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const SearchPage()),
+                  ),
+                ),
+              ),
               Selector<NotificationsProvider, int>(
                 selector: (_, p) => p.unread,
                 builder: (_, unread, _) => _TopBarIcon(
@@ -40,20 +77,112 @@ class HomeTopBar extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: AppSizes.md),
-          Consumer<AddressesProvider>(
-            builder: (context, addr, _) {
-              final defaultAddr = addr.defaultAddress;
-              final cityLine = defaultAddr == null
-                  ? 'New Delhi 110001'
-                  : '${defaultAddr.city} ${defaultAddr.pincode}';
-              return _LocationPill(
-                cityLine: cityLine,
-                onTap: () => _showAddressSheet(context),
-              );
-            },
+          // The location pill collapses (height + opacity + the
+          // separator above it) as `t` -> 1. ClipRect ensures the
+          // collapsing content doesn't bleed visually.
+          ClipRect(
+            child: Align(
+              alignment: Alignment.topCenter,
+              heightFactor: (1 - t).clamp(0.0, 1.0),
+              child: Opacity(
+                opacity: (1 - t).clamp(0.0, 1.0),
+                child: Padding(
+                  padding: const EdgeInsets.only(top: AppSizes.md),
+                  child: Consumer<AddressesProvider>(
+                    builder: (context, addr, _) {
+                      final defaultAddr = addr.defaultAddress;
+                      final cityLine = defaultAddr == null
+                          ? 'New Delhi 110001'
+                          : '${defaultAddr.city} ${defaultAddr.pincode}';
+                      return _LocationPill(
+                        cityLine: cityLine,
+                        onTap: () => _showAddressSheet(context),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Wraps a brand-row substitute so it claims no width when invisible
+/// (at t=0) and full width when fully faded in (at t=1). Using
+/// Opacity alone would leave a phantom gap when collapsed.
+class _CollapsedSlot extends StatelessWidget {
+  const _CollapsedSlot({
+    required this.t,
+    required this.fullWidth,
+    required this.child,
+  });
+  final double t;
+  final double fullWidth;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (t <= 0) return const SizedBox.shrink();
+    return Padding(
+      padding: EdgeInsets.only(right: AppSizes.xs * t),
+      child: ClipRect(
+        child: Align(
+          alignment: Alignment.centerRight,
+          widthFactor: t,
+          child: Opacity(opacity: t, child: child),
+        ),
+      ),
+    );
+  }
+}
+
+class _CompactCityChip extends StatelessWidget {
+  const _CompactCityChip({required this.city, required this.onTap});
+  final String city;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        height: 38,
+        padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm),
+        decoration: ShapeDecoration(
+          color: AppColors.white,
+          shape: AppShapes.squircle(
+            AppSizes.radiusMd,
+            side: const BorderSide(color: AppColors.hairline, width: 0.6),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.location_on_rounded,
+              color: AppColors.brand,
+              size: 14,
+            ),
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(
+                city,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: AppColors.black,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.1,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

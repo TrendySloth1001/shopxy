@@ -8,7 +8,12 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 
 class HomeSearchBar extends StatefulWidget {
-  const HomeSearchBar({super.key});
+  const HomeSearchBar({super.key, this.shrink = 0.0});
+
+  /// 0.0 = fully visible, 1.0 = collapsed to zero height. Driven by
+  /// the home page's scroll offset so the bar shrinks into the brand
+  /// row's compact search icon as the user scrolls.
+  final double shrink;
 
   @override
   State<HomeSearchBar> createState() => _HomeSearchBarState();
@@ -37,6 +42,21 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
 
   @override
   Widget build(BuildContext context) {
+    final t = Curves.easeOut.transform(widget.shrink.clamp(0.0, 1.0));
+    final visible = (1 - t).clamp(0.0, 1.0);
+    return ClipRect(
+      child: Align(
+        alignment: Alignment.topCenter,
+        heightFactor: visible,
+        child: Opacity(
+          opacity: visible,
+          child: _buildPill(context),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPill(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSizes.lg,
