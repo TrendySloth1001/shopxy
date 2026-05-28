@@ -4,9 +4,15 @@ import 'package:shopxy_customer/features/addresses/domain/entities/user_address.
 import 'package:shopxy_customer/features/addresses/presentation/pages/addresses_page.dart';
 import 'package:shopxy_customer/features/addresses/presentation/pages/edit_address_page.dart';
 import 'package:shopxy_customer/features/addresses/presentation/providers/addresses_provider.dart';
+import 'package:shopxy_customer/core/network/image_url.dart';
+import 'package:shopxy_customer/features/auth/presentation/providers/auth_provider.dart';
+import 'package:shopxy_customer/features/home/presentation/widgets/network_image_box.dart';
 import 'package:shopxy_customer/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:shopxy_customer/features/notifications/presentation/pages/notifications_page.dart';
+import 'package:shopxy_customer/features/profile/presentation/pages/profile_page.dart';
 import 'package:shopxy_customer/features/search/presentation/pages/search_page.dart';
+import 'package:shopxy_customer/features/shops/domain/entities/linked_shop.dart';
+import 'package:shopxy_customer/features/shops/presentation/providers/shops_provider.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
@@ -74,6 +80,29 @@ class HomeTopBar extends StatelessWidget {
                     MaterialPageRoute(builder: (_) => const NotificationsPage()),
                   ),
                 ),
+              ),
+              // Profile button moves here when the customer is linked
+              // to at least one merchant (shop-side party link). In
+              // that layout the bottom nav drops the Profile tab in
+              // favour of Merchant, so the affordance lives next to
+              // the bell instead. Unlinked customers don't render this
+              // — Profile is still reachable via the bottom nav.
+              Selector<ShopsProvider, bool>(
+                selector: (_, p) =>
+                    p.shops.any((s) => s.role == ShopRole.party),
+                builder: (_, linked, _) {
+                  if (!linked) return const SizedBox.shrink();
+                  return Padding(
+                    padding: const EdgeInsets.only(left: AppSizes.xs),
+                    child: _ProfileButton(
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const CustomerProfilePage(),
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
             ],
           ),
@@ -687,5 +716,68 @@ class _TopBarIcon extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// Tappable avatar that opens the customer profile page. Rendered next
+/// to the notification bell when the customer is linked to at least
+/// one merchant — in that layout the bottom nav drops Profile in
+/// favour of Merchant, so this is where the user reaches it.
+class _ProfileButton extends StatelessWidget {
+  const _ProfileButton({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Selector<AuthProvider, ({String? name, String? avatarUrl})>(
+        selector: (_, a) =>
+            (name: a.user?.name, avatarUrl: a.user?.avatarUrl),
+        builder: (_, u, _) {
+          final hasAvatar =
+              u.avatarUrl != null && u.avatarUrl!.isNotEmpty;
+          return Container(
+            width: 38,
+            height: 38,
+            decoration: ShapeDecoration(
+              color: AppColors.white,
+              shape: AppShapes.squircle(
+                AppSizes.radiusMd,
+                side: const BorderSide(
+                  color: AppColors.hairline,
+                  width: 0.6,
+                ),
+              ),
+            ),
+            padding: const EdgeInsets.all(2),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(AppSizes.radiusSm),
+              child: hasAvatar
+                  ? NetworkImageBox(url: resolveImageUrl(u.avatarUrl!))
+                  : Container(
+                      color: AppColors.brandSoft,
+                      alignment: Alignment.center,
+                      child: Text(
+                        _initial(u.name),
+                        style: const TextStyle(
+                          color: AppColors.brand,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
+                          height: 1,
+                        ),
+                      ),
+                    ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  static String _initial(String? name) {
+    if (name == null || name.trim().isEmpty) return '?';
+    return name.trim().substring(0, 1).toUpperCase();
   }
 }

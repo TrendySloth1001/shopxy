@@ -6,6 +6,9 @@ import 'package:shopxy_customer/features/catalog/presentation/providers/cart_pro
 import 'package:shopxy_customer/features/home/presentation/pages/home_page.dart';
 import 'package:shopxy_customer/features/orders/presentation/pages/my_orders_page.dart';
 import 'package:shopxy_customer/features/profile/presentation/pages/profile_page.dart';
+import 'package:shopxy_customer/features/shops/domain/entities/linked_shop.dart';
+import 'package:shopxy_customer/features/shops/presentation/pages/my_shops_page.dart';
+import 'package:shopxy_customer/features/shops/presentation/providers/shops_provider.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/constants/app_strings.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
@@ -55,12 +58,27 @@ class _CustomerShellState extends State<CustomerShell> {
   /// isolation — the IndexedStack underneath doesn't tear down.
   final _navVisible = ValueNotifier<bool>(true);
 
-  final _pages = const [
+  /// Tracked so we can detect when linkage changes (e.g. user accepts
+  /// an invite mid-session) and snap back to Home — without this, the
+  /// same _currentIndex would silently point at a different page.
+  bool? _lastLinked;
+
+  static const List<Widget> _linkedPages = [
+    HomePage(),
+    MyShopsPage(),
+    CartPage(embedded: true),
+    MyOrdersPage(),
+  ];
+
+  static const List<Widget> _unlinkedPages = [
     HomePage(),
     CartPage(embedded: true),
     MyOrdersPage(),
     CustomerProfilePage(),
   ];
+
+  bool _hasLinkedMerchant(List<LinkedShop> shops) =>
+      shops.any((s) => s.role == ShopRole.party);
 
   void _select(int i) {
     if (i == _currentIndex) {
@@ -104,36 +122,59 @@ class _CustomerShellState extends State<CustomerShell> {
       bottom: basePadding.bottom + _kNavFootprint,
     );
 
-    return CustomerShellScope(
-      index: _currentIndex,
-      select: _select,
-      child: Scaffold(
-        backgroundColor: AppColors.canvas,
-        body: NotificationListener<ScrollNotification>(
-          onNotification: _onScroll,
-          child: Stack(
-            children: [
-              MediaQuery(
-                data: MediaQuery.of(context).copyWith(padding: extendedPadding),
-                child: IndexedStack(
-                  index: _currentIndex,
-                  children: _pages,
-                ),
+    // Selector — only rebuilds when linkage state actually flips, not
+    // on every shop-list refresh.
+    return Selector<ShopsProvider, bool>(
+      selector: (_, p) => _hasLinkedMerchant(p.shops),
+      builder: (context, linked, _) {
+        // Linkage flipped during the session — snap back to Home so
+        // the user isn't dropped onto a tab whose meaning just
+        // shifted under them.
+        if (_lastLinked != null &&
+            _lastLinked != linked &&
+            _currentIndex != 0) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) setState(() => _currentIndex = 0);
+          });
+        }
+        _lastLinked = linked;
+
+        final pages = linked ? _linkedPages : _unlinkedPages;
+
+        return CustomerShellScope(
+          index: _currentIndex,
+          select: _select,
+          child: Scaffold(
+            backgroundColor: AppColors.canvas,
+            body: NotificationListener<ScrollNotification>(
+              onNotification: _onScroll,
+              child: Stack(
+                children: [
+                  MediaQuery(
+                    data: MediaQuery.of(context)
+                        .copyWith(padding: extendedPadding),
+                    child: IndexedStack(
+                      index: _currentIndex,
+                      children: pages,
+                    ),
+                  ),
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: _FloatingNav(
+                      currentIndex: _currentIndex,
+                      onSelect: _select,
+                      visible: _navVisible,
+                      linked: linked,
+                    ),
+                  ),
+                ],
               ),
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: _FloatingNav(
-                  currentIndex: _currentIndex,
-                  onSelect: _select,
-                  visible: _navVisible,
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -150,10 +191,12 @@ class _FloatingNav extends StatelessWidget {
     required this.currentIndex,
     required this.onSelect,
     required this.visible,
+    required this.linked,
   });
   final int currentIndex;
   final ValueChanged<int> onSelect;
   final ValueNotifier<bool> visible;
+  final bool linked;
 
   @override
   Widget build(BuildContext context) {
@@ -180,6 +223,7 @@ class _FloatingNav extends StatelessWidget {
                 child: _NavPill(
                   currentIndex: currentIndex,
                   onSelect: onSelect,
+                  linked: linked,
                 ),
               ),
             ),
@@ -191,36 +235,52 @@ class _FloatingNav extends StatelessWidget {
 }
 
 class _NavPill extends StatelessWidget {
-  const _NavPill({required this.currentIndex, required this.onSelect});
+  const _NavPill({
+    required this.currentIndex,
+    required this.onSelect,
+    required this.linked,
+  });
   final int currentIndex;
   final ValueChanged<int> onSelect;
+  final bool linked;
 
-  static const _items = <_NavItem>[
-    _NavItem(
-      icon: Icons.home_outlined,
-      selectedIcon: Icons.home_rounded,
-      label: AppStrings.navHome,
-    ),
-    _NavItem(
-      icon: Icons.shopping_cart_outlined,
-      selectedIcon: Icons.shopping_cart_rounded,
-      label: AppStrings.navCart,
-      isCart: true,
-    ),
-    _NavItem(
-      icon: Icons.receipt_long_outlined,
-      selectedIcon: Icons.receipt_long_rounded,
-      label: 'Orders',
-    ),
-    _NavItem(
-      icon: Icons.person_outline_rounded,
-      selectedIcon: Icons.person_rounded,
-      label: AppStrings.navProfile,
-    ),
-  ];
+  static const _home = _NavItem(
+    icon: Icons.home_outlined,
+    selectedIcon: Icons.home_rounded,
+    label: AppStrings.navHome,
+  );
+  static const _merchant = _NavItem(
+    icon: Icons.storefront_outlined,
+    selectedIcon: Icons.storefront_rounded,
+    label: 'Merchant',
+  );
+  static const _cart = _NavItem(
+    icon: Icons.shopping_cart_outlined,
+    selectedIcon: Icons.shopping_cart_rounded,
+    label: AppStrings.navCart,
+    isCart: true,
+  );
+  static const _orders = _NavItem(
+    icon: Icons.receipt_long_outlined,
+    selectedIcon: Icons.receipt_long_rounded,
+    label: 'Orders',
+  );
+  static const _profile = _NavItem(
+    icon: Icons.person_outline_rounded,
+    selectedIcon: Icons.person_rounded,
+    label: AppStrings.navProfile,
+  );
+
+  /// When the user has at least one linked merchant the Merchant tab
+  /// takes the index-1 slot and the Profile entry moves to the home
+  /// top bar (rendered separately). Unlinked customers see the
+  /// original layout where Profile lives in the bottom nav.
+  static const _linkedItems = <_NavItem>[_home, _merchant, _cart, _orders];
+  static const _unlinkedItems = <_NavItem>[_home, _cart, _orders, _profile];
 
   @override
   Widget build(BuildContext context) {
+    final items = linked ? _linkedItems : _unlinkedItems;
     return Container(
       decoration: ShapeDecoration(
         color: AppColors.white,
@@ -243,9 +303,9 @@ class _NavPill extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            for (var i = 0; i < _items.length; i++)
+            for (var i = 0; i < items.length; i++)
               _NavCell(
-                item: _items[i],
+                item: items[i],
                 selected: i == currentIndex,
                 onTap: () => onSelect(i),
               ),
