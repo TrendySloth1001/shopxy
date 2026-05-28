@@ -725,19 +725,38 @@ class _CategoryCapsuleBlock extends StatelessWidget {
               ],
             ),
             const SizedBox(height: AppSizes.sm),
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: block.products.length,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 4,
-                mainAxisSpacing: AppSizes.sm,
-                crossAxisSpacing: AppSizes.sm,
-                // Square image (1:1) + 2-line body (name + price) needs
-                // ~55% headroom under the image at 4-col tile widths.
-                childAspectRatio: 0.55,
-              ),
-              itemBuilder: (_, i) => _CapsuleTile(product: block.products[i]),
+            // Compute tile height from the actual width — the text
+            // portion under the image is a constant (~36px: 4 + 13 + 2
+            // + 17), not a multiple of width, so a fixed
+            // childAspectRatio can't be right on all screens. We
+            // measure the available width, derive the per-tile width,
+            // and pass an exact mainAxisExtent. Items are capped at 4
+            // (one row) — the upstream feed already returns 4, but the
+            // cap defends against any future feed change leaving extra
+            // empty rows.
+            LayoutBuilder(
+              builder: (context, c) {
+                const cols = 4;
+                const spacing = AppSizes.sm;
+                final tileW = (c.maxWidth - (cols - 1) * spacing) / cols;
+                final tileH = tileW + 40; // 4 + 13 + 2 + 17 + 4 safety
+                final count = block.products.length > cols
+                    ? cols
+                    : block.products.length;
+                return GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: count,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: cols,
+                    mainAxisSpacing: spacing,
+                    crossAxisSpacing: spacing,
+                    mainAxisExtent: tileH,
+                  ),
+                  itemBuilder: (_, i) =>
+                      _CapsuleTile(product: block.products[i]),
+                );
+              },
             ),
           ],
         ),
@@ -1699,17 +1718,29 @@ class _ShopShowcaseBlock extends StatelessWidget {
               ],
             ),
             const SizedBox(height: AppSizes.md),
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: block.products.length,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 4,
-                mainAxisSpacing: AppSizes.sm,
-                crossAxisSpacing: AppSizes.sm,
-                childAspectRatio: 0.55,
-              ),
-              itemBuilder: (_, i) => _CapsuleTile(product: block.products[i]),
+            LayoutBuilder(
+              builder: (context, c) {
+                const cols = 4;
+                const spacing = AppSizes.sm;
+                final tileW = (c.maxWidth - (cols - 1) * spacing) / cols;
+                final tileH = tileW + 40;
+                final count = block.products.length > cols
+                    ? cols
+                    : block.products.length;
+                return GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: count,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: cols,
+                    mainAxisSpacing: spacing,
+                    crossAxisSpacing: spacing,
+                    mainAxisExtent: tileH,
+                  ),
+                  itemBuilder: (_, i) =>
+                      _CapsuleTile(product: block.products[i]),
+                );
+              },
             ),
           ],
         ),
