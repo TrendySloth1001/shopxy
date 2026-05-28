@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy_customer/core/network/image_url.dart';
+import 'package:shopxy_customer/features/home/presentation/widgets/network_image_box.dart';
 import 'package:shopxy_customer/features/notifications/presentation/pages/invitations_page.dart';
 import 'package:shopxy_customer/features/notifications/presentation/providers/notifications_provider.dart';
-import 'package:shopxy_customer/features/notifications/presentation/widgets/notification_bell.dart';
 import 'package:shopxy_customer/features/shops/domain/entities/linked_shop.dart';
 import 'package:shopxy_customer/features/shops/presentation/pages/shop_invoices_page.dart';
 import 'package:shopxy_customer/features/shops/presentation/providers/shops_provider.dart';
@@ -11,6 +13,17 @@ import 'package:shopxy_customer/shared/constants/app_strings.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 
+/// Customer-side "Merchants" tab (index 1 once the user is linked).
+/// Single screen, three layers stacked vertically:
+///
+///   1. Hero header     — page identity + count
+///   2. Summary strip   — at-a-glance stats incl. unread invitations
+///   3. Filter + list   — role filter (when both roles present) +
+///                        rich merchant cards sorted by activity
+///
+/// Pending invitations are intentionally NOT shown inline here; the
+/// home tab surfaces them and the bell + summary chip link to the
+/// dedicated InvitationsPage.
 class MyShopsPage extends StatefulWidget {
   const MyShopsPage({super.key});
 
@@ -18,7 +31,11 @@ class MyShopsPage extends StatefulWidget {
   State<MyShopsPage> createState() => _MyShopsPageState();
 }
 
+enum _RoleFilter { all, customer, supplier }
+
 class _MyShopsPageState extends State<MyShopsPage> {
+  _RoleFilter _filter = _RoleFilter.all;
+
   @override
   void initState() {
     super.initState();
@@ -32,279 +49,910 @@ class _MyShopsPageState extends State<MyShopsPage> {
   @override
   Widget build(BuildContext context) {
     final p = context.watch<ShopsProvider>();
+    final unread = context.select<NotificationsProvider, int>(
+      (n) => n.pendingIncoming.length,
+    );
+
+    // Most-active first so users land on their live relationships.
+    // Shops without invoices fall to the bottom (sorted by name).
+    final sorted = [...p.shops]..sort((a, b) {
+        final aT = a.lastInvoiceAt;
+        final bT = b.lastInvoiceAt;
+        if (aT == null && bT == null) return a.name.compareTo(b.name);
+        if (aT == null) return 1;
+        if (bT == null) return -1;
+        return bT.compareTo(aT);
+      });
+
+    final visible = sorted.where(_matchesFilter).toList(growable: false);
+    final partyCount = sorted.where((s) => s.role == ShopRole.party).length;
+    final supplierCount = sorted.length - partyCount;
+    final showFilter = partyCount > 0 && supplierCount > 0;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(AppStrings.myShops),
-        actions: [
-          const NotificationBell(),
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            onPressed: p.loadShops,
+      backgroundColor: AppColors.canvas,
+      body: SafeArea(
+        bottom: false,
+        child: RefreshIndicator(
+          onRefresh: p.loadShops,
+          color: AppColors.brand,
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              _HeroHeader(
+                count: sorted.length,
+                isLoading: p.isLoading && sorted.isEmpty,
+              ),
+              if (p.isLoading && sorted.isEmpty)
+                const _SkeletonList()
+              else if (p.error != null && sorted.isEmpty)
+                _ErrorBlock(error: p.error!, onRetry: p.loadShops)
+              else if (sorted.isEmpty)
+                const _EmptyShops()
+              else ...[
+                if (unread > 0)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSizes.lg,
+                      AppSizes.md,
+                      AppSizes.lg,
+                      0,
+                    ),
+                    child: _InvitesBanner(
+                      count: unread,
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const InvitationsPage(),
+                        ),
+                      ),
+                    ),
+                  ),
+                if (showFilter)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSizes.lg,
+                      AppSizes.md,
+                      AppSizes.lg,
+                      0,
+                    ),
+                    child: _RoleFilterChips(
+                      filter: _filter,
+                      onChanged: (f) => setState(() => _filter = f),
+                      partyCount: partyCount,
+                      supplierCount: supplierCount,
+                    ),
+                  ),
+                const SizedBox(height: AppSizes.md),
+                for (final s in visible)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSizes.lg,
+                      0,
+                      AppSizes.lg,
+                      AppSizes.md,
+                    ),
+                    child: _ShopCard(shop: s),
+                  ),
+                if (visible.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSizes.lg,
+                      vertical: AppSizes.xl,
+                    ),
+                    child: Center(
+                      child: Text(
+                        _filter == _RoleFilter.customer
+                            ? 'No customer links yet.'
+                            : 'No supplier links yet.',
+                        style: const TextStyle(
+                          color: AppColors.muted,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: AppSizes.huge),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  bool _matchesFilter(LinkedShop s) {
+    return switch (_filter) {
+      _RoleFilter.all => true,
+      _RoleFilter.customer => s.role == ShopRole.party,
+      _RoleFilter.supplier => s.role == ShopRole.vendor,
+    };
+  }
+}
+
+// ── Hero header ────────────────────────────────────────────────────
+
+class _HeroHeader extends StatelessWidget {
+  const _HeroHeader({required this.count, required this.isLoading});
+  final int count;
+  final bool isLoading;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: AppColors.hairline, width: 0.6),
+        ),
+      ),
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.lg,
+        AppSizes.lg,
+        AppSizes.md,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'YOUR MERCHANTS',
+            style: TextStyle(
+              color: AppColors.brand,
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.4,
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Merchants',
+            style: TextStyle(
+              color: AppColors.black,
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.6,
+              height: 1.1,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            isLoading
+                ? 'Loading your linked merchants…'
+                : count == 0
+                    ? 'Shops that have linked you appear here.'
+                    : '$count linked ${count == 1 ? 'merchant' : 'merchants'}',
+            style: const TextStyle(
+              color: AppColors.muted,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: p.loadShops,
-        color: AppColors.brand,
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            const _PendingInviteCallout(),
-            if (p.isLoading && p.shops.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(AppSizes.xxxl),
-                child: Center(child: CircularProgressIndicator()),
-              )
-            else if (p.error != null && p.shops.isEmpty)
-              _ErrorBlock(error: p.error!, onRetry: p.loadShops)
-            else if (p.shops.isEmpty)
-              const _EmptyShops()
-            else ...[
-              const SizedBox(height: AppSizes.sm),
-              for (final s in p.shops) _ShopTile(shop: s),
-              const SizedBox(height: AppSizes.huge),
-            ],
-          ],
-        ),
       ),
     );
   }
 }
 
-class _ShopTile extends StatelessWidget {
-  const _ShopTile({required this.shop});
-  final LinkedShop shop;
+// ── Pending-invites banner ────────────────────────────────────────
+//
+// Only renders when the user has unanswered invitations. Acts as a
+// teaser/tap-through to InvitationsPage — the full Accept/Decline UI
+// lives on the home tab and the dedicated page.
+
+class _InvitesBanner extends StatelessWidget {
+  const _InvitesBanner({required this.count, required this.onTap});
+  final int count;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isParty = shop.role == ShopRole.party;
-    final accent = isParty ? AppColors.accentRose : AppColors.accentIndigo;
-    final accentSoft = isParty ? AppColors.accentRoseSoft : AppColors.accentIndigoSoft;
-    final roleLabel = isParty ? AppStrings.roleCustomer : AppStrings.roleSupplier;
-
-    return InkWell(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => ShopInvoicesPage(shop: shop)),
-      ),
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
       child: Container(
-        decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: AppColors.hairline)),
-        ),
         padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.lg,
-          vertical: AppSizes.md,
+          horizontal: AppSizes.md,
+          vertical: AppSizes.sm + 2,
+        ),
+        decoration: ShapeDecoration(
+          color: AppColors.brandSoft,
+          shape: AppShapes.squircle(
+            AppSizes.radiusMd,
+            side: const BorderSide(color: AppColors.brand, width: 0.8),
+          ),
         ),
         child: Row(
           children: [
             Container(
-              width: 46,
-              height: 46,
-              decoration: ShapeDecoration(
-                color: accentSoft,
-                shape: AppShapes.squircle(AppSizes.radiusMd),
+              width: 28,
+              height: 28,
+              decoration: const BoxDecoration(
+                color: AppColors.brand,
+                shape: BoxShape.circle,
               ),
               alignment: Alignment.center,
+              child: const Icon(
+                Icons.mark_email_unread_rounded,
+                color: AppColors.white,
+                size: 14,
+              ),
+            ),
+            const SizedBox(width: AppSizes.sm + 2),
+            Expanded(
               child: Text(
-                shop.name.isEmpty ? '?' : shop.name[0].toUpperCase(),
-                style: TextStyle(
-                  color: accent,
+                count == 1
+                    ? '1 pending invitation'
+                    : '$count pending invitations',
+                style: const TextStyle(
+                  color: AppColors.brandStrong,
+                  fontSize: 13,
                   fontWeight: FontWeight.w800,
-                  fontSize: 18,
+                  letterSpacing: -0.1,
                 ),
               ),
             ),
-            const SizedBox(width: AppSizes.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    shop.name,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                        decoration: ShapeDecoration(
-                          color: accentSoft,
-                          shape: AppShapes.squircle(AppSizes.radiusFull),
-                        ),
-                        child: Text(
-                          roleLabel,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: accent,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.4,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: AppSizes.sm),
-                      Expanded(
-                        child: Text(
-                          shop.invoiceCount == 0
-                              ? 'No invoices yet'
-                              : '${shop.invoiceCount} ${shop.invoiceCount == 1 ? "invoice" : "invoices"}',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: AppColors.muted,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.brandStrong,
+              size: 20,
             ),
-            const Icon(Icons.chevron_right_rounded, color: AppColors.subtle),
           ],
         ),
       ),
     );
   }
 }
+
+// ── Role filter ────────────────────────────────────────────────────
+
+class _RoleFilterChips extends StatelessWidget {
+  const _RoleFilterChips({
+    required this.filter,
+    required this.onChanged,
+    required this.partyCount,
+    required this.supplierCount,
+  });
+  final _RoleFilter filter;
+  final ValueChanged<_RoleFilter> onChanged;
+  final int partyCount;
+  final int supplierCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        _Chip(
+          label: 'All',
+          selected: filter == _RoleFilter.all,
+          onTap: () => onChanged(_RoleFilter.all),
+        ),
+        const SizedBox(width: AppSizes.xs),
+        _Chip(
+          label: 'Customer · $partyCount',
+          selected: filter == _RoleFilter.customer,
+          onTap: () => onChanged(_RoleFilter.customer),
+        ),
+        const SizedBox(width: AppSizes.xs),
+        _Chip(
+          label: 'Supplier · $supplierCount',
+          selected: filter == _RoleFilter.supplier,
+          onTap: () => onChanged(_RoleFilter.supplier),
+        ),
+      ],
+    );
+  }
+}
+
+class _Chip extends StatelessWidget {
+  const _Chip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSizes.md,
+          vertical: 7,
+        ),
+        decoration: ShapeDecoration(
+          color: selected ? AppColors.brand : AppColors.white,
+          shape: AppShapes.squircle(
+            AppSizes.radiusFull,
+            side: BorderSide(
+              color: selected ? AppColors.brand : AppColors.hairline,
+              width: 0.6,
+            ),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: selected ? AppColors.white : AppColors.muted,
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.1,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Shop card ──────────────────────────────────────────────────────
+
+class _ShopCard extends StatelessWidget {
+  const _ShopCard({required this.shop});
+  final LinkedShop shop;
+
+  @override
+  Widget build(BuildContext context) {
+    final money = NumberFormat.currency(
+      symbol: AppStrings.currencySymbol,
+      decimalDigits: 0,
+    );
+    final displayName = shop.shopName ?? shop.name;
+    final isParty = shop.role == ShopRole.party;
+    final roleLabel = isParty
+        ? AppStrings.roleCustomer
+        : AppStrings.roleSupplier;
+
+    return Material(
+      color: AppColors.white,
+      shape: AppShapes.squircle(
+        AppSizes.radiusLg,
+        side: const BorderSide(color: AppColors.hairline, width: 0.8),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => ShopInvoicesPage(shop: shop)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _CardBanner(bannerUrl: shop.shopBannerUrl),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSizes.md,
+                0,
+                AppSizes.md,
+                AppSizes.md,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Transform.translate(
+                    offset: const Offset(0, -22),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _ShopLogo(
+                          logoUrl: shop.shopLogoUrl,
+                          fallbackInitial: _initial(displayName),
+                        ),
+                        const SizedBox(width: AppSizes.sm + 2),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 28),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  displayName,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: AppColors.black,
+                                    fontSize: 15.5,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: -0.2,
+                                    height: 1.2,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    _RolePill(label: roleLabel),
+                                    const SizedBox(width: AppSizes.xs + 2),
+                                    Text(
+                                      '·',
+                                      style: TextStyle(
+                                        color: AppColors.disabled,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                    const SizedBox(width: AppSizes.xs + 2),
+                                    Flexible(
+                                      child: Text(
+                                        shop.invoiceCount == 0
+                                            ? 'No invoices yet'
+                                            : '${shop.invoiceCount} ${shop.invoiceCount == 1 ? 'invoice' : 'invoices'}',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          color: AppColors.muted,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Pull the activity row up so the negative-offset
+                  // logo doesn't leave a hollow gap below the title
+                  // block.
+                  Transform.translate(
+                    offset: const Offset(0, -16),
+                    child: _ActivityRow(
+                      shop: shop,
+                      money: money,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static String _initial(String name) {
+    if (name.trim().isEmpty) return '?';
+    return name.trim().substring(0, 1).toUpperCase();
+  }
+}
+
+class _CardBanner extends StatelessWidget {
+  const _CardBanner({required this.bannerUrl});
+  final String? bannerUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasBanner = bannerUrl != null && bannerUrl!.isNotEmpty;
+    return SizedBox(
+      height: 78,
+      child: hasBanner
+          ? Stack(
+              children: [
+                Positioned.fill(
+                  child: NetworkImageBox(url: resolveImageUrl(bannerUrl!)),
+                ),
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          AppColors.black.withValues(alpha: 0.18),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            )
+          : Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [AppColors.brandSoft, AppColors.heroPanel],
+                ),
+              ),
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.only(right: AppSizes.lg),
+              child: const Icon(
+                Icons.storefront_rounded,
+                color: AppColors.brand,
+                size: 30,
+              ),
+            ),
+    );
+  }
+}
+
+class _ShopLogo extends StatelessWidget {
+  const _ShopLogo({required this.logoUrl, required this.fallbackInitial});
+  final String? logoUrl;
+  final String fallbackInitial;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasLogo = logoUrl != null && logoUrl!.isNotEmpty;
+    return Container(
+      width: 56,
+      height: 56,
+      decoration: ShapeDecoration(
+        color: AppColors.white,
+        shape: AppShapes.squircle(
+          AppSizes.radiusMd,
+          side: const BorderSide(color: AppColors.hairline, width: 0.8),
+        ),
+      ),
+      padding: const EdgeInsets.all(3),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppSizes.radiusSm),
+        child: hasLogo
+            ? NetworkImageBox(url: resolveImageUrl(logoUrl!))
+            : Container(
+                color: AppColors.brandSoft,
+                alignment: Alignment.center,
+                child: Text(
+                  fallbackInitial,
+                  style: const TextStyle(
+                    color: AppColors.brand,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+      ),
+    );
+  }
+}
+
+class _RolePill extends StatelessWidget {
+  const _RolePill({required this.label});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: ShapeDecoration(
+        color: AppColors.brandSoft,
+        shape: AppShapes.squircle(AppSizes.radiusFull),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: AppColors.brand,
+          fontSize: 10,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.4,
+        ),
+      ),
+    );
+  }
+}
+
+class _ActivityRow extends StatelessWidget {
+  const _ActivityRow({required this.shop, required this.money});
+  final LinkedShop shop;
+  final NumberFormat money;
+
+  @override
+  Widget build(BuildContext context) {
+    final lastAt = shop.lastInvoiceAt;
+    final hasActivity = lastAt != null;
+    return Row(
+      children: [
+        Expanded(
+          child: Row(
+            children: [
+              Icon(
+                hasActivity
+                    ? Icons.receipt_long_rounded
+                    : Icons.access_time_rounded,
+                size: 13,
+                color: AppColors.muted,
+              ),
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  hasActivity
+                      ? 'Last invoice · ${_formatDate(lastAt)}'
+                          '${shop.lastInvoiceTotal != null ? ' · ${money.format(shop.lastInvoiceTotal)}' : ''}'
+                      : 'No activity yet',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppColors.muted,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Container(
+          width: 26,
+          height: 26,
+          decoration: const BoxDecoration(
+            color: AppColors.heroPanel,
+            shape: BoxShape.circle,
+          ),
+          alignment: Alignment.center,
+          child: const Icon(
+            Icons.arrow_forward_rounded,
+            color: AppColors.black,
+            size: 14,
+          ),
+        ),
+      ],
+    );
+  }
+
+  static String _formatDate(DateTime t) {
+    final now = DateTime.now();
+    final diff = now.difference(t);
+    if (diff.inMinutes < 1) return 'just now';
+    if (diff.inHours < 1) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    if (diff.inDays < 7) return '${diff.inDays}d ago';
+    if (now.year == t.year) return DateFormat('d MMM').format(t);
+    return DateFormat('d MMM yyyy').format(t);
+  }
+}
+
+// ── Skeleton (loading) ─────────────────────────────────────────────
+
+class _SkeletonList extends StatelessWidget {
+  const _SkeletonList();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.md,
+        AppSizes.lg,
+        0,
+      ),
+      child: Column(
+        children: List.generate(3, (_) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: AppSizes.md),
+            child: Container(
+              height: 168,
+              decoration: ShapeDecoration(
+                color: AppColors.white,
+                shape: AppShapes.squircle(
+                  AppSizes.radiusLg,
+                  side: const BorderSide(
+                    color: AppColors.hairline,
+                    width: 0.8,
+                  ),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    height: 78,
+                    decoration: const BoxDecoration(color: AppColors.heroPanel),
+                  ),
+                  const SizedBox(height: AppSizes.md),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSizes.md,
+                    ),
+                    child: Container(
+                      width: 140,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: AppColors.heroPanel,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSizes.sm),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSizes.md,
+                    ),
+                    child: Container(
+                      width: 200,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: AppColors.heroPanel,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+}
+
+// ── Empty state ────────────────────────────────────────────────────
 
 class _EmptyShops extends StatelessWidget {
   const _EmptyShops();
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.all(AppSizes.xxxl),
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.xl,
+        AppSizes.huge,
+        AppSizes.xl,
+        AppSizes.xl,
+      ),
       child: Column(
         children: [
           Container(
-            width: 220,
-            height: 160,
-            alignment: Alignment.center,
-            decoration: ShapeDecoration(
-              color: AppColors.heroPanel,
-              shape: AppShapes.squircle(AppSizes.radiusLg),
+            width: 84,
+            height: 84,
+            decoration: const BoxDecoration(
+              color: AppColors.brandSoft,
+              shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.storefront_outlined,
-                size: 48, color: AppColors.muted),
+            alignment: Alignment.center,
+            child: const Icon(
+              Icons.storefront_outlined,
+              size: 36,
+              color: AppColors.brand,
+            ),
           ),
-          const SizedBox(height: AppSizes.xl),
-          Text(
-            AppStrings.noShopsTitle,
-            style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+          const SizedBox(height: AppSizes.lg),
+          const Text(
+            'No linked merchants yet',
             textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppColors.black,
+              fontSize: 17,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.2,
+            ),
           ),
           const SizedBox(height: AppSizes.xs),
-          Text(
-            AppStrings.noShopsHint,
-            style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted),
+          const Text(
+            'When a shop adds you as a customer, they\'ll appear here '
+            'with all their invoices.',
             textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppColors.muted,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: AppSizes.lg),
+          _PrimaryCta(
+            label: 'View invitations',
+            icon: Icons.mark_email_unread_rounded,
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const InvitationsPage()),
+            ),
           ),
         ],
       ),
     );
   }
 }
+
+class _PrimaryCta extends StatelessWidget {
+  const _PrimaryCta({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.brand,
+      shape: AppShapes.squircle(AppSizes.radiusMd),
+      child: InkWell(
+        onTap: onTap,
+        customBorder: AppShapes.squircle(AppSizes.radiusMd),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.lg,
+            vertical: 11,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: AppColors.white, size: 16),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: AppColors.white,
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.2,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Error state ────────────────────────────────────────────────────
 
 class _ErrorBlock extends StatelessWidget {
   const _ErrorBlock({required this.error, required this.onRetry});
   final String error;
   final VoidCallback onRetry;
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(AppSizes.xxl),
-      child: Column(
-        children: [
-          const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 36),
-          const SizedBox(height: AppSizes.sm),
-          Text(error, textAlign: TextAlign.center),
-          const SizedBox(height: AppSizes.md),
-          FilledButton(onPressed: onRetry, child: const Text(AppStrings.retry)),
-        ],
-      ),
-    );
-  }
-}
-
-class _PendingInviteCallout extends StatelessWidget {
-  const _PendingInviteCallout();
 
   @override
   Widget build(BuildContext context) {
-    final n = context.watch<NotificationsProvider>();
-    final pending = n.pendingIncoming;
-    if (pending.isEmpty) return const SizedBox.shrink();
-
-    final theme = Theme.of(context);
-    final first = pending.first;
-    final shopName = first.fromShopName ?? first.fromUserName ?? 'A shop';
-    final extra = pending.length - 1;
-
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-        AppSizes.lg,
-        AppSizes.md,
-        AppSizes.lg,
-        AppSizes.sm,
+        AppSizes.xl,
+        AppSizes.huge,
+        AppSizes.xl,
+        AppSizes.xl,
       ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(AppSizes.radiusLg),
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const InvitationsPage()),
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(AppSizes.lg),
-          decoration: ShapeDecoration(
-            color: AppColors.brandSoft,
-            shape: AppShapes.squircle(
-              AppSizes.radiusLg,
-              side: const BorderSide(color: AppColors.brand, width: 1),
+      child: Column(
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: const BoxDecoration(
+              color: AppColors.errorSoft,
+              shape: BoxShape.circle,
+            ),
+            alignment: Alignment.center,
+            child: const Icon(
+              Icons.cloud_off_outlined,
+              color: AppColors.error,
+              size: 28,
             ),
           ),
-          child: Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: const BoxDecoration(
-                  color: AppColors.brand,
-                  shape: BoxShape.circle,
-                ),
-                alignment: Alignment.center,
-                child: const Icon(Icons.mark_email_unread_rounded,
-                    color: AppColors.white, size: 18),
-              ),
-              const SizedBox(width: AppSizes.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'You have a pending invitation',
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: AppColors.brandStrong,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      extra > 0
-                          ? '$shopName and $extra other${extra == 1 ? "" : "s"} are waiting for your reply.'
-                          : '$shopName wants to add you. Tap to review.',
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: AppColors.brandStrong),
-                    ),
-                  ],
-                ),
-              ),
-              const Icon(Icons.chevron_right_rounded,
-                  color: AppColors.brandStrong),
-            ],
+          const SizedBox(height: AppSizes.md),
+          const Text(
+            "Couldn't load your merchants",
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppColors.black,
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+            ),
           ),
-        ),
+          const SizedBox(height: AppSizes.xs),
+          Text(
+            error,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: AppColors.muted,
+              fontSize: 12.5,
+              fontWeight: FontWeight.w500,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: AppSizes.lg),
+          _PrimaryCta(
+            label: AppStrings.retry,
+            icon: Icons.refresh_rounded,
+            onTap: onRetry,
+          ),
+        ],
       ),
     );
   }

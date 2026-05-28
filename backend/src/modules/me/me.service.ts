@@ -1,6 +1,23 @@
 import prisma from '../../infra/db/prisma.js';
 import type { Prisma } from '@prisma/client';
 
+// Shop branding (logo/banner/slug) is included so the customer-side
+// "Merchants" tab can render real shop identity instead of an initial
+// chip. The trailing invoice take=1+desc gives us the last-activity
+// timestamp + amount used to sort and label each tile.
+const linkShopSelect = {
+  id: true,
+  name: true,
+  slug: true,
+  logoUrl: true,
+  bannerUrl: true,
+} satisfies Prisma.ShopSelect;
+
+const lastInvoiceSelect = {
+  invoiceDate: true,
+  total: true,
+} satisfies Prisma.InvoiceSelect;
+
 const partySelect = {
   id: true,
   name: true,
@@ -8,6 +25,12 @@ const partySelect = {
   phone: true,
   address: true,
   _count: { select: { invoices: true } },
+  shop: { select: linkShopSelect },
+  invoices: {
+    select: lastInvoiceSelect,
+    orderBy: { invoiceDate: 'desc' as const },
+    take: 1,
+  },
 } satisfies Prisma.PartySelect;
 
 const vendorSelect = {
@@ -17,6 +40,12 @@ const vendorSelect = {
   phone: true,
   address: true,
   _count: { select: { invoices: true } },
+  shop: { select: linkShopSelect },
+  invoices: {
+    select: lastInvoiceSelect,
+    orderBy: { invoiceDate: 'desc' as const },
+    take: 1,
+  },
 } satisfies Prisma.VendorSelect;
 
 const invoiceListSelect = {

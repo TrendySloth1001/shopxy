@@ -158,6 +158,13 @@ void main() async {
   // Restore the cart from disk so a relaunch keeps the user's basket.
   // Independent from auth — anonymous carts survive sign-in.
   cartProvider.restore();
+  // Restore the "was-linked-to-a-merchant" hint from disk so the
+  // bottom-nav layout decision is right on the first paint. Without
+  // this, the shell would render the unlinked layout (Home/Cart/
+  // Orders/Profile), then flip to (Home/Merchant/Cart/Orders) the
+  // moment /me/links resolves — a visible flicker.
+  // ignore: unawaited_futures
+  shopsProvider.restoreHint();
 
   // Single navigator key so the deep-link handler can push routes
   // (PDP for /p/<id>) regardless of the active tab in the shell.

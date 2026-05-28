@@ -6,7 +6,6 @@ import 'package:shopxy_customer/features/catalog/presentation/providers/cart_pro
 import 'package:shopxy_customer/features/home/presentation/pages/home_page.dart';
 import 'package:shopxy_customer/features/orders/presentation/pages/my_orders_page.dart';
 import 'package:shopxy_customer/features/profile/presentation/pages/profile_page.dart';
-import 'package:shopxy_customer/features/shops/domain/entities/linked_shop.dart';
 import 'package:shopxy_customer/features/shops/presentation/pages/my_shops_page.dart';
 import 'package:shopxy_customer/features/shops/presentation/providers/shops_provider.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
@@ -77,9 +76,6 @@ class _CustomerShellState extends State<CustomerShell> {
     CustomerProfilePage(),
   ];
 
-  bool _hasLinkedMerchant(List<LinkedShop> shops) =>
-      shops.any((s) => s.role == ShopRole.party);
-
   void _select(int i) {
     if (i == _currentIndex) {
       // Re-tapping the active tab snaps the nav back into view so the
@@ -123,9 +119,10 @@ class _CustomerShellState extends State<CustomerShell> {
     );
 
     // Selector — only rebuilds when linkage state actually flips, not
-    // on every shop-list refresh.
+    // on every shop-list refresh. Uses the provider's hint-or-real
+    // getter so the very first paint reflects last-known state.
     return Selector<ShopsProvider, bool>(
-      selector: (_, p) => _hasLinkedMerchant(p.shops),
+      selector: (_, p) => p.hasLinkedParty,
       builder: (context, linked, _) {
         // Linkage flipped during the session — snap back to Home so
         // the user isn't dropped onto a tab whose meaning just
@@ -281,7 +278,11 @@ class _NavPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = linked ? _linkedItems : _unlinkedItems;
+    // width:double.infinity pins the pill to the full available width
+    // so the cells redistribute internally (selected widens, others
+    // compress) instead of the whole pill shrinking around them.
     return Container(
+      width: double.infinity,
       decoration: ShapeDecoration(
         color: AppColors.white,
         shape: AppShapes.squircle(AppSizes.radiusFull),
@@ -300,16 +301,53 @@ class _NavPill extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            for (var i = 0; i < items.length; i++)
-              _NavCell(
-                item: items[i],
-                selected: i == currentIndex,
-                onTap: () => onSelect(i),
-              ),
-          ],
+        // Cells get animated, computed widths instead of intrinsic
+        // sizing — the selected cell takes a bigger share so it can
+        // host its label, and unselected cells share the remaining
+        // space equally. Total share always sums to the full inner
+        // width, so cells stay flush against each other (no ugly
+        // gaps) and the only thing that visibly moves on tap is the
+        // brand-soft pill sliding to a new position + width.
+        child: LayoutBuilder(
+          builder: (context, c) {
+            const selectedShare = 2.0;
+            const unselectedShare = 1.0;
+            final totalShare =
+                selectedShare + unselectedShare * (items.length - 1);
+            final selectedWidth = c.maxWidth * selectedShare / totalShare;
+            final unselectedWidth =
+                c.maxWidth * unselectedShare / totalShare;
+            return Row(
+              children: [
+                for (var i = 0; i < items.length; i++)
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 240),
+                    curve: Curves.easeOutCubic,
+                    width:
+                        i == currentIndex ? selectedWidth : unselectedWidth,
+                    height: 44,
+                    decoration: ShapeDecoration(
+                      color: i == currentIndex
+                          ? AppColors.brandSoft
+                          : Colors.transparent,
+                      shape: AppShapes.squircle(AppSizes.radiusFull),
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      shape: AppShapes.squircle(AppSizes.radiusFull),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: () => onSelect(i),
+                        child: _NavCell(
+                          item: items[i],
+                          selected: i == currentIndex,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -330,14 +368,9 @@ class _NavItem {
 }
 
 class _NavCell extends StatelessWidget {
-  const _NavCell({
-    required this.item,
-    required this.selected,
-    required this.onTap,
-  });
+  const _NavCell({required this.item, required this.selected});
   final _NavItem item;
   final bool selected;
-  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -356,48 +389,35 @@ class _NavCell extends StatelessWidget {
             size: 22,
           );
 
-    return Expanded(
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          customBorder: AppShapes.squircle(AppSizes.radiusFull),
-          onTap: onTap,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            curve: Curves.easeOut,
-            padding: EdgeInsets.symmetric(
-              horizontal: selected ? 14 : 10,
-              vertical: 10,
+    // Content only — the parent AnimatedContainer owns width,
+    // decoration, and tap. Centered Row clips its label to whatever
+    // horizontal room the cell happens to have at any animation
+    // frame, so the icon stays anchored and the label doesn't bleed
+    // past the brand-soft pill while it grows / shrinks.
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          iconWidget,
+          if (selected) ...[
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                item.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                softWrap: false,
+                style: const TextStyle(
+                  color: AppColors.brandStrong,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12,
+                  letterSpacing: 0.1,
+                ),
+              ),
             ),
-            decoration: ShapeDecoration(
-              color: selected ? AppColors.brandSoft : Colors.transparent,
-              shape: AppShapes.squircle(AppSizes.radiusFull),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                iconWidget,
-                if (selected) ...[
-                  const SizedBox(width: 6),
-                  Flexible(
-                    child: Text(
-                      item.label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.brandStrong,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 12,
-                        letterSpacing: 0.1,
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
+          ],
+        ],
       ),
     );
   }
