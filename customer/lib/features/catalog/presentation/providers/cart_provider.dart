@@ -80,6 +80,17 @@ class CartProvider extends ChangeNotifier {
   bool _serverSynced = false;
   Future<void>? _syncInFlight;
 
+  /// True when [_lines] contains mutations that haven't been pushed to
+  /// the server — i.e. a guest cart, OR the result of mutations made
+  /// after logout. False after a restore of an already-synced
+  /// snapshot, and reset to false after every successful server sync.
+  ///
+  /// Critical: this is what prevents the "every restart doubles the
+  /// quantity" bug. Without it, a cold start would POST the cached
+  /// snapshot to /me/cart/merge and the server-side sum would double
+  /// the qty on each launch. We only merge when this flag is true.
+  bool _hasGuestChanges = false;
+
   /// Per-line sync state. A line is `syncing` while a server mutation
   /// is in flight, and `dirty` if the most recent server mutation
   /// failed and the local change has been rolled back. The UI can
@@ -139,6 +150,7 @@ class CartProvider extends ChangeNotifier {
     } else {
       _lines[product.id] = CartItem(product: product, quantity: capped);
     }
+    if (!_serverSynced) _hasGuestChanges = true;
     _persist();
     _syncLineToServer(product.id, capped);
     notifyListeners();
@@ -152,6 +164,7 @@ class CartProvider extends ChangeNotifier {
   AddToCartResult setQuantity(int productId, double quantity) {
     if (quantity <= 0) {
       _lines.remove(productId);
+      if (!_serverSynced) _hasGuestChanges = true;
       _persist();
       _syncLineToServer(productId, 0);
       notifyListeners();
@@ -161,6 +174,7 @@ class CartProvider extends ChangeNotifier {
     if (line == null) return AddToCartResult.missingLine;
     final capped = _capQuantity(quantity, line.product);
     line.quantity = capped;
+    if (!_serverSynced) _hasGuestChanges = true;
     _persist();
     _syncLineToServer(productId, capped);
     notifyListeners();
@@ -169,6 +183,7 @@ class CartProvider extends ChangeNotifier {
 
   void remove(int productId) {
     _lines.remove(productId);
+    if (!_serverSynced) _hasGuestChanges = true;
     _persist();
     _syncLineToServer(productId, 0);
     notifyListeners();
@@ -318,12 +333,18 @@ class CartProvider extends ChangeNotifier {
       }
       _note = (data['note'] as String?) ?? '';
       _idempotencyKey = data['idempotencyKey'] as String?;
+      // Older snapshots written before the doubling fix didn't carry
+      // this flag — default to false (treat as already-synced cache)
+      // so legacy installs heal on the next launch instead of
+      // re-merging and doubling once more.
+      _hasGuestChanges = (data['hasGuestChanges'] as bool?) ?? false;
       if (_lines.isNotEmpty) notifyListeners();
     } catch (_) {
       // Corrupt snapshot — drop it and start fresh.
       _lines.clear();
       _note = '';
       _idempotencyKey = null;
+      _hasGuestChanges = false;
     }
   }
 
@@ -342,7 +363,14 @@ class CartProvider extends ChangeNotifier {
   Future<void> _runSync({required bool mergeLocal}) async {
     try {
       List<CartLineDto> serverLines;
-      if (mergeLocal && _lines.isNotEmpty) {
+      // Only merge when the caller has explicitly opted in AND the
+      // local lines actually represent unsynced guest mutations. A
+      // restored snapshot of an already-synced server cart must NOT be
+      // merged — that would re-POST the same lines and the server-side
+      // sum would double the qty on every cold start.
+      final shouldMerge =
+          mergeLocal && _hasGuestChanges && _lines.isNotEmpty;
+      if (shouldMerge) {
         final payload = _lines.values
             .map((l) => (productId: l.product.id, quantity: l.quantity))
             .toList();
@@ -355,6 +383,9 @@ class CartProvider extends ChangeNotifier {
         _lines[l.product.id] = CartItem(product: l.product, quantity: l.quantity);
       }
       _serverSynced = true;
+      // Whatever was local is now reconciled with the server; the
+      // persisted snapshot is once again a pure cache.
+      _hasGuestChanges = false;
       _persist();
       notifyListeners();
     } catch (_) {
@@ -445,6 +476,11 @@ class CartProvider extends ChangeNotifier {
             .toList(),
         'note': _note,
         'idempotencyKey': _idempotencyKey,
+        // Persist whether these lines are guest mutations awaiting an
+        // upload. On restore we use this to decide whether to merge or
+        // just pull — merging an already-synced snapshot would
+        // double-count quantities on every cold start.
+        'hasGuestChanges': _hasGuestChanges,
       };
       await prefs.setString(_kCartStorageKey, jsonEncode(payload));
     } catch (_) {

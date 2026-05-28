@@ -10,6 +10,7 @@ import 'package:shopxy_customer/features/categories/presentation/widgets/categor
 import 'package:shopxy_customer/features/home/presentation/widgets/home_feed_blocks.dart';
 import 'package:shopxy_customer/features/home/presentation/widgets/home_footer_strip.dart';
 import 'package:shopxy_customer/features/home/presentation/widgets/home_pending_invite_callout.dart';
+import 'package:shopxy_customer/features/home/presentation/pages/section_products_page.dart';
 import 'package:shopxy_customer/features/home/presentation/widgets/home_product_carousel.dart';
 import 'package:shopxy_customer/features/home/presentation/widgets/home_recently_viewed.dart';
 import 'package:shopxy_customer/features/home/presentation/widgets/home_search_bar.dart';
@@ -301,10 +302,21 @@ class _HomeFeedListState extends State<_HomeFeedList> {
       if (feed.newInStock.isNotEmpty)
         Padding(
           padding: const EdgeInsets.only(bottom: AppSizes.xl),
-          child: HomeProductCarousel(
-            eyebrow: 'JUST LANDED',
-            title: 'Fresh in stock',
-            products: feed.newInStock,
+          child: Builder(
+            builder: (ctx) => HomeProductCarousel(
+              eyebrow: 'JUST LANDED',
+              title: 'Fresh in stock',
+              products: feed.newInStock,
+              onSeeAll: () => Navigator.of(ctx).push(
+                MaterialPageRoute(
+                  builder: (_) => SectionProductsPage(
+                    eyebrow: 'JUST LANDED',
+                    title: 'Fresh in stock',
+                    products: feed.newInStock,
+                  ),
+                ),
+              ),
+            ),
           ),
         ),
     ];
