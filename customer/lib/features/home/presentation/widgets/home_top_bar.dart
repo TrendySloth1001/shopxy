@@ -11,7 +11,6 @@ import 'package:shopxy_customer/features/notifications/presentation/providers/no
 import 'package:shopxy_customer/features/notifications/presentation/pages/notifications_page.dart';
 import 'package:shopxy_customer/features/profile/presentation/pages/profile_page.dart';
 import 'package:shopxy_customer/features/search/presentation/pages/search_page.dart';
-import 'package:shopxy_customer/features/shops/domain/entities/linked_shop.dart';
 import 'package:shopxy_customer/features/shops/presentation/providers/shops_provider.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
@@ -88,8 +87,10 @@ class HomeTopBar extends StatelessWidget {
               // the bell instead. Unlinked customers don't render this
               // — Profile is still reachable via the bottom nav.
               Selector<ShopsProvider, bool>(
-                selector: (_, p) =>
-                    p.shops.any((s) => s.role == ShopRole.party),
+                // Hint-or-real getter — keeps the profile button's
+                // visibility consistent with the bottom-nav layout
+                // decision from the very first paint.
+                selector: (_, p) => p.hasLinkedParty,
                 builder: (_, linked, _) {
                   if (!linked) return const SizedBox.shrink();
                   return Padding(

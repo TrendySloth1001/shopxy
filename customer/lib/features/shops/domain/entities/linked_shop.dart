@@ -20,6 +20,13 @@ class LinkedShop {
     required this.phone,
     required this.address,
     required this.invoiceCount,
+    this.shopId,
+    this.shopName,
+    this.shopSlug,
+    this.shopLogoUrl,
+    this.shopBannerUrl,
+    this.lastInvoiceAt,
+    this.lastInvoiceTotal,
   });
 
   /// `partyId` or `vendorId` from the merchant's database, depending on
@@ -32,8 +39,27 @@ class LinkedShop {
   final String? address;
   final int invoiceCount;
 
+  /// Owning shop's identity. Joined from `party.shop` / `vendor.shop`
+  /// server-side so we can render real shop branding instead of an
+  /// initial chip. All nullable so legacy payloads still parse.
+  final int? shopId;
+  final String? shopName;
+  final String? shopSlug;
+  final String? shopLogoUrl;
+  final String? shopBannerUrl;
+
+  /// Most recent invoice activity on this link — sorted-by + labelled
+  /// on the Merchants tab so live relationships float to the top.
+  final DateTime? lastInvoiceAt;
+  final double? lastInvoiceTotal;
+
   factory LinkedShop.fromJson(Map<String, dynamic> j, ShopRole role) {
     final counts = j['_count'] as Map<String, dynamic>?;
+    final shop = j['shop'] as Map<String, dynamic>?;
+    final invoices = j['invoices'] as List<dynamic>?;
+    final lastInvoice = (invoices != null && invoices.isNotEmpty)
+        ? invoices.first as Map<String, dynamic>
+        : null;
     return LinkedShop(
       id: j['id'] as int,
       role: role,
@@ -42,6 +68,17 @@ class LinkedShop {
       phone: j['phone'] as String?,
       address: j['address'] as String?,
       invoiceCount: (counts?['invoices'] as int?) ?? 0,
+      shopId: shop?['id'] as int?,
+      shopName: shop?['name'] as String?,
+      shopSlug: shop?['slug'] as String?,
+      shopLogoUrl: shop?['logoUrl'] as String?,
+      shopBannerUrl: shop?['bannerUrl'] as String?,
+      lastInvoiceAt: lastInvoice?['invoiceDate'] == null
+          ? null
+          : DateTime.parse(lastInvoice!['invoiceDate'] as String),
+      lastInvoiceTotal: lastInvoice == null
+          ? null
+          : _asDouble(lastInvoice['total']),
     );
   }
 }
