@@ -100,6 +100,7 @@ describe('trending — recomputeWindow + listTrending', () => {
 
   it('GET /products/trending?categoryId filters to that category', async () => {
     const user = await createTestUser();
+    const createdCategoryIds: number[] = [];
     try {
       const catA = await prisma.category.create({
         data: { name: `T-A-${uuid()}`, slug: `t-a-${uuid()}` },
@@ -107,6 +108,7 @@ describe('trending — recomputeWindow + listTrending', () => {
       const catB = await prisma.category.create({
         data: { name: `T-B-${uuid()}`, slug: `t-b-${uuid()}` },
       });
+      createdCategoryIds.push(catA.id, catB.id);
       const pA = await makePublishedProduct(user.shopId, catA.id);
       const pB = await makePublishedProduct(user.shopId, catB.id);
       await seedEvent({ productId: pA.id, userId: user.userId, type: 'TAP' });
@@ -124,6 +126,9 @@ describe('trending — recomputeWindow + listTrending', () => {
     } finally {
       await prisma.productEvent.deleteMany({ where: { userId: user.userId } });
       await cleanupTestUser(user);
+      if (createdCategoryIds.length) {
+        await prisma.category.deleteMany({ where: { id: { in: createdCategoryIds } } });
+      }
     }
   });
 
@@ -174,6 +179,7 @@ describe('trending — recommendations', () => {
   it('recomputeForUser prefers user-engaged categories and downranks already-purchased', async () => {
     const merchant = await createTestUser();
     const customer = await createTestUser();
+    const createdCategoryIds: number[] = [];
     try {
       const liked = await prisma.category.create({
         data: { name: `L-${uuid()}`, slug: `l-${uuid()}` },
@@ -181,6 +187,7 @@ describe('trending — recommendations', () => {
       const ignored = await prisma.category.create({
         data: { name: `I-${uuid()}`, slug: `i-${uuid()}` },
       });
+      createdCategoryIds.push(liked.id, ignored.id);
 
       const pLikedA = await makePublishedProduct(merchant.shopId, liked.id);
       const pLikedB = await makePublishedProduct(merchant.shopId, liked.id);
@@ -232,6 +239,9 @@ describe('trending — recommendations', () => {
       });
       await cleanupTestUser(customer);
       await cleanupTestUser(merchant);
+      if (createdCategoryIds.length) {
+        await prisma.category.deleteMany({ where: { id: { in: createdCategoryIds } } });
+      }
     }
   });
 

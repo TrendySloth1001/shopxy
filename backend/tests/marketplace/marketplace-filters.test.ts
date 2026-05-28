@@ -13,6 +13,7 @@ const app = buildApp();
 describe('marketplace — filters & facets', () => {
   let merchant: Awaited<ReturnType<typeof createTestUser>>;
   let categorySlug = '';
+  let createdCategoryId: number | null = null;
   const productIds: number[] = [];
 
   beforeAll(async () => {
@@ -31,6 +32,7 @@ describe('marketplace — filters & facets', () => {
         select: { id: true, slug: true },
       });
       cat = made;
+      createdCategoryId = made.id;
     }
     categorySlug = cat.slug;
 
@@ -69,6 +71,9 @@ describe('marketplace — filters & facets', () => {
   afterAll(async () => {
     await prisma.product.deleteMany({ where: { id: { in: productIds } } });
     await cleanupTestUser(merchant);
+    if (createdCategoryId != null) {
+      await prisma.category.delete({ where: { id: createdCategoryId } });
+    }
     await prisma.$disconnect();
   });
 

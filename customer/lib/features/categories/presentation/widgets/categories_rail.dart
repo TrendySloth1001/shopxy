@@ -25,7 +25,7 @@ class CategoriesRail extends StatelessWidget {
       color: AppColors.white,
       padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
       child: SizedBox(
-        height: 102,
+        height: 116,
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),

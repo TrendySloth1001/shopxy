@@ -3,15 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy_customer/features/home/data/models/home_blocks.dart';
 import 'package:shopxy_customer/features/home/data/models/home_feed_mapper.dart';
+import 'package:shopxy_customer/features/home/data/models/home_feed_models.dart';
 import 'package:shopxy_customer/features/home/presentation/providers/home_feed_provider.dart';
 import 'package:shopxy_customer/features/home/presentation/services/tracking_service.dart';
-import 'package:shopxy_customer/features/home/presentation/widgets/home_ad_strip.dart';
-import 'package:shopxy_customer/features/home/presentation/widgets/home_brand_spotlight.dart';
 import 'package:shopxy_customer/features/categories/presentation/widgets/categories_rail.dart';
 import 'package:shopxy_customer/features/home/presentation/widgets/home_feed_blocks.dart';
-import 'package:shopxy_customer/features/home/presentation/widgets/home_flash_deals.dart';
 import 'package:shopxy_customer/features/home/presentation/widgets/home_footer_strip.dart';
-import 'package:shopxy_customer/features/home/presentation/widgets/home_hero_carousel.dart';
+import 'package:shopxy_customer/features/home/presentation/widgets/home_product_carousel.dart';
+import 'package:shopxy_customer/features/home/presentation/widgets/home_recently_viewed.dart';
 import 'package:shopxy_customer/features/home/presentation/widgets/home_search_bar.dart';
 import 'package:shopxy_customer/features/home/presentation/widgets/home_top_bar.dart';
 import 'package:shopxy_customer/features/home/presentation/widgets/home_trust_strip.dart';
@@ -87,6 +86,11 @@ class _HomePageState extends State<HomePage> {
       child: _HomeFeedList(
         feed: provider.feed,
         feedVersion: provider.feedVersion,
+        blocks: provider.blocks,
+        isLoadingMore: provider.endlessLoading,
+        isExhausted: provider.endlessExhausted,
+        loadMore: provider.loadMore,
+        endlessError: provider.endlessError,
       ),
     );
   }
@@ -96,7 +100,15 @@ class _HomePageState extends State<HomePage> {
 /// (each widget early-returns on empty input), so a backend with no
 /// banners but live flash deals still produces a coherent page.
 class _HomeFeedList extends StatefulWidget {
-  const _HomeFeedList({required this.feed, required this.feedVersion});
+  const _HomeFeedList({
+    required this.feed,
+    required this.feedVersion,
+    required this.blocks,
+    required this.isLoadingMore,
+    required this.isExhausted,
+    required this.loadMore,
+    required this.endlessError,
+  });
   final HomeFeed feed;
 
   /// Monotonic counter that ticks each time the provider successfully
@@ -104,6 +116,14 @@ class _HomeFeedList extends StatefulWidget {
   /// so unrelated rebuilds (cart badge, theme changes) don't re-fire
   /// the impression batch.
   final int feedVersion;
+
+  /// Composed block list owned by the provider — grows as the endless
+  /// pager fetches more pages.
+  final List<HomeBlock> blocks;
+  final bool isLoadingMore;
+  final bool isExhausted;
+  final String? endlessError;
+  final Future<void> Function() loadMore;
 
   @override
   State<_HomeFeedList> createState() => _HomeFeedListState();
@@ -114,109 +134,152 @@ class _HomeFeedListState extends State<_HomeFeedList> {
   /// for. Prevents the impression burst from re-firing on every
   /// rebuild (e.g. when the cart badge changes higher in the tree).
   int? _trackedFeedVersion;
+  final ScrollController _scroll = ScrollController();
+  // Track how many blocks we'd already counted impressions for so a
+  // newly-appended endless page only fires impressions for its own
+  // products, not the entire growing list.
+  int _impressionWatermark = 0;
 
   @override
   void initState() {
     super.initState();
+    _scroll.addListener(_maybeLoadMore);
     WidgetsBinding.instance.addPostFrameCallback((_) => _trackImpressions());
+  }
+
+  @override
+  void dispose() {
+    _scroll.removeListener(_maybeLoadMore);
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  void _maybeLoadMore() {
+    if (widget.isExhausted || widget.isLoadingMore) return;
+    if (!_scroll.hasClients) return;
+    final pos = _scroll.position;
+    // Fire when within ~1.5 screens of the bottom so the next page is
+    // already on the wire by the time the user gets there.
+    if (pos.pixels >= pos.maxScrollExtent - pos.viewportDimension * 1.5) {
+      widget.loadMore();
+    }
   }
 
   @override
   void didUpdateWidget(covariant _HomeFeedList oldWidget) {
     super.didUpdateWidget(oldWidget);
+    // A successful refresh resets blocks to a smaller list — drop the
+    // watermark so post-refresh impressions fire from the start.
+    if (widget.feedVersion != oldWidget.feedVersion) {
+      _impressionWatermark = 0;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) => _trackImpressions());
+    // If new content arrived but the list is shorter than the
+    // viewport the scroll listener never fires — kick the pager
+    // manually until the page fills up.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (!_scroll.hasClients) return;
+      final pos = _scroll.position;
+      if (pos.maxScrollExtent <= 0 &&
+          !widget.isLoadingMore &&
+          !widget.isExhausted) {
+        widget.loadMore();
+      }
+    });
   }
 
   void _trackImpressions() {
     if (!mounted) return;
-    if (widget.feedVersion == _trackedFeedVersion) return;
+    if (widget.feedVersion == _trackedFeedVersion &&
+        _impressionWatermark >= widget.blocks.length) {
+      return;
+    }
     _trackedFeedVersion = widget.feedVersion;
     final tracking = context.read<TrackingService>();
     // Server batches + dedupes on clientUuid, so a quick scroll-by
-    // burst still stays cheap even if we fire a few extras.
-    for (final p in widget.feed.trending.take(20)) {
-      tracking.recordImpression(p.productId);
+    // burst still stays cheap even if we fire a few extras. We walk
+    // only the newly-appended blocks since the last call.
+    for (var i = _impressionWatermark; i < widget.blocks.length; i++) {
+      for (final p in _productsInBlock(widget.blocks[i])) {
+        tracking.recordImpression(p.productId);
+      }
     }
-    for (final p in widget.feed.recommended.take(20)) {
-      tracking.recordImpression(p.productId);
-    }
+    _impressionWatermark = widget.blocks.length;
+  }
+
+  Iterable<ProductCard> _productsInBlock(HomeBlock b) {
+    return switch (b) {
+      MosaicBlock m => [m.hero, m.topRight, m.bottomRight],
+      Grid2ColBlock g => g.products,
+      Grid3CompactBlock g => g.products,
+      VerticalCardsBlock v => v.products,
+      ReelsTallBlock r => r.products,
+      CategoryCapsuleBlock c => c.products,
+      QuickAddChipsBlock q => q.products,
+      ComparisonBlock c => [c.left, c.right],
+      CarouselBlock c => c.products,
+      SponsoredCarouselBlock s => s.products,
+      RecentlyViewedBlock r => r.products,
+      // Non-product blocks (banners, curated rails, single promos)
+      // are tracked as banner impressions elsewhere, not here.
+      CuratedRailBlock _ => const <ProductCard>[],
+      CollectionBannerBlock _ => const <ProductCard>[],
+      HeroSingleBlock _ => const <ProductCard>[],
+      AdSingleBlock _ => const <ProductCard>[],
+      PromoSingleBlock _ => const <ProductCard>[],
+      FlashSingleBlock _ => const <ProductCard>[],
+      SpotlightSingleBlock _ => const <ProductCard>[],
+      PosterProductBlock p => [p.product],
+      LeaderboardBlock l => l.products,
+      BrandFocusBlock f => f.products,
+      PriceBandBlock p => p.products,
+      ZigZagDuoBlock z => [z.hero, z.pair],
+      ShopShowcaseBlock s => s.products,
+    };
   }
 
   @override
   Widget build(BuildContext context) {
+    final blocks = widget.blocks;
     final feed = widget.feed;
-    // Everything below the brand spotlight runs through the block
-    // composer (lib/.../data/home_blocks.dart). The composer turns the
-    // raw product slices into a varied, long-scroll feed (mosaic, grid,
-    // reels, comparison, …) so we no longer have a parade of identical
-    // horizontal carousels.
-    final blocks = composeHomeBlocks(feed);
+
+    // Conditional prelude slots. Order matches the user's mental
+    // model: browse intent (categories) → continuity (things they
+    // viewed) → freshness (new arrivals) → then the endless cycle.
+    // Empty slots collapse so the layout doesn't leave a hole.
+    final preludeSlots = <Widget>[
+      const CategoriesRail(),
+      const Padding(
+        padding: EdgeInsets.only(bottom: AppSizes.lg),
+        child: HomeTrustStrip(),
+      ),
+      if (feed.recentlyViewed.isNotEmpty)
+        Padding(
+          padding: const EdgeInsets.only(bottom: AppSizes.xl),
+          child: HomeRecentlyViewed(items: feed.recentlyViewed),
+        ),
+      if (feed.newInStock.isNotEmpty)
+        Padding(
+          padding: const EdgeInsets.only(bottom: AppSizes.xl),
+          child: HomeProductCarousel(
+            eyebrow: 'JUST LANDED',
+            title: 'Fresh in stock',
+            products: feed.newInStock,
+          ),
+        ),
+    ];
 
     return ListView.builder(
+      controller: _scroll,
       padding: const EdgeInsets.only(bottom: AppSizes.huge),
-      // The fixed prelude (categories → trust → hero → flash → ad strip
-      // → spotlight → promo) plus one slot per composer block plus the
-      // footer. Each section is gated by a `.isNotEmpty` check inside
-      // its widget so empty payloads collapse without leaving stray gaps.
-      itemCount: 7 + blocks.length + 1,
+      // Prelude (variable, depending on which conditional slots have
+      // data) + composed blocks + tail sentinel (loader / footer).
+      itemCount: preludeSlots.length + blocks.length + 1,
       itemBuilder: (context, i) {
-        switch (i) {
-          case 0:
-            // Browse intent: canonical category rail right under the
-            // fold. Backed by CategoriesProvider (real taxonomy), not
-            // the legacy sample-data pucks.
-            return const CategoriesRail();
-          case 1:
-            // Trust: lower buying anxiety before showing prices.
-            return const Padding(
-              padding: EdgeInsets.only(bottom: AppSizes.lg),
-              child: HomeTrustStrip(),
-            );
-          case 2:
-            // Hero ads: editorial brand discovery, auto-rotating.
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: feed.heroSlides.isNotEmpty ? AppSizes.xl : 0,
-              ),
-              child: HomeHeroCarousel(slides: feed.heroSlides),
-            );
-          case 3:
-            // Urgency: live countdown + sold-progress pulls scroll.
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: feed.flashDeals.isNotEmpty ? AppSizes.xl : 0,
-              ),
-              child: HomeFlashDeals(deals: feed.flashDeals),
-            );
-          case 4:
-            // Sponsored brand strip — three medium-size ads.
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: feed.adStrip.isNotEmpty ? AppSizes.xl : 0,
-              ),
-              child: HomeAdStrip(slides: feed.adStrip),
-            );
-          case 5:
-            // Brand carousel: aspirational shopping for brand-led users.
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom:
-                    feed.brandSpotlights.isNotEmpty ? AppSizes.xl : 0,
-              ),
-              child: HomeBrandSpotlight(brands: feed.brandSpotlights),
-            );
-          case 6:
-            // Promo banners: merchandised editorial offers. Same card
-            // shape as the ad strip so layout reads consistently.
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: feed.promoBanners.isNotEmpty ? AppSizes.xl : 0,
-              ),
-              child: HomeAdStrip(slides: feed.promoBanners),
-            );
-        }
+        if (i < preludeSlots.length) return preludeSlots[i];
 
-        final blockIdx = i - 7;
+        final blockIdx = i - preludeSlots.length;
         if (blockIdx < blocks.length) {
           return Padding(
             padding: const EdgeInsets.only(bottom: AppSizes.xl),
@@ -224,9 +287,59 @@ class _HomeFeedListState extends State<_HomeFeedList> {
           );
         }
 
-        // Trust footer closes the page.
-        return const HomeFooterStrip();
+        // Tail sentinel. Spinner only when a page is actually in
+        // flight — the older `isLoadingMore || blocks.isNotEmpty`
+        // gated wrong and kept the spinner glued on after every
+        // successful page, making the feed look frozen.
+        if (widget.isExhausted) {
+          return _EndlessExhausted(
+            message: widget.endlessError == null
+                ? "You've reached the end — pull to refresh"
+                : 'Took a breather to avoid rate limits — pull to refresh',
+          );
+        }
+        if (widget.isLoadingMore) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: AppSizes.xl),
+            child: Center(
+              child: SizedBox(
+                width: 22, height: 22,
+                child: CircularProgressIndicator(strokeWidth: 2.4),
+              ),
+            ),
+          );
+        }
+        // Empty-state safety net: nothing loaded, nothing loading,
+        // nothing exhausted — show the footer instead of a blank tile.
+        if (blocks.isEmpty) return const HomeFooterStrip();
+        // Idle tail between pages — let the scroll listener notice
+        // we've passed the prefetch threshold and call loadMore.
+        return const SizedBox(height: AppSizes.xl);
       },
+    );
+  }
+}
+
+class _EndlessExhausted extends StatelessWidget {
+  const _EndlessExhausted({required this.message});
+  final String message;
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.lg, AppSizes.xl, AppSizes.lg, AppSizes.huge,
+      ),
+      child: Column(
+        children: [
+          const HomeFooterStrip(),
+          const SizedBox(height: AppSizes.lg),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: AppColors.muted, fontSize: 12.5),
+          ),
+        ],
+      ),
     );
   }
 }

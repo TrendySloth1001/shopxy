@@ -9,6 +9,10 @@ export const homePublicRouter = Router();
 
 homePublicRouter.get('/feed', asyncHandler(homeController.feed.bind(homeController)));
 homePublicRouter.get(
+  '/feed/page',
+  asyncHandler(homeController.endlessPage.bind(homeController)),
+);
+homePublicRouter.get(
   '/category-rail',
   asyncHandler(homeController.categoryRail.bind(homeController)),
 );

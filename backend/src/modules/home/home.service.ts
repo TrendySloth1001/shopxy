@@ -1,4 +1,9 @@
 import prisma from '../../infra/db/prisma.js';
+import {
+  getShuffledIds,
+  getViewerOwnedProductIds,
+  SEED_BUCKETS,
+} from './endless-cache.service.js';
 import { bannersService } from '../banners/banners.service.js';
 import { flashSalesService } from '../flash-sales/flash-sales.service.js';
 import { brandSpotlightService } from '../brand-spotlight/brand-spotlight.service.js';
@@ -30,6 +35,7 @@ export class HomeService {
       collections,
       trendingGlobal,
       categoryTree,
+      newArrivals,
     ] = await Promise.all([
       this._safe(() => bannersService.getActiveByPlacement('HERO')),
       this._safe(() => bannersService.getActiveByPlacement('AD_STRIP')),
@@ -43,6 +49,13 @@ export class HomeService {
       // flattened to {id, slug, name, imageUrl} so the puck strip can
       // render without a second request.
       this._safe(() => categoriesService.getTree({ activeOnly: true })),
+      // "Just landed" rail — top 20 most recently created published
+      // products. Customer surfaces them in the prelude (after the
+      // categories rail) so the user lands on fresh inventory before
+      // the shuffled endless feed kicks in. The same select shape as
+      // the trending row so the customer mapper can re-use its
+      // product-card extractor.
+      this._safe(() => this._newArrivals(20)),
     ]);
 
     const organicTrending = trendingGlobal.map((r) => ({
@@ -68,6 +81,7 @@ export class HomeService {
       brandSpotlights: spotlights,
       collections,
       trending: trendingWithSponsored,
+      newArrivals,
       categoryPucks: categoryTree
         .filter((c) => c.parentId == null)
         .slice(0, 12)
@@ -79,6 +93,34 @@ export class HomeService {
           iconName: c.iconName,
         })),
     };
+  }
+
+  /// "Just landed" rail — newest published products. Single SELECT
+  /// ordered by `created_at desc`, capped at `take`. Cheap (uses the
+  /// `(shop_id, is_published)` index for the WHERE then sorts the
+  /// already-narrow result by createdAt). Same select shape as the
+  /// trending card so the customer can re-use its mapper.
+  private async _newArrivals(take: number) {
+    return prisma.product.findMany({
+      where: { isActive: true, isPublished: true },
+      orderBy: { createdAt: 'desc' },
+      take,
+      select: {
+        id: true,
+        name: true,
+        mrp: true,
+        sellingPrice: true,
+        brand: true,
+        ratingAvg: true,
+        ratingCount: true,
+        images: {
+          select: { url: true, sortOrder: true },
+          orderBy: { sortOrder: 'asc' as const },
+          take: 1,
+        },
+        shop: { select: { id: true, name: true, slug: true } },
+      },
+    });
   }
 
   /// Interleaves sponsored picks into the organic trending rail at
@@ -111,6 +153,7 @@ export class HomeService {
         },
         select: {
           id: true, name: true, mrp: true, sellingPrice: true,
+        brand: true,
           ratingAvg: true, ratingCount: true,
           images: { select: { url: true, sortOrder: true }, orderBy: { sortOrder: 'asc' }, take: 1 },
           shop: { select: { id: true, name: true, slug: true } },
@@ -174,6 +217,99 @@ export class HomeService {
     return rows.map((r) => ({ score: Number(r.score), product: r.product }));
   }
 
+  /// Endless-scroll product page. The customer home tab keeps requesting
+  /// the next page as the user scrolls; this method never returns "no
+  /// more" — once the catalog is exhausted at the current rotation,
+  /// the next call reshuffles with a derived seed and continues. The
+  /// only stop signal is the upstream rate-limiter.
+  ///
+  /// Cache architecture (see `endless-cache.service.ts`):
+  ///   - Client `seed` is bucketed to `seed % SEED_BUCKETS` (256). The
+  ///     bounded seed space means we maintain at most 256 distinct
+  ///     shuffles across all concurrent users, each cached in Redis
+  ///     for 10 minutes. Cache hit rate approaches 100% steady-state.
+  ///   - Each bucket's shuffled id list is a single Postgres SELECT
+  ///     done once per TTL; every page-load after that is a slice of
+  ///     the cached array (no DB round-trip for ordering).
+  ///   - Viewer-owns-own-shop filter is a separate Redis-cached set
+  ///     subtracted from the slice in memory, so the catalog shuffle
+  ///     stays universal (no per-user shuffle re-build).
+  ///   - The product cards themselves come from one `findMany` on the
+  ///     final slice. Total DB cost per request in cache-warm steady
+  ///     state: one short findMany. ~5 ms.
+  ///
+  /// Wrap-around (the "endless" part): once the user's page count
+  /// crosses the bucket size, we rotate to the NEXT bucket so the
+  /// next sweep through the catalog has a different ordering. The
+  /// rotation is folded into the bucket index, not a per-request
+  /// seed mutation, so the rotated bucket is itself cached.
+  async getEndlessPage(opts: { seed: number; page: number; limit: number; viewerUserId?: number }) {
+    const limit = Math.min(40, Math.max(4, opts.limit | 0));
+
+    // Pull (cached) full shuffled id list for this bucket. Filter out
+    // viewer-owned products if signed in. Slice with offset / limit.
+    let bucket = ((opts.seed % SEED_BUCKETS) + SEED_BUCKETS) % SEED_BUCKETS;
+    let ids = await getShuffledIds(bucket);
+
+    if (opts.viewerUserId) {
+      const owned = await getViewerOwnedProductIds(opts.viewerUserId);
+      if (owned.size > 0) ids = ids.filter((id) => !owned.has(id));
+    }
+
+    if (ids.length === 0) {
+      return { products: [], nextPage: opts.page + 1, total: 0 };
+    }
+
+    const totalPages = Math.max(1, Math.ceil(ids.length / limit));
+    const rotation = Math.floor(opts.page / totalPages);
+    const effectivePage = opts.page % totalPages;
+
+    // Catalog sweep complete → rotate to a different cached bucket so
+    // the next pass shuffles differently. Adding `rotation` keeps the
+    // mapping deterministic per (seed, page).
+    if (rotation > 0) {
+      bucket = (bucket + rotation) % SEED_BUCKETS;
+      ids = await getShuffledIds(bucket);
+      if (opts.viewerUserId) {
+        const owned = await getViewerOwnedProductIds(opts.viewerUserId);
+        if (owned.size > 0) ids = ids.filter((id) => !owned.has(id));
+      }
+    }
+
+    const offset = effectivePage * limit;
+    const sliceIds = ids.slice(offset, offset + limit);
+    if (sliceIds.length === 0) {
+      return { products: [], nextPage: opts.page + 1, total: ids.length };
+    }
+
+    // Single findMany for the cards. Prisma doesn't preserve the
+    // IN-clause ordering, so we re-sort against `sliceIds`.
+    const cards = await prisma.product.findMany({
+      where: { id: { in: sliceIds } },
+      select: {
+        id: true,
+        name: true,
+        mrp: true,
+        sellingPrice: true,
+        brand: true,
+        ratingAvg: true,
+        ratingCount: true,
+        images: {
+          select: { url: true, sortOrder: true },
+          orderBy: { sortOrder: 'asc' as const },
+          take: 1,
+        },
+        shop: { select: { id: true, name: true, slug: true } },
+      },
+    });
+    const byId = new Map(cards.map((c) => [c.id, c]));
+    const products = sliceIds
+      .map((id) => byId.get(id))
+      .filter((c): c is NonNullable<typeof c> => !!c);
+
+    return { products, nextPage: opts.page + 1, total: ids.length };
+  }
+
   /// Auth-gated counterpart to /home/feed: caller's recently viewed +
   /// their for-you recommendations. Returns empty arrays for cold-start
   /// users — UI hides the section when empty.
@@ -191,6 +327,7 @@ export class HomeService {
               name: true,
               mrp: true,
               sellingPrice: true,
+        brand: true,
               ratingAvg: true,
               ratingCount: true,
               isPublished: true,
@@ -228,6 +365,7 @@ export interface HomeFeedResponse {
     isAd?: boolean;
     promotionId?: number;
   }>;
+  newArrivals: unknown[];
   categoryPucks: Array<{
     id: number;
     slug: string;

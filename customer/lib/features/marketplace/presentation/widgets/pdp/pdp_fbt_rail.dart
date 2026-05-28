@@ -65,7 +65,11 @@ class _PdpFbtRailState extends State<PdpFbtRail> {
           ),
           const SizedBox(height: AppSizes.sm),
           SizedBox(
-            height: 220,
+            // 140px square image + ~88px body (name 2 lines, price row,
+            // optional rating row, 16px padding). A couple of devices
+            // were clipping by 4px at the default scale — 232 buys the
+            // headroom and absorbs a +10% text-scale setting too.
+            height: 232,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
