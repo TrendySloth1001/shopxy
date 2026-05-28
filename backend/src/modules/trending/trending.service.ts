@@ -34,6 +34,7 @@ const productPublicSelect = {
   sku: true,
   mrp: true,
   sellingPrice: true,
+        brand: true,
   ratingAvg: true,
   ratingCount: true,
   isPublished: true,

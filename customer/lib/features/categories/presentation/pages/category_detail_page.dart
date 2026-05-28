@@ -103,7 +103,7 @@ class CategoryDetailPage extends StatelessWidget {
                 crossAxisCount: 3,
                 mainAxisSpacing: 14,
                 crossAxisSpacing: 12,
-                childAspectRatio: 0.82,
+                childAspectRatio: 0.7,
               ),
               itemCount: children.length,
               itemBuilder: (context, index) {

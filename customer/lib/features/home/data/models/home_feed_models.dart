@@ -229,6 +229,7 @@ class ProductCard {
     this.isAd = false,
     this.promotionId,
     this.shopSlug,
+    this.brand,
     this.discountPct = 0,
     this.freeDelivery = true,
   });
@@ -255,6 +256,10 @@ class ProductCard {
   /// Slug of the shop owning this product — lets the PDP and any
   /// inline "Visit shop" link route without a second API call.
   final String? shopSlug;
+  /// Free-text brand name surfaced on the PDP and used by the home
+  /// `BrandFocusBlock` to cluster products from the same manufacturer.
+  /// Nullable because some catalog entries don't have a brand set.
+  final String? brand;
 
   /// Integer percent-off, computed from mrp vs sellingPrice. 0 means
   /// "show no discount chip" (either the prices match or the product

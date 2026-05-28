@@ -31,7 +31,7 @@ class HomeTopBar extends StatelessWidget {
               Text(
                 'shop',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: AppColors.black,
                   fontSize: 22,
                   fontWeight: FontWeight.w800,
                   letterSpacing: -0.5,
@@ -40,7 +40,7 @@ class HomeTopBar extends StatelessWidget {
               Text(
                 'xy',
                 style: TextStyle(
-                  color: Color(0xFFF4F757),
+                  color: AppColors.brand,
                   fontSize: 22,
                   fontWeight: FontWeight.w800,
                   letterSpacing: -0.5,
@@ -63,7 +63,7 @@ class HomeTopBar extends StatelessWidget {
                     children: [
                       const Icon(
                         Icons.location_on_outlined,
-                        color: Colors.white,
+                        color: AppColors.brand,
                         size: AppSizes.iconMd,
                       ),
                       const SizedBox(width: 4),
@@ -73,15 +73,15 @@ class HomeTopBar extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            color: Colors.white,
+                            color: AppColors.black,
                             fontSize: 12,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
                       const Icon(
                         Icons.keyboard_arrow_down_rounded,
-                        color: Colors.white,
+                        color: AppColors.muted,
                         size: 18,
                       ),
                     ],
@@ -410,7 +410,7 @@ class _TopBarIcon extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Icon(icon, color: Colors.white, size: 24),
+          Icon(icon, color: AppColors.black, size: 24),
           if (count != null && count! > 0)
             Positioned(
               right: -4,
@@ -418,16 +418,16 @@ class _TopBarIcon extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF4F757),
+                  color: AppColors.brand,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.brand, width: 1.5),
+                  border: Border.all(color: AppColors.canvas, width: 1.5),
                 ),
                 constraints: const BoxConstraints(minWidth: 16),
                 child: Text(
                   '$count',
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                    color: AppColors.black,
+                    color: AppColors.white,
                     fontSize: 9,
                     fontWeight: FontWeight.w800,
                   ),

@@ -53,6 +53,40 @@ class HomeFeedRemoteDataSource {
       recentlyViewed: mapped.recentlyViewed,
     );
   }
+
+  /// Endless-scroll page. The server reshuffles indefinitely so this
+  /// only stops returning data if the user is rate-limited (4xx/5xx).
+  /// On the very first call pass `seed: null` and the server mints
+  /// a fresh one; reuse it on every subsequent page so the rotation
+  /// stays consistent across the session.
+  Future<EndlessPage> endlessPage({required int page, int? seed, int limit = 16}) async {
+    final qp = <String, String>{
+      'page': '$page',
+      'limit': '$limit',
+      if (seed != null) 'seed': '$seed',
+    };
+    final query = qp.entries.map((e) => '${e.key}=${e.value}').join('&');
+    final res = await _client.get('/home/feed/page?$query');
+    if (res.statusCode != 200) {
+      throw HomeFeedException('Failed to load endless page: ${res.statusCode}');
+    }
+    final json = jsonDecode(res.body) as Map<String, dynamic>;
+    final products = HomeFeedMapper.fromEndlessPage(
+      (json['products'] as List?) ?? const [],
+    );
+    return EndlessPage(
+      products: products,
+      seed: (json['seed'] as num).toInt(),
+      nextPage: (json['nextPage'] as num).toInt(),
+    );
+  }
+}
+
+class EndlessPage {
+  const EndlessPage({required this.products, required this.seed, required this.nextPage});
+  final List products;
+  final int seed;
+  final int nextPage;
 }
 
 class HomeFeedException implements Exception {

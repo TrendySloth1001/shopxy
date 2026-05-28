@@ -111,7 +111,13 @@ class HomeFeedMapper {
     final trending = _list(json['trending']);
     final offers = _list(json['offers']);
     final bestValue = _list(json['bestValue']);
-    final newInStock = _list(json['newInStock']);
+    // Server sends raw Product rows under `newArrivals` (not the
+    // trending-wrap shape), so we feed them through the same mapper
+    // the endless page uses. The legacy `newInStock` key is read as
+    // a fallback for older payloads.
+    final newInStock = _list(json['newArrivals']).isNotEmpty
+        ? _list(json['newArrivals'])
+        : _list(json['newInStock']);
     final sponsored = _list(json['sponsoredProducts']);
     final pucks = _list(json['categoryPucks']);
 
@@ -132,11 +138,40 @@ class HomeFeedMapper {
       trending: mapTrendingList(trending),
       offers: mapTrendingList(offers),
       bestValue: mapTrendingList(bestValue),
-      newInStock: mapTrendingList(newInStock),
+      // newArrivals/newInStock are raw product rows from the server;
+      // route them through the raw-row mapper rather than the
+      // trending-wrap one. Probes the first row's shape to stay
+      // compatible with legacy {score, product}-wrapped payloads.
+      newInStock: _mapMaybeWrapped(newInStock),
       sponsoredProducts: mapTrendingList(sponsored),
       recommended: const [],
       recentlyViewed: const [],
     );
+  }
+
+  /// Routes a list whose rows might be raw products or trending
+  /// `{score, product}` wrappers through the right card mapper.
+  /// Empty lists short-circuit so the type-probe never panics.
+  static List<ProductCard> _mapMaybeWrapped(List<dynamic> rows) {
+    if (rows.isEmpty) return const [];
+    final first = rows.first;
+    if (first is Map<String, dynamic> && first['product'] is Map<String, dynamic>) {
+      return rows
+          .map(_productCardFromTrending)
+          .whereType<ProductCard>()
+          .toList();
+    }
+    return fromEndlessPage(rows);
+  }
+
+  /// Endless-scroll page → list of ProductCard. The endpoint returns
+  /// raw Product rows (not the trending-wrap shape) so we route directly
+  /// through `_productCardFromProduct`.
+  static List<ProductCard> fromEndlessPage(List<dynamic> rows) {
+    return rows
+        .map((r) => r is Map<String, dynamic> ? _productCardFromProduct(r) : null)
+        .whereType<ProductCard>()
+        .toList();
   }
 
   static ({List<ProductCard> recommended, List<ProductCard> recentlyViewed}) fromPersonalized(
@@ -273,6 +308,7 @@ class HomeFeedMapper {
       isAd: isAd,
       promotionId: promotionId,
       shopSlug: shop?['slug'] as String?,
+      brand: p['brand'] as String?,
       discountPct: discountPct,
     );
   }

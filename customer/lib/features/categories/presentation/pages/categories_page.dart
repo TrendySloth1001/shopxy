@@ -48,7 +48,10 @@ class _CategoriesPageState extends State<CategoriesPage> {
                       crossAxisCount: 3,
                       mainAxisSpacing: 14,
                       crossAxisSpacing: 12,
-                      childAspectRatio: 0.82,
+                      // Tile has a square thumb + 2-line name + "N subs"
+                      // chip. 0.82 clipped the chip at default text scale;
+                      // 0.7 gives every tile enough vertical room.
+                      childAspectRatio: 0.7,
                     ),
                     itemCount: tree.length,
                     itemBuilder: (context, index) {

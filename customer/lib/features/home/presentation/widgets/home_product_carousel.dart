@@ -511,26 +511,34 @@ class _PriceRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Text(
-          product.price,
-          style: const TextStyle(
-            color: AppColors.black,
-            fontSize: 15,
-            fontWeight: FontWeight.w800,
-            height: 1,
+    // FittedBox scales the whole price line down a hair if the tile's
+    // intrinsic width can't host it. Stops the 1-4px horizontal
+    // overflow seen in 3-col grids without dropping any signal —
+    // tested with ₹64,990 + 28% off on a ~100px tile.
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: AlignmentDirectional.centerStart,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            product.price,
+            maxLines: 1,
+            style: const TextStyle(
+              color: AppColors.black,
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+              height: 1,
+            ),
           ),
-        ),
-        if (product.originalPrice.isNotEmpty) ...[
-          const SizedBox(width: 4),
-          Flexible(
-            child: Padding(
+          if (product.originalPrice.isNotEmpty) ...[
+            const SizedBox(width: 4),
+            Padding(
               padding: const EdgeInsets.only(bottom: 1),
               child: Text(
                 product.originalPrice,
-                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
                 style: const TextStyle(
                   color: AppColors.muted,
                   fontSize: 11,
@@ -538,23 +546,12 @@ class _PriceRow extends StatelessWidget {
                 ),
               ),
             ),
-          ),
+          ],
+          // Inline "% off" intentionally dropped — the corner badge on
+          // the image already screams the discount, and the duplicate
+          // here was the main source of overflow on narrow tiles.
         ],
-        if (hasDiscount) ...[
-          const SizedBox(width: 4),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 1),
-            child: Text(
-              '${product.discountPct}% off',
-              style: const TextStyle(
-                color: AppColors.success,
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ),
-        ],
-      ],
+      ),
     );
   }
 }
