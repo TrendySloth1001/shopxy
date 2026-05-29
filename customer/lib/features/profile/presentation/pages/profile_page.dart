@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy_customer/features/addresses/presentation/pages/addresses_page.dart';
+import 'package:shopxy_customer/features/auth/domain/entities/auth_user.dart';
 import 'package:shopxy_customer/features/auth/presentation/providers/auth_provider.dart';
+import 'package:shopxy_customer/features/auth/presentation/widgets/require_auth.dart';
 import 'package:shopxy_customer/features/profile/presentation/pages/edit_profile_page.dart';
 import 'package:shopxy_customer/features/profile/presentation/pages/help_page.dart';
 import 'package:shopxy_customer/features/profile/presentation/pages/info_pages.dart';
@@ -21,6 +23,7 @@ import 'package:shopxy_customer/shared/constants/app_strings.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_bar.dart';
+import 'package:shopxy_customer/shared/widgets/app_button.dart';
 import 'package:shopxy_customer/shared/widgets/app_dialog.dart';
 
 class CustomerProfilePage extends StatelessWidget {
@@ -41,15 +44,29 @@ class CustomerProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = context.watch<AuthProvider>().user;
+    final auth = context.watch<AuthProvider>();
     final theme = Theme.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: const AppAppBar(title: AppStrings.navProfile),
-      body: ListView(
-        padding: const EdgeInsets.only(bottom: AppSizes.huge),
-        children: [
+      body: auth.isGuest
+          ? _GuestProfileBody(theme: theme)
+          : _buildSignedInBody(context, theme, auth.user),
+    );
+  }
+
+  /// Rendered for signed-in users. Pulled out of `build` only so the
+  /// guest path stays a clean swap and the existing list keeps its
+  /// shape (no rewrite, just relocation).
+  Widget _buildSignedInBody(
+    BuildContext context,
+    ThemeData theme,
+    AuthUser? user,
+  ) {
+    return ListView(
+      padding: const EdgeInsets.only(bottom: AppSizes.huge),
+      children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(
               AppSizes.lg, AppSizes.lg, AppSizes.lg, AppSizes.md,
@@ -255,11 +272,136 @@ class CustomerProfilePage extends StatelessWidget {
               ),
             ),
           ),
-        ],
-      ),
+      ],
     );
   }
+}
 
+/// Public-browse profile body: a sign-in hero card and a slim set of
+/// non-user-scoped settings (Help, About, Privacy, Terms). Authed-only
+/// rows (Edit profile, Linked merchants, Addresses, Wishlist, etc.) are
+/// omitted entirely rather than gated per-row — the page itself is the
+/// gate, which matches how Amazon/Flipkart present "You" for guests.
+class _GuestProfileBody extends StatelessWidget {
+  const _GuestProfileBody({required this.theme});
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.only(bottom: AppSizes.huge),
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSizes.lg,
+            AppSizes.xl,
+            AppSizes.lg,
+            AppSizes.lg,
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(AppSizes.lg),
+            decoration: ShapeDecoration(
+              color: AppColors.white,
+              shape: AppShapes.squircle(
+                AppSizes.radiusLg,
+                side: const BorderSide(color: AppColors.hairline, width: 1),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 56,
+                      height: 56,
+                      decoration: ShapeDecoration(
+                        color: AppColors.heroPanel,
+                        shape: AppShapes.squircle(AppSizes.radiusMd),
+                      ),
+                      alignment: Alignment.center,
+                      child: const Icon(
+                        Icons.person_outline_rounded,
+                        size: 28,
+                        color: AppColors.black,
+                      ),
+                    ),
+                    const SizedBox(width: AppSizes.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Welcome to ShopXY',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Sign in to track orders, save items and get '
+                            'invitations from your shops.',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: AppColors.muted,
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSizes.lg),
+                AppButton.primary(
+                  label: 'Sign in',
+                  icon: Icons.login_rounded,
+                  fullWidth: true,
+                  onPressed: () => requireAuth(
+                    context,
+                    reason:
+                        'Sign in to access orders, saved items, addresses '
+                        'and shop invitations.',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const _SectionLabel(label: 'About'),
+        _Row(
+          icon: Icons.help_outline_rounded,
+          title: 'Help & FAQ',
+          subtitle: 'Common questions + email support',
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const HelpAndFaqPage()),
+          ),
+        ),
+        _Row(
+          icon: Icons.info_outline_rounded,
+          title: AppStrings.about,
+          subtitle: 'Version 1.0.0',
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const AboutPage()),
+          ),
+        ),
+        _Row(
+          icon: Icons.shield_outlined,
+          title: AppStrings.privacyPolicy,
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const PrivacyPolicyPage()),
+          ),
+        ),
+        _Row(
+          icon: Icons.description_outlined,
+          title: AppStrings.termsOfService,
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const TermsOfServicePage()),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _Gap extends StatelessWidget {

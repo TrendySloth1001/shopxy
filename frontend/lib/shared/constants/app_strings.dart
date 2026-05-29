@@ -8,6 +8,7 @@ class AppStrings {
   static const String navProducts = 'Products';
   static const String navCategories = 'Categories';
   static const String navInvoices = 'Invoices';
+  static const String navQuotations = 'Quotations';
   static const String navOrders = 'Orders';
   static const String navVendors = 'Vendors';
   static const String navMore = 'More';

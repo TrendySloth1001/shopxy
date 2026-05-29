@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy_customer/features/auth/presentation/providers/auth_provider.dart';
+import 'package:shopxy_customer/features/auth/presentation/widgets/require_auth.dart';
 import 'package:shopxy_customer/features/orders/domain/entities/customer_order.dart';
 import 'package:shopxy_customer/features/orders/presentation/pages/order_detail_page.dart';
 import 'package:shopxy_customer/features/orders/presentation/providers/orders_provider.dart';
@@ -13,6 +15,7 @@ import 'package:shopxy_customer/shared/widgets/app_bar.dart';
 import 'package:shopxy_customer/shared/widgets/app_button.dart';
 import 'package:shopxy_customer/shared/widgets/app_price_text.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
+import 'package:shopxy_customer/shared/widgets/empty_state.dart';
 
 /// "My Orders" inbox — card-per-order layout so each row is visually
 /// scannable: shop chip up top, item-name preview, item count + date,
@@ -31,12 +34,41 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) context.read<OrdersProvider>().load();
+      if (!mounted) return;
+      // Skip the /me/orders fetch for guests — the page renders a
+      // sign-in prompt instead. main.dart's auth listener will trigger
+      // load() automatically if the user signs in.
+      if (context.read<AuthProvider>().isAuthenticated) {
+        context.read<OrdersProvider>().load();
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final isGuest = context.select<AuthProvider, bool>((a) => a.isGuest);
+    if (isGuest) {
+      return Scaffold(
+        backgroundColor: AppColors.canvas,
+        appBar: const AppAppBar(title: AppStrings.myOrders),
+        body: EmptyState(
+          icon: Icons.receipt_long_outlined,
+          title: 'Sign in to see your orders',
+          subtitle:
+              'Your purchases, tracking and invoices live here once you have an account.',
+          action: AppButton.primary(
+            label: 'Sign in',
+            icon: Icons.login_rounded,
+            onPressed: () => requireAuth(
+              context,
+              reason:
+                  'View your orders, tracking and invoices in one place.',
+            ),
+          ),
+        ),
+      );
+    }
+
     final p = context.watch<OrdersProvider>();
     return Scaffold(
       backgroundColor: AppColors.canvas,

@@ -14,6 +14,9 @@ const paymentModeSchema = z.enum([
   'CHEQUE',
   'CARD',
   'OTHER',
+  // System-only: set on the Payment a caution set-off creates. Never accepted
+  // directly from /payments (see refine below) — only caution.service writes it.
+  'CAUTION',
 ]);
 
 const createPaymentSchema = z
@@ -44,7 +47,11 @@ const createPaymentSchema = z
       message:
         'RECEIPT must have partyId; PAYMENT must have vendorId',
     },
-  );
+  )
+  .refine((d) => d.mode !== 'CAUTION', {
+    message: "mode 'CAUTION' is reserved for caution set-offs",
+    path: ['mode'],
+  });
 
 const listPaymentsSchema = z.object({
   partyId: z.coerce.number().int().positive().optional(),

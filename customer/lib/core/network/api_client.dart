@@ -114,6 +114,14 @@ class ApiClient {
     final response = await call();
     if (response.statusCode != 401) return response;
 
+    // Guest path: no token was attached, so there's no session to
+    // refresh and no "you got logged out" event to fire. The caller
+    // (a feature that tried to read /me/*) gets the 401 as-is and
+    // decides how to render — typically by prompting sign-in. Without
+    // this guard every gated request a guest makes would cascade into
+    // a full state-reset via onUnauthorized → clearAuth.
+    if (_tokenManager.accessToken == null) return response;
+
     final refreshed = await _tryRefresh();
     if (!refreshed) {
       _tokenManager.onUnauthorized?.call();

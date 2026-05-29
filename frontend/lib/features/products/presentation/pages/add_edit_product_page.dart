@@ -246,6 +246,33 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     });
   }
 
+  // Mirrors the per-kind required fields in backend `contentBlockSchema`.
+  // Anything missing here would 400 the whole product save — so we filter
+  // these out at submit time rather than let one stale block block the user.
+  bool _isContentBlockShippable(ContentBlock b) {
+    final d = b.data;
+    switch (b.kind) {
+      case 'HERO':
+        return (d['imageUrl'] is String) && (d['imageUrl'] as String).isNotEmpty
+            && (d['headline'] is String) && (d['headline'] as String).isNotEmpty;
+      case 'FEATURE':
+        return (d['imageUrl'] is String) && (d['imageUrl'] as String).isNotEmpty
+            && (d['title'] is String) && (d['title'] as String).isNotEmpty
+            && (d['body'] is String) && (d['body'] as String).isNotEmpty
+            && (d['side'] == 'LEFT' || d['side'] == 'RIGHT');
+      case 'COMPARISON':
+        final cols = d['columns'];
+        final rows = d['rows'];
+        return cols is List && cols.length >= 2 && rows is List && rows.isNotEmpty;
+      case 'GALLERY':
+        final imgs = d['images'];
+        return imgs is List && imgs.isNotEmpty;
+      case 'TEXT':
+        return (d['markdown'] is String) && (d['markdown'] as String).isNotEmpty;
+    }
+    return false;
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isSaving = true);
@@ -281,6 +308,19 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     await warnIfDuplicate(skuText, 'SKU');
     await warnIfDuplicate(barcodeText, 'barcode');
     if (!mounted) return;
+    // Drop content blocks whose per-kind required fields are missing.
+    // Backend Zod will 400 on a malformed block even if the merchant
+    // never touched it this session — e.g. a legacy COMPARISON block
+    // saved before columns/rows became required.
+    final droppedBlocks = _contentBlocks.length - _contentBlocks.where(_isContentBlockShippable).length;
+    if (droppedBlocks > 0) {
+      _contentBlocks.retainWhere(_isContentBlockShippable);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Dropped $droppedBlocks malformed content block${droppedBlocks == 1 ? "" : "s"}'),
+        ),
+      );
+    }
     try {
       int productId;
       if (isEditing) {

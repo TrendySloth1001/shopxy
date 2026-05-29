@@ -304,8 +304,6 @@ class CollectionTile {
 class HomeStaticData {
   HomeStaticData._();
 
-  static const String defaultLocation = 'Deliver to: New Delhi 110001';
-
   static const List<String> searchHints = [
     'Search "noise cancelling earbuds"',
     'Search "summer kurta sets"',

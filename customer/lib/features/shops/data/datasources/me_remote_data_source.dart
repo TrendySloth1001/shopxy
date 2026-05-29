@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:shopxy_customer/core/network/api_client.dart';
 import 'package:shopxy_customer/features/shops/domain/entities/linked_shop.dart';
 import 'package:shopxy_customer/features/shops/domain/entities/linked_merchant.dart';
@@ -71,5 +72,178 @@ class MeRemoteDataSource {
       throw Exception('Failed to load invoice: ${res.statusCode}');
     }
     return ShopInvoiceDetail.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+  }
+
+  /// Read-only caution ledger the shop holds against this customer. Only
+  /// meaningful for party links (vendors have no caution). Returns the held
+  /// balance + history.
+  Future<ShopCautionLedger> caution(LinkedShop shop,
+      {int page = 1, int limit = 50}) async {
+    final res = await _client.get(
+      '/me/parties/${shop.id}/caution',
+      queryParameters: {'page': '$page', 'limit': '$limit'},
+    );
+    if (res.statusCode != 200) {
+      throw Exception('Failed to load caution: ${res.statusCode}');
+    }
+    final json = jsonDecode(res.body) as Map<String, dynamic>;
+    final rawBalance = json['balance'];
+    final balance = rawBalance is num
+        ? rawBalance.toDouble()
+        : double.tryParse('${rawBalance ?? ''}') ?? 0;
+    return ShopCautionLedger(
+      balance: balance,
+      entries: (json['data'] as List)
+          .map((e) => ShopCautionTxn.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+
+  String _err(String body, String fallback) {
+    try {
+      final m = jsonDecode(body) as Map<String, dynamic>;
+      return (m['message'] ?? m['error'] ?? fallback) as String;
+    } catch (_) {
+      return fallback;
+    }
+  }
+
+  /// Party-initiated caution requests the customer has raised on this shop.
+  Future<List<ShopCautionRequest>> cautionRequests(LinkedShop shop) async {
+    final res = await _client.get('/me/parties/${shop.id}/caution-requests');
+    if (res.statusCode != 200) {
+      throw Exception(_err(res.body, 'Failed to load requests: ${res.statusCode}'));
+    }
+    final json = jsonDecode(res.body) as Map<String, dynamic>;
+    return (json['data'] as List)
+        .map((e) => ShopCautionRequest.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Offer to post a caution deposit; the merchant approves it later. The
+  /// optional [basket] is read-only context (products the customer browsed to
+  /// size the deposit) — it does not earmark the money.
+  Future<ShopCautionRequest> createCautionRequest(
+    LinkedShop shop, {
+    required double amount,
+    String? mode,
+    String? modeReference,
+    String? note,
+    List<Map<String, dynamic>>? basket,
+  }) async {
+    final res = await _client.post(
+      '/me/parties/${shop.id}/caution-requests',
+      body: {
+        'amount': amount,
+        'mode': ?mode,
+        if (modeReference != null && modeReference.isNotEmpty)
+          'modeReference': modeReference,
+        if (note != null && note.isNotEmpty) 'note': note,
+        if (basket != null && basket.isNotEmpty) 'basket': basket,
+      },
+    );
+    if (res.statusCode != 201 && res.statusCode != 200) {
+      throw Exception(_err(res.body, 'Failed to send request: ${res.statusCode}'));
+    }
+    return ShopCautionRequest.fromJson(
+      jsonDecode(res.body) as Map<String, dynamic>,
+    );
+  }
+
+  /// Cancel a still-pending request.
+  Future<ShopCautionRequest> cancelCautionRequest(
+    LinkedShop shop,
+    int requestId,
+  ) async {
+    final res = await _client.post(
+      '/me/parties/${shop.id}/caution-requests/$requestId/cancel',
+    );
+    if (res.statusCode != 200) {
+      throw Exception(_err(res.body, 'Failed to cancel: ${res.statusCode}'));
+    }
+    return ShopCautionRequest.fromJson(
+      jsonDecode(res.body) as Map<String, dynamic>,
+    );
+  }
+
+  /// Quotations the shop sent this customer.
+  Future<List<ShopQuotation>> quotations(LinkedShop shop) async {
+    final res = await _client.get('/me/parties/${shop.id}/quotations');
+    if (res.statusCode != 200) {
+      throw Exception(_err(res.body, 'Failed to load quotations: ${res.statusCode}'));
+    }
+    final json = jsonDecode(res.body) as Map<String, dynamic>;
+    return (json['data'] as List)
+        .map((e) => ShopQuotation.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Accept a quotation → the shop turns it into a confirmed invoice.
+  Future<ShopQuotation> acceptQuotation(LinkedShop shop, int quotationId) async {
+    final res = await _client.post(
+      '/me/parties/${shop.id}/quotations/$quotationId/accept',
+    );
+    if (res.statusCode != 200) {
+      throw Exception(_err(res.body, 'Failed to accept: ${res.statusCode}'));
+    }
+    return ShopQuotation.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+  }
+
+  Future<ShopQuotation> declineQuotation(
+    LinkedShop shop,
+    int quotationId, {
+    String? declineNote,
+  }) async {
+    final res = await _client.post(
+      '/me/parties/${shop.id}/quotations/$quotationId/decline',
+      body: {
+        if (declineNote != null && declineNote.isNotEmpty)
+          'declineNote': declineNote,
+      },
+    );
+    if (res.statusCode != 200) {
+      throw Exception(_err(res.body, 'Failed to decline: ${res.statusCode}'));
+    }
+    return ShopQuotation.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+  }
+
+  /// Customer builds a basket and asks the shop for a quote (lands REQUESTED).
+  Future<ShopQuotation> requestQuotation(
+    LinkedShop shop, {
+    required List<Map<String, dynamic>> items,
+    String? note,
+  }) async {
+    final res = await _client.post(
+      '/me/parties/${shop.id}/quotations',
+      body: {
+        'items': items,
+        if (note != null && note.isNotEmpty) 'note': note,
+      },
+    );
+    if (res.statusCode != 201 && res.statusCode != 200) {
+      throw Exception(_err(res.body, 'Failed to send request: ${res.statusCode}'));
+    }
+    return ShopQuotation.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+  }
+
+  /// Download a quotation as PDF bytes (shop-sent or customer-requested).
+  Future<Uint8List> downloadQuotationPdf(LinkedShop shop, int quotationId) async {
+    final res = await _client
+        .get('/me/parties/${shop.id}/quotations/$quotationId/pdf');
+    if (res.statusCode != 200) {
+      throw Exception(_err(res.body, 'Could not download PDF: ${res.statusCode}'));
+    }
+    return res.bodyBytes;
+  }
+
+  /// Withdraw a quote request that's still awaiting the shop.
+  Future<ShopQuotation> cancelQuotation(LinkedShop shop, int quotationId) async {
+    final res = await _client.post(
+      '/me/parties/${shop.id}/quotations/$quotationId/cancel',
+    );
+    if (res.statusCode != 200) {
+      throw Exception(_err(res.body, 'Failed to cancel: ${res.statusCode}'));
+    }
+    return ShopQuotation.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 }

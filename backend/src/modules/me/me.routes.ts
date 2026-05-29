@@ -30,6 +30,50 @@ router.get(
   asyncHandler((req, res) => meController.partyInvoice(req, res)),
 );
 router.get(
+  '/parties/:partyId/caution',
+  asyncHandler((req, res) => meController.partyCaution(req, res)),
+);
+router.post(
+  '/parties/:partyId/caution-requests',
+  asyncHandler((req, res) => meController.createCautionRequest(req, res)),
+);
+router.get(
+  '/parties/:partyId/caution-requests',
+  asyncHandler((req, res) => meController.cautionRequests(req, res)),
+);
+router.post(
+  '/parties/:partyId/caution-requests/:reqId/cancel',
+  asyncHandler((req, res) => meController.cancelCautionRequest(req, res)),
+);
+router.get(
+  '/parties/:partyId/quotations',
+  asyncHandler((req, res) => meController.quotations(req, res)),
+);
+router.post(
+  '/parties/:partyId/quotations',
+  asyncHandler((req, res) => meController.requestQuotation(req, res)),
+);
+router.post(
+  '/parties/:partyId/quotations/:quotationId/cancel',
+  asyncHandler((req, res) => meController.cancelQuotation(req, res)),
+);
+router.get(
+  '/parties/:partyId/quotations/:quotationId/pdf',
+  asyncHandler((req, res) => meController.quotationPdf(req, res)),
+);
+router.get(
+  '/parties/:partyId/quotations/:quotationId',
+  asyncHandler((req, res) => meController.quotation(req, res)),
+);
+router.post(
+  '/parties/:partyId/quotations/:quotationId/accept',
+  asyncHandler((req, res) => meController.acceptQuotation(req, res)),
+);
+router.post(
+  '/parties/:partyId/quotations/:quotationId/decline',
+  asyncHandler((req, res) => meController.declineQuotation(req, res)),
+);
+router.get(
   '/vendors/:vendorId/invoices',
   asyncHandler((req, res) => meController.vendorInvoices(req, res)),
 );

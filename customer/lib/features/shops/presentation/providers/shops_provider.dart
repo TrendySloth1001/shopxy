@@ -118,6 +118,152 @@ class ShopsProvider extends ChangeNotifier {
     return _ds.invoiceDetail(s, id);
   }
 
+  /// Per-shop caution ledger cache (party links only). Same keying as
+  /// invoices so party + vendor at separate shops never collide.
+  final Map<String, ShopCautionLedger> _cautionCache = {};
+  final Map<String, bool> _cautionLoading = {};
+  final Map<String, String?> _cautionError = {};
+
+  ShopCautionLedger? cautionFor(LinkedShop s) => _cautionCache[_key(s)];
+  bool isLoadingCaution(LinkedShop s) => _cautionLoading[_key(s)] ?? false;
+  String? cautionErrorFor(LinkedShop s) => _cautionError[_key(s)];
+
+  Future<void> loadCaution(LinkedShop s) async {
+    // Vendors have no caution ledger — skip the round-trip.
+    if (s.role != ShopRole.party) return;
+    final key = _key(s);
+    _cautionLoading[key] = true;
+    _cautionError[key] = null;
+    notifyListeners();
+    try {
+      _cautionCache[key] = await _ds.caution(s);
+    } catch (e) {
+      _cautionError[key] = e.toString().replaceFirst('Exception: ', '');
+    } finally {
+      _cautionLoading[key] = false;
+      notifyListeners();
+    }
+  }
+
+  /// Per-shop cache of the customer's own caution *requests* (party links
+  /// only). Same keying as the ledger so party + vendor never collide.
+  final Map<String, List<ShopCautionRequest>> _cautionReqCache = {};
+  final Map<String, bool> _cautionReqLoading = {};
+
+  List<ShopCautionRequest>? cautionRequestsFor(LinkedShop s) =>
+      _cautionReqCache[_key(s)];
+  bool isLoadingCautionRequests(LinkedShop s) =>
+      _cautionReqLoading[_key(s)] ?? false;
+
+  Future<void> loadCautionRequests(LinkedShop s) async {
+    if (s.role != ShopRole.party) return;
+    final key = _key(s);
+    _cautionReqLoading[key] = true;
+    notifyListeners();
+    try {
+      _cautionReqCache[key] = await _ds.cautionRequests(s);
+    } catch (_) {
+      // Non-fatal — the requests strip just stays empty.
+    } finally {
+      _cautionReqLoading[key] = false;
+      notifyListeners();
+    }
+  }
+
+  /// Offer to post a caution deposit. Throws on failure (the sheet surfaces
+  /// the message); on success refreshes the requests strip.
+  Future<void> submitCautionRequest(
+    LinkedShop s, {
+    required double amount,
+    String? mode,
+    String? modeReference,
+    String? note,
+    List<Map<String, dynamic>>? basket,
+  }) async {
+    await _ds.createCautionRequest(
+      s,
+      amount: amount,
+      mode: mode,
+      modeReference: modeReference,
+      note: note,
+      basket: basket,
+    );
+    await loadCautionRequests(s);
+  }
+
+  /// Cancel a pending request, then refresh the strip.
+  Future<void> cancelCautionRequest(LinkedShop s, int requestId) async {
+    await _ds.cancelCautionRequest(s, requestId);
+    await loadCautionRequests(s);
+  }
+
+  /// Per-shop cache of quotations the shop sent this customer.
+  final Map<String, List<ShopQuotation>> _quotationCache = {};
+  final Map<String, bool> _quotationLoading = {};
+  final Map<String, String?> _quotationError = {};
+
+  List<ShopQuotation>? quotationsFor(LinkedShop s) => _quotationCache[_key(s)];
+  bool isLoadingQuotations(LinkedShop s) => _quotationLoading[_key(s)] ?? false;
+  String? quotationErrorFor(LinkedShop s) => _quotationError[_key(s)];
+
+  int pendingQuotationCount(LinkedShop s) =>
+      (_quotationCache[_key(s)] ?? const [])
+          .where((q) => q.isPending)
+          .length;
+
+  Future<void> loadQuotations(LinkedShop s) async {
+    if (s.role != ShopRole.party) return;
+    final key = _key(s);
+    _quotationLoading[key] = true;
+    _quotationError[key] = null;
+    notifyListeners();
+    try {
+      _quotationCache[key] = await _ds.quotations(s);
+    } catch (e) {
+      _quotationError[key] = e.toString().replaceFirst('Exception: ', '');
+    } finally {
+      _quotationLoading[key] = false;
+      notifyListeners();
+    }
+  }
+
+  /// Accept a quotation → it becomes a confirmed invoice. Refreshes the
+  /// quotation list + the invoice ledger. Throws on failure.
+  Future<void> acceptQuotation(LinkedShop s, int quotationId) async {
+    await _ds.acceptQuotation(s, quotationId);
+    await loadQuotations(s);
+    await loadInvoices(s);
+  }
+
+  Future<void> declineQuotation(
+    LinkedShop s,
+    int quotationId, {
+    String? declineNote,
+  }) async {
+    await _ds.declineQuotation(s, quotationId, declineNote: declineNote);
+    await loadQuotations(s);
+  }
+
+  /// Build a basket and ask the shop for a quote. Refreshes the list. Throws.
+  Future<void> requestQuotation(
+    LinkedShop s, {
+    required List<Map<String, dynamic>> items,
+    String? note,
+  }) async {
+    await _ds.requestQuotation(s, items: items, note: note);
+    await loadQuotations(s);
+  }
+
+  /// Withdraw a still-pending quote request. Refreshes the list. Throws.
+  Future<void> cancelQuotation(LinkedShop s, int quotationId) async {
+    await _ds.cancelQuotation(s, quotationId);
+    await loadQuotations(s);
+  }
+
+  /// Raw PDF bytes for a quotation (for the share/save sheet). Throws.
+  Future<Uint8List> downloadQuotationPdf(LinkedShop s, int quotationId) =>
+      _ds.downloadQuotationPdf(s, quotationId);
+
   void reset() {
     _shops = const [];
     _loaded = false;
@@ -125,6 +271,14 @@ class ShopsProvider extends ChangeNotifier {
     _invoiceCache.clear();
     _invoiceLoading.clear();
     _invoiceError.clear();
+    _cautionCache.clear();
+    _cautionLoading.clear();
+    _cautionError.clear();
+    _cautionReqCache.clear();
+    _cautionReqLoading.clear();
+    _quotationCache.clear();
+    _quotationLoading.clear();
+    _quotationError.clear();
     // Clear the persisted hint too — without this, signing in as a
     // different user on the same device would inherit the previous
     // user's bottom-nav layout for the first frame.

@@ -5,6 +5,7 @@ import 'package:shopxy/features/categories/presentation/pages/categories_page.da
 import 'package:shopxy/features/challans/presentation/pages/challans_page.dart';
 import 'package:shopxy/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:shopxy/features/invoices/presentation/pages/invoices_page.dart';
+import 'package:shopxy/features/quotations/presentation/pages/quotations_page.dart';
 import 'package:shopxy/features/orders/presentation/pages/orders_inbox_page.dart';
 import 'package:shopxy/features/orders/presentation/providers/orders_provider.dart';
 import 'package:shopxy/features/parties/presentation/pages/parties_page.dart';
@@ -151,6 +152,13 @@ List<_Shortcut> get _operationShortcuts => [
         accent: AppColors.brandStrong,
         accentSoft: AppColors.brandSoft,
         builder: (_) => const InvoicesPage(),
+      ),
+      _Shortcut(
+        label: AppStrings.navQuotations,
+        icon: Icons.request_quote_outlined,
+        accent: AppColors.accentIndigo,
+        accentSoft: AppColors.accentIndigoSoft,
+        builder: (_) => const QuotationsPage(),
       ),
       _Shortcut(
         label: AppStrings.navChallans,

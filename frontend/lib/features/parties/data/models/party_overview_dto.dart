@@ -60,6 +60,7 @@ class PartyOverviewDto {
           ? null
           : DateTime.parse(json['lastActivityAt'] as String),
       balance: _d(json['balance']),
+      cautionBalance: _d(json['cautionBalance']),
     );
   }
 

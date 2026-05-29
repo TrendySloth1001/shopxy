@@ -10,7 +10,9 @@ export type PaymentMode =
   | 'RTGS'
   | 'CHEQUE'
   | 'CARD'
-  | 'OTHER';
+  | 'OTHER'
+  // System-only: set on the Payment created by a caution set-off.
+  | 'CAUTION';
 
 export interface CreatePaymentInput {
   shopId: number;

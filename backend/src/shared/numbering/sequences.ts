@@ -89,6 +89,32 @@ export async function nextPaymentRef(
   };
 }
 
+/// Per-shop caution money-receipt number per FY: `CAU/25-26/00001`. A
+/// refundable security deposit for goods attracts no GST, so this is an
+/// ordinary money receipt (not a GST receipt voucher). Used for DEPOSIT and
+/// REFUND caution txns, and for the DEPOSIT minted when a party request is
+/// approved (hence the optional `tx` for the Serializable approval flow).
+export async function nextCautionRef(
+  shopId: number,
+  date: Date = new Date(),
+  tx?: Prisma.TransactionClient,
+): Promise<string> {
+  const fy = financialYearForDate(date);
+  const seq = await nextCounter(shopId, `CAU-${fy}`, tx);
+  return `CAU/${fy}/${String(seq).padStart(5, '0')}`;
+}
+
+/// Per-shop quotation numbering per FY: `QUO/25-26/00001`.
+export async function nextQuotationNo(
+  shopId: number,
+  date: Date = new Date(),
+  tx?: Prisma.TransactionClient,
+): Promise<string> {
+  const fy = financialYearForDate(date);
+  const seq = await nextCounter(shopId, `QUO-${fy}`, tx);
+  return `QUO/${fy}/${String(seq).padStart(5, '0')}`;
+}
+
 /// Per-shop stock-adjustment numbering. Adjustment numbers reset on
 /// the FY boundary like invoices.
 export async function nextAdjustmentNo(shopId: number): Promise<string> {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy_customer/features/auth/presentation/providers/auth_provider.dart';
+import 'package:shopxy_customer/features/auth/presentation/widgets/require_auth.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/constants/app_strings.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
@@ -25,13 +26,31 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _isLoading = false;
   String? _error;
 
+  late final AuthProvider _auth;
+
+  @override
+  void initState() {
+    super.initState();
+    _auth = context.read<AuthProvider>();
+    _auth.addListener(_onAuthChanged);
+  }
+
   @override
   void dispose() {
+    _auth.removeListener(_onAuthChanged);
     _name.dispose();
     _email.dispose();
     _password.dispose();
     _confirm.dispose();
     super.dispose();
+  }
+
+  /// Pop with `true` on successful auth so the LoginPage below us — and
+  /// in turn the original `requireAuth` caller — sees the success.
+  void _onAuthChanged() {
+    if (_auth.isAuthenticated && mounted) {
+      Navigator.of(context).pop(true);
+    }
   }
 
   Future<void> _submit() async {
@@ -58,8 +77,11 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
-    return GlassPage(
+    // Top-right Skip overlay — same treatment as LoginPage. See
+    // SkipToGuestButton for why the confirmation sheet is here.
+    return Stack(
+      children: [
+        GlassPage(
       hero: GlassHero.image(asset: 'assets/register.png', height: 260),
       navButton: GlassNavButton(
         onPressed: () => Navigator.pop(context),
@@ -181,6 +203,13 @@ class _RegisterPageState extends State<RegisterPage> {
         onPrimary: _submit,
         primaryLoading: _isLoading,
       ),
+        ),
+        Positioned(
+          top: MediaQuery.of(context).padding.top + AppSizes.sm,
+          right: AppSizes.sm,
+          child: const SkipToGuestButton(),
+        ),
+      ],
     );
   }
 }

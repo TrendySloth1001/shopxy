@@ -50,6 +50,10 @@ import 'package:shopxy/features/parties/data/datasources/parties_remote_data_sou
 import 'package:shopxy/features/parties/presentation/providers/parties_provider.dart';
 import 'package:shopxy/features/payments/data/datasources/payments_remote_data_source.dart';
 import 'package:shopxy/features/payments/presentation/providers/payments_provider.dart';
+import 'package:shopxy/features/caution/data/datasources/caution_remote_data_source.dart';
+import 'package:shopxy/features/caution/presentation/providers/caution_provider.dart';
+import 'package:shopxy/features/quotations/data/datasources/quotations_remote_data_source.dart';
+import 'package:shopxy/features/quotations/presentation/providers/quotations_provider.dart';
 import 'package:shopxy/features/products/data/datasources/products_remote_data_source.dart';
 import 'package:shopxy/features/products/presentation/providers/products_provider.dart';
 import 'package:shopxy/features/stock/data/datasources/stock_remote_data_source.dart';
@@ -94,6 +98,8 @@ void main() async {
   final ordersDs = OrdersRemoteDataSource(apiClient);
   final ordersProvider = OrdersProvider(ordersDs);
   final paymentsDs = PaymentsRemoteDataSource(apiClient);
+  final cautionDs = CautionRemoteDataSource(apiClient);
+  final quotationsDs = QuotationsRemoteDataSource(apiClient);
   final shopDs = ShopRemoteDataSource(apiClient);
   final adminBannersDs = AdminBannersRemoteDataSource(apiClient);
   final carouselsDs = CarouselsRemoteDataSource(apiClient);
@@ -177,6 +183,8 @@ void main() async {
         Provider<VendorsRemoteDataSource>.value(value: vendorsDs),
         Provider<PartiesRemoteDataSource>.value(value: partiesDs),
         Provider<PaymentsRemoteDataSource>.value(value: paymentsDs),
+        Provider<CautionRemoteDataSource>.value(value: cautionDs),
+        Provider<QuotationsRemoteDataSource>.value(value: quotationsDs),
         Provider<ChallansRemoteDataSource>.value(value: challansDs),
         Provider<StockAdjustmentsRemoteDataSource>.value(value: stockAdjustmentsDs),
         Provider<CategoriesRemoteDataSource>.value(value: categoriesDs),
@@ -195,6 +203,8 @@ void main() async {
         ChangeNotifierProvider<VendorsProvider>.value(value: vendorsProvider),
         ChangeNotifierProvider<PartiesProvider>.value(value: partiesProvider),
         ChangeNotifierProvider(create: (_) => PaymentsProvider(paymentsDs)),
+        ChangeNotifierProvider(create: (_) => CautionProvider(cautionDs)),
+        ChangeNotifierProvider(create: (_) => QuotationsProvider(quotationsDs)),
         ChangeNotifierProvider<ChallansProvider>.value(value: challansProvider),
         ChangeNotifierProvider<NotificationsProvider>.value(value: notificationsProvider),
         ChangeNotifierProvider(create: (_) => ReportsProvider(reportsDs)),

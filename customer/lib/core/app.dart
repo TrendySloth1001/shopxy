@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy_customer/core/lifecycle/lifecycle_observer.dart';
 import 'package:shopxy_customer/core/router/app_shell.dart';
-import 'package:shopxy_customer/features/auth/presentation/pages/login_page.dart';
 import 'package:shopxy_customer/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy_customer/features/catalog/presentation/providers/cart_provider.dart';
 import 'package:shopxy_customer/features/home/presentation/services/tracking_service.dart';
@@ -54,7 +53,7 @@ class ShopxyCustomerApp extends StatelessWidget {
             unawaited(tracking.flush());
           }
         },
-        child: const _AuthGate(),
+        child: const _RootView(),
       ),
     );
   }
@@ -71,15 +70,17 @@ class ShopxyCustomerApp extends StatelessWidget {
   }
 }
 
-class _AuthGate extends StatelessWidget {
-  const _AuthGate();
+/// Boot gate: shows the splash only while the token-check is still in
+/// flight. Once auth has settled — whether the user is signed in or a
+/// guest — the customer shell takes over and individual screens decide
+/// what to show for guests (sign-in CTAs, public content, etc.).
+class _RootView extends StatelessWidget {
+  const _RootView();
 
   @override
   Widget build(BuildContext context) {
-    final auth = context.watch<AuthProvider>();
-    if (auth.isLoading) return const _Splash();
-    if (auth.isAuthenticated) return const CustomerShell();
-    return const LoginPage();
+    final isLoading = context.select<AuthProvider, bool>((a) => a.isLoading);
+    return isLoading ? const _Splash() : const CustomerShell();
   }
 }
 

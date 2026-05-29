@@ -7,6 +7,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/constants/app_strings.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+import 'package:shopxy_customer/shared/widgets/app_divider.dart';
 
 class ShopInvoiceDetailPage extends StatefulWidget {
   const ShopInvoiceDetailPage({
@@ -76,30 +77,33 @@ class _ShopInvoiceDetailPageState extends State<ShopInvoiceDetailPage> {
           final inv = snap.data!;
           return ListView(
             padding: const EdgeInsets.fromLTRB(
-              AppSizes.lg,
+              0,
               AppSizes.md,
-              AppSizes.lg,
+              0,
               AppSizes.huge,
             ),
             children: [
-              _HeaderCard(invoice: inv),
-              const SizedBox(height: AppSizes.md),
-              _CounterpartyCard(invoice: inv, fallbackName: widget.shop.name),
+              _Header(invoice: inv),
+              const _SpacedDivider(),
+              _Counterparty(invoice: inv, fallbackName: widget.shop.name),
               const SizedBox(height: AppSizes.xl),
-              _SectionEyebrow(
+              _Eyebrow(
                 text: 'ITEMS',
                 trailing: '${inv.items.length}'
                     ' item${inv.items.length == 1 ? '' : 's'}',
               ),
-              const SizedBox(height: AppSizes.sm),
-              _ItemsCard(items: inv.items, money: money),
-              const SizedBox(height: AppSizes.xl),
-              _TotalsCard(invoice: inv, money: money),
+              const AppDivider.flush(),
+              for (int i = 0; i < inv.items.length; i++) ...[
+                if (i > 0) const AppDivider.flush(),
+                _ItemRow(item: inv.items[i], money: money),
+              ],
+              const _SpacedDivider(),
+              _Totals(invoice: inv, money: money),
               if (inv.note != null) ...[
                 const SizedBox(height: AppSizes.xl),
-                _SectionEyebrow(text: 'NOTE'),
-                const SizedBox(height: AppSizes.sm),
-                _NoteCard(text: inv.note!),
+                const _Eyebrow(text: 'NOTE'),
+                const AppDivider.flush(),
+                _Note(text: inv.note!),
               ],
             ],
           );
@@ -109,39 +113,26 @@ class _ShopInvoiceDetailPageState extends State<ShopInvoiceDetailPage> {
   }
 }
 
-/// White surface card used as the consistent container across the
-/// page. Single source of truth for "the look of a card on this
-/// screen" — keeps the visual rhythm steady without per-section
-/// re-rolling decorations.
-class _Card extends StatelessWidget {
-  const _Card({required this.child, this.padding});
-  final Widget child;
-  final EdgeInsetsGeometry? padding;
-
+/// A hairline with breathing room above/below — the flat-layout replacement
+/// for the gap between the old bordered cards.
+class _SpacedDivider extends StatelessWidget {
+  const _SpacedDivider();
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: padding ?? const EdgeInsets.all(AppSizes.lg),
-      decoration: ShapeDecoration(
-        color: AppColors.white,
-        shape: AppShapes.squircle(
-          AppSizes.radiusLg,
-          side: const BorderSide(color: AppColors.hairline, width: 0.8),
-        ),
-      ),
-      child: child,
-    );
-  }
+  Widget build(BuildContext context) => const Padding(
+        padding: EdgeInsets.symmetric(vertical: AppSizes.lg),
+        child: AppDivider.flush(),
+      );
 }
 
-class _HeaderCard extends StatelessWidget {
-  const _HeaderCard({required this.invoice});
+class _Header extends StatelessWidget {
+  const _Header({required this.invoice});
   final ShopInvoiceDetail invoice;
 
   @override
   Widget build(BuildContext context) {
     final eyebrow = invoice.isSale ? 'SALES INVOICE' : 'PURCHASE BILL';
-    return _Card(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -237,8 +228,8 @@ class _StatusPill extends StatelessWidget {
   }
 }
 
-class _CounterpartyCard extends StatelessWidget {
-  const _CounterpartyCard({
+class _Counterparty extends StatelessWidget {
+  const _Counterparty({
     required this.invoice,
     required this.fallbackName,
   });
@@ -253,7 +244,8 @@ class _CounterpartyCard extends StatelessWidget {
         ? Icons.person_outline_rounded
         : Icons.storefront_outlined;
 
-    return _Card(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -321,15 +313,20 @@ class _CounterpartyCard extends StatelessWidget {
   }
 }
 
-class _SectionEyebrow extends StatelessWidget {
-  const _SectionEyebrow({required this.text, this.trailing});
+class _Eyebrow extends StatelessWidget {
+  const _Eyebrow({required this.text, this.trailing});
   final String text;
   final String? trailing;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSizes.xs),
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        0,
+        AppSizes.lg,
+        AppSizes.sm,
+      ),
       child: Row(
         children: [
           Expanded(
@@ -352,34 +349,6 @@ class _SectionEyebrow extends StatelessWidget {
                 fontWeight: FontWeight.w700,
               ),
             ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ItemsCard extends StatelessWidget {
-  const _ItemsCard({required this.items, required this.money});
-  final List<ShopInvoiceItem> items;
-  final NumberFormat money;
-
-  @override
-  Widget build(BuildContext context) {
-    return _Card(
-      padding: EdgeInsets.zero,
-      child: Column(
-        children: [
-          for (int i = 0; i < items.length; i++) ...[
-            if (i > 0)
-              const Divider(
-                height: 1,
-                thickness: 0.6,
-                color: AppColors.hairline,
-                indent: AppSizes.lg,
-                endIndent: AppSizes.lg,
-              ),
-            _ItemRow(item: items[i], money: money),
-          ],
         ],
       ),
     );
@@ -459,14 +428,15 @@ class _ItemRow extends StatelessWidget {
   }
 }
 
-class _TotalsCard extends StatelessWidget {
-  const _TotalsCard({required this.invoice, required this.money});
+class _Totals extends StatelessWidget {
+  const _Totals({required this.invoice, required this.money});
   final ShopInvoiceDetail invoice;
   final NumberFormat money;
 
   @override
   Widget build(BuildContext context) {
-    return _Card(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
       child: Column(
         children: [
           _TotalsRow(label: 'Subtotal', value: money.format(invoice.subtotal)),
@@ -479,11 +449,7 @@ class _TotalsCard extends StatelessWidget {
             ),
           const Padding(
             padding: EdgeInsets.symmetric(vertical: AppSizes.sm),
-            child: Divider(
-              height: 1,
-              thickness: 0.6,
-              color: AppColors.hairline,
-            ),
+            child: AppDivider.flush(),
           ),
           _TotalsRow(
             label: 'Total',
@@ -541,14 +507,19 @@ class _TotalsRow extends StatelessWidget {
   }
 }
 
-class _NoteCard extends StatelessWidget {
-  const _NoteCard({required this.text});
+class _Note extends StatelessWidget {
+  const _Note({required this.text});
   final String text;
 
   @override
   Widget build(BuildContext context) {
-    return _Card(
-      padding: const EdgeInsets.all(AppSizes.md),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.md,
+        AppSizes.lg,
+        0,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
