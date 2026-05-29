@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
 import { nextPaymentRef } from '../../shared/numbering/sequences.js';
+import { toNumber } from '../../shared/numbering/decimal.js';
 
 export type PaymentType = 'RECEIPT' | 'PAYMENT';
 export type PaymentMode =
@@ -32,12 +33,6 @@ export interface CreatePaymentInput {
 }
 
 /// Decimal helper — Prisma returns Decimal, the front-end wants double.
-function toNumber(value: Prisma.Decimal | number | null | undefined): number {
-  if (value == null) return 0;
-  if (typeof value === 'number') return value;
-  return Number(value.toString());
-}
-
 export class PaymentsService {
   /// Create a payment row, atomically allocating the next reference
   /// number. Caller passes the merchant's userId in `createdById` so we
@@ -262,9 +257,26 @@ export class PaymentsService {
   async deletePayment(shopId: number, id: number) {
     const owned = await prisma.payment.findFirst({
       where: { id, shopId },
-      select: { id: true },
+      select: { id: true, mode: true },
     });
     if (!owned) return false;
+
+    // A mode='CAUTION' payment is a caution set-off with a matching ADJUSTMENT
+    // CautionTxn that dropped the caution balance. The CautionTxn→Payment link
+    // is onDelete:SetNull, so deleting the payment alone would leave the
+    // ADJUSTMENT in place (caution balance stays spent) while the invoice's
+    // outstanding silently reopens. Reverse both atomically. The ADJUSTMENT
+    // must go first, while paymentId still points at the payment.
+    if (owned.mode === 'CAUTION') {
+      await prisma.$transaction(async (tx) => {
+        await tx.cautionTxn.deleteMany({
+          where: { shopId, paymentId: id, type: 'ADJUSTMENT' },
+        });
+        await tx.payment.delete({ where: { id } });
+      });
+      return true;
+    }
+
     await prisma.payment.delete({ where: { id } });
     return true;
   }
