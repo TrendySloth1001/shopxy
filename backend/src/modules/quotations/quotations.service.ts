@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
 import { Writable } from 'stream';
 import { nextQuotationNo } from '../../shared/numbering/sequences.js';
+import { toNumber, round2 } from '../../shared/numbering/decimal.js';
 import { HttpError } from '../../shared/http/errorHandler.js';
 import { invoicesService } from '../invoices/invoices.service.js';
 import { renderQuotationPdf } from './quotation-pdf-renderer.js';
@@ -13,12 +14,6 @@ export type QuotationStatus =
   | 'DECLINED'
   | 'CANCELLED'
   | 'EXPIRED';
-
-function toNumber(value: Prisma.Decimal | number | null | undefined): number {
-  if (value == null) return 0;
-  if (typeof value === 'number') return value;
-  return Number(value.toString());
-}
 
 /// A line the merchant added to the quotation bucket.
 export interface QuotationItemInput {
@@ -68,13 +63,18 @@ function toDTO(r: QuotationRow) {
 /// Compute a per-line total + the quotation roll-up. This drives the display
 /// figures; the authoritative GST split is recomputed by invoicesService when
 /// the customer accepts (so cess/place-of-supply nuances stay in one engine).
+/// Estimate the quotation totals. This is a PREVIEW only — when a customer
+/// accepts, accept() re-prices the same lines through invoicesService (the
+/// authoritative GST engine), which additionally applies cess, the CGST/SGST
+/// place-of-supply split and invoice-level round-off. Rounding here mirrors the
+/// invoice engine's per-line round2 so the common (no-cess) estimate matches.
 function priceItems(items: QuotationItemInput[]) {
   let subtotal = 0;
   let taxAmount = 0;
   const lines = items.map((it) => {
     const qty = it.quantity;
-    const taxable = Math.max(0, qty * it.unitPrice - (it.discount ?? 0));
-    const tax = (taxable * (it.taxPercent ?? 0)) / 100;
+    const taxable = round2(Math.max(0, qty * it.unitPrice - (it.discount ?? 0)));
+    const tax = round2((taxable * (it.taxPercent ?? 0)) / 100);
     subtotal += taxable;
     taxAmount += tax;
     return {
@@ -86,15 +86,14 @@ function priceItems(items: QuotationItemInput[]) {
       taxPercent: it.taxPercent ?? 0,
       discount: it.discount ?? 0,
       imageUrl: it.imageUrl ?? null,
-      lineTotal: Math.round((taxable + tax) * 100) / 100,
+      lineTotal: round2(taxable + tax),
     };
   });
-  const round = (n: number) => Math.round(n * 100) / 100;
   return {
     lines,
-    subtotal: round(subtotal),
-    taxAmount: round(taxAmount),
-    total: round(subtotal + taxAmount),
+    subtotal: round2(subtotal),
+    taxAmount: round2(taxAmount),
+    total: round2(subtotal + taxAmount),
   };
 }
 
@@ -125,9 +124,10 @@ export class QuotationsService {
     }
 
     const priced = priceItems(input.items);
-    const quotationNo = await nextQuotationNo(shopId, new Date());
 
     const created = await prisma.$transaction(async (tx) => {
+      // Allocate inside the txn so a rollback doesn't burn the QUO counter.
+      const quotationNo = await nextQuotationNo(shopId, new Date(), tx);
       const row = await tx.quotation.create({
         data: {
           shopId,
@@ -257,31 +257,45 @@ export class QuotationsService {
       discount?: number;
     }>);
 
-    const result = await invoicesService.createInvoice({
-      shopId,
-      type: 'SALE',
-      documentType: 'TAX_INVOICE',
-      partyId,
-      placeOfSupplyStateCode: quotation.placeOfSupplyStateCode ?? undefined,
-      note: quotation.note ?? undefined,
-      items: lines.map((l) => ({
-        productId: l.productId,
-        quantity: l.quantity,
-        unitPrice: l.unitPrice,
-        taxPercent: l.taxPercent,
-        discount: l.discount,
-      })),
-      confirm: true,
-      confirmedById: userId,
-    });
-
-    // createInvoice never throws on a domain problem — it returns { error } or
-    // a confirmError. Either way, undo the claim so the customer can retry.
-    if ('error' in result || !('confirmed' in result) || !result.confirmed) {
-      await prisma.quotation.updateMany({
+    // Undo the PENDING→ACCEPTED claim so the customer can retry. Used on both
+    // the returned-error path and the (infra) throw path below.
+    const restorePending = () =>
+      prisma.quotation.updateMany({
         where: { id, shopId, status: 'ACCEPTED' },
         data: { status: 'PENDING', respondedAt: null },
       });
+
+    let result;
+    try {
+      result = await invoicesService.createInvoice({
+        shopId,
+        type: 'SALE',
+        documentType: 'TAX_INVOICE',
+        partyId,
+        placeOfSupplyStateCode: quotation.placeOfSupplyStateCode ?? undefined,
+        note: quotation.note ?? undefined,
+        items: lines.map((l) => ({
+          productId: l.productId,
+          quantity: l.quantity,
+          unitPrice: l.unitPrice,
+          taxPercent: l.taxPercent,
+          discount: l.discount,
+        })),
+        confirm: true,
+        confirmedById: userId,
+      });
+    } catch (err) {
+      // createInvoice is documented not to throw on a domain problem, but an
+      // infra failure (DB, numbering, serialization abort) must not leave the
+      // quotation stuck ACCEPTED with no invoice — release the claim and
+      // propagate so the customer can retry.
+      await restorePending();
+      throw err;
+    }
+
+    // On a returned domain error or a failed confirm, undo the claim too.
+    if ('error' in result || !('confirmed' in result) || !result.confirmed) {
+      await restorePending();
       // Best-effort cleanup of a left-over draft invoice.
       if (!('error' in result) && result.invoice?.id) {
         await invoicesService.deleteInvoice(shopId, result.invoice.id).catch(() => {});
@@ -416,9 +430,10 @@ export class QuotationsService {
     if (!shop) return { error: 'PARTY_NOT_FOUND' as const };
 
     const priced = priceItems(input.items);
-    const quotationNo = await nextQuotationNo(shopId, new Date());
 
     const created = await prisma.$transaction(async (tx) => {
+      // Allocate inside the txn so a rollback doesn't burn the QUO counter.
+      const quotationNo = await nextQuotationNo(shopId, new Date(), tx);
       const row = await tx.quotation.create({
         data: {
           shopId,

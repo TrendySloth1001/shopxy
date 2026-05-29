@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
 import { nextPaymentRef, nextCautionRef } from '../../shared/numbering/sequences.js';
+import { toNumber } from '../../shared/numbering/decimal.js';
 import { HttpError } from '../../shared/http/errorHandler.js';
 
 export type CautionTxnType = 'DEPOSIT' | 'REFUND' | 'ADJUSTMENT' | 'FORFEIT';
@@ -15,12 +16,6 @@ export type CautionMode =
   | 'CHEQUE'
   | 'CARD'
   | 'OTHER';
-
-function toNumber(value: Prisma.Decimal | number | null | undefined): number {
-  if (value == null) return 0;
-  if (typeof value === 'number') return value;
-  return Number(value.toString());
-}
 
 /// Caution / security deposit ledger, scoped per shop. A deposit is a
 /// liability the shop owes back to the party, so it lives in its own table
@@ -43,6 +38,25 @@ export class CautionService {
     for (const row of grouped) {
       const sum = toNumber(row._sum.amount);
       bal += row.type === 'DEPOSIT' ? sum : -sum;
+    }
+    return bal;
+  }
+
+  /// Live balance computed inside a transaction client, so a cap check and the
+  /// txn that depends on it can't be split by a concurrent writer.
+  private async balanceInTx(
+    tx: Prisma.TransactionClient,
+    shopId: number,
+    partyId: number,
+  ): Promise<number> {
+    const grouped = await tx.cautionTxn.groupBy({
+      by: ['type'],
+      where: { shopId, partyId },
+      _sum: { amount: true },
+    });
+    let bal = 0;
+    for (const row of grouped) {
+      bal += (row.type === 'DEPOSIT' ? 1 : -1) * toNumber(row._sum.amount);
     }
     return bal;
   }
@@ -142,34 +156,43 @@ export class CautionService {
     });
     if (!party) return null;
 
-    if (input.type === 'REFUND') {
-      const balance = await this.balance(shopId, partyId);
-      if (input.amount - balance > 0.001) {
-        throw new HttpError(
-          400,
-          'CAUTION_REFUND_EXCEEDS_BALANCE',
-          `Refund exceeds caution balance (${balance.toFixed(2)})`,
-        );
-      }
-    }
+    // Serializable so the refund cap check and the txn that consumes the
+    // balance can't be interleaved with a concurrent refund/set-off — same
+    // guarantee adjust() relies on. The receipt number is allocated inside
+    // the txn so a rollback doesn't burn it.
+    return prisma.$transaction(
+      async (tx) => {
+        const before = await this.balanceInTx(tx, shopId, partyId);
+        if (input.type === 'REFUND' && input.amount - before > 0.001) {
+          throw new HttpError(
+            400,
+            'CAUTION_REFUND_EXCEEDS_BALANCE',
+            `Refund exceeds caution balance (${before.toFixed(2)})`,
+          );
+        }
 
-    // Ordinary money-receipt number — a deposit/refund of a goods security
-    // deposit attracts no GST, so this is a plain receipt, not a GST voucher.
-    const receiptNo = await nextCautionRef(shopId, new Date());
-    const txn = await prisma.cautionTxn.create({
-      data: {
-        shopId,
-        partyId,
-        type: input.type,
-        amount: new Prisma.Decimal(input.amount),
-        mode: input.mode,
-        modeReference: input.modeReference ?? null,
-        receiptNo,
-        note: input.note ?? null,
-        createdById: input.createdById ?? null,
+        // Ordinary money-receipt number — a deposit/refund of a goods security
+        // deposit attracts no GST, so this is a plain receipt, not a voucher.
+        const receiptNo = await nextCautionRef(shopId, new Date(), tx);
+        const txn = await tx.cautionTxn.create({
+          data: {
+            shopId,
+            partyId,
+            type: input.type,
+            amount: new Prisma.Decimal(input.amount),
+            mode: input.mode,
+            modeReference: input.modeReference ?? null,
+            receiptNo,
+            note: input.note ?? null,
+            createdById: input.createdById ?? null,
+          },
+        });
+        const balance =
+          input.type === 'DEPOSIT' ? before + input.amount : before - input.amount;
+        return { txn, balance };
       },
-    });
-    return { txn, balance: await this.balance(shopId, partyId) };
+      { isolationLevel: 'Serializable' },
+    );
   }
 
   /// Forfeit (keep) part or all of a deposit on the party's default. Unlike
@@ -193,27 +216,34 @@ export class CautionService {
     });
     if (!party) return null;
 
-    const balance = await this.balance(shopId, partyId);
-    if (input.amount - balance > 0.001) {
-      throw new HttpError(
-        400,
-        'CAUTION_FORFEIT_EXCEEDS_BALANCE',
-        `Forfeit exceeds caution balance (${balance.toFixed(2)})`,
-      );
-    }
+    // Serializable for the same reason as record()/adjust(): the cap check
+    // and the txn that spends the balance must be one atomic step.
+    return prisma.$transaction(
+      async (tx) => {
+        const before = await this.balanceInTx(tx, shopId, partyId);
+        if (input.amount - before > 0.001) {
+          throw new HttpError(
+            400,
+            'CAUTION_FORFEIT_EXCEEDS_BALANCE',
+            `Forfeit exceeds caution balance (${before.toFixed(2)})`,
+          );
+        }
 
-    const txn = await prisma.cautionTxn.create({
-      data: {
-        shopId,
-        partyId,
-        type: 'FORFEIT',
-        amount: new Prisma.Decimal(input.amount),
-        gstTreatment: input.gstTreatment,
-        note: input.note ?? null,
-        createdById: input.createdById ?? null,
+        const txn = await tx.cautionTxn.create({
+          data: {
+            shopId,
+            partyId,
+            type: 'FORFEIT',
+            amount: new Prisma.Decimal(input.amount),
+            gstTreatment: input.gstTreatment,
+            note: input.note ?? null,
+            createdById: input.createdById ?? null,
+          },
+        });
+        return { txn, balance: before - input.amount };
       },
-    });
-    return { txn, balance: await this.balance(shopId, partyId) };
+      { isolationLevel: 'Serializable' },
+    );
   }
 
   /// Set off caution against an open invoice. Atomic + Serializable so two
@@ -249,16 +279,7 @@ export class CautionService {
         }
 
         // Live caution balance inside the txn.
-        const grouped = await tx.cautionTxn.groupBy({
-          by: ['type'],
-          where: { shopId, partyId },
-          _sum: { amount: true },
-        });
-        let balance = 0;
-        for (const row of grouped) {
-          balance +=
-            (row.type === 'DEPOSIT' ? 1 : -1) * toNumber(row._sum.amount);
-        }
+        const balance = await this.balanceInTx(tx, shopId, partyId);
         if (input.amount - balance > 0.001) {
           throw new HttpError(
             400,

@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
 import { nextCautionRef } from '../../shared/numbering/sequences.js';
+import { toNumber } from '../../shared/numbering/decimal.js';
 import { HttpError } from '../../shared/http/errorHandler.js';
 
 export type CautionRequestStatus =
@@ -8,12 +9,6 @@ export type CautionRequestStatus =
   | 'APPROVED'
   | 'REJECTED'
   | 'CANCELLED';
-
-function toNumber(value: Prisma.Decimal | number | null | undefined): number {
-  if (value == null) return 0;
-  if (typeof value === 'number') return value;
-  return Number(value.toString());
-}
 
 const requestSelect = {
   id: true,

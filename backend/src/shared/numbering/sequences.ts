@@ -25,6 +25,22 @@ async function nextCounter(
   return rows[0].value;
 }
 
+/// FY-scoped, per-shop document reference: `${prefix}/${FY}/${seq}` (e.g.
+/// `INV/25-26/00001`). Resets at the FY boundary (the counter key embeds FY)
+/// and is independent across merchants (the key is composite with shop_id).
+/// All the public nextXxx helpers below differ only in their prefix, so they
+/// delegate here — change the format once and every document type follows.
+async function fyScopedRef(
+  shopId: number,
+  prefix: string,
+  date: Date,
+  tx?: Prisma.TransactionClient,
+): Promise<{ ref: string; financialYear: string }> {
+  const fy = financialYearForDate(date);
+  const seq = await nextCounter(shopId, `${prefix}-${fy}`, tx);
+  return { ref: `${prefix}/${fy}/${String(seq).padStart(5, '0')}`, financialYear: fy };
+}
+
 /// Invoice number per Indian convention, per shop:
 /// `${prefix}/${FY}/${seq}`. Example: `INV/25-26/00001`. Resets at the
 /// FY boundary (counter key embeds FY) AND is independent across
@@ -41,7 +57,6 @@ export async function nextInvoiceNo(
     | 'DEBIT_NOTE' = 'TAX_INVOICE',
   invoiceDate: Date = new Date(),
 ): Promise<{ invoiceNo: string; financialYear: string }> {
-  const fy = financialYearForDate(invoiceDate);
   let prefix: string;
   switch (documentType) {
     case 'ESTIMATE':
@@ -57,18 +72,12 @@ export async function nextInvoiceNo(
     default:
       prefix = type === 'SALE' ? 'INV' : 'PUR';
   }
-  const seq = await nextCounter(shopId, `${prefix}-${fy}`);
-  return {
-    invoiceNo: `${prefix}/${fy}/${String(seq).padStart(5, '0')}`,
-    financialYear: fy,
-  };
+  const { ref, financialYear } = await fyScopedRef(shopId, prefix, invoiceDate);
+  return { invoiceNo: ref, financialYear };
 }
 
 export async function nextChallanNo(shopId: number): Promise<string> {
-  const now = new Date();
-  const fy = financialYearForDate(now);
-  const seq = await nextCounter(shopId, `CH-${fy}`);
-  return `CH/${fy}/${String(seq).padStart(5, '0')}`;
+  return (await fyScopedRef(shopId, 'CH', new Date())).ref;
 }
 
 /// Payment reference number per FY per shop. Mirrors `nextInvoiceNo`:
@@ -80,13 +89,9 @@ export async function nextPaymentRef(
   paymentDate: Date = new Date(),
   tx?: Prisma.TransactionClient,
 ): Promise<{ referenceNo: string; financialYear: string }> {
-  const fy = financialYearForDate(paymentDate);
   const prefix = type === 'RECEIPT' ? 'RCT' : 'PAY';
-  const seq = await nextCounter(shopId, `${prefix}-${fy}`, tx);
-  return {
-    referenceNo: `${prefix}/${fy}/${String(seq).padStart(5, '0')}`,
-    financialYear: fy,
-  };
+  const { ref, financialYear } = await fyScopedRef(shopId, prefix, paymentDate, tx);
+  return { referenceNo: ref, financialYear };
 }
 
 /// Per-shop caution money-receipt number per FY: `CAU/25-26/00001`. A
@@ -99,9 +104,7 @@ export async function nextCautionRef(
   date: Date = new Date(),
   tx?: Prisma.TransactionClient,
 ): Promise<string> {
-  const fy = financialYearForDate(date);
-  const seq = await nextCounter(shopId, `CAU-${fy}`, tx);
-  return `CAU/${fy}/${String(seq).padStart(5, '0')}`;
+  return (await fyScopedRef(shopId, 'CAU', date, tx)).ref;
 }
 
 /// Per-shop quotation numbering per FY: `QUO/25-26/00001`.
@@ -110,15 +113,11 @@ export async function nextQuotationNo(
   date: Date = new Date(),
   tx?: Prisma.TransactionClient,
 ): Promise<string> {
-  const fy = financialYearForDate(date);
-  const seq = await nextCounter(shopId, `QUO-${fy}`, tx);
-  return `QUO/${fy}/${String(seq).padStart(5, '0')}`;
+  return (await fyScopedRef(shopId, 'QUO', date, tx)).ref;
 }
 
 /// Per-shop stock-adjustment numbering. Adjustment numbers reset on
 /// the FY boundary like invoices.
 export async function nextAdjustmentNo(shopId: number): Promise<string> {
-  const fy = financialYearForDate(new Date());
-  const seq = await nextCounter(shopId, `ADJ-${fy}`);
-  return `ADJ/${fy}/${String(seq).padStart(5, '0')}`;
+  return (await fyScopedRef(shopId, 'ADJ', new Date())).ref;
 }
