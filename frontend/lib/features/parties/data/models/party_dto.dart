@@ -1,6 +1,14 @@
 import 'package:shopxy/features/parties/domain/entities/party.dart';
 
 class PartyDto {
+  /// Prisma `Decimal` columns serialize to JSON as strings; coerce safely.
+  static double _d(dynamic v) {
+    if (v == null) return 0;
+    if (v is num) return v.toDouble();
+    if (v is String) return double.tryParse(v) ?? 0;
+    return 0;
+  }
+
   static Party fromJson(Map<String, dynamic> json) {
     final count = json['_count'] as Map<String, dynamic>?;
     return Party(
@@ -21,6 +29,7 @@ class PartyDto {
       updatedAt: DateTime.parse(json['updatedAt'] as String),
       challanCount: count?['challans'] as int? ?? 0,
       invoiceCount: count?['invoices'] as int? ?? 0,
+      cautionBalance: _d(json['cautionBalance']),
     );
   }
 

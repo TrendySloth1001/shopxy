@@ -15,7 +15,6 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
-import 'package:shopxy/shared/widgets/app_card.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_section_header.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
@@ -348,11 +347,9 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
             child: ListView(
               padding: const EdgeInsets.all(AppSizes.lg),
               children: [
-          AppCard(
-            padding: const EdgeInsets.all(AppSizes.lg),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
                 Row(
                   children: [
                     Expanded(
@@ -470,28 +467,23 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                 ],
               ],
             ),
-          ),
-          const SizedBox(height: AppSizes.md),
+          const SizedBox(height: AppSizes.lg),
+          const AppDivider.flush(),
+          const SizedBox(height: AppSizes.lg),
           AppSectionHeader(
             title: AppStrings.invoiceItems.toUpperCase(),
             padding: const EdgeInsets.only(bottom: AppSizes.sm),
           ),
-          AppCard(
-            padding: EdgeInsets.zero,
-            child: Column(
-              children: [
-                for (int i = 0; i < invoice.items.length; i++) ...[
-                  if (i > 0) const AppDivider.flush(),
-                  _ItemTile(item: invoice.items[i]),
-                ],
-              ],
-            ),
-          ),
+          const AppDivider.flush(),
+          for (int i = 0; i < invoice.items.length; i++) ...[
+            if (i > 0) const AppDivider.flush(),
+            _ItemTile(item: invoice.items[i]),
+          ],
           const SizedBox(height: AppSizes.md),
-          AppCard(
-            padding: const EdgeInsets.all(AppSizes.lg),
-            child: Column(
-              children: [
+          const AppDivider.flush(),
+          const SizedBox(height: AppSizes.md),
+          Column(
+            children: [
                 _TotalRow(label: AppStrings.subtotal, value: invoice.subtotal),
                 // GST split mirrors how the invoice was saved. For older
                 // rows without the split (igst/cgst/sgst all 0) we fall
@@ -537,27 +529,25 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                 ],
               ],
             ),
-          ),
           const SizedBox(height: AppSizes.md),
-          AppCard(
-            padding: EdgeInsets.zero,
-            child: ListTile(
-              leading: const Icon(
-                Icons.chat_rounded,
-                color: AppColors.whatsapp,
-              ),
-              title: const Text('Send via WhatsApp'),
-              subtitle: Text(
-                invoice.customerPhone != null && invoice.customerPhone!.isNotEmpty
-                    ? 'Opens chat with ${invoice.customerPhone}'
-                    : 'Pick a chat to send to',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: AppColors.muted,
-                ),
-              ),
-              trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: _shareViaWhatsApp,
+          const AppDivider.flush(),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(
+              Icons.chat_rounded,
+              color: AppColors.whatsapp,
             ),
+            title: const Text('Send via WhatsApp'),
+            subtitle: Text(
+              invoice.customerPhone != null && invoice.customerPhone!.isNotEmpty
+                  ? 'Opens chat with ${invoice.customerPhone}'
+                  : 'Pick a chat to send to',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.muted,
+              ),
+            ),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: _shareViaWhatsApp,
           ),
           // Estimates / proformas get a one-tap "Convert to Invoice" tile.
           // Hidden once the source is cancelled — converting a cancelled
@@ -566,87 +556,77 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
           if ((invoice.documentType == 'ESTIMATE' ||
                   invoice.documentType == 'PROFORMA') &&
               invoice.status != 'CANCELLED') ...[
-            const SizedBox(height: AppSizes.md),
-            AppCard(
-              padding: EdgeInsets.zero,
-              child: ListTile(
-                leading: const Icon(
-                  Icons.swap_horiz_rounded,
-                  color: AppColors.brand,
-                ),
-                title: const Text('Convert to Invoice'),
-                subtitle: Text(
-                  'Create a tax invoice from this estimate',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: AppColors.muted,
-                  ),
-                ),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: _isDownloading ? null : _convertToInvoice,
+            const AppDivider.flush(),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(
+                Icons.swap_horiz_rounded,
+                color: AppColors.brand,
               ),
+              title: const Text('Convert to Invoice'),
+              subtitle: Text(
+                'Create a tax invoice from this estimate',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppColors.muted,
+                ),
+              ),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: _isDownloading ? null : _convertToInvoice,
             ),
           ],
           if (invoice.status == 'CONFIRMED' &&
               (invoice.partyId != null || invoice.vendorId != null)) ...[
-            const SizedBox(height: AppSizes.md),
-            AppCard(
-              padding: EdgeInsets.zero,
-              child: ListTile(
-                leading: const Icon(
-                  Icons.check_circle_outline_rounded,
-                  color: AppColors.success,
-                ),
-                title: const Text('Mark as Paid'),
-                subtitle: Text(
-                  invoice.type == 'SALE'
-                      ? 'Record a receipt for this invoice'
-                      : 'Record a payment for this bill',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: AppColors.muted,
-                  ),
-                ),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () async {
-                  final isSale = invoice.type == 'SALE';
-                  final created = await RecordPaymentSheet.show(
-                    context,
-                    type: isSale ? 'RECEIPT' : 'PAYMENT',
-                    partyId: isSale ? invoice.partyId : null,
-                    vendorId: isSale ? null : invoice.vendorId,
-                    partyName: invoice.customerName,
-                    vendorName: invoice.vendorName,
-                    initialAmount: invoice.total,
-                    lockedInvoiceId: invoice.id,
-                    lockedInvoiceLabel: invoice.invoiceNo,
-                  );
-                  if (!context.mounted) return;
-                  if (created != null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Payment recorded')),
-                    );
-                  }
-                },
+            const AppDivider.flush(),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(
+                Icons.check_circle_outline_rounded,
+                color: AppColors.success,
               ),
+              title: const Text('Mark as Paid'),
+              subtitle: Text(
+                invoice.type == 'SALE'
+                    ? 'Record a receipt for this invoice'
+                    : 'Record a payment for this bill',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppColors.muted,
+                ),
+              ),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () async {
+                final isSale = invoice.type == 'SALE';
+                final created = await RecordPaymentSheet.show(
+                  context,
+                  type: isSale ? 'RECEIPT' : 'PAYMENT',
+                  partyId: isSale ? invoice.partyId : null,
+                  vendorId: isSale ? null : invoice.vendorId,
+                  partyName: invoice.customerName,
+                  vendorName: invoice.vendorName,
+                  initialAmount: invoice.total,
+                  lockedInvoiceId: invoice.id,
+                  lockedInvoiceLabel: invoice.invoiceNo,
+                );
+                if (!context.mounted) return;
+                if (created != null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Payment recorded')),
+                  );
+                }
+              },
             ),
           ],
           if (invoice.note != null && invoice.note!.isNotEmpty) ...[
-            const SizedBox(height: AppSizes.md),
-            AppCard(
-              padding: const EdgeInsets.all(AppSizes.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    AppStrings.note,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: AppSizes.sm),
-                  Text(invoice.note!),
-                ],
+            const SizedBox(height: AppSizes.lg),
+            const AppDivider.flush(),
+            const SizedBox(height: AppSizes.lg),
+            Text(
+              AppStrings.note,
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w700,
               ),
             ),
+            const SizedBox(height: AppSizes.sm),
+            Text(invoice.note!),
           ],
           const SizedBox(height: AppSizes.huge),
               ],

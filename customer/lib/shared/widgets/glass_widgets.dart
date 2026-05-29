@@ -188,7 +188,16 @@ class GlassHero extends StatelessWidget {
           key: key,
           illustration: Padding(
             padding: EdgeInsets.symmetric(vertical: verticalPadding),
-            child: Image.asset(asset, fit: BoxFit.contain),
+            child: Image.asset(
+              asset,
+              fit: BoxFit.contain,
+              // Degrade gracefully if the asset is missing (e.g. the hero PNGs
+              // aren't bundled yet) instead of throwing a runtime image error.
+              errorBuilder: (_, _, _) => const Center(
+                child: Icon(Icons.image_outlined,
+                    size: 56, color: AppColors.subtle),
+              ),
+            ),
           ),
           height: height,
           backgroundColor: backgroundColor,

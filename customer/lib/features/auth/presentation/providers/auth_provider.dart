@@ -33,6 +33,13 @@ class AuthProvider extends ChangeNotifier {
   bool get isAuthenticated => _user != null;
   bool get isLoading => _isLoading;
 
+  /// True once the boot token-check has settled and there's no signed-in
+  /// user — i.e. the app is in public-browse mode. Distinct from
+  /// `!isAuthenticated`, which is also true mid-boot (when we don't yet
+  /// know). Screens use this to render sign-in CTAs without flashing
+  /// them under the splash.
+  bool get isGuest => !_isLoading && _user == null;
+
   /// Called on app start to restore session from stored tokens.
   Future<void> init() async {
     if (_tokenManager.accessToken == null) {

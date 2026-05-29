@@ -18,17 +18,9 @@ import 'package:shopxy_customer/features/marketplace/presentation/pages/shop_pro
 ///   `https://<webBaseUrl>/s/<slug>`     shop (universal / app link)
 ///   `shopxy://shop/<slug>`              shop (custom scheme)
 class DeepLinkHandler {
-  DeepLinkHandler(
-    this._navigatorKey, {
-    this.isAuthenticated,
-  });
+  DeepLinkHandler(this._navigatorKey);
 
   final GlobalKey<NavigatorState> _navigatorKey;
-  /// When supplied, a link arriving while the user is signed-out is
-  /// stashed in [_pendingLink] until [replayPendingOnLogin] is invoked
-  /// (wired to AuthProvider's auth-state listener). Without this guard
-  /// a logged-out user gets pushed into a PDP underneath the LoginPage.
-  final bool Function()? isAuthenticated;
 
   final AppLinks _appLinks = AppLinks();
   StreamSubscription<Uri>? _sub;
@@ -42,10 +34,6 @@ class DeepLinkHandler {
   String? _lastKey;
   int _lastNavigatedAtMs = 0;
   static const _dedupeWindowMs = 1500;
-
-  /// Pending destination the user wants to see, deferred until they
-  /// sign in. Tagged with the same `p:` / `s:` prefix as `_lastKey`.
-  String? _pendingLink;
 
   Future<void> start() async {
     if (_started) return;
@@ -82,13 +70,9 @@ class DeepLinkHandler {
   }
 
   void _route(String key) {
-    // Auth gate: defer the navigation until the user signs in. The
-    // AuthProvider listener in main.dart calls [replayPendingOnLogin]
-    // once auth flips true.
-    if (isAuthenticated != null && !isAuthenticated!()) {
-      _pendingLink = key;
-      return;
-    }
+    // Both supported destinations (product PDP, shop profile) are
+    // public — no auth gate. If a future link type needs auth (e.g.
+    // /orders/<id>), guard it here and queue for replay on sign-in.
 
     // Dedupe consecutive identical taps. The OS fires the uri stream
     // more than once on some platforms, and the AppLinks plugin
@@ -120,15 +104,6 @@ class DeepLinkHandler {
         ),
       );
     }
-  }
-
-  /// Invoked by main.dart on the false→true auth-state transition.
-  /// Drains any link the user tapped while signed out.
-  void replayPendingOnLogin() {
-    final pending = _pendingLink;
-    if (pending == null) return;
-    _pendingLink = null;
-    _route(pending);
   }
 
   /// Extracts a `"p:<id>"` (product) or `"s:<slug>"` (shop) target

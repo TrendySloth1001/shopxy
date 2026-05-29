@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy_customer/features/auth/presentation/pages/register_page.dart';
 import 'package:shopxy_customer/features/auth/presentation/providers/auth_provider.dart';
+import 'package:shopxy_customer/features/auth/presentation/widgets/require_auth.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/constants/app_strings.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
@@ -23,11 +24,33 @@ class _LoginPageState extends State<LoginPage> {
   bool _isLoading = false;
   String? _error;
 
+  /// Captured in initState so [dispose] can detach the listener without
+  /// touching `context` (which is unsafe after the element is unmounted).
+  late final AuthProvider _auth;
+
+  @override
+  void initState() {
+    super.initState();
+    _auth = context.read<AuthProvider>();
+    _auth.addListener(_onAuthChanged);
+  }
+
   @override
   void dispose() {
+    _auth.removeListener(_onAuthChanged);
     _email.dispose();
     _password.dispose();
     super.dispose();
+  }
+
+  /// Pop with `true` the moment auth flips to signed-in — covers both
+  /// our own `_submit` succeeding AND a stacked `RegisterPage` finishing
+  /// (in which case its pop already returned us here, and we now bubble
+  /// the success up to whoever called `requireAuth`).
+  void _onAuthChanged() {
+    if (_auth.isAuthenticated && mounted) {
+      Navigator.of(context).pop(true);
+    }
   }
 
   Future<void> _submit() async {
@@ -55,8 +78,13 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
-    return GlassPage(
+    // GlassPage has slots for top-left (navButton) + bottom (actions) but
+    // no top-right slot, so we Stack the Skip affordance on top instead
+    // of plumbing a new parameter into the shared widget for this single
+    // use case.
+    return Stack(
+      children: [
+        GlassPage(
       hero: GlassHero.image(asset: 'assets/login.png', height: 280),
       title: AppStrings.welcomeBack,
       subtitle: AppStrings.loginSubtitle,
@@ -135,6 +163,13 @@ class _LoginPageState extends State<LoginPage> {
         onPrimary: _submit,
         primaryLoading: _isLoading,
       ),
+        ),
+        Positioned(
+          top: MediaQuery.of(context).padding.top + AppSizes.sm,
+          right: AppSizes.sm,
+          child: const SkipToGuestButton(),
+        ),
+      ],
     );
   }
 }

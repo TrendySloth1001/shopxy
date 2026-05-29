@@ -1,23 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy_customer/features/auth/presentation/widgets/require_auth.dart';
 import 'package:shopxy_customer/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:shopxy_customer/features/notifications/presentation/pages/notifications_page.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 
 /// AppBar action that opens the notifications inbox and surfaces a
-/// small unread badge on the bell glyph.
+/// small unread badge on the bell glyph. For guests the bell still
+/// renders (the icon is part of the home top bar's visual rhythm) but
+/// tapping it prompts sign-in instead of opening the empty inbox.
 class NotificationBell extends StatelessWidget {
   const NotificationBell({super.key});
+
+  Future<void> _open(BuildContext context) async {
+    final signedIn = await requireAuth(
+      context,
+      reason: 'Sign in to see your orders, invitations and shop updates.',
+    );
+    if (!signedIn || !context.mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const NotificationsPage()),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final unread = context.select<NotificationsProvider, int>((p) => p.unread);
     return IconButton(
       tooltip: 'Notifications',
-      onPressed: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const NotificationsPage()),
-      ),
+      onPressed: () => _open(context),
       icon: SizedBox(
         width: 28,
         height: 28,

@@ -292,6 +292,15 @@ class _PartyTile extends StatelessWidget {
                           icon: Icons.receipt_outlined,
                           dense: true,
                         ),
+                        if (party.cautionBalance > 0)
+                          AppStatusBadge(
+                            label:
+                                'Caution ${AppStrings.currencySymbol}${party.cautionBalance.toStringAsFixed(0)}',
+                            icon: Icons.savings_outlined,
+                            tone: AppStatusTone.info,
+                            weight: AppStatusWeight.soft,
+                            dense: true,
+                          ),
                         if (invite != null) _InviteChip(invite: invite!),
                       ],
                     ),

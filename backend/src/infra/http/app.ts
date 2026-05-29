@@ -11,6 +11,8 @@ import stockAdjustmentsRouter from '../../modules/stock-adjustments/stock-adjust
 import dashboardRouter from '../../modules/dashboard/dashboard.routes.js';
 import vendorsRouter from '../../modules/vendors/vendors.routes.js';
 import partiesRouter from '../../modules/parties/parties.routes.js';
+import cautionRequestsRouter from '../../modules/caution/caution-requests.routes.js';
+import quotationsRouter from '../../modules/quotations/quotations.routes.js';
 import invoicesRouter from '../../modules/invoices/invoices.routes.js';
 import challansRouter from '../../modules/challans/challans.routes.js';
 import uploadRouter from '../../modules/upload/upload.routes.js';
@@ -335,6 +337,8 @@ export function buildApp(): express.Express {
   app.use('/dashboard', ownerOnly, resolveShop, dashboardRouter);
   app.use('/vendors', ownerOnly, vendorsRouter);
   app.use('/parties', ownerOnly, partiesRouter);
+  app.use('/caution-requests', ownerOnly, cautionRequestsRouter);
+  app.use('/quotations', ownerOnly, quotationsRouter);
   app.use('/invoices', ownerOnly, invoicesRouter);
   app.use('/challans', ownerOnly, challansRouter);
   app.use('/upload', ownerOnly, uploadLimiter, uploadRouter);

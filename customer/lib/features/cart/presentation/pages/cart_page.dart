@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:shopxy_customer/core/network/image_url.dart';
+import 'package:shopxy_customer/features/auth/presentation/widgets/require_auth.dart';
 import 'package:shopxy_customer/features/cart/presentation/pages/checkout_page.dart';
 import 'package:shopxy_customer/features/catalog/domain/entities/cart_item.dart';
 import 'package:shopxy_customer/features/catalog/presentation/providers/cart_provider.dart';
@@ -29,7 +30,17 @@ class CartPage extends StatelessWidget {
 
   final bool embedded;
 
-  void _goToCheckout(BuildContext context) {
+  Future<void> _goToCheckout(BuildContext context) async {
+    // Guests can browse and build a basket, but checkout needs an
+    // account so we can attach the order to a user + ship to a saved
+    // address. After sign-in the cart is server-merged (main.dart's
+    // auth listener) so the items they just built up survive.
+    final signedIn = await requireAuth(
+      context,
+      reason: 'Sign in to place your order and ship it to a saved address. '
+          'Your cart will be kept.',
+    );
+    if (!signedIn || !context.mounted) return;
     // When the cart sits inside a tab (embedded=true) the closest
     // Navigator is the AppShell's nested one. Pushing checkout onto
     // it leaves the bottom tab bar visible and traps the back gesture

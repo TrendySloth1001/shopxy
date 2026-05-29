@@ -8,6 +8,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/constants/app_strings.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+import 'package:shopxy_customer/shared/widgets/app_divider.dart';
 
 class ShopInvoicesPage extends StatefulWidget {
   const ShopInvoicesPage({super.key, required this.shop});
@@ -35,7 +36,7 @@ class _ShopInvoicesPageState extends State<ShopInvoicesPage> {
     final err = p.invoiceErrorFor(widget.shop);
 
     return Scaffold(
-      appBar: AppBar(title: Text(widget.shop.name)),
+      appBar: AppBar(title: const Text('Invoices')),
       body: RefreshIndicator(
         onRefresh: () => p.loadInvoices(widget.shop),
         color: AppColors.brand,
@@ -47,8 +48,7 @@ class _ShopInvoicesPageState extends State<ShopInvoicesPage> {
                     ? const _EmptyInvoices()
                     : ListView.separated(
                         itemCount: invoices.length,
-                        separatorBuilder: (_, _) =>
-                            Container(height: 1, color: AppColors.hairline),
+                        separatorBuilder: (_, _) => const AppDivider.flush(),
                         itemBuilder: (_, i) => _InvoiceTile(
                           invoice: invoices[i],
                           shop: widget.shop,

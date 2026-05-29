@@ -1,11 +1,63 @@
 import { Request, Response } from 'express';
+import { z } from 'zod';
 import { parsePagination, paginatedResponse } from '../../shared/http/pagination.js';
 import { meService } from './me.service.js';
+import { cautionService } from '../caution/caution.service.js';
+import { cautionRequestsService, CautionRequestStatus } from '../caution/caution-requests.service.js';
+import { quotationsService, QuotationStatus } from '../quotations/quotations.service.js';
 
 function parseId(raw: string): number | null {
   const id = Number(raw);
   return Number.isInteger(id) && id > 0 ? id : null;
 }
+
+/// One basket line — products the customer browsed to size/justify the deposit.
+const cautionBasketItemSchema = z.object({
+  productId: z.number().int().positive(),
+  name: z.string().max(200),
+  sku: z.string().max(120).nullable().optional(),
+  qty: z.number().positive(),
+  unitPrice: z.number().nonnegative(),
+});
+
+/// A party declares the deposit they want to post + how they'll pay it, plus an
+/// optional basket of products as context (does not earmark the deposit).
+const cautionRequestSchema = z.object({
+  amount: z.number().positive(),
+  mode: z.enum(['CASH', 'UPI', 'NEFT', 'RTGS', 'CHEQUE', 'CARD', 'OTHER']).nullable().optional(),
+  modeReference: z.string().max(120).nullable().optional(),
+  note: z.string().max(500).nullable().optional(),
+  basket: z.array(cautionBasketItemSchema).max(50).nullable().optional(),
+});
+
+const cautionRequestStatusSchema = z
+  .enum(['PENDING', 'APPROVED', 'REJECTED', 'CANCELLED'])
+  .optional();
+
+const quotationStatusSchema = z
+  .enum(['REQUESTED', 'PENDING', 'ACCEPTED', 'DECLINED', 'CANCELLED', 'EXPIRED'])
+  .optional();
+
+const declineQuotationSchema = z.object({
+  declineNote: z.string().max(500).nullable().optional(),
+});
+
+/// One line in a customer-built quote request (advisory catalogue prices; the
+/// merchant re-prices before sending the quotation back).
+const quoteRequestItemSchema = z.object({
+  productId: z.number().int().positive(),
+  name: z.string().max(200),
+  sku: z.string().max(120).nullable().optional(),
+  quantity: z.number().positive(),
+  unitPrice: z.number().nonnegative(),
+  taxPercent: z.number().min(0).max(100).nullable().optional(),
+  imageUrl: z.string().max(2000).nullable().optional(),
+});
+
+const requestQuotationSchema = z.object({
+  items: z.array(quoteRequestItemSchema).min(1).max(100),
+  note: z.string().max(500).nullable().optional(),
+});
 
 export class MeController {
   async catalog(req: Request, res: Response): Promise<void> {
@@ -76,6 +128,200 @@ export class MeController {
     });
     const body = paginatedResponse(data, total, { page, limit, skip });
     res.json({ ...body, vendor });
+  }
+
+  /// Read-only caution ledger for a party the caller is linked to. The
+  /// customer sees what their shop holds + the deposit/refund/set-off
+  /// history, but can't mutate it (no POST endpoints under /me).
+  async partyCaution(req: Request, res: Response): Promise<void> {
+    const partyId = parseId(req.params.partyId);
+    if (!partyId) { res.status(400).json({ error: 'Invalid party id' }); return; }
+    const party = await meService.assertOwnsParty(req.user!.sub, partyId);
+    if (!party) { res.status(403).json({ error: 'Not linked to this party' }); return; }
+
+    const { page, limit, skip } = parsePagination(req);
+    const result = await cautionService.history(party.shop.id, partyId, {
+      skip,
+      take: limit,
+    });
+    // assertOwnsParty already proved the row exists, so result is non-null.
+    const { balance, entries, total } = result!;
+    res.json({
+      balance,
+      ...paginatedResponse(entries, total, { page, limit, skip }),
+    });
+  }
+
+  /// Party-initiated caution requests. These are the first write endpoints
+  /// under /me — each is gated by `assertOwnsParty` so a customer can only
+  /// touch a party they're actually linked to. Approval stays merchant-only.
+  async createCautionRequest(req: Request, res: Response): Promise<void> {
+    const partyId = parseId(req.params.partyId);
+    if (!partyId) { res.status(400).json({ error: 'Invalid party id' }); return; }
+    const party = await meService.assertOwnsParty(req.user!.sub, partyId);
+    if (!party) { res.status(403).json({ error: 'Not linked to this party' }); return; }
+
+    const payload = cautionRequestSchema.parse(req.body);
+    const result = await cautionRequestsService.createRequest(
+      party.shop.id,
+      partyId,
+      req.user!.sub,
+      payload,
+    );
+    // assertOwnsParty already proved the row exists, so result is non-null.
+    res.status(201).json(result);
+  }
+
+  async cautionRequests(req: Request, res: Response): Promise<void> {
+    const partyId = parseId(req.params.partyId);
+    if (!partyId) { res.status(400).json({ error: 'Invalid party id' }); return; }
+    const party = await meService.assertOwnsParty(req.user!.sub, partyId);
+    if (!party) { res.status(403).json({ error: 'Not linked to this party' }); return; }
+
+    const { page, limit, skip } = parsePagination(req);
+    const status = cautionRequestStatusSchema.parse(req.query.status) as
+      | CautionRequestStatus
+      | undefined;
+    const { data, total } = await cautionRequestsService.listForParty(
+      party.shop.id,
+      partyId,
+      { status, skip, take: limit },
+    );
+    res.json(paginatedResponse(data, total, { page, limit, skip }));
+  }
+
+  async cancelCautionRequest(req: Request, res: Response): Promise<void> {
+    const partyId = parseId(req.params.partyId);
+    const requestId = parseId(req.params.reqId);
+    if (!partyId || !requestId) { res.status(400).json({ error: 'Invalid id' }); return; }
+    const party = await meService.assertOwnsParty(req.user!.sub, partyId);
+    if (!party) { res.status(403).json({ error: 'Not linked to this party' }); return; }
+
+    const result = await cautionRequestsService.cancelRequest(partyId, requestId);
+    res.json(result);
+  }
+
+  /// Quotations the merchant sent to a party the caller is linked to. Listing
+  /// + detail are reads; accept/decline are writes (gated by assertOwnsParty).
+  async quotations(req: Request, res: Response): Promise<void> {
+    const partyId = parseId(req.params.partyId);
+    if (!partyId) { res.status(400).json({ error: 'Invalid party id' }); return; }
+    const party = await meService.assertOwnsParty(req.user!.sub, partyId);
+    if (!party) { res.status(403).json({ error: 'Not linked to this party' }); return; }
+
+    const { page, limit, skip } = parsePagination(req);
+    const status = quotationStatusSchema.parse(req.query.status) as
+      | QuotationStatus
+      | undefined;
+    const { data, total } = await quotationsService.listForParty(
+      party.shop.id,
+      partyId,
+      { status, skip, take: limit },
+    );
+    res.json(paginatedResponse(data, total, { page, limit, skip }));
+  }
+
+  async quotation(req: Request, res: Response): Promise<void> {
+    const partyId = parseId(req.params.partyId);
+    const quotationId = parseId(req.params.quotationId);
+    if (!partyId || !quotationId) { res.status(400).json({ error: 'Invalid id' }); return; }
+    const party = await meService.assertOwnsParty(req.user!.sub, partyId);
+    if (!party) { res.status(403).json({ error: 'Not linked to this party' }); return; }
+
+    const quotation = await quotationsService.getForParty(party.shop.id, partyId, quotationId);
+    if (!quotation) { res.status(404).json({ error: 'Quotation not found' }); return; }
+    res.json(quotation);
+  }
+
+  async acceptQuotation(req: Request, res: Response): Promise<void> {
+    const partyId = parseId(req.params.partyId);
+    const quotationId = parseId(req.params.quotationId);
+    if (!partyId || !quotationId) { res.status(400).json({ error: 'Invalid id' }); return; }
+    const party = await meService.assertOwnsParty(req.user!.sub, partyId);
+    if (!party) { res.status(403).json({ error: 'Not linked to this party' }); return; }
+
+    const result = await quotationsService.accept(
+      party.shop.id,
+      partyId,
+      quotationId,
+      req.user!.sub,
+    );
+    res.json(result);
+  }
+
+  async declineQuotation(req: Request, res: Response): Promise<void> {
+    const partyId = parseId(req.params.partyId);
+    const quotationId = parseId(req.params.quotationId);
+    if (!partyId || !quotationId) { res.status(400).json({ error: 'Invalid id' }); return; }
+    const party = await meService.assertOwnsParty(req.user!.sub, partyId);
+    if (!party) { res.status(403).json({ error: 'Not linked to this party' }); return; }
+
+    const { declineNote } = declineQuotationSchema.parse(req.body ?? {});
+    const result = await quotationsService.decline(
+      party.shop.id,
+      partyId,
+      quotationId,
+      declineNote,
+    );
+    res.json(result);
+  }
+
+  /// Customer builds a basket and asks the shop for a quote (status REQUESTED).
+  async requestQuotation(req: Request, res: Response): Promise<void> {
+    const partyId = parseId(req.params.partyId);
+    if (!partyId) { res.status(400).json({ error: 'Invalid party id' }); return; }
+    const party = await meService.assertOwnsParty(req.user!.sub, partyId);
+    if (!party) { res.status(403).json({ error: 'Not linked to this party' }); return; }
+
+    const payload = requestQuotationSchema.parse(req.body);
+    const result = await quotationsService.requestByCustomer(
+      party.shop.id,
+      partyId,
+      req.user!.sub,
+      { items: payload.items, note: payload.note },
+    );
+    if ('error' in result) {
+      res.status(404).json({ error: 'Shop not found' });
+      return;
+    }
+    res.status(201).json(result.quotation);
+  }
+
+  /// Customer downloads a quotation (the shop sent, or they requested) as PDF.
+  async quotationPdf(req: Request, res: Response): Promise<void> {
+    const partyId = parseId(req.params.partyId);
+    const quotationId = parseId(req.params.quotationId);
+    if (!partyId || !quotationId) { res.status(400).json({ error: 'Invalid id' }); return; }
+    const party = await meService.assertOwnsParty(req.user!.sub, partyId);
+    if (!party) { res.status(403).json({ error: 'Not linked to this party' }); return; }
+
+    const quotation = await quotationsService.getForParty(party.shop.id, partyId, quotationId);
+    if (!quotation) { res.status(404).json({ error: 'Quotation not found' }); return; }
+    const filename = `quotation-${quotation.quotationNo ?? quotationId}.pdf`;
+    const err = await quotationsService.streamPdf(party.shop.id, quotationId, res, () => {
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    });
+    if (err) {
+      if (!res.headersSent) res.status(500).json({ error: err.error });
+      else res.end();
+    }
+  }
+
+  /// Customer withdraws their own REQUESTED quote.
+  async cancelQuotation(req: Request, res: Response): Promise<void> {
+    const partyId = parseId(req.params.partyId);
+    const quotationId = parseId(req.params.quotationId);
+    if (!partyId || !quotationId) { res.status(400).json({ error: 'Invalid id' }); return; }
+    const party = await meService.assertOwnsParty(req.user!.sub, partyId);
+    if (!party) { res.status(403).json({ error: 'Not linked to this party' }); return; }
+
+    const result = await quotationsService.cancelRequest(
+      party.shop.id,
+      partyId,
+      quotationId,
+    );
+    res.json(result);
   }
 
   async partyInvoice(req: Request, res: Response): Promise<void> {

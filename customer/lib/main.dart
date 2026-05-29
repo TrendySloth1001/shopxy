@@ -168,21 +168,10 @@ void main() async {
 
   // Single navigator key so the deep-link handler can push routes
   // (PDP for /p/<id>) regardless of the active tab in the shell.
+  // Both supported destinations are public, so no auth deferral is
+  // needed — guests can open a shared product link straight away.
   final navigatorKey = GlobalKey<NavigatorState>();
-  final deepLinks = DeepLinkHandler(
-    navigatorKey,
-    // Defer-and-replay any link tapped while signed out so we don't
-    // push a PDP underneath the LoginPage.
-    isAuthenticated: () => authProvider.isAuthenticated,
-  );
-  // Replay the pending link (if any) the moment the user signs in.
-  bool wasAuthed = authProvider.isAuthenticated;
-  authProvider.addListener(() {
-    if (!wasAuthed && authProvider.isAuthenticated) {
-      deepLinks.replayPendingOnLogin();
-    }
-    wasAuthed = authProvider.isAuthenticated;
-  });
+  final deepLinks = DeepLinkHandler(navigatorKey);
   // Fire-and-forget: getInitialLink is awaited internally before the
   // first frame's postFrameCallback runs, and the stream subscription
   // survives the app lifetime.

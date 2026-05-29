@@ -1,5 +1,6 @@
 import prisma from '../../infra/db/prisma.js';
 import { contactChangeLogService } from '../contact-change-log/contact-change-log.service.js';
+import { cautionService } from '../caution/caution.service.js';
 
 /// Tenant-scoped party (customer) operations. Every method takes
 /// `shopId` so reads and writes stay isolated to the calling
@@ -75,7 +76,18 @@ export class PartiesService {
       prisma.party.count({ where }),
     ]);
 
-    return { parties, total };
+    // Attach the held caution balance per party in one grouped query
+    // (no N+1). Parties with no deposits get an implicit 0.
+    const balances = await cautionService.balancesFor(
+      shopId,
+      parties.map((p) => p.id),
+    );
+    const withCaution = parties.map((p) => ({
+      ...p,
+      cautionBalance: balances.get(p.id) ?? 0,
+    }));
+
+    return { parties: withCaution, total };
   }
 
   async getPartyById(shopId: number, id: number) {
@@ -186,6 +198,7 @@ export class PartiesService {
     const billed = Number(balanceParts[0]._sum.total?.toString() ?? '0');
     const received = Number(balanceParts[1]._sum.amount?.toString() ?? '0');
     const balance = billed - received;
+    const cautionBalance = await cautionService.balance(shopId, id);
 
     const lastInvoice = recentInvoices[0]?.invoiceDate ?? null;
     const lastChallan = recentChallans[0]?.createdAt ?? null;
@@ -208,6 +221,7 @@ export class PartiesService {
       recentChallans,
       lastActivityAt,
       balance,
+      cautionBalance,
     };
   }
 

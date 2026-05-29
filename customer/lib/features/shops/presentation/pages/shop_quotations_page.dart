@@ -1,0 +1,193 @@
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:shopxy_customer/features/shops/domain/entities/linked_shop.dart';
+import 'package:shopxy_customer/features/shops/presentation/pages/request_quotation_page.dart';
+import 'package:shopxy_customer/features/shops/presentation/pages/shop_quotation_detail_page.dart';
+import 'package:shopxy_customer/features/shops/presentation/providers/shops_provider.dart';
+import 'package:shopxy_customer/shared/constants/app_sizes.dart';
+import 'package:shopxy_customer/shared/theme/app_colors.dart';
+import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+import 'package:shopxy_customer/shared/widgets/app_list_section.dart';
+
+/// Clean list of quotations the shop sent the customer. Tapping a row opens the
+/// full detail page (line items, totals, Accept / Decline).
+class ShopQuotationsPage extends StatefulWidget {
+  const ShopQuotationsPage({super.key, required this.shop});
+  final LinkedShop shop;
+
+  @override
+  State<ShopQuotationsPage> createState() => _ShopQuotationsPageState();
+}
+
+class _ShopQuotationsPageState extends State<ShopQuotationsPage> {
+  final _currency = NumberFormat.currency(symbol: '₹', decimalDigits: 0);
+  final _dateFmt = DateFormat('d MMM yyyy');
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) context.read<ShopsProvider>().loadQuotations(widget.shop);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.watch<ShopsProvider>();
+    final quotes = p.quotationsFor(widget.shop) ?? const <ShopQuotation>[];
+    final loading = p.isLoadingQuotations(widget.shop);
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Quotations')),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () async {
+          final prov = context.read<ShopsProvider>();
+          final sent = await Navigator.push<bool>(
+            context,
+            MaterialPageRoute(
+              builder: (_) => RequestQuotationPage(shop: widget.shop),
+            ),
+          );
+          if (sent == true) prov.loadQuotations(widget.shop);
+        },
+        backgroundColor: AppColors.brand,
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('Request a quote',
+            style: TextStyle(fontWeight: FontWeight.w800)),
+      ),
+      body: RefreshIndicator(
+        color: AppColors.brand,
+        onRefresh: () => p.loadQuotations(widget.shop),
+        child: loading && quotes.isEmpty
+            ? const Center(child: CircularProgressIndicator())
+            : quotes.isEmpty
+                ? ListView(
+                    children: const [
+                      SizedBox(height: 120),
+                      Icon(Icons.request_quote_outlined,
+                          size: 44, color: AppColors.muted),
+                      SizedBox(height: AppSizes.md),
+                      Center(
+                        child: Text(
+                            'No quotations yet. Tap “Request a quote” to ask\nthis shop to price a basket for you.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: AppColors.muted)),
+                      ),
+                    ],
+                  )
+                : ListView(
+                    padding: const EdgeInsets.only(top: AppSizes.sm),
+                    children: [
+                      AppListSection(
+                        flushDividers: true,
+                        children: [
+                          for (final q in quotes)
+                            _QuotationRow(
+                              q: q,
+                              currency: _currency,
+                              dateFmt: _dateFmt,
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => ShopQuotationDetailPage(
+                                    shop: widget.shop,
+                                    quotation: q,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+      ),
+    );
+  }
+}
+
+class _QuotationRow extends StatelessWidget {
+  const _QuotationRow({
+    required this.q,
+    required this.currency,
+    required this.dateFmt,
+    required this.onTap,
+  });
+  final ShopQuotation q;
+  final NumberFormat currency;
+  final DateFormat dateFmt;
+  final VoidCallback onTap;
+
+  (Color, Color, String) _style() {
+    switch (q.status) {
+      case 'REQUESTED':
+        return (AppColors.brand, AppColors.brandSoft, 'Requested');
+      case 'PENDING':
+        return (AppColors.warning, AppColors.warningSoft, 'Awaiting you');
+      case 'ACCEPTED':
+        return (AppColors.success, AppColors.successSoft, 'Accepted');
+      case 'DECLINED':
+        return (AppColors.error, AppColors.errorSoft, 'Declined');
+      case 'CANCELLED':
+        return (AppColors.muted, AppColors.hairline, 'Withdrawn');
+      default:
+        return (AppColors.muted, AppColors.hairline, q.status);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final (fg, bg, label) = _style();
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.lg, vertical: AppSizes.md),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(q.quotationNo,
+                          style: theme.textTheme.bodyLarge
+                              ?.copyWith(fontWeight: FontWeight.w800)),
+                      const SizedBox(width: AppSizes.sm),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 2),
+                        decoration: ShapeDecoration(
+                            color: bg,
+                            shape: AppShapes.squircle(AppSizes.radiusFull)),
+                        child: Text(label,
+                            style: TextStyle(
+                                color: fg,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 11)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${dateFmt.format(q.createdAt.toLocal())} · ${q.items.length} item(s)',
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: AppColors.muted),
+                  ),
+                ],
+              ),
+            ),
+            Text(currency.format(q.total),
+                style: theme.textTheme.bodyLarge
+                    ?.copyWith(fontWeight: FontWeight.w800)),
+            const SizedBox(width: AppSizes.xs),
+            const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
+          ],
+        ),
+      ),
+    );
+  }
+}

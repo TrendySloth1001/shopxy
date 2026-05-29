@@ -6,7 +6,7 @@ import 'package:shopxy_customer/features/home/presentation/widgets/network_image
 import 'package:shopxy_customer/features/notifications/presentation/pages/invitations_page.dart';
 import 'package:shopxy_customer/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:shopxy_customer/features/shops/domain/entities/linked_shop.dart';
-import 'package:shopxy_customer/features/shops/presentation/pages/shop_invoices_page.dart';
+import 'package:shopxy_customer/features/shops/presentation/pages/shop_sections_page.dart';
 import 'package:shopxy_customer/features/shops/presentation/providers/shops_provider.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/constants/app_strings.dart';
@@ -415,7 +415,7 @@ class _ShopCard extends StatelessWidget {
       child: InkWell(
         onTap: () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => ShopInvoicesPage(shop: shop)),
+          MaterialPageRoute(builder: (_) => ShopSectionsPage(shop: shop)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

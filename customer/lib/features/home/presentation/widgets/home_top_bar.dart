@@ -6,6 +6,7 @@ import 'package:shopxy_customer/features/addresses/presentation/pages/edit_addre
 import 'package:shopxy_customer/features/addresses/presentation/providers/addresses_provider.dart';
 import 'package:shopxy_customer/core/network/image_url.dart';
 import 'package:shopxy_customer/features/auth/presentation/providers/auth_provider.dart';
+import 'package:shopxy_customer/features/auth/presentation/widgets/require_auth.dart';
 import 'package:shopxy_customer/features/home/presentation/widgets/network_image_box.dart';
 import 'package:shopxy_customer/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:shopxy_customer/features/notifications/presentation/pages/notifications_page.dart';
@@ -48,13 +49,15 @@ class HomeTopBar extends StatelessWidget {
               // full-row pill + search bar collapse away below.
               Consumer<AddressesProvider>(
                 builder: (context, addr, _) {
-                  final defaultAddr = addr.defaultAddress;
-                  final city = defaultAddr?.city ?? 'New Delhi';
+                  // No address = guest OR signed-in but empty address
+                  // book. In both cases the chip becomes an explicit
+                  // "Set location" CTA — `_showAddressSheet` itself
+                  // handles the auth gate via requireAuth (Phase 3).
                   return _CollapsedSlot(
                     t: t,
                     fullWidth: 110,
                     child: _CompactCityChip(
-                      city: city,
+                      city: addr.defaultAddress?.city,
                       onTap: () => _showAddressSheet(context),
                     ),
                   );
@@ -121,11 +124,10 @@ class HomeTopBar extends StatelessWidget {
                   child: Consumer<AddressesProvider>(
                     builder: (context, addr, _) {
                       final defaultAddr = addr.defaultAddress;
-                      final cityLine = defaultAddr == null
-                          ? 'New Delhi 110001'
-                          : '${defaultAddr.city} ${defaultAddr.pincode}';
                       return _LocationPill(
-                        cityLine: cityLine,
+                        cityLine: defaultAddr == null
+                            ? null
+                            : '${defaultAddr.city} ${defaultAddr.pincode}',
                         onTap: () => _showAddressSheet(context),
                       );
                     },
@@ -171,11 +173,17 @@ class _CollapsedSlot extends StatelessWidget {
 
 class _CompactCityChip extends StatelessWidget {
   const _CompactCityChip({required this.city, required this.onTap});
-  final String city;
+
+  /// Null when the user has no saved default address (guest, or signed
+  /// in with an empty address book). The chip falls back to a
+  /// "Set location" prompt so the user can act on it instead of staring
+  /// at a fake city we picked for them.
+  final String? city;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final hasCity = city != null && city!.isNotEmpty;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
@@ -192,19 +200,21 @@ class _CompactCityChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Icons.location_on_rounded,
+            Icon(
+              hasCity
+                  ? Icons.location_on_rounded
+                  : Icons.add_location_alt_outlined,
               color: AppColors.brand,
               size: 14,
             ),
             const SizedBox(width: 4),
             Flexible(
               child: Text(
-                city,
+                hasCity ? city! : 'Set location',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: AppColors.black,
+                style: TextStyle(
+                  color: hasCity ? AppColors.black : AppColors.brand,
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                   letterSpacing: -0.1,
@@ -291,11 +301,17 @@ class _BrandWordmark extends StatelessWidget {
 
 class _LocationPill extends StatelessWidget {
   const _LocationPill({required this.cityLine, required this.onTap});
-  final String cityLine;
+
+  /// Null when no address is saved — pill renders an "Add delivery
+  /// address" CTA in brand colour instead of stamping in a placeholder
+  /// city. The eyebrow flips from "DELIVER TO" to "DELIVERY ADDRESS"
+  /// so the row reads as a prompt, not a fact.
+  final String? cityLine;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final hasAddress = cityLine != null && cityLine!.isNotEmpty;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
@@ -321,8 +337,10 @@ class _LocationPill extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               alignment: Alignment.center,
-              child: const Icon(
-                Icons.location_on_rounded,
+              child: Icon(
+                hasAddress
+                    ? Icons.location_on_rounded
+                    : Icons.add_location_alt_outlined,
                 color: AppColors.brand,
                 size: 16,
               ),
@@ -333,9 +351,9 @@ class _LocationPill extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
-                    'DELIVER TO',
-                    style: TextStyle(
+                  Text(
+                    hasAddress ? 'DELIVER TO' : 'DELIVERY ADDRESS',
+                    style: const TextStyle(
                       color: AppColors.muted,
                       fontSize: 9.5,
                       fontWeight: FontWeight.w800,
@@ -345,11 +363,11 @@ class _LocationPill extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    cityLine,
+                    hasAddress ? cityLine! : 'Tap to add an address',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: AppColors.black,
+                    style: TextStyle(
+                      color: hasAddress ? AppColors.black : AppColors.brand,
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
                       height: 1.15,
@@ -371,7 +389,16 @@ class _LocationPill extends StatelessWidget {
   }
 }
 
-void _showAddressSheet(BuildContext context) {
+Future<void> _showAddressSheet(BuildContext context) async {
+  // Saving / picking a delivery address is per-user; a guest tapping
+  // the address chip is asking to set up shipping — gate at the door
+  // instead of letting them open the sheet, see a "no addresses" empty
+  // state, then hit a 401 the moment they tap "Add new".
+  final signedIn = await requireAuth(
+    context,
+    reason: 'Sign in to save delivery addresses and use them at checkout.',
+  );
+  if (!signedIn || !context.mounted) return;
   // Read provider before showing the sheet; the sheet builds in its
   // own context that still has access via the root MaterialApp tree.
   context.read<AddressesProvider>().load();

@@ -1,0 +1,2 @@
+Bundled-asset directory. Hero PNGs (login.png, register.png, empty_*.png) belong here.
+GlassHero.image degrades gracefully when one is missing.

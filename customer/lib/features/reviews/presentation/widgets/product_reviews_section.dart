@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy_customer/features/auth/presentation/widgets/require_auth.dart';
 import 'package:shopxy_customer/features/reviews/data/datasources/reviews_remote_data_source.dart';
 import 'package:shopxy_customer/features/reviews/domain/entities/review.dart';
 import 'package:shopxy_customer/features/reviews/presentation/pages/all_reviews_page.dart';
@@ -77,6 +78,11 @@ class _ProductReviewsSectionState extends State<ProductReviewsSection> {
   }
 
   Future<void> _openWriteSheet() async {
+    final signedIn = await requireAuth(
+      context,
+      reason: 'Sign in to leave a rating or review for this product.',
+    );
+    if (!signedIn || !mounted) return;
     final result = await WriteReviewSheet.show(
       context,
       productId: widget.productId,
