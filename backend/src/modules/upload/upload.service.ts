@@ -9,7 +9,6 @@ import {
 } from '@aws-sdk/client-s3';
 import { Readable } from 'stream';
 import crypto from 'crypto';
-import path from 'path';
 import sharp from 'sharp';
 
 // MinIO/S3 credentials must come from the environment. We refuse to bake

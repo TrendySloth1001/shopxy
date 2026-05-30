@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
+import { round2 } from '../../shared/numbering/decimal.js';
 import { walletService } from '../wallet/wallet.service.js';
 
 /// Canonical return reasons. Kept loose (string) on the DB so adding
@@ -181,7 +182,6 @@ export class ReturnsService {
     const parent = child.customerOrder;
     const grossSubtotal = parent ? Number(parent.estimatedTotal) : 0;
     const couponDiscount = parent ? Number(parent.couponDiscount) : 0;
-    const walletPaid = parent ? Number(parent.walletPaid) : 0;
     // Wallet credits are reusable money — so they get refunded in full
     // back to the wallet. Only the coupon discount is non-recoverable.
     const refundableSubtotal = Math.max(0, grossSubtotal - couponDiscount);
@@ -548,10 +548,6 @@ export class ReturnsService {
       };
     });
   }
-}
-
-function round2(n: number): number {
-  return Math.round(n * 100) / 100;
 }
 
 export const returnsService = new ReturnsService();

@@ -1,5 +1,4 @@
 import prisma from '../../infra/db/prisma.js';
-import { Prisma } from '@prisma/client';
 import { Writable } from 'stream';
 import { ledgerService } from '../ledger/ledger.service.js';
 import { nextInvoiceNo } from '../../shared/numbering/sequences.js';

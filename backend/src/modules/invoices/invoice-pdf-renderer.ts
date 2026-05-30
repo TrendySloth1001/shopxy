@@ -4,7 +4,6 @@ import { Writable } from 'stream';
 import QRCode from 'qrcode';
 import prisma from '../../infra/db/prisma.js';
 import { stateNameFromCode } from '../../shared/validation/indian.js';
-import { amountInWords } from '../../shared/numbering/amount_in_words.js';
 
 /// Render one invoice as a PDF — to a stream when `out` is set, or to a
 /// Buffer otherwise. Returns `{ error }` if the invoice can't be found

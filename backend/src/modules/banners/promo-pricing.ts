@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
+import { round2 } from '../../shared/numbering/decimal.js';
 
 /// Shared pricing rules for the BannerProduct carousel-promo surface.
 /// One module owns clamping, per-line discount math, and active-promo
@@ -12,13 +13,6 @@ export type DiscountType = 'PERCENT' | 'AMOUNT';
 /// matches the existing ad-hoc clamp the legacy `discountPct: Int`
 /// column used, and prevents accidental "100%" free-give bugs.
 export const MAX_PERCENT = 90;
-
-/// Round to paise. Mirrors invoices.service.round2 — duplicated here so
-/// the banner module doesn't need to import from invoices and create a
-/// cycle.
-function round2(n: number): number {
-  return Math.round((n + Number.EPSILON) * 100) / 100;
-}
 
 /// Clamp a merchant-typed number to a safe stored value. Accepts the
 /// raw input (could be NaN, negative, oversized, fractional percent) +

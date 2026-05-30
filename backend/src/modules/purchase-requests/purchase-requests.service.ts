@@ -1,5 +1,6 @@
 import prisma from '../../infra/db/prisma.js';
 import type { Prisma } from '@prisma/client';
+import { round2 } from '../../shared/numbering/decimal.js';
 import { invoicesService } from '../invoices/invoices.service.js';
 
 /// Local helper — invoices.service doesn't expose a payment summariser
@@ -1584,10 +1585,6 @@ export class PurchaseRequestsService {
       deduplicated: true,
     };
   }
-}
-
-function round2(n: number): number {
-  return Math.round(n * 100) / 100;
 }
 
 export const purchaseRequestsService = new PurchaseRequestsService();
