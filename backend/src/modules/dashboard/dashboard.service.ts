@@ -38,9 +38,9 @@ export class DashboardService {
         take: 10,
         include: { product: { select: { id: true, name: true, sku: true, unit: true } } },
       }),
-      prisma.invoice.count({ where: { status: 'DRAFT' } }),
+      prisma.invoice.count({ where: { shopId, status: 'DRAFT' } }),
       prisma.invoice.findMany({
-        where: { status: 'DRAFT' },
+        where: { shopId, status: 'DRAFT' },
         orderBy: { createdAt: 'desc' },
         take: 5,
         select: {
