@@ -1095,7 +1095,15 @@ export class PurchaseRequestsService {
       // ── 2. Load full row (now safely ours to act on) ─────────────
       const request = await prisma.purchaseRequest.findUniqueOrThrow({
         where: { id: opts.requestId },
-        include: { items: true },
+        include: {
+          items: true,
+          // Needed to apportion the order-level coupon discount onto this
+          // shop's invoice (H4). The coupon was applied across the whole
+          // CustomerOrder; this child shop earns its proportional slice.
+          customerOrder: {
+            select: { couponDiscount: true, estimatedTotal: true },
+          },
+        },
       });
       if (request.items.length === 0) {
         await revertToPending();
@@ -1138,6 +1146,20 @@ export class PurchaseRequestsService {
       // both the invoice rows and the ledger entries either both
       // succeed or both roll back. We surface failures back to the
       // caller and revert our PROCESSING claim.
+      // This shop's slice of the order-level coupon (H4). The coupon was
+      // applied across the whole CustomerOrder at submit time; each child
+      // shop earns its proportional share so the invoice bills — and
+      // charges GST on (Sec 15(3)) — the post-coupon net the customer
+      // actually owes, instead of the full pre-coupon amount.
+      const order = request.customerOrder;
+      const orderCoupon = Number(order.couponDiscount) || 0;
+      const parentTotal = Number(order.estimatedTotal) || 0;
+      const thisShopTotal = Number(request.estimatedTotal) || 0;
+      const couponShare =
+        orderCoupon > 0 && parentTotal > 0
+          ? round2(orderCoupon * (thisShopTotal / parentTotal))
+          : 0;
+
       const result = await invoicesService.createInvoice({
         shopId: request.shopId,
         type: 'SALE',
@@ -1145,10 +1167,18 @@ export class PurchaseRequestsService {
         customerName: request.customerName,
         customerPhone: request.customerPhone ?? undefined,
         note: opts.note ?? request.note ?? undefined,
+        // Header discount = this shop's coupon share (H4).
+        discount: couponShare > 0 ? couponShare : undefined,
         items: request.items.map((i) => ({
           productId: i.productId,
           quantity: Number(i.quantity),
           unitPrice: Number(i.unitPrice),
+          // The snapshot unitPrice already has the flash-sale / carousel
+          // promo baked in. Pass an explicit 0 so the invoice engine's
+          // promo auto-fill doesn't subtract the same discount a second
+          // time (H1). taxPercent is intentionally omitted so the engine
+          // fills it from the product's GST rate (C1).
+          discount: 0,
         })),
         confirm: true,
         confirmedById: opts.decidedById,

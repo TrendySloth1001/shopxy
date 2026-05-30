@@ -28,6 +28,7 @@ const safeUserSelect = {
   shopStateCode: true,
   shopPinCode: true,
   shopGstin: true,
+  registrationType: true,
   shopPan: true,
   upiVpa: true,
   avatarUrl: true,
@@ -296,6 +297,7 @@ export class AuthService {
       shopStateCode?: string | null;
       shopPinCode?: string | null;
       shopGstin?: string | null;
+      registrationType?: 'REGULAR' | 'COMPOSITION' | 'UNREGISTERED';
       shopPan?: string | null;
       upiVpa?: string | null;
       // Profile photo URL (upload-service path). Editable from both
@@ -322,6 +324,7 @@ export class AuthService {
       shopStateCode?: string | null;
       shopPinCode?: string | null;
       shopGstin?: string | null;
+      registrationType?: 'REGULAR' | 'COMPOSITION' | 'UNREGISTERED';
       shopPan?: string | null;
       upiVpa?: string | null;
       avatarUrl?: string | null;
@@ -344,6 +347,14 @@ export class AuthService {
     if (data.shopStateCode !== undefined) updates.shopStateCode = data.shopStateCode;
     if (data.shopPinCode !== undefined) updates.shopPinCode = data.shopPinCode;
     if (data.shopGstin !== undefined) updates.shopGstin = data.shopGstin;
+    // Keep registration status coherent with the GSTIN. An explicit value
+    // always wins (so a composition dealer can mark themselves COMPOSITION);
+    // otherwise a GSTIN ⇒ REGULAR and a cleared GSTIN ⇒ UNREGISTERED.
+    if (data.registrationType !== undefined) {
+      updates.registrationType = data.registrationType;
+    } else if (data.shopGstin !== undefined) {
+      updates.registrationType = data.shopGstin ? 'REGULAR' : 'UNREGISTERED';
+    }
     if (data.shopPan !== undefined) updates.shopPan = data.shopPan;
     if (data.upiVpa !== undefined) updates.upiVpa = data.upiVpa;
     if (data.avatarUrl !== undefined) updates.avatarUrl = data.avatarUrl;

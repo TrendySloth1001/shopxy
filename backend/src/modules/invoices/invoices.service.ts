@@ -211,7 +211,7 @@ export class InvoicesService {
         error: `Invoice exceeds maximum ${MAX_INVOICE_LINES} lines` as const,
       };
     }
-    const documentType: DocumentType = data.documentType ?? 'TAX_INVOICE';
+    let documentType: DocumentType = data.documentType ?? 'TAX_INVOICE';
 
     let partyId: number | null = null;
     let customerName = data.customerName ?? null;
@@ -287,13 +287,50 @@ export class InvoicesService {
     // first and was the cause of cross-tenant invoice corruption.
     const shop = await prisma.shop.findUnique({
       where: { id: data.shopId },
-      select: { owner: { select: { shopStateCode: true } } },
+      select: {
+        owner: {
+          select: { shopStateCode: true, shopGstin: true, registrationType: true },
+        },
+      },
     });
-    const shopStateCode = shop?.owner.shopStateCode ?? null;
+    const shopGstin = shop?.owner.shopGstin ?? null;
+    // A registered shop's GSTIN encodes its state in the first two digits.
+    // Use it as the authoritative fallback when shopStateCode wasn't filled
+    // in, so IGST-vs-CGST/SGST is never mis-determined on a tax invoice just
+    // because the state field was left blank.
+    const shopStateCode =
+      shop?.owner.shopStateCode ?? (shopGstin ? shopGstin.slice(0, 2) : null);
 
+    // ── GST registration gate ────────────────────────────────────────
+    // Only a regular GST-registered person may collect output tax (CGST
+    // Sec 32). REGULAR charges GST and issues tax invoices. COMPOSITION
+    // holds a GSTIN but (Sec 10) cannot charge GST, and UNREGISTERED has no
+    // GSTIN — both must issue a Bill of Supply with zero tax (Rule 49).
+    // We therefore charge output GST on a SALE only for a REGULAR shop that
+    // actually holds a GSTIN (belt-and-suspenders against a misconfigured row).
+    //
+    // PURCHASE documents record the *input* tax a vendor charged us, so
+    // their tax is kept regardless of our own registration (an
+    // unregistered buyer still pays the vendor's GST — it just isn't
+    // claimable as ITC, which is a reporting concern, not a document one).
+    const registrationType = shop?.owner.registrationType ?? 'UNREGISTERED';
+    const isShopRegistered = registrationType === 'REGULAR' && !!shopGstin;
+    const chargesOutputGst = data.type === 'SALE' ? isShopRegistered : true;
+
+    // An unregistered shop can't issue a tax invoice — downgrade it to a
+    // Bill of Supply so the document type matches the (zero) tax charged.
+    if (data.type === 'SALE' && !isShopRegistered && documentType === 'TAX_INVOICE') {
+      documentType = 'BILL_OF_SUPPLY';
+    }
+
+    // Place of supply. For a sale it follows the customer's state; when the
+    // customer's state is unknown (walk-in / B2C with no address) it defaults
+    // to the shop's own state — a local intra-state supply (CGST+SGST), which
+    // is the correct GST default rather than leaving POS null. For a purchase
+    // it's the shop's state (where goods are received).
     const placeOfSupplyStateCode =
       data.placeOfSupplyStateCode ??
-      (data.type === 'SALE' ? customerStateCode : shopStateCode) ??
+      (data.type === 'SALE' ? (customerStateCode ?? shopStateCode) : shopStateCode) ??
       null;
     const isInterstate = isInterstateSupply(shopStateCode, placeOfSupplyStateCode);
 
@@ -301,7 +338,7 @@ export class InvoicesService {
     const productIds = [...new Set(data.items.map((i) => i.productId))];
     const products = await prisma.product.findMany({
       where: { id: { in: productIds }, shopId: data.shopId },
-      select: { id: true, name: true, sku: true, hsnCode: true, unit: true, stockQuantity: true },
+      select: { id: true, name: true, sku: true, hsnCode: true, unit: true, stockQuantity: true, taxPercent: true },
     });
     const productMap = new Map(products.map((p) => [p.id, p]));
     for (const item of data.items) {
@@ -316,28 +353,86 @@ export class InvoicesService {
     // a clear "no discount" intent that should not be overridden.
     const promos = await resolveActiveProductPromos(data.shopId, productIds);
 
-    let subtotal = 0;
-    let taxableValueTotal = 0;
+    // First pass: each line's gross value (qty * unitPrice) and its own
+    // discount, clamped so a single line can never exceed its gross value.
+    // An unbounded line discount would otherwise mint a negative taxable
+    // value and negative output GST (a document invalid for GSTR-1). The
+    // promo branch is already clamped via lineDiscount(); we clamp the
+    // explicit branch the same way (defense in depth).
+    const lines = data.items.map((item) => {
+      const gross = this.round2(item.quantity * item.unitPrice);
+      let rawItemDiscount: number;
+      if (item.discount !== undefined) {
+        rawItemDiscount = item.discount;
+      } else {
+        const promo = promos.get(item.productId);
+        rawItemDiscount = promo
+          ? lineDiscount(promo.type, promo.value, item.unitPrice, item.quantity)
+          : 0;
+      }
+      // 0..gross inclusive — a 100% "free" line is legitimate; negative is not.
+      const itemDiscount = Math.min(Math.max(0, this.round2(rawItemDiscount)), gross);
+      return { item, gross, itemDiscount };
+    });
+
+    // Invoice-level (header) discount, clamped so the document total can
+    // never go negative, then apportioned across lines BEFORE GST. Under
+    // CGST Sec 15(3)(a) a discount recorded on the invoice reduces the
+    // taxable value, so tax must be charged on the post-discount net — not
+    // subtracted after tax (which would over-collect GST and leave the
+    // stored taxable/tax irreconcilable with the billed amount).
+    const baseTaxableTotal = this.round2(
+      lines.reduce((s, l) => s + (l.gross - l.itemDiscount), 0),
+    );
+    const headerDiscount = Math.min(
+      Math.max(0, this.round2(data.discount ?? 0)),
+      baseTaxableTotal,
+    );
+
+    let subtotal = 0; // gross of all discounts (sum of qty * unitPrice)
+    let taxableValueTotal = 0; // net taxable after every discount
     let igstTotal = 0;
     let cgstTotal = 0;
     let sgstTotal = 0;
     let cessTotal = 0;
-    const headerDiscount = data.discount ?? 0;
+    let headerAllocated = 0; // running sum so the last line absorbs drift
 
-    const itemsData = data.items.map((item) => {
+    const itemsData = lines.map((l, idx) => {
+      const { item, gross, itemDiscount } = l;
       const product = productMap.get(item.productId)!;
-      const taxPct = item.taxPercent ?? 0;
-      const cessRate = item.cessRate ?? 0;
-      let itemDiscount: number;
-      if (item.discount !== undefined) {
-        itemDiscount = item.discount;
+      const lineBase = this.round2(gross - itemDiscount);
+
+      // Proportional share of the header discount. The last line takes the
+      // remainder so the apportioned shares re-sum to headerDiscount
+      // exactly — no paisa lost or created.
+      let headerShare: number;
+      if (headerDiscount <= 0 || baseTaxableTotal <= 0) {
+        headerShare = 0;
+      } else if (idx === lines.length - 1) {
+        headerShare = this.round2(headerDiscount - headerAllocated);
       } else {
-        const promo = promos.get(item.productId);
-        itemDiscount = promo
-          ? lineDiscount(promo.type, promo.value, item.unitPrice, item.quantity)
-          : 0;
+        headerShare = this.round2((headerDiscount * lineBase) / baseTaxableTotal);
       }
-      const taxableValue = this.round2(item.quantity * item.unitPrice - itemDiscount);
+      headerAllocated = this.round2(headerAllocated + headerShare);
+
+      // Full discount on this line = its own + its share of the header
+      // discount, folded in so the per-line invariant holds:
+      // taxableValue = qty * unitPrice - discount.
+      const lineDiscountTotal = this.round2(itemDiscount + headerShare);
+      const taxableValue = this.round2(gross - lineDiscountTotal);
+
+      // GST registration gate: an unregistered seller charges no output
+      // tax, so the effective rate is forced to 0 (the line then stores 0%,
+      // matching the Bill of Supply it is issued under).
+      //
+      // When the caller omits taxPercent (the customer-order, challan and
+      // quotation spawn paths all do), fall back to the product's own GST
+      // rate rather than silently charging 0% — that omission was the C1
+      // "every customer invoice carries ₹0 GST" bug. An explicit 0 from the
+      // merchant create form still wins (exempt/nil-rated lines).
+      const productTaxPct = Number(product.taxPercent) || 0;
+      const taxPct = chargesOutputGst ? (item.taxPercent ?? productTaxPct) : 0;
+      const cessRate = chargesOutputGst ? (item.cessRate ?? 0) : 0;
 
       let igstAmount = 0;
       let cgstAmount = 0;
@@ -357,7 +452,7 @@ export class InvoicesService {
         taxableValue + igstAmount + cgstAmount + sgstAmount + cessAmount,
       );
 
-      subtotal += taxableValue;
+      subtotal += gross;
       taxableValueTotal += taxableValue;
       igstTotal += igstAmount;
       cgstTotal += cgstAmount;
@@ -373,7 +468,7 @@ export class InvoicesService {
         quantity: item.quantity,
         unitPrice: item.unitPrice,
         taxPercent: taxPct,
-        discount: itemDiscount,
+        discount: lineDiscountTotal,
         taxableValue,
         igstAmount,
         cgstAmount,
@@ -385,9 +480,10 @@ export class InvoicesService {
     });
 
     const taxAmount = this.round2(igstTotal + cgstTotal + sgstTotal + cessTotal);
-    const grandTotalRaw = this.round2(
-      taxableValueTotal + taxAmount - headerDiscount,
-    );
+    // The header discount is already baked into each line's taxable value,
+    // so the grand total is simply net taxable + tax — never a post-tax
+    // subtraction (which is what broke Sec 15(3) before).
+    const grandTotalRaw = this.round2(taxableValueTotal + taxAmount);
     const roundOff = this.round2(Math.round(grandTotalRaw) - grandTotalRaw);
     const total = this.round2(grandTotalRaw + roundOff);
     const words = amountInWords(total);
@@ -426,7 +522,10 @@ export class InvoicesService {
         cgstAmount: this.round2(cgstTotal),
         sgstAmount: this.round2(sgstTotal),
         cessAmount: this.round2(cessTotal),
-        discount: headerDiscount,
+        // Header discount is distributed into the line-level `discount`
+        // fields above, so the invoice-level field is 0 to avoid the PDF
+        // (which sums header + line discounts) double-counting it.
+        discount: 0,
         roundOff,
         total,
         amountInWords: words,
