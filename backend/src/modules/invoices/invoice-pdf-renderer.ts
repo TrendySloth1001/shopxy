@@ -437,6 +437,35 @@ export async function renderInvoicePdf(
         y = doc.y + 4;
       }
 
+      // ---------- Statutory declarations ----------
+      // Rule 46(p): a tax invoice must state whether tax is payable on
+      // reverse charge. Rule 49 / Rule 5(g): a Bill of Supply must declare
+      // that the supplier is not authorised to collect tax (unregistered or
+      // composition). These are mandatory document elements.
+      {
+        if (y + 26 > 770) { doc.addPage(); y = 40; }
+        if (invoice.documentType === 'BILL_OF_SUPPLY') {
+          doc
+            .font('Helvetica-Oblique')
+            .fontSize(8)
+            .fillColor('#6B7280')
+            .text(
+              'Bill of Supply — the supplier is not registered to collect GST / is under the composition scheme. No tax is charged on this document.',
+              LEFT,
+              y,
+              { width: W },
+            );
+          y = doc.y + 4;
+        } else if (invoice.documentType === 'TAX_INVOICE') {
+          doc
+            .font('Helvetica')
+            .fontSize(8)
+            .fillColor('#6B7280')
+            .text('Tax payable on reverse charge: No', LEFT, y, { width: W });
+          y = doc.y + 4;
+        }
+      }
+
       // ---------- UPI QR (if applicable) ----------
       if (upiQr) {
         if (y + 140 > 770) { doc.addPage(); y = 40; }

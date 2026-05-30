@@ -181,12 +181,37 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
     super.dispose();
   }
 
+  // Sum of each line's taxable (qty*price − its own discount). Doubles as
+  // the base over which the invoice-level discount is apportioned.
   double get _subtotal => _items.fold(0, (sum, i) => sum + i.subtotal);
-  double get _totalTax => _items.fold(0, (sum, i) => sum + i.tax);
-  double get _headerDiscount => double.tryParse(_discount.text) ?? 0;
-  // Pre-roundoff total: taxable + tax − header discount, mirroring the
-  // backend's `total = taxableValue + totalTax − discount` math.
-  double get _rawTotal => _subtotal + _totalTax - _headerDiscount;
+  // Invoice-level discount, clamped to [0, subtotal] so the preview can't
+  // go negative — matches the backend engine's clamp.
+  double get _headerDiscount {
+    final raw = double.tryParse(_discount.text) ?? 0;
+    if (raw <= 0 || _subtotal <= 0) return 0;
+    return raw > _subtotal ? _subtotal : raw;
+  }
+  // GST is charged on each line's taxable AFTER its proportional share of
+  // the invoice-level discount (CGST Sec 15(3)). The backend apportions the
+  // header discount into the lines before computing tax, so the preview
+  // mirrors that or the shown total won't match the saved invoice.
+  double get _totalTax {
+    final base = _subtotal;
+    final hd = _headerDiscount;
+    if (base <= 0) return 0;
+    var tax = 0.0;
+    for (final i in _items) {
+      final lineBase = i.subtotal; // qty*price − line discount
+      final net = lineBase - hd * (lineBase / base);
+      tax += net * i.taxPercent / 100;
+    }
+    return tax;
+  }
+  // Net taxable after every discount.
+  double get _taxableValue => _subtotal - _headerDiscount;
+  // Header discount is now applied BEFORE tax, so the pre-roundoff total is
+  // simply net taxable + tax (no post-tax subtraction).
+  double get _rawTotal => _taxableValue + _totalTax;
   // Indian invoices commonly round to the nearest rupee. We compute the
   // diff the same way the backend does so the UI matches the saved row.
   double get _roundedTotal => _rawTotal.roundToDouble();
