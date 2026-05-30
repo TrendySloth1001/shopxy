@@ -177,7 +177,7 @@ class PosterProductBlock extends HomeBlock {
   final ProductCard product;
 }
 
-/// Numbered "Top N in <category>" ranking. The compose layer picks
+/// Numbered "Top N in `<category>`" ranking. The compose layer picks
 /// any title; the render layer draws 1..5 rank chips.
 class LeaderboardBlock extends HomeBlock {
   const LeaderboardBlock({required this.title, required this.products});
@@ -185,7 +185,7 @@ class LeaderboardBlock extends HomeBlock {
   final List<ProductCard> products; // 3..5 items
 }
 
-/// Brand-led grid: "Spotlight: <brand>" + 6 products from that brand.
+/// Brand-led grid: "Spotlight: `<brand>`" + 6 products from that brand.
 /// Composer hunts the pool for a brand cluster — falls back to first
 /// brand it finds.
 class BrandFocusBlock extends HomeBlock {

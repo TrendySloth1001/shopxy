@@ -3,10 +3,6 @@ import { ledgerService } from '../ledger/ledger.service.js';
 import { nextChallanNo } from '../../shared/numbering/sequences.js';
 import { invoicesService } from '../invoices/invoices.service.js';
 
-function round2(v: number): number {
-  return Math.round((v + Number.EPSILON) * 100) / 100;
-}
-
 export class ChallansService {
   async createChallan(
     shopId: number,
