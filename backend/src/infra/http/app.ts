@@ -342,7 +342,10 @@ export function buildApp(): express.Express {
   app.use('/invoices', ownerOnly, invoicesRouter);
   app.use('/challans', ownerOnly, challansRouter);
   app.use('/upload', ownerOnly, uploadLimiter, uploadRouter);
-  app.use('/reports', ownerOnly, reportsRouter);
+  // resolveShop attaches req.shopId so every report query can scope to the
+  // caller's own shop. Without it the reports aggregated across ALL shops
+  // (a cross-tenant data + PII leak).
+  app.use('/reports', ownerOnly, resolveShop, reportsRouter);
   // Merchant returns inbox + workflow — mounted BEFORE /orders so the
   // sub-path takes precedence over the /orders/:id route registered
   // by the parent router below.
