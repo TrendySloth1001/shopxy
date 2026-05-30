@@ -122,4 +122,43 @@ describe('payments.service — smoke', () => {
       await cleanupTestUser(shopB);
     }
   });
+
+  it('voidPayment — retains the row but drops it from the party ledger balance', async () => {
+    const ctx = await createTestUser();
+    try {
+      const party = await createParty(ctx.shopId);
+      const pay = await paymentsService.createPayment({
+        shopId: ctx.shopId,
+        type: 'RECEIPT',
+        amount: 500,
+        mode: 'CASH',
+        partyId: party.id,
+        createdById: ctx.userId,
+      });
+
+      // Before voiding: the receipt credits the ledger → balance −500.
+      const before = await paymentsService.partyLedger(ctx.shopId, party.id);
+      expect(before?.balance).toBe(-500);
+
+      const ok = await paymentsService.voidPayment(ctx.shopId, pay.id, ctx.userId, 'entered twice');
+      expect(ok).toBe(true);
+
+      // The row is retained (audit trail) and stamped voided…
+      const row = await prisma.payment.findUnique({ where: { id: pay.id } });
+      expect(row).not.toBeNull();
+      expect(row?.voidedAt).not.toBeNull();
+      expect(row?.voidReason).toBe('entered twice');
+
+      // …but it no longer affects the ledger balance.
+      const after = await paymentsService.partyLedger(ctx.shopId, party.id);
+      expect(after?.balance).toBe(0);
+
+      // Voiding again is an idempotent no-op.
+      expect(await paymentsService.voidPayment(ctx.shopId, pay.id, ctx.userId)).toBe(true);
+
+      await prisma.payment.delete({ where: { id: pay.id } });
+    } finally {
+      await cleanupTestUser(ctx);
+    }
+  });
 });
