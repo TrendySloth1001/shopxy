@@ -10,6 +10,7 @@ const itemSchema = z.object({
   quantity: z.number().positive(),
   unitPrice: z.number().nonnegative(),
   taxPercent: z.number().min(0).max(100).nullable().optional(),
+  cessRate: z.number().min(0).max(100).nullable().optional(),
   discount: z.number().nonnegative().nullable().optional(),
   imageUrl: z.string().max(2000).nullable().optional(),
 });
