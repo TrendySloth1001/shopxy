@@ -1,6 +1,7 @@
 import prisma from '../../infra/db/prisma.js';
 import { ledgerService } from '../ledger/ledger.service.js';
-import { nextChallanNo, nextInvoiceNo } from '../../shared/numbering/sequences.js';
+import { nextChallanNo } from '../../shared/numbering/sequences.js';
+import { invoicesService } from '../invoices/invoices.service.js';
 
 function round2(v: number): number {
   return Math.round((v + Number.EPSILON) * 100) / 100;
@@ -224,77 +225,48 @@ export class ChallansService {
     const productIds = challan.items.map((i) => i.productId);
     const products = await prisma.product.findMany({
       where: { id: { in: productIds }, shopId },
-      select: { id: true, sellingPrice: true, taxPercent: true },
+      select: { id: true, sellingPrice: true },
     });
     const priceMap = new Map(products.map((p) => [p.id, p]));
 
-    let subtotal = 0;
-    let taxAmount = 0;
-    const headerDiscount = data?.discount ?? 0;
-
-    const itemsData = challan.items.map((item) => {
-      const product = priceMap.get(item.productId);
-      const unitPrice = product ? Number(product.sellingPrice) : 0;
-      const taxPct = product ? Number(product.taxPercent) : 0;
-      const qty = Number(item.quantity);
-      const base = qty * unitPrice;
-      const tax = (base * taxPct) / 100;
-      const total = round2(base + tax);
-      subtotal += base;
-      taxAmount += tax;
-      return {
-        productId: item.productId,
-        productName: item.productName,
-        productSku: item.productSku,
-        unit: item.unit,
-        quantity: qty,
-        unitPrice,
-        taxPercent: taxPct,
-        discount: 0,
-        total,
-      };
-    });
-
-    const total = round2(subtotal + taxAmount - headerDiscount);
-    const invoiceDate = new Date();
-    const { invoiceNo, financialYear } = await nextInvoiceNo(
+    // Route through the shared invoice engine instead of hand-building the
+    // invoice — that hand-built path never set the IGST/CGST/SGST split,
+    // ignored the GST-registration gate (always a TAX_INVOICE) and applied
+    // the discount after tax. createInvoice fills the GST split, downgrades
+    // to a Bill of Supply for an unregistered shop, defaults each line's tax
+    // rate from the product, and applies the discount before tax.
+    const result = await invoicesService.createInvoice({
       shopId,
-      'SALE',
-      'TAX_INVOICE',
-      invoiceDate,
-    );
-
-    const invoice = await prisma.$transaction(async (tx) => {
-      const newInvoice = await tx.invoice.create({
-        data: {
-          shopId,
-          invoiceNo,
-          financialYear,
-          type: 'SALE',
-          status: 'DRAFT',
-          partyId: challan.partyId,
-          customerName: data?.customerName ?? challan.partyName,
-          customerPhone: challan.partyPhone ?? challan.party?.phone ?? null,
-          customerGstin: data?.customerGstin ?? challan.party?.gstin ?? null,
-          subtotal: round2(subtotal),
-          taxAmount: round2(taxAmount),
-          discount: headerDiscount,
-          total,
-          note: data?.note ?? challan.note ?? null,
-          items: { create: itemsData },
-        },
-        include: { items: true, party: true },
-      });
-
-      await tx.challan.update({
-        where: { id },
-        data: { status: 'CONVERTED', invoiceId: newInvoice.id },
-      });
-
-      return newInvoice;
+      type: 'SALE',
+      documentType: 'TAX_INVOICE',
+      partyId: challan.partyId ?? undefined,
+      customerName: data?.customerName ?? challan.partyName ?? undefined,
+      customerPhone: challan.partyPhone ?? challan.party?.phone ?? undefined,
+      customerGstin: data?.customerGstin ?? challan.party?.gstin ?? undefined,
+      discount: data?.discount,
+      note: data?.note ?? challan.note ?? undefined,
+      items: challan.items.map((item) => ({
+        productId: item.productId,
+        quantity: Number(item.quantity),
+        unitPrice: Number(priceMap.get(item.productId)?.sellingPrice ?? 0),
+        // taxPercent omitted → engine fills it from the product's GST rate.
+      })),
     });
+    if ('error' in result) return { error: result.error };
 
-    return { invoice };
+    // Link the challan to the freshly-minted draft invoice. If this fails,
+    // roll back the orphan draft so a retry doesn't strand two invoices.
+    try {
+      await prisma.challan.update({
+        where: { id },
+        data: { status: 'CONVERTED', invoiceId: result.invoice.id },
+      });
+    } catch (err) {
+      await invoicesService.deleteInvoice(shopId, result.invoice.id).catch(() => {});
+      throw err;
+    }
+
+    return { invoice: result.invoice };
   }
 }
 

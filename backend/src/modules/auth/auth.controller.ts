@@ -89,6 +89,7 @@ const updateProfileSchema = z.object({
     .regex(GSTIN_REGEX, 'invalid GSTIN')
     .nullable()
     .optional(),
+  registrationType: z.enum(['REGULAR', 'COMPOSITION', 'UNREGISTERED']).optional(),
   shopPan: z
     .string()
     .regex(PAN_REGEX, 'invalid PAN')

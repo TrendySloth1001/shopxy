@@ -3,16 +3,44 @@ import { z } from 'zod';
 import { parsePagination, paginatedResponse } from '../../shared/http/pagination.js';
 import { invoicesService } from './invoices.service.js';
 
-const itemSchema = z.object({
-  productId: z.number().int().positive(),
-  quantity: z.number().positive(),
-  unitPrice: z.number().nonnegative(),
-  taxPercent: z.number().min(0).max(100).optional(),
-  /// GST compensation cess. Most line items leave this at 0; tobacco /
-  /// luxury goods / aerated drinks attract it.
-  cessRate: z.number().min(0).max(100).optional(),
-  discount: z.number().nonnegative().optional(),
-});
+const itemSchema = z
+  .object({
+    productId: z.number().int().positive(),
+    quantity: z.number().positive(),
+    unitPrice: z.number().nonnegative(),
+    taxPercent: z.number().min(0).max(100).optional(),
+    /// GST compensation cess. Most line items leave this at 0; tobacco /
+    /// luxury goods / aerated drinks attract it.
+    cessRate: z.number().min(0).max(100).optional(),
+    discount: z.number().nonnegative().optional(),
+  })
+  // A line discount can never exceed the line's gross value — otherwise it
+  // would mint a negative taxable value and negative output GST (H2/H6).
+  .refine((i) => i.discount === undefined || i.discount <= i.quantity * i.unitPrice, {
+    message: 'Line discount cannot exceed quantity × unit price',
+    path: ['discount'],
+  });
+
+/// Reject an invoice-level discount larger than the whole taxable value
+/// (after line discounts) — keeps the document total from going negative
+/// (H3). The engine also clamps, but a clear 400 beats a silent clamp.
+function refineHeaderDiscount<T extends { discount?: number; items: Array<{ quantity: number; unitPrice: number; discount?: number }> }>(
+  data: T,
+  ctx: z.RefinementCtx,
+): void {
+  if (data.discount === undefined) return;
+  const baseTaxable = data.items.reduce(
+    (s, i) => s + (i.quantity * i.unitPrice - (i.discount ?? 0)),
+    0,
+  );
+  if (data.discount > baseTaxable) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Invoice discount cannot exceed the total taxable value',
+      path: ['discount'],
+    });
+  }
+}
 
 const documentTypeEnum = z.enum([
   'TAX_INVOICE',
@@ -37,7 +65,7 @@ const createInvoiceSchema = z.object({
   invoiceDate: z.string().datetime().optional(),
   items: z.array(itemSchema).min(1),
   confirm: z.boolean().optional(),
-});
+}).superRefine(refineHeaderDiscount);
 
 const updateStatusSchema = z.object({
   status: z.enum(['DRAFT', 'CONFIRMED', 'CANCELLED']),
@@ -55,7 +83,7 @@ const updateInvoiceSchema = z.object({
   discount: z.number().nonnegative().optional(),
   note: z.string().max(1000).optional(),
   items: z.array(itemSchema).min(1),
-});
+}).superRefine(refineHeaderDiscount);
 
 const listQuerySchema = z.object({
   type: z.enum(['SALE', 'PURCHASE']).optional(),
