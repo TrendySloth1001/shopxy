@@ -23,6 +23,9 @@ export interface QuotationItemInput {
   quantity: number;
   unitPrice: number;
   taxPercent?: number | null;
+  /// GST compensation cess (tobacco / luxury / aerated). Carried through
+  /// to the spawned invoice so a cess-bearing quote isn't under-billed.
+  cessRate?: number | null;
   discount?: number | null;
   imageUrl?: string | null;
 }
@@ -73,10 +76,15 @@ function priceItems(items: QuotationItemInput[]) {
   let taxAmount = 0;
   const lines = items.map((it) => {
     const qty = it.quantity;
-    const taxable = round2(Math.max(0, qty * it.unitPrice - (it.discount ?? 0)));
+    // Clamp the discount to the line's gross so a quote can never preview a
+    // negative line (and so the spawned invoice — which also clamps — agrees).
+    const gross = round2(qty * it.unitPrice);
+    const discount = Math.min(Math.max(0, it.discount ?? 0), gross);
+    const taxable = round2(gross - discount);
     const tax = round2((taxable * (it.taxPercent ?? 0)) / 100);
+    const cess = round2((taxable * (it.cessRate ?? 0)) / 100);
     subtotal += taxable;
-    taxAmount += tax;
+    taxAmount += tax + cess;
     return {
       productId: it.productId,
       name: it.name,
@@ -84,16 +92,23 @@ function priceItems(items: QuotationItemInput[]) {
       quantity: qty,
       unitPrice: it.unitPrice,
       taxPercent: it.taxPercent ?? 0,
-      discount: it.discount ?? 0,
+      cessRate: it.cessRate ?? 0,
+      discount,
       imageUrl: it.imageUrl ?? null,
-      lineTotal: round2(taxable + tax),
+      lineTotal: round2(taxable + tax + cess),
     };
   });
+  const netTax = round2(taxAmount);
+  const rawTotal = round2(round2(subtotal) + netTax);
+  // Round the preview total to the nearest whole rupee — the invoice engine
+  // rounds its grand total the same way, so the quote the customer accepts
+  // matches the invoice they're billed (M1: no silent sub-rupee up-charge).
+  const total = Math.round(rawTotal);
   return {
     lines,
     subtotal: round2(subtotal),
-    taxAmount: round2(taxAmount),
-    total: round2(subtotal + taxAmount),
+    taxAmount: netTax,
+    total,
   };
 }
 
@@ -254,6 +269,7 @@ export class QuotationsService {
       quantity: number;
       unitPrice: number;
       taxPercent?: number;
+      cessRate?: number;
       discount?: number;
     }>);
 
@@ -279,6 +295,7 @@ export class QuotationsService {
           quantity: l.quantity,
           unitPrice: l.unitPrice,
           taxPercent: l.taxPercent,
+          cessRate: l.cessRate,
           discount: l.discount,
         })),
         confirm: true,
