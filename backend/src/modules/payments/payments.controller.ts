@@ -144,6 +144,9 @@ export class PaymentsController {
     res.json(payment);
   }
 
+  /// DELETE /payments/:id now soft-voids the payment (it is retained for
+  /// audit + statutory retention, just excluded from balances). An optional
+  /// `reason` may be supplied via the request body or `?reason=`.
   async delete(req: Request, res: Response): Promise<void> {
     const shopId = requireShopId(req, res);
     if (!shopId) return;
@@ -152,7 +155,11 @@ export class PaymentsController {
       res.status(400).json({ error: 'Invalid id' });
       return;
     }
-    const ok = await paymentsService.deletePayment(shopId, id);
+    const reason =
+      (typeof req.body?.reason === 'string' && req.body.reason) ||
+      (typeof req.query?.reason === 'string' && req.query.reason) ||
+      null;
+    const ok = await paymentsService.voidPayment(shopId, id, req.user?.sub ?? null, reason);
     if (!ok) {
       res.status(404).json({ error: 'Payment not found' });
       return;
