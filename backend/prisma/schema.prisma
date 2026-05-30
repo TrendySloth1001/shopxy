@@ -39,6 +39,10 @@ model User {
   shopStateCode      String?            @map("shop_state_code")
   shopPinCode        String?            @map("shop_pin_code")
   shopGstin          String?            @map("shop_gstin")
+  /// GST registration status. Gates whether this shop charges output tax
+  /// and issues tax invoices vs Bills of Supply. Defaults to UNREGISTERED;
+  /// the migration backfills REGULAR for rows that already have a GSTIN.
+  registrationType   RegistrationType   @default(UNREGISTERED) @map("registration_type")
   shopPan            String?            @map("shop_pan")
   upiVpa             String?            @map("upi_vpa")
   /// Customer + merchant profile photo. Stored as the upload-service
@@ -64,36 +68,37 @@ model User {
   stockTransactions  StockTransaction[]
   stockAdjustments   StockAdjustment[]
 
-  invitationsSent       Invitation[]           @relation("InvitationsSent")
-  invitationsReceived   Invitation[]           @relation("InvitationsReceived")
-  notifications         Notification[]
-  linkedParties         Party[]
-  linkedVendors         Vendor[]
-  customerOrders        CustomerOrder[]
-  purchaseRequests      PurchaseRequest[]      @relation("CustomerPurchaseRequests")
-  decidedRequests       PurchaseRequest[]      @relation("MerchantDecidedRequests")
-  purchaseRequestEvents PurchaseRequestEvent[] @relation("PurchaseRequestEventActor")
-  paymentsCreated       Payment[]              @relation("PaymentCreatedBy")
-  contactChanges        ContactChangeLog[]
-  wishlistItems         WishlistItem[]
-  cartItems             CartItem[]
-  shop                  Shop?
-  productReviews        ProductReview[]
-  reviewedSpotlights    BrandSpotlight[]       @relation("BrandSpotlightReviewer")
-  productEvents         ProductEvent[]
-  recentlyViewed        RecentlyViewed[]
-  recommendationCache   RecommendationCache[]
-  searchEvents          SearchEvent[]
-  addresses             UserAddress[]
-  returnsRequested      ReturnRequest[]        @relation("ReturnRequestCustomer")
-  returnEvents          ReturnRequestEvent[]   @relation("ReturnRequestEventActor")
-  walletEntries         WalletEntry[]
-  couponRedemptions     CouponRedemption[]
-  cautionTxnsCreated    CautionTxn[]           @relation("CautionTxnCreatedBy")
-  cautionRequestsMade   CautionRequest[]       @relation("CautionRequestRequestedBy")
-  cautionRequestsReviewed CautionRequest[]     @relation("CautionRequestReviewedBy")
-  quotationsCreated     Quotation[]            @relation("QuotationCreatedBy")
-  quotationsRequested   Quotation[]            @relation("QuotationRequestedBy")
+  invitationsSent         Invitation[]           @relation("InvitationsSent")
+  invitationsReceived     Invitation[]           @relation("InvitationsReceived")
+  notifications           Notification[]
+  linkedParties           Party[]
+  linkedVendors           Vendor[]
+  customerOrders          CustomerOrder[]
+  purchaseRequests        PurchaseRequest[]      @relation("CustomerPurchaseRequests")
+  decidedRequests         PurchaseRequest[]      @relation("MerchantDecidedRequests")
+  purchaseRequestEvents   PurchaseRequestEvent[] @relation("PurchaseRequestEventActor")
+  paymentsCreated         Payment[]              @relation("PaymentCreatedBy")
+  paymentsVoided          Payment[]              @relation("PaymentVoidedBy")
+  contactChanges          ContactChangeLog[]
+  wishlistItems           WishlistItem[]
+  cartItems               CartItem[]
+  shop                    Shop?
+  productReviews          ProductReview[]
+  reviewedSpotlights      BrandSpotlight[]       @relation("BrandSpotlightReviewer")
+  productEvents           ProductEvent[]
+  recentlyViewed          RecentlyViewed[]
+  recommendationCache     RecommendationCache[]
+  searchEvents            SearchEvent[]
+  addresses               UserAddress[]
+  returnsRequested        ReturnRequest[]        @relation("ReturnRequestCustomer")
+  returnEvents            ReturnRequestEvent[]   @relation("ReturnRequestEventActor")
+  walletEntries           WalletEntry[]
+  couponRedemptions       CouponRedemption[]
+  cautionTxnsCreated      CautionTxn[]           @relation("CautionTxnCreatedBy")
+  cautionRequestsMade     CautionRequest[]       @relation("CautionRequestRequestedBy")
+  cautionRequestsReviewed CautionRequest[]       @relation("CautionRequestReviewedBy")
+  quotationsCreated       Quotation[]            @relation("QuotationCreatedBy")
+  quotationsRequested     Quotation[]            @relation("QuotationRequestedBy")
 
   /// Denormalised wallet balance — sum of [WalletEntry.amount] for
   /// this user. Kept in sync inside the same transaction that writes
@@ -1396,6 +1401,15 @@ model Payment {
   /// Owner who recorded the payment.
   createdById    Int?         @map("created_by_id")
   createdBy      User?        @relation("PaymentCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  /// Soft-void audit trail. A payment is never hard-deleted — voiding sets
+  /// these so the row is retained (CGST Sec 36 / Rule 56 retention) while
+  /// being excluded from every balance, outstanding and ledger total. A
+  /// silent hard-delete used to reopen an invoice's outstanding with no
+  /// trace, which broke period-close and enabled undetectable tampering.
+  voidedAt       DateTime?    @map("voided_at")
+  voidedById     Int?         @map("voided_by_id")
+  voidedBy       User?        @relation("PaymentVoidedBy", fields: [voidedById], references: [id], onDelete: SetNull)
+  voidReason     String?      @map("void_reason")
   /// Client-supplied idempotency key (via `X-Idempotency-Key`). When set
   /// a retry from a flaky mobile network reuses the original row instead
   /// of double-paying the invoice. Partial unique on (shop_id, type,
@@ -1411,6 +1425,7 @@ model Payment {
   @@index([shopId, partyId, paymentDate])
   @@index([shopId, vendorId, paymentDate])
   @@index([invoiceId])
+  @@index([invoiceId, voidedAt])
   @@map("payments")
 }
 
@@ -1418,38 +1433,38 @@ model Payment {
 /// A liability — deliberately kept out of the sales/payments revenue tables.
 /// Balance per (shopId, partyId) = SUM(DEPOSIT) − SUM(REFUND) − SUM(ADJUSTMENT).
 model CautionTxn {
-  id            Int      @id @default(autoincrement())
-  shopId        Int      @map("shop_id")
-  shop          Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  partyId       Int      @map("party_id")
-  party         Party    @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  id            Int             @id @default(autoincrement())
+  shopId        Int             @map("shop_id")
+  shop          Shop            @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  partyId       Int             @map("party_id")
+  party         Party           @relation(fields: [partyId], references: [id], onDelete: Cascade)
   /// 'DEPOSIT' (money in) | 'REFUND' (money back) | 'ADJUSTMENT' (set off
   /// against an invoice) | 'FORFEIT' (deposit kept on default — taxable
   /// business income, see gstTreatment). Balance subtracts everything but DEPOSIT.
   type          String
-  amount        Decimal  @db.Decimal(12, 2)
+  amount        Decimal         @db.Decimal(12, 2)
   /// CASH | UPI | NEFT | RTGS | CHEQUE | CARD | OTHER for DEPOSIT/REFUND; null for ADJUSTMENT/FORFEIT.
   mode          String?
-  modeReference String?  @map("mode_reference")
+  modeReference String?         @map("mode_reference")
   /// Ordinary money-receipt number on DEPOSIT/REFUND (e.g. CAU/25-26/00001).
   /// A refundable deposit for goods attracts no GST, so this is a plain
   /// receipt — not a GST receipt voucher. Null for ADJUSTMENT/FORFEIT.
-  receiptNo     String?  @map("receipt_no")
+  receiptNo     String?         @map("receipt_no")
   /// FORFEIT only: 'NONE' = pure default penalty, no GST (Circular 178/2022
   /// ¶7.1.5) | 'SUPPLY' = forfeiture of a cancelled supply, GST at the goods
   /// rate (¶11.3). Null for every other type.
-  gstTreatment  String?  @map("gst_treatment")
+  gstTreatment  String?         @map("gst_treatment")
   /// Set when type='ADJUSTMENT' — the invoice the deposit was applied to.
-  invoiceId     Int?     @map("invoice_id")
-  invoice       Invoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  invoiceId     Int?            @map("invoice_id")
+  invoice       Invoice?        @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
   /// The mode='CAUTION' Payment created by the set-off so the invoice's
   /// computed outstanding (total − SUM(payments)) drops automatically.
-  paymentId     Int?     @map("payment_id")
-  payment       Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  paymentId     Int?            @map("payment_id")
+  payment       Payment?        @relation(fields: [paymentId], references: [id], onDelete: SetNull)
   note          String?
-  createdById   Int?     @map("created_by_id")
-  createdBy     User?    @relation("CautionTxnCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
-  createdAt     DateTime @default(now()) @map("created_at")
+  createdById   Int?            @map("created_by_id")
+  createdBy     User?           @relation("CautionTxnCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt     DateTime        @default(now()) @map("created_at")
   /// Set when this DEPOSIT was produced by approving a party-initiated request.
   request       CautionRequest?
 
@@ -1484,7 +1499,7 @@ model CautionRequest {
   basket        Json?
   /// Sum of the basket line totals (intended purchase value). Drives the
   /// suggested deposit amount client-side; the customer can still override.
-  basketValue   Decimal?    @db.Decimal(14, 2) @map("basket_value")
+  basketValue   Decimal?    @map("basket_value") @db.Decimal(14, 2)
   /// PENDING | APPROVED | REJECTED | CANCELLED.
   status        String      @default("PENDING")
   // ── Payment-gateway seam (unused today; channel defaults MANUAL) ──
@@ -1529,7 +1544,7 @@ model Quotation {
   /// Line items: [{ productId, name, sku?, quantity, unitPrice, taxPercent, discount, lineTotal }].
   items                  Json
   subtotal               Decimal   @db.Decimal(14, 2)
-  taxAmount              Decimal   @db.Decimal(14, 2) @map("tax_amount")
+  taxAmount              Decimal   @map("tax_amount") @db.Decimal(14, 2)
   total                  Decimal   @db.Decimal(14, 2)
   note                   String?
   placeOfSupplyStateCode String?   @map("place_of_supply_state_code")
@@ -1793,6 +1808,17 @@ model FlashSale {
 enum Role {
   OWNER
   CUSTOMER
+}
+
+/// A shop's GST registration status — the source of truth for whether it
+/// may charge output tax. REGULAR charges GST and issues tax invoices;
+/// COMPOSITION holds a GSTIN but (CGST Sec 10) cannot charge GST and must
+/// issue a Bill of Supply; UNREGISTERED has no GSTIN and likewise issues a
+/// Bill of Supply. Backfilled to REGULAR for existing GSTIN-holders.
+enum RegistrationType {
+  REGULAR
+  COMPOSITION
+  UNREGISTERED
 }
 
 /// Marketplace-visible shop owned 1:1 by a merchant User. Separate from
