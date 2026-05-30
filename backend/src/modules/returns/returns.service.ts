@@ -190,6 +190,29 @@ export class ReturnsService {
       : 1;
 
     const itemMap = new Map(child.items.map((i) => [i.id, i]));
+    // Cumulative-returned-quantity guard (C4). Without it a line could be
+    // returned and refunded, then returned again and again — minting
+    // unlimited wallet credit for goods bought only once. Sum the quantity
+    // already returned on every still-live or completed return for this
+    // child, then require requested + alreadyReturned to stay within what
+    // was originally purchased. (REJECTED / CANCELLED returns release their
+    // hold and are excluded.)
+    const requestedItemIds = opts.items.map((i) => i.purchaseRequestItemId);
+    const priorReturns = await prisma.returnRequestItem.groupBy({
+      by: ['purchaseRequestItemId'],
+      where: {
+        purchaseRequestItemId: { in: requestedItemIds },
+        return: {
+          requestId: opts.childId,
+          status: { in: ['REQUESTED', 'APPROVED', 'PICKED_UP', 'RECEIVED', 'REFUNDED'] },
+        },
+      },
+      _sum: { quantity: true },
+    });
+    const alreadyReturned = new Map(
+      priorReturns.map((r) => [r.purchaseRequestItemId, Number(r._sum.quantity) || 0]),
+    );
+
     let refundTotal = 0;
     const itemRows: Array<{
       purchaseRequestItemId: number;
@@ -200,7 +223,8 @@ export class ReturnsService {
     for (const it of opts.items) {
       const original = itemMap.get(it.purchaseRequestItemId);
       if (!original) return { error: 'INVALID_ITEMS' };
-      if (!(it.quantity > 0) || it.quantity > Number(original.quantity)) {
+      const prior = alreadyReturned.get(it.purchaseRequestItemId) ?? 0;
+      if (!(it.quantity > 0) || it.quantity + prior > Number(original.quantity)) {
         return { error: 'BAD_QTY' };
       }
       const linePrice = it.quantity * Number(original.unitPrice);
