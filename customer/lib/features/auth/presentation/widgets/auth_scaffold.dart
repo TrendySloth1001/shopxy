@@ -1,0 +1,316 @@
+import 'package:flutter/material.dart';
+import 'package:shopxy_customer/features/auth/presentation/widgets/require_auth.dart';
+import 'package:shopxy_customer/features/home/presentation/widgets/network_image_box.dart';
+import 'package:shopxy_customer/shared/constants/app_sizes.dart';
+import 'package:shopxy_customer/shared/theme/app_colors.dart';
+import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+
+/// Immersive auth layout: a full-bleed photo hero with the brand mark +
+/// tagline overlaid, and a white rounded sheet floating up over it that
+/// holds the form. The sheet scrolls (and the bottom inset is reserved)
+/// so fields stay reachable with the keyboard open.
+class AuthScaffold extends StatelessWidget {
+  const AuthScaffold({
+    super.key,
+    required this.heroImageUrl,
+    required this.heroTagline,
+    required this.title,
+    required this.subtitle,
+    required this.child,
+    this.showSkip = false,
+    this.heroHeight = 300,
+  });
+
+  final String heroImageUrl;
+  final String heroTagline;
+  final String title;
+  final String subtitle;
+  final Widget child;
+  final bool showSkip;
+  final double heroHeight;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Scaffold(
+      backgroundColor: AppColors.black,
+      body: Stack(
+        // Expand to fill the screen — all children are Positioned, so
+        // without this the Stack would collapse to nothing and the
+        // bottom-anchored sheet would have no height.
+        fit: StackFit.expand,
+        children: [
+          // Hero pinned at the top — doesn't move when the keyboard opens.
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: heroHeight + 40,
+            child: _HeroArt(imageUrl: heroImageUrl, tagline: heroTagline),
+          ),
+          // Floating sheet with the form, overlapping the hero's bottom.
+          Positioned(
+            top: heroHeight - 26,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Container(
+              decoration: ShapeDecoration(
+                color: AppColors.white,
+                shape: AppShapes.squircleTop(28),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: SafeArea(
+                top: false,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(
+                      AppSizes.xl, AppSizes.xxl, AppSizes.xl, AppSizes.xl),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: theme.textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.6,
+                        ),
+                      ),
+                      const SizedBox(height: AppSizes.xs),
+                      Text(
+                        subtitle,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: AppColors.muted,
+                          height: 1.4,
+                        ),
+                      ),
+                      const SizedBox(height: AppSizes.xl),
+                      child,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          if (showSkip)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + AppSizes.xs,
+              right: AppSizes.sm,
+              child: const _WhiteSkip(),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Full-bleed image + scrim + brand mark and tagline. Private to the
+/// auth scaffold.
+class _HeroArt extends StatelessWidget {
+  const _HeroArt({required this.imageUrl, required this.tagline});
+  final String imageUrl;
+  final String tagline;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        NetworkImageBox(url: imageUrl, fit: BoxFit.cover),
+        const DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0x4D000000),
+                Color(0x00000000),
+                Color(0x80000000),
+                Color(0xD9000000),
+              ],
+              stops: [0.0, 0.32, 0.68, 1.0],
+            ),
+          ),
+        ),
+        // Lifted clear of the floating sheet (which overlaps the hero's
+        // bottom ~66px) so the tagline isn't clipped.
+        Positioned(
+          left: AppSizes.xl,
+          right: AppSizes.xl,
+          bottom: 84,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 30,
+                    height: 30,
+                    decoration: ShapeDecoration(
+                      color: AppColors.brand,
+                      shape: AppShapes.squircle(AppSizes.radiusSm),
+                    ),
+                    alignment: Alignment.center,
+                    child: const Icon(Icons.storefront_rounded,
+                        color: AppColors.white, size: 18),
+                  ),
+                  const SizedBox(width: AppSizes.sm),
+                  const Text(
+                    'shop',
+                    style: TextStyle(
+                      color: AppColors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.5,
+                      height: 1,
+                    ),
+                  ),
+                  const Text(
+                    'xy.',
+                    style: TextStyle(
+                      color: AppColors.brand,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.5,
+                      height: 1,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSizes.sm),
+              Text(
+                tagline,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  height: 1.3,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// White "Skip" pill over the dark hero — wraps the shared skip-to-guest
+/// confirmation flow so dismissals stay informed.
+class _WhiteSkip extends StatelessWidget {
+  const _WhiteSkip();
+
+  @override
+  Widget build(BuildContext context) {
+    return Theme(
+      // SkipToGuestButton uses muted ink; on the dark hero we want white.
+      data: Theme.of(context).copyWith(
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(
+            foregroundColor: Colors.white,
+            textStyle:
+                const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+          ),
+        ),
+      ),
+      child: const SkipToGuestButton(),
+    );
+  }
+}
+
+/// Soft, filled form field for the auth sheets — canvas fill so it reads
+/// against the white sheet, optional leading icon and obscure toggle.
+class AuthField extends StatelessWidget {
+  const AuthField({
+    super.key,
+    required this.controller,
+    required this.label,
+    required this.icon,
+    this.obscure = false,
+    this.onToggleObscure,
+    this.keyboardType,
+    this.textInputAction,
+    this.onSubmitted,
+    this.validator,
+    this.autocorrect = true,
+    this.autofocus = false,
+    this.textCapitalization = TextCapitalization.none,
+    this.helper,
+  });
+
+  final TextEditingController controller;
+  final String label;
+  final IconData icon;
+  final bool obscure;
+  final VoidCallback? onToggleObscure;
+  final TextInputType? keyboardType;
+  final TextInputAction? textInputAction;
+  final ValueChanged<String>? onSubmitted;
+  final FormFieldValidator<String>? validator;
+  final bool autocorrect;
+  final bool autofocus;
+  final TextCapitalization textCapitalization;
+  final String? helper;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: controller,
+      obscureText: obscure,
+      keyboardType: keyboardType,
+      textInputAction: textInputAction,
+      autocorrect: autocorrect,
+      autofocus: autofocus,
+      textCapitalization: textCapitalization,
+      onFieldSubmitted: onSubmitted,
+      validator: validator,
+      decoration: InputDecoration(
+        labelText: label,
+        helperText: helper,
+        prefixIcon: Icon(icon, size: AppSizes.iconMd),
+        suffixIcon: onToggleObscure != null
+            ? IconButton(
+                icon: Icon(obscure
+                    ? Icons.visibility_outlined
+                    : Icons.visibility_off_outlined),
+                onPressed: onToggleObscure,
+              )
+            : null,
+        filled: true,
+        fillColor: AppColors.canvas,
+      ),
+    );
+  }
+}
+
+/// Inline error banner for failed sign-in / sign-up attempts.
+class AuthErrorBanner extends StatelessWidget {
+  const AuthErrorBanner({super.key, required this.message});
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSizes.md),
+      decoration: ShapeDecoration(
+        color: AppColors.errorSoft,
+        shape: AppShapes.squircle(AppSizes.radiusMd),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.error_outline_rounded,
+              color: AppColors.error, size: AppSizes.iconSm),
+          const SizedBox(width: AppSizes.sm),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(
+                  color: AppColors.error, fontSize: 13, height: 1.3),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
