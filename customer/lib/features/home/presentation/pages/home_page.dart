@@ -118,15 +118,24 @@ class _HomePageState extends State<HomePage> {
     }
     return RefreshIndicator(
       onRefresh: provider.refresh,
-      child: _HomeFeedList(
-        feed: provider.feed,
-        feedVersion: provider.feedVersion,
-        blocks: provider.blocks,
-        isLoadingMore: provider.endlessLoading,
-        isExhausted: provider.endlessExhausted,
-        loadMore: provider.loadMore,
-        endlessError: provider.endlessError,
-        scroll: _scroll,
+      // The pending-payment affordance now lives in the top bar (a
+      // wallet icon + badge next to the bell) so the feed stays a clean
+      // shopping surface — see HomeTopBar.
+      child: Column(
+        children: [
+          Expanded(
+            child: _HomeFeedList(
+              feed: provider.feed,
+              feedVersion: provider.feedVersion,
+              blocks: provider.blocks,
+              isLoadingMore: provider.endlessLoading,
+              isExhausted: provider.endlessExhausted,
+              loadMore: provider.loadMore,
+              endlessError: provider.endlessError,
+              scroll: _scroll,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -501,3 +510,4 @@ class _ErrorRetry extends StatelessWidget {
     );
   }
 }
+
