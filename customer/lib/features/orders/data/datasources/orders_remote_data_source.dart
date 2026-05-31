@@ -226,4 +226,61 @@ class OrdersRemoteDataSource {
         '${(8 + r.nextInt(4)).toRadixString(16)}${hex(3)}-${hex(12)}';
     return s;
   }
+
+  /// Start an online gateway payment for an order's payable remainder.
+  /// Returns the checkout session the app opens the Razorpay sheet with.
+  Future<GatewayCheckout> payForOrder(int orderId) async {
+    final res = await _client.post('/me/orders/$orderId/pay');
+    if (res.statusCode != 201) {
+      final err = jsonDecode(res.body) as Map<String, dynamic>;
+      throw Exception(err['error'] ?? 'Could not start payment');
+    }
+    return GatewayCheckout.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+  }
+
+  /// Client-confirm after the Razorpay sheet reports success. The server
+  /// re-checks the live provider order and settles if paid (a backstop for the
+  /// webhook, which can't reach a localhost dev server and may lag in prod).
+  /// Returns the order's resulting paymentStatus (e.g. 'PAID'). Best-effort:
+  /// the webhook is still authoritative, so a failure here is non-fatal.
+  Future<String> syncOrderPayment(int orderId) async {
+    final res = await _client.post('/me/orders/$orderId/payment/sync');
+    if (res.statusCode != 200) {
+      final err = jsonDecode(res.body) as Map<String, dynamic>;
+      throw Exception(err['error'] ?? 'Could not sync payment');
+    }
+    final json = jsonDecode(res.body) as Map<String, dynamic>;
+    return (json['paymentStatus'] as String?) ?? 'PENDING';
+  }
+}
+
+/// The checkout session returned by `POST /me/orders/:id/pay` — mirrors the
+/// backend's gateway InitiateResult. `clientParams` is the provider-specific
+/// bag (Razorpay: key / order_id / amount / currency) fed to the sheet.
+class GatewayCheckout {
+  const GatewayCheckout({
+    required this.intentId,
+    required this.provider,
+    required this.providerOrderRef,
+    required this.amount,
+    required this.currency,
+    required this.clientParams,
+  });
+
+  final int intentId;
+  final String provider;
+  final String providerOrderRef;
+  final double amount;
+  final String currency;
+  final Map<String, dynamic> clientParams;
+
+  factory GatewayCheckout.fromJson(Map<String, dynamic> j) => GatewayCheckout(
+        intentId: (j['intentId'] as num).toInt(),
+        provider: j['provider'] as String,
+        providerOrderRef: j['providerOrderRef'] as String,
+        amount: (j['amount'] as num).toDouble(),
+        currency: (j['currency'] as String?) ?? 'INR',
+        clientParams: ((j['clientParams'] as Map?) ?? const <String, dynamic>{})
+            .cast<String, dynamic>(),
+      );
 }
