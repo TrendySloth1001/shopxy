@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy_customer/features/addresses/domain/entities/user_address.dart';
+import 'package:shopxy_customer/features/home/data/models/home_feed_models.dart';
 import 'package:shopxy_customer/features/addresses/presentation/pages/addresses_page.dart';
 import 'package:shopxy_customer/features/addresses/presentation/pages/edit_address_page.dart';
 import 'package:shopxy_customer/features/addresses/presentation/providers/addresses_provider.dart';
@@ -10,6 +13,8 @@ import 'package:shopxy_customer/features/auth/presentation/widgets/require_auth.
 import 'package:shopxy_customer/features/home/presentation/widgets/network_image_box.dart';
 import 'package:shopxy_customer/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:shopxy_customer/features/notifications/presentation/pages/notifications_page.dart';
+import 'package:shopxy_customer/features/orders/presentation/providers/orders_provider.dart';
+import 'package:shopxy_customer/features/orders/presentation/pages/pending_payments_page.dart';
 import 'package:shopxy_customer/features/profile/presentation/pages/profile_page.dart';
 import 'package:shopxy_customer/features/search/presentation/pages/search_page.dart';
 import 'package:shopxy_customer/features/shops/presentation/providers/shops_provider.dart';
@@ -43,35 +48,44 @@ class HomeTopBar extends StatelessWidget {
         children: [
           Row(
             children: [
-              const _BrandWordmark(),
-              const Spacer(),
-              // Compact substitutes fade in (and claim width) as the
-              // full-row pill + search bar collapse away below.
-              Consumer<AddressesProvider>(
-                builder: (context, addr, _) {
-                  // No address = guest OR signed-in but empty address
-                  // book. In both cases the chip becomes an explicit
-                  // "Set location" CTA — `_showAddressSheet` itself
-                  // handles the auth gate via requireAuth (Phase 3).
-                  return _CollapsedSlot(
-                    t: t,
-                    fullWidth: 110,
-                    child: _CompactCityChip(
-                      city: addr.defaultAddress?.city,
-                      onTap: () => _showAddressSheet(context),
-                    ),
-                  );
-                },
-              ),
-              _CollapsedSlot(
-                t: t,
-                fullWidth: 44,
-                child: _TopBarIcon(
-                  icon: Icons.search_rounded,
+              _BrandWordmark(t: t),
+              // As the full search bar collapses away on scroll, a broad
+              // search field fades in here to fill the freed space. The
+              // address isn't surfaced in the collapsed header at all —
+              // it's still one tap away via the location row up top when
+              // expanded. Expanded keeps the wallet/bell/avatar pinned to
+              // the right (acts as a spacer while the field is invisible).
+              Expanded(
+                child: _CollapsedSearchField(
+                  t: t,
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(builder: (_) => const SearchPage()),
                   ),
                 ),
+              ),
+              // Pending-payment affordance. Lives up here next to the
+              // bell — out of the browse path — so the home feed stays
+              // a clean shopping surface. Renders nothing when there's
+              // nothing to pay; the badge counts outstanding orders and
+              // a tap opens the full list.
+              Selector<OrdersProvider, int>(
+                selector: (_, p) =>
+                    p.orders.where((o) => o.needsOnlinePayment).length,
+                builder: (_, pending, _) {
+                  if (pending == 0) return const SizedBox.shrink();
+                  return Padding(
+                    padding: const EdgeInsets.only(right: AppSizes.xs),
+                    child: _TopBarIcon(
+                      icon: Icons.account_balance_wallet_outlined,
+                      count: pending,
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const PendingPaymentsPage(),
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
               Selector<NotificationsProvider, int>(
                 selector: (_, p) => p.unread,
@@ -120,14 +134,13 @@ class HomeTopBar extends StatelessWidget {
               child: Opacity(
                 opacity: (1 - t).clamp(0.0, 1.0),
                 child: Padding(
-                  padding: const EdgeInsets.only(top: AppSizes.md),
+                  padding: const EdgeInsets.only(top: AppSizes.sm),
                   child: Consumer<AddressesProvider>(
                     builder: (context, addr, _) {
                       final defaultAddr = addr.defaultAddress;
                       return _LocationPill(
-                        cityLine: defaultAddr == null
-                            ? null
-                            : '${defaultAddr.city} ${defaultAddr.pincode}',
+                        line: defaultAddr?.line1,
+                        pincode: defaultAddr?.pincode,
                         onTap: () => _showAddressSheet(context),
                       );
                     },
@@ -142,86 +155,103 @@ class HomeTopBar extends StatelessWidget {
   }
 }
 
-/// Wraps a brand-row substitute so it claims no width when invisible
-/// (at t=0) and full width when fully faded in (at t=1). Using
-/// Opacity alone would leave a phantom gap when collapsed.
-class _CollapsedSlot extends StatelessWidget {
-  const _CollapsedSlot({
-    required this.t,
-    required this.fullWidth,
-    required this.child,
-  });
+/// Broad search field that lives in the brand row and fades in as the
+/// page scrolls (the full search bar below collapses away at the same
+/// time). Sits inside an [Expanded], so at t=0 it's invisible and
+/// non-interactive but still reserves the middle width — keeping the
+/// wallet/bell/avatar pinned to the right exactly like a [Spacer] would.
+///
+/// Cycles the same rotating [HomeStaticData.searchHints] as the full
+/// search bar, with the matching slide+fade transition, so the two read
+/// as one continuous element across the scroll.
+class _CollapsedSearchField extends StatefulWidget {
+  const _CollapsedSearchField({required this.t, required this.onTap});
+
+  /// 0 = expanded header (field hidden), 1 = fully collapsed (field shown).
   final double t;
-  final double fullWidth;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    if (t <= 0) return const SizedBox.shrink();
-    return Padding(
-      padding: EdgeInsets.only(right: AppSizes.xs * t),
-      child: ClipRect(
-        child: Align(
-          alignment: Alignment.centerRight,
-          widthFactor: t,
-          child: Opacity(opacity: t, child: child),
-        ),
-      ),
-    );
-  }
-}
-
-class _CompactCityChip extends StatelessWidget {
-  const _CompactCityChip({required this.city, required this.onTap});
-
-  /// Null when the user has no saved default address (guest, or signed
-  /// in with an empty address book). The chip falls back to a
-  /// "Set location" prompt so the user can act on it instead of staring
-  /// at a fake city we picked for them.
-  final String? city;
   final VoidCallback onTap;
 
   @override
+  State<_CollapsedSearchField> createState() => _CollapsedSearchFieldState();
+}
+
+class _CollapsedSearchFieldState extends State<_CollapsedSearchField> {
+  int _hintIndex = 0;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (!mounted) return;
+      setState(
+        () => _hintIndex = (_hintIndex + 1) % HomeStaticData.searchHints.length,
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final hasCity = city != null && city!.isNotEmpty;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Container(
-        height: 38,
-        padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm),
-        decoration: ShapeDecoration(
-          color: AppColors.white,
-          shape: AppShapes.squircle(
-            AppSizes.radiusMd,
-            side: const BorderSide(color: AppColors.hairline, width: 0.6),
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              hasCity
-                  ? Icons.location_on_rounded
-                  : Icons.add_location_alt_outlined,
-              color: AppColors.brand,
-              size: 14,
-            ),
-            const SizedBox(width: 4),
-            Flexible(
-              child: Text(
-                hasCity ? city! : 'Set location',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: hasCity ? AppColors.black : AppColors.brand,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.1,
+    return IgnorePointer(
+      // Don't intercept taps across the middle of the header while the
+      // field is (near) invisible at the top of the page.
+      ignoring: widget.t < 0.5,
+      child: Opacity(
+        opacity: widget.t.clamp(0.0, 1.0),
+        child: Padding(
+          padding: const EdgeInsets.only(left: AppSizes.md, right: AppSizes.sm),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: widget.onTap,
+            child: Container(
+              height: 38,
+              padding: const EdgeInsets.symmetric(horizontal: AppSizes.md),
+              decoration: ShapeDecoration(
+                color: AppColors.white,
+                shape: AppShapes.squircle(
+                  AppSizes.radiusMd,
+                  side: const BorderSide(color: AppColors.hairline, width: 0.6),
                 ),
               ),
+              child: Row(
+                children: [
+                  const Icon(Icons.search_rounded,
+                      color: AppColors.muted, size: 18),
+                  const SizedBox(width: AppSizes.sm),
+                  Expanded(
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      transitionBuilder: (child, anim) => SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(0, 0.5),
+                          end: Offset.zero,
+                        ).animate(anim),
+                        child: FadeTransition(opacity: anim, child: child),
+                      ),
+                      child: Text(
+                        HomeStaticData.searchHints[_hintIndex],
+                        key: ValueKey(_hintIndex),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: AppColors.muted,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: -0.1,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -229,10 +259,16 @@ class _CompactCityChip extends StatelessWidget {
 }
 
 class _BrandWordmark extends StatelessWidget {
-  const _BrandWordmark();
+  const _BrandWordmark({required this.t});
+
+  /// 0 = expanded (full "shopxy." wordmark), 1 = collapsed (just the
+  /// "S" mark). The text portion shrinks + fades away as the header
+  /// collapses, freeing width for the search field beside it.
+  final double t;
 
   @override
   Widget build(BuildContext context) {
+    final reveal = (1 - t).clamp(0.0, 1.0);
     return Row(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -245,54 +281,61 @@ class _BrandWordmark extends StatelessWidget {
             shape: AppShapes.squircle(AppSizes.radiusSm),
           ),
           alignment: Alignment.center,
-          child: const Text(
-            'S',
-            style: TextStyle(
-              color: AppColors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w900,
-              letterSpacing: -0.4,
-              height: 1,
-            ),
+          // Placeholder mark — to be replaced with the real logo later.
+          child: const Icon(
+            Icons.storefront_rounded,
+            color: AppColors.white,
+            size: 18,
           ),
         ),
-        const SizedBox(width: AppSizes.sm),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: TextBaseline.alphabetic,
-          children: const [
-            Text(
-              'shop',
-              style: TextStyle(
-                color: AppColors.black,
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.6,
-                height: 1,
+        ClipRect(
+          child: Align(
+            alignment: Alignment.centerLeft,
+            widthFactor: reveal,
+            child: Opacity(
+              opacity: reveal,
+              child: const Padding(
+                padding: EdgeInsets.only(left: AppSizes.sm),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      'shop',
+                      style: TextStyle(
+                        color: AppColors.black,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.6,
+                        height: 1,
+                      ),
+                    ),
+                    Text(
+                      'xy',
+                      style: TextStyle(
+                        color: AppColors.brand,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.6,
+                        height: 1,
+                      ),
+                    ),
+                    SizedBox(width: 2),
+                    Text(
+                      '.',
+                      style: TextStyle(
+                        color: AppColors.brand,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        height: 1,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            Text(
-              'xy',
-              style: TextStyle(
-                color: AppColors.brand,
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.6,
-                height: 1,
-              ),
-            ),
-            SizedBox(width: 2),
-            Text(
-              '.',
-              style: TextStyle(
-                color: AppColors.brand,
-                fontSize: 22,
-                fontWeight: FontWeight.w900,
-                height: 1,
-              ),
-            ),
-          ],
+          ),
         ),
       ],
     );
@@ -300,87 +343,97 @@ class _BrandWordmark extends StatelessWidget {
 }
 
 class _LocationPill extends StatelessWidget {
-  const _LocationPill({required this.cityLine, required this.onTap});
+  const _LocationPill({
+    required this.line,
+    required this.pincode,
+    required this.onTap,
+  });
 
-  /// Null when no address is saved — pill renders an "Add delivery
-  /// address" CTA in brand colour instead of stamping in a placeholder
-  /// city. The eyebrow flips from "DELIVER TO" to "DELIVERY ADDRESS"
-  /// so the row reads as a prompt, not a fact.
-  final String? cityLine;
+  /// Address line 1 of the default address. Null/empty when no address
+  /// is saved — the pill then renders an "Add a delivery address" CTA in
+  /// brand colour instead of stamping in a placeholder.
+  final String? line;
+
+  /// Pincode of the default address. Pinned at the end of the row so it
+  /// stays visible even when a long [line] truncates with an ellipsis.
+  final String? pincode;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final hasAddress = cityLine != null && cityLine!.isNotEmpty;
+    final hasAddress = line != null && line!.isNotEmpty;
+    final hasPincode = pincode != null && pincode!.isNotEmpty;
+    // Slim, borderless single line — no filled panel. Reads as a light
+    // "deliver to <line 1> <pincode> ▾" affordance under the brand row
+    // instead of a heavy boxed pill.
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.md,
-          vertical: AppSizes.sm + 2,
-        ),
-        decoration: ShapeDecoration(
-          color: AppColors.heroPanel,
-          shape: AppShapes.squircle(
-            AppSizes.radiusMd,
-            side: const BorderSide(color: AppColors.hairline, width: 0.6),
-          ),
-        ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2),
         child: Row(
           children: [
-            Container(
-              width: 28,
-              height: 28,
-              decoration: const BoxDecoration(
-                color: AppColors.brandSoft,
-                shape: BoxShape.circle,
-              ),
-              alignment: Alignment.center,
-              child: Icon(
-                hasAddress
-                    ? Icons.location_on_rounded
-                    : Icons.add_location_alt_outlined,
-                color: AppColors.brand,
-                size: 16,
-              ),
+            Icon(
+              hasAddress
+                  ? Icons.location_on_rounded
+                  : Icons.add_location_alt_outlined,
+              color: AppColors.brand,
+              size: 16,
             ),
-            const SizedBox(width: AppSizes.sm),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    hasAddress ? 'DELIVER TO' : 'DELIVERY ADDRESS',
-                    style: const TextStyle(
-                      color: AppColors.muted,
-                      fontSize: 9.5,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.9,
-                      height: 1.1,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    hasAddress ? cityLine! : 'Tap to add an address',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: hasAddress ? AppColors.black : AppColors.brand,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      height: 1.15,
-                      letterSpacing: -0.1,
-                    ),
-                  ),
-                ],
+            const SizedBox(width: 6),
+            if (hasAddress) ...[
+              const Text(
+                'Deliver to  ',
+                style: TextStyle(
+                  color: AppColors.muted,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
+              Flexible(
+                child: Text(
+                  line!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppColors.black,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.1,
+                  ),
+                ),
+              ),
+              if (hasPincode) ...[
+                const SizedBox(width: 5),
+                Text(
+                  pincode!,
+                  style: const TextStyle(
+                    color: AppColors.black,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.1,
+                  ),
+                ),
+              ],
+            ] else
+              const Flexible(
+                child: Text(
+                  'Add a delivery address',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: AppColors.brand,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.1,
+                  ),
+                ),
+              ),
+            const SizedBox(width: 2),
             const Icon(
               Icons.keyboard_arrow_down_rounded,
               color: AppColors.muted,
-              size: 20,
+              size: 18,
             ),
           ],
         ),
