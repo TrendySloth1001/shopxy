@@ -1,7 +1,128 @@
 import 'package:flutter/material.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/constants/app_strings.dart';
+import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/widgets/app_button.dart';
+
+/// A bottom-sheet confirmation with two actions. Returns `true` when the
+/// user taps the confirm button, `false`/`null` otherwise.
+///
+/// Preferred over [AppConfirmDialog] for action confirmations on phones:
+/// the sheet rises from the thumb, the destructive action sits full-width
+/// on top, and "keep / cancel" is a quieter ghost button below. Mirrors
+/// the [AppConfirmDialog.show] API so callers can swap one for the other.
+class AppConfirmSheet extends StatelessWidget {
+  const AppConfirmSheet({
+    super.key,
+    required this.title,
+    required this.message,
+    this.confirmLabel = AppStrings.confirm,
+    this.cancelLabel = AppStrings.cancel,
+    this.danger = false,
+  });
+
+  final String title;
+  final String message;
+  final String confirmLabel;
+  final String cancelLabel;
+  final bool danger;
+
+  static Future<bool> show(
+    BuildContext context, {
+    required String title,
+    required String message,
+    String confirmLabel = AppStrings.confirm,
+    String cancelLabel = AppStrings.cancel,
+    bool danger = false,
+  }) async {
+    final result = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => AppConfirmSheet(
+        title: title,
+        message: message,
+        confirmLabel: confirmLabel,
+        cancelLabel: cancelLabel,
+        danger: danger,
+      ),
+    );
+    return result ?? false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Grab handle
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.symmetric(vertical: AppSizes.sm),
+              decoration: BoxDecoration(
+                color: AppColors.hairline,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSizes.lg,
+                AppSizes.sm,
+                AppSizes.lg,
+                AppSizes.lg,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 18,
+                    ),
+                  ),
+                  const SizedBox(height: AppSizes.sm),
+                  Text(
+                    message,
+                    style: const TextStyle(
+                      color: AppColors.muted,
+                      fontSize: 14,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: AppSizes.lg),
+                  AppButton(
+                    label: confirmLabel,
+                    fullWidth: true,
+                    onPressed: () => Navigator.of(context).pop(true),
+                    variant: danger
+                        ? AppButtonVariant.danger
+                        : AppButtonVariant.primary,
+                  ),
+                  const SizedBox(height: AppSizes.sm),
+                  AppButton.ghost(
+                    label: cancelLabel,
+                    fullWidth: true,
+                    onPressed: () => Navigator.of(context).pop(false),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 /// Standardised confirm dialog. Returns `true` if user confirms.
 class AppConfirmDialog extends StatelessWidget {

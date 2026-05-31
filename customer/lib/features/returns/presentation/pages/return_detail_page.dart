@@ -56,7 +56,7 @@ class _ReturnDetailPageState extends State<ReturnDetailPage> {
   }
 
   Future<void> _cancel() async {
-    final ok = await AppConfirmDialog.show(
+    final ok = await AppConfirmSheet.show(
       context,
       title: 'Cancel this return?',
       message: 'You\'ll need to start a new return if you change your mind.',

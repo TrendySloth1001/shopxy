@@ -14,6 +14,10 @@ class AppStrings {
   // Auth (mirrors merchant for shared widgets)
   static const String welcomeBack = 'Welcome back';
   static const String loginSubtitle = 'Sign in to your Shopxy account';
+  // Shown when a merchant (OWNER) account tries to sign in here — the
+  // customer app is for shoppers only.
+  static const String merchantAccountBlocked =
+      'This is a merchant account. Please use the Shopxy Merchant app to sign in.';
   static const String registerTitle = 'Create your account';
   static const String registerSubtitle = 'See your invoices in one place';
   static const String createAccount = 'Create Account';

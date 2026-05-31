@@ -9,7 +9,9 @@ import 'package:shopxy_customer/core/auth/token_manager.dart';
 import 'package:shopxy_customer/features/catalog/presentation/providers/cart_provider.dart';
 import 'package:shopxy_customer/features/orders/domain/entities/customer_order.dart';
 import 'package:shopxy_customer/features/orders/presentation/services/invoice_share.dart';
-import 'package:shopxy_customer/features/orders/data/datasources/orders_remote_data_source.dart' show CancelOrderException;
+import 'package:shopxy_customer/features/orders/data/datasources/orders_remote_data_source.dart'
+    show CancelOrderException;
+import 'package:shopxy_customer/features/payments/razorpay_checkout.dart';
 import 'package:shopxy_customer/features/orders/presentation/providers/orders_provider.dart';
 import 'package:shopxy_customer/features/orders/presentation/widgets/order_timeline.dart';
 import 'package:shopxy_customer/features/returns/presentation/widgets/request_return_sheet.dart';
@@ -26,18 +28,18 @@ import 'package:shopxy_customer/shared/widgets/app_price_text.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 
 /// Customer-facing order detail. One parent CustomerOrder = one
-/// checkout submission; per-vendor slices live as cards inside.
+/// checkout submission; per-vendor slices live as sections inside.
 ///
+/// Visual model: a single white sheet split into divider-bounded
+/// sections (no floating cards) for a formal, statement-like read.
 /// Layout, top to bottom:
-///   1. Aggregate status hero (e.g. "2 of 3 shops confirmed")
-///   2. Delivery snapshot (address as captured at place time)
-///   3. One card per vendor with:
-///        • shop chip + status pill
-///        • items list
-///        • shop subtotal + invoice ref when confirmed
-///        • per-shop cancel button while still PENDING
+///   1. Delivery snapshot (address as captured at place time)
+///   2. One section per vendor (shop + status + items + invoice/cancel)
+///   3. Buy again
 ///   4. Order summary (items total / delivery / grand total)
 ///   5. Customer's note, if present
+/// The online-payment call-to-action is pinned to a sticky bottom bar
+/// rather than living inline at the top.
 class OrderDetailPage extends StatefulWidget {
   const OrderDetailPage({super.key, required this.orderId});
   final int orderId;
@@ -50,15 +52,21 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
   CustomerOrderDetail? _order;
   bool _loading = true;
   String? _error;
+
   /// Tracks which child id is mid-cancel so the right button shows the
   /// spinner — multiple shops can be cancelled in sequence.
   int? _cancellingChildId;
+
   /// Tracks which child id is mid-download so the right invoice icon
   /// can render a spinner.
   int? _downloadingChildId;
+
   /// In-flight reorder request — disables the "Buy again" button to
   /// avoid double-submission.
   bool _reordering = false;
+
+  /// In-flight online payment — drives the Pay Now spinner.
+  bool _paying = false;
 
   @override
   void initState() {
@@ -89,6 +97,72 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
     }
   }
 
+  /// Resume/complete the online payment for this order. Opens the Razorpay
+  /// sheet for the payable remainder, then reloads so the new paymentStatus
+  /// (PAID, set by the backend webhook) is reflected.
+  Future<void> _payNow() async {
+    if (_paying) return;
+    setState(() => _paying = true);
+    try {
+      final cart = context.read<CartProvider>();
+      final checkout = await cart.payForOrder(widget.orderId);
+      final result = await RazorpayCheckout().open(
+        clientParams: checkout.clientParams,
+        description: 'Order #${widget.orderId}',
+      );
+      if (result.isSuccess) {
+        // Webhook can't reach localhost (and may lag in prod): confirm with the
+        // server now so the order flips to PAID immediately. Best-effort.
+        try {
+          await cart.syncOrderPayment(widget.orderId);
+        } catch (_) {
+          /* non-fatal — the reload below still reflects server state */
+        }
+      }
+      if (!mounted) return;
+      if (result.isSuccess) {
+        showAppSnackbar(
+          context,
+          message: 'Payment successful',
+          tone: AppSnackbarTone.success,
+        );
+      } else if (result.outcome == RazorpayOutcome.dismissed) {
+        showAppSnackbar(
+          context,
+          message: 'Payment cancelled',
+          tone: AppSnackbarTone.error,
+        );
+      } else {
+        showAppSnackbar(
+          context,
+          message: result.message ?? 'Payment failed',
+          tone: AppSnackbarTone.error,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        // The backend returns ALREADY_PAID (409) when a prior attempt already
+        // paid this order — reopening the sheet on a paid order is exactly what
+        // froze Razorpay. Surface it as success-ish, not a scary error; the
+        // reload below will drop the Pay button.
+        final msg = e.toString();
+        final alreadyPaid =
+            msg.contains('ALREADY_PAID') || msg.contains('already paid');
+        showAppSnackbar(
+          context,
+          message: alreadyPaid
+              ? 'This order is already paid'
+              : 'Could not start payment: ${msg.replaceFirst('Exception: ', '')}',
+          tone: alreadyPaid ? AppSnackbarTone.info : AppSnackbarTone.error,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _paying = false);
+      // Webhook may land a beat after the sheet closes — reload either way.
+      await _load();
+    }
+  }
+
   Future<void> _downloadInvoice(ShopOrderDetail child) async {
     final invoice = child.invoice;
     if (invoice == null) return;
@@ -99,10 +173,10 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
         throw Exception('Please sign in to download invoices.');
       }
       final bytes = await context.read<OrdersProvider>().downloadInvoicePdf(
-            parentId: widget.orderId,
-            childId: child.id,
-            accessToken: token,
-          );
+        parentId: widget.orderId,
+        childId: child.id,
+        accessToken: token,
+      );
       if (!mounted) return;
       await shareInvoicePdf(
         context: context,
@@ -124,7 +198,9 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
   Future<void> _reorder() async {
     setState(() => _reordering = true);
     try {
-      final result = await context.read<OrdersProvider>().reorder(widget.orderId);
+      final result = await context.read<OrdersProvider>().reorder(
+        widget.orderId,
+      );
       if (!mounted) return;
       if (result.items.isEmpty) {
         showAppSnackbar(
@@ -154,11 +230,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
       final msg = skippedCount == 0
           ? '$addedCount ${addedCount == 1 ? "item" : "items"} added to cart'
           : '$addedCount added · $skippedCount unavailable';
-      showAppSnackbar(
-        context,
-        message: msg,
-        tone: AppSnackbarTone.success,
-      );
+      showAppSnackbar(context, message: msg, tone: AppSnackbarTone.success);
     } catch (e) {
       if (!mounted) return;
       showAppSnackbar(
@@ -173,7 +245,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
 
   Future<void> _cancelShop(ShopOrderDetail child) async {
     final sellerName = child.shop?.displayName ?? 'this seller';
-    final ok = await AppConfirmDialog.show(
+    final ok = await AppConfirmSheet.show(
       context,
       title: 'Cancel items from $sellerName?',
       message: 'Items from other sellers in this order will continue.',
@@ -186,9 +258,9 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
     setState(() => _cancellingChildId = child.id);
     try {
       await context.read<OrdersProvider>().cancelShopOrder(
-            parentId: widget.orderId,
-            childId: child.id,
-          );
+        parentId: widget.orderId,
+        childId: child.id,
+      );
       if (!mounted) return;
       showAppSnackbar(
         context,
@@ -198,11 +270,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
       await _load();
     } on CancelOrderException catch (e) {
       if (!mounted) return;
-      showAppSnackbar(
-        context,
-        message: e.message,
-        tone: AppSnackbarTone.error,
-      );
+      showAppSnackbar(context, message: e.message, tone: AppSnackbarTone.error);
     } catch (e) {
       if (!mounted) return;
       showAppSnackbar(
@@ -225,29 +293,35 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
         ? null
         : DateFormat('d MMM y · h:mm a').format(order.createdAt);
     return Scaffold(
-      backgroundColor: AppColors.canvas,
-      appBar: AppAppBar(
-        title: 'Order #${widget.orderId}',
-        subtitle: subtitle,
-      ),
+      backgroundColor: AppColors.white,
+      appBar: AppAppBar(title: 'Order #${widget.orderId}', subtitle: subtitle),
+      // Online-payment CTA is pinned to the bottom of the screen rather
+      // than floating at the top of the scroll.
+      bottomNavigationBar: (order != null && order.needsOnlinePayment)
+          ? _PayNowBar(
+              amount: order.payableRemainder,
+              loading: _paying,
+              onPay: _payNow,
+            )
+          : null,
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? _ErrorState(message: _error!, onRetry: _load)
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  color: AppColors.brand,
-                  child: _Body(
-                    order: order!,
-                    cancellingChildId: _cancellingChildId,
-                    downloadingChildId: _downloadingChildId,
-                    reordering: _reordering,
-                    onCancelShop: _cancelShop,
-                    onDownloadInvoice: _downloadInvoice,
-                    onReorder: _reorder,
-                    onReturnSubmitted: _load,
-                  ),
-                ),
+          ? _ErrorState(message: _error!, onRetry: _load)
+          : RefreshIndicator(
+              onRefresh: _load,
+              color: AppColors.brand,
+              child: _Body(
+                order: order!,
+                cancellingChildId: _cancellingChildId,
+                downloadingChildId: _downloadingChildId,
+                reordering: _reordering,
+                onCancelShop: _cancelShop,
+                onDownloadInvoice: _downloadInvoice,
+                onReorder: _reorder,
+                onReturnSubmitted: _load,
+              ),
+            ),
     );
   }
 }
@@ -275,19 +349,21 @@ class _Body extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final children = order.detailedShopOrders;
+    final hasAddress =
+        order.customerAddress != null && order.customerAddress!.isNotEmpty;
+    final hasNote = order.note != null && order.note!.isNotEmpty;
+    final reorderable = _anyReorderable(order);
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.only(bottom: AppSizes.huge),
+      padding: const EdgeInsets.only(bottom: AppSizes.xl),
       children: [
-        if (order.customerAddress != null &&
-            order.customerAddress!.isNotEmpty) ...[
-          const SizedBox(height: AppSizes.md),
+        if (hasAddress) ...[
           const _SectionLabel(label: 'DELIVERING TO'),
           _DeliverySnapshotCard(order: order),
+          const _SectionDivider(),
         ],
-        const SizedBox(height: AppSizes.lg),
         // Heading only when the order genuinely splits — for a single
-        // seller we just let the card itself speak. Mirrors how Amazon
+        // seller we just let the section itself speak. Mirrors how Amazon
         // and Flipkart treat a single-shipment order (no "Packages"
         // heading) vs a multi-shipment one ("Packages in this order").
         if (children.length > 1)
@@ -297,7 +373,7 @@ class _Body extends StatelessWidget {
                 '${order.totalItemCount == 1 ? "ITEM" : "ITEMS"}',
           ),
         for (var i = 0; i < children.length; i++) ...[
-          if (i != 0) const SizedBox(height: AppSizes.md),
+          if (i != 0) const _SectionDivider(),
           _ShopOrderCard(
             child: children[i],
             cancelling: cancellingChildId == children[i].id,
@@ -310,15 +386,15 @@ class _Body extends StatelessWidget {
             packageCount: children.length,
           ),
         ],
-        if (_anyReorderable(order)) ...[
-          const SizedBox(height: AppSizes.lg),
+        const _SectionDivider(),
+        if (reorderable) ...[
           _BuyAgainCard(loading: reordering, onPressed: onReorder),
+          const _SectionDivider(),
         ],
-        const SizedBox(height: AppSizes.lg),
         const _SectionLabel(label: 'ORDER SUMMARY'),
         _OrderSummaryCard(order: order),
-        if (order.note != null && order.note!.isNotEmpty) ...[
-          const SizedBox(height: AppSizes.lg),
+        if (hasNote) ...[
+          const _SectionDivider(),
           const _SectionLabel(label: 'YOUR NOTE'),
           _NoteCard(note: order.note!),
         ],
@@ -327,7 +403,7 @@ class _Body extends StatelessWidget {
   }
 }
 
-// ─── Section primitive ───────────────────────────────────────────────
+// ─── Section primitives ──────────────────────────────────────────────
 
 class _SectionLabel extends StatelessWidget {
   const _SectionLabel({required this.label});
@@ -336,7 +412,10 @@ class _SectionLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-        AppSizes.lg, AppSizes.xs, AppSizes.lg, AppSizes.sm,
+        AppSizes.lg,
+        AppSizes.md,
+        AppSizes.lg,
+        AppSizes.sm,
       ),
       child: Text(
         label,
@@ -351,14 +430,88 @@ class _SectionLabel extends StatelessWidget {
   }
 }
 
+/// Full-bleed hairline that separates one major section from the next.
+/// In-section row breaks (between items) use indented dividers instead,
+/// so the two read as distinct levels of the hierarchy.
+class _SectionDivider extends StatelessWidget {
+  const _SectionDivider();
+  @override
+  Widget build(BuildContext context) =>
+      const Divider(height: 1, thickness: 1, color: AppColors.hairline);
+}
+
+/// Small soft-tinted capsule (pill) button for the per-section footer
+/// actions — Cancel items (danger) / Request a return (brand). A tinted
+/// fill with squircle-full corners reads as a deliberate button rather
+/// than a bare text link, while staying lighter than a solid CTA.
+class _CapsuleAction extends StatelessWidget {
+  const _CapsuleAction({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.background,
+    required this.onTap,
+    this.loading = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+  final Color background;
+  final VoidCallback onTap;
+  final bool loading;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: background,
+      shape: AppShapes.squircle(AppSizes.radiusFull),
+      child: InkWell(
+        customBorder: AppShapes.squircle(AppSizes.radiusFull),
+        onTap: loading ? null : onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.lg,
+            vertical: AppSizes.sm,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (loading)
+                SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: color,
+                  ),
+                )
+              else
+                Icon(icon, size: 16, color: color),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 // ─── Aggregate status hero ───────────────────────────────────────────
 
 /// Picks the (color, icon, headline) for the aggregate status row in
-/// the Order Summary card. The old top-of-page status hero was
-/// removed in favour of a single inline row — same information, much
-/// less visual weight.
+/// the Order Summary section.
 ({Color color, IconData icon, String headline, String? subtext}) _statusVisuals(
-    CustomerOrder o) {
+  CustomerOrder o,
+) {
   final children = o.shopOrders;
   if (children.isEmpty) {
     return (
@@ -402,9 +555,7 @@ class _SectionLabel extends StatelessWidget {
     return (
       color: AppColors.warning,
       icon: Icons.schedule_rounded,
-      headline: total == 1
-          ? 'Waiting on seller'
-          : 'Waiting on $total sellers',
+      headline: total == 1 ? 'Waiting on seller' : 'Waiting on $total sellers',
       subtext: null,
     );
   }
@@ -418,10 +569,10 @@ class _SectionLabel extends StatelessWidget {
 
 // ─── Delivery snapshot ───────────────────────────────────────────────
 
-/// Address card with a compact one-line glimpse by default. Tapping
-/// the card expands to reveal the full address + phone — keeps the
-/// hierarchy quiet for the common case where the customer just wants
-/// to know the order's destination at a glance.
+/// Address row with a compact one-line glimpse by default. Tapping
+/// expands to reveal the full address + phone — keeps the hierarchy
+/// quiet for the common case where the customer just wants to know the
+/// order's destination at a glance.
 class _DeliverySnapshotCard extends StatefulWidget {
   const _DeliverySnapshotCard({required this.order});
   final CustomerOrderDetail order;
@@ -434,9 +585,7 @@ class _DeliverySnapshotCardState extends State<_DeliverySnapshotCard> {
   bool _expanded = false;
 
   /// First non-empty line of the address (street / locality) — what
-  /// the merchant snapshot has at line 0. We pair it with the city
-  /// segment when the first line is too short to be useful on its
-  /// own.
+  /// the merchant snapshot has at line 0.
   String _glimpse() {
     final addr = (widget.order.customerAddress ?? '').trim();
     if (addr.isEmpty) return '';
@@ -456,134 +605,137 @@ class _DeliverySnapshotCardState extends State<_DeliverySnapshotCard> {
     final glimpse = _glimpse();
     final phone = o.customerPhone ?? '';
 
-    return Material(
-      color: AppColors.white,
-      shape: AppShapes.squircle(AppSizes.radiusMd),
-      child: InkWell(
-        customBorder: AppShapes.squircle(AppSizes.radiusMd),
-        onTap: () => setState(() => _expanded = !_expanded),
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
-          padding: const EdgeInsets.all(AppSizes.md),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Padding(
-                padding: EdgeInsets.only(top: 2),
-                child: Icon(Icons.location_on_outlined,
-                    color: AppColors.muted, size: 18),
+    return InkWell(
+      onTap: () => setState(() => _expanded = !_expanded),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSizes.lg,
+          AppSizes.xs,
+          AppSizes.lg,
+          AppSizes.md,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.only(top: 2),
+              child: Icon(
+                Icons.location_on_outlined,
+                color: AppColors.muted,
+                size: 18,
               ),
-              const SizedBox(width: AppSizes.sm),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        if (o.customerName.isNotEmpty) ...[
-                          Flexible(
-                            child: Text(
-                              o.customerName,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w800,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          const Text(
-                            '·',
-                            style: TextStyle(
-                              color: AppColors.muted,
-                              fontSize: 13,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                        ],
-                        Expanded(
+            ),
+            const SizedBox(width: AppSizes.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      if (o.customerName.isNotEmpty) ...[
+                        Flexible(
                           child: Text(
-                            glimpse,
+                            o.customerName,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              color: AppColors.muted,
+                              fontWeight: FontWeight.w800,
                               fontSize: 13,
                             ),
                           ),
                         ),
+                        const SizedBox(width: 6),
+                        const Text(
+                          '·',
+                          style: TextStyle(
+                            color: AppColors.muted,
+                            fontSize: 13,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
                       ],
-                    ),
-                    AnimatedSize(
-                      duration: const Duration(milliseconds: 180),
-                      curve: Curves.easeOut,
-                      alignment: Alignment.topLeft,
-                      child: _expanded
-                          ? Padding(
-                              padding: const EdgeInsets.only(top: 6),
-                              child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
-                                children: [
-                                  if (fullAddr.isNotEmpty)
-                                    Text(
-                                      fullAddr,
-                                      style: const TextStyle(
-                                        color: AppColors.black,
-                                        fontSize: 13,
-                                        height: 1.4,
-                                      ),
+                      Expanded(
+                        child: Text(
+                          glimpse,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: AppColors.muted,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  AnimatedSize(
+                    duration: const Duration(milliseconds: 180),
+                    curve: Curves.easeOut,
+                    alignment: Alignment.topLeft,
+                    child: _expanded
+                        ? Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (fullAddr.isNotEmpty)
+                                  Text(
+                                    fullAddr,
+                                    style: const TextStyle(
+                                      color: AppColors.black,
+                                      fontSize: 13,
+                                      height: 1.4,
                                     ),
-                                  if (phone.isNotEmpty)
-                                    Padding(
-                                      padding:
-                                          const EdgeInsets.only(top: 4),
-                                      child: Row(
-                                        children: [
-                                          const Icon(Icons.phone_rounded,
-                                              size: 14,
-                                              color: AppColors.muted),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            phone,
-                                            style: const TextStyle(
-                                              color: AppColors.muted,
-                                              fontSize: 12,
-                                            ),
+                                  ),
+                                if (phone.isNotEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.phone_rounded,
+                                          size: 14,
+                                          color: AppColors.muted,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          phone,
+                                          style: const TextStyle(
+                                            color: AppColors.muted,
+                                            fontSize: 12,
                                           ),
-                                        ],
-                                      ),
+                                        ),
+                                      ],
                                     ),
-                                ],
-                              ),
-                            )
-                          : const SizedBox.shrink(),
-                    ),
-                  ],
-                ),
+                                  ),
+                              ],
+                            ),
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                ],
               ),
-              const SizedBox(width: AppSizes.sm),
-              AnimatedRotation(
-                turns: _expanded ? 0.5 : 0,
-                duration: const Duration(milliseconds: 180),
-                child: const Icon(Icons.expand_more_rounded,
-                    color: AppColors.subtle),
+            ),
+            const SizedBox(width: AppSizes.sm),
+            AnimatedRotation(
+              turns: _expanded ? 0.5 : 0,
+              duration: const Duration(milliseconds: 180),
+              child: const Icon(
+                Icons.expand_more_rounded,
+                color: AppColors.subtle,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-// ─── Per-vendor card ─────────────────────────────────────────────────
+// ─── Buy again ───────────────────────────────────────────────────────
 
-/// Big primary call-to-action card at the bottom of the order detail
-/// — wraps the "Buy again" button so the user can repurchase a past
-/// order in one tap. Only rendered when at least one shop in the
-/// order produced an invoice (i.e. there's something to repeat).
+/// "Buy again" row at the foot of the order — repurchase a past order
+/// in one tap. Only rendered when at least one shop in the order
+/// produced an invoice (i.e. there's something to repeat).
 class _BuyAgainCard extends StatelessWidget {
   const _BuyAgainCard({required this.loading, required this.onPressed});
   final bool loading;
@@ -592,72 +744,70 @@ class _BuyAgainCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSizes.md),
-      child: Material(
-        color: AppColors.white,
-        shape: AppShapes.squircle(
-          AppSizes.radiusMd,
-          side: const BorderSide(color: AppColors.hairline),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(AppSizes.md),
-          child: Row(
-            children: [
-              const Icon(Icons.replay_circle_filled_rounded,
-                  color: AppColors.brand, size: 28),
-              const SizedBox(width: AppSizes.md),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Buy again',
-                      style: TextStyle(
-                        color: AppColors.black,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 14,
-                      ),
-                    ),
-                    SizedBox(height: 2),
-                    Text(
-                      'Adds the items from this order back to your cart',
-                      style: TextStyle(
-                        color: AppColors.muted,
-                        fontSize: 12,
-                        height: 1.3,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: AppSizes.sm),
-              FilledButton(
-                onPressed: loading ? null : onPressed,
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.black,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSizes.md,
-                    vertical: AppSizes.sm,
-                  ),
-                  shape: AppShapes.squircle(AppSizes.radiusFull),
-                ),
-                child: loading
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Text(
-                        'Add to cart',
-                        style: TextStyle(fontWeight: FontWeight.w800),
-                      ),
-              ),
-            ],
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.md,
+        AppSizes.lg,
+        AppSizes.md,
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.replay_circle_filled_rounded,
+            color: AppColors.brand,
+            size: 28,
           ),
-        ),
+          const SizedBox(width: AppSizes.md),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Buy again',
+                  style: TextStyle(
+                    color: AppColors.black,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14,
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'Adds the items from this order back to your cart',
+                  style: TextStyle(
+                    color: AppColors.muted,
+                    fontSize: 12,
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSizes.sm),
+          FilledButton(
+            onPressed: loading ? null : onPressed,
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.black,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSizes.md,
+                vertical: AppSizes.sm,
+              ),
+              shape: AppShapes.squircle(AppSizes.radiusFull),
+            ),
+            child: loading
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Text(
+                    'Add to cart',
+                    style: TextStyle(fontWeight: FontWeight.w800),
+                  ),
+          ),
+        ],
       ),
     );
   }
@@ -674,6 +824,8 @@ bool _anyReorderable(CustomerOrderDetail order) {
   }
   return false;
 }
+
+// ─── Per-vendor section ──────────────────────────────────────────────
 
 class _ShopOrderCard extends StatelessWidget {
   const _ShopOrderCard({
@@ -694,6 +846,7 @@ class _ShopOrderCard extends StatelessWidget {
   final VoidCallback onDownloadInvoice;
   final int parentOrderId;
   final VoidCallback onReturnSubmitted;
+
   /// 1-based package number when the order has multiple vendors. Null
   /// for single-vendor orders (the "Package 1 of 1" eyebrow is noise).
   final int? packageIndex;
@@ -702,218 +855,212 @@ class _ShopOrderCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vendorName = child.shop?.displayName ?? 'Seller';
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
-      decoration: ShapeDecoration(
-        color: AppColors.white,
-        shape: AppShapes.squircle(AppSizes.radiusMd),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header: "Package N of M" eyebrow (multi only) + status pill
-          // on the right, then "Sold by X" as the title — same pattern
-          // Amazon/Flipkart use to ground each shipment in the order.
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSizes.md, AppSizes.md, AppSizes.md, AppSizes.sm,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    if (packageIndex != null)
-                      Expanded(
-                        child: Text(
-                          'PACKAGE $packageIndex OF $packageCount',
-                          style: const TextStyle(
-                            color: AppColors.muted,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.6,
-                          ),
-                        ),
-                      )
-                    else
-                      const Spacer(),
-                    _StatusPill(status: child.status),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Padding(
-                      padding: EdgeInsets.only(top: 2),
-                      child: Icon(Icons.storefront_outlined,
-                          size: 16, color: AppColors.muted),
-                    ),
-                    const SizedBox(width: 6),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Header: "Package N of M" eyebrow (multi only) + status pill
+        // on the right, then "Sold by X" as the title.
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSizes.lg,
+            AppSizes.md,
+            AppSizes.lg,
+            AppSizes.sm,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  if (packageIndex != null)
                     Expanded(
-                      child: RichText(
-                        text: TextSpan(
-                          style: const TextStyle(
-                            color: AppColors.muted,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          children: [
-                            const TextSpan(text: 'Sold by '),
-                            TextSpan(
-                              text: vendorName,
-                              style: const TextStyle(
-                                color: AppColors.black,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ],
+                      child: Text(
+                        'PACKAGE $packageIndex OF $packageCount',
+                        style: const TextStyle(
+                          color: AppColors.muted,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.6,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const Divider(
-            height: 1,
-            color: AppColors.hairline,
-            indent: AppSizes.md,
-            endIndent: AppSizes.md,
-          ),
-          // Items
-          for (var i = 0; i < child.items.length; i++) ...[
-            _ItemRow(item: child.items[i]),
-            if (i != child.items.length - 1)
-              const Divider(
-                height: 1,
-                color: AppColors.hairline,
-                indent: AppSizes.md,
-                endIndent: AppSizes.md,
+                    )
+                  else
+                    const Spacer(),
+                  _StatusPill(status: child.status),
+                ],
               ),
-          ],
-          // Tracking timeline — only when the slice has been
-          // confirmed or has any post-confirmation milestone. Hiding
-          // it for raw PENDING rows avoids a "Order placed → empty"
-          // strip that just repeats the header timestamp.
-          if (child.events.isNotEmpty &&
-              child.status != 'PENDING' &&
-              child.status != 'REJECTED' &&
-              child.status != 'CANCELLED') ...[
+              const SizedBox(height: 4),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.only(top: 2),
+                    child: Icon(
+                      Icons.storefront_outlined,
+                      size: 16,
+                      color: AppColors.muted,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: RichText(
+                      text: TextSpan(
+                        style: const TextStyle(
+                          color: AppColors.muted,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        children: [
+                          const TextSpan(text: 'Sold by '),
+                          TextSpan(
+                            text: vendorName,
+                            style: const TextStyle(
+                              color: AppColors.black,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const Divider(
+          height: 1,
+          color: AppColors.hairline,
+          indent: AppSizes.lg,
+          endIndent: AppSizes.lg,
+        ),
+        // Items
+        for (var i = 0; i < child.items.length; i++) ...[
+          _ItemRow(item: child.items[i]),
+          if (i != child.items.length - 1)
             const Divider(
               height: 1,
               color: AppColors.hairline,
-              indent: AppSizes.md,
-              endIndent: AppSizes.md,
+              indent: AppSizes.lg,
+              endIndent: AppSizes.lg,
             ),
-            OrderTimeline(events: child.events, status: child.status),
-          ],
-          // Footer slot: invoice link (confirmed) / rejection note /
-          // cancel link (pending). Only one of these renders at a time,
-          // so we don't accumulate vertical padding when nothing is
-          // there to say.
-          if (child.invoice != null)
-            _InvoiceFooter(
-              invoice: child.invoice!,
-              linkedPartyId: child.linkedPartyId,
-              shopName: child.shop?.displayName,
-              downloading: downloading,
-              onDownload: onDownloadInvoice,
+        ],
+        // Tracking timeline — only when the slice has been confirmed or
+        // has any post-confirmation milestone. Hiding it for raw PENDING
+        // rows avoids a "Order placed → empty" strip that just repeats
+        // the header timestamp.
+        if (child.events.isNotEmpty &&
+            child.status != 'PENDING' &&
+            child.status != 'REJECTED' &&
+            child.status != 'CANCELLED') ...[
+          const Divider(
+            height: 1,
+            color: AppColors.hairline,
+            indent: AppSizes.lg,
+            endIndent: AppSizes.lg,
+          ),
+          OrderTimeline(events: child.events, status: child.status),
+        ],
+        // Footer slot: invoice link (confirmed) / rejection note /
+        // cancel link (pending). Only one of these renders at a time.
+        if (child.invoice != null)
+          _InvoiceFooter(
+            invoice: child.invoice!,
+            linkedPartyId: child.linkedPartyId,
+            shopName: child.shop?.displayName,
+            downloading: downloading,
+            onDownload: onDownloadInvoice,
+          ),
+        if (child.isRejected &&
+            child.decisionNote != null &&
+            child.decisionNote!.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSizes.lg,
+              AppSizes.sm,
+              AppSizes.lg,
+              AppSizes.md,
             ),
-          if (child.isRejected &&
-              child.decisionNote != null &&
-              child.decisionNote!.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSizes.md, AppSizes.sm, AppSizes.md, AppSizes.md,
+            child: Container(
+              padding: const EdgeInsets.all(AppSizes.sm),
+              decoration: ShapeDecoration(
+                color: AppColors.errorSoft,
+                shape: AppShapes.squircle(AppSizes.radiusSm),
               ),
-              child: Container(
-                padding: const EdgeInsets.all(AppSizes.sm),
-                decoration: ShapeDecoration(
-                  color: AppColors.errorSoft,
-                  shape: AppShapes.squircle(AppSizes.radiusSm),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(Icons.info_outline_rounded,
-                        size: 16, color: AppColors.error),
-                    const SizedBox(width: AppSizes.sm),
-                    Expanded(
-                      child: Text(
-                        child.decisionNote!,
-                        style: const TextStyle(
-                          color: AppColors.error,
-                          fontSize: 12,
-                          height: 1.4,
-                        ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.info_outline_rounded,
+                    size: 16,
+                    color: AppColors.error,
+                  ),
+                  const SizedBox(width: AppSizes.sm),
+                  Expanded(
+                    child: Text(
+                      child.decisionNote!,
+                      style: const TextStyle(
+                        color: AppColors.error,
+                        fontSize: 12,
+                        height: 1.4,
                       ),
                     ),
-                  ],
-                ),
-              ),
-            ),
-          if (child.isPending)
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton.icon(
-                onPressed: cancelling ? null : onCancel,
-                icon: cancelling
-                    ? const SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppColors.error,
-                        ),
-                      )
-                    : const Icon(Icons.close_rounded, size: 16),
-                label: const Text('Cancel items'),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.error,
-                  visualDensity: VisualDensity.compact,
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: AppSizes.md, vertical: 6),
-                  textStyle: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 13,
                   ),
-                ),
+                ],
               ),
             ),
-          // "Request return" — surfaces once the slice has been
-          // confirmed (an invoice exists) AND the merchant's return
-          // policy allows it. Eligibility window is enforced server-side.
-          if (child.status == 'CONFIRMED' &&
-              child.items.isNotEmpty &&
-              (child.shop?.returnsEnabled ?? true))
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton.icon(
-                onPressed: () => openRequestReturn(
+          ),
+        if (child.isPending)
+          Align(
+            alignment: Alignment.centerRight,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSizes.lg,
+                AppSizes.xs,
+                AppSizes.lg,
+                AppSizes.md,
+              ),
+              child: _CapsuleAction(
+                icon: Icons.close_rounded,
+                label: 'Cancel items',
+                color: AppColors.error,
+                background: AppColors.errorSoft,
+                loading: cancelling,
+                onTap: onCancel,
+              ),
+            ),
+          ),
+        // "Request return" — surfaces once the slice has been confirmed
+        // (an invoice exists) AND the merchant's return policy allows it.
+        // Eligibility window is enforced server-side.
+        if (child.status == 'CONFIRMED' &&
+            child.items.isNotEmpty &&
+            (child.shop?.returnsEnabled ?? true))
+          Align(
+            alignment: Alignment.centerRight,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSizes.lg,
+                AppSizes.xs,
+                AppSizes.lg,
+                AppSizes.md,
+              ),
+              child: _CapsuleAction(
+                icon: Icons.assignment_return_outlined,
+                label: 'Request a return',
+                color: AppColors.brand,
+                background: AppColors.brandSoft,
+                onTap: () => openRequestReturn(
                   context,
                   parentOrderId: parentOrderId,
                   shopOrder: child,
                   onSubmitted: onReturnSubmitted,
                 ),
-                icon: const Icon(Icons.assignment_return_outlined, size: 16),
-                label: const Text('Request a return'),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.brand,
-                  visualDensity: VisualDensity.compact,
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: AppSizes.md, vertical: 6),
-                  textStyle: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 13,
-                  ),
-                ),
               ),
             ),
-        ],
-      ),
+          ),
+      ],
     );
   }
 }
@@ -946,7 +1093,10 @@ class _InvoiceFooter extends StatelessWidget {
 
     Widget content = Padding(
       padding: const EdgeInsets.fromLTRB(
-        AppSizes.md, AppSizes.sm, AppSizes.md, AppSizes.md,
+        AppSizes.lg,
+        AppSizes.sm,
+        AppSizes.lg,
+        AppSizes.md,
       ),
       child: Row(
         children: [
@@ -991,13 +1141,7 @@ class _InvoiceFooter extends StatelessWidget {
 
     if (!canOpen) return content;
 
-    return InkWell(
-      onTap: () => _openInvoice(context),
-      borderRadius: const BorderRadius.vertical(
-        bottom: Radius.circular(AppSizes.radiusMd),
-      ),
-      child: content,
-    );
+    return InkWell(onTap: () => _openInvoice(context), child: content);
   }
 
   void _openInvoice(BuildContext context) {
@@ -1021,10 +1165,7 @@ class _InvoiceFooter extends StatelessWidget {
 
   (Color, String) _visuals() {
     if (invoice.isPaid) {
-      return (
-        AppColors.success,
-        'Paid · Invoice ${invoice.invoiceNo}',
-      );
+      return (AppColors.success, 'Paid · Invoice ${invoice.invoiceNo}');
     }
     if (invoice.isPartiallyPaid) {
       return (
@@ -1093,18 +1234,27 @@ class _ItemRow extends StatelessWidget {
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(AppSizes.md),
+        padding: const EdgeInsets.fromLTRB(
+          AppSizes.lg,
+          AppSizes.md,
+          AppSizes.lg,
+          AppSizes.md,
+        ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(AppSizes.radiusSm),
               child: Container(
-                width: 56, height: 56,
+                width: 56,
+                height: 56,
                 color: AppColors.heroPanel,
                 child: item.imageUrl == null
-                    ? const Icon(Icons.image_outlined,
-                        color: AppColors.muted, size: 20)
+                    ? const Icon(
+                        Icons.image_outlined,
+                        color: AppColors.muted,
+                        size: 20,
+                      )
                     : NetworkImageBox(url: resolveImageUrl(item.imageUrl!)),
               ),
             ),
@@ -1131,7 +1281,9 @@ class _ItemRow extends StatelessWidget {
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: ShapeDecoration(
                           color: AppColors.heroPanel,
                           shape: AppShapes.squircle(AppSizes.radiusFull),
@@ -1200,19 +1352,18 @@ class _OrderSummaryCard extends StatelessWidget {
       }
     }
     final status = _statusVisuals(order);
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
-      padding: const EdgeInsets.all(AppSizes.md),
-      decoration: ShapeDecoration(
-        color: AppColors.white,
-        shape: AppShapes.squircle(AppSizes.radiusMd),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.xs,
+        AppSizes.lg,
+        AppSizes.md,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Status row at the top of the summary — replaces the old
-          // top-of-page hero banner. Icon + headline + small subtext on
-          // a single line, matching the existing bill-row rhythm.
+          // Status row at the top of the summary — icon + headline +
+          // small subtext on a single line, matching the bill-row rhythm.
           Padding(
             padding: const EdgeInsets.only(bottom: AppSizes.sm),
             child: Row(
@@ -1327,19 +1478,19 @@ class _BillRow extends StatelessWidget {
   }
 }
 
-// ─── Note card ───────────────────────────────────────────────────────
+// ─── Note ────────────────────────────────────────────────────────────
 
 class _NoteCard extends StatelessWidget {
   const _NoteCard({required this.note});
   final String note;
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
-      padding: const EdgeInsets.all(AppSizes.md),
-      decoration: ShapeDecoration(
-        color: AppColors.white,
-        shape: AppShapes.squircle(AppSizes.radiusMd),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.xs,
+        AppSizes.lg,
+        AppSizes.md,
       ),
       child: Text(
         note,
@@ -1365,8 +1516,11 @@ class _ErrorState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.cloud_off_rounded,
-                size: 48, color: AppColors.muted),
+            const Icon(
+              Icons.cloud_off_rounded,
+              size: 48,
+              color: AppColors.muted,
+            ),
             const SizedBox(height: AppSizes.md),
             const Text(
               AppStrings.somethingWentWrong,
@@ -1385,6 +1539,80 @@ class _ErrorState extends StatelessWidget {
               onPressed: onRetry,
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Pay-now bottom bar ──────────────────────────────────────────────
+
+/// Sticky bottom action bar shown on an order whose online payment is
+/// still pending or previously failed. Outstanding amount on the left,
+/// Pay Now on the right, separated from the body by a top hairline.
+/// Tapping Pay Now re-opens the Razorpay sheet for the payable remainder.
+class _PayNowBar extends StatelessWidget {
+  const _PayNowBar({
+    required this.amount,
+    required this.loading,
+    required this.onPay,
+  });
+
+  final double amount;
+  final bool loading;
+  final VoidCallback onPay;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.white,
+        border: Border(top: BorderSide(color: AppColors.hairline)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSizes.lg,
+            AppSizes.md,
+            AppSizes.lg,
+            AppSizes.md,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Payment pending',
+                      style: TextStyle(
+                        color: AppColors.muted,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${AppStrings.currencySymbol}${amount.toStringAsFixed(2)}',
+                      style: const TextStyle(
+                        color: AppColors.black,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSizes.md),
+              AppButton(
+                label: 'Pay Now',
+                isLoading: loading,
+                onPressed: loading ? null : onPay,
+              ),
+            ],
+          ),
         ),
       ),
     );
