@@ -6,6 +6,8 @@ import 'package:shopxy_customer/core/lifecycle/lifecycle_observer.dart';
 import 'package:shopxy_customer/core/router/app_shell.dart';
 import 'package:shopxy_customer/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy_customer/features/catalog/presentation/providers/cart_provider.dart';
+import 'package:shopxy_customer/features/onboarding/presentation/pages/onboarding_page.dart';
+import 'package:shopxy_customer/features/onboarding/presentation/providers/onboarding_controller.dart';
 import 'package:shopxy_customer/features/home/presentation/services/tracking_service.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/constants/app_strings.dart';
@@ -70,17 +72,21 @@ class ShopxyCustomerApp extends StatelessWidget {
   }
 }
 
-/// Boot gate: shows the splash only while the token-check is still in
-/// flight. Once auth has settled — whether the user is signed in or a
-/// guest — the customer shell takes over and individual screens decide
-/// what to show for guests (sign-in CTAs, public content, etc.).
+/// Boot gate. Shows the splash while the token-check OR the onboarding
+/// flag is still resolving. Once both have settled: a first-run user
+/// sees onboarding; everyone else lands in the customer shell — whether
+/// signed in or a guest, with individual screens deciding what to show
+/// for guests (sign-in CTAs, public content, etc.).
 class _RootView extends StatelessWidget {
   const _RootView();
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = context.select<AuthProvider, bool>((a) => a.isLoading);
-    return isLoading ? const _Splash() : const CustomerShell();
+    final authLoading = context.select<AuthProvider, bool>((a) => a.isLoading);
+    final onboarding = context.watch<OnboardingController>();
+    if (authLoading || !onboarding.loaded) return const _Splash();
+    if (!onboarding.seen) return const OnboardingPage();
+    return const CustomerShell();
   }
 }
 
