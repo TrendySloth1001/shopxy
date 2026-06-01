@@ -77,6 +77,27 @@ export function getRedis(): Redis {
   return client;
 }
 
+/// Best-effort single-runner lock (atomic SET NX PX). Used by scheduled jobs
+/// that call a rate-limited EXTERNAL API (e.g. gateway reconciliation polling
+/// Razorpay) so multiple app instances don't all fire the same sweep at once.
+///
+/// This is NOT a correctness primitive — every job it guards is idempotent, so
+/// a lost lock at worst means redundant external calls, never a double-write.
+/// It therefore **degrades open**: if Redis is unreachable we return true (run
+/// anyway), because a single-instance/dev box has no contention and the job
+/// must not hinge on Redis being up. The TTL auto-expires the lock so a crash
+/// between acquire and the next tick can't wedge the job permanently.
+export async function tryAcquireJobLock(key: string, ttlMs: number): Promise<boolean> {
+  if (!available) return true;
+  try {
+    const res = await client.set(`lock:${key}`, '1', 'PX', ttlMs, 'NX');
+    return res === 'OK';
+  } catch (err) {
+    logger.warn({ err: (err as Error).message, key }, 'job lock check failed — running anyway');
+    return true;
+  }
+}
+
 export async function closeRedis(): Promise<void> {
   if (available) {
     try {

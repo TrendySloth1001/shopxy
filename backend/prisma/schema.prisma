@@ -1061,6 +1061,14 @@ model CustomerOrder {
   /// Amount paid from the user's wallet at submit time (0 when wallet
   /// wasn't used). Mirrored as a WalletEntry with source=CHECKOUT.
   walletPaid     Decimal @default(0) @map("wallet_paid") @db.Decimal(12, 2)
+  /// Online-payment state for the order's gateway-payable remainder
+  /// (estimatedTotal − couponDiscount − walletPaid):
+  ///   COD     — no online payment expected (cash on delivery) [default]
+  ///   PENDING — an online payment has been initiated, awaiting capture
+  ///   PAID    — captured (set by the ORDER gateway settlement handler)
+  ///   FAILED  — the gateway reported a terminal failure
+  /// Free-form String so a new state needs no migration.
+  paymentStatus  String  @default("COD") @map("payment_status")
 
   /// Idempotency now lives on the parent — one key per checkout
   /// submission. The legacy per-PurchaseRequest unique was retired by
@@ -1136,9 +1144,10 @@ model PurchaseRequest {
 
   createdAt DateTime               @default(now()) @map("created_at")
   updatedAt DateTime               @updatedAt @map("updated_at")
-  items     PurchaseRequestItem[]
-  events    PurchaseRequestEvent[]
-  returns   ReturnRequest[]
+  items            PurchaseRequestItem[]
+  events           PurchaseRequestEvent[]
+  returns          ReturnRequest[]
+  gatewayTransfers GatewayTransfer[]
 
   /// Hot paths:
   ///   1. customer's order list:     (customerUserId, createdAt DESC)
@@ -1929,6 +1938,8 @@ model Shop {
   cautionTxns            CautionTxn[]
   cautionRequests        CautionRequest[]
   quotations             Quotation[]
+  /// Route payout destination (at most one). Null until KYC onboarding starts.
+  linkedAccount          LinkedAccount?
 
   @@index([isPublished])
   @@map("shops")
@@ -2335,4 +2346,141 @@ model Promotion {
   @@index([productId])
   @@index([isActive, startAt, endAt])
   @@map("promotions")
+}
+
+/// Provider-agnostic online-payment intent. One row per checkout attempt for
+/// any gateway (Razorpay today; the `provider` string keeps it open). The
+/// authoritative record that money was collected online and what it settles
+/// against. See PAYMENT_GATEWAY_ARCHITECTURE.md + modules/payment-gateway/.
+///
+/// `shopId` / `customerUserId` / `targetId` are deliberately relationless plain
+/// columns (like [WalletEntry.sourceId]) — a new settlement target kind doesn't
+/// then need a migration to extend an FK constraint.
+model GatewayPayment {
+  id                 Int      @id @default(autoincrement())
+  /// Registry key of the gateway that owns this intent (e.g. 'RAZORPAY').
+  provider           String
+  /// CREATED | PENDING | CAPTURED | FAILED | REFUNDED. Transitions only advance.
+  status             String   @default("CREATED")
+  amount             Decimal  @db.Decimal(12, 2)
+  currency           String   @default("INR")
+  /// WALLET | ORDER | INVOICE | CAUTION — which domain the money settles into.
+  targetType         String   @map("target_type")
+  /// Domain id for the target (WALLET → customerUserId, ORDER → CustomerOrder id…).
+  targetId           Int      @map("target_id")
+  shopId             Int?     @map("shop_id")
+  customerUserId     Int?     @map("customer_user_id")
+  /// Gateway-side references (Razorpay order_id / payment_id). Set as the flow
+  /// progresses; used by webhooks + reconciliation to resolve the intent.
+  providerOrderRef   String?  @map("provider_order_ref")
+  providerPaymentRef String?  @map("provider_payment_ref")
+  /// Client-supplied retry key. Partial-unique with customerUserId so a flaky
+  /// mobile retry reuses the original intent instead of minting a duplicate.
+  idempotencyKey     String?  @map("idempotency_key")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  @@unique([customerUserId, idempotencyKey], name: "gateway_payments_user_idempotency")
+  @@index([provider, providerOrderRef])
+  @@index([provider, providerPaymentRef])
+  @@index([status, targetType])
+  @@map("gateway_payments")
+}
+
+/// Append-only webhook ledger + exactly-once dedupe gate. The unique
+/// (provider, event_id) means a redelivered webhook is rejected at insert,
+/// so settlement runs at most once per provider event.
+model GatewayWebhookEvent {
+  id          Int       @id @default(autoincrement())
+  provider    String
+  eventId     String    @map("event_id")
+  payload     Json
+  processedAt DateTime? @map("processed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@unique([provider, eventId], name: "gateway_webhook_events_provider_event")
+  @@map("gateway_webhook_events")
+}
+
+/// One Razorpay Route payout destination per Shop (a "linked account").
+/// Created via merchant KYC onboarding. A Shop with no row — or a row whose
+/// payoutsEnabled is false — CANNOT receive a held transfer; the ORDER split
+/// handler gates on this and records the child KYC_GATED instead.
+///
+/// NB: Route "on-hold settlement" is NOT a licensed escrow. Funds parked via
+/// `on_hold` sit in Razorpay's regulated balance with Razorpay as custodian —
+/// never in a ShopXY-controlled account. See ROUTE_SPLIT_DESIGN.md.
+model LinkedAccount {
+  id                Int      @id @default(autoincrement())
+  shopId            Int      @unique @map("shop_id")
+  shop              Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  provider          String   @default("RAZORPAY")
+  /// Razorpay linked-account id (acc_XXXX) — the `account` in a TransferRequest.
+  providerAccountId String?  @map("provider_account_id")
+  /// KYC lifecycle, mirrored from account.* webhooks:
+  /// CREATED → UNDER_REVIEW → ACTIVATED | NEEDS_CLARIFICATION | SUSPENDED.
+  kycStatus         String   @default("CREATED") @map("kyc_status")
+  /// True only once Razorpay confirms the account can be settled to. The split
+  /// handler refuses to create a transfer otherwise.
+  payoutsEnabled    Boolean  @default(false) @map("payouts_enabled")
+  email             String?
+  contactName       String?  @map("contact_name")
+  businessType      String?  @map("business_type")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  transfers GatewayTransfer[]
+
+  @@index([provider, providerAccountId])
+  @@map("linked_accounts")
+}
+
+/// One Route transfer per (GatewayPayment, PurchaseRequest) — the per-shop
+/// slice of a captured order, created ON-HOLD and released on delivery /
+/// reversed on an in-hold return. Tracks the hold lifecycle independently of
+/// the parent intent so one order can have some children released, others
+/// reversed.
+model GatewayTransfer {
+  id                  Int             @id @default(autoincrement())
+  /// Parent captured intent (GatewayPayment.id). Loose Int FK to match how
+  /// GatewayPayment is referenced elsewhere in this module.
+  gatewayPaymentId    Int             @map("gateway_payment_id")
+  /// The child shop-order this slice settles. One transfer per PurchaseRequest.
+  purchaseRequestId   Int             @map("purchase_request_id")
+  purchaseRequest     PurchaseRequest @relation(fields: [purchaseRequestId], references: [id], onDelete: Cascade)
+  /// Destination linked account. Null while the child is KYC-gated.
+  linkedAccountId     Int?            @map("linked_account_id")
+  linkedAccount       LinkedAccount?  @relation(fields: [linkedAccountId], references: [id], onDelete: SetNull)
+  /// Denormalised acct id for audit even if the LinkedAccount row is edited.
+  /// Null while KYC-gated (no transfer created yet).
+  providerAccountId   String?         @map("provider_account_id")
+  amount              Decimal         @db.Decimal(12, 2)
+  /// Razorpay transfer id (trf_XXXX). Null in the window between row insert and
+  /// the createTransfers call returning — reconciliation heals null-ref rows.
+  providerTransferRef String?         @map("provider_transfer_ref")
+  /// Deterministic idempotency key "gw:<paymentId>:pr:<requestId>". Persisted
+  /// BEFORE the provider call and echoed into Razorpay transfer notes, so a
+  /// retry/heal does fetch-before-create instead of minting a duplicate.
+  idempotencyKey      String          @map("idempotency_key")
+  /// HELD | PARTIALLY_REVERSED | RELEASED | REVERSED | FAILED | KYC_GATED.
+  /// String (not enum) so states need no migration (matches ReturnRequest.status).
+  /// PARTIALLY_REVERSED keeps a part-clawed-back transfer out of P2 auto-release.
+  status              String          @default("HELD")
+  /// on_hold_until echoed back (capture + Shop.returnWindowDays). The auto-
+  /// release backstop; buyer-confirm releases earlier.
+  holdUntil           DateTime?       @map("hold_until")
+  releasedAt          DateTime?       @map("released_at")
+  reversedAt          DateTime?       @map("reversed_at")
+  /// Cumulative reversed amount (partial returns). status → REVERSED only when
+  /// reversedAmount == amount.
+  reversedAmount      Decimal         @default(0) @map("reversed_amount") @db.Decimal(12, 2)
+  failureReason       String?         @map("failure_reason")
+  createdAt           DateTime        @default(now()) @map("created_at")
+  updatedAt           DateTime        @updatedAt @map("updated_at")
+
+  @@unique([gatewayPaymentId, purchaseRequestId], name: "gateway_transfers_payment_request")
+  @@index([status, holdUntil])
+  @@index([purchaseRequestId])
+  @@index([providerTransferRef])
+  @@map("gateway_transfers")
 }

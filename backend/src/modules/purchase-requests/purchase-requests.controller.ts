@@ -442,6 +442,62 @@ export class PurchaseRequestsController {
     }
     res.status(201).json(result);
   }
+
+  /// POST /me/orders/:id/pay — start an online gateway payment for this order's
+  /// payable remainder (estimatedTotal − coupon − wallet). Returns the checkout
+  /// session (provider, providerOrderRef, clientParams) the app opens the
+  /// Razorpay sheet with. The ORDER settlement handler marks the order PAID on
+  /// webhook capture — never on the client callback.
+  async payForOrder(req: Request, res: Response): Promise<void> {
+    const orderId = parseId(req.params.id);
+    if (!orderId) { res.status(400).json({ error: 'Invalid id' }); return; }
+    try {
+      const result = await purchaseRequestsService.initiateOnlinePayment({
+        userId: req.user!.sub,
+        orderId,
+      });
+      if ('error' in result) {
+        const map = {
+          NOT_FOUND: { status: 404, msg: 'Order not found' },
+          ALREADY_PAID: { status: 409, msg: 'This order is already paid' },
+          NOTHING_TO_PAY: { status: 400, msg: 'Nothing to pay online for this order' },
+        } as const;
+        const m = map[result.error];
+        res.status(m.status).json({ error: m.msg, code: result.error });
+        return;
+      }
+      res.status(201).json(result.payment);
+    } catch (err) {
+      const status = (err as { status?: number })?.status ?? 400;
+      const message = err instanceof Error ? err.message : 'Failed to start payment';
+      res.status(status).json({ error: message });
+    }
+  }
+
+  /// POST /me/orders/:id/payment/sync — client-confirm after the checkout sheet
+  /// returns success. Settles the payment if the live provider order is paid
+  /// (webhook backstop), then returns the order's paymentStatus so the app can
+  /// refresh immediately instead of waiting on a webhook that may never arrive
+  /// (localhost) or lags. Idempotent.
+  async syncPayment(req: Request, res: Response): Promise<void> {
+    const orderId = parseId(req.params.id);
+    if (!orderId) { res.status(400).json({ error: 'Invalid id' }); return; }
+    try {
+      const result = await purchaseRequestsService.syncOnlinePayment({
+        userId: req.user!.sub,
+        orderId,
+      });
+      if ('error' in result) {
+        res.status(404).json({ error: 'Order not found', code: result.error });
+        return;
+      }
+      res.status(200).json({ paymentStatus: result.paymentStatus, settled: result.settled });
+    } catch (err) {
+      const status = (err as { status?: number })?.status ?? 400;
+      const message = err instanceof Error ? err.message : 'Failed to sync payment';
+      res.status(status).json({ error: message });
+    }
+  }
 }
 
 export const purchaseRequestsController = new PurchaseRequestsController();

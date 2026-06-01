@@ -8,6 +8,10 @@ export type WalletSource =
   | 'LOYALTY'
   | 'MANUAL'
   | 'CHECKOUT'
+  /// Customer-funded wallet top-up via a payment gateway (Razorpay etc.).
+  /// Written by the payment-gateway settlement handler on webhook capture;
+  /// keyed (`gw:<intentId>`) so a redelivered webhook can't double-credit.
+  | 'TOPUP'
   /// Refund for a per-shop child order the customer cancelled before
   /// the merchant acted. Distinct from REFUND (which is post-return).
   | 'CANCEL';

@@ -10,6 +10,8 @@ import 'package:shopxy/features/notifications/presentation/providers/notificatio
 import 'package:shopxy/core/router/app_shell.dart';
 import 'package:shopxy/features/notifications/presentation/widgets/notification_bell.dart';
 import 'package:shopxy/features/orders/presentation/providers/orders_provider.dart';
+import 'package:shopxy/features/shop/presentation/providers/linked_account_provider.dart';
+import 'package:shopxy/features/shop/presentation/widgets/payout_setup_sheet.dart';
 import 'package:shopxy/features/stock/domain/entities/stock_transaction.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
@@ -27,6 +29,9 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
+  /// Guards the one-time payout-setup nudge so a rebuild can't stack sheets.
+  bool _payoutNudgeScheduled = false;
+
   @override
   void initState() {
     super.initState();
@@ -41,6 +46,23 @@ class _DashboardPageState extends State<DashboardPage> {
       // Pending-orders badge on the orders callout. Cheap COUNT query
       // — safe to fire every time the dashboard appears.
       context.read<OrdersProvider>().refreshPendingCount();
+      // Load payout status so we can nudge the owner to finish onboarding
+      // until settlements are live. The nudge itself fires from build()
+      // once the status resolves.
+      context.read<LinkedAccountProvider>().load();
+    });
+  }
+
+  /// Shows the payout-setup bottom sheet once per session when the shop still
+  /// needs onboarding. Marking the prompt dismissed (on either action) flips
+  /// [LinkedAccountProvider.shouldPrompt] false so it won't re-open.
+  void _maybeNudgePayouts(LinkedAccountProvider payouts) {
+    if (_payoutNudgeScheduled || !payouts.shouldPrompt) return;
+    _payoutNudgeScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted || !payouts.shouldPrompt) return;
+      await showPayoutSetupSheet(context, hasDraft: payouts.hasDraft);
+      if (mounted) payouts.dismissPrompt();
     });
   }
 
@@ -48,6 +70,7 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget build(BuildContext context) {
     final provider = context.watch<DashboardProvider>();
     final stats = provider.stats;
+    _maybeNudgePayouts(context.watch<LinkedAccountProvider>());
 
     return Scaffold(
       appBar: AppBar(

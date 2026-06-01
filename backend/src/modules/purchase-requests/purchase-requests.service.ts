@@ -2,6 +2,9 @@ import prisma from '../../infra/db/prisma.js';
 import type { Prisma } from '@prisma/client';
 import { round2 } from '../../shared/numbering/decimal.js';
 import { invoicesService } from '../invoices/invoices.service.js';
+import { paymentGatewayService } from '../payment-gateway/index.js';
+import { ensureOrderInvoiceReceipts } from '../payment-gateway/order-receipts.js';
+import { releaseTransfersForPurchaseRequest } from '../payment-gateway/settlement/transfer-actions.js';
 
 /// Local helper — invoices.service doesn't expose a payment summariser
 /// (its own status flow is independent of paid-vs-total accounting), so
@@ -766,6 +769,9 @@ export class PurchaseRequestsService {
           customerPhone: true,
           customerAddress: true,
           estimatedTotal: true,
+          couponDiscount: true,
+          walletPaid: true,
+          paymentStatus: true,
           createdAt: true,
           updatedAt: true,
           _count: { select: { shopOrders: true } },
@@ -820,6 +826,9 @@ export class PurchaseRequestsService {
         customerAddress: true,
         note: true,
         estimatedTotal: true,
+        couponDiscount: true,
+        walletPaid: true,
+        paymentStatus: true,
         createdAt: true,
         updatedAt: true,
         _count: { select: { shopOrders: true } },
@@ -1232,6 +1241,22 @@ export class PurchaseRequestsService {
         },
       });
 
+      // ── 6. Record the online payment against this fresh invoice ──
+      // If the customer already paid online (pay-then-confirm — the common
+      // case), settle that captured amount onto the merchant's ledger now so
+      // the invoice shows PAID instead of UNPAID. Idempotent + best-effort:
+      // a failure here must NOT roll back the (already committed) invoice —
+      // the confirm-then-pay path and any later run reconcile it.
+      try {
+        await ensureOrderInvoiceReceipts(request.customerOrderId);
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error(
+          `[confirmRequest] receipt reconcile failed for order ${request.customerOrderId}:`,
+          err instanceof Error ? err.message : err,
+        );
+      }
+
       return {
         invoice: { id: result.invoice.id, invoiceNo: result.invoice.invoiceNo },
       };
@@ -1386,7 +1411,7 @@ export class PurchaseRequestsService {
   > {
     const pr = await prisma.purchaseRequest.findFirst({
       where: { id: opts.requestId, shopId: opts.shopId },
-      select: { id: true, status: true },
+      select: { id: true, status: true, shop: { select: { returnsEnabled: true } } },
     });
     if (!pr) return { error: 'NOT_FOUND' };
     // Only confirmed orders can move through shipping milestones.
@@ -1403,6 +1428,17 @@ export class PurchaseRequestsService {
       },
       select: { id: true, type: true, occurredAt: true },
     });
+    // Route on-hold fast-path: on DELIVERED, release the seller's held slice
+    // early ONLY when the shop has no return window — otherwise the money must
+    // stay held so an in-hold return can reverse cleanly (the P2 sweep releases
+    // it at window close). Best-effort + flag-gated; never blocks the event.
+    if (opts.type === 'DELIVERED' && pr.shop.returnsEnabled === false) {
+      try {
+        await releaseTransfersForPurchaseRequest(opts.requestId);
+      } catch {
+        /* the reconcile sweep is the backstop; the event already recorded. */
+      }
+    }
     return { event: created };
   }
 
@@ -1583,6 +1619,92 @@ export class PurchaseRequestsService {
         walletPaid: Number(existing.walletPaid),
       },
       deduplicated: true,
+    };
+  }
+
+  /// Start an online (gateway) payment for the online-payable remainder of a
+  /// customer order — estimatedTotal − couponDiscount − walletPaid. Creates a
+  /// GatewayPayment intent (settlement target ORDER, id = this order) and flips
+  /// the order to PENDING; the ORDER settlement handler flips it to PAID on
+  /// webhook capture. Idempotent per order via the `order:<id>` key — a retry
+  /// (abandoned sheet, flaky network) reuses the same intent + Razorpay order.
+  async initiateOnlinePayment(opts: {
+    userId: number;
+    orderId: number;
+  }): Promise<
+    | { error: 'NOT_FOUND' | 'ALREADY_PAID' | 'NOTHING_TO_PAY' }
+    | {
+        ok: true;
+        payment: Awaited<ReturnType<typeof paymentGatewayService.initiatePayment>>;
+      }
+  > {
+    const order = await prisma.customerOrder.findFirst({
+      where: { id: opts.orderId, customerUserId: opts.userId },
+      select: {
+        id: true,
+        estimatedTotal: true,
+        couponDiscount: true,
+        walletPaid: true,
+        paymentStatus: true,
+      },
+    });
+    if (!order) return { error: 'NOT_FOUND' };
+    if (order.paymentStatus === 'PAID') return { error: 'ALREADY_PAID' };
+
+    const payable = round2(
+      Number(order.estimatedTotal) -
+        Number(order.couponDiscount) -
+        Number(order.walletPaid),
+    );
+    if (!(payable > 0)) return { error: 'NOTHING_TO_PAY' };
+
+    const payment = await paymentGatewayService.initiatePayment({
+      provider: 'RAZORPAY',
+      target: { type: 'ORDER', id: order.id },
+      amount: payable,
+      currency: 'INR',
+      shopId: null,
+      customerUserId: opts.userId,
+      idempotencyKey: `order:${order.id}`,
+    });
+
+    // Flip to PENDING, but never clobber a PAID set by a racing webhook.
+    await prisma.customerOrder.updateMany({
+      where: { id: order.id, paymentStatus: { not: 'PAID' } },
+      data: { paymentStatus: 'PENDING' },
+    });
+
+    return { ok: true, payment };
+  }
+
+  /// Client-confirm after the checkout sheet returns success. Re-checks the live
+  /// provider order and settles if paid (marks the order PAID + posts merchant
+  /// receipts), then returns the order's resulting paymentStatus. The webhook is
+  /// still authoritative; this covers environments it can't reach (localhost) and
+  /// makes the "paid but shows pending" gap impossible. Idempotent.
+  async syncOnlinePayment(opts: {
+    userId: number;
+    orderId: number;
+  }): Promise<{ error: 'NOT_FOUND' } | { ok: true; paymentStatus: string; settled: boolean }> {
+    const order = await prisma.customerOrder.findFirst({
+      where: { id: opts.orderId, customerUserId: opts.userId },
+      select: { id: true },
+    });
+    if (!order) return { error: 'NOT_FOUND' };
+
+    const sync = await paymentGatewayService.syncIntentStatus({
+      customerUserId: opts.userId,
+      idempotencyKey: `order:${order.id}`,
+    });
+
+    const fresh = await prisma.customerOrder.findUnique({
+      where: { id: order.id },
+      select: { paymentStatus: true },
+    });
+    return {
+      ok: true,
+      paymentStatus: fresh?.paymentStatus ?? 'COD',
+      settled: sync.settled,
     };
   }
 }

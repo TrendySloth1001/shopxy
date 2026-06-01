@@ -5,15 +5,16 @@ import 'package:shopxy/features/shop/presentation/pages/shop_kyc_page.dart';
 import 'package:shopxy/features/shop/presentation/pages/shop_payouts_page.dart';
 import 'package:shopxy/features/shop/presentation/pages/shop_team_page.dart';
 import 'package:shopxy/features/shop/presentation/providers/shop_provider.dart';
+import 'package:shopxy/features/shop/presentation/providers/linked_account_provider.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
-import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
 
 /// "Shop operations" hub — entry tiles for Hours/Vacation, Payouts,
-/// KYC, and Team. Hours is fully wired; the other three are
-/// scaffolds today (no backend) so the surfaces exist when the
-/// payment + verification + multi-user features land.
+/// KYC, and Team. Hours and Payouts are fully wired (Payouts shows a
+/// live onboarding status badge); KYC-documents and Team are still
+/// scaffolds (no backend) so the surfaces exist when the verification +
+/// multi-user features land.
 class ShopOperationsPage extends StatefulWidget {
   const ShopOperationsPage({super.key});
 
@@ -31,18 +32,24 @@ class _ShopOperationsPageState extends State<ShopOperationsPage> {
       // the latest server state when the merchant returns from
       // editing.
       context.read<ShopProvider>().load();
+      // Live payout status drives the Payouts tile badge (Set up / Under
+      // review / Active) instead of a static "Coming soon".
+      context.read<LinkedAccountProvider>().load();
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final shop = context.watch<ShopProvider>().shop;
+    final payouts = context.watch<LinkedAccountProvider>();
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(title: const Text('Shop operations')),
+      // Editorial layout: flat rows separated by full-bleed hairlines, no
+      // cards. Each row owns its own horizontal padding so the dividers run
+      // edge-to-edge under the list.
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(
-            AppSizes.lg, AppSizes.lg, AppSizes.lg, AppSizes.huge),
+        padding: const EdgeInsets.only(top: AppSizes.sm, bottom: AppSizes.huge),
         children: [
           _OpsTile(
             icon: Icons.schedule_rounded,
@@ -69,15 +76,8 @@ class _ShopOperationsPageState extends State<ShopOperationsPage> {
             iconBg: AppColors.infoSoft,
             iconColor: AppColors.info,
             title: 'Payouts & settlement',
-            subtitle:
-                'Bank account + UPI for payouts. Wiring lands with '
-                'the payment gateway.',
-            trailing: const AppStatusBadge(
-              label: 'Coming soon',
-              tone: AppStatusTone.info,
-              weight: AppStatusWeight.soft,
-              dense: true,
-            ),
+            subtitle: _payoutsSubtitle(payouts),
+            trailing: _payoutsBadge(payouts),
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const ShopPayoutsPage()),
             ),
@@ -124,6 +124,54 @@ class _ShopOperationsPageState extends State<ShopOperationsPage> {
   }
 }
 
+String _payoutsSubtitle(LinkedAccountProvider p) {
+  if (!p.loaded) return 'Link a bank account to receive your sales settlements.';
+  if (p.hasDraft) return 'Resume your payout setup — you have a saved draft.';
+  final s = p.status;
+  if (s == null) {
+    return 'Set up your bank account to start receiving settlements.';
+  }
+  if (s.payoutsEnabled) {
+    return 'Active — your sales settle to your linked bank account.';
+  }
+  return 'Submitted — Razorpay is verifying your account.';
+}
+
+Widget? _payoutsBadge(LinkedAccountProvider p) {
+  if (!p.loaded) return null;
+  if (p.hasDraft) {
+    return const AppStatusBadge(
+      label: 'In progress',
+      tone: AppStatusTone.warning,
+      weight: AppStatusWeight.soft,
+      dense: true,
+    );
+  }
+  final s = p.status;
+  if (s == null) {
+    return const AppStatusBadge(
+      label: 'Set up',
+      tone: AppStatusTone.warning,
+      weight: AppStatusWeight.soft,
+      dense: true,
+    );
+  }
+  if (s.payoutsEnabled) {
+    return const AppStatusBadge(
+      label: 'Active',
+      tone: AppStatusTone.success,
+      weight: AppStatusWeight.soft,
+      dense: true,
+    );
+  }
+  return const AppStatusBadge(
+    label: 'Under review',
+    tone: AppStatusTone.info,
+    weight: AppStatusWeight.soft,
+    dense: true,
+  );
+}
+
 class _OpsTile extends StatelessWidget {
   const _OpsTile({
     required this.icon,
@@ -145,58 +193,55 @@ class _OpsTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSizes.sm),
-      child: Material(
-        color: AppColors.white,
-        shape: AppShapes.squircle(AppSizes.radiusMd),
-        child: InkWell(
-          customBorder: AppShapes.squircle(AppSizes.radiusMd),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(AppSizes.md),
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: iconBg,
-                    shape: BoxShape.circle,
-                  ),
-                  alignment: Alignment.center,
-                  child: Icon(icon, color: iconColor, size: 20),
-                ),
-                const SizedBox(width: AppSizes.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        subtitle,
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: AppColors.muted),
-                      ),
-                    ],
-                  ),
-                ),
-                if (trailing != null) ...[
-                  const SizedBox(width: AppSizes.sm),
-                  trailing!,
-                ],
-                const SizedBox(width: AppSizes.sm),
-                const Icon(Icons.chevron_right_rounded,
-                    color: AppColors.subtle),
-              ],
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        decoration: const BoxDecoration(
+          border: Border(top: BorderSide(color: AppColors.hairline)),
+        ),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSizes.lg,
+          vertical: AppSizes.md,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: iconBg,
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Icon(icon, color: iconColor, size: 20),
             ),
-          ),
+            const SizedBox(width: AppSizes.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: AppColors.muted),
+                  ),
+                ],
+              ),
+            ),
+            if (trailing != null) ...[
+              const SizedBox(width: AppSizes.sm),
+              trailing!,
+            ],
+            const SizedBox(width: AppSizes.sm),
+            const Icon(Icons.chevron_right_rounded, color: AppColors.subtle),
+          ],
         ),
       ),
     );
