@@ -9,6 +9,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:shopxy/features/invoices/data/datasources/invoices_remote_data_source.dart';
 import 'package:shopxy/features/invoices/domain/entities/invoice.dart';
 import 'package:shopxy/features/payments/presentation/widgets/record_payment_sheet.dart';
+import 'package:shopxy/features/payments/data/datasources/payments_remote_data_source.dart';
+import 'package:shopxy/features/payments/domain/entities/payment.dart';
 import 'package:shopxy/features/invoices/presentation/pages/create_invoice_page.dart';
 import 'package:shopxy/features/invoices/presentation/providers/invoices_provider.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
@@ -33,6 +35,10 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
   Invoice? _invoice;
   bool _isLoading = true;
   bool _isDownloading = false;
+  // Receipts recorded against this invoice (cash/UPI recorded by the merchant
+  // AND platform-collected online/wallet receipts reconciled by the backend).
+  // Drives the paid/outstanding summary + the payments list.
+  List<Payment> _payments = const [];
 
   @override
   void initState() {
@@ -41,17 +47,63 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
   }
 
   Future<void> _load() async {
+    // Capture both data sources synchronously, before any await, so we never
+    // touch `context` across an async gap.
+    final ds = context.read<InvoicesRemoteDataSource>();
+    final paymentsDs = context.read<PaymentsRemoteDataSource>();
     try {
-      final ds = context.read<InvoicesRemoteDataSource>();
       final invoice = await ds.getInvoiceById(widget.invoiceId);
+      // Payments received against this invoice. Best-effort: a failure here
+      // must not blank the invoice — fall back to an empty list so the page
+      // still renders (the paid/outstanding summary just won't show).
+      List<Payment> payments = const [];
+      try {
+        payments = await paymentsDs.listPayments(invoiceId: widget.invoiceId);
+      } catch (_) {
+        payments = const [];
+      }
       if (mounted) {
         setState(() {
           _invoice = invoice;
+          _payments = payments;
           _isLoading = false;
         });
       }
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  /// Sum of receipts recorded against this invoice.
+  double get _paidTotal =>
+      _payments.fold<double>(0, (sum, p) => sum + p.amount);
+
+  /// Invoice total minus what's been received, floored at 0.
+  double _outstanding(Invoice invoice) {
+    final out = invoice.total - _paidTotal;
+    return out > 0 ? out : 0;
+  }
+
+  /// Human label for a receipt's channel. Platform-collected receipts (online
+  /// gateway / wallet) use mode OTHER; their note distinguishes which.
+  String _paymentModeLabel(Payment p) {
+    switch (p.mode) {
+      case 'OTHER':
+        return p.note ?? 'Online';
+      case 'CASH':
+        return 'Cash';
+      case 'UPI':
+        return 'UPI';
+      case 'NEFT':
+        return 'NEFT';
+      case 'RTGS':
+        return 'RTGS';
+      case 'CHEQUE':
+        return 'Cheque';
+      case 'CARD':
+        return 'Card';
+      default:
+        return p.mode;
     }
   }
 
@@ -513,6 +565,112 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                   value: invoice.total,
                   isHighlight: true,
                 ),
+                // Payments received against this invoice — covers ALL channels:
+                // cash/UPI recorded by the merchant AND online/wallet receipts
+                // the backend reconciles from a customer's order payment. Shown
+                // only once the invoice is a live liability (CONFIRMED).
+                if (invoice.status == 'CONFIRMED') ...[
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: AppSizes.sm),
+                    child: AppDivider.flush(),
+                  ),
+                  _TotalRow(label: 'Received', value: _paidTotal),
+                  _TotalRow(
+                    label: 'Outstanding',
+                    value: _outstanding(invoice),
+                    isHighlight: true,
+                  ),
+                  if (_payments.isNotEmpty) ...[
+                    const SizedBox(height: AppSizes.xs),
+                    for (final p in _payments)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 3),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _paymentModeLabel(p),
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  Text(
+                                    '${p.referenceNo} · ${df.format(p.paymentDate)}',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: AppColors.muted,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Text(
+                              '${AppStrings.currencySymbol}${p.amount.toStringAsFixed(2)}',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ],
+                // Payments received against this invoice — covers ALL channels:
+                // cash/UPI recorded by the merchant AND online/wallet receipts
+                // the backend reconciles from a customer's order payment. Shown
+                // only once the invoice is a live liability (CONFIRMED).
+                if (invoice.status == 'CONFIRMED') ...[
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: AppSizes.sm),
+                    child: AppDivider.flush(),
+                  ),
+                  _TotalRow(label: 'Received', value: _paidTotal),
+                  _TotalRow(
+                    label: 'Outstanding',
+                    value: _outstanding(invoice),
+                    isHighlight: true,
+                  ),
+                  if (_payments.isNotEmpty) ...[
+                    const SizedBox(height: AppSizes.xs),
+                    for (final p in _payments)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 3),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _paymentModeLabel(p),
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  Text(
+                                    '${p.referenceNo} · ${df.format(p.paymentDate)}',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: AppColors.muted,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Text(
+                              '${AppStrings.currencySymbol}${p.amount.toStringAsFixed(2)}',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ],
                 if (invoice.amountInWords != null &&
                     invoice.amountInWords!.isNotEmpty) ...[
                   const SizedBox(height: AppSizes.xs),
@@ -575,7 +733,8 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
             ),
           ],
           if (invoice.status == 'CONFIRMED' &&
-              (invoice.partyId != null || invoice.vendorId != null)) ...[
+              (invoice.partyId != null || invoice.vendorId != null) &&
+              _outstanding(invoice) > 0.005) ...[
             const AppDivider.flush(),
             ListTile(
               contentPadding: EdgeInsets.zero,

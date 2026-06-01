@@ -30,9 +30,9 @@ void main() {
     ));
     await tester.pump();
 
-    expect(find.text('No shops yet'), findsOneWidget);
+    expect(find.text('No linked merchants yet'), findsOneWidget);
     expect(
-      find.textContaining('When a shop invites you'),
+      find.textContaining('When a shop adds you as a customer'),
       findsOneWidget,
     );
   });
@@ -76,22 +76,25 @@ void main() {
 
   testWidgets('shows pending-invite banner when invitations are waiting',
       (tester) async {
+    // The redesigned callout lives in the has-shops list (not the empty state),
+    // so seed a shop alongside the pending invitation.
     await tester.pumpWidget(_wrap(
-      shops: FakeShopsProvider(),
+      shops: FakeShopsProvider(seedShops: [fakeShop(id: 1, name: 'Bharat Traders')]),
       notifs: FakeNotificationsProvider(
         seedPending: [fakePendingInvitation(fromShopName: 'Acme Stores')],
       ),
     ));
     await tester.pump();
 
-    expect(find.text('You have a pending invitation'), findsOneWidget);
-    expect(find.textContaining('Acme Stores'), findsOneWidget);
+    // The redesigned callout shows a count, not the sender's name inline
+    // (my_shops_page.dart: "Pending invitations are intentionally NOT shown inline").
+    expect(find.text('1 pending invitation'), findsOneWidget);
   });
 
   testWidgets('pluralises the pending callout when there are several',
       (tester) async {
     await tester.pumpWidget(_wrap(
-      shops: FakeShopsProvider(),
+      shops: FakeShopsProvider(seedShops: [fakeShop(id: 5, name: 'Bharat Traders')]),
       notifs: FakeNotificationsProvider(
         seedPending: [
           fakePendingInvitation(id: 1, fromShopName: 'Acme Stores'),
@@ -102,9 +105,6 @@ void main() {
     ));
     await tester.pump();
 
-    expect(
-      find.textContaining('Acme Stores and 2 others are waiting'),
-      findsOneWidget,
-    );
+    expect(find.text('3 pending invitations'), findsOneWidget);
   });
 }

@@ -1109,9 +1109,10 @@ class _StatusJourney extends StatelessWidget {
     final invoiced = order.linkedInvoiceNo != null;
     final confirmed = order.isConfirmed;
     final placed = true;
-    // We don't have payment state plumbed through here yet — leave Paid
-    // un-lit until the invoice ledger surfaces it.
-    final paid = false;
+    // Paid state comes from the linked invoice's payment summary (receipts,
+    // which include the customer's online/wallet payments). Lit when fully
+    // settled.
+    final paid = order.isPaid;
 
     final steps = <_JourneyStep>[
       _JourneyStep(label: AppStrings.orderJourneyPlaced, done: placed),

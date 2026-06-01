@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shopxy/core/auth/token_manager.dart';
 import 'package:shopxy/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:shopxy/features/auth/domain/entities/auth_user.dart';
+import 'package:shopxy/shared/constants/app_strings.dart';
 
 class AuthProvider extends ChangeNotifier {
   AuthProvider(this._dataSource, this._tokenManager);
@@ -31,7 +32,14 @@ class AuthProvider extends ChangeNotifier {
       return;
     }
     try {
-      _user = await _dataSource.getMe();
+      final me = await _dataSource.getMe();
+      if (!me.isOwner) {
+        // Cross-app session: a customer account's tokens must not
+        // restore into the merchant app. Drop them and boot to login.
+        await _tokenManager.clear();
+      } else {
+        _user = me;
+      }
     } catch (_) {
       // Token invalid/expired and refresh also failed → force login
       await _tokenManager.clear();
@@ -42,6 +50,13 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> login(String email, String password) async {
     final result = await _dataSource.login(email, password);
+    if (!result.user.isOwner) {
+      // Customer account — not allowed in the merchant app. Discard the
+      // freshly-issued tokens and surface a clear message; never set
+      // `_user`, so the auth gate stays on the login screen.
+      await _tokenManager.clear();
+      throw Exception(AppStrings.customerAccountBlocked);
+    }
     await _tokenManager.saveTokens(
       accessToken: result.accessToken,
       refreshToken: result.refreshToken,
