@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
 import { round2 } from '../../shared/numbering/decimal.js';
 import { walletService } from '../wallet/wallet.service.js';
+import { reverseTransferForReturn } from '../payment-gateway/settlement/transfer-actions.js';
 
 /// Canonical return reasons. Kept loose (string) on the DB so adding
 /// a new category later doesn't require a migration; the enum below
@@ -437,7 +438,10 @@ export class ReturnsService {
     | { ok: true; walletEntryId: number | null; refundAmount: number }
     | { error: 'NOT_FOUND' | 'BAD_STATE' }
   > {
-    return prisma.$transaction(async (tx) => {
+    // Captured inside the tx for the post-commit Route reversal (below).
+    let reverseChildId: number | null = null;
+    let reverseAmount = 0;
+    const result = await prisma.$transaction(async (tx) => {
       // Claim the row from a refund-eligible state.
       const claim = await tx.returnRequest.updateMany({
         where: {
@@ -541,12 +545,31 @@ export class ReturnsService {
           note: opts.note ?? null,
         },
       });
+      reverseChildId = row.requestId;
+      reverseAmount = refundAmount;
       return {
         ok: true as const,
         walletEntryId: entry?.id ?? null,
         refundAmount,
       };
     });
+
+    // Post-commit: if a Route on-hold split funded this child, claw the seller's
+    // slice back. Runs AFTER the tx (external call), is best-effort and a no-op
+    // when the split feature is off — it must NEVER fail the customer's refund,
+    // which has already committed. An insufficient-balance reversal is flagged
+    // for manual recovery by reverseTransferForReturn itself (P5).
+    if ('ok' in result && result.ok && reverseChildId != null) {
+      try {
+        await reverseTransferForReturn({
+          purchaseRequestId: reverseChildId,
+          reverseAmount,
+        });
+      } catch {
+        /* reconciliation re-drives a transient failure; refund stands. */
+      }
+    }
+    return result;
   }
 }
 

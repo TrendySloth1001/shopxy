@@ -80,11 +80,16 @@ import {
 } from '../../modules/returns/returns.routes.js';
 import { customerWalletRouter } from '../../modules/wallet/wallet.routes.js';
 import {
+  walletTopUpRouter,
+  paymentGatewayPublicRouter,
+} from '../../modules/payment-gateway/payment-gateway.routes.js';
+import {
   customerCouponsRouter,
   merchantCouponsRouter,
 } from '../../modules/coupons/coupons.routes.js';
 import searchRouter from '../../modules/search/search.routes.js';
 import promotionsRouter from '../../modules/promotions/promotions.routes.js';
+import linkedAccountsRouter from '../../modules/linked-accounts/linked-accounts.routes.js';
 import { requirePlatformAdmin } from '../../shared/http/requireRole.js';
 import {
   ordersRouter,
@@ -136,6 +141,12 @@ export function buildApp(): express.Express {
       credentials: true,
     }),
   );
+
+  // Payment-gateway webhooks + meta. MOUNTED BEFORE express.json so the
+  // webhook handler sees the raw bytes (it carries its own express.raw) — HMAC
+  // signature verification fails if the body is reparsed. Unauthenticated:
+  // trust comes from the provider signature, so it's also before requireAuth.
+  app.use('/payment-gateway', paymentGatewayPublicRouter);
 
   app.use(express.json({ limit: '2mb' }));
 
@@ -247,6 +258,9 @@ export function buildApp(): express.Express {
   app.use('/me/orders/:parentId/returns', customerOrderReturnsSubmitRouter);
   app.use('/me/returns', customerReturnsRouter);
   app.use('/me/wallet', customerWalletRouter);
+  // Authenticated wallet top-up via payment gateway (creates a checkout
+  // session funding the caller's own wallet). Read-side returns the intent.
+  app.use('/me/wallet/topup', walletTopUpRouter);
   app.use('/me/coupons', customerCouponsRouter);
   app.use('/me/recently-viewed', recentlyViewedRouter);
   app.use('/me/reviews', myReviewsRouter);
@@ -351,6 +365,8 @@ export function buildApp(): express.Express {
   // by the parent router below.
   app.use('/orders/returns', ownerOnly, resolveShop, merchantReturnsRouter);
   app.use('/orders', ownerOnly, ordersRouter);
+  // Merchant Route onboarding (start KYC + poll status) for the caller's shop.
+  app.use('/linked-account', ownerOnly, resolveShop, linkedAccountsRouter);
   app.use('/payments', ownerOnly, paymentsRouter);
 
   app.use(errorHandler);

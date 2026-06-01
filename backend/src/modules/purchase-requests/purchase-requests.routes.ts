@@ -61,6 +61,17 @@ customerRouter.post(
   '/:id/reorder',
   asyncHandler((req, res) => purchaseRequestsController.reorderForCustomer(req, res)),
 );
+// Start an online gateway payment for this order's payable remainder.
+customerRouter.post(
+  '/:id/pay',
+  asyncHandler((req, res) => purchaseRequestsController.payForOrder(req, res)),
+);
+// Client-confirm after the checkout sheet returns success — settles if the live
+// provider order is paid (webhook backstop) and returns the paymentStatus.
+customerRouter.post(
+  '/:id/payment/sync',
+  asyncHandler((req, res) => purchaseRequestsController.syncPayment(req, res)),
+);
 // Per-shop invoice PDF download. Path matches the customer-app data
 // source exactly (note the `invoice.pdf` literal, not a `/pdf` segment).
 customerRouter.get(

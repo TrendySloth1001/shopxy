@@ -25,7 +25,9 @@ import 'package:shopxy/features/orders/presentation/providers/orders_provider.da
 import 'package:shopxy/features/reports/data/datasources/reports_remote_data_source.dart';
 import 'package:shopxy/features/reports/presentation/providers/reports_provider.dart';
 import 'package:shopxy/features/shop/data/datasources/shop_remote_data_source.dart';
+import 'package:shopxy/features/shop/data/datasources/linked_account_remote_data_source.dart';
 import 'package:shopxy/features/shop/presentation/providers/shop_provider.dart';
+import 'package:shopxy/features/shop/presentation/providers/linked_account_provider.dart';
 import 'package:shopxy/features/admin/data/datasources/admin_bank_offers_remote_data_source.dart';
 import 'package:shopxy/features/admin/data/datasources/admin_banners_remote_data_source.dart';
 import 'package:shopxy/features/admin/data/datasources/admin_shops_remote_data_source.dart';
@@ -129,6 +131,8 @@ void main() async {
   final partiesProvider = PartiesProvider(partiesDs);
   final challansProvider = ChallansProvider(challansDs);
   final shopProvider = ShopProvider(shopDs);
+  final linkedAccountProvider =
+      LinkedAccountProvider(LinkedAccountRemoteDataSource(apiClient));
 
   authProvider.registerOnClear(notificationsProvider.reset);
   authProvider.registerOnClear(productsProvider.reset);
@@ -137,6 +141,7 @@ void main() async {
   authProvider.registerOnClear(partiesProvider.reset);
   authProvider.registerOnClear(challansProvider.reset);
   authProvider.registerOnClear(shopProvider.reset);
+  authProvider.registerOnClear(linkedAccountProvider.reset);
   authProvider.registerOnClear(ordersProvider.reset);
   authProvider.registerOnClear(carouselsProvider.reset);
 
@@ -209,6 +214,8 @@ void main() async {
         ChangeNotifierProvider<NotificationsProvider>.value(value: notificationsProvider),
         ChangeNotifierProvider(create: (_) => ReportsProvider(reportsDs)),
         ChangeNotifierProvider<ShopProvider>.value(value: shopProvider),
+        ChangeNotifierProvider<LinkedAccountProvider>.value(
+            value: linkedAccountProvider),
         ChangeNotifierProvider(create: (_) => AdminBannersProvider(adminBannersDs)),
         ChangeNotifierProvider<CarouselsProvider>.value(value: carouselsProvider),
         ChangeNotifierProvider(create: (_) => AdminSpotlightProvider(adminSpotlightDs)),
