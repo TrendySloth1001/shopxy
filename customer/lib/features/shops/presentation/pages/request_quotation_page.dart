@@ -18,6 +18,10 @@ import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 /// customer wants, and send it as a QUOTE REQUEST. The shop prices it and
 /// sends back a quotation the customer can then accept (→ confirmed invoice).
 /// This is the customer-initiated mirror of the merchant's quotation builder.
+///
+/// The catalogue is explorable by the merchant's own categories (chips
+/// with live counts) on top of free-text search, so a customer can drill
+/// into "what does this shop sell" instead of scrolling one long list.
 class RequestQuotationPage extends StatefulWidget {
   const RequestQuotationPage({super.key, required this.shop});
   final LinkedShop shop;
@@ -32,18 +36,36 @@ class _RequestQuotationPageState extends State<RequestQuotationPage> {
   String? _error;
   String _query = '';
 
+  /// Selected category id, or null for "All".
+  int? _categoryId;
+
   /// productId → (product, qty).
   final Map<int, ({MarketplaceProduct product, int qty})> _basket = {};
 
-  /// Catalogue filtered by the search box (name or SKU, case-insensitive).
+  /// Distinct categories present in this shop's catalogue, with a count
+  /// of how many products fall under each. Sorted by name.
+  List<({ProductCategoryRef cat, int count})> get _categories {
+    final byId = <int, ({ProductCategoryRef cat, int count})>{};
+    for (final p in _products) {
+      final c = p.category;
+      if (c == null) continue;
+      final cur = byId[c.id];
+      byId[c.id] = (cat: c, count: (cur?.count ?? 0) + 1);
+    }
+    final list = byId.values.toList()
+      ..sort((a, b) => a.cat.name.toLowerCase().compareTo(b.cat.name.toLowerCase()));
+    return list;
+  }
+
+  /// Catalogue filtered by the selected category AND the search box.
   List<MarketplaceProduct> get _visible {
     final q = _query.trim().toLowerCase();
-    if (q.isEmpty) return _products;
-    return _products
-        .where((p) =>
-            p.name.toLowerCase().contains(q) ||
-            p.sku.toLowerCase().contains(q))
-        .toList();
+    return _products.where((p) {
+      if (_categoryId != null && p.category?.id != _categoryId) return false;
+      if (q.isEmpty) return true;
+      return p.name.toLowerCase().contains(q) ||
+          p.sku.toLowerCase().contains(q);
+    }).toList();
   }
 
   static String? _firstImage(MarketplaceProduct p) =>
@@ -145,8 +167,8 @@ class _RequestQuotationPageState extends State<RequestQuotationPage> {
       context,
       title: 'Send quote request',
       builder: (ctx) => Padding(
-        padding: const EdgeInsets.fromLTRB(
-            AppSizes.lg, 0, AppSizes.lg, AppSizes.lg),
+        padding:
+            const EdgeInsets.fromLTRB(AppSizes.lg, 0, AppSizes.lg, AppSizes.lg),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -196,8 +218,11 @@ class _RequestQuotationPageState extends State<RequestQuotationPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.canvas,
       appBar: AppBar(
-        title: Text('Request a quote · ${widget.shop.shopName ?? widget.shop.name}'),
+        title: Text(
+          'Request a quote · ${widget.shop.shopName ?? widget.shop.name}',
+        ),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -214,47 +239,179 @@ class _RequestQuotationPageState extends State<RequestQuotationPage> {
                         ),
                       ),
                     )
-                  : Column(
-                      children: [
-                        _SearchBar(
-                          onChanged: (v) => setState(() => _query = v),
-                        ),
-                        const AppDivider.flush(),
-                        Expanded(
-                          child: Builder(builder: (_) {
-                            final visible = _visible;
-                            if (visible.isEmpty) {
-                              return const Center(
-                                child: Padding(
-                                  padding: EdgeInsets.all(AppSizes.xxl),
-                                  child: Text('No products match your search.',
-                                      style: TextStyle(color: AppColors.muted)),
-                                ),
-                              );
-                            }
-                            return ListView.separated(
-                              padding: const EdgeInsets.fromLTRB(
-                                  0, AppSizes.sm, 0, 140),
-                              itemCount: visible.length,
-                              separatorBuilder: (_, _) =>
-                                  const AppDivider.flush(),
-                              itemBuilder: (_, i) {
-                                final p = visible[i];
-                                return _ProductRow(
-                                  product: p,
-                                  qty: _basket[p.id]?.qty ?? 0,
-                                  onChanged: (q) => _setQty(p, q),
-                                );
-                              },
-                            );
-                          }),
-                        ),
-                      ],
+                  : _CatalogueBody(
+                      categories: _categories,
+                      categoryId: _categoryId,
+                      visible: _visible,
+                      basket: _basket,
+                      onQuery: (v) => setState(() => _query = v),
+                      onCategory: (id) => setState(() => _categoryId = id),
+                      onQty: _setQty,
                     ),
       bottomNavigationBar: _BottomBar(
         itemCount: _itemCount,
         basketValue: _basketValue,
         onContinue: _continue,
+      ),
+    );
+  }
+}
+
+/// Search + category chips + the filtered product list.
+class _CatalogueBody extends StatelessWidget {
+  const _CatalogueBody({
+    required this.categories,
+    required this.categoryId,
+    required this.visible,
+    required this.basket,
+    required this.onQuery,
+    required this.onCategory,
+    required this.onQty,
+  });
+
+  final List<({ProductCategoryRef cat, int count})> categories;
+  final int? categoryId;
+  final List<MarketplaceProduct> visible;
+  final Map<int, ({MarketplaceProduct product, int qty})> basket;
+  final ValueChanged<String> onQuery;
+  final ValueChanged<int?> onCategory;
+  final void Function(MarketplaceProduct, int) onQty;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        _SearchBar(onChanged: onQuery),
+        if (categories.isNotEmpty)
+          _CategoryChips(
+            categories: categories,
+            selected: categoryId,
+            onSelect: onCategory,
+          ),
+        const AppDivider.flush(),
+        Expanded(
+          child: visible.isEmpty
+              ? const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(AppSizes.xxl),
+                    child: Text(
+                      'No products match here.\nTry another category or search.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: AppColors.muted, height: 1.4),
+                    ),
+                  ),
+                )
+              : ListView.separated(
+                  padding:
+                      const EdgeInsets.fromLTRB(0, AppSizes.sm, 0, 140),
+                  itemCount: visible.length,
+                  separatorBuilder: (_, _) => const AppDivider.flush(),
+                  itemBuilder: (_, i) {
+                    final p = visible[i];
+                    return _ProductRow(
+                      product: p,
+                      qty: basket[p.id]?.qty ?? 0,
+                      onChanged: (q) => onQty(p, q),
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Horizontal "All + each category" chip rail with live counts.
+class _CategoryChips extends StatelessWidget {
+  const _CategoryChips({
+    required this.categories,
+    required this.selected,
+    required this.onSelect,
+  });
+  final List<({ProductCategoryRef cat, int count})> categories;
+  final int? selected;
+  final ValueChanged<int?> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final total = categories.fold<int>(0, (s, e) => s + e.count);
+    return SizedBox(
+      height: 50,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.lg, vertical: AppSizes.sm),
+        children: [
+          _Chip(
+            label: 'All',
+            count: total,
+            selected: selected == null,
+            onTap: () => onSelect(null),
+          ),
+          for (final c in categories) ...[
+            const SizedBox(width: AppSizes.sm),
+            _Chip(
+              label: c.cat.name,
+              count: c.count,
+              selected: selected == c.cat.id,
+              onTap: () => onSelect(c.cat.id),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _Chip extends StatelessWidget {
+  const _Chip({
+    required this.label,
+    required this.count,
+    required this.selected,
+    required this.onTap,
+  });
+  final String label;
+  final int count;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = selected ? AppColors.white : AppColors.black;
+    return Material(
+      color: selected ? AppColors.black : AppColors.white,
+      shape: AppShapes.squircle(
+        AppSizes.radiusFull,
+        side: selected
+            ? BorderSide.none
+            : const BorderSide(color: AppColors.hairline, width: 1),
+      ),
+      child: InkWell(
+        customBorder: AppShapes.squircle(AppSizes.radiusFull),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSizes.md, vertical: AppSizes.sm),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                    color: fg, fontWeight: FontWeight.w700, fontSize: 13),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                '$count',
+                style: TextStyle(
+                  color: selected ? Colors.white70 : AppColors.muted,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -275,7 +432,8 @@ class _ProductRow extends StatelessWidget {
     final theme = Theme.of(context);
     final selected = qty > 0;
     final img = product.images.isNotEmpty ? product.images.first : null;
-    return Padding(
+    return Container(
+      color: selected ? AppColors.brand.withValues(alpha: 0.05) : null,
       padding: const EdgeInsets.symmetric(
         horizontal: AppSizes.lg,
         vertical: AppSizes.md,
@@ -295,11 +453,34 @@ class _ProductRow extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  '${AppStrings.currencySymbol}${product.sellingPrice.toStringAsFixed(0)} / ${product.unit}',
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: AppColors.muted),
+                const SizedBox(height: 3),
+                Row(
+                  children: [
+                    Text(
+                      '${AppStrings.currencySymbol}${product.sellingPrice.toStringAsFixed(0)}',
+                      style: const TextStyle(
+                        color: AppColors.black,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13.5,
+                      ),
+                    ),
+                    Text(
+                      ' / ${product.unit}',
+                      style: const TextStyle(
+                          color: AppColors.muted, fontSize: 12),
+                    ),
+                    if (product.isDiscounted) ...[
+                      const SizedBox(width: AppSizes.sm),
+                      Text(
+                        '${AppStrings.currencySymbol}${product.mrp.toStringAsFixed(0)}',
+                        style: const TextStyle(
+                          color: AppColors.subtle,
+                          fontSize: 12,
+                          decoration: TextDecoration.lineThrough,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ],
             ),
@@ -334,36 +515,46 @@ class _Stepper extends StatelessWidget {
   final ValueChanged<int> onChanged;
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        IconButton(
-          icon: const Icon(Icons.remove_circle_outline_rounded),
-          color: AppColors.brand,
-          visualDensity: VisualDensity.compact,
-          onPressed: () => onChanged(qty - 1),
-        ),
-        Text(
-          '$qty',
-          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-        ),
-        IconButton(
-          icon: const Icon(Icons.add_circle_outline_rounded),
-          color: AppColors.brand,
-          visualDensity: VisualDensity.compact,
-          onPressed: () => onChanged(qty + 1),
-        ),
-      ],
+    return Container(
+      decoration: ShapeDecoration(
+        color: AppColors.brandSoft,
+        shape: AppShapes.squircle(AppSizes.radiusFull),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.remove_rounded),
+            color: AppColors.brandStrong,
+            iconSize: 18,
+            visualDensity: VisualDensity.compact,
+            onPressed: () => onChanged(qty - 1),
+          ),
+          Text(
+            '$qty',
+            style: const TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 15,
+                color: AppColors.brandStrong),
+          ),
+          IconButton(
+            icon: const Icon(Icons.add_rounded),
+            color: AppColors.brandStrong,
+            iconSize: 18,
+            visualDensity: VisualDensity.compact,
+            onPressed: () => onChanged(qty + 1),
+          ),
+        ],
+      ),
     );
   }
 }
 
-/// Product photo when available, brand-tinted box icon otherwise. Shared look
-/// between the request list and the quote detail rows.
+/// Product photo when available, brand-tinted box icon otherwise.
 class _Thumb extends StatelessWidget {
   const _Thumb({required this.imageUrl});
   final String? imageUrl;
-  static const double size = 44;
+  static const double size = 48;
 
   @override
   Widget build(BuildContext context) {
@@ -378,7 +569,7 @@ class _Thumb extends StatelessWidget {
         ),
         alignment: Alignment.center,
         child: const Icon(Icons.inventory_2_outlined,
-            size: 20, color: AppColors.brand),
+            size: 22, color: AppColors.brand),
       );
     }
     return ClipPath(
@@ -403,7 +594,7 @@ class _SearchBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-          AppSizes.lg, AppSizes.sm, AppSizes.lg, AppSizes.sm),
+          AppSizes.lg, AppSizes.sm, AppSizes.lg, AppSizes.xs),
       child: TextField(
         onChanged: onChanged,
         textInputAction: TextInputAction.search,
@@ -412,14 +603,14 @@ class _SearchBar extends StatelessWidget {
           prefixIcon: const Icon(Icons.search_rounded, size: 20),
           isDense: true,
           filled: true,
-          fillColor: AppColors.canvas,
+          fillColor: AppColors.white,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-            borderSide: BorderSide.none,
+            borderSide: const BorderSide(color: AppColors.hairline),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-            borderSide: BorderSide.none,
+            borderSide: const BorderSide(color: AppColors.hairline),
           ),
         ),
       ),
@@ -444,7 +635,10 @@ class _BottomBar extends StatelessWidget {
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
-          AppSizes.lg, AppSizes.sm, AppSizes.lg, AppSizes.md,
+          AppSizes.lg,
+          AppSizes.sm,
+          AppSizes.lg,
+          AppSizes.md,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -476,11 +670,13 @@ class _BottomBar extends StatelessWidget {
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.brand,
                   foregroundColor: Colors.white,
+                  disabledBackgroundColor: AppColors.hairline,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: AppShapes.squircle(AppSizes.radiusMd),
                   textStyle: const TextStyle(fontWeight: FontWeight.w800),
                 ),
-                child: Text(hasItems ? 'Request quote' : 'Add items to request a quote'),
+                child: Text(
+                    hasItems ? 'Request quote' : 'Add items to request a quote'),
               ),
             ),
           ],
