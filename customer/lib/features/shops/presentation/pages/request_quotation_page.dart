@@ -134,6 +134,20 @@ class _RequestQuotationPageState extends State<RequestQuotationPage> {
           })
       .toList();
 
+  /// Open a read-rich preview of [p] (full gallery + details fetched on
+  /// demand) so the customer can actually see what they're quoting, and
+  /// add/adjust quantity from there.
+  void _showProductPreview(MarketplaceProduct p) {
+    showAppBottomSheet<void>(
+      context,
+      builder: (_) => _ProductPreviewSheet(
+        base: p,
+        initialQty: _basket[p.id]?.qty ?? 0,
+        onQty: (q) => _setQty(p, q),
+      ),
+    );
+  }
+
   Future<void> _continue() async {
     if (_basket.isEmpty) return;
     final note = await _confirmSheet();
@@ -247,6 +261,7 @@ class _RequestQuotationPageState extends State<RequestQuotationPage> {
                       onQuery: (v) => setState(() => _query = v),
                       onCategory: (id) => setState(() => _categoryId = id),
                       onQty: _setQty,
+                      onView: _showProductPreview,
                     ),
       bottomNavigationBar: _BottomBar(
         itemCount: _itemCount,
@@ -267,6 +282,7 @@ class _CatalogueBody extends StatelessWidget {
     required this.onQuery,
     required this.onCategory,
     required this.onQty,
+    required this.onView,
   });
 
   final List<({ProductCategoryRef cat, int count})> categories;
@@ -276,6 +292,7 @@ class _CatalogueBody extends StatelessWidget {
   final ValueChanged<String> onQuery;
   final ValueChanged<int?> onCategory;
   final void Function(MarketplaceProduct, int) onQty;
+  final void Function(MarketplaceProduct) onView;
 
   @override
   Widget build(BuildContext context) {
@@ -312,6 +329,7 @@ class _CatalogueBody extends StatelessWidget {
                       product: p,
                       qty: basket[p.id]?.qty ?? 0,
                       onChanged: (q) => onQty(p, q),
+                      onView: () => onView(p),
                     );
                   },
                 ),
@@ -422,25 +440,32 @@ class _ProductRow extends StatelessWidget {
     required this.product,
     required this.qty,
     required this.onChanged,
+    required this.onView,
   });
   final MarketplaceProduct product;
   final int qty;
   final ValueChanged<int> onChanged;
+  final VoidCallback onView;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final selected = qty > 0;
     final img = product.images.isNotEmpty ? product.images.first : null;
-    return Container(
-      color: selected ? AppColors.brand.withValues(alpha: 0.05) : null,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSizes.lg,
-        vertical: AppSizes.md,
-      ),
-      child: Row(
-        children: [
-          _Thumb(imageUrl: img),
+    // Whole row taps through to the preview; the Add/stepper controls
+    // sit on top and capture their own taps.
+    return Material(
+      color: selected ? AppColors.brand.withValues(alpha: 0.05) : AppColors.canvas,
+      child: InkWell(
+        onTap: onView,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.lg,
+            vertical: AppSizes.md,
+          ),
+          child: Row(
+            children: [
+              _Thumb(imageUrl: img),
           const SizedBox(width: AppSizes.md),
           Expanded(
             child: Column(
@@ -503,7 +528,9 @@ class _ProductRow extends StatelessWidget {
             )
           else
             _Stepper(qty: qty, onChanged: onChanged),
-        ],
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -708,4 +735,289 @@ class _ErrorView extends StatelessWidget {
           ),
         ),
       );
+}
+
+/// In-context product preview opened from a catalogue row. Shows an
+/// instant header from the list product, then fetches the full detail
+/// (gallery, highlights, description) so the customer can actually see
+/// the item, with an add-to-quote control wired back to the basket.
+class _ProductPreviewSheet extends StatefulWidget {
+  const _ProductPreviewSheet({
+    required this.base,
+    required this.initialQty,
+    required this.onQty,
+  });
+  final MarketplaceProduct base;
+  final int initialQty;
+  final ValueChanged<int> onQty;
+
+  @override
+  State<_ProductPreviewSheet> createState() => _ProductPreviewSheetState();
+}
+
+class _ProductPreviewSheetState extends State<_ProductPreviewSheet> {
+  MarketplaceProduct? _detail;
+  bool _loading = true;
+  late int _qty = widget.initialQty;
+
+  MarketplaceProduct get _p => _detail ?? widget.base;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final d = await context
+          .read<MarketplaceRemoteDataSource>()
+          .product(widget.base.id);
+      if (mounted) {
+        setState(() {
+          _detail = d;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  void _set(int q) {
+    setState(() => _qty = q < 0 ? 0 : q);
+    widget.onQty(_qty);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final p = _p;
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _Gallery(images: p.images),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+                AppSizes.lg, AppSizes.md, AppSizes.lg, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (p.brand != null && p.brand!.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Text(
+                      p.brand!.toUpperCase(),
+                      style: const TextStyle(
+                        color: AppColors.muted,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.6,
+                      ),
+                    ),
+                  ),
+                Text(
+                  p.name,
+                  style: theme.textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w800, height: 1.25),
+                ),
+                const SizedBox(height: AppSizes.sm),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '${AppStrings.currencySymbol}${p.sellingPrice.toStringAsFixed(0)}',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w800, fontSize: 20),
+                    ),
+                    const SizedBox(width: 6),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 2),
+                      child: Text('/ ${p.unit}',
+                          style: const TextStyle(
+                              color: AppColors.muted, fontSize: 13)),
+                    ),
+                    if (p.isDiscounted) ...[
+                      const SizedBox(width: AppSizes.sm),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 2),
+                        child: Text(
+                          '${AppStrings.currencySymbol}${p.mrp.toStringAsFixed(0)}',
+                          style: const TextStyle(
+                            color: AppColors.subtle,
+                            fontSize: 13,
+                            decoration: TextDecoration.lineThrough,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 2),
+                        child: Text(
+                          '${p.discountPct}% off',
+                          style: const TextStyle(
+                              color: AppColors.brandStrong,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                if (_loading)
+                  const Padding(
+                    padding: EdgeInsets.only(top: AppSizes.md),
+                    child: Row(children: [
+                      SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(strokeWidth: 2)),
+                      SizedBox(width: AppSizes.sm),
+                      Text('Loading details…',
+                          style:
+                              TextStyle(color: AppColors.muted, fontSize: 12)),
+                    ]),
+                  ),
+                if (p.highlights.isNotEmpty) ...[
+                  const SizedBox(height: AppSizes.md),
+                  for (final h in p.highlights)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Padding(
+                            padding: EdgeInsets.only(top: 5, right: 8),
+                            child: Icon(Icons.check_circle_rounded,
+                                size: 13, color: AppColors.brand),
+                          ),
+                          Expanded(
+                            child: Text(h,
+                                style:
+                                    const TextStyle(fontSize: 13, height: 1.35)),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+                if (p.description != null &&
+                    p.description!.trim().isNotEmpty) ...[
+                  const SizedBox(height: AppSizes.md),
+                  Text(
+                    p.description!.trim(),
+                    style: const TextStyle(
+                        color: AppColors.muted, fontSize: 13, height: 1.5),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(AppSizes.lg),
+            child: _qty == 0
+                ? SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: () => _set(1),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.brand,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: AppShapes.squircle(AppSizes.radiusMd),
+                        textStyle: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                      child: const Text('Add to quote'),
+                    ),
+                  )
+                : Row(
+                    children: [
+                      _Stepper(qty: _qty, onChanged: _set),
+                      const SizedBox(width: AppSizes.md),
+                      Text(
+                        '$_qty in your request',
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w700, color: AppColors.muted),
+                      ),
+                    ],
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Swipeable image gallery for the preview sheet. Falls back to a tinted
+/// placeholder when the product has no images.
+class _Gallery extends StatefulWidget {
+  const _Gallery({required this.images});
+  final List<String> images;
+
+  @override
+  State<_Gallery> createState() => _GalleryState();
+}
+
+class _GalleryState extends State<_Gallery> {
+  final _pc = PageController();
+  int _i = 0;
+
+  @override
+  void dispose() {
+    _pc.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final imgs = widget.images;
+    if (imgs.isEmpty) {
+      return Container(
+        height: 200,
+        color: AppColors.heroPanel,
+        alignment: Alignment.center,
+        child: const Icon(Icons.inventory_2_outlined,
+            size: 48, color: AppColors.brand),
+      );
+    }
+    return Column(
+      children: [
+        SizedBox(
+          height: 240,
+          child: PageView.builder(
+            controller: _pc,
+            onPageChanged: (i) => setState(() => _i = i),
+            itemCount: imgs.length,
+            itemBuilder: (_, i) => Container(
+              color: AppColors.heroPanel,
+              child: NetworkImageBox(
+                url: resolveImageUrl(imgs[i]),
+                fit: BoxFit.contain,
+                placeholderColor: AppColors.heroPanel,
+              ),
+            ),
+          ),
+        ),
+        if (imgs.length > 1) ...[
+          const SizedBox(height: AppSizes.sm),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              for (int i = 0; i < imgs.length; i++)
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: i == _i ? 18 : 6,
+                  height: 6,
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  decoration: BoxDecoration(
+                    color: i == _i ? AppColors.brand : AppColors.hairline,
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
 }
