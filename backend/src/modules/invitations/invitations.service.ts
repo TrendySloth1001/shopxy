@@ -1,10 +1,15 @@
 import crypto from 'crypto';
 import prisma from '../../infra/db/prisma.js';
-import type { Prisma, PrismaClient } from '@prisma/client';
+import type { Prisma, PrismaClient, ShopRole } from '@prisma/client';
+import {
+  bumpTokensValidFromCache,
+  invalidateMembershipCache,
+} from '../../shared/http/requireAuth.js';
+import { normalizeRights } from '../../shared/http/permissions.js';
 
 const INVITE_TTL_DAYS = 14;
 
-export type LinkType = 'PARTY' | 'VENDOR';
+export type LinkType = 'PARTY' | 'VENDOR' | 'TEAM';
 export type InviteStatus = 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'CANCELLED' | 'EXPIRED';
 
 /// Thrown inside `respond({ decision: 'ACCEPT' })` when the target
@@ -19,6 +24,17 @@ class InvitationAlreadyLinkedError extends Error {
   }
 }
 
+/// Thrown inside `respond({ decision: 'ACCEPT' })` for a TEAM invite
+/// when the accepting account can't be made a member (already on a
+/// team, or the invite lost its role). Rolls the transaction back so
+/// the invitation doesn't get stranded in ACCEPTED with no membership.
+class TeamInviteError extends Error {
+  constructor(public code: string) {
+    super(code);
+    this.name = 'TeamInviteError';
+  }
+}
+
 const inviteSelect = {
   id: true,
   shopId: true,
@@ -26,6 +42,9 @@ const inviteSelect = {
   toEmail: true,
   toUserId: true,
   linkType: true,
+  teamRole: true,
+  teamRoleName: true,
+  teamPermissions: true,
   partyId: true,
   vendorId: true,
   status: true,
@@ -67,6 +86,8 @@ export class InvitationsService {
     fromUserId: number;
     toEmail: string;
     linkType: LinkType;
+    teamRoleName?: string | null;
+    teamPermissions?: string[] | null;
     partyId?: number | null;
     vendorId?: number | null;
     displayName?: string | null;
@@ -74,6 +95,19 @@ export class InvitationsService {
   }) {
     const toEmail = input.toEmail.toLowerCase().trim();
     const { linkType } = input;
+
+    // TEAM invites add the recipient to the shop's staff rather than
+    // linking an address-book contact, so they take a separate path.
+    if (linkType === 'TEAM') {
+      return this.sendTeamInvite({
+        shopId: input.shopId,
+        fromUserId: input.fromUserId,
+        toEmail,
+        teamRoleName: input.teamRoleName ?? null,
+        teamPermissions: input.teamPermissions ?? null,
+        message: input.message ?? null,
+      });
+    }
     const hasEntity =
       (linkType === 'PARTY' && !!input.partyId) ||
       (linkType === 'VENDOR' && !!input.vendorId);
@@ -187,6 +221,95 @@ export class InvitationsService {
     return { invitation };
   }
 
+  /// Owner invites a staffer onto the shop's team. Enforces the
+  /// "block dual-use" rule: the email can't already be a marketplace
+  /// shopper, and can't already be on a team (including this shop's).
+  /// On accept (see `respond`) a ShopMember row is created with
+  /// `teamRole`.
+  private async sendTeamInvite(input: {
+    shopId: number;
+    fromUserId: number;
+    toEmail: string;
+    teamRoleName: string | null;
+    teamPermissions: string[] | null;
+    message: string | null;
+  }) {
+    const { toEmail } = input;
+    const teamRoleName = input.teamRoleName?.trim();
+    if (!teamRoleName) {
+      return { error: 'A role is required' as const };
+    }
+    // The exact grant to apply on accept — normalised so manage⇒view.
+    const teamPermissions = normalizeRights(input.teamPermissions ?? []);
+
+    const [fromUser, toUser, existing] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: input.fromUserId },
+        select: { id: true, name: true },
+      }),
+      prisma.user.findUnique({
+        where: { email: toEmail },
+        select: { id: true, role: true, shopMembership: { select: { shopId: true } } },
+      }),
+      // One pending TEAM invite per (shop, email).
+      prisma.invitation.findFirst({
+        where: { shopId: input.shopId, toEmail, linkType: 'TEAM', status: 'PENDING' },
+        select: { id: true },
+      }),
+    ]);
+
+    if (!fromUser) return { error: 'Sender not found' as const };
+    if (toUser) {
+      if (toUser.id === input.fromUserId) {
+        return { error: "You can't invite your own account" as const };
+      }
+      // Already staffs a shop (this one or another) — one team per user.
+      // (An owner of their own shop has a membership too, so this also
+      // stops you inviting another shop's owner.) A plain shopper account
+      // has no membership and CAN be invited: accepting converts it to a
+      // staff account for this shop (see respond()'s TEAM branch).
+      if (toUser.shopMembership) {
+        return { error: 'This person is already on a shop team' as const };
+      }
+    }
+    if (existing) {
+      return { error: 'A pending invitation already exists for this person' as const };
+    }
+
+    const token = crypto.randomUUID();
+    const expiresAt = new Date(Date.now() + INVITE_TTL_DAYS * 24 * 60 * 60 * 1000);
+
+    const invitation = await prisma.$transaction(async (tx) => {
+      const created = await tx.invitation.create({
+        data: {
+          shopId: input.shopId,
+          fromUserId: input.fromUserId,
+          toEmail,
+          toUserId: toUser?.id ?? null,
+          linkType: 'TEAM',
+          teamRole: 'STAFF',
+          teamRoleName,
+          teamPermissions,
+          message: input.message?.trim() || null,
+          fromShopName: fromUser.name,
+          displayName: null,
+          token,
+          expiresAt,
+        },
+        select: inviteSelect,
+      });
+      if (toUser) {
+        await createInviteReceivedNotification(tx, {
+          userId: toUser.id,
+          invitation: created,
+        });
+      }
+      return created;
+    });
+
+    return { invitation };
+  }
+
   /// Inbox — invitations addressed to the current user. Filtered by
   /// status, paginated, ordered newest-first. Uses the
   /// (toUserId, status, createdAt DESC) compound index.
@@ -243,7 +366,7 @@ export class InvitationsService {
     decision: 'ACCEPT' | 'DECLINE';
   }) {
     try {
-      return await prisma.$transaction(async (tx) => {
+      const result = await prisma.$transaction(async (tx) => {
       const invite = await tx.invitation.findUnique({
         where: { id: opts.invitationId },
         select: inviteSelect,
@@ -344,6 +467,36 @@ export class InvitationsService {
             });
             newVendorId = created.id;
           }
+        } else if (invite.linkType === 'TEAM') {
+          if (!invite.teamRoleName) {
+            throw new TeamInviteError('INVALID_TEAM_ROLE');
+          }
+          // Re-check dual-use at accept time — the account may have
+          // joined another team since the invite was sent. Rolls back
+          // (the status flip above included) if so.
+          const acceptingUser = await tx.user.findUnique({
+            where: { id: opts.userId },
+            select: { role: true, shopMembership: { select: { id: true } } },
+          });
+          if (acceptingUser?.shopMembership) {
+            throw new TeamInviteError('ALREADY_ON_TEAM');
+          }
+          await tx.shopMember.create({
+            data: {
+              shopId: invite.shopId,
+              userId: opts.userId,
+              role: 'STAFF',
+              roleName: invite.teamRoleName,
+              // The grant captured at invite time (already normalised).
+              permissions: normalizeRights(invite.teamPermissions),
+            },
+          });
+          // Grant merchant-side access (if they were a shopper) and bump
+          // the token floor so shopId/shopRole/role land on next request.
+          await tx.user.update({
+            where: { id: opts.userId },
+            data: { role: 'OWNER', tokensValidFrom: respondedAt },
+          });
         }
       }
 
@@ -370,9 +523,12 @@ export class InvitationsService {
             opts.decision === 'ACCEPT'
               ? `${invite.toEmail} accepted your invitation`
               : `${invite.toEmail} declined your invitation`,
-          body: invite.displayName
-            ? `Linked as ${invite.linkType === 'PARTY' ? 'party' : 'vendor'} "${invite.displayName}"`
-            : null,
+          body:
+            invite.linkType === 'TEAM'
+              ? `Joined the team as ${invite.teamRoleName ?? 'staff'}`
+              : invite.displayName
+                ? `Linked as ${invite.linkType === 'PARTY' ? 'party' : 'vendor'} "${invite.displayName}"`
+                : null,
           data: {
             invitationId: invite.id,
             linkType: invite.linkType,
@@ -384,9 +540,28 @@ export class InvitationsService {
 
         return { invitation: updated };
       });
+
+      // A TEAM accept changed the accepting user's role + token floor
+      // inside the transaction; mirror that into the in-process caches
+      // so their very next request reflects merchant access + the new
+      // shopId/shopRole without waiting out the 60s TTL.
+      const acceptedInvite = 'invitation' in result ? result.invitation : undefined;
+      if (
+        opts.decision === 'ACCEPT' &&
+        acceptedInvite &&
+        acceptedInvite.linkType === 'TEAM'
+      ) {
+        const stamp = acceptedInvite.respondedAt ?? new Date();
+        bumpTokensValidFromCache(opts.userId, stamp);
+        invalidateMembershipCache(opts.userId);
+      }
+      return result;
     } catch (e) {
       if (e instanceof InvitationAlreadyLinkedError) {
         return { error: 'PARTY_ALREADY_LINKED' as const };
+      }
+      if (e instanceof TeamInviteError) {
+        return { error: e.code as 'ALREADY_ON_TEAM' | 'INVALID_TEAM_ROLE' };
       }
       throw e;
     }
@@ -444,6 +619,7 @@ export class InvitationsService {
         select: {
           id: true,
           linkType: true,
+          teamRoleName: true,
           partyId: true,
           vendorId: true,
           fromShopName: true,
@@ -456,10 +632,16 @@ export class InvitationsService {
           data: pending.map((p) => ({
             userId: opts.userId,
             kind: 'INVITE_RECEIVED',
-            title: `${p.fromShopName ?? 'A shop'} invited you`,
-            body: p.displayName
-              ? `As ${p.linkType === 'PARTY' ? 'party' : 'vendor'} "${p.displayName}"`
-              : null,
+            title:
+              p.linkType === 'TEAM'
+                ? `${p.fromShopName ?? 'A shop'} invited you to their team`
+                : `${p.fromShopName ?? 'A shop'} invited you`,
+            body:
+              p.linkType === 'TEAM'
+                ? `As ${p.teamRoleName ?? 'staff'}`
+                : p.displayName
+                  ? `As ${p.linkType === 'PARTY' ? 'party' : 'vendor'} "${p.displayName}"`
+                  : null,
             data: {
               invitationId: p.id,
               linkType: p.linkType,
@@ -486,10 +668,16 @@ async function createInviteReceivedNotification(
     data: {
       userId: opts.userId,
       kind: 'INVITE_RECEIVED',
-      title: `${invite.fromShopName ?? 'A shop'} invited you`,
-      body: invite.displayName
-        ? `As ${invite.linkType === 'PARTY' ? 'party' : 'vendor'} "${invite.displayName}"`
-        : null,
+      title:
+        invite.linkType === 'TEAM'
+          ? `${invite.fromShopName ?? 'A shop'} invited you to their team`
+          : `${invite.fromShopName ?? 'A shop'} invited you`,
+      body:
+        invite.linkType === 'TEAM'
+          ? `As ${invite.teamRoleName ?? 'staff'}`
+          : invite.displayName
+            ? `As ${invite.linkType === 'PARTY' ? 'party' : 'vendor'} "${invite.displayName}"`
+            : null,
       data: {
         invitationId: invite.id,
         linkType: invite.linkType,
@@ -498,6 +686,23 @@ async function createInviteReceivedNotification(
       },
     },
   });
+}
+
+/// Human-readable label for a ShopRole, used in notification copy.
+/// Falls back to "team member" when the role is somehow missing.
+export function teamRoleLabel(role: ShopRole | null | undefined): string {
+  switch (role) {
+    case 'OWNER':
+      return 'owner';
+    case 'MANAGER':
+      return 'Manager';
+    case 'STOCKIST':
+      return 'Stockist';
+    case 'CASHIER':
+      return 'Cashier';
+    default:
+      return 'team member';
+  }
 }
 
 export const invitationsService = new InvitationsService();

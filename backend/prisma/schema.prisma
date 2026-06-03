@@ -99,6 +99,10 @@ model User {
   cautionRequestsReviewed CautionRequest[]       @relation("CautionRequestReviewedBy")
   quotationsCreated       Quotation[]            @relation("QuotationCreatedBy")
   quotationsRequested     Quotation[]            @relation("QuotationRequestedBy")
+  /// Staff membership in a shop's team (at most one — see ShopMember).
+  /// The shop owner also has a row here (role OWNER), seeded by the
+  /// team-roles migration backfill.
+  shopMembership          ShopMember?            @relation("ShopMemberUser")
 
   /// Denormalised wallet balance — sum of [WalletEntry.amount] for
   /// this user. Kept in sync inside the same transaction that writes
@@ -975,8 +979,21 @@ model Invitation {
   toUserId   Int?   @map("to_user_id")
   toUser     User?  @relation("InvitationsReceived", fields: [toUserId], references: [id], onDelete: SetNull)
 
-  /// PARTY or VENDOR.
+  /// PARTY, VENDOR, or TEAM. TEAM invites add the recipient to the
+  /// shop's staff (see ShopMember) instead of linking an address-book
+  /// contact; for those, `teamRole` carries the ShopRole to grant on
+  /// accept and party/vendor stay null.
   linkType String  @map("link_type")
+  /// Set only for linkType=TEAM — the ShopRole the recipient is granted
+  /// when they accept. Acts as the preset label; the actual grant is in
+  /// `teamPermissions`. Null for PARTY/VENDOR invites.
+  teamRole ShopRole? @map("team_role")
+  /// Display label of the role granted on accept (a TeamRole name).
+  teamRoleName String? @map("team_role_name")
+  /// The exact rights granted on accept (see permissions.ts). Lets the
+  /// owner hand-pick an employee's access at invite time, not just a
+  /// canned role. Empty for non-TEAM invites.
+  teamPermissions String[] @default([]) @map("team_permissions")
   partyId  Int?    @map("party_id")
   party    Party?  @relation(fields: [partyId], references: [id], onDelete: Cascade)
   vendorId Int?    @map("vendor_id")
@@ -1940,9 +1957,92 @@ model Shop {
   quotations             Quotation[]
   /// Route payout destination (at most one). Null until KYC onboarding starts.
   linkedAccount          LinkedAccount?
+  /// Staff team — the owner plus any invited members. Drives the Team &
+  /// roles screen and per-request permission gating; see ShopMember.
+  members                ShopMember[]
+  /// Owner-defined roles (named permission templates) for this shop.
+  teamRoles              TeamRole[]
 
   @@index([isPublished])
   @@map("shops")
+}
+
+/// A staffer's position within a shop's team. The source of truth for
+/// per-request permission gating (see `requirePermission`) — distinct
+/// from `User.role`, which only says "merchant-side account vs
+/// marketplace shopper". OWNER is the shop's owner (one per shop, seeded
+/// by the migration backfill); MANAGER / STOCKIST / CASHIER are invited
+/// staff. The scopes are coarse on purpose — no per-user custom
+/// permissions — so the model stays understandable:
+///   OWNER    — everything, including team + billing/payouts.
+///   MANAGER  — full operational access except team + billing.
+///   STOCKIST — inventory + purchases (stock, vendors); read elsewhere.
+///   CASHIER  — invoices + payments; read elsewhere.
+/// OWNER bypasses every permission check. STAFF is the generic
+/// non-owner member — their actual access lives in ShopMember.permissions
+/// and their display label in ShopMember.roleName (a TeamRole name).
+/// MANAGER/STOCKIST/CASHIER are legacy preset values kept for older rows;
+/// new staff are stored as STAFF.
+enum ShopRole {
+  OWNER
+  MANAGER
+  STOCKIST
+  CASHIER
+  STAFF
+}
+
+/// An owner-defined, per-shop role: a named permission template. The 3
+/// classic roles (Manager/Stockist/Cashier) are seeded as editable
+/// `builtin` rows so the whole roles surface is data-driven — owners can
+/// rename/retune them and add their own. Assigning a role COPIES its
+/// permissions onto the member (ShopMember.permissions stays the source
+/// of truth), so editing or deleting a role later never silently changes
+/// who can do what.
+model TeamRole {
+  id          Int      @id @default(autoincrement())
+  shopId      Int      @map("shop_id")
+  shop        Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  name        String
+  permissions String[] @default([])
+  /// True for the seeded starter roles. Cosmetic only (lets the UI mark
+  /// them) — owners may still edit/delete them.
+  builtin     Boolean  @default(false)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([shopId, name])
+  @@index([shopId])
+  @@map("team_roles")
+}
+
+/// Join row linking a User to the Shop they staff, with their ShopRole.
+/// `@@unique([userId])` enforces that a user belongs to at most ONE
+/// shop's team — this keeps the JWT's shopId/shopRole single-valued and
+/// removes any need for a shop-switcher. The shop owner has a row here
+/// too (role OWNER); staff never own a `Shop` row (Shop.ownerUserId),
+/// only a membership. Cascades on either side's delete.
+model ShopMember {
+  id        Int      @id @default(autoincrement())
+  shopId    Int      @map("shop_id")
+  shop      Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  userId    Int      @unique @map("user_id")
+  user      User     @relation("ShopMemberUser", fields: [userId], references: [id], onDelete: Cascade)
+  role      ShopRole @default(STAFF)
+  /// Display label for this member's role — a TeamRole name ("Cashier",
+  /// "Warehouse Lead", …). Null for the owner. The `role` enum only
+  /// distinguishes OWNER vs STAFF now; this carries the human name.
+  roleName  String?  @map("role_name")
+  /// Per-employee granted rights as "<area>:<action>" strings (see
+  /// shared/http/permissions.ts). THIS is the source of truth for what
+  /// the member can do (copied from the assigned TeamRole, then freely
+  /// tweakable). Empty for OWNER (their role bypasses every check).
+  permissions String[] @default([]) @map("permissions")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([shopId, userId])
+  @@index([shopId])
+  @@map("shop_members")
 }
 
 /// Customer-facing promo codes. A coupon can be platform-wide

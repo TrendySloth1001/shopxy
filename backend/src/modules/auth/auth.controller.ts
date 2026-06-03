@@ -147,6 +147,46 @@ export async function register(req: Request, res: Response) {
   res.status(201).json(result);
 }
 
+/// GET /auth/team-invite/:token — read-only preview for the staff
+/// accept screen. Public (the recipient isn't signed in yet).
+export async function previewTeamInvite(req: Request, res: Response) {
+  const result = await authService.previewTeamInvite(req.params.token);
+  if ('error' in result) {
+    res.status(400).json({ error: result.error });
+    return;
+  }
+  res.json(result.invite);
+}
+
+const acceptInviteSchema = z.object({
+  token: z.string().min(1),
+  // Optional — the service defaults it from the email when not given, so
+  // an account that isn't set up on either app still has a usable name.
+  name: z.string().trim().min(2).max(80).optional(),
+  password: z
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .max(128)
+    .regex(/[A-Za-z]/, 'Password must contain at least one letter')
+    .regex(/[0-9]/, 'Password must contain at least one number'),
+});
+
+/// POST /auth/accept-invite — brand-new staffer sets up their account
+/// against a TEAM invite token and is logged straight in.
+export async function acceptTeamInvite(req: Request, res: Response) {
+  const parsed = acceptInviteSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.flatten() });
+    return;
+  }
+  const result = await authService.acceptTeamInvite(parsed.data);
+  if ('error' in result) {
+    res.status(400).json({ error: result.error });
+    return;
+  }
+  res.status(201).json(result);
+}
+
 export async function login(req: Request, res: Response) {
   const parsed = loginSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -192,7 +232,18 @@ export async function getMe(req: Request, res: Response) {
     res.status(404).json({ error: 'User not found' });
     return;
   }
-  res.json(user);
+  // Surface the caller's team scope alongside the profile so the
+  // merchant app can gate role-sensitive UI (Team & roles actions,
+  // hiding write affordances staff can't use). Both are hydrated onto
+  // req.user by requireAuth from the ShopMember row; null for accounts
+  // not on any team.
+  res.json({
+    ...user,
+    shopId: req.user!.shopId ?? null,
+    shopRole: req.user!.shopRole ?? null,
+    shopRoleName: req.user!.shopRoleName ?? null,
+    shopPermissions: req.user!.shopPermissions ?? [],
+  });
 }
 
 export async function updateProfile(req: Request, res: Response) {

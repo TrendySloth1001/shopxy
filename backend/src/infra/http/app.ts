@@ -98,7 +98,10 @@ import {
 import { getFileStream } from '../../modules/upload/upload.service.js';
 import { requireAuth } from '../../shared/http/requireAuth.js';
 import { requireRole } from '../../shared/http/requireRole.js';
+import { requireArea } from '../../shared/http/permissions.js';
+import { MERCHANT_AREAS } from '../../shared/http/merchantAreas.js';
 import { resolveShop } from '../../shared/http/resolveShop.js';
+import teamRouter from '../../modules/team/team.routes.js';
 import { optionalAuth } from '../../shared/http/optionalAuth.js';
 import { errorHandler } from '../../shared/http/errorHandler.js';
 import { requestId } from '../../shared/http/requestId.js';
@@ -139,6 +142,8 @@ export function buildApp(): express.Express {
     cors({
       origin: allowedOrigins,
       credentials: true,
+      // Let browser clients read the perms-version header for live re-sync.
+      exposedHeaders: ['X-Shop-Perms'],
     }),
   );
 
@@ -300,74 +305,64 @@ export function buildApp(): express.Express {
   app.use('/admin/shops', requirePlatformAdmin, adminShopRouter);
 
   const ownerOnly = requireRole('OWNER');
-  app.use('/me/shop', ownerOnly, shopRouter);
-  // Merchant-owned flash deals — resolveShop attaches req.shopId; the
-  // service scopes every read/write through Product.shopId so a wrong
-  // ownerId can't reach into another shop's promotions.
-  app.use('/me/flash-deals', ownerOnly, resolveShop, flashSalesMerchantRouter);
-  // Merchant carousels (Phase 2) — named carousel groups + nested
-  // slides. carouselWriteLimiter caps the per-user write rate. Every
-  // slide endpoint resolves :carouselId to its shopId before any DB
-  // mutation, so cross-shop probes return 404.
-  app.use(
-    '/me/carousels',
-    ownerOnly,
-    resolveShop,
-    carouselWriteLimiter,
-    carouselsMerchantRouter,
-  );
-  // Legacy merchant slide CRUD — kept as a thin shim during the
-  // Phase 1→7 deprecation window so existing merchant builds keep
-  // working. New writes should target /me/carousels/:cid/slides
-  // instead. carouselWriteLimiter retrofitted to close the gap
-  // identified in the Phase 1 security audit.
-  app.use(
-    '/me/banners',
-    ownerOnly,
-    resolveShop,
-    carouselWriteLimiter,
-    bannersMerchantRouter,
-  );
-  app.use('/me/analytics', ownerOnly, resolveShop, analyticsRouter);
-  app.use('/me/promotions', ownerOnly, resolveShop, promotionsRouter);
-  // Merchant coupon CRUD. Lives at `/me/coupons-admin` so it doesn't
-  // collide with the customer-facing `/me/coupons` listing surface.
-  app.use('/me/coupons-admin', ownerOnly, resolveShop, merchantCouponsRouter);
-  app.use(
-    '/me/brand-spotlight',
-    ownerOnly,
-    resolveShop,
-    brandSpotlightMerchantRouter,
-  );
-  // Categories are a shared read surface — both merchants (picking a
-  // category for a product) and customers (browsing the marketplace)
-  // hit GET /categories + /categories/tree. Mutating routes inside the
-  // router self-gate to requirePlatformAdmin.
 
-  app.use('/custom-fields', ownerOnly, customFieldsRouter);
-  app.use('/products', ownerOnly, resolveShop, productsRouter);
-  app.use('/stock', ownerOnly, stockRouter);
-  app.use('/stock-adjustments', ownerOnly, stockAdjustmentsRouter);
-  app.use('/dashboard', ownerOnly, resolveShop, dashboardRouter);
-  app.use('/vendors', ownerOnly, vendorsRouter);
-  app.use('/parties', ownerOnly, partiesRouter);
-  app.use('/caution-requests', ownerOnly, cautionRequestsRouter);
-  app.use('/quotations', ownerOnly, quotationsRouter);
-  app.use('/invoices', ownerOnly, invoicesRouter);
-  app.use('/challans', ownerOnly, challansRouter);
+  // Mount a merchant router behind ownerOnly + area-based permission
+  // gating. The area is looked up from the central MERCHANT_AREAS
+  // registry; a prefix that isn't registered throws at boot, so a new
+  // merchant route literally cannot ship ungated (fail-closed). The
+  // area gate enforces `<area>:view` on reads and `<area>:manage` on
+  // writes; OWNER bypasses. `extra` carries per-mount middleware
+  // (resolveShop, rate limiters) that must run before the router.
+  const mountMerchant = (
+    prefix: string,
+    router: express.Router,
+    extra: express.RequestHandler[] = [],
+  ): void => {
+    const area = MERCHANT_AREAS[prefix];
+    if (!area) {
+      throw new Error(
+        `mountMerchant: no permission area mapped for "${prefix}". Add it ` +
+          `to MERCHANT_AREAS (or OPEN_MERCHANT_MOUNTS if intentionally open).`,
+      );
+    }
+    app.use(prefix, ownerOnly, requireArea(area), ...extra, router);
+  };
+
+  mountMerchant('/me/team', teamRouter, [resolveShop]);
+  mountMerchant('/me/shop', shopRouter);
+  mountMerchant('/me/flash-deals', flashSalesMerchantRouter, [resolveShop]);
+  mountMerchant('/me/carousels', carouselsMerchantRouter, [
+    resolveShop,
+    carouselWriteLimiter,
+  ]);
+  mountMerchant('/me/banners', bannersMerchantRouter, [
+    resolveShop,
+    carouselWriteLimiter,
+  ]);
+  mountMerchant('/me/analytics', analyticsRouter, [resolveShop]);
+  mountMerchant('/me/promotions', promotionsRouter, [resolveShop]);
+  mountMerchant('/me/coupons-admin', merchantCouponsRouter, [resolveShop]);
+  mountMerchant('/me/brand-spotlight', brandSpotlightMerchantRouter, [resolveShop]);
+  mountMerchant('/custom-fields', customFieldsRouter);
+  mountMerchant('/products', productsRouter, [resolveShop]);
+  mountMerchant('/stock', stockRouter);
+  mountMerchant('/stock-adjustments', stockAdjustmentsRouter);
+  mountMerchant('/dashboard', dashboardRouter, [resolveShop]);
+  mountMerchant('/vendors', vendorsRouter);
+  mountMerchant('/parties', partiesRouter);
+  mountMerchant('/caution-requests', cautionRequestsRouter);
+  mountMerchant('/quotations', quotationsRouter);
+  mountMerchant('/invoices', invoicesRouter);
+  mountMerchant('/challans', challansRouter);
+  // Upload is shared infra (product images, etc.) — intentionally open to
+  // any team member (see OPEN_MERCHANT_MOUNTS); not area-gated.
   app.use('/upload', ownerOnly, uploadLimiter, uploadRouter);
-  // resolveShop attaches req.shopId so every report query can scope to the
-  // caller's own shop. Without it the reports aggregated across ALL shops
-  // (a cross-tenant data + PII leak).
-  app.use('/reports', ownerOnly, resolveShop, reportsRouter);
-  // Merchant returns inbox + workflow — mounted BEFORE /orders so the
-  // sub-path takes precedence over the /orders/:id route registered
-  // by the parent router below.
-  app.use('/orders/returns', ownerOnly, resolveShop, merchantReturnsRouter);
-  app.use('/orders', ownerOnly, ordersRouter);
-  // Merchant Route onboarding (start KYC + poll status) for the caller's shop.
-  app.use('/linked-account', ownerOnly, resolveShop, linkedAccountsRouter);
-  app.use('/payments', ownerOnly, paymentsRouter);
+  mountMerchant('/reports', reportsRouter, [resolveShop]);
+  // Mounted BEFORE /orders so the returns sub-path wins over /orders/:id.
+  mountMerchant('/orders/returns', merchantReturnsRouter, [resolveShop]);
+  mountMerchant('/orders', ordersRouter);
+  mountMerchant('/linked-account', linkedAccountsRouter, [resolveShop]);
+  mountMerchant('/payments', paymentsRouter);
 
   app.use(errorHandler);
 

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/core/auth/permission_widgets.dart';
+import 'package:shopxy/core/auth/shop_capabilities.dart';
+import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/challans/presentation/pages/challan_detail_page.dart';
 import 'package:shopxy/features/challans/presentation/pages/create_challan_page.dart';
 import 'package:shopxy/features/challans/presentation/providers/challans_provider.dart';
@@ -47,7 +50,10 @@ class _ChallansPageState extends State<ChallansPage> {
     final provider = context.watch<ChallansProvider>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text(AppStrings.navChallans)),
+      appBar: AppBar(
+        title: const Text(AppStrings.navChallans),
+        actions: [AccessReloadButton(onReload: () => provider.loadChallans())],
+      ),
       body: Column(
         children: [
           Padding(
@@ -135,10 +141,15 @@ class _ChallansPageState extends State<ChallansPage> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openCreate,
-        icon: const Icon(Icons.add_rounded),
-        label: const Text(AppStrings.createChallan),
+      floatingActionButton: MaybeLocked(
+        allowed: context.select<AuthProvider, bool>(
+            (a) => a.user?.canManage('invoices') ?? false),
+        what: 'create challans',
+        child: FloatingActionButton.extended(
+          onPressed: _openCreate,
+          icon: const Icon(Icons.add_rounded),
+          label: const Text(AppStrings.createChallan),
+        ),
       ),
     );
   }

@@ -151,6 +151,12 @@ void main() async {
     authProvider.clearAuth();
   };
 
+  // Live permission sync: every authenticated response carries the
+  // caller's perms version; when it changes (an owner edited this
+  // staffer's access elsewhere) AuthProvider refetches /auth/me and the
+  // gated UI rebuilds — on the next request, no re-login.
+  apiClient.onPermsVersion = authProvider.notePermsVersion;
+
   // Keep the pending-orders badge fresh on session change.
   authProvider.addListener(() {
     if (authProvider.isAuthenticated) {

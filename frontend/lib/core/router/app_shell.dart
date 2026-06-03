@@ -26,6 +26,8 @@ import 'package:shopxy/features/returns/presentation/pages/merchant_returns_page
 import 'package:shopxy/features/spotlight/presentation/pages/spotlight_request_page.dart';
 import 'package:shopxy/features/analytics/presentation/pages/merchant_analytics_page.dart';
 import 'package:shopxy/features/promotions/presentation/pages/promotion_manager_page.dart';
+import 'package:shopxy/core/auth/shop_capabilities.dart';
+import 'package:shopxy/features/auth/domain/entities/auth_user.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/stock_adjustments/presentation/pages/stock_adjustments_page.dart';
 import 'package:shopxy/features/vendors/presentation/pages/vendors_page.dart';
@@ -71,12 +73,21 @@ class _Shortcut {
     required this.accent,
     required this.accentSoft,
     required this.builder,
+    this.requires,
   });
   final String label;
   final IconData icon;
   final Color accent;
   final Color accentSoft;
   final WidgetBuilder builder;
+
+  /// Capability predicate gating this shortcut by shop role. Null = any
+  /// team member may see it (read-only surfaces like Reports/Analytics).
+  /// Mirrors the backend requirePermission map via [ShopCapabilities].
+  final bool Function(AuthUser user)? requires;
+
+  bool visibleTo(AuthUser? user) =>
+      requires == null || (user != null && requires!(user));
 }
 
 List<_Shortcut> get _manageShortcuts => [
@@ -86,6 +97,7 @@ List<_Shortcut> get _manageShortcuts => [
         accent: AppColors.brand,
         accentSoft: AppColors.brandSoft,
         builder: (_) => const ShopProfilePage(),
+        requires: (u) => u.canView('shop'),
       ),
       _Shortcut(
         label: 'My Carousels',
@@ -93,6 +105,7 @@ List<_Shortcut> get _manageShortcuts => [
         accent: AppColors.accentIndigo,
         accentSoft: AppColors.accentIndigoSoft,
         builder: (_) => const MyCarouselsPage(),
+        requires: (u) => u.canView('marketing'),
       ),
       _Shortcut(
         label: 'Flash deals',
@@ -100,6 +113,7 @@ List<_Shortcut> get _manageShortcuts => [
         accent: AppColors.flashDeal,
         accentSoft: AppColors.flashDealSoft,
         builder: (_) => const FlashDealsPage(),
+        requires: (u) => u.canView('marketing'),
       ),
       _Shortcut(
         label: 'Brand spotlight',
@@ -107,6 +121,7 @@ List<_Shortcut> get _manageShortcuts => [
         accent: AppColors.accentAmber,
         accentSoft: AppColors.accentAmberSoft,
         builder: (_) => const SpotlightRequestPage(),
+        requires: (u) => u.canView('marketing'),
       ),
       _Shortcut(
         label: 'Promotions',
@@ -114,6 +129,7 @@ List<_Shortcut> get _manageShortcuts => [
         accent: AppColors.accentRose,
         accentSoft: AppColors.accentRoseSoft,
         builder: (_) => const PromotionManagerPage(),
+        requires: (u) => u.canView('marketing'),
       ),
       _Shortcut(
         label: 'Coupons',
@@ -121,6 +137,7 @@ List<_Shortcut> get _manageShortcuts => [
         accent: AppColors.accentAmber,
         accentSoft: AppColors.accentAmberSoft,
         builder: (_) => const MerchantCouponsPage(),
+        requires: (u) => u.canView('marketing'),
       ),
       _Shortcut(
         label: AppStrings.navCategories,
@@ -128,6 +145,7 @@ List<_Shortcut> get _manageShortcuts => [
         accent: AppColors.accentTeal,
         accentSoft: AppColors.accentTealSoft,
         builder: (_) => const CategoriesPage(),
+        requires: (u) => u.canView('products'),
       ),
       _Shortcut(
         label: AppStrings.navVendors,
@@ -135,6 +153,7 @@ List<_Shortcut> get _manageShortcuts => [
         accent: AppColors.accentIndigo,
         accentSoft: AppColors.accentIndigoSoft,
         builder: (_) => const VendorsPage(),
+        requires: (u) => u.canView('vendors'),
       ),
       _Shortcut(
         label: AppStrings.navParties,
@@ -142,6 +161,7 @@ List<_Shortcut> get _manageShortcuts => [
         accent: AppColors.accentRose,
         accentSoft: AppColors.accentRoseSoft,
         builder: (_) => const PartiesPage(),
+        requires: (u) => u.canView('parties'),
       ),
     ];
 
@@ -152,6 +172,7 @@ List<_Shortcut> get _operationShortcuts => [
         accent: AppColors.brandStrong,
         accentSoft: AppColors.brandSoft,
         builder: (_) => const InvoicesPage(),
+        requires: (u) => u.canView('invoices'),
       ),
       _Shortcut(
         label: AppStrings.navQuotations,
@@ -159,6 +180,7 @@ List<_Shortcut> get _operationShortcuts => [
         accent: AppColors.accentIndigo,
         accentSoft: AppColors.accentIndigoSoft,
         builder: (_) => const QuotationsPage(),
+        requires: (u) => u.canView('invoices'),
       ),
       _Shortcut(
         label: AppStrings.navChallans,
@@ -166,6 +188,7 @@ List<_Shortcut> get _operationShortcuts => [
         accent: AppColors.accentAmber,
         accentSoft: AppColors.accentAmberSoft,
         builder: (_) => const ChallansPage(),
+        requires: (u) => u.canView('invoices'),
       ),
       _Shortcut(
         label: 'Stock adjustments',
@@ -173,6 +196,7 @@ List<_Shortcut> get _operationShortcuts => [
         accent: AppColors.brand,
         accentSoft: AppColors.brandSoft,
         builder: (_) => const StockAdjustmentsPage(),
+        requires: (u) => u.canView('stock'),
       ),
       _Shortcut(
         label: 'Returns',
@@ -180,6 +204,7 @@ List<_Shortcut> get _operationShortcuts => [
         accent: AppColors.accentRose,
         accentSoft: AppColors.accentRoseSoft,
         builder: (_) => const MerchantReturnsPage(),
+        requires: (u) => u.canView('orders'),
       ),
       _Shortcut(
         label: 'Reports',
@@ -187,6 +212,7 @@ List<_Shortcut> get _operationShortcuts => [
         accent: AppColors.brandStrong,
         accentSoft: AppColors.brandSoft,
         builder: (_) => const ReportsPage(),
+        requires: (u) => u.canView('reports'),
       ),
       _Shortcut(
         label: 'Analytics',
@@ -194,6 +220,7 @@ List<_Shortcut> get _operationShortcuts => [
         accent: AppColors.accentIndigo,
         accentSoft: AppColors.accentIndigoSoft,
         builder: (_) => const MerchantAnalyticsPage(),
+        requires: (u) => u.canView('reports'),
       ),
     ];
 
@@ -425,14 +452,31 @@ class _NavDrawer extends StatelessWidget {
                         Navigator.pop(context);
                       },
                     ),
-                  const SizedBox(height: 12),
-                  const _DrawerSectionLabel(text: 'Manage'),
-                  for (final s in _manageShortcuts)
-                    _DrawerShortcutTile(shortcut: s),
-                  const SizedBox(height: 8),
-                  const _DrawerSectionLabel(text: 'Operations'),
-                  for (final s in _operationShortcuts)
-                    _DrawerShortcutTile(shortcut: s),
+                  // Only surface shortcuts this role can act on — the
+                  // drawer otherwise leaks every feature regardless of
+                  // permission. Section headers drop when their group is
+                  // empty for the role.
+                  ...() {
+                    final user = context.watch<AuthProvider>().user;
+                    final manage = _manageShortcuts
+                        .where((s) => s.visibleTo(user))
+                        .toList();
+                    final ops = _operationShortcuts
+                        .where((s) => s.visibleTo(user))
+                        .toList();
+                    return [
+                      if (manage.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        const _DrawerSectionLabel(text: 'Manage'),
+                        for (final s in manage) _DrawerShortcutTile(shortcut: s),
+                      ],
+                      if (ops.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        const _DrawerSectionLabel(text: 'Operations'),
+                        for (final s in ops) _DrawerShortcutTile(shortcut: s),
+                      ],
+                    ];
+                  }(),
                   if (context.watch<AuthProvider>().user?.isPlatformAdmin ==
                       true) ...[
                     const SizedBox(height: 8),

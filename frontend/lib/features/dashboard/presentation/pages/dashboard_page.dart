@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/core/auth/permission_widgets.dart';
+import 'package:shopxy/core/auth/shop_capabilities.dart';
+import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/dashboard/domain/entities/dashboard_stats.dart';
 import 'package:shopxy/features/dashboard/presentation/providers/dashboard_provider.dart';
 import 'package:shopxy/features/challans/presentation/pages/challan_detail_page.dart';
@@ -37,19 +40,24 @@ class _DashboardPageState extends State<DashboardPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      context.read<DashboardProvider>().loadStats();
-      // First-login pending-invite check: if the user has unresponded
-      // invitations waiting, surface a one-time banner here. The
-      // provider tracks whether we've already shown it this session.
+      final user = context.read<AuthProvider>().user;
+      // Only load the (now permission-gated) dashboard stats if the
+      // caller can view them — staff without dashboard:view get a 403
+      // and the NoAccessView instead.
+      if (user?.canView('dashboard') ?? false) {
+        context.read<DashboardProvider>().loadStats();
+      }
+      // Personal: pending invitations the user can respond to.
       final n = context.read<NotificationsProvider>();
       n.loadIncoming(status: 'PENDING');
-      // Pending-orders badge on the orders callout. Cheap COUNT query
-      // — safe to fire every time the dashboard appears.
-      context.read<OrdersProvider>().refreshPendingCount();
-      // Load payout status so we can nudge the owner to finish onboarding
-      // until settlements are live. The nudge itself fires from build()
-      // once the status resolves.
-      context.read<LinkedAccountProvider>().load();
+      // Orders badge — only if they can see orders.
+      if (user?.canView('orders') ?? false) {
+        context.read<OrdersProvider>().refreshPendingCount();
+      }
+      // Payout onboarding nudge is for whoever manages billing.
+      if (user?.canView('payouts') ?? false) {
+        context.read<LinkedAccountProvider>().load();
+      }
     });
   }
 
@@ -70,21 +78,34 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget build(BuildContext context) {
     final provider = context.watch<DashboardProvider>();
     final stats = provider.stats;
-    _maybeNudgePayouts(context.watch<LinkedAccountProvider>());
+    // select (not watch): rebuilds only when THIS bool flips, not on any
+    // other AuthProvider change (name, avatar, unrelated permissions).
+    final canViewDashboard = context.select<AuthProvider, bool>(
+        (a) => a.user?.canView('dashboard') ?? false);
+    if (canViewDashboard) {
+      _maybeNudgePayouts(context.watch<LinkedAccountProvider>());
+    }
 
     return Scaffold(
       appBar: AppBar(
         leading: const ShellMenuButton(),
         title: const Text(AppStrings.appName),
         actions: [
+          // NotificationBell is personal — always available.
           const NotificationBell(),
-          IconButton(
-            onPressed: () => provider.loadStats(),
-            icon: const Icon(Icons.refresh_rounded),
-          ),
+          // Always available (even on the no-access screen) so a staffer
+          // just granted access can re-check without restarting.
+          AccessReloadButton(onReload: () => provider.loadStats()),
         ],
       ),
-      body: provider.isLoading && stats == null
+      body: !canViewDashboard
+          ? const NoAccessView(
+              title: 'Dashboard hidden',
+              message:
+                  'Your role doesn\'t include the dashboard overview. Ask an '
+                  'owner if you need it.',
+            )
+          : provider.isLoading && stats == null
           ? const Center(child: CircularProgressIndicator())
           : provider.error != null && stats == null
               ? AppErrorView(onRetry: () => provider.loadStats())

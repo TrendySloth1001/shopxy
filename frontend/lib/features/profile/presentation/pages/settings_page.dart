@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:shopxy/core/auth/shop_capabilities.dart';
 import 'package:shopxy/core/prefs/navigation_prefs.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/custom_fields/presentation/pages/custom_fields_settings_page.dart';
@@ -159,24 +160,28 @@ class _SettingsPageState extends State<SettingsPage> {
           const _Gap(),
 
           // ── Shop operations ─────────────────────────────────
-          const _Eyebrow('SHOP OPERATIONS'),
-          const SizedBox(height: AppSizes.sm),
-          _SettingRow(
-            icon: Icons.tune_rounded,
-            title: 'Shop operations',
-            subtitle: 'Hours, vacation mode, payouts, KYC, team',
-            trailing: const Icon(
-              Icons.chevron_right_rounded,
-              color: AppColors.subtle,
+          // Hidden entirely unless the role can view at least one of the
+          // areas inside (hours/shop, payouts, or team).
+          if ((user?.canView('shop') ?? false) ||
+              (user?.canView('payouts') ?? false) ||
+              (user?.canView('team') ?? false)) ...[
+            const _Eyebrow('SHOP OPERATIONS'),
+            const SizedBox(height: AppSizes.sm),
+            _SettingRow(
+              icon: Icons.tune_rounded,
+              title: 'Shop operations',
+              subtitle: 'Hours, vacation mode, payouts, KYC, team',
+              trailing: const Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.subtle,
+              ),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ShopOperationsPage()),
+              ),
             ),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (_) => const ShopOperationsPage()),
-            ),
-          ),
-
-          const _Gap(),
+            const _Gap(),
+          ],
 
           // ── Appearance ──────────────────────────────────────
           const _Eyebrow('APPEARANCE'),
