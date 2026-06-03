@@ -1,6 +1,10 @@
 import prisma from '../../infra/db/prisma.js';
 import type { Prisma } from '@prisma/client';
+import { round2 } from '../../shared/numbering/decimal.js';
 import { invoicesService } from '../invoices/invoices.service.js';
+import { paymentGatewayService } from '../payment-gateway/index.js';
+import { ensureOrderInvoiceReceipts } from '../payment-gateway/order-receipts.js';
+import { releaseTransfersForPurchaseRequest } from '../payment-gateway/settlement/transfer-actions.js';
 
 /// Local helper — invoices.service doesn't expose a payment summariser
 /// (its own status flow is independent of paid-vs-total accounting), so
@@ -765,6 +769,9 @@ export class PurchaseRequestsService {
           customerPhone: true,
           customerAddress: true,
           estimatedTotal: true,
+          couponDiscount: true,
+          walletPaid: true,
+          paymentStatus: true,
           createdAt: true,
           updatedAt: true,
           _count: { select: { shopOrders: true } },
@@ -819,6 +826,9 @@ export class PurchaseRequestsService {
         customerAddress: true,
         note: true,
         estimatedTotal: true,
+        couponDiscount: true,
+        walletPaid: true,
+        paymentStatus: true,
         createdAt: true,
         updatedAt: true,
         _count: { select: { shopOrders: true } },
@@ -1095,7 +1105,15 @@ export class PurchaseRequestsService {
       // ── 2. Load full row (now safely ours to act on) ─────────────
       const request = await prisma.purchaseRequest.findUniqueOrThrow({
         where: { id: opts.requestId },
-        include: { items: true },
+        include: {
+          items: true,
+          // Needed to apportion the order-level coupon discount onto this
+          // shop's invoice (H4). The coupon was applied across the whole
+          // CustomerOrder; this child shop earns its proportional slice.
+          customerOrder: {
+            select: { couponDiscount: true, estimatedTotal: true },
+          },
+        },
       });
       if (request.items.length === 0) {
         await revertToPending();
@@ -1138,6 +1156,20 @@ export class PurchaseRequestsService {
       // both the invoice rows and the ledger entries either both
       // succeed or both roll back. We surface failures back to the
       // caller and revert our PROCESSING claim.
+      // This shop's slice of the order-level coupon (H4). The coupon was
+      // applied across the whole CustomerOrder at submit time; each child
+      // shop earns its proportional share so the invoice bills — and
+      // charges GST on (Sec 15(3)) — the post-coupon net the customer
+      // actually owes, instead of the full pre-coupon amount.
+      const order = request.customerOrder;
+      const orderCoupon = Number(order.couponDiscount) || 0;
+      const parentTotal = Number(order.estimatedTotal) || 0;
+      const thisShopTotal = Number(request.estimatedTotal) || 0;
+      const couponShare =
+        orderCoupon > 0 && parentTotal > 0
+          ? round2(orderCoupon * (thisShopTotal / parentTotal))
+          : 0;
+
       const result = await invoicesService.createInvoice({
         shopId: request.shopId,
         type: 'SALE',
@@ -1145,10 +1177,18 @@ export class PurchaseRequestsService {
         customerName: request.customerName,
         customerPhone: request.customerPhone ?? undefined,
         note: opts.note ?? request.note ?? undefined,
+        // Header discount = this shop's coupon share (H4).
+        discount: couponShare > 0 ? couponShare : undefined,
         items: request.items.map((i) => ({
           productId: i.productId,
           quantity: Number(i.quantity),
           unitPrice: Number(i.unitPrice),
+          // The snapshot unitPrice already has the flash-sale / carousel
+          // promo baked in. Pass an explicit 0 so the invoice engine's
+          // promo auto-fill doesn't subtract the same discount a second
+          // time (H1). taxPercent is intentionally omitted so the engine
+          // fills it from the product's GST rate (C1).
+          discount: 0,
         })),
         confirm: true,
         confirmedById: opts.decidedById,
@@ -1200,6 +1240,22 @@ export class PurchaseRequestsService {
           },
         },
       });
+
+      // ── 6. Record the online payment against this fresh invoice ──
+      // If the customer already paid online (pay-then-confirm — the common
+      // case), settle that captured amount onto the merchant's ledger now so
+      // the invoice shows PAID instead of UNPAID. Idempotent + best-effort:
+      // a failure here must NOT roll back the (already committed) invoice —
+      // the confirm-then-pay path and any later run reconcile it.
+      try {
+        await ensureOrderInvoiceReceipts(request.customerOrderId);
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error(
+          `[confirmRequest] receipt reconcile failed for order ${request.customerOrderId}:`,
+          err instanceof Error ? err.message : err,
+        );
+      }
 
       return {
         invoice: { id: result.invoice.id, invoiceNo: result.invoice.invoiceNo },
@@ -1355,7 +1411,7 @@ export class PurchaseRequestsService {
   > {
     const pr = await prisma.purchaseRequest.findFirst({
       where: { id: opts.requestId, shopId: opts.shopId },
-      select: { id: true, status: true },
+      select: { id: true, status: true, shop: { select: { returnsEnabled: true } } },
     });
     if (!pr) return { error: 'NOT_FOUND' };
     // Only confirmed orders can move through shipping milestones.
@@ -1372,6 +1428,17 @@ export class PurchaseRequestsService {
       },
       select: { id: true, type: true, occurredAt: true },
     });
+    // Route on-hold fast-path: on DELIVERED, release the seller's held slice
+    // early ONLY when the shop has no return window — otherwise the money must
+    // stay held so an in-hold return can reverse cleanly (the P2 sweep releases
+    // it at window close). Best-effort + flag-gated; never blocks the event.
+    if (opts.type === 'DELIVERED' && pr.shop.returnsEnabled === false) {
+      try {
+        await releaseTransfersForPurchaseRequest(opts.requestId);
+      } catch {
+        /* the reconcile sweep is the backstop; the event already recorded. */
+      }
+    }
     return { event: created };
   }
 
@@ -1554,10 +1621,92 @@ export class PurchaseRequestsService {
       deduplicated: true,
     };
   }
-}
 
-function round2(n: number): number {
-  return Math.round(n * 100) / 100;
+  /// Start an online (gateway) payment for the online-payable remainder of a
+  /// customer order — estimatedTotal − couponDiscount − walletPaid. Creates a
+  /// GatewayPayment intent (settlement target ORDER, id = this order) and flips
+  /// the order to PENDING; the ORDER settlement handler flips it to PAID on
+  /// webhook capture. Idempotent per order via the `order:<id>` key — a retry
+  /// (abandoned sheet, flaky network) reuses the same intent + Razorpay order.
+  async initiateOnlinePayment(opts: {
+    userId: number;
+    orderId: number;
+  }): Promise<
+    | { error: 'NOT_FOUND' | 'ALREADY_PAID' | 'NOTHING_TO_PAY' }
+    | {
+        ok: true;
+        payment: Awaited<ReturnType<typeof paymentGatewayService.initiatePayment>>;
+      }
+  > {
+    const order = await prisma.customerOrder.findFirst({
+      where: { id: opts.orderId, customerUserId: opts.userId },
+      select: {
+        id: true,
+        estimatedTotal: true,
+        couponDiscount: true,
+        walletPaid: true,
+        paymentStatus: true,
+      },
+    });
+    if (!order) return { error: 'NOT_FOUND' };
+    if (order.paymentStatus === 'PAID') return { error: 'ALREADY_PAID' };
+
+    const payable = round2(
+      Number(order.estimatedTotal) -
+        Number(order.couponDiscount) -
+        Number(order.walletPaid),
+    );
+    if (!(payable > 0)) return { error: 'NOTHING_TO_PAY' };
+
+    const payment = await paymentGatewayService.initiatePayment({
+      provider: 'RAZORPAY',
+      target: { type: 'ORDER', id: order.id },
+      amount: payable,
+      currency: 'INR',
+      shopId: null,
+      customerUserId: opts.userId,
+      idempotencyKey: `order:${order.id}`,
+    });
+
+    // Flip to PENDING, but never clobber a PAID set by a racing webhook.
+    await prisma.customerOrder.updateMany({
+      where: { id: order.id, paymentStatus: { not: 'PAID' } },
+      data: { paymentStatus: 'PENDING' },
+    });
+
+    return { ok: true, payment };
+  }
+
+  /// Client-confirm after the checkout sheet returns success. Re-checks the live
+  /// provider order and settles if paid (marks the order PAID + posts merchant
+  /// receipts), then returns the order's resulting paymentStatus. The webhook is
+  /// still authoritative; this covers environments it can't reach (localhost) and
+  /// makes the "paid but shows pending" gap impossible. Idempotent.
+  async syncOnlinePayment(opts: {
+    userId: number;
+    orderId: number;
+  }): Promise<{ error: 'NOT_FOUND' } | { ok: true; paymentStatus: string; settled: boolean }> {
+    const order = await prisma.customerOrder.findFirst({
+      where: { id: opts.orderId, customerUserId: opts.userId },
+      select: { id: true },
+    });
+    if (!order) return { error: 'NOT_FOUND' };
+
+    const sync = await paymentGatewayService.syncIntentStatus({
+      customerUserId: opts.userId,
+      idempotencyKey: `order:${order.id}`,
+    });
+
+    const fresh = await prisma.customerOrder.findUnique({
+      where: { id: order.id },
+      select: { paymentStatus: true },
+    });
+    return {
+      ok: true,
+      paymentStatus: fresh?.paymentStatus ?? 'COD',
+      settled: sync.settled,
+    };
+  }
 }
 
 export const purchaseRequestsService = new PurchaseRequestsService();

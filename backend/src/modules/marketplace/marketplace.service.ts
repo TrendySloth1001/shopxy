@@ -81,6 +81,9 @@ const listSelect = {
     take: 1,
   },
   shop: { select: { id: true, name: true, slug: true } },
+  // Category lets the customer client group/explore a shop's catalogue
+  // by the merchant's own categories (e.g. the request-a-quote browser).
+  category: { select: { id: true, name: true, slug: true } },
 } satisfies Prisma.ProductSelect;
 
 export class MarketplaceService {

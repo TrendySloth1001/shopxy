@@ -16,10 +16,19 @@ InviteStatus _statusFrom(String raw) {
   }
 }
 
-enum InviteLinkType { party, vendor }
+enum InviteLinkType { party, vendor, team }
 
-InviteLinkType _typeFrom(String raw) =>
-    raw == 'VENDOR' ? InviteLinkType.vendor : InviteLinkType.party;
+InviteLinkType _typeFrom(String raw) {
+  switch (raw) {
+    case 'VENDOR':
+      return InviteLinkType.vendor;
+    case 'TEAM':
+      return InviteLinkType.team;
+    case 'PARTY':
+    default:
+      return InviteLinkType.party;
+  }
+}
 
 class Invitation {
   const Invitation({
@@ -30,10 +39,13 @@ class Invitation {
     required this.linkType,
     required this.partyId,
     required this.vendorId,
+    this.teamRole,
     required this.status,
     required this.message,
     required this.fromShopName,
     required this.displayName,
+    this.teamRoleName,
+    this.teamPermissions = const [],
     required this.expiresAt,
     required this.respondedAt,
     required this.createdAt,
@@ -48,6 +60,11 @@ class Invitation {
   final InviteLinkType linkType;
   final int? partyId;
   final int? vendorId;
+  /// Set only for TEAM invites — the role label + the exact rights
+  /// granted on accept. Used by the join-request screen.
+  final String? teamRole;
+  final String? teamRoleName;
+  final List<String> teamPermissions;
   final InviteStatus status;
   final String? message;
   final String? fromShopName;
@@ -61,6 +78,7 @@ class Invitation {
   bool get isPending => status == InviteStatus.pending;
   bool get isAccepted => status == InviteStatus.accepted;
   bool get isParty => linkType == InviteLinkType.party;
+  bool get isTeam => linkType == InviteLinkType.team;
 
   factory Invitation.fromJson(Map<String, dynamic> j) {
     final fromUser = j['fromUser'] as Map<String, dynamic>?;
@@ -72,6 +90,10 @@ class Invitation {
       linkType: _typeFrom(j['linkType'] as String),
       partyId: j['partyId'] as int?,
       vendorId: j['vendorId'] as int?,
+      teamRole: j['teamRole'] as String?,
+      teamRoleName: j['teamRoleName'] as String?,
+      teamPermissions:
+          (j['teamPermissions'] as List?)?.cast<String>() ?? const [],
       status: _statusFrom(j['status'] as String),
       message: j['message'] as String?,
       fromShopName: j['fromShopName'] as String?,

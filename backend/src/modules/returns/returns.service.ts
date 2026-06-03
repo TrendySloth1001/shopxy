@@ -1,6 +1,8 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
+import { round2 } from '../../shared/numbering/decimal.js';
 import { walletService } from '../wallet/wallet.service.js';
+import { reverseTransferForReturn } from '../payment-gateway/settlement/transfer-actions.js';
 
 /// Canonical return reasons. Kept loose (string) on the DB so adding
 /// a new category later doesn't require a migration; the enum below
@@ -181,7 +183,6 @@ export class ReturnsService {
     const parent = child.customerOrder;
     const grossSubtotal = parent ? Number(parent.estimatedTotal) : 0;
     const couponDiscount = parent ? Number(parent.couponDiscount) : 0;
-    const walletPaid = parent ? Number(parent.walletPaid) : 0;
     // Wallet credits are reusable money — so they get refunded in full
     // back to the wallet. Only the coupon discount is non-recoverable.
     const refundableSubtotal = Math.max(0, grossSubtotal - couponDiscount);
@@ -190,6 +191,29 @@ export class ReturnsService {
       : 1;
 
     const itemMap = new Map(child.items.map((i) => [i.id, i]));
+    // Cumulative-returned-quantity guard (C4). Without it a line could be
+    // returned and refunded, then returned again and again — minting
+    // unlimited wallet credit for goods bought only once. Sum the quantity
+    // already returned on every still-live or completed return for this
+    // child, then require requested + alreadyReturned to stay within what
+    // was originally purchased. (REJECTED / CANCELLED returns release their
+    // hold and are excluded.)
+    const requestedItemIds = opts.items.map((i) => i.purchaseRequestItemId);
+    const priorReturns = await prisma.returnRequestItem.groupBy({
+      by: ['purchaseRequestItemId'],
+      where: {
+        purchaseRequestItemId: { in: requestedItemIds },
+        return: {
+          requestId: opts.childId,
+          status: { in: ['REQUESTED', 'APPROVED', 'PICKED_UP', 'RECEIVED', 'REFUNDED'] },
+        },
+      },
+      _sum: { quantity: true },
+    });
+    const alreadyReturned = new Map(
+      priorReturns.map((r) => [r.purchaseRequestItemId, Number(r._sum.quantity) || 0]),
+    );
+
     let refundTotal = 0;
     const itemRows: Array<{
       purchaseRequestItemId: number;
@@ -200,7 +224,8 @@ export class ReturnsService {
     for (const it of opts.items) {
       const original = itemMap.get(it.purchaseRequestItemId);
       if (!original) return { error: 'INVALID_ITEMS' };
-      if (!(it.quantity > 0) || it.quantity > Number(original.quantity)) {
+      const prior = alreadyReturned.get(it.purchaseRequestItemId) ?? 0;
+      if (!(it.quantity > 0) || it.quantity + prior > Number(original.quantity)) {
         return { error: 'BAD_QTY' };
       }
       const linePrice = it.quantity * Number(original.unitPrice);
@@ -413,7 +438,10 @@ export class ReturnsService {
     | { ok: true; walletEntryId: number | null; refundAmount: number }
     | { error: 'NOT_FOUND' | 'BAD_STATE' }
   > {
-    return prisma.$transaction(async (tx) => {
+    // Captured inside the tx for the post-commit Route reversal (below).
+    let reverseChildId: number | null = null;
+    let reverseAmount = 0;
+    const result = await prisma.$transaction(async (tx) => {
       // Claim the row from a refund-eligible state.
       const claim = await tx.returnRequest.updateMany({
         where: {
@@ -517,17 +545,32 @@ export class ReturnsService {
           note: opts.note ?? null,
         },
       });
+      reverseChildId = row.requestId;
+      reverseAmount = refundAmount;
       return {
         ok: true as const,
         walletEntryId: entry?.id ?? null,
         refundAmount,
       };
     });
-  }
-}
 
-function round2(n: number): number {
-  return Math.round(n * 100) / 100;
+    // Post-commit: if a Route on-hold split funded this child, claw the seller's
+    // slice back. Runs AFTER the tx (external call), is best-effort and a no-op
+    // when the split feature is off — it must NEVER fail the customer's refund,
+    // which has already committed. An insufficient-balance reversal is flagged
+    // for manual recovery by reverseTransferForReturn itself (P5).
+    if ('ok' in result && result.ok && reverseChildId != null) {
+      try {
+        await reverseTransferForReturn({
+          purchaseRequestId: reverseChildId,
+          reverseAmount,
+        });
+      } catch {
+        /* reconciliation re-drives a transient failure; refund stands. */
+      }
+    }
+    return result;
+  }
 }
 
 export const returnsService = new ReturnsService();

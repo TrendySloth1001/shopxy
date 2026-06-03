@@ -17,11 +17,52 @@ import 'package:shopxy_customer/shared/widgets/app_price_text.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/widgets/empty_state.dart';
 
-/// "My Orders" inbox — card-per-order layout so each row is visually
-/// scannable: shop chip up top, item-name preview, item count + date,
-/// status pill, and price on the right. We deliberately do NOT surface
-/// merchant phone/email — only the public shop name — because customers
-/// shouldn't be reaching out to merchants directly through the app.
+/// Order status buckets used by the filter chips. Each order is placed
+/// in exactly one bucket via [_statusOf] so it shows once per filter.
+enum OrderFilter { all, pending, confirmed, cancelled, declined }
+
+extension _OrderFilterX on OrderFilter {
+  String get label => switch (this) {
+        OrderFilter.all => 'All',
+        OrderFilter.pending => 'Pending',
+        OrderFilter.confirmed => 'Confirmed',
+        OrderFilter.cancelled => 'Cancelled',
+        OrderFilter.declined => 'Declined',
+      };
+
+  /// Empty-state copy when a filter has no orders.
+  String get emptyLine => switch (this) {
+        OrderFilter.all => "You haven't placed any orders yet",
+        OrderFilter.pending => 'No orders waiting on a seller',
+        OrderFilter.confirmed => 'No confirmed orders yet',
+        OrderFilter.cancelled => 'No cancelled orders',
+        OrderFilter.declined => 'No declined orders',
+      };
+}
+
+/// Classifies a parent order into a single bucket. Priority reflects
+/// "what needs my attention / is still alive": a still-pending slice
+/// dominates, then any confirmed slice (order is going ahead), then the
+/// dead states (declined / cancelled).
+OrderFilter _statusOf(CustomerOrder o) {
+  final c = o.shopOrders;
+  if (c.isEmpty) return OrderFilter.pending;
+  final pending = c.where((x) => x.isPending).length;
+  final confirmed = c.where((x) => x.isConfirmed).length;
+  final rejected = c.where((x) => x.isRejected).length;
+  final cancelled = c.where((x) => x.isCancelled).length;
+  if (pending > 0) return OrderFilter.pending;
+  if (confirmed > 0) return OrderFilter.confirmed;
+  if (rejected >= cancelled) return OrderFilter.declined;
+  return OrderFilter.cancelled;
+}
+
+/// "My Orders" inbox — a filterable, card-per-order list. Chips across
+/// the top scope the list to a status (All / Pending / Confirmed /
+/// Cancelled / Declined) with live counts. Each card is scannable: order
+/// id + aggregate status pill, seller attribution, item count + date,
+/// and the grand total. We deliberately do NOT surface merchant
+/// phone/email — only the public shop name.
 class MyOrdersPage extends StatefulWidget {
   const MyOrdersPage({super.key});
 
@@ -30,6 +71,8 @@ class MyOrdersPage extends StatefulWidget {
 }
 
 class _MyOrdersPageState extends State<MyOrdersPage> {
+  OrderFilter _filter = OrderFilter.all;
+
   @override
   void initState() {
     super.initState();
@@ -61,8 +104,7 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
             icon: Icons.login_rounded,
             onPressed: () => requireAuth(
               context,
-              reason:
-                  'View your orders, tracking and invoices in one place.',
+              reason: 'View your orders, tracking and invoices in one place.',
             ),
           ),
         ),
@@ -70,31 +112,177 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
     }
 
     final p = context.watch<OrdersProvider>();
+    final orders = p.orders;
+    final hasOrders = orders.isNotEmpty;
+
+    // Counts per bucket (single pass), for the chip badges.
+    final counts = <OrderFilter, int>{OrderFilter.all: orders.length};
+    for (final o in orders) {
+      final s = _statusOf(o);
+      counts[s] = (counts[s] ?? 0) + 1;
+    }
+    final visible = _filter == OrderFilter.all
+        ? orders
+        : orders.where((o) => _statusOf(o) == _filter).toList();
+
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: const AppAppBar(title: AppStrings.myOrders),
-      body: RefreshIndicator(
-        onRefresh: p.load,
-        color: AppColors.brand,
-        child: p.isLoading && p.orders.isEmpty
-            ? const _LoadingState()
-            : p.error != null && p.orders.isEmpty
-                ? _ErrorState(message: p.error!, onRetry: p.load)
-                : p.orders.isEmpty
-                    ? const _EmptyOrders()
-                    : ListView.separated(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        padding: const EdgeInsets.fromLTRB(
-                          AppSizes.lg,
-                          AppSizes.md,
-                          AppSizes.lg,
-                          AppSizes.lg,
-                        ),
-                        itemCount: p.orders.length,
-                        separatorBuilder: (_, _) =>
-                            const SizedBox(height: AppSizes.md),
-                        itemBuilder: (_, i) => _OrderCard(order: p.orders[i]),
-                      ),
+      appBar: AppAppBar(
+        title: AppStrings.myOrders,
+        subtitle: hasOrders
+            ? '${orders.length} ${orders.length == 1 ? 'order' : 'orders'}'
+            : null,
+      ),
+      body: Column(
+        children: [
+          if (hasOrders)
+            _FilterBar(
+              selected: _filter,
+              counts: counts,
+              onSelect: (f) => setState(() => _filter = f),
+            ),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: p.load,
+              color: AppColors.brand,
+              child: p.isLoading && orders.isEmpty
+                  ? const _LoadingState()
+                  : p.error != null && orders.isEmpty
+                      ? _ErrorState(message: p.error!, onRetry: p.load)
+                      : orders.isEmpty
+                          ? const _EmptyOrders()
+                          : visible.isEmpty
+                              ? _FilteredEmpty(filter: _filter)
+                              : ListView.separated(
+                                  physics:
+                                      const AlwaysScrollableScrollPhysics(),
+                                  padding: const EdgeInsets.fromLTRB(
+                                    AppSizes.lg,
+                                    AppSizes.sm,
+                                    AppSizes.lg,
+                                    AppSizes.lg,
+                                  ),
+                                  itemCount: visible.length,
+                                  separatorBuilder: (_, _) =>
+                                      const SizedBox(height: AppSizes.md),
+                                  itemBuilder: (_, i) =>
+                                      _OrderCard(order: visible[i]),
+                                ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Filter chips ─────────────────────────────────────────────────────
+
+class _FilterBar extends StatelessWidget {
+  const _FilterBar({
+    required this.selected,
+    required this.counts,
+    required this.onSelect,
+  });
+  final OrderFilter selected;
+  final Map<OrderFilter, int> counts;
+  final ValueChanged<OrderFilter> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    // All is always shown; status chips appear only when they have
+    // orders (or are currently selected) so the bar stays uncluttered.
+    final chips = <OrderFilter>[
+      OrderFilter.all,
+      for (final f in [
+        OrderFilter.pending,
+        OrderFilter.confirmed,
+        OrderFilter.cancelled,
+        OrderFilter.declined,
+      ])
+        if ((counts[f] ?? 0) > 0 || selected == f) f,
+    ];
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.canvas,
+        border: Border(bottom: BorderSide(color: AppColors.hairline)),
+      ),
+      child: SizedBox(
+        height: 52,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSizes.lg, vertical: AppSizes.sm),
+          itemCount: chips.length,
+          separatorBuilder: (_, _) => const SizedBox(width: AppSizes.sm),
+          itemBuilder: (_, i) {
+            final f = chips[i];
+            return _FilterChip(
+              label: f.label,
+              count: counts[f] ?? 0,
+              selected: selected == f,
+              onTap: () => onSelect(f),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _FilterChip extends StatelessWidget {
+  const _FilterChip({
+    required this.label,
+    required this.count,
+    required this.selected,
+    required this.onTap,
+  });
+  final String label;
+  final int count;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = selected ? AppColors.white : AppColors.black;
+    return Material(
+      color: selected ? AppColors.black : AppColors.white,
+      shape: AppShapes.squircle(
+        AppSizes.radiusFull,
+        side: selected
+            ? BorderSide.none
+            : const BorderSide(color: AppColors.hairline, width: 1),
+      ),
+      child: InkWell(
+        customBorder: AppShapes.squircle(AppSizes.radiusFull),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSizes.md, vertical: AppSizes.sm),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  color: fg,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                '$count',
+                style: TextStyle(
+                  color: selected ? Colors.white70 : AppColors.muted,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -155,9 +343,6 @@ class _OrderCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 4),
-              // "Sold by X" / "Sold by X & 2 others" — Amazon-style
-              // single-line attribution. Drops the verbose "N shops"
-              // chip and the chip-strip; one sentence does both jobs.
               Text(
                 _sellerLine(order),
                 maxLines: 1,
@@ -172,15 +357,12 @@ class _OrderCard extends StatelessWidget {
               Text(
                 '${itemCount == 1 ? "1 item" : "$itemCount items"} · '
                 '${_date.format(order.createdAt)}',
-                style: const TextStyle(
-                  color: AppColors.muted,
-                  fontSize: 12,
-                ),
+                style: const TextStyle(color: AppColors.muted, fontSize: 12),
               ),
               const SizedBox(height: AppSizes.sm),
               const Divider(height: 1, color: AppColors.hairline),
               const SizedBox(height: AppSizes.sm),
-              // Bottom: grand total + chevron
+              // Bottom: grand total + a "to pay" nudge + chevron
               Row(
                 children: [
                   const Text(
@@ -198,11 +380,30 @@ class _OrderCard extends StatelessWidget {
                     style: const TextStyle(fontSize: 15),
                   ),
                   const Spacer(),
-                  const Icon(
-                    Icons.chevron_right_rounded,
-                    color: AppColors.subtle,
-                    size: 20,
-                  ),
+                  if (order.needsOnlinePayment)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
+                      decoration: ShapeDecoration(
+                        color: AppColors.warning.withValues(alpha: 0.12),
+                        shape: AppShapes.squircle(AppSizes.radiusFull),
+                      ),
+                      child: const Text(
+                        'PAYMENT DUE',
+                        style: TextStyle(
+                          color: AppColors.warning,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 9.5,
+                          letterSpacing: 0.4,
+                        ),
+                      ),
+                    )
+                  else
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      color: AppColors.subtle,
+                      size: 20,
+                    ),
                 ],
               ),
             ],
@@ -212,13 +413,10 @@ class _OrderCard extends StatelessWidget {
     );
   }
 
-  /// "Sold by Foo", "Sold by Foo & Bar", "Sold by Foo & 2 others" —
-  /// the standard marketplace attribution line. Falls back gracefully
-  /// when shop names are missing.
+  /// "Sold by Foo", "Sold by Foo & Bar", "Sold by Foo & 2 others".
   static String _sellerLine(CustomerOrder order) {
-    final names = order.shopOrders
-        .map((s) => s.shop?.displayName ?? 'Seller')
-        .toList();
+    final names =
+        order.shopOrders.map((s) => s.shop?.displayName ?? 'Seller').toList();
     if (names.isEmpty) return 'No sellers';
     if (names.length == 1) return 'Sold by ${names[0]}';
     if (names.length == 2) return 'Sold by ${names[0]} & ${names[1]}';
@@ -250,8 +448,7 @@ class _OrderCard extends StatelessWidget {
       return (AppColors.error, AppColors.errorSoft, Icons.cancel_rounded);
     }
     if (pending == total) {
-      return (AppColors.warning, AppColors.warningSoft,
-          Icons.schedule_rounded);
+      return (AppColors.warning, AppColors.warningSoft, Icons.schedule_rounded);
     }
     return (AppColors.warning, AppColors.warningSoft,
         Icons.hourglass_bottom_rounded);
@@ -299,6 +496,33 @@ class _StatusPill extends StatelessWidget {
 }
 
 // ─── States ──────────────────────────────────────────────────────────
+
+class _FilteredEmpty extends StatelessWidget {
+  const _FilteredEmpty({required this.filter});
+  final OrderFilter filter;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        const SizedBox(height: AppSizes.massive),
+        const Icon(Icons.filter_list_off_rounded,
+            size: 44, color: AppColors.subtle),
+        const SizedBox(height: AppSizes.md),
+        Text(
+          filter.emptyLine,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: AppColors.muted,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+}
 
 class _LoadingState extends StatelessWidget {
   const _LoadingState();
@@ -430,8 +654,8 @@ class _ErrorState extends StatelessWidget {
         const SizedBox(height: AppSizes.md),
         Text(
           AppStrings.somethingWentWrong,
-          style: theme.textTheme.titleMedium
-              ?.copyWith(fontWeight: FontWeight.w700),
+          style:
+              theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 4),

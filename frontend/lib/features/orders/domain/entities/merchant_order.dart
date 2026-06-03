@@ -184,6 +184,9 @@ class MerchantOrderDetail extends MerchantOrder {
     this.note,
     this.decisionNote,
     this.linkedInvoiceNo,
+    this.invoicePaymentStatus,
+    this.invoicePaidAmount = 0,
+    this.invoiceBalanceDue = 0,
     required this.items,
   });
 
@@ -191,7 +194,20 @@ class MerchantOrderDetail extends MerchantOrder {
   final String? note;
   final String? decisionNote;
   final String? linkedInvoiceNo;
+  /// Payment state of the linked invoice as the backend computed it
+  /// (PAID | PARTIAL | UNPAID) — derived from receipts posted against the
+  /// invoice, which includes online/wallet payments the customer made.
+  /// Null until an invoice exists. Drives the "Paid" step on the journey.
+  final String? invoicePaymentStatus;
+  final double invoicePaidAmount;
+  final double invoiceBalanceDue;
   final List<MerchantOrderItem> items;
+
+  /// True when the linked invoice is fully settled.
+  bool get isPaid => invoicePaymentStatus == 'PAID';
+
+  /// True when some — but not all — of the invoice has been received.
+  bool get isPartiallyPaid => invoicePaymentStatus == 'PARTIAL';
 
   /// Any line with insufficient stock? Drives the warning chip on the
   /// inbox row + the warning banner on the detail page.
@@ -229,6 +245,11 @@ class MerchantOrderDetail extends MerchantOrder {
       note: j['note'] as String?,
       decisionNote: j['decisionNote'] as String?,
       linkedInvoiceNo: invoice?['invoiceNo'] as String?,
+      // Payment summary the backend attaches to the linked invoice
+      // (attachInvoicePaymentSummary). Present only once an invoice exists.
+      invoicePaymentStatus: invoice?['paymentStatus'] as String?,
+      invoicePaidAmount: _asDouble(invoice?['paidAmount']),
+      invoiceBalanceDue: _asDouble(invoice?['balanceDue']),
       items: ((j['items'] as List?) ?? const [])
           .map((e) => MerchantOrderItem.fromJson(e as Map<String, dynamic>))
           .toList(),

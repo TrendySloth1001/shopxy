@@ -4,7 +4,10 @@ import 'package:intl/intl.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/core/auth/permission_widgets.dart';
+import 'package:shopxy/core/auth/shop_capabilities.dart';
 import 'package:shopxy/core/router/app_shell.dart';
+import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/invoices/data/datasources/invoices_remote_data_source.dart';
 import 'package:shopxy/features/invoices/domain/entities/invoice.dart';
 import 'package:shopxy/features/invoices/presentation/pages/create_invoice_page.dart';
@@ -79,6 +82,8 @@ class _InvoicesPageState extends State<InvoicesPage> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<InvoicesProvider>();
+    final canManage = context.select<AuthProvider, bool>(
+        (a) => a.user?.canManage('invoices') ?? false);
     final activeSecondary = [
       if (provider.documentTypeFilter != null) provider.documentTypeFilter!,
       if (provider.statusFilter != null) provider.statusFilter!,
@@ -112,9 +117,13 @@ class _InvoicesPageState extends State<InvoicesPage> {
                 ),
             ],
           ),
-          IconButton(
-            icon: const Icon(Icons.add_rounded),
+          AccessReloadButton(
+              onReload: () => provider.loadInvoices(refresh: true)),
+          LockedIconButton(
+            allowed: canManage,
+            icon: Icons.add_rounded,
             tooltip: AppStrings.createInvoice,
+            what: 'create invoices',
             onPressed: _openCreate,
           ),
         ],
@@ -188,10 +197,14 @@ class _InvoicesPageState extends State<InvoicesPage> {
                             kind: LineArt.invoice,
                             title: AppStrings.noInvoices,
                             subtitle: AppStrings.noInvoicesHint,
-                            action: AppButton.primary(
-                              label: AppStrings.createInvoice,
-                              icon: Icons.add_rounded,
-                              onPressed: _openCreate,
+                            action: MaybeLocked(
+                              allowed: canManage,
+                              what: 'create invoices',
+                              child: AppButton.primary(
+                                label: AppStrings.createInvoice,
+                                icon: Icons.add_rounded,
+                                onPressed: _openCreate,
+                              ),
                             ),
                           )
                         : RefreshIndicator(

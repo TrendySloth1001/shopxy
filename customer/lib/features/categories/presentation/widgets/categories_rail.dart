@@ -7,15 +7,23 @@ import 'package:shopxy_customer/features/categories/presentation/providers/categ
 import 'package:shopxy_customer/features/categories/presentation/widgets/category_image.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
+import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 
-/// Horizontal "Shop by category" rail rendered just under the home
-/// top bar. Draws the canonical taxonomy parents, plus a trailing
-/// "All" puck that opens the full categories grid.
+/// Horizontal "Shop by category" rail rendered just under the home top
+/// bar. Each parent category is a compact pill — a round thumbnail +
+/// label side by side — so the whole rail is one slim band instead of
+/// a tall puck grid. A trailing "All" chip opens the full grid.
 ///
 /// Pure consumer of [CategoriesProvider] — load is fired in main.dart
 /// at app boot, so the first paint typically lands hot.
 class CategoriesRail extends StatelessWidget {
   const CategoriesRail({super.key});
+
+  /// Diameter of the round thumbnail inside each chip.
+  static const double _thumb = 30;
+
+  /// Fixed chip height = thumbnail + the 5px inset above and below it.
+  static const double _chipHeight = _thumb + 10;
 
   @override
   Widget build(BuildContext context) {
@@ -23,17 +31,17 @@ class CategoriesRail extends StatelessWidget {
     if (tree.isEmpty) return const SizedBox.shrink();
     return Container(
       color: AppColors.white,
-      padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
+      padding: const EdgeInsets.symmetric(vertical: AppSizes.sm + 2),
       child: SizedBox(
-        height: 116,
+        height: _chipHeight,
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
           itemCount: tree.length + 1,
-          separatorBuilder: (_, _) => const SizedBox(width: AppSizes.lg),
+          separatorBuilder: (_, _) => const SizedBox(width: AppSizes.sm),
           itemBuilder: (context, i) {
             if (i == tree.length) {
-              return _AllPuck(
+              return _CategoryChip.all(
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const CategoriesPage()),
@@ -41,7 +49,7 @@ class CategoriesRail extends StatelessWidget {
               );
             }
             final node = tree[i];
-            return _CategoryPuck(
+            return _CategoryChip(
               category: node.category,
               onTap: () => Navigator.push(
                 context,
@@ -57,80 +65,74 @@ class CategoriesRail extends StatelessWidget {
   }
 }
 
-class _CategoryPuck extends StatelessWidget {
-  const _CategoryPuck({required this.category, required this.onTap});
-  final Category category;
+/// One pill: round leading thumbnail (or an "All" icon) + label. Filled
+/// with the canvas tone over the white rail so it reads as a tappable
+/// chip without a heavy border.
+class _CategoryChip extends StatelessWidget {
+  const _CategoryChip({required this.category, required this.onTap})
+      : label = null;
+
+  /// Trailing "All" chip — no category image, an apps glyph instead.
+  const _CategoryChip.all({required this.onTap})
+      : category = null,
+        label = 'All';
+
+  final Category? category;
+  final String? label;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(40),
-      child: SizedBox(
-        width: 72,
-        child: Column(
-          children: [
-            ClipOval(
-              child: SizedBox(
-                width: 64,
-                height: 64,
-                child: CategoryImage(category: category),
-              ),
+    const d = CategoriesRail._thumb;
+    final Widget leading = category != null
+        ? ClipOval(
+            child: SizedBox(
+              width: d,
+              height: d,
+              child: CategoryImage(category: category!),
             ),
-            const SizedBox(height: 6),
-            Text(
-              category.name,
-              maxLines: 2,
-              textAlign: TextAlign.center,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: AppColors.black,
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                height: 1.15,
-              ),
+          )
+        : Container(
+            width: d,
+            height: d,
+            decoration: const BoxDecoration(
+              color: AppColors.surfaceTint,
+              shape: BoxShape.circle,
             ),
-          ],
-        ),
+            alignment: Alignment.center,
+            child: const Icon(Icons.apps_rounded,
+                color: AppColors.black, size: 18),
+          );
+
+    return Material(
+      color: AppColors.canvas,
+      shape: AppShapes.squircle(
+        AppSizes.radiusFull,
+        side: const BorderSide(color: AppColors.hairline, width: 0.6),
       ),
-    );
-  }
-}
-
-class _AllPuck extends StatelessWidget {
-  const _AllPuck({required this.onTap});
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(40),
-      child: SizedBox(
-        width: 72,
-        child: Column(
-          children: [
-            Container(
-              width: 64,
-              height: 64,
-              decoration: const BoxDecoration(
-                color: AppColors.surfaceTint,
-                shape: BoxShape.circle,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(5, 5, AppSizes.md, 5),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              leading,
+              const SizedBox(width: AppSizes.sm),
+              Text(
+                category?.name ?? label!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: AppColors.black,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.1,
+                ),
               ),
-              alignment: Alignment.center,
-              child: const Icon(Icons.apps_rounded, color: AppColors.black),
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'All',
-              style: TextStyle(
-                color: AppColors.black,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

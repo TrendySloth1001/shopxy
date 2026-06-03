@@ -30,7 +30,7 @@ class CustomerProfilePage extends StatelessWidget {
   const CustomerProfilePage({super.key});
 
   Future<void> _logout(BuildContext context) async {
-    final ok = await AppConfirmDialog.show(
+    final ok = await AppConfirmSheet.show(
       context,
       title: AppStrings.logout,
       message: AppStrings.logoutConfirm,

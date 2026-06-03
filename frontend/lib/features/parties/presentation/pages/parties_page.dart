@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/core/auth/permission_widgets.dart';
+import 'package:shopxy/core/auth/shop_capabilities.dart';
+import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/notifications/domain/entities/invitation.dart';
 import 'package:shopxy/features/notifications/presentation/pages/send_invite_page.dart';
 import 'package:shopxy/features/notifications/presentation/providers/notifications_provider.dart';
@@ -54,14 +57,20 @@ class _PartiesPageState extends State<PartiesPage> {
   Widget build(BuildContext context) {
     final provider = context.watch<PartiesProvider>();
     final outgoing = context.watch<NotificationsProvider>().outgoing;
+    final canManage = context.select<AuthProvider, bool>(
+        (a) => a.user?.canManage('parties') ?? false);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text(AppStrings.navParties),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add_rounded),
+          AccessReloadButton(
+              onReload: () => provider.loadParties(refresh: true)),
+          LockedIconButton(
+            allowed: canManage,
+            icon: Icons.add_rounded,
             tooltip: AppStrings.addParty,
+            what: 'add customers',
             onPressed: () => _showPartySheet(context),
           ),
         ],
@@ -94,10 +103,14 @@ class _PartiesPageState extends State<PartiesPage> {
                             kind: LineArt.customers,
                             title: AppStrings.noParties,
                             subtitle: AppStrings.noPartiesHint,
-                            action: AppButton.primary(
-                              label: AppStrings.addParty,
-                              icon: Icons.add_rounded,
-                              onPressed: () => _showPartySheet(context),
+                            action: MaybeLocked(
+                              allowed: canManage,
+                              what: 'add customers',
+                              child: AppButton.primary(
+                                label: AppStrings.addParty,
+                                icon: Icons.add_rounded,
+                                onPressed: () => _showPartySheet(context),
+                              ),
                             ),
                           )
                         : RefreshIndicator(

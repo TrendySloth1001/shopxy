@@ -355,6 +355,9 @@ class CustomerOrder {
     this.customerPhone,
     this.customerAddress,
     required this.estimatedTotal,
+    this.couponDiscount = 0,
+    this.walletPaid = 0,
+    this.paymentStatus = 'COD',
     required this.createdAt,
     required this.shopOrderCount,
     required this.shopOrders,
@@ -366,6 +369,13 @@ class CustomerOrder {
   final String? customerAddress;
   /// Sum of children's estimated totals — what the customer paid.
   final double estimatedTotal;
+  /// Order-level coupon discount (0 when none).
+  final double couponDiscount;
+  /// Amount paid from wallet at submit (0 when wallet unused).
+  final double walletPaid;
+  /// Online-payment state of the gateway-payable remainder:
+  /// COD / PENDING / PAID / FAILED. Drives Pay Now + home reminder.
+  final String paymentStatus;
   final DateTime createdAt;
   /// Number of vendor slices (`_count.shopOrders` from the server).
   final int shopOrderCount;
@@ -374,6 +384,20 @@ class CustomerOrder {
   /// Total items across every vendor slice.
   int get totalItemCount =>
       shopOrders.fold(0, (sum, s) => sum + s.itemCount);
+
+  /// Amount still payable online: estimatedTotal − coupon − wallet.
+  /// Floored at 0 (a fully wallet/coupon-covered order owes nothing).
+  double get payableRemainder {
+    final r = estimatedTotal - couponDiscount - walletPaid;
+    return r > 0 ? r : 0;
+  }
+
+  /// True when an online payment is still owed — the order chose online
+  /// pay (not COD) and hasn't captured yet. Drives the "Pay Now" button
+  /// and the home reminder.
+  bool get needsOnlinePayment =>
+      (paymentStatus == 'PENDING' || paymentStatus == 'FAILED') &&
+      payableRemainder > 0;
 
   /// Compact human label: "3 shops confirmed" / "2 confirmed, 1 pending"
   /// / "All cancelled". Built so the list row doesn't need to repeat
@@ -427,6 +451,9 @@ class CustomerOrder {
       customerPhone: j['customerPhone'] as String?,
       customerAddress: j['customerAddress'] as String?,
       estimatedTotal: _toDouble(j['estimatedTotal']),
+      couponDiscount: _toDouble(j['couponDiscount']),
+      walletPaid: _toDouble(j['walletPaid']),
+      paymentStatus: (j['paymentStatus'] as String?) ?? 'COD',
       createdAt: DateTime.parse(j['createdAt'] as String),
       shopOrderCount:
           ((j['_count'] as Map?)?['shopOrders'] as int?) ?? 0,
@@ -443,6 +470,9 @@ class CustomerOrder {
       customerPhone: customerPhone,
       customerAddress: customerAddress,
       estimatedTotal: estimatedTotal,
+      couponDiscount: couponDiscount,
+      walletPaid: walletPaid,
+      paymentStatus: paymentStatus,
       createdAt: createdAt,
       shopOrderCount: shopOrderCount,
       shopOrders: shopOrders ?? this.shopOrders,
@@ -507,6 +537,9 @@ class CustomerOrderDetail extends CustomerOrder {
     super.customerPhone,
     super.customerAddress,
     required super.estimatedTotal,
+    super.couponDiscount,
+    super.walletPaid,
+    super.paymentStatus,
     required super.createdAt,
     required super.shopOrderCount,
     required List<ShopOrderDetail> shopOrders,
@@ -529,6 +562,9 @@ class CustomerOrderDetail extends CustomerOrder {
       customerEmail: j['customerEmail'] as String?,
       customerAddress: j['customerAddress'] as String?,
       estimatedTotal: _toDouble(j['estimatedTotal']),
+      couponDiscount: _toDouble(j['couponDiscount']),
+      walletPaid: _toDouble(j['walletPaid']),
+      paymentStatus: (j['paymentStatus'] as String?) ?? 'COD',
       createdAt: DateTime.parse(j['createdAt'] as String),
       shopOrderCount:
           ((j['_count'] as Map?)?['shopOrders'] as int?) ?? 0,

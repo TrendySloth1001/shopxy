@@ -39,6 +39,10 @@ model User {
   shopStateCode      String?            @map("shop_state_code")
   shopPinCode        String?            @map("shop_pin_code")
   shopGstin          String?            @map("shop_gstin")
+  /// GST registration status. Gates whether this shop charges output tax
+  /// and issues tax invoices vs Bills of Supply. Defaults to UNREGISTERED;
+  /// the migration backfills REGULAR for rows that already have a GSTIN.
+  registrationType   RegistrationType   @default(UNREGISTERED) @map("registration_type")
   shopPan            String?            @map("shop_pan")
   upiVpa             String?            @map("upi_vpa")
   /// Customer + merchant profile photo. Stored as the upload-service
@@ -64,36 +68,41 @@ model User {
   stockTransactions  StockTransaction[]
   stockAdjustments   StockAdjustment[]
 
-  invitationsSent       Invitation[]           @relation("InvitationsSent")
-  invitationsReceived   Invitation[]           @relation("InvitationsReceived")
-  notifications         Notification[]
-  linkedParties         Party[]
-  linkedVendors         Vendor[]
-  customerOrders        CustomerOrder[]
-  purchaseRequests      PurchaseRequest[]      @relation("CustomerPurchaseRequests")
-  decidedRequests       PurchaseRequest[]      @relation("MerchantDecidedRequests")
-  purchaseRequestEvents PurchaseRequestEvent[] @relation("PurchaseRequestEventActor")
-  paymentsCreated       Payment[]              @relation("PaymentCreatedBy")
-  contactChanges        ContactChangeLog[]
-  wishlistItems         WishlistItem[]
-  cartItems             CartItem[]
-  shop                  Shop?
-  productReviews        ProductReview[]
-  reviewedSpotlights    BrandSpotlight[]       @relation("BrandSpotlightReviewer")
-  productEvents         ProductEvent[]
-  recentlyViewed        RecentlyViewed[]
-  recommendationCache   RecommendationCache[]
-  searchEvents          SearchEvent[]
-  addresses             UserAddress[]
-  returnsRequested      ReturnRequest[]        @relation("ReturnRequestCustomer")
-  returnEvents          ReturnRequestEvent[]   @relation("ReturnRequestEventActor")
-  walletEntries         WalletEntry[]
-  couponRedemptions     CouponRedemption[]
-  cautionTxnsCreated    CautionTxn[]           @relation("CautionTxnCreatedBy")
-  cautionRequestsMade   CautionRequest[]       @relation("CautionRequestRequestedBy")
-  cautionRequestsReviewed CautionRequest[]     @relation("CautionRequestReviewedBy")
-  quotationsCreated     Quotation[]            @relation("QuotationCreatedBy")
-  quotationsRequested   Quotation[]            @relation("QuotationRequestedBy")
+  invitationsSent         Invitation[]           @relation("InvitationsSent")
+  invitationsReceived     Invitation[]           @relation("InvitationsReceived")
+  notifications           Notification[]
+  linkedParties           Party[]
+  linkedVendors           Vendor[]
+  customerOrders          CustomerOrder[]
+  purchaseRequests        PurchaseRequest[]      @relation("CustomerPurchaseRequests")
+  decidedRequests         PurchaseRequest[]      @relation("MerchantDecidedRequests")
+  purchaseRequestEvents   PurchaseRequestEvent[] @relation("PurchaseRequestEventActor")
+  paymentsCreated         Payment[]              @relation("PaymentCreatedBy")
+  paymentsVoided          Payment[]              @relation("PaymentVoidedBy")
+  contactChanges          ContactChangeLog[]
+  wishlistItems           WishlistItem[]
+  cartItems               CartItem[]
+  shop                    Shop?
+  productReviews          ProductReview[]
+  reviewedSpotlights      BrandSpotlight[]       @relation("BrandSpotlightReviewer")
+  productEvents           ProductEvent[]
+  recentlyViewed          RecentlyViewed[]
+  recommendationCache     RecommendationCache[]
+  searchEvents            SearchEvent[]
+  addresses               UserAddress[]
+  returnsRequested        ReturnRequest[]        @relation("ReturnRequestCustomer")
+  returnEvents            ReturnRequestEvent[]   @relation("ReturnRequestEventActor")
+  walletEntries           WalletEntry[]
+  couponRedemptions       CouponRedemption[]
+  cautionTxnsCreated      CautionTxn[]           @relation("CautionTxnCreatedBy")
+  cautionRequestsMade     CautionRequest[]       @relation("CautionRequestRequestedBy")
+  cautionRequestsReviewed CautionRequest[]       @relation("CautionRequestReviewedBy")
+  quotationsCreated       Quotation[]            @relation("QuotationCreatedBy")
+  quotationsRequested     Quotation[]            @relation("QuotationRequestedBy")
+  /// Staff membership in a shop's team (at most one — see ShopMember).
+  /// The shop owner also has a row here (role OWNER), seeded by the
+  /// team-roles migration backfill.
+  shopMembership          ShopMember?            @relation("ShopMemberUser")
 
   /// Denormalised wallet balance — sum of [WalletEntry.amount] for
   /// this user. Kept in sync inside the same transaction that writes
@@ -970,8 +979,21 @@ model Invitation {
   toUserId   Int?   @map("to_user_id")
   toUser     User?  @relation("InvitationsReceived", fields: [toUserId], references: [id], onDelete: SetNull)
 
-  /// PARTY or VENDOR.
+  /// PARTY, VENDOR, or TEAM. TEAM invites add the recipient to the
+  /// shop's staff (see ShopMember) instead of linking an address-book
+  /// contact; for those, `teamRole` carries the ShopRole to grant on
+  /// accept and party/vendor stay null.
   linkType String  @map("link_type")
+  /// Set only for linkType=TEAM — the ShopRole the recipient is granted
+  /// when they accept. Acts as the preset label; the actual grant is in
+  /// `teamPermissions`. Null for PARTY/VENDOR invites.
+  teamRole ShopRole? @map("team_role")
+  /// Display label of the role granted on accept (a TeamRole name).
+  teamRoleName String? @map("team_role_name")
+  /// The exact rights granted on accept (see permissions.ts). Lets the
+  /// owner hand-pick an employee's access at invite time, not just a
+  /// canned role. Empty for non-TEAM invites.
+  teamPermissions String[] @default([]) @map("team_permissions")
   partyId  Int?    @map("party_id")
   party    Party?  @relation(fields: [partyId], references: [id], onDelete: Cascade)
   vendorId Int?    @map("vendor_id")
@@ -1056,6 +1078,14 @@ model CustomerOrder {
   /// Amount paid from the user's wallet at submit time (0 when wallet
   /// wasn't used). Mirrored as a WalletEntry with source=CHECKOUT.
   walletPaid     Decimal @default(0) @map("wallet_paid") @db.Decimal(12, 2)
+  /// Online-payment state for the order's gateway-payable remainder
+  /// (estimatedTotal − couponDiscount − walletPaid):
+  ///   COD     — no online payment expected (cash on delivery) [default]
+  ///   PENDING — an online payment has been initiated, awaiting capture
+  ///   PAID    — captured (set by the ORDER gateway settlement handler)
+  ///   FAILED  — the gateway reported a terminal failure
+  /// Free-form String so a new state needs no migration.
+  paymentStatus  String  @default("COD") @map("payment_status")
 
   /// Idempotency now lives on the parent — one key per checkout
   /// submission. The legacy per-PurchaseRequest unique was retired by
@@ -1131,9 +1161,10 @@ model PurchaseRequest {
 
   createdAt DateTime               @default(now()) @map("created_at")
   updatedAt DateTime               @updatedAt @map("updated_at")
-  items     PurchaseRequestItem[]
-  events    PurchaseRequestEvent[]
-  returns   ReturnRequest[]
+  items            PurchaseRequestItem[]
+  events           PurchaseRequestEvent[]
+  returns          ReturnRequest[]
+  gatewayTransfers GatewayTransfer[]
 
   /// Hot paths:
   ///   1. customer's order list:     (customerUserId, createdAt DESC)
@@ -1396,6 +1427,15 @@ model Payment {
   /// Owner who recorded the payment.
   createdById    Int?         @map("created_by_id")
   createdBy      User?        @relation("PaymentCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  /// Soft-void audit trail. A payment is never hard-deleted — voiding sets
+  /// these so the row is retained (CGST Sec 36 / Rule 56 retention) while
+  /// being excluded from every balance, outstanding and ledger total. A
+  /// silent hard-delete used to reopen an invoice's outstanding with no
+  /// trace, which broke period-close and enabled undetectable tampering.
+  voidedAt       DateTime?    @map("voided_at")
+  voidedById     Int?         @map("voided_by_id")
+  voidedBy       User?        @relation("PaymentVoidedBy", fields: [voidedById], references: [id], onDelete: SetNull)
+  voidReason     String?      @map("void_reason")
   /// Client-supplied idempotency key (via `X-Idempotency-Key`). When set
   /// a retry from a flaky mobile network reuses the original row instead
   /// of double-paying the invoice. Partial unique on (shop_id, type,
@@ -1411,6 +1451,7 @@ model Payment {
   @@index([shopId, partyId, paymentDate])
   @@index([shopId, vendorId, paymentDate])
   @@index([invoiceId])
+  @@index([invoiceId, voidedAt])
   @@map("payments")
 }
 
@@ -1418,38 +1459,38 @@ model Payment {
 /// A liability — deliberately kept out of the sales/payments revenue tables.
 /// Balance per (shopId, partyId) = SUM(DEPOSIT) − SUM(REFUND) − SUM(ADJUSTMENT).
 model CautionTxn {
-  id            Int      @id @default(autoincrement())
-  shopId        Int      @map("shop_id")
-  shop          Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  partyId       Int      @map("party_id")
-  party         Party    @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  id            Int             @id @default(autoincrement())
+  shopId        Int             @map("shop_id")
+  shop          Shop            @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  partyId       Int             @map("party_id")
+  party         Party           @relation(fields: [partyId], references: [id], onDelete: Cascade)
   /// 'DEPOSIT' (money in) | 'REFUND' (money back) | 'ADJUSTMENT' (set off
   /// against an invoice) | 'FORFEIT' (deposit kept on default — taxable
   /// business income, see gstTreatment). Balance subtracts everything but DEPOSIT.
   type          String
-  amount        Decimal  @db.Decimal(12, 2)
+  amount        Decimal         @db.Decimal(12, 2)
   /// CASH | UPI | NEFT | RTGS | CHEQUE | CARD | OTHER for DEPOSIT/REFUND; null for ADJUSTMENT/FORFEIT.
   mode          String?
-  modeReference String?  @map("mode_reference")
+  modeReference String?         @map("mode_reference")
   /// Ordinary money-receipt number on DEPOSIT/REFUND (e.g. CAU/25-26/00001).
   /// A refundable deposit for goods attracts no GST, so this is a plain
   /// receipt — not a GST receipt voucher. Null for ADJUSTMENT/FORFEIT.
-  receiptNo     String?  @map("receipt_no")
+  receiptNo     String?         @map("receipt_no")
   /// FORFEIT only: 'NONE' = pure default penalty, no GST (Circular 178/2022
   /// ¶7.1.5) | 'SUPPLY' = forfeiture of a cancelled supply, GST at the goods
   /// rate (¶11.3). Null for every other type.
-  gstTreatment  String?  @map("gst_treatment")
+  gstTreatment  String?         @map("gst_treatment")
   /// Set when type='ADJUSTMENT' — the invoice the deposit was applied to.
-  invoiceId     Int?     @map("invoice_id")
-  invoice       Invoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  invoiceId     Int?            @map("invoice_id")
+  invoice       Invoice?        @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
   /// The mode='CAUTION' Payment created by the set-off so the invoice's
   /// computed outstanding (total − SUM(payments)) drops automatically.
-  paymentId     Int?     @map("payment_id")
-  payment       Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  paymentId     Int?            @map("payment_id")
+  payment       Payment?        @relation(fields: [paymentId], references: [id], onDelete: SetNull)
   note          String?
-  createdById   Int?     @map("created_by_id")
-  createdBy     User?    @relation("CautionTxnCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
-  createdAt     DateTime @default(now()) @map("created_at")
+  createdById   Int?            @map("created_by_id")
+  createdBy     User?           @relation("CautionTxnCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt     DateTime        @default(now()) @map("created_at")
   /// Set when this DEPOSIT was produced by approving a party-initiated request.
   request       CautionRequest?
 
@@ -1484,7 +1525,7 @@ model CautionRequest {
   basket        Json?
   /// Sum of the basket line totals (intended purchase value). Drives the
   /// suggested deposit amount client-side; the customer can still override.
-  basketValue   Decimal?    @db.Decimal(14, 2) @map("basket_value")
+  basketValue   Decimal?    @map("basket_value") @db.Decimal(14, 2)
   /// PENDING | APPROVED | REJECTED | CANCELLED.
   status        String      @default("PENDING")
   // ── Payment-gateway seam (unused today; channel defaults MANUAL) ──
@@ -1529,7 +1570,7 @@ model Quotation {
   /// Line items: [{ productId, name, sku?, quantity, unitPrice, taxPercent, discount, lineTotal }].
   items                  Json
   subtotal               Decimal   @db.Decimal(14, 2)
-  taxAmount              Decimal   @db.Decimal(14, 2) @map("tax_amount")
+  taxAmount              Decimal   @map("tax_amount") @db.Decimal(14, 2)
   total                  Decimal   @db.Decimal(14, 2)
   note                   String?
   placeOfSupplyStateCode String?   @map("place_of_supply_state_code")
@@ -1795,6 +1836,17 @@ enum Role {
   CUSTOMER
 }
 
+/// A shop's GST registration status — the source of truth for whether it
+/// may charge output tax. REGULAR charges GST and issues tax invoices;
+/// COMPOSITION holds a GSTIN but (CGST Sec 10) cannot charge GST and must
+/// issue a Bill of Supply; UNREGISTERED has no GSTIN and likewise issues a
+/// Bill of Supply. Backfilled to REGULAR for existing GSTIN-holders.
+enum RegistrationType {
+  REGULAR
+  COMPOSITION
+  UNREGISTERED
+}
+
 /// Marketplace-visible shop owned 1:1 by a merchant User. Separate from
 /// the User.shop* fields, which exist for GST-compliant invoice header
 /// rendering (legal name, address, GSTIN) — those stay where they are.
@@ -1903,9 +1955,94 @@ model Shop {
   cautionTxns            CautionTxn[]
   cautionRequests        CautionRequest[]
   quotations             Quotation[]
+  /// Route payout destination (at most one). Null until KYC onboarding starts.
+  linkedAccount          LinkedAccount?
+  /// Staff team — the owner plus any invited members. Drives the Team &
+  /// roles screen and per-request permission gating; see ShopMember.
+  members                ShopMember[]
+  /// Owner-defined roles (named permission templates) for this shop.
+  teamRoles              TeamRole[]
 
   @@index([isPublished])
   @@map("shops")
+}
+
+/// A staffer's position within a shop's team. The source of truth for
+/// per-request permission gating (see `requirePermission`) — distinct
+/// from `User.role`, which only says "merchant-side account vs
+/// marketplace shopper". OWNER is the shop's owner (one per shop, seeded
+/// by the migration backfill); MANAGER / STOCKIST / CASHIER are invited
+/// staff. The scopes are coarse on purpose — no per-user custom
+/// permissions — so the model stays understandable:
+///   OWNER    — everything, including team + billing/payouts.
+///   MANAGER  — full operational access except team + billing.
+///   STOCKIST — inventory + purchases (stock, vendors); read elsewhere.
+///   CASHIER  — invoices + payments; read elsewhere.
+/// OWNER bypasses every permission check. STAFF is the generic
+/// non-owner member — their actual access lives in ShopMember.permissions
+/// and their display label in ShopMember.roleName (a TeamRole name).
+/// MANAGER/STOCKIST/CASHIER are legacy preset values kept for older rows;
+/// new staff are stored as STAFF.
+enum ShopRole {
+  OWNER
+  MANAGER
+  STOCKIST
+  CASHIER
+  STAFF
+}
+
+/// An owner-defined, per-shop role: a named permission template. The 3
+/// classic roles (Manager/Stockist/Cashier) are seeded as editable
+/// `builtin` rows so the whole roles surface is data-driven — owners can
+/// rename/retune them and add their own. Assigning a role COPIES its
+/// permissions onto the member (ShopMember.permissions stays the source
+/// of truth), so editing or deleting a role later never silently changes
+/// who can do what.
+model TeamRole {
+  id          Int      @id @default(autoincrement())
+  shopId      Int      @map("shop_id")
+  shop        Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  name        String
+  permissions String[] @default([])
+  /// True for the seeded starter roles. Cosmetic only (lets the UI mark
+  /// them) — owners may still edit/delete them.
+  builtin     Boolean  @default(false)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([shopId, name])
+  @@index([shopId])
+  @@map("team_roles")
+}
+
+/// Join row linking a User to the Shop they staff, with their ShopRole.
+/// `@@unique([userId])` enforces that a user belongs to at most ONE
+/// shop's team — this keeps the JWT's shopId/shopRole single-valued and
+/// removes any need for a shop-switcher. The shop owner has a row here
+/// too (role OWNER); staff never own a `Shop` row (Shop.ownerUserId),
+/// only a membership. Cascades on either side's delete.
+model ShopMember {
+  id        Int      @id @default(autoincrement())
+  shopId    Int      @map("shop_id")
+  shop      Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  userId    Int      @unique @map("user_id")
+  user      User     @relation("ShopMemberUser", fields: [userId], references: [id], onDelete: Cascade)
+  role      ShopRole @default(STAFF)
+  /// Display label for this member's role — a TeamRole name ("Cashier",
+  /// "Warehouse Lead", …). Null for the owner. The `role` enum only
+  /// distinguishes OWNER vs STAFF now; this carries the human name.
+  roleName  String?  @map("role_name")
+  /// Per-employee granted rights as "<area>:<action>" strings (see
+  /// shared/http/permissions.ts). THIS is the source of truth for what
+  /// the member can do (copied from the assigned TeamRole, then freely
+  /// tweakable). Empty for OWNER (their role bypasses every check).
+  permissions String[] @default([]) @map("permissions")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([shopId, userId])
+  @@index([shopId])
+  @@map("shop_members")
 }
 
 /// Customer-facing promo codes. A coupon can be platform-wide
@@ -2309,4 +2446,141 @@ model Promotion {
   @@index([productId])
   @@index([isActive, startAt, endAt])
   @@map("promotions")
+}
+
+/// Provider-agnostic online-payment intent. One row per checkout attempt for
+/// any gateway (Razorpay today; the `provider` string keeps it open). The
+/// authoritative record that money was collected online and what it settles
+/// against. See PAYMENT_GATEWAY_ARCHITECTURE.md + modules/payment-gateway/.
+///
+/// `shopId` / `customerUserId` / `targetId` are deliberately relationless plain
+/// columns (like [WalletEntry.sourceId]) — a new settlement target kind doesn't
+/// then need a migration to extend an FK constraint.
+model GatewayPayment {
+  id                 Int      @id @default(autoincrement())
+  /// Registry key of the gateway that owns this intent (e.g. 'RAZORPAY').
+  provider           String
+  /// CREATED | PENDING | CAPTURED | FAILED | REFUNDED. Transitions only advance.
+  status             String   @default("CREATED")
+  amount             Decimal  @db.Decimal(12, 2)
+  currency           String   @default("INR")
+  /// WALLET | ORDER | INVOICE | CAUTION — which domain the money settles into.
+  targetType         String   @map("target_type")
+  /// Domain id for the target (WALLET → customerUserId, ORDER → CustomerOrder id…).
+  targetId           Int      @map("target_id")
+  shopId             Int?     @map("shop_id")
+  customerUserId     Int?     @map("customer_user_id")
+  /// Gateway-side references (Razorpay order_id / payment_id). Set as the flow
+  /// progresses; used by webhooks + reconciliation to resolve the intent.
+  providerOrderRef   String?  @map("provider_order_ref")
+  providerPaymentRef String?  @map("provider_payment_ref")
+  /// Client-supplied retry key. Partial-unique with customerUserId so a flaky
+  /// mobile retry reuses the original intent instead of minting a duplicate.
+  idempotencyKey     String?  @map("idempotency_key")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  @@unique([customerUserId, idempotencyKey], name: "gateway_payments_user_idempotency")
+  @@index([provider, providerOrderRef])
+  @@index([provider, providerPaymentRef])
+  @@index([status, targetType])
+  @@map("gateway_payments")
+}
+
+/// Append-only webhook ledger + exactly-once dedupe gate. The unique
+/// (provider, event_id) means a redelivered webhook is rejected at insert,
+/// so settlement runs at most once per provider event.
+model GatewayWebhookEvent {
+  id          Int       @id @default(autoincrement())
+  provider    String
+  eventId     String    @map("event_id")
+  payload     Json
+  processedAt DateTime? @map("processed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@unique([provider, eventId], name: "gateway_webhook_events_provider_event")
+  @@map("gateway_webhook_events")
+}
+
+/// One Razorpay Route payout destination per Shop (a "linked account").
+/// Created via merchant KYC onboarding. A Shop with no row — or a row whose
+/// payoutsEnabled is false — CANNOT receive a held transfer; the ORDER split
+/// handler gates on this and records the child KYC_GATED instead.
+///
+/// NB: Route "on-hold settlement" is NOT a licensed escrow. Funds parked via
+/// `on_hold` sit in Razorpay's regulated balance with Razorpay as custodian —
+/// never in a ShopXY-controlled account. See ROUTE_SPLIT_DESIGN.md.
+model LinkedAccount {
+  id                Int      @id @default(autoincrement())
+  shopId            Int      @unique @map("shop_id")
+  shop              Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  provider          String   @default("RAZORPAY")
+  /// Razorpay linked-account id (acc_XXXX) — the `account` in a TransferRequest.
+  providerAccountId String?  @map("provider_account_id")
+  /// KYC lifecycle, mirrored from account.* webhooks:
+  /// CREATED → UNDER_REVIEW → ACTIVATED | NEEDS_CLARIFICATION | SUSPENDED.
+  kycStatus         String   @default("CREATED") @map("kyc_status")
+  /// True only once Razorpay confirms the account can be settled to. The split
+  /// handler refuses to create a transfer otherwise.
+  payoutsEnabled    Boolean  @default(false) @map("payouts_enabled")
+  email             String?
+  contactName       String?  @map("contact_name")
+  businessType      String?  @map("business_type")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  transfers GatewayTransfer[]
+
+  @@index([provider, providerAccountId])
+  @@map("linked_accounts")
+}
+
+/// One Route transfer per (GatewayPayment, PurchaseRequest) — the per-shop
+/// slice of a captured order, created ON-HOLD and released on delivery /
+/// reversed on an in-hold return. Tracks the hold lifecycle independently of
+/// the parent intent so one order can have some children released, others
+/// reversed.
+model GatewayTransfer {
+  id                  Int             @id @default(autoincrement())
+  /// Parent captured intent (GatewayPayment.id). Loose Int FK to match how
+  /// GatewayPayment is referenced elsewhere in this module.
+  gatewayPaymentId    Int             @map("gateway_payment_id")
+  /// The child shop-order this slice settles. One transfer per PurchaseRequest.
+  purchaseRequestId   Int             @map("purchase_request_id")
+  purchaseRequest     PurchaseRequest @relation(fields: [purchaseRequestId], references: [id], onDelete: Cascade)
+  /// Destination linked account. Null while the child is KYC-gated.
+  linkedAccountId     Int?            @map("linked_account_id")
+  linkedAccount       LinkedAccount?  @relation(fields: [linkedAccountId], references: [id], onDelete: SetNull)
+  /// Denormalised acct id for audit even if the LinkedAccount row is edited.
+  /// Null while KYC-gated (no transfer created yet).
+  providerAccountId   String?         @map("provider_account_id")
+  amount              Decimal         @db.Decimal(12, 2)
+  /// Razorpay transfer id (trf_XXXX). Null in the window between row insert and
+  /// the createTransfers call returning — reconciliation heals null-ref rows.
+  providerTransferRef String?         @map("provider_transfer_ref")
+  /// Deterministic idempotency key "gw:<paymentId>:pr:<requestId>". Persisted
+  /// BEFORE the provider call and echoed into Razorpay transfer notes, so a
+  /// retry/heal does fetch-before-create instead of minting a duplicate.
+  idempotencyKey      String          @map("idempotency_key")
+  /// HELD | PARTIALLY_REVERSED | RELEASED | REVERSED | FAILED | KYC_GATED.
+  /// String (not enum) so states need no migration (matches ReturnRequest.status).
+  /// PARTIALLY_REVERSED keeps a part-clawed-back transfer out of P2 auto-release.
+  status              String          @default("HELD")
+  /// on_hold_until echoed back (capture + Shop.returnWindowDays). The auto-
+  /// release backstop; buyer-confirm releases earlier.
+  holdUntil           DateTime?       @map("hold_until")
+  releasedAt          DateTime?       @map("released_at")
+  reversedAt          DateTime?       @map("reversed_at")
+  /// Cumulative reversed amount (partial returns). status → REVERSED only when
+  /// reversedAmount == amount.
+  reversedAmount      Decimal         @default(0) @map("reversed_amount") @db.Decimal(12, 2)
+  failureReason       String?         @map("failure_reason")
+  createdAt           DateTime        @default(now()) @map("created_at")
+  updatedAt           DateTime        @updatedAt @map("updated_at")
+
+  @@unique([gatewayPaymentId, purchaseRequestId], name: "gateway_transfers_payment_request")
+  @@index([status, holdUntil])
+  @@index([purchaseRequestId])
+  @@index([providerTransferRef])
+  @@map("gateway_transfers")
 }

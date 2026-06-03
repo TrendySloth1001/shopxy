@@ -34,6 +34,13 @@ export interface CreatePaymentInput {
 
 /// Decimal helper — Prisma returns Decimal, the front-end wants double.
 export class PaymentsService {
+  /// Round to paise. Ledger balances and outstanding amounts must be
+  /// rounded after every float accumulation or they render binary-float
+  /// fuzz (e.g. 11111.039999999995) that won't tie to a client re-sum.
+  private round2(v: number): number {
+    return Math.round((v + Number.EPSILON) * 100) / 100;
+  }
+
   /// Create a payment row, atomically allocating the next reference
   /// number. Caller passes the merchant's userId in `createdById` so we
   /// can attribute the row.
@@ -149,6 +156,21 @@ export class PaymentsService {
             },
           });
           if (!invoice) throw new Error('Invoice not found');
+          // Only a live (CONFIRMED) invoice carries a real liability. A
+          // DRAFT isn't yet a payable, and a CANCELLED invoice's `total`
+          // is stale — allocating to either mints a phantom credit that
+          // drives the party/vendor balance negative (H7).
+          if (invoice.status !== 'CONFIRMED') {
+            throw new Error('Cannot record a payment against a non-confirmed invoice');
+          }
+          // A receipt settles a SALE; a vendor payment settles a PURCHASE.
+          // Cross-wiring them corrupts both ledgers.
+          if (type === 'RECEIPT' && invoice.type !== 'SALE') {
+            throw new Error('Receipts can only be applied to sale invoices');
+          }
+          if (type === 'PAYMENT' && invoice.type !== 'PURCHASE') {
+            throw new Error('Payments can only be applied to purchase invoices');
+          }
           if (type === 'RECEIPT' && invoice.partyId !== partyId) {
             throw new Error('Invoice does not belong to this party');
           }
@@ -157,12 +179,14 @@ export class PaymentsService {
           }
 
           const allocated = await tx.payment.aggregate({
-            where: { invoiceId, shopId },
+            where: { invoiceId, shopId, voidedAt: null },
             _sum: { amount: true },
           });
           const alreadyApplied = toNumber(allocated._sum.amount);
-          const outstanding = toNumber(invoice.total) - alreadyApplied;
-          if (amount - outstanding > 0.001) {
+          const outstanding = this.round2(toNumber(invoice.total) - alreadyApplied);
+          // Compare on whole paise with a strict threshold so a receipt can
+          // never overshoot the outstanding by the old one-tenth-paisa slack.
+          if (this.round2(amount - outstanding) > 0) {
             throw new Error(
               `Amount exceeds outstanding (${outstanding.toFixed(2)}) on invoice`,
             );
@@ -251,33 +275,47 @@ export class PaymentsService {
     });
   }
 
-  /// Hard delete — keeps schema simple. Audit history lives in the
-  /// `note` field on the response so callers can show "Deleted by …"
-  /// snackbars without an extra column. (Tradeoff: no recovery.)
-  async deletePayment(shopId: number, id: number) {
+  /// Soft-void a payment. The row is retained (statutory retention + audit
+  /// trail) but stamped voided, so every balance / outstanding / ledger
+  /// aggregate excludes it. Replaces the old hard delete, which silently
+  /// reopened an invoice's outstanding with no trace and enabled
+  /// undetectable tampering. Idempotent — voiding an already-voided payment
+  /// is a no-op. Returns false only when the payment doesn't exist.
+  async voidPayment(
+    shopId: number,
+    id: number,
+    voidedById?: number | null,
+    reason?: string | null,
+  ) {
     const owned = await prisma.payment.findFirst({
       where: { id, shopId },
-      select: { id: true, mode: true },
+      select: { id: true, mode: true, voidedAt: true },
     });
     if (!owned) return false;
+    if (owned.voidedAt) return true; // already voided
+
+    const voidData = {
+      voidedAt: new Date(),
+      voidedById: voidedById ?? null,
+      voidReason: reason ?? null,
+    };
 
     // A mode='CAUTION' payment is a caution set-off with a matching ADJUSTMENT
-    // CautionTxn that dropped the caution balance. The CautionTxn→Payment link
-    // is onDelete:SetNull, so deleting the payment alone would leave the
-    // ADJUSTMENT in place (caution balance stays spent) while the invoice's
-    // outstanding silently reopens. Reverse both atomically. The ADJUSTMENT
-    // must go first, while paymentId still points at the payment.
+    // CautionTxn that dropped the caution balance. Voiding the payment must
+    // restore that balance, so we remove the ADJUSTMENT (its only purpose was
+    // to record this set-off) in the same transaction. The Payment row itself
+    // is retained — just voided — so the money trail survives.
     if (owned.mode === 'CAUTION') {
       await prisma.$transaction(async (tx) => {
         await tx.cautionTxn.deleteMany({
           where: { shopId, paymentId: id, type: 'ADJUSTMENT' },
         });
-        await tx.payment.delete({ where: { id } });
+        await tx.payment.update({ where: { id }, data: voidData });
       });
       return true;
     }
 
-    await prisma.payment.delete({ where: { id } });
+    await prisma.payment.update({ where: { id }, data: voidData });
     return true;
   }
 
@@ -298,7 +336,15 @@ export class PaymentsService {
 
     const [invoices, payments] = await Promise.all([
       prisma.invoice.findMany({
-        where: { partyId, shopId, type: 'SALE', status: 'CONFIRMED' },
+        where: {
+          partyId,
+          shopId,
+          type: 'SALE',
+          status: 'CONFIRMED',
+          // Estimates / proformas are not accounting documents — they must
+          // never appear on the receivables ledger.
+          documentType: { notIn: ['ESTIMATE', 'PROFORMA'] },
+        },
         orderBy: [{ invoiceDate: 'asc' }, { id: 'asc' }],
         select: {
           id: true,
@@ -310,7 +356,7 @@ export class PaymentsService {
         },
       }),
       prisma.payment.findMany({
-        where: { partyId, shopId, type: 'RECEIPT' },
+        where: { partyId, shopId, type: 'RECEIPT', voidedAt: null },
         orderBy: [{ paymentDate: 'asc' }, { id: 'asc' }],
         select: {
           id: true,
@@ -387,15 +433,21 @@ export class PaymentsService {
     const entries: Entry[] = merged.map((row) => {
       if (row.kind === 'invoice') {
         const inv = row.payload as (typeof invoices)[number];
-        const debit = toNumber(inv.total);
-        running += debit;
+        const amount = toNumber(inv.total);
+        // A credit note REDUCES the receivable (it's the merchant crediting
+        // the customer), so it lands in the credit column with a negative
+        // running effect — not added as a positive debit like a tax invoice.
+        const isCreditNote = inv.documentType === 'CREDIT_NOTE';
+        const debit = isCreditNote ? 0 : amount;
+        const credit = isCreditNote ? amount : 0;
+        running = this.round2(running + debit - credit);
         return {
           kind: 'invoice',
           id: inv.id,
           date: inv.invoiceDate,
           label: inv.invoiceNo,
           debit,
-          credit: 0,
+          credit,
           runningBalance: running,
           documentType: inv.documentType,
           status: inv.status,
@@ -403,7 +455,7 @@ export class PaymentsService {
       }
       const pay = row.payload as (typeof payments)[number];
       const credit = toNumber(pay.amount);
-      running -= credit;
+      running = this.round2(running - credit);
       return {
         kind: 'payment',
         id: pay.id,
@@ -422,7 +474,7 @@ export class PaymentsService {
     return {
       party,
       openingBalance: 0,
-      balance: running,
+      balance: this.round2(running),
       entries,
     };
   }
@@ -444,7 +496,13 @@ export class PaymentsService {
 
     const [invoices, payments] = await Promise.all([
       prisma.invoice.findMany({
-        where: { vendorId, shopId, type: 'PURCHASE', status: 'CONFIRMED' },
+        where: {
+          vendorId,
+          shopId,
+          type: 'PURCHASE',
+          status: 'CONFIRMED',
+          documentType: { notIn: ['ESTIMATE', 'PROFORMA'] },
+        },
         orderBy: [{ invoiceDate: 'asc' }, { id: 'asc' }],
         select: {
           id: true,
@@ -456,7 +514,7 @@ export class PaymentsService {
         },
       }),
       prisma.payment.findMany({
-        where: { vendorId, shopId, type: 'PAYMENT' },
+        where: { vendorId, shopId, type: 'PAYMENT', voidedAt: null },
         orderBy: [{ paymentDate: 'asc' }, { id: 'asc' }],
         select: {
           id: true,
@@ -521,15 +579,20 @@ export class PaymentsService {
     const entries: Entry[] = merged.map((row) => {
       if (row.kind === 'invoice') {
         const inv = row.payload as (typeof invoices)[number];
-        const debit = toNumber(inv.total);
-        running += debit;
+        const amount = toNumber(inv.total);
+        // A purchase credit note REDUCES what we owe the vendor, so it
+        // lands in the credit column rather than adding to the payable.
+        const isCreditNote = inv.documentType === 'CREDIT_NOTE';
+        const debit = isCreditNote ? 0 : amount;
+        const credit = isCreditNote ? amount : 0;
+        running = this.round2(running + debit - credit);
         return {
           kind: 'invoice',
           id: inv.id,
           date: inv.invoiceDate,
           label: inv.invoiceNo,
           debit,
-          credit: 0,
+          credit,
           runningBalance: running,
           documentType: inv.documentType,
           status: inv.status,
@@ -537,7 +600,7 @@ export class PaymentsService {
       }
       const pay = row.payload as (typeof payments)[number];
       const credit = toNumber(pay.amount);
-      running -= credit;
+      running = this.round2(running - credit);
       return {
         kind: 'payment',
         id: pay.id,
@@ -556,7 +619,7 @@ export class PaymentsService {
     return {
       vendor,
       openingBalance: 0,
-      balance: running,
+      balance: this.round2(running),
       entries,
     };
   }

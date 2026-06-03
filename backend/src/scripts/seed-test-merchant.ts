@@ -68,6 +68,10 @@ async function ensureMerchant(): Promise<{ userId: number; shopId: number }> {
         },
         select: { id: true },
       });
+      // shopId/shopRole resolve from ShopMember — seed the OWNER row.
+      await tx.shopMember.create({
+        data: { shopId: s.id, userId: u.id, role: 'OWNER' },
+      });
       return { userId: u.id, shopId: s.id };
     });
     console.log(`✓ Created OWNER ${TARGET_EMAIL} (id=${created.userId}) + shop "${TARGET_SHOP_NAME}" (id=${created.shopId})`);
@@ -95,6 +99,11 @@ async function ensureMerchant(): Promise<{ userId: number; shopId: number }> {
         isPublished: true,
       },
       select: { id: true, isPublished: true },
+    });
+    await prisma.shopMember.upsert({
+      where: { userId: user.id },
+      create: { shopId: shop.id, userId: user.id, role: 'OWNER' },
+      update: { shopId: shop.id, role: 'OWNER' },
     });
     console.log(`✓ Created missing shop for ${TARGET_EMAIL} (shopId=${shop.id})`);
   } else if (!shop.isPublished) {

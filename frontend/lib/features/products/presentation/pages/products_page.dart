@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/core/auth/permission_widgets.dart';
+import 'package:shopxy/core/auth/shop_capabilities.dart';
 import 'package:shopxy/core/router/app_shell.dart';
+import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/categories/presentation/widgets/category_icon_catalog.dart';
 import 'package:shopxy/features/categories/presentation/widgets/category_picker_sheet.dart';
 import 'package:shopxy/features/products/domain/entities/product.dart';
@@ -181,6 +184,18 @@ class _ProductsPageState extends State<ProductsPage> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<ProductsProvider>();
+    // select the exact gating slice → rebuilds only when one of these
+    // flips, not on unrelated AuthProvider changes.
+    final (canView, canWrite, canStock) =
+        context.select<AuthProvider, (bool, bool, bool)>((a) {
+      final u = a.user;
+      return (
+        u?.canViewProducts ?? false,
+        u?.canWriteProducts ?? false,
+        // Swipe-to-stock is an inventory action (stockists have it too).
+        u?.canWriteStock ?? false,
+      );
+    });
     final hasFilter = provider.categoryFilter != null ||
         provider.lowStockOnly ||
         provider.outOfStockOnly;
@@ -213,14 +228,20 @@ class _ProductsPageState extends State<ProductsPage> {
               );
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.add_rounded),
-            tooltip: AppStrings.addProduct,
-            onPressed: _openAddProduct,
-          ),
+          AccessReloadButton(onReload: () => provider.loadProducts()),
+          if (canView)
+            LockedIconButton(
+              allowed: canWrite,
+              icon: Icons.add_rounded,
+              tooltip: AppStrings.addProduct,
+              what: 'add products',
+              onPressed: _openAddProduct,
+            ),
         ],
       ),
-      body: Column(
+      body: !canView
+          ? const NoAccessView(title: 'Products hidden')
+          : Column(
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(
@@ -312,7 +333,7 @@ class _ProductsPageState extends State<ProductsPage> {
                                   : (hasFilter || isSearching)
                                       ? AppStrings.noMatchesHint
                                       : AppStrings.noProductsHint,
-                              action: (hasFilter || isSearching)
+                              action: (hasFilter || isSearching || !canWrite)
                                   ? null
                                   : AppButton.primary(
                                       label: AppStrings.addProduct,
@@ -364,37 +385,45 @@ class _ProductsPageState extends State<ProductsPage> {
                                   product: (p) => Slidable(
                                     key: ValueKey('product_${p.id}'),
                                     // Swipe right (start) → Stock In.
-                                    startActionPane: ActionPane(
-                                      motion: const StretchMotion(),
-                                      extentRatio: 0.28,
-                                      children: [
-                                        SlidableAction(
-                                          onPressed: (_) =>
-                                              _openStockSheet(p, 'STOCK_IN'),
-                                          backgroundColor: AppColors.success,
-                                          foregroundColor: AppColors.white,
-                                          icon: Icons.arrow_downward_rounded,
-                                          label: 'Stock in',
-                                          padding: EdgeInsets.zero,
-                                        ),
-                                      ],
-                                    ),
+                                    // Inventory action — hidden for roles
+                                    // without inventory:write (e.g. Cashier).
+                                    startActionPane: canStock
+                                        ? ActionPane(
+                                            motion: const StretchMotion(),
+                                            extentRatio: 0.28,
+                                            children: [
+                                              SlidableAction(
+                                                onPressed: (_) => _openStockSheet(
+                                                    p, 'STOCK_IN'),
+                                                backgroundColor:
+                                                    AppColors.success,
+                                                foregroundColor: AppColors.white,
+                                                icon:
+                                                    Icons.arrow_downward_rounded,
+                                                label: 'Stock in',
+                                                padding: EdgeInsets.zero,
+                                              ),
+                                            ],
+                                          )
+                                        : null,
                                     // Swipe left (end) → Stock Out.
-                                    endActionPane: ActionPane(
-                                      motion: const StretchMotion(),
-                                      extentRatio: 0.28,
-                                      children: [
-                                        SlidableAction(
-                                          onPressed: (_) =>
-                                              _openStockSheet(p, 'STOCK_OUT'),
-                                          backgroundColor: AppColors.error,
-                                          foregroundColor: AppColors.white,
-                                          icon: Icons.arrow_upward_rounded,
-                                          label: 'Stock out',
-                                          padding: EdgeInsets.zero,
-                                        ),
-                                      ],
-                                    ),
+                                    endActionPane: canStock
+                                        ? ActionPane(
+                                            motion: const StretchMotion(),
+                                            extentRatio: 0.28,
+                                            children: [
+                                              SlidableAction(
+                                                onPressed: (_) => _openStockSheet(
+                                                    p, 'STOCK_OUT'),
+                                                backgroundColor: AppColors.error,
+                                                foregroundColor: AppColors.white,
+                                                icon: Icons.arrow_upward_rounded,
+                                                label: 'Stock out',
+                                                padding: EdgeInsets.zero,
+                                              ),
+                                            ],
+                                          )
+                                        : null,
                                     child: ProductListTile(
                                       product: p,
                                       showCategory: showCategoryOnRow,

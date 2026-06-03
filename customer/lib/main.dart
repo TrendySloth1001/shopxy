@@ -25,6 +25,7 @@ import 'package:shopxy_customer/features/wishlist/presentation/providers/wishlis
 import 'package:shopxy_customer/features/home/data/datasources/home_feed_remote_data_source.dart';
 import 'package:shopxy_customer/features/home/presentation/providers/home_feed_provider.dart';
 import 'package:shopxy_customer/features/home/presentation/services/tracking_service.dart';
+import 'package:shopxy_customer/features/onboarding/presentation/providers/onboarding_controller.dart';
 import 'package:shopxy_customer/features/addresses/data/datasources/addresses_remote_data_source.dart';
 import 'package:shopxy_customer/features/addresses/presentation/providers/addresses_provider.dart';
 import 'package:shopxy_customer/features/banner_slide/data/datasources/banner_slide_remote_data_source.dart';
@@ -81,6 +82,9 @@ void main() async {
   final wishlistProvider = WishlistProvider(wishlistDs);
   final addressesProvider = AddressesProvider(addressesDs);
   final categoriesProvider = CategoriesProvider(categoriesDs);
+  // First-run onboarding gate. Read the persisted flag now so the root
+  // view can decide onboarding-vs-shell on the very first frame.
+  final onboardingController = OnboardingController();
 
   // Wire user-scoped resets into AuthProvider.clearAuth() so the
   // refresh-failure path and any future caller (e.g. an explicit
@@ -166,6 +170,12 @@ void main() async {
   // ignore: unawaited_futures
   shopsProvider.restoreHint();
 
+  // Read the onboarding-seen flag from disk. Fire-and-forget — the root
+  // view shows the splash until `loaded` flips, so there's no flash of
+  // onboarding for returning users.
+  // ignore: unawaited_futures
+  onboardingController.load();
+
   // Single navigator key so the deep-link handler can push routes
   // (PDP for /p/<id>) regardless of the active tab in the shell.
   // Both supported destinations are public, so no auth deferral is
@@ -212,6 +222,8 @@ void main() async {
         Provider<AvatarRemoteDataSource>.value(value: avatarDs),
         ChangeNotifierProvider<CategoriesProvider>.value(
             value: categoriesProvider),
+        ChangeNotifierProvider<OnboardingController>.value(
+            value: onboardingController),
         ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
         ChangeNotifierProvider<NotificationsProvider>.value(
             value: notificationsProvider),

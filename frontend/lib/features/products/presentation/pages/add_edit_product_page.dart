@@ -214,6 +214,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     _lowStockThreshold.dispose();
     _imageUrlController.dispose();
     _tagController.dispose();
+    _highlightController.dispose();
     super.dispose();
   }
 
@@ -516,10 +517,10 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
   }
 
   /// Pick + upload an image and return its stored URL. Used by the
-  /// variants editor — it doesn't want to mutate the page's
-  /// `_imageUrls` list, just attach the returned URL to its own
-  /// variant row. Returns null on cancel / failure so the caller can
-  /// no-op gracefully.
+  /// variants editor and the A+ content editor — they don't want to
+  /// mutate the page's `_imageUrls` list, just attach the returned URL
+  /// to their own row. Returns null on cancel / failure so the caller
+  /// can no-op gracefully.
   Future<String?> _pickAndUploadVariantImage(ImageSource source) async {
     if (_isUploading) return null;
     final picker = ImagePicker();
@@ -731,6 +732,31 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     return discard == true;
   }
 
+  void _markDirty() => _dirty = true;
+
+  /// Push a focused, full-screen editor for one advanced section, then
+  /// refresh the hub summaries when it returns. The [builder] receives a
+  /// `refresh` callback so stateless editors (highlights, tags) can
+  /// re-render the pushed page on add/remove. Stateful editors (specs,
+  /// offers, A+ blocks, variants) manage their own rebuilds and can
+  /// ignore it.
+  Future<void> _openEditor({
+    required String title,
+    String? intro,
+    required Widget Function(void Function() refresh) builder,
+  }) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => _EditorScaffold(
+          title: title,
+          intro: intro,
+          builder: builder,
+        ),
+      ),
+    );
+    if (mounted) setState(() {}); // refresh the hub tile summaries
+  }
+
   @override
   Widget build(BuildContext context) {
     final categories = context.watch<CategoriesProvider>().categories;
@@ -743,161 +769,403 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
         if (discard && context.mounted) Navigator.pop(context);
       },
       child: Scaffold(
-      appBar: AppBar(
-        title: Text(isEditing ? AppStrings.editProduct : AppStrings.addProduct),
-        actions: [
-          if (isEditing)
-            IconButton(
-              tooltip: 'Reviews',
-              icon: const Icon(Icons.reviews_outlined),
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => ProductReviewsPage(
-                    productId: widget.product!.id,
-                    productName: widget.product!.name,
-                    ratingAvg: widget.product!.ratingAvg,
-                    ratingCount: widget.product!.ratingCount,
+        appBar: AppBar(
+          title:
+              Text(isEditing ? AppStrings.editProduct : AppStrings.addProduct),
+          actions: [
+            if (isEditing)
+              IconButton(
+                tooltip: 'Reviews',
+                icon: const Icon(Icons.reviews_outlined),
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => ProductReviewsPage(
+                      productId: widget.product!.id,
+                      productName: widget.product!.name,
+                      ratingAvg: widget.product!.ratingAvg,
+                      ratingCount: widget.product!.ratingCount,
+                    ),
                   ),
                 ),
               ),
+            IconButton(
+              onPressed: _isScanning ? null : _scanLabel,
+              tooltip: AppStrings.scanLabel,
+              icon: _isScanning
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.document_scanner_outlined),
             ),
-          IconButton(
-            onPressed: _isScanning ? null : _scanLabel,
-            tooltip: AppStrings.scanLabel,
-            icon: _isScanning
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.document_scanner_outlined),
-          ),
-          TextButton(
-            onPressed: _isSaving ? null : _save,
-            child: _isSaving
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text(AppStrings.save),
-          ),
-        ],
-      ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(AppSizes.lg),
-          children: [
-            // ── Images section ────────────────────────────────────────
-            AppSectionHeader(
-              title: AppStrings.productImages.toUpperCase(),
-              padding: const EdgeInsets.only(bottom: AppSizes.sm),
+            TextButton(
+              onPressed: _isSaving ? null : _save,
+              child: _isSaving
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text(AppStrings.save),
             ),
-            if (_imageUrls.isNotEmpty) ...[
-              SizedBox(
-                height: 96,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _imageUrls.length,
-                  separatorBuilder: (_, _) =>
-                      const SizedBox(width: AppSizes.sm),
-                  itemBuilder: (ctx, i) => Stack(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-                        child: Image.network(
-                          resolveImageUrl(_imageUrls[i]),
-                          width: 96,
-                          height: 96,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, _, _) => Container(
-                            width: 96,
-                            height: 96,
-                            decoration: ShapeDecoration(
-                              color: AppColors.white,
-                              shape: AppShapes.squircle(
-                                AppSizes.radiusMd,
-                                side: BorderSide(color: AppColors.hairline, width: 1),
-                              ),
-                            ),
-                            child: const Icon(
-                              Icons.broken_image_rounded,
-                              color: AppColors.muted,
-                            ),
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        top: 4,
-                        right: 4,
-                        child: GestureDetector(
-                          onTap: () => setState(() {
-                            final url = _imageUrls[i];
-                            final existingId = _existingImageIdByUrl[url];
-                            if (existingId != null) _removedImageIds.add(existingId);
-                            _imageUrls.removeAt(i);
-                          }),
-                          child: Container(
-                            padding: const EdgeInsets.all(2),
-                            decoration: const BoxDecoration(
-                              color: AppColors.black,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.close_rounded,
-                              size: 14,
-                              color: AppColors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+          ],
+        ),
+        body: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.all(AppSizes.lg),
+            children: [
+              // ── Photos ────────────────────────────────────────────────
+              ..._photosSection(),
+
+              const SizedBox(height: AppSizes.xl),
+
+              // ── The essentials — everything required to publish ───────
+              AppSectionHeader(
+                title: 'THE BASICS',
+                padding: const EdgeInsets.only(bottom: AppSizes.sm),
+              ),
+              TextFormField(
+                controller: _name,
+                decoration: const InputDecoration(
+                  labelText: AppStrings.productName,
+                  hintText: 'e.g. Boult Astra TWS Earbuds',
                 ),
+                validator: _requiredValidator,
+                textCapitalization: TextCapitalization.words,
               ),
               const SizedBox(height: AppSizes.md),
+              TextFormField(
+                controller: _description,
+                decoration: const InputDecoration(
+                  labelText: AppStrings.description,
+                  hintText: 'A line or two about what it is',
+                ),
+                maxLines: 2,
+                textCapitalization: TextCapitalization.sentences,
+              ),
+              const SizedBox(height: AppSizes.md),
+              TextFormField(
+                controller: _brand,
+                decoration: const InputDecoration(
+                  labelText: 'Brand',
+                  hintText: 'e.g. Boult — optional',
+                ),
+                textCapitalization: TextCapitalization.words,
+              ),
+
+              const SizedBox(height: AppSizes.lg),
+              // ── Price ─────────────────────────────────────────────────
+              AppSectionHeader(
+                title: 'PRICE',
+                padding: const EdgeInsets.only(bottom: AppSizes.sm),
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _sellingPrice,
+                      decoration: const InputDecoration(
+                        labelText: 'Selling price',
+                        prefixText: '${AppStrings.currencySymbol} ',
+                        helperText: 'What the customer pays',
+                      ),
+                      keyboardType: TextInputType.number,
+                      validator: _priceValidator,
+                    ),
+                  ),
+                  const SizedBox(width: AppSizes.md),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _mrp,
+                      decoration: const InputDecoration(
+                        labelText: 'MRP',
+                        prefixText: '${AppStrings.currencySymbol} ',
+                        helperText: 'Strike-through price',
+                      ),
+                      keyboardType: TextInputType.number,
+                      validator: _priceValidator,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSizes.md),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _purchasePrice,
+                      decoration: const InputDecoration(
+                        labelText: 'Cost price',
+                        prefixText: '${AppStrings.currencySymbol} ',
+                        helperText: 'What you pay',
+                      ),
+                      keyboardType: TextInputType.number,
+                      validator: _priceValidator,
+                    ),
+                  ),
+                  const SizedBox(width: AppSizes.md),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _taxPercent,
+                      decoration: const InputDecoration(
+                        labelText: 'GST',
+                        suffixText: '%',
+                        helperText: 'Optional',
+                      ),
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: AppSizes.lg),
+              // ── Identity & stock ──────────────────────────────────────
+              AppSectionHeader(
+                title: 'IDENTITY & STOCK',
+                padding: const EdgeInsets.only(bottom: AppSizes.sm),
+              ),
+              TextFormField(
+                controller: _sku,
+                decoration: const InputDecoration(
+                  labelText: AppStrings.sku,
+                  helperText: 'Your own product code — must be unique',
+                ),
+                validator: _requiredValidator,
+              ),
+              const SizedBox(height: AppSizes.md),
+              if (!isEditing)
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _stockQuantity,
+                        decoration: const InputDecoration(
+                          labelText: 'Opening stock',
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                    const SizedBox(width: AppSizes.md),
+                    Expanded(child: _unitField()),
+                  ],
+                )
+              else
+                _unitField(),
+              const SizedBox(height: AppSizes.md),
+              _categoryField(categories),
+
+              const SizedBox(height: AppSizes.xxl),
+
+              // ── More details — optional, each opens full-screen ───────
+              AppSectionHeader(
+                title: 'MORE DETAILS',
+                padding: const EdgeInsets.only(bottom: AppSizes.xs),
+              ),
+              const Padding(
+                padding: EdgeInsets.only(bottom: AppSizes.md),
+                child: Text(
+                  'All optional. Add as much as you like to make the product '
+                  'page richer — you can come back any time.',
+                  style: TextStyle(
+                      color: AppColors.muted, fontSize: 12.5, height: 1.4),
+                ),
+              ),
+              ..._detailTiles(),
+
+              const SizedBox(height: AppSizes.huge),
             ],
-            // ── Pick from gallery / camera ────────────────────────────
-            // Gallery uses pickMultiImage so the merchant can drop a
-            // whole product shoot in one tap; camera stays single
-            // because you can't capture a batch in one shutter press.
-            Row(
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Essentials sub-builders ─────────────────────────────────────────
+
+  /// Unit dropdown — shows the short code when collapsed (so it fits a
+  /// half-width slot) and the full label inside the menu.
+  Widget _unitField() {
+    final value = AppUnits.all.contains(_selectedUnit)
+        ? _selectedUnit
+        : AppUnits.all.first;
+    return DropdownButtonFormField<String>(
+      initialValue: value,
+      isExpanded: true,
+      decoration: const InputDecoration(labelText: AppStrings.unit),
+      selectedItemBuilder: (_) =>
+          AppUnits.all.map((u) => Text('$u — ${AppUnits.label(u)}')).toList(),
+      items: AppUnits.all
+          .map(
+            (u) => DropdownMenuItem(
+              value: u,
+              child: Text('$u - ${AppUnits.label(u)}'),
+            ),
+          )
+          .toList(),
+      onChanged: (v) {
+        if (v != null) setState(() => _selectedUnit = v);
+      },
+    );
+  }
+
+  Widget _categoryField(List<dynamic> categories) {
+    final selected = _selectedCategoryId == null
+        ? null
+        : categories
+            .where((c) => c.id == _selectedCategoryId)
+            .cast<dynamic>()
+            .firstOrNull;
+    final label = selected?.name ?? AppStrings.none;
+    final iconData = resolveCategoryIcon(selected?.iconName as String?);
+    return InkWell(
+      onTap: () async {
+        final result = await CategoryPickerSheet.show(
+          context,
+          currentSelectionId: _selectedCategoryId,
+        );
+        if (result != null) {
+          setState(() {
+            _selectedCategoryId = result.categoryId;
+            _dirty = true;
+          });
+        }
+      },
+      borderRadius: BorderRadius.circular(8),
+      child: InputDecorator(
+        decoration: const InputDecoration(labelText: AppStrings.category),
+        child: Row(
+          children: [
+            Icon(iconData, size: 18, color: AppColors.muted),
+            const SizedBox(width: 8),
+            Expanded(child: Text(label, overflow: TextOverflow.ellipsis)),
+            const Icon(Icons.unfold_more_rounded,
+                size: 18, color: AppColors.muted),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _photosSection() {
+    return [
+      AppSectionHeader(
+        title: AppStrings.productImages.toUpperCase(),
+        padding: const EdgeInsets.only(bottom: AppSizes.sm),
+      ),
+      if (_imageUrls.isNotEmpty) ...[
+        SizedBox(
+          height: 96,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: _imageUrls.length,
+            separatorBuilder: (_, _) => const SizedBox(width: AppSizes.sm),
+            itemBuilder: (ctx, i) => Stack(
               children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _isUploading ? null : _pickAndUploadMultiple,
-                    icon: const Icon(Icons.photo_library_rounded, size: 18),
-                    label: const Text(AppStrings.pickFromGallery),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+                  child: Image.network(
+                    resolveImageUrl(_imageUrls[i]),
+                    width: 96,
+                    height: 96,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) => Container(
+                      width: 96,
+                      height: 96,
+                      decoration: ShapeDecoration(
+                        color: AppColors.white,
+                        shape: AppShapes.squircle(
+                          AppSizes.radiusMd,
+                          side: BorderSide(color: AppColors.hairline, width: 1),
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.broken_image_rounded,
+                        color: AppColors.muted,
+                      ),
+                    ),
                   ),
                 ),
-                const SizedBox(width: AppSizes.sm),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _isUploading
-                        ? null
-                        : () => _pickAndUploadImage(ImageSource.camera),
-                    icon: const Icon(Icons.camera_alt_rounded, size: 18),
-                    label: const Text(AppStrings.takePhoto),
+                Positioned(
+                  top: 4,
+                  right: 4,
+                  child: GestureDetector(
+                    onTap: () => setState(() {
+                      final url = _imageUrls[i];
+                      final existingId = _existingImageIdByUrl[url];
+                      if (existingId != null) _removedImageIds.add(existingId);
+                      _imageUrls.removeAt(i);
+                      _dirty = true;
+                    }),
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: const BoxDecoration(
+                        color: AppColors.black,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.close_rounded,
+                        size: 14,
+                        color: AppColors.white,
+                      ),
+                    ),
                   ),
                 ),
               ],
             ),
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text(
-                _imageUrls.isEmpty
-                    ? 'Tap "Pick from gallery" to select multiple images at once. Up to $_maxGalleryImages per product.'
-                    : '${_imageUrls.length}/$_maxGalleryImages images added.',
-                style: const TextStyle(color: AppColors.muted, fontSize: 12),
-              ),
+          ),
+        ),
+        const SizedBox(height: AppSizes.md),
+      ],
+      // Gallery uses pickMultiImage so the merchant can drop a whole
+      // product shoot in one tap; camera stays single because you can't
+      // capture a batch in one shutter press.
+      Row(
+        children: [
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: _isUploading ? null : _pickAndUploadMultiple,
+              icon: const Icon(Icons.photo_library_rounded, size: 18),
+              label: const Text(AppStrings.pickFromGallery),
             ),
-            if (_isUploading) ...[
-              const SizedBox(height: AppSizes.sm),
-              const LinearProgressIndicator(),
-            ],
-            const SizedBox(height: AppSizes.sm),
-            // ── URL fallback ──────────────────────────────────────────
+          ),
+          const SizedBox(width: AppSizes.sm),
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: _isUploading
+                  ? null
+                  : () => _pickAndUploadImage(ImageSource.camera),
+              icon: const Icon(Icons.camera_alt_rounded, size: 18),
+              label: const Text(AppStrings.takePhoto),
+            ),
+          ),
+        ],
+      ),
+      Padding(
+        padding: const EdgeInsets.only(top: 4),
+        child: Text(
+          _imageUrls.isEmpty
+              ? 'Tap "Pick from gallery" to select multiple images at once. Up to $_maxGalleryImages per product.'
+              : '${_imageUrls.length}/$_maxGalleryImages images added.',
+          style: const TextStyle(color: AppColors.muted, fontSize: 12),
+        ),
+      ),
+      if (_isUploading) ...[
+        const SizedBox(height: AppSizes.sm),
+        const LinearProgressIndicator(),
+      ],
+      const SizedBox(height: AppSizes.sm),
+      // URL fallback — collapsed behind an expansion so it doesn't clutter
+      // the common gallery/camera path.
+      Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          tilePadding: EdgeInsets.zero,
+          childrenPadding: const EdgeInsets.only(bottom: AppSizes.sm),
+          title: const Text('Add by image link',
+              style: TextStyle(fontSize: 13, color: AppColors.muted)),
+          children: [
             Row(
               children: [
                 Expanded(
@@ -919,385 +1187,363 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                 ),
               ],
             ),
-
-            const SizedBox(height: AppSizes.xxl),
-
-            // ── Basic info ────────────────────────────────────────────
-            AppSectionHeader(
-              title: AppStrings.sectionBasicInfo.toUpperCase(),
-              padding: const EdgeInsets.only(bottom: AppSizes.sm),
-            ),
-            TextFormField(
-              controller: _name,
-              decoration: const InputDecoration(
-                labelText: AppStrings.productName,
-              ),
-              validator: _requiredValidator,
-              textCapitalization: TextCapitalization.words,
-            ),
-            const SizedBox(height: AppSizes.md),
-            TextFormField(
-              controller: _description,
-              decoration: const InputDecoration(
-                labelText: AppStrings.description,
-              ),
-              maxLines: 2,
-              textCapitalization: TextCapitalization.sentences,
-            ),
-            const SizedBox(height: AppSizes.md),
-            // Phase B — brand surfaces on the customer PDP under the
-            // product title and powers a future brand-filter facet.
-            // Free-text; promotion to FK happens later, when ≥3
-            // features key off it.
-            TextFormField(
-              controller: _brand,
-              decoration: const InputDecoration(
-                labelText: 'Brand',
-                hintText: 'e.g. Portronics, boAt — optional',
-              ),
-              textCapitalization: TextCapitalization.words,
-            ),
-            const SizedBox(height: AppSizes.md),
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _sku,
-                    decoration: const InputDecoration(
-                      labelText: AppStrings.sku,
-                    ),
-                    validator: _requiredValidator,
-                  ),
-                ),
-                const SizedBox(width: AppSizes.md),
-                Expanded(
-                  child: TextFormField(
-                    controller: _barcode,
-                    decoration: const InputDecoration(
-                      labelText: AppStrings.barcode,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSizes.md),
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _hsnCode,
-                    decoration: const InputDecoration(
-                      labelText: AppStrings.hsnCode,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: AppSizes.md),
-                Expanded(
-                  child: () {
-                    final selected = _selectedCategoryId == null
-                        ? null
-                        : categories
-                            .where((c) => c.id == _selectedCategoryId)
-                            .cast<dynamic>()
-                            .firstOrNull;
-                    final label = selected?.name ?? AppStrings.none;
-                    final iconData =
-                        resolveCategoryIcon(selected?.iconName as String?);
-                    return InkWell(
-                      onTap: () async {
-                        final result = await CategoryPickerSheet.show(
-                          context,
-                          currentSelectionId: _selectedCategoryId,
-                        );
-                        if (result != null) {
-                          setState(() {
-                            _selectedCategoryId = result.categoryId;
-                            _dirty = true;
-                          });
-                        }
-                      },
-                      borderRadius: BorderRadius.circular(8),
-                      child: InputDecorator(
-                        decoration: const InputDecoration(
-                          labelText: AppStrings.category,
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(iconData, size: 18, color: AppColors.muted),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                label,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            const Icon(
-                              Icons.unfold_more_rounded,
-                              size: 18,
-                              color: AppColors.muted,
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }(),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: AppSizes.xxl),
-
-            // ── Tags ──────────────────────────────────────────────────
-            AppSectionHeader(
-              title: 'TAGS',
-              padding: const EdgeInsets.only(bottom: AppSizes.sm),
-            ),
-            _TagsEditor(
-              tags: _tags,
-              controller: _tagController,
-              onAdd: _addTagFromInput,
-              onRemove: (t) => setState(() {
-                _tags.remove(t);
-                _dirty = true;
-              }),
-            ),
-
-            const SizedBox(height: AppSizes.xxl),
-
-            // ── Highlights ───────────────────────────────────────────
-            AppSectionHeader(
-              title: 'HIGHLIGHTS',
-              padding: const EdgeInsets.only(bottom: AppSizes.sm),
-            ),
-            const Text(
-              'Short bullet points shown above the fold on the marketplace product page.',
-              style: TextStyle(color: AppColors.muted, fontSize: 12),
-            ),
-            const SizedBox(height: AppSizes.sm),
-            _HighlightsEditor(
-              items: _highlights,
-              controller: _highlightController,
-              onAdd: _addHighlight,
-              onRemove: (i) => setState(() {
-                _highlights.removeAt(i);
-                _dirty = true;
-              }),
-            ),
-
-            const SizedBox(height: AppSizes.xxl),
-
-            // ── Specifications ───────────────────────────────────────
-            AppSectionHeader(
-              title: 'SPECIFICATIONS',
-              padding: const EdgeInsets.only(bottom: AppSizes.sm),
-            ),
-            const Text(
-              'Group attributes by section (e.g. "Display", "Camera"). '
-              'Each row is a label + value.',
-              style: TextStyle(color: AppColors.muted, fontSize: 12),
-            ),
-            const SizedBox(height: AppSizes.sm),
-            _SpecsEditor(
-              groups: _specs,
-              onChange: () => setState(() => _dirty = true),
-            ),
-
-            const SizedBox(height: AppSizes.xxl),
-
-            // ── Offers ───────────────────────────────────────────────
-            AppSectionHeader(
-              title: 'OFFERS',
-              padding: const EdgeInsets.only(bottom: AppSizes.sm),
-            ),
-            const Text(
-              'Bank, coupon, EMI or exchange offers shown beneath the price block.',
-              style: TextStyle(color: AppColors.muted, fontSize: 12),
-            ),
-            const SizedBox(height: AppSizes.sm),
-            _OffersEditor(
-              offers: _offers,
-              onChange: () => setState(() => _dirty = true),
-            ),
-
-            const SizedBox(height: AppSizes.xxl),
-
-            // ── A+ content blocks (Phase C) ─────────────────────────
-            AppSectionHeader(
-              title: 'PRODUCT DESCRIPTION (A+ BLOCKS)',
-              padding: const EdgeInsets.only(bottom: AppSizes.sm),
-            ),
-            const Text(
-              'Hero image, feature tiles, comparison table, gallery or text. '
-              'Up to 8 blocks; renders inside the customer PDP Details tab.',
-              style: TextStyle(color: AppColors.muted, fontSize: 12),
-            ),
-            const SizedBox(height: AppSizes.sm),
-            ContentBlocksEditor(
-              blocks: _contentBlocks,
-              onChange: () => setState(() => _dirty = true),
-            ),
-
-            const SizedBox(height: AppSizes.xxl),
-
-            // ── Variants (Phase E) ───────────────────────────────────
-            AppSectionHeader(
-              title: 'VARIANTS',
-              padding: const EdgeInsets.only(bottom: AppSizes.sm),
-            ),
-            const Text(
-              'Optional. Declare axes (Colour, Size, …) and add one '
-              'variant per combination. The first product save creates '
-              'a default variant automatically; multi-variant editing '
-              'lands here.',
-              style: TextStyle(color: AppColors.muted, fontSize: 12),
-            ),
-            const SizedBox(height: AppSizes.sm),
-            VariantsEditor(
-              axes: _variantAxes,
-              variants: _variants,
-              defaultMrp: double.tryParse(_mrp.text) ?? 0,
-              defaultSellingPrice: double.tryParse(_sellingPrice.text) ?? 0,
-              defaultPurchasePrice: double.tryParse(_purchasePrice.text) ?? 0,
-              defaultSku: _sku.text,
-              onChange: () => setState(() => _dirty = true),
-              onUploadImage: _pickAndUploadVariantImage,
-            ),
-
-            const SizedBox(height: AppSizes.xxl),
-
-            // ── Pricing ───────────────────────────────────────────────
-            AppSectionHeader(
-              title: AppStrings.sectionPricing.toUpperCase(),
-              padding: const EdgeInsets.only(bottom: AppSizes.sm),
-            ),
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _mrp,
-                    decoration: InputDecoration(
-                      labelText: AppStrings.mrp,
-                      prefixText: '${AppStrings.currencySymbol} ',
-                    ),
-                    keyboardType: TextInputType.number,
-                    validator: _priceValidator,
-                  ),
-                ),
-                const SizedBox(width: AppSizes.md),
-                Expanded(
-                  child: TextFormField(
-                    controller: _sellingPrice,
-                    decoration: InputDecoration(
-                      labelText: AppStrings.sellingPrice,
-                      prefixText: '${AppStrings.currencySymbol} ',
-                    ),
-                    keyboardType: TextInputType.number,
-                    validator: _priceValidator,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSizes.md),
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _purchasePrice,
-                    decoration: InputDecoration(
-                      labelText: AppStrings.purchasePrice,
-                      prefixText: '${AppStrings.currencySymbol} ',
-                    ),
-                    keyboardType: TextInputType.number,
-                    validator: _priceValidator,
-                  ),
-                ),
-                const SizedBox(width: AppSizes.md),
-                Expanded(
-                  child: TextFormField(
-                    controller: _taxPercent,
-                    decoration: const InputDecoration(
-                      labelText: AppStrings.taxPercent,
-                      suffixText: '%',
-                    ),
-                    keyboardType: TextInputType.number,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: AppSizes.xxl),
-
-            // ── Stock ────────────────────────────────────────────────
-            AppSectionHeader(
-              title: AppStrings.sectionStock.toUpperCase(),
-              padding: const EdgeInsets.only(bottom: AppSizes.sm),
-            ),
-            Row(
-              children: [
-                if (!isEditing)
-                  Expanded(
-                    child: TextFormField(
-                      controller: _stockQuantity,
-                      decoration: const InputDecoration(
-                        labelText: AppStrings.stockQuantity,
-                      ),
-                      keyboardType: TextInputType.number,
-                    ),
-                  ),
-                if (!isEditing) const SizedBox(width: AppSizes.md),
-                Expanded(
-                  child: TextFormField(
-                    controller: _lowStockThreshold,
-                    decoration: const InputDecoration(
-                      labelText: AppStrings.lowStockThreshold,
-                    ),
-                    keyboardType: TextInputType.number,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSizes.md),
-            DropdownButtonFormField<String>(
-              // Defensive: if the product's stored unit isn't in the
-              // known set (e.g. backend added new units, legacy data),
-              // fall back to the first known unit so we don't trip
-              // the Dropdown's "exactly one matching item" assertion.
-              initialValue: AppUnits.all.contains(_selectedUnit)
-                  ? _selectedUnit
-                  : AppUnits.all.first,
-              decoration: const InputDecoration(labelText: AppStrings.unit),
-              items: AppUnits.all
-                  .map(
-                    (u) => DropdownMenuItem(
-                      value: u,
-                      child: Text('$u - ${AppUnits.label(u)}'),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (v) {
-                if (v != null) setState(() => _selectedUnit = v);
-              },
-            ),
-
-            const SizedBox(height: AppSizes.xl),
-            // ── More about this product ───────────────────────────────
-            // Shop-wide custom fields. Inline "+ Add field" lets the
-            // user define a new field without leaving the form.
-            AppSectionHeader(
-              title: AppStrings.moreAboutThisProduct.toUpperCase(),
-              padding: const EdgeInsets.only(bottom: AppSizes.sm),
-            ),
-            CustomFieldsFormSection(
-              values: _customFieldValues,
-              onValueChanged: (id, value) =>
-                  setState(() => _customFieldValues[id] = value),
-            ),
-
-            const SizedBox(height: AppSizes.huge),
           ],
         ),
       ),
+    ];
+  }
+
+  // ── "More details" hub ──────────────────────────────────────────────
+
+  List<Widget> _detailTiles() {
+    final specRows = _specs.fold<int>(0, (n, g) => n + g.rows.length);
+    final customSet =
+        _customFieldValues.values.where((v) => v.trim().isNotEmpty).length;
+    final codesSet = [
+      _barcode.text.trim().isNotEmpty,
+      _hsnCode.text.trim().isNotEmpty,
+    ].where((b) => b).length;
+
+    final tiles = <Widget>[
+      _DetailTile(
+        icon: Icons.bolt_outlined,
+        title: 'Highlights',
+        subtitle: 'Short selling points shown up top',
+        count: _highlights.length,
+        onTap: () => _openEditor(
+          title: 'Highlights',
+          intro:
+              'Short bullet points shown above the fold on the product page. '
+              'Up to 8.',
+          builder: (refresh) => _HighlightsEditor(
+            items: _highlights,
+            controller: _highlightController,
+            onAdd: () {
+              _addHighlight();
+              refresh();
+            },
+            onRemove: (i) {
+              _highlights.removeAt(i);
+              _dirty = true;
+              refresh();
+            },
+          ),
+        ),
       ),
+      _DetailTile(
+        icon: Icons.fact_check_outlined,
+        title: 'Specifications',
+        subtitle: 'Detailed spec sheet, grouped by section',
+        count: specRows,
+        onTap: () => _openEditor(
+          title: 'Specifications',
+          intro: 'Group attributes by section (e.g. "Display", "Camera"). '
+              'Each row is a label and a value.',
+          builder: (_) => _SpecsEditor(groups: _specs, onChange: _markDirty),
+        ),
+      ),
+      _DetailTile(
+        icon: Icons.local_offer_outlined,
+        title: 'Offers',
+        subtitle: 'Coupon, EMI or exchange offers',
+        count: _offers.length,
+        onTap: () => _openEditor(
+          title: 'Offers',
+          intro:
+              'Bank, coupon, EMI or exchange offers shown beneath the price.',
+          builder: (_) => _OffersEditor(offers: _offers, onChange: _markDirty),
+        ),
+      ),
+      _DetailTile(
+        icon: Icons.article_outlined,
+        title: 'Rich product description',
+        subtitle: 'Hero image, features, comparison, gallery',
+        count: _contentBlocks.length,
+        onTap: () => _openEditor(
+          title: 'Rich description',
+          intro: 'Build the scrollable story on the product page. '
+              'Add up to 8 blocks and drag them into order.',
+          builder: (_) => ContentBlocksEditor(
+            blocks: _contentBlocks,
+            onChange: _markDirty,
+            onPickImage: () => _pickAndUploadVariantImage(ImageSource.gallery),
+          ),
+        ),
+      ),
+      _DetailTile(
+        icon: Icons.style_outlined,
+        title: 'Variants',
+        subtitle: 'Colours, sizes and other options',
+        count: _variants.where((v) => !v.isDefault).length,
+        onTap: () => _openEditor(
+          title: 'Variants',
+          intro: 'Optional. Declare axes (Colour, Size, …) and add one '
+              'variant per combination. A single default variant is created '
+              'automatically when you don\'t.',
+          builder: (_) => VariantsEditor(
+            axes: _variantAxes,
+            variants: _variants,
+            defaultMrp: double.tryParse(_mrp.text) ?? 0,
+            defaultSellingPrice: double.tryParse(_sellingPrice.text) ?? 0,
+            defaultPurchasePrice: double.tryParse(_purchasePrice.text) ?? 0,
+            defaultSku: _sku.text,
+            onChange: _markDirty,
+            onUploadImage: _pickAndUploadVariantImage,
+          ),
+        ),
+      ),
+      _DetailTile(
+        icon: Icons.sell_outlined,
+        title: 'Tags',
+        subtitle: 'Keywords that help shoppers find this',
+        count: _tags.length,
+        onTap: () => _openEditor(
+          title: 'Tags',
+          intro: 'Up to 20. Bestseller, Eco-friendly, etc.',
+          builder: (refresh) => _TagsEditor(
+            tags: _tags,
+            controller: _tagController,
+            onAdd: () {
+              _addTagFromInput();
+              refresh();
+            },
+            onRemove: (t) {
+              _tags.remove(t);
+              _dirty = true;
+              refresh();
+            },
+          ),
+        ),
+      ),
+      _DetailTile(
+        icon: Icons.qr_code_2_outlined,
+        title: 'Codes & inventory',
+        subtitle: 'Barcode, HSN code, low-stock alert',
+        count: codesSet,
+        onTap: () => _openEditor(
+          title: 'Codes & inventory',
+          builder: (_) => _CodesInventoryEditor(
+            barcode: _barcode,
+            hsnCode: _hsnCode,
+            lowStockThreshold: _lowStockThreshold,
+            onChanged: _markDirty,
+          ),
+        ),
+      ),
+      _DetailTile(
+        icon: Icons.dashboard_customize_outlined,
+        title: 'More about this product',
+        subtitle: 'Your shop\'s own custom fields',
+        count: customSet,
+        onTap: () => _openEditor(
+          title: 'More about this product',
+          intro: 'Shop-wide fields like Warranty, Model number or Material '
+              '— define them once, reuse on every product.',
+          builder: (_) => CustomFieldsFormSection(
+            values: _customFieldValues,
+            onValueChanged: (id, value) {
+              _customFieldValues[id] = value;
+              _dirty = true;
+            },
+          ),
+        ),
+      ),
+    ];
+
+    return [
+      for (final t in tiles) ...[
+        t,
+        const SizedBox(height: AppSizes.sm),
+      ],
+    ];
+  }
+}
+
+/// One row in the "More details" hub — icon, title, helper line, a count
+/// badge when the section already has content, and a chevron. Tapping
+/// opens that section full-screen.
+class _DetailTile extends StatelessWidget {
+  const _DetailTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    this.count = 0,
+  });
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+      child: Container(
+        padding: const EdgeInsets.all(AppSizes.md),
+        decoration: ShapeDecoration(
+          color: AppColors.white,
+          shape: AppShapes.squircle(
+            AppSizes.radiusMd,
+            side: const BorderSide(color: AppColors.hairline, width: 1),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: ShapeDecoration(
+                color: AppColors.surfaceTint,
+                shape: AppShapes.squircle(AppSizes.radiusSm),
+              ),
+              alignment: Alignment.center,
+              child: Icon(icon, size: 20, color: AppColors.black),
+            ),
+            const SizedBox(width: AppSizes.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w700, fontSize: 14.5),
+                  ),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                        color: AppColors.muted, fontSize: 12, height: 1.3),
+                  ),
+                ],
+              ),
+            ),
+            if (count > 0) ...[
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: ShapeDecoration(
+                  color: AppColors.heroPanel,
+                  shape: AppShapes.squircle(AppSizes.radiusFull),
+                ),
+                child: Text(
+                  '$count',
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w800, fontSize: 12),
+                ),
+              ),
+              const SizedBox(width: AppSizes.sm),
+            ],
+            const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Full-screen host for an advanced section. A plain app bar with a Done
+/// button, an optional intro line, and the section's editor below. The
+/// [builder] gets a `refresh` callback so editors that don't manage
+/// their own state can ask this scaffold to rebuild.
+class _EditorScaffold extends StatefulWidget {
+  const _EditorScaffold({
+    required this.title,
+    required this.builder,
+    this.intro,
+  });
+  final String title;
+  final String? intro;
+  final Widget Function(void Function() refresh) builder;
+
+  @override
+  State<_EditorScaffold> createState() => _EditorScaffoldState();
+}
+
+class _EditorScaffoldState extends State<_EditorScaffold> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.title),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Done'),
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppSizes.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (widget.intro != null) ...[
+              Text(
+                widget.intro!,
+                style: const TextStyle(
+                    color: AppColors.muted, fontSize: 13, height: 1.45),
+              ),
+              const SizedBox(height: AppSizes.lg),
+            ],
+            widget.builder(() => setState(() {})),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Barcode / HSN / low-stock — the techy identifiers, kept off the main
+/// page so the essentials stay clean. Controllers are owned by the page;
+/// this is a thin presentation wrapper.
+class _CodesInventoryEditor extends StatelessWidget {
+  const _CodesInventoryEditor({
+    required this.barcode,
+    required this.hsnCode,
+    required this.lowStockThreshold,
+    required this.onChanged,
+  });
+  final TextEditingController barcode;
+  final TextEditingController hsnCode;
+  final TextEditingController lowStockThreshold;
+  final VoidCallback onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextFormField(
+          controller: barcode,
+          onChanged: (_) => onChanged(),
+          decoration: const InputDecoration(
+            labelText: AppStrings.barcode,
+            helperText: 'The number under the striped code on the package',
+          ),
+        ),
+        const SizedBox(height: AppSizes.lg),
+        TextFormField(
+          controller: hsnCode,
+          onChanged: (_) => onChanged(),
+          decoration: const InputDecoration(
+            labelText: AppStrings.hsnCode,
+            helperText: 'Tax classification code for invoices',
+          ),
+        ),
+        const SizedBox(height: AppSizes.lg),
+        TextFormField(
+          controller: lowStockThreshold,
+          onChanged: (_) => onChanged(),
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            labelText: AppStrings.lowStockThreshold,
+            helperText: 'We\'ll flag the product once stock drops to this',
+          ),
+        ),
+      ],
     );
   }
 }
@@ -1562,41 +1808,58 @@ class _GroupCard extends StatelessWidget {
               isDense: true,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
+          // Each attribute stacks label-over-value full width so long
+          // labels ("In the box") and long values aren't clipped the way
+          // the old side-by-side layout cut them off.
           for (var i = 0; i < group.rows.length; i++)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: Row(
+            Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.fromLTRB(10, 4, 4, 10),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceTint,
+                borderRadius: BorderRadius.circular(AppSizes.radiusSm),
+              ),
+              child: Column(
                 children: [
-                  Expanded(
-                    child: TextFormField(
-                      initialValue: group.rows[i].label,
-                      onChanged: (v) =>
-                          onChangeRow(i, group.rows[i].copyWith(label: v)),
-                      decoration: const InputDecoration(
-                        labelText: 'Label',
-                        border: OutlineInputBorder(),
-                        isDense: true,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          initialValue: group.rows[i].label,
+                          onChanged: (v) =>
+                              onChangeRow(i, group.rows[i].copyWith(label: v)),
+                          decoration: const InputDecoration(
+                            labelText: 'Label',
+                            hintText: 'e.g. In the box',
+                            border: OutlineInputBorder(),
+                            isDense: true,
+                          ),
+                        ),
                       ),
-                    ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, size: 18),
+                        tooltip: 'Remove row',
+                        onPressed: () => onRemoveRow(i),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    flex: 2,
+                  const SizedBox(height: 6),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 6),
                     child: TextFormField(
                       initialValue: group.rows[i].value,
                       onChanged: (v) =>
                           onChangeRow(i, group.rows[i].copyWith(value: v)),
+                      minLines: 1,
+                      maxLines: 3,
                       decoration: const InputDecoration(
                         labelText: 'Value',
+                        hintText: 'e.g. Earbuds, charging case, cable, manual',
                         border: OutlineInputBorder(),
                         isDense: true,
                       ),
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close_rounded, size: 18),
-                    onPressed: () => onRemoveRow(i),
                   ),
                 ],
               ),

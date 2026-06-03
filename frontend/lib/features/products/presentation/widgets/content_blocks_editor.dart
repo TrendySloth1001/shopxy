@@ -1,5 +1,5 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shopxy/core/network/image_url.dart';
 import 'package:shopxy/features/products/domain/entities/product.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
@@ -10,16 +10,22 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 /// enforced client + server.
 ///
 /// The editor reads/writes [blocks] in place: the parent owns the list,
-/// the widget mutates it directly. Same pattern used by [_SpecsEditor]
-/// and [_OffersEditor] elsewhere in this file's neighbourhood.
+/// the widget mutates it directly. Same pattern used by the specs and
+/// offers editors in the add/edit product page.
+///
+/// [onPickImage] uploads an image (gallery/camera handled by the page)
+/// and returns its stored URL — every image field offers it so the
+/// merchant never has to hand-paste a link.
 class ContentBlocksEditor extends StatefulWidget {
   const ContentBlocksEditor({
     super.key,
     required this.blocks,
     required this.onChange,
+    required this.onPickImage,
   });
   final List<ContentBlock> blocks;
   final VoidCallback onChange;
+  final Future<String?> Function() onPickImage;
 
   @override
   State<ContentBlocksEditor> createState() => _ContentBlocksEditorState();
@@ -27,6 +33,17 @@ class ContentBlocksEditor extends StatefulWidget {
 
 class _ContentBlocksEditorState extends State<ContentBlocksEditor> {
   static const _maxBlocks = 8;
+
+  // Friendly metadata for the "add a block" menu — plain-language label
+  // + a one-liner so the merchant knows what each block does without
+  // having to guess from an acronym.
+  static const _kinds = <(String, IconData, String, String)>[
+    ('HERO', Icons.wallpaper_rounded, 'Hero banner', 'A big image with a headline'),
+    ('FEATURE', Icons.view_sidebar_rounded, 'Feature', 'Image beside a title + description'),
+    ('COMPARISON', Icons.table_chart_rounded, 'Comparison table', 'Compare this vs other options'),
+    ('GALLERY', Icons.collections_rounded, 'Gallery', 'A row of images with captions'),
+    ('TEXT', Icons.notes_rounded, 'Text', 'A paragraph of rich text'),
+  ];
 
   void _add(String kind) {
     if (widget.blocks.length >= _maxBlocks) return;
@@ -69,8 +86,8 @@ class _ContentBlocksEditorState extends State<ContentBlocksEditor> {
           },
         'COMPARISON' => {
             'columns': [
-              {'label': 'Hydra 10', 'values': <String>['']},
-              {'label': 'Hydra 9', 'values': <String>['']},
+              {'label': 'This product', 'values': <String>['']},
+              {'label': 'Others', 'values': <String>['']},
             ],
             'rows': <String>[''],
           },
@@ -87,6 +104,15 @@ class _ContentBlocksEditorState extends State<ContentBlocksEditor> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (widget.blocks.isEmpty)
+          const Padding(
+            padding: EdgeInsets.only(bottom: AppSizes.sm),
+            child: Text(
+              'Build a rich product story shoppers scroll through — add a '
+              'block to start.',
+              style: TextStyle(color: AppColors.muted, fontSize: 12.5, height: 1.4),
+            ),
+          ),
         for (var i = 0; i < widget.blocks.length; i++)
           _BlockCard(
             block: widget.blocks[i],
@@ -96,23 +122,72 @@ class _ContentBlocksEditorState extends State<ContentBlocksEditor> {
             onRemove: () => _remove(i),
             onUp: () => _move(i, -1),
             onDown: () => _move(i, 1),
+            onPickImage: widget.onPickImage,
           ),
         if (widget.blocks.length < _maxBlocks) ...[
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final k in const ['HERO', 'FEATURE', 'COMPARISON', 'GALLERY', 'TEXT'])
-                OutlinedButton.icon(
-                  onPressed: () => _add(k),
-                  icon: const Icon(Icons.add, size: 16),
-                  label: Text('Add $k'),
-                ),
-            ],
-          ),
+          const SizedBox(height: AppSizes.sm),
+          for (final (kind, icon, label, hint) in _kinds)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSizes.sm),
+              child: _AddBlockTile(
+                icon: icon,
+                label: label,
+                hint: hint,
+                onTap: () => _add(kind),
+              ),
+            ),
         ],
       ],
+    );
+  }
+}
+
+/// A tappable "add this kind of block" row — plain-language label + a
+/// hint so the merchant picks the right block on the first try.
+class _AddBlockTile extends StatelessWidget {
+  const _AddBlockTile({
+    required this.icon,
+    required this.label,
+    required this.hint,
+    required this.onTap,
+  });
+  final IconData icon;
+  final String label;
+  final String hint;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+      child: Container(
+        padding: const EdgeInsets.all(AppSizes.md),
+        decoration: BoxDecoration(
+          border: Border.all(color: AppColors.hairline),
+          borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: AppColors.muted),
+            const SizedBox(width: AppSizes.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w700, fontSize: 14)),
+                  Text(hint,
+                      style: const TextStyle(
+                          color: AppColors.muted, fontSize: 12)),
+                ],
+              ),
+            ),
+            const Icon(Icons.add_rounded, color: AppColors.muted),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -126,6 +201,7 @@ class _BlockCard extends StatelessWidget {
     required this.onRemove,
     required this.onUp,
     required this.onDown,
+    required this.onPickImage,
   });
   final ContentBlock block;
   final int index;
@@ -134,6 +210,15 @@ class _BlockCard extends StatelessWidget {
   final VoidCallback onRemove;
   final VoidCallback onUp;
   final VoidCallback onDown;
+  final Future<String?> Function() onPickImage;
+
+  static const _titles = <String, String>{
+    'HERO': 'Hero banner',
+    'FEATURE': 'Feature',
+    'COMPARISON': 'Comparison table',
+    'GALLERY': 'Gallery',
+    'TEXT': 'Text',
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -142,7 +227,7 @@ class _BlockCard extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         border: Border.all(color: AppColors.hairline),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppSizes.radiusMd),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -150,45 +235,45 @@ class _BlockCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 6, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: AppColors.heroPanel,
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  block.kind,
+                  _titles[block.kind] ?? block.kind,
                   style: const TextStyle(
                     fontWeight: FontWeight.w800,
-                    fontSize: 11,
-                    letterSpacing: 0.6,
+                    fontSize: 11.5,
                   ),
                 ),
               ),
               const SizedBox(width: AppSizes.sm),
-              Text('Block ${index + 1} / $total',
-                  style: const TextStyle(
-                      color: AppColors.muted, fontSize: 12)),
+              Text('${index + 1} of $total',
+                  style: const TextStyle(color: AppColors.muted, fontSize: 12)),
               const Spacer(),
               IconButton(
                 tooltip: 'Move up',
+                visualDensity: VisualDensity.compact,
                 onPressed: index == 0 ? null : onUp,
                 icon: const Icon(Icons.keyboard_arrow_up_rounded),
               ),
               IconButton(
                 tooltip: 'Move down',
+                visualDensity: VisualDensity.compact,
                 onPressed: index == total - 1 ? null : onDown,
                 icon: const Icon(Icons.keyboard_arrow_down_rounded),
               ),
               IconButton(
                 tooltip: 'Remove',
+                visualDensity: VisualDensity.compact,
                 onPressed: onRemove,
                 icon: const Icon(Icons.delete_outline),
               ),
             ],
           ),
           const SizedBox(height: 8),
-          _BlockForm(block: block, onUpdate: onUpdate),
+          _BlockForm(block: block, onUpdate: onUpdate, onPickImage: onPickImage),
         ],
       ),
     );
@@ -196,9 +281,14 @@ class _BlockCard extends StatelessWidget {
 }
 
 class _BlockForm extends StatelessWidget {
-  const _BlockForm({required this.block, required this.onUpdate});
+  const _BlockForm({
+    required this.block,
+    required this.onUpdate,
+    required this.onPickImage,
+  });
   final ContentBlock block;
   final ValueChanged<Map<String, dynamic>> onUpdate;
+  final Future<String?> Function() onPickImage;
 
   Map<String, dynamic> _patch(Map<String, dynamic> patch) =>
       {...block.data, ...patch};
@@ -210,12 +300,13 @@ class _BlockForm extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _UrlField(
-              label: 'Image URL',
+            _ImageField(
+              label: 'Banner image',
               value: block.data['imageUrl'] as String? ?? '',
               onChanged: (v) => onUpdate(_patch({'imageUrl': v})),
+              onPickImage: onPickImage,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             _TextLine(
               label: 'Headline',
               value: block.data['headline'] as String? ?? '',
@@ -235,21 +326,22 @@ class _BlockForm extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _UrlField(
-              label: 'Image URL',
+            _ImageField(
+              label: 'Feature image',
               value: block.data['imageUrl'] as String? ?? '',
               onChanged: (v) => onUpdate(_patch({'imageUrl': v})),
+              onPickImage: onPickImage,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Row(
               children: [
-                const Text('Image side: '),
+                const Text('Image on the '),
                 const SizedBox(width: 8),
                 DropdownButton<String>(
                   value: (block.data['side'] as String?) ?? 'LEFT',
                   items: const [
-                    DropdownMenuItem(value: 'LEFT', child: Text('LEFT')),
-                    DropdownMenuItem(value: 'RIGHT', child: Text('RIGHT')),
+                    DropdownMenuItem(value: 'LEFT', child: Text('Left')),
+                    DropdownMenuItem(value: 'RIGHT', child: Text('Right')),
                   ],
                   onChanged: (v) =>
                       v == null ? null : onUpdate(_patch({'side': v})),
@@ -265,7 +357,7 @@ class _BlockForm extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             _TextArea(
-              label: 'Body',
+              label: 'Description',
               value: block.data['body'] as String? ?? '',
               onChanged: (v) => onUpdate(_patch({'body': v})),
               maxLength: 500,
@@ -281,26 +373,18 @@ class _BlockForm extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             for (var i = 0; i < imgs.length; i++) ...[
-              Row(
-                children: [
-                  Expanded(
-                    child: _UrlField(
-                      label: 'Image ${i + 1} URL',
-                      value: imgs[i]['url'] as String? ?? '',
-                      onChanged: (v) {
-                        imgs[i] = {...imgs[i], 'url': v};
-                        onUpdate(_patch({'images': imgs}));
-                      },
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close, size: 18),
-                    onPressed: () {
-                      imgs.removeAt(i);
-                      onUpdate(_patch({'images': imgs}));
-                    },
-                  ),
-                ],
+              _ImageField(
+                label: 'Image ${i + 1}',
+                value: imgs[i]['url'] as String? ?? '',
+                onChanged: (v) {
+                  imgs[i] = {...imgs[i], 'url': v};
+                  onUpdate(_patch({'images': imgs}));
+                },
+                onPickImage: onPickImage,
+                onRemove: () {
+                  imgs.removeAt(i);
+                  onUpdate(_patch({'images': imgs}));
+                },
               ),
               _TextLine(
                 label: 'Caption (optional)',
@@ -311,7 +395,7 @@ class _BlockForm extends StatelessWidget {
                 },
                 maxLength: 140,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
             ],
             if (imgs.length < 6)
               OutlinedButton.icon(
@@ -325,68 +409,347 @@ class _BlockForm extends StatelessWidget {
           ],
         );
       case 'COMPARISON':
-        // Hand the merchant a JSON-like textarea for compact editing —
-        // a full per-cell editor would balloon the form. We re-parse
-        // on every keystroke when the JSON is valid; invalid drafts
-        // are kept verbatim under _draft so the merchant doesn't lose
-        // their work mid-typing. The server re-validates with Zod and
-        // returns 400 if the shape is bad.
-        return _TextArea(
-          label: 'Comparison JSON (columns + rows)',
-          value: (block.data['_draft'] as String?) ??
-              _stringifyComparison(block.data),
-          onChanged: (v) {
-            try {
-              final parsed = jsonDecode(v) as Map<String, dynamic>;
-              onUpdate({
-                'columns': parsed['columns'] ?? const [],
-                'rows': parsed['rows'] ?? const [],
-                '_draft': v,
-              });
-            } catch (_) {
-              onUpdate(_patch({'_draft': v}));
-            }
-          },
-          maxLength: 2000,
+        return _ComparisonEditor(
+          data: block.data,
+          onChanged: (next) => onUpdate(next),
         );
       case 'TEXT':
       default:
         return _TextArea(
-          label: 'Markdown',
+          label: 'Text',
           value: block.data['markdown'] as String? ?? '',
           onChanged: (v) => onUpdate(_patch({'markdown': v})),
           maxLength: 2000,
         );
     }
   }
-
-  String _stringifyComparison(Map<String, dynamic> data) =>
-      const JsonEncoder.withIndent('  ').convert({
-        'columns': data['columns'] ?? const [],
-        'rows': data['rows'] ?? const [],
-      });
 }
 
-class _UrlField extends StatelessWidget {
-  const _UrlField({
+/// Structured comparison-table editor (replaces the old raw-JSON
+/// textarea). The merchant names the columns they're comparing, then
+/// adds feature rows and fills one cell per column. The widget keeps
+/// every column's `values` array the same length as `rows` so the saved
+/// payload always matches the backend's `contentBlockSchema`.
+class _ComparisonEditor extends StatefulWidget {
+  const _ComparisonEditor({required this.data, required this.onChanged});
+  final Map<String, dynamic> data;
+  final ValueChanged<Map<String, dynamic>> onChanged;
+
+  @override
+  State<_ComparisonEditor> createState() => _ComparisonEditorState();
+}
+
+class _ComparisonEditorState extends State<_ComparisonEditor> {
+  late List<Map<String, dynamic>> _columns;
+  late List<String> _rows;
+
+  static const _maxColumns = 4;
+  static const _minColumns = 2;
+  static const _maxRows = 10;
+
+  @override
+  void initState() {
+    super.initState();
+    _columns = (((widget.data['columns'] as List?) ?? const [])
+            .whereType<Map>()
+            .map((m) => <String, dynamic>{
+                  'label': (m['label'] as String?) ?? '',
+                  'values': ((m['values'] as List?) ?? const [])
+                      .map((e) => e?.toString() ?? '')
+                      .toList(),
+                })
+            .toList());
+    _rows = ((widget.data['rows'] as List?) ?? const [])
+        .map((e) => e?.toString() ?? '')
+        .toList();
+    // Seed sane defaults if a fresh/empty block landed here.
+    while (_columns.length < _minColumns) {
+      _columns.add(<String, dynamic>{'label': '', 'values': <String>[]});
+    }
+    if (_rows.isEmpty) _rows = [''];
+    _normalize();
+  }
+
+  /// Keep every column's value list aligned 1:1 with [_rows].
+  void _normalize() {
+    for (final c in _columns) {
+      final vals = (c['values'] as List).cast<String>();
+      while (vals.length < _rows.length) {
+        vals.add('');
+      }
+      while (vals.length > _rows.length) {
+        vals.removeLast();
+      }
+      c['values'] = vals;
+    }
+  }
+
+  void _emit() {
+    widget.onChanged(<String, dynamic>{
+      'columns': _columns
+          .map((c) => <String, dynamic>{
+                'label': c['label'],
+                'values': c['values'],
+              })
+          .toList(),
+      'rows': _rows,
+    });
+  }
+
+  void _mutate(VoidCallback fn) {
+    setState(() {
+      fn();
+      _normalize();
+    });
+    _emit();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Name what you’re comparing, then add a row for each feature '
+          'and fill in a cell under every column.',
+          style: TextStyle(color: AppColors.muted, fontSize: 12, height: 1.4),
+        ),
+        const SizedBox(height: 10),
+        const Text('Columns',
+            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5)),
+        const SizedBox(height: 6),
+        for (var c = 0; c < _columns.length; c++)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    initialValue: _columns[c]['label'] as String,
+                    onChanged: (v) => _mutate(() => _columns[c]['label'] = v),
+                    decoration: InputDecoration(
+                      labelText: 'Column ${c + 1} name',
+                      hintText: c == 0 ? 'This product' : 'Other / competitor',
+                      border: const OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                  ),
+                ),
+                if (_columns.length > _minColumns)
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 18),
+                    tooltip: 'Remove column',
+                    onPressed: () => _mutate(() => _columns.removeAt(c)),
+                  ),
+              ],
+            ),
+          ),
+        if (_columns.length < _maxColumns)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              icon: const Icon(Icons.add, size: 16),
+              label: const Text('Add column'),
+              onPressed: () => _mutate(() => _columns
+                  .add(<String, dynamic>{'label': '', 'values': <String>[]})),
+            ),
+          ),
+        const SizedBox(height: 10),
+        const Text('Rows',
+            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5)),
+        const SizedBox(height: 6),
+        for (var r = 0; r < _rows.length; r++)
+          Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceTint,
+              borderRadius: BorderRadius.circular(AppSizes.radiusSm),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        initialValue: _rows[r],
+                        onChanged: (v) => _mutate(() => _rows[r] = v),
+                        decoration: const InputDecoration(
+                          labelText: 'Feature',
+                          hintText: 'e.g. Battery life',
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                        ),
+                      ),
+                    ),
+                    if (_rows.length > 1)
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline, size: 20),
+                        tooltip: 'Remove row',
+                        onPressed: () => _mutate(() {
+                          _rows.removeAt(r);
+                          for (final c in _columns) {
+                            (c['values'] as List).removeAt(r);
+                          }
+                        }),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                for (var c = 0; c < _columns.length; c++)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: TextFormField(
+                      initialValue: (_columns[c]['values'] as List)[r] as String,
+                      onChanged: (v) =>
+                          _mutate(() => (_columns[c]['values'] as List)[r] = v),
+                      decoration: InputDecoration(
+                        labelText:
+                            (_columns[c]['label'] as String).trim().isEmpty
+                                ? 'Column ${c + 1}'
+                                : _columns[c]['label'] as String,
+                        border: const OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        if (_rows.length < _maxRows)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              icon: const Icon(Icons.add, size: 16),
+              label: const Text('Add row'),
+              onPressed: () => _mutate(() => _rows.add('')),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// Image field with an inline thumbnail, an Upload button (reuses the
+/// page's picker via [onPickImage]) and a "paste a link" fallback so a
+/// merchant never has to know what a URL is to add a picture.
+class _ImageField extends StatefulWidget {
+  const _ImageField({
     required this.label,
     required this.value,
     required this.onChanged,
+    required this.onPickImage,
+    this.onRemove,
   });
   final String label;
   final String value;
   final ValueChanged<String> onChanged;
+  final Future<String?> Function() onPickImage;
+  final VoidCallback? onRemove;
+
+  @override
+  State<_ImageField> createState() => _ImageFieldState();
+}
+
+class _ImageFieldState extends State<_ImageField> {
+  bool _uploading = false;
+  bool _showUrl = false;
+
+  Future<void> _upload() async {
+    setState(() => _uploading = true);
+    try {
+      final url = await widget.onPickImage();
+      if (url != null) widget.onChanged(url);
+    } finally {
+      if (mounted) setState(() => _uploading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
-      initialValue: value,
-      onChanged: onChanged,
-      decoration: InputDecoration(
-        labelText: label,
-        border: const OutlineInputBorder(),
-        isDense: true,
-      ),
+    final hasImage = widget.value.trim().isNotEmpty;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(AppSizes.radiusSm),
+              child: Container(
+                width: 64,
+                height: 64,
+                color: AppColors.surfaceTint,
+                child: hasImage
+                    ? Image.network(
+                        resolveImageUrl(widget.value),
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) => const Icon(
+                            Icons.broken_image_outlined,
+                            color: AppColors.muted),
+                      )
+                    : const Icon(Icons.image_outlined, color: AppColors.muted),
+              ),
+            ),
+            const SizedBox(width: AppSizes.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(widget.label,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w600, fontSize: 13)),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: _uploading ? null : _upload,
+                        icon: _uploading
+                            ? const SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.upload_rounded, size: 16),
+                        label: Text(hasImage ? 'Replace' : 'Upload'),
+                      ),
+                      if (hasImage && widget.onRemove != null)
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline, size: 20),
+                          tooltip: 'Remove',
+                          onPressed: widget.onRemove,
+                        ),
+                    ],
+                  ),
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: const Size(0, 28),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    onPressed: () => setState(() => _showUrl = !_showUrl),
+                    child: Text(_showUrl ? 'Hide link field' : 'or paste a link',
+                        style: const TextStyle(fontSize: 12)),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        if (_showUrl) ...[
+          const SizedBox(height: 6),
+          TextFormField(
+            initialValue: widget.value,
+            onChanged: widget.onChanged,
+            keyboardType: TextInputType.url,
+            decoration: const InputDecoration(
+              labelText: 'Image link (URL)',
+              border: OutlineInputBorder(),
+              isDense: true,
+            ),
+          ),
+        ],
+      ],
     );
   }
 }
