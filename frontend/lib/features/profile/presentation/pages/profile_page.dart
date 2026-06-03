@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/core/auth/shop_capabilities.dart';
 import 'package:shopxy/core/network/image_url.dart';
 import 'package:shopxy/core/router/app_shell.dart';
 import 'package:shopxy/features/auth/domain/entities/auth_user.dart';
@@ -50,7 +51,7 @@ class ProfilePage extends StatelessWidget {
         padding: const EdgeInsets.only(bottom: AppSizes.huge),
         children: [
           _ProfileHero(user: user),
-          if (user != null && _shopProfileIncomplete(user))
+          if (user != null && user.isShopOwner && _shopProfileIncomplete(user))
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSizes.lg,
@@ -66,96 +67,8 @@ class ProfilePage extends StatelessWidget {
               ),
             ),
           const SizedBox(height: AppSizes.xl),
-          const _SectionLabel(text: 'Manage your business'),
-          const SizedBox(height: AppSizes.sm),
-          _ManageCard(
-            children: [
-              _ManageTile(
-                icon: Icons.category_outlined,
-                accent: AppColors.accentTeal,
-                accentSoft: AppColors.accentTealSoft,
-                title: AppStrings.navCategories,
-                subtitle: 'Product categories and grouping',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const CategoriesPage()),
-                ),
-              ),
-              _ManageTile(
-                icon: Icons.storefront_outlined,
-                accent: AppColors.accentIndigo,
-                accentSoft: AppColors.accentIndigoSoft,
-                title: AppStrings.navVendors,
-                subtitle: 'Suppliers you buy from',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const VendorsPage()),
-                ),
-              ),
-              _ManageTile(
-                icon: Icons.groups_outlined,
-                accent: AppColors.accentRose,
-                accentSoft: AppColors.accentRoseSoft,
-                title: AppStrings.navParties,
-                subtitle: 'Customers you sell to',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const PartiesPage()),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSizes.lg),
-          const _SectionLabel(text: 'Operations'),
-          const SizedBox(height: AppSizes.sm),
-          _ManageCard(
-            children: [
-              _ManageTile(
-                icon: Icons.receipt_long_outlined,
-                accent: AppColors.brandStrong,
-                accentSoft: AppColors.brandSoft,
-                title: AppStrings.navInvoices,
-                subtitle: 'Sales, purchase and credit notes',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const InvoicesPage()),
-                ),
-              ),
-              _ManageTile(
-                icon: Icons.assignment_outlined,
-                accent: AppColors.accentAmber,
-                accentSoft: AppColors.accentAmberSoft,
-                title: AppStrings.navChallans,
-                subtitle: 'Delivery notes without prices',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ChallansPage()),
-                ),
-              ),
-              _ManageTile(
-                icon: Icons.tune_rounded,
-                accent: AppColors.brand,
-                accentSoft: AppColors.brandSoft,
-                title: 'Stock adjustments',
-                subtitle: 'Damage, expiry, shrinkage corrections',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const StockAdjustmentsPage()),
-                ),
-              ),
-              _ManageTile(
-                icon: Icons.insights_outlined,
-                accent: AppColors.brandStrong,
-                accentSoft: AppColors.brandSoft,
-                title: 'Reports',
-                subtitle: 'Sales, purchases, GST and P&L',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ReportsPage()),
-                ),
-              ),
-            ],
-          ),
+          ..._businessSection(context, user),
+          ..._operationsSection(context, user),
           const SizedBox(height: AppSizes.huge),
           Center(
             child: Text(
@@ -180,6 +93,119 @@ class ProfilePage extends StatelessWidget {
         (u.shopStateCode == null || u.shopStateCode!.trim().isEmpty) ||
         (u.shopGstin == null || u.shopGstin!.trim().isEmpty);
   }
+
+  /// "Manage your business" — only the tiles this role can act on. The
+  /// section header is dropped entirely if the role has none of them.
+  static List<Widget> _businessSection(BuildContext context, AuthUser? user) {
+    if (user == null) return const [];
+    final tiles = <Widget>[
+      if (user.canView('products'))
+        _ManageTile(
+          icon: Icons.category_outlined,
+          accent: AppColors.accentTeal,
+          accentSoft: AppColors.accentTealSoft,
+          title: AppStrings.navCategories,
+          subtitle: 'Product categories and grouping',
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const CategoriesPage()),
+          ),
+        ),
+      if (user.canView('vendors'))
+        _ManageTile(
+          icon: Icons.storefront_outlined,
+          accent: AppColors.accentIndigo,
+          accentSoft: AppColors.accentIndigoSoft,
+          title: AppStrings.navVendors,
+          subtitle: 'Suppliers you buy from',
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const VendorsPage()),
+          ),
+        ),
+      if (user.canView('parties'))
+        _ManageTile(
+          icon: Icons.groups_outlined,
+          accent: AppColors.accentRose,
+          accentSoft: AppColors.accentRoseSoft,
+          title: AppStrings.navParties,
+          subtitle: 'Customers you sell to',
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const PartiesPage()),
+          ),
+        ),
+    ];
+    if (tiles.isEmpty) return const [];
+    return [
+      const _SectionLabel(text: 'Manage your business'),
+      const SizedBox(height: AppSizes.sm),
+      _ManageCard(children: tiles),
+      const SizedBox(height: AppSizes.lg),
+    ];
+  }
+
+  /// "Operations" — invoicing/inventory tiles gated by capability.
+  /// Reports stays for everyone (it's a read-only insight surface).
+  static List<Widget> _operationsSection(BuildContext context, AuthUser? user) {
+    if (user == null) return const [];
+    final tiles = <Widget>[
+      if (user.canView('invoices'))
+        _ManageTile(
+          icon: Icons.receipt_long_outlined,
+          accent: AppColors.brandStrong,
+          accentSoft: AppColors.brandSoft,
+          title: AppStrings.navInvoices,
+          subtitle: 'Sales, purchase and credit notes',
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const InvoicesPage()),
+          ),
+        ),
+      if (user.canView('invoices'))
+        _ManageTile(
+          icon: Icons.assignment_outlined,
+          accent: AppColors.accentAmber,
+          accentSoft: AppColors.accentAmberSoft,
+          title: AppStrings.navChallans,
+          subtitle: 'Delivery notes without prices',
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ChallansPage()),
+          ),
+        ),
+      if (user.canView('stock'))
+        _ManageTile(
+          icon: Icons.tune_rounded,
+          accent: AppColors.brand,
+          accentSoft: AppColors.brandSoft,
+          title: 'Stock adjustments',
+          subtitle: 'Damage, expiry, shrinkage corrections',
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const StockAdjustmentsPage()),
+          ),
+        ),
+      if (user.canView('reports'))
+        _ManageTile(
+          icon: Icons.insights_outlined,
+          accent: AppColors.brandStrong,
+          accentSoft: AppColors.brandSoft,
+          title: 'Reports',
+          subtitle: 'Sales, purchases, GST and P&L',
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ReportsPage()),
+          ),
+        ),
+    ];
+    if (tiles.isEmpty) return const [];
+    return [
+      const _SectionLabel(text: 'Operations'),
+      const SizedBox(height: AppSizes.sm),
+      _ManageCard(children: tiles),
+    ];
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -196,7 +222,10 @@ class _ProfileHero extends StatelessWidget {
     final theme = Theme.of(context);
     final name = user?.name ?? '—';
     final email = user?.email ?? '';
-    final role = user?.role;
+    // The chip reflects the *shop* role (Owner/Manager/Stockist/Cashier),
+    // not the account role — `user.role` is OWNER for every merchant
+    // account including staff, which would mislabel everyone "Owner".
+    final shopRole = user?.shopRole;
     final memberSince = user?.createdAt;
     final shopName = user?.shopName;
 
@@ -291,7 +320,7 @@ class _ProfileHero extends StatelessWidget {
                       runSpacing: 4,
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        _RoleChip(role: role),
+                        _RoleChip(shopRole: shopRole),
                         if (memberSince != null)
                           _MetaChip(
                             icon: Icons.calendar_today_outlined,
@@ -542,16 +571,29 @@ class _ManageTile extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────
 
 class _RoleChip extends StatelessWidget {
-  const _RoleChip({this.role});
-  final String? role;
+  const _RoleChip({this.shopRole});
+  final String? shopRole;
+
+  static String _label(String? role) {
+    switch (role) {
+      case 'OWNER':
+        return AppStrings.roleOwner;
+      case 'MANAGER':
+        return 'Manager';
+      case 'STOCKIST':
+        return 'Stockist';
+      case 'CASHIER':
+        return 'Cashier';
+      default:
+        return AppStrings.roleStaff;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isOwner = role == 'OWNER';
-    final label = isOwner
-        ? AppStrings.roleOwner
-        : (role == null || role!.isEmpty ? AppStrings.roleStaff : role!);
+    final isOwner = shopRole == 'OWNER';
+    final label = _label(shopRole);
     final bg = isOwner ? AppColors.brandSoft : AppColors.accentIndigoSoft;
     final fg = isOwner ? AppColors.brandStrong : AppColors.accentIndigo;
     return Container(

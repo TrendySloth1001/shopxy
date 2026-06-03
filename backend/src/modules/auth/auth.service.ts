@@ -1,13 +1,15 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import { Role } from '@prisma/client';
+import { Role, ShopRole } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
 import { invitationsService } from '../invitations/invitations.service.js';
 import { notificationsService } from '../notifications/notifications.service.js';
 import { logger } from '../../shared/logging/logger.js';
 import { requireEnv } from '../../shared/env.js';
 import { bumpTokensValidFromCache } from '../../shared/http/requireAuth.js';
+import { normalizeRights } from '../../shared/http/permissions.js';
+import { seedDefaultRoles } from '../team/team.service.js';
 
 const ACCESS_SECRET = requireEnv('JWT_ACCESS_SECRET');
 const REFRESH_SECRET = requireEnv('JWT_REFRESH_SECRET');
@@ -49,19 +51,23 @@ async function signAccess(
   role: Role,
   isPlatformAdmin: boolean,
 ): Promise<string> {
-  // Bake the merchant's shopId into the JWT so handlers don't pay a
-  // per-request lookup on the @unique ownerUserId index. Customer
-  // accounts (and OWNERs without a shop yet) keep `shopId` undefined.
+  // Bake the caller's shopId + shopRole into the JWT so handlers don't
+  // pay a per-request lookup on ShopMember. Resolved from the team
+  // membership (the owner has an OWNER row; staff have their granted
+  // role). Customer accounts — and merchant accounts not yet on any
+  // team — keep both undefined.
   let shopId: number | undefined;
+  let shopRole: ShopRole | undefined;
   if (role === 'OWNER') {
-    const shop = await prisma.shop.findUnique({
-      where: { ownerUserId: userId },
-      select: { id: true },
+    const membership = await prisma.shopMember.findUnique({
+      where: { userId },
+      select: { shopId: true, role: true },
     });
-    shopId = shop?.id;
+    shopId = membership?.shopId;
+    shopRole = membership?.role;
   }
   return jwt.sign(
-    { sub: userId, email, role, isPlatformAdmin, shopId },
+    { sub: userId, email, role, isPlatformAdmin, shopId, shopRole },
     ACCESS_SECRET,
     { expiresIn: '15m' },
   );
@@ -120,6 +126,16 @@ async function uniqueShopSlug(base: string): Promise<string> {
   }
 }
 
+/// Thrown inside acceptTeamInvite's transaction when the single-use
+/// status claim loses a race (double submit) — rolls the new account +
+/// membership back so one invite can't mint two staffers.
+class InviteAlreadyUsedError extends Error {
+  constructor() {
+    super('INVITE_ALREADY_USED');
+    this.name = 'InviteAlreadyUsedError';
+  }
+}
+
 export class AuthService {
   async register(data: {
     email: string;
@@ -163,13 +179,23 @@ export class AuthService {
           },
           select: safeUserSelect,
         });
-        await tx.shop.create({
+        const shop = await tx.shop.create({
           data: {
             ownerUserId: created.id,
             name: shopName,
             slug,
           },
+          select: { id: true },
         });
+        // Seed the owner's team membership in the same transaction.
+        // shopId/shopRole now resolve from ShopMember, so without this
+        // row a brand-new owner couldn't reach their own shop.
+        await tx.shopMember.create({
+          data: { shopId: shop.id, userId: created.id, role: 'OWNER' },
+        });
+        // Seed the shop's starter roles (Manager/Stockist/Cashier) so the
+        // Team & roles screen is populated from day one.
+        await seedDefaultRoles(tx, shop.id);
         return created;
       });
     } else {
@@ -200,6 +226,142 @@ export class AuthService {
       // emit as two separate console calls.
       logger.error({ event: 'invitation_claim_failed', userId: user.id, err });
       logger.warn({ userId: user.id, err }, 'invitation claim failed');
+    }
+
+    const accessToken = await signAccess(user.id, user.email, user.role, user.isPlatformAdmin);
+    const refreshToken = await createRefreshToken(user.id);
+    return { user, accessToken, refreshToken };
+  }
+
+  /// Read-only view of a TEAM invitation by its token, for the staff
+  /// accept-invite screen ("<Shop> invited you to join as Manager").
+  /// Returns a friendly error string for unusable tokens so the screen
+  /// can explain why rather than 404.
+  async previewTeamInvite(token: string) {
+    const invite = await prisma.invitation.findUnique({
+      where: { token },
+      select: {
+        toEmail: true,
+        teamRoleName: true,
+        linkType: true,
+        status: true,
+        expiresAt: true,
+        fromShopName: true,
+      },
+    });
+    if (!invite || invite.linkType !== 'TEAM') {
+      return { error: 'This invitation link is not valid.' as const };
+    }
+    if (invite.status !== 'PENDING') {
+      return { error: 'This invitation has already been used.' as const };
+    }
+    if (invite.expiresAt < new Date()) {
+      return { error: 'This invitation has expired.' as const };
+    }
+    return {
+      invite: {
+        email: invite.toEmail,
+        roleLabel: invite.teamRoleName ?? 'Staff',
+        shopName: invite.fromShopName,
+      },
+    };
+  }
+
+  /// Brand-new staffer accepts a TEAM invite and sets up their account
+  /// in one step: validates the token, creates a shopless merchant
+  /// (role=OWNER) account, makes them a ShopMember with the invited
+  /// role, and marks the invite accepted — atomically. No tokensValidFrom
+  /// bump (there are no prior sessions to revoke), so the freshly-minted
+  /// access token isn't immediately invalidated. Existing accounts use
+  /// the in-app notification accept flow instead.
+  async acceptTeamInvite(data: { token: string; name?: string; password: string }) {
+    const invite = await prisma.invitation.findUnique({
+      where: { token: data.token },
+      select: {
+        id: true,
+        shopId: true,
+        toEmail: true,
+        teamRoleName: true,
+        teamPermissions: true,
+        linkType: true,
+        status: true,
+        expiresAt: true,
+        fromUserId: true,
+      },
+    });
+    if (!invite || invite.linkType !== 'TEAM' || !invite.teamRoleName) {
+      return { error: 'This invitation link is not valid.' as const };
+    }
+    if (invite.status !== 'PENDING') {
+      return { error: 'This invitation has already been used.' as const };
+    }
+    if (invite.expiresAt < new Date()) {
+      return { error: 'This invitation has expired.' as const };
+    }
+    const email = invite.toEmail.toLowerCase().trim();
+    const existing = await prisma.user.findUnique({ where: { email }, select: { id: true } });
+    if (existing) {
+      return {
+        error:
+          'An account with this email already exists. Sign in and accept from your notifications.' as const,
+      };
+    }
+
+    const passwordHash = await bcrypt.hash(data.password, 12);
+    const teamRoleName = invite.teamRoleName;
+    // Default the name from the email local part when not supplied, so an
+    // account that isn't fully set up still has a sensible label.
+    const finalName = data.name?.trim() || email.split('@')[0];
+    let user;
+    try {
+      user = await prisma.$transaction(async (tx) => {
+        // Single-use claim: flip PENDING→ACCEPTED first so a double
+        // submit can't create two accounts off one invite.
+        const claim = await tx.invitation.updateMany({
+          where: { id: invite.id, status: 'PENDING' },
+          data: { status: 'ACCEPTED', respondedAt: new Date() },
+        });
+        if (claim.count === 0) throw new InviteAlreadyUsedError();
+
+        const created = await tx.user.create({
+          data: {
+            email,
+            name: finalName,
+            passwordHash,
+            role: 'OWNER',
+            acceptedAt: new Date(),
+          },
+          select: safeUserSelect,
+        });
+        await tx.invitation.update({
+          where: { id: invite.id },
+          data: { toUserId: created.id },
+        });
+        await tx.shopMember.create({
+          data: {
+            shopId: invite.shopId,
+            userId: created.id,
+            role: 'STAFF',
+            roleName: teamRoleName,
+            permissions: normalizeRights(invite.teamPermissions),
+          },
+        });
+        await tx.notification.create({
+          data: {
+            userId: invite.fromUserId,
+            kind: 'INVITE_ACCEPTED',
+            title: `${invite.toEmail} joined your team`,
+            body: `As ${teamRoleName}`,
+            data: { invitationId: invite.id, linkType: 'TEAM' },
+          },
+        });
+        return created;
+      });
+    } catch (err) {
+      if (err instanceof InviteAlreadyUsedError) {
+        return { error: 'This invitation has already been used.' as const };
+      }
+      throw err;
     }
 
     const accessToken = await signAccess(user.id, user.email, user.role, user.isPlatformAdmin);

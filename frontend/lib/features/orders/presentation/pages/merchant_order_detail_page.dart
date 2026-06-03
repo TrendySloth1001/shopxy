@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:shopxy/core/auth/permission_widgets.dart';
+import 'package:shopxy/core/auth/shop_capabilities.dart';
+import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/invoices/presentation/pages/invoice_detail_page.dart';
 import 'package:shopxy/features/invoices/presentation/providers/invoices_provider.dart';
 import 'package:shopxy/features/orders/data/datasources/orders_remote_data_source.dart';
@@ -337,6 +340,8 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
   @override
   Widget build(BuildContext context) {
     final order = _order;
+    final canWriteOrders = context.select<AuthProvider, bool>(
+        (a) => a.user?.canWriteOrders ?? false);
     return Scaffold(
       appBar: AppBar(
         title: Text('Order #${widget.orderId}'),
@@ -392,30 +397,38 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
                 child: Row(
                   children: [
                     Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: _busy ? null : _reject,
-                        icon: const Icon(Icons.close_rounded,
-                            color: AppColors.error),
-                        label: const Text(
-                          'Decline',
-                          style: TextStyle(color: AppColors.error),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          minimumSize: const Size.fromHeight(48),
-                          side: const BorderSide(color: AppColors.error),
+                      child: MaybeLocked(
+                        allowed: canWriteOrders,
+                        what: 'manage orders',
+                        child: OutlinedButton.icon(
+                          onPressed: _busy ? null : _reject,
+                          icon: const Icon(Icons.close_rounded,
+                              color: AppColors.error),
+                          label: const Text(
+                            'Decline',
+                            style: TextStyle(color: AppColors.error),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size.fromHeight(48),
+                            side: const BorderSide(color: AppColors.error),
+                          ),
                         ),
                       ),
                     ),
                     const SizedBox(width: AppSizes.md),
                     Expanded(
                       flex: 2,
-                      child: FilledButton.icon(
-                        onPressed: _busy ? null : _confirm,
-                        icon: const Icon(Icons.check_rounded),
-                        label: const Text(AppStrings.confirmAndCreateInvoice),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.brand,
-                          minimumSize: const Size.fromHeight(48),
+                      child: MaybeLocked(
+                        allowed: canWriteOrders,
+                        what: 'manage orders',
+                        child: FilledButton.icon(
+                          onPressed: _busy ? null : _confirm,
+                          icon: const Icon(Icons.check_rounded),
+                          label: const Text(AppStrings.confirmAndCreateInvoice),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: AppColors.brand,
+                            minimumSize: const Size.fromHeight(48),
+                          ),
                         ),
                       ),
                     ),

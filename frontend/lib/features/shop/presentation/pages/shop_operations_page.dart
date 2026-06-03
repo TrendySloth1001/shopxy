@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/core/auth/permission_widgets.dart';
+import 'package:shopxy/core/auth/shop_capabilities.dart';
+import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/shop/presentation/pages/shop_hours_page.dart';
 import 'package:shopxy/features/shop/presentation/pages/shop_kyc_page.dart';
 import 'package:shopxy/features/shop/presentation/pages/shop_payouts_page.dart';
@@ -33,8 +36,12 @@ class _ShopOperationsPageState extends State<ShopOperationsPage> {
       // editing.
       context.read<ShopProvider>().load();
       // Live payout status drives the Payouts tile badge (Set up / Under
-      // review / Active) instead of a static "Coming soon".
-      context.read<LinkedAccountProvider>().load();
+      // review / Active). Only owners can read the linked-account status
+      // (billing:manage is owner-only) — staff would just 403, and the
+      // tile is hidden for them anyway, so skip the call.
+      if (context.read<AuthProvider>().user?.canView('payouts') ?? false) {
+        context.read<LinkedAccountProvider>().load();
+      }
     });
   }
 
@@ -42,16 +49,31 @@ class _ShopOperationsPageState extends State<ShopOperationsPage> {
   Widget build(BuildContext context) {
     final shop = context.watch<ShopProvider>().shop;
     final payouts = context.watch<LinkedAccountProvider>();
+    final (canShop, canBilling, canTeam) =
+        context.select<AuthProvider, (bool, bool, bool)>((a) {
+      final u = a.user;
+      return (
+        u?.canView('shop') ?? false,
+        u?.canView('payouts') ?? false,
+        u?.canView('team') ?? false,
+      );
+    });
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(title: const Text('Shop operations')),
+      appBar: AppBar(
+        title: const Text('Shop operations'),
+        actions: [
+          AccessReloadButton(onReload: () => context.read<ShopProvider>().load()),
+        ],
+      ),
       // Editorial layout: flat rows separated by full-bleed hairlines, no
       // cards. Each row owns its own horizontal padding so the dividers run
       // edge-to-edge under the list.
       body: ListView(
         padding: const EdgeInsets.only(top: AppSizes.sm, bottom: AppSizes.huge),
         children: [
-          _OpsTile(
+          if (canShop)
+            _OpsTile(
             icon: Icons.schedule_rounded,
             iconBg: AppColors.brandSoft,
             iconColor: AppColors.brandStrong,
@@ -71,7 +93,8 @@ class _ShopOperationsPageState extends State<ShopOperationsPage> {
               MaterialPageRoute(builder: (_) => const ShopHoursPage()),
             ),
           ),
-          _OpsTile(
+          if (canBilling)
+            _OpsTile(
             icon: Icons.account_balance_outlined,
             iconBg: AppColors.infoSoft,
             iconColor: AppColors.info,
@@ -82,7 +105,8 @@ class _ShopOperationsPageState extends State<ShopOperationsPage> {
               MaterialPageRoute(builder: (_) => const ShopPayoutsPage()),
             ),
           ),
-          _OpsTile(
+          if (canBilling)
+            _OpsTile(
             icon: Icons.verified_user_outlined,
             iconBg: AppColors.accentIndigoSoft,
             iconColor: AppColors.accentIndigo,
@@ -100,24 +124,19 @@ class _ShopOperationsPageState extends State<ShopOperationsPage> {
               MaterialPageRoute(builder: (_) => const ShopKycPage()),
             ),
           ),
-          _OpsTile(
-            icon: Icons.group_outlined,
-            iconBg: AppColors.accentRoseSoft,
-            iconColor: AppColors.accentRose,
-            title: 'Team & roles',
-            subtitle:
-                "Invite staff with scoped permissions. Single-user "
-                "today; multi-user lands in the next release.",
-            trailing: const AppStatusBadge(
-              label: 'Coming soon',
-              tone: AppStatusTone.info,
-              weight: AppStatusWeight.soft,
-              dense: true,
+          if (canTeam)
+            _OpsTile(
+              icon: Icons.group_outlined,
+              iconBg: AppColors.accentRoseSoft,
+              iconColor: AppColors.accentRose,
+              title: 'Team & roles',
+              subtitle:
+                  'Invite staff and scope exactly what each person can '
+                  'view and manage.',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const ShopTeamPage()),
+              ),
             ),
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const ShopTeamPage()),
-            ),
-          ),
         ],
       ),
     );

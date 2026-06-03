@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/core/auth/permission_widgets.dart';
+import 'package:shopxy/core/auth/shop_capabilities.dart';
+import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/notifications/domain/entities/invitation.dart';
 import 'package:shopxy/features/notifications/presentation/pages/send_invite_page.dart';
 import 'package:shopxy/features/notifications/presentation/providers/notifications_provider.dart';
@@ -57,14 +60,20 @@ class _VendorsPageState extends State<VendorsPage> {
   Widget build(BuildContext context) {
     final provider = context.watch<VendorsProvider>();
     final outgoing = context.watch<NotificationsProvider>().outgoing;
+    final canManage = context.select<AuthProvider, bool>(
+        (a) => a.user?.canManage('vendors') ?? false);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text(AppStrings.navVendors),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add_rounded),
+          AccessReloadButton(
+              onReload: () => provider.loadVendors(refresh: true)),
+          LockedIconButton(
+            allowed: canManage,
+            icon: Icons.add_rounded,
             tooltip: AppStrings.addVendor,
+            what: 'add vendors',
             onPressed: () => _showVendorSheet(context),
           ),
         ],
@@ -97,10 +106,14 @@ class _VendorsPageState extends State<VendorsPage> {
                             kind: LineArt.vendors,
                             title: AppStrings.noVendors,
                             subtitle: AppStrings.noVendorsHint,
-                            action: AppButton.primary(
-                              label: AppStrings.addVendor,
-                              icon: Icons.add_rounded,
-                              onPressed: () => _showVendorSheet(context),
+                            action: MaybeLocked(
+                              allowed: canManage,
+                              what: 'add vendors',
+                              child: AppButton.primary(
+                                label: AppStrings.addVendor,
+                                icon: Icons.add_rounded,
+                                onPressed: () => _showVendorSheet(context),
+                              ),
                             ),
                           )
                         : RefreshIndicator(

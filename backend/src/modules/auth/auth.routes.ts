@@ -12,6 +12,8 @@ import {
   changePassword,
   exportData,
   deleteAccount,
+  previewTeamInvite,
+  acceptTeamInvite,
 } from './auth.controller.js';
 
 const router = Router();
@@ -21,6 +23,9 @@ router.post('/register', asyncHandler(register));
 router.post('/login', asyncHandler(login));
 router.post('/refresh', asyncHandler(refresh));
 router.post('/logout', asyncHandler(logout));
+// Staff onboarding via a TEAM invite token — preview + accept-with-signup.
+router.get('/team-invite/:token', asyncHandler(previewTeamInvite));
+router.post('/accept-invite', asyncHandler(acceptTeamInvite));
 
 // Protected — token required
 router.post('/logout-all', requireAuth, asyncHandler(logoutAll));

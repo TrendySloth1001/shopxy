@@ -3,7 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/core/auth/permission_widgets.dart';
+import 'package:shopxy/core/auth/shop_capabilities.dart';
 import 'package:shopxy/core/router/app_shell.dart';
+import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/orders/domain/entities/merchant_order.dart';
 import 'package:shopxy/features/orders/presentation/pages/merchant_order_detail_page.dart';
 import 'package:shopxy/features/orders/presentation/providers/orders_provider.dart';
@@ -85,12 +88,17 @@ class _OrdersInboxPageState extends State<OrdersInboxPage> {
   @override
   Widget build(BuildContext context) {
     final p = context.watch<OrdersProvider>();
+    final canView = context.select<AuthProvider, bool>(
+        (a) => a.user?.canView('orders') ?? false);
     return Scaffold(
       appBar: AppBar(
         leading: Navigator.canPop(context) ? null : const ShellMenuButton(),
         title: const Text(AppStrings.orders),
+        actions: [AccessReloadButton(onReload: () => p.load())],
       ),
-      body: Column(
+      body: !canView
+          ? const NoAccessView(title: 'Orders hidden')
+          : Column(
         children: [
           // ── Status pills ───────────────────────────────────────────
           Padding(
