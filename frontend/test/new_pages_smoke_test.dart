@@ -26,6 +26,12 @@ import 'package:shopxy/features/promotions/presentation/providers/promotions_pro
 import 'package:shopxy/features/spotlight/data/datasources/spotlight_remote_data_source.dart';
 import 'package:shopxy/features/spotlight/presentation/pages/spotlight_request_page.dart';
 import 'package:shopxy/features/spotlight/presentation/providers/spotlight_provider.dart';
+import 'package:shopxy/features/shop/data/datasources/linked_account_remote_data_source.dart';
+import 'package:shopxy/features/shop/data/datasources/shop_remote_data_source.dart';
+import 'package:shopxy/features/shop/presentation/pages/shop_operations_page.dart';
+import 'package:shopxy/features/shop/presentation/pages/shop_payouts_page.dart';
+import 'package:shopxy/features/shop/presentation/providers/linked_account_provider.dart';
+import 'package:shopxy/features/shop/presentation/providers/shop_provider.dart';
 
 ApiClient _api() => ApiClient(TokenManager());
 
@@ -95,5 +101,48 @@ void main() {
     await tester.pump();
     expect(find.text('Collections'), findsOneWidget);
     expect(find.text('New collection'), findsOneWidget);
+  });
+
+  // Payout onboarding surfaces — guard the provider wiring (ShopProvider +
+  // LinkedAccountProvider for operations; ApiClient + LinkedAccountProvider
+  // for the payouts form). A missing provider would throw on first pump.
+  testWidgets('ShopOperationsPage renders its tiles', (tester) async {
+    final api = _api();
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(
+            create: (_) => ShopProvider(ShopRemoteDataSource(api)),
+          ),
+          ChangeNotifierProvider(
+            create: (_) =>
+                LinkedAccountProvider(LinkedAccountRemoteDataSource(api)),
+          ),
+        ],
+        child: const MaterialApp(home: ShopOperationsPage()),
+      ),
+    );
+    await tester.pump();
+    expect(find.text('Shop operations'), findsOneWidget);
+    expect(find.text('Payouts & settlement'), findsOneWidget);
+    expect(find.text('KYC documents'), findsOneWidget);
+  });
+
+  testWidgets('ShopPayoutsPage renders chrome', (tester) async {
+    final api = _api();
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          Provider<ApiClient>.value(value: api),
+          ChangeNotifierProvider(
+            create: (_) =>
+                LinkedAccountProvider(LinkedAccountRemoteDataSource(api)),
+          ),
+        ],
+        child: const MaterialApp(home: ShopPayoutsPage()),
+      ),
+    );
+    await tester.pump();
+    expect(find.text('Payouts & settlement'), findsOneWidget);
   });
 }

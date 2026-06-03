@@ -154,7 +154,7 @@ export class VendorsService {
             _sum: { total: true },
           }),
           prisma.payment.aggregate({
-            where: { vendorId: id, shopId, type: 'PAYMENT' },
+            where: { vendorId: id, shopId, type: 'PAYMENT', voidedAt: null },
             _sum: { amount: true },
           }),
         ]),

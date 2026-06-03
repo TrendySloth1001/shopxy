@@ -351,6 +351,10 @@ class AppStrings {
   // Auth
   static const String welcomeBack = 'Welcome back';
   static const String loginSubtitle = 'Sign in to your Shopxy account';
+  // Shown when a customer account tries to sign in here — the merchant
+  // app is for shop owners only.
+  static const String customerAccountBlocked =
+      'This is a customer account. Please use the Shopxy customer app to sign in.';
   static const String registerTitle = 'Create your account';
   static const String registerSubtitle = 'Start managing your inventory';
   static const String createAccount = 'Create Account';

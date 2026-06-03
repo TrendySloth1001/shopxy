@@ -5,6 +5,9 @@ class AuthUser {
     required this.name,
     required this.role,
     this.isPlatformAdmin = false,
+    this.shopRole,
+    this.shopRoleName,
+    this.shopPermissions = const [],
     required this.emailNotifications,
     required this.createdAt,
     this.shopName,
@@ -27,6 +30,18 @@ class AuthUser {
   /// Platform-wide curation privilege (banners, taxonomy, collections).
   /// Independent of role — flag any user via DB to grant it.
   final bool isPlatformAdmin;
+  /// The caller's position within their shop's team (OWNER, MANAGER,
+  /// STOCKIST, CASHIER). Null for accounts not on any team (e.g. a
+  /// customer account, or an owner whose shop predates membership).
+  /// Surfaced on /auth/me; gates role-sensitive UI like the Team screen.
+  final String? shopRole;
+  /// Human label of the caller's role — a TeamRole name ("Cashier",
+  /// "Warehouse Lead", …). Preferred over [shopRole] for display.
+  final String? shopRoleName;
+  /// Granted rights as `area:action` strings (see shop_capabilities
+  /// .dart). Empty for OWNER (their role bypasses every gate) and for
+  /// non-team accounts. Surfaced on /auth/me.
+  final List<String> shopPermissions;
   final bool emailNotifications;
   final DateTime createdAt;
   // Shop profile — surfaced on /auth/me and editable via PATCH /auth/me.
@@ -51,6 +66,9 @@ class AuthUser {
         name: j['name'] as String,
         role: j['role'] as String,
         isPlatformAdmin: (j['isPlatformAdmin'] as bool?) ?? false,
+        shopRole: j['shopRole'] as String?,
+        shopRoleName: j['shopRoleName'] as String?,
+        shopPermissions: (j['shopPermissions'] as List?)?.cast<String>() ?? const [],
         emailNotifications: (j['emailNotifications'] as bool?) ?? true,
         createdAt: DateTime.parse(j['createdAt'] as String),
         shopName: j['shopName'] as String?,
@@ -71,6 +89,10 @@ class AuthUser {
       );
 
   bool get isOwner => role == 'OWNER';
+
+  /// True when this account owns the shop (vs invited staff). Gates the
+  /// team-management actions on the Team & roles screen.
+  bool get isShopOwner => shopRole == 'OWNER';
 
   AuthUser copyWith({
     String? name,
@@ -93,6 +115,9 @@ class AuthUser {
         name: name ?? this.name,
         role: role,
         isPlatformAdmin: isPlatformAdmin,
+        shopRole: shopRole,
+        shopRoleName: shopRoleName,
+        shopPermissions: shopPermissions,
         emailNotifications: emailNotifications ?? this.emailNotifications,
         createdAt: createdAt,
         shopName: shopName ?? this.shopName,

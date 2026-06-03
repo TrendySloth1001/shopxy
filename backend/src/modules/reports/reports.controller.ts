@@ -18,25 +18,40 @@ function parseRange(req: Request): DateRange {
   };
 }
 
+/// Every report is scoped to the caller's shop. resolveShop runs ahead of
+/// this router and guarantees req.shopId is set; bail loudly if it isn't
+/// rather than silently aggregating across every tenant (the old bug).
+function requireShopId(req: Request, res: Response): number | null {
+  if (typeof req.shopId !== 'number') {
+    res.status(403).json({ error: 'This account has no shop linked.' });
+    return null;
+  }
+  return req.shopId;
+}
+
 export class ReportsController {
   async sales(req: Request, res: Response): Promise<void> {
-    const range = parseRange(req);
-    const data = await reportsService.sales(range);
+    const shopId = requireShopId(req, res);
+    if (shopId === null) return;
+    const data = await reportsService.sales(shopId, parseRange(req));
     res.json(data);
   }
   async purchases(req: Request, res: Response): Promise<void> {
-    const range = parseRange(req);
-    const data = await reportsService.purchases(range);
+    const shopId = requireShopId(req, res);
+    if (shopId === null) return;
+    const data = await reportsService.purchases(shopId, parseRange(req));
     res.json(data);
   }
   async gst(req: Request, res: Response): Promise<void> {
-    const range = parseRange(req);
-    const data = await reportsService.gstSummary(range);
+    const shopId = requireShopId(req, res);
+    if (shopId === null) return;
+    const data = await reportsService.gstSummary(shopId, parseRange(req));
     res.json(data);
   }
   async pnl(req: Request, res: Response): Promise<void> {
-    const range = parseRange(req);
-    const data = await reportsService.pnl(range);
+    const shopId = requireShopId(req, res);
+    if (shopId === null) return;
+    const data = await reportsService.pnl(shopId, parseRange(req));
     res.json(data);
   }
 }

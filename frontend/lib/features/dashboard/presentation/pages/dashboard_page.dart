@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/core/auth/permission_widgets.dart';
+import 'package:shopxy/core/auth/shop_capabilities.dart';
+import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/dashboard/domain/entities/dashboard_stats.dart';
 import 'package:shopxy/features/dashboard/presentation/providers/dashboard_provider.dart';
 import 'package:shopxy/features/challans/presentation/pages/challan_detail_page.dart';
@@ -10,6 +13,8 @@ import 'package:shopxy/features/notifications/presentation/providers/notificatio
 import 'package:shopxy/core/router/app_shell.dart';
 import 'package:shopxy/features/notifications/presentation/widgets/notification_bell.dart';
 import 'package:shopxy/features/orders/presentation/providers/orders_provider.dart';
+import 'package:shopxy/features/shop/presentation/providers/linked_account_provider.dart';
+import 'package:shopxy/features/shop/presentation/widgets/payout_setup_sheet.dart';
 import 'package:shopxy/features/stock/domain/entities/stock_transaction.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
@@ -27,20 +32,45 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
+  /// Guards the one-time payout-setup nudge so a rebuild can't stack sheets.
+  bool _payoutNudgeScheduled = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      context.read<DashboardProvider>().loadStats();
-      // First-login pending-invite check: if the user has unresponded
-      // invitations waiting, surface a one-time banner here. The
-      // provider tracks whether we've already shown it this session.
+      final user = context.read<AuthProvider>().user;
+      // Only load the (now permission-gated) dashboard stats if the
+      // caller can view them — staff without dashboard:view get a 403
+      // and the NoAccessView instead.
+      if (user?.canView('dashboard') ?? false) {
+        context.read<DashboardProvider>().loadStats();
+      }
+      // Personal: pending invitations the user can respond to.
       final n = context.read<NotificationsProvider>();
       n.loadIncoming(status: 'PENDING');
-      // Pending-orders badge on the orders callout. Cheap COUNT query
-      // — safe to fire every time the dashboard appears.
-      context.read<OrdersProvider>().refreshPendingCount();
+      // Orders badge — only if they can see orders.
+      if (user?.canView('orders') ?? false) {
+        context.read<OrdersProvider>().refreshPendingCount();
+      }
+      // Payout onboarding nudge is for whoever manages billing.
+      if (user?.canView('payouts') ?? false) {
+        context.read<LinkedAccountProvider>().load();
+      }
+    });
+  }
+
+  /// Shows the payout-setup bottom sheet once per session when the shop still
+  /// needs onboarding. Marking the prompt dismissed (on either action) flips
+  /// [LinkedAccountProvider.shouldPrompt] false so it won't re-open.
+  void _maybeNudgePayouts(LinkedAccountProvider payouts) {
+    if (_payoutNudgeScheduled || !payouts.shouldPrompt) return;
+    _payoutNudgeScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted || !payouts.shouldPrompt) return;
+      await showPayoutSetupSheet(context, hasDraft: payouts.hasDraft);
+      if (mounted) payouts.dismissPrompt();
     });
   }
 
@@ -48,20 +78,34 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget build(BuildContext context) {
     final provider = context.watch<DashboardProvider>();
     final stats = provider.stats;
+    // select (not watch): rebuilds only when THIS bool flips, not on any
+    // other AuthProvider change (name, avatar, unrelated permissions).
+    final canViewDashboard = context.select<AuthProvider, bool>(
+        (a) => a.user?.canView('dashboard') ?? false);
+    if (canViewDashboard) {
+      _maybeNudgePayouts(context.watch<LinkedAccountProvider>());
+    }
 
     return Scaffold(
       appBar: AppBar(
         leading: const ShellMenuButton(),
         title: const Text(AppStrings.appName),
         actions: [
+          // NotificationBell is personal — always available.
           const NotificationBell(),
-          IconButton(
-            onPressed: () => provider.loadStats(),
-            icon: const Icon(Icons.refresh_rounded),
-          ),
+          // Always available (even on the no-access screen) so a staffer
+          // just granted access can re-check without restarting.
+          AccessReloadButton(onReload: () => provider.loadStats()),
         ],
       ),
-      body: provider.isLoading && stats == null
+      body: !canViewDashboard
+          ? const NoAccessView(
+              title: 'Dashboard hidden',
+              message:
+                  'Your role doesn\'t include the dashboard overview. Ask an '
+                  'owner if you need it.',
+            )
+          : provider.isLoading && stats == null
           ? const Center(child: CircularProgressIndicator())
           : provider.error != null && stats == null
               ? AppErrorView(onRetry: () => provider.loadStats())

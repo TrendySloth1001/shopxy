@@ -43,15 +43,25 @@ export async function loadShopMiddleware(
     res.status(401).json({ error: 'Authentication required' });
     return;
   }
-  const shop = await prisma.shop.findUnique({
-    where: { ownerUserId: userId },
-    select: { id: true },
+  // Fast path: requireAuth already hydrated the caller's shopId from
+  // their JWT / membership cache, so reuse it without a round-trip.
+  if (typeof req.user?.shopId === 'number') {
+    req.shopId = req.user.shopId;
+    next();
+    return;
+  }
+  // Fallback: resolve from the caller's team membership. Staff don't
+  // own a Shop row — only a ShopMember — so we key off membership, not
+  // Shop.ownerUserId.
+  const membership = await prisma.shopMember.findUnique({
+    where: { userId },
+    select: { shopId: true },
   });
-  if (!shop) {
+  if (!membership) {
     res.status(404).json({ error: 'No shop linked to this account' });
     return;
   }
-  req.shopId = shop.id;
+  req.shopId = membership.shopId;
   next();
 }
 

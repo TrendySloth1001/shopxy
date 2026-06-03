@@ -16,6 +16,12 @@ class ApiClient {
   final TokenManager _tokenManager;
   Completer<bool>? _refreshCompleter;
 
+  /// Invoked with the `X-Shop-Perms` version on every authenticated
+  /// response. Wired (in main) to AuthProvider so a permission/role
+  /// change made elsewhere is picked up on the next request — no
+  /// re-login. Null for unauthenticated / customer responses.
+  void Function(String permsVersion)? onPermsVersion;
+
   Uri _buildUri(String path, [Map<String, String>? queryParameters]) {
     final normalizedPath = path.startsWith('/') ? path.substring(1) : path;
     final uri = Uri.parse('${AppConfig.apiBaseUrl}$normalizedPath');
@@ -109,16 +115,21 @@ class ApiClient {
   // ── 401 interception + transparent token refresh ──────────────────────────
 
   Future<T> _withRetry<T extends http.BaseResponse>(Future<T> Function() call) async {
-    final response = await call();
-    if (response.statusCode != 401) return response;
-
-    final refreshed = await _tryRefresh();
-    if (!refreshed) {
-      _tokenManager.onUnauthorized?.call();
-      return response;
+    var response = await call();
+    if (response.statusCode == 401) {
+      final refreshed = await _tryRefresh();
+      if (!refreshed) {
+        _tokenManager.onUnauthorized?.call();
+        return response;
+      }
+      // Retry original call once with the new token.
+      response = await call();
     }
-    // Retry original call once with the new token.
-    return call();
+    // Every authenticated response carries the caller's perms version;
+    // hand it to the listener so the UI re-syncs when it changes.
+    final v = response.headers['x-shop-perms'];
+    if (v != null) onPermsVersion?.call(v);
+    return response;
   }
 
   Future<bool> _tryRefresh() async {

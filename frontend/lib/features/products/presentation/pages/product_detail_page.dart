@@ -3,6 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:shopxy/core/auth/permission_widgets.dart';
+import 'package:shopxy/core/auth/shop_capabilities.dart';
+import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/products/data/datasources/products_remote_data_source.dart';
 import 'package:shopxy/features/products/domain/entities/product.dart';
 import 'package:shopxy/features/products/presentation/pages/add_edit_product_page.dart';
@@ -437,6 +440,11 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     }
 
     final p = _product!;
+    final (canWriteProducts, canStock) =
+        context.select<AuthProvider, (bool, bool)>((a) {
+      final u = a.user;
+      return (u?.canWriteProducts ?? false, u?.canWriteStock ?? false);
+    });
 
     return Scaffold(
       appBar: AppBar(
@@ -447,28 +455,37 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             icon: const Icon(Icons.qr_code_rounded),
             tooltip: AppStrings.generateQr,
           ),
-          IconButton(
+          // Edit is a product write — shown locked (greyed + padlock) for
+          // roles without products:manage so they know it exists.
+          LockedIconButton(
+            allowed: canWriteProducts,
+            icon: Icons.edit_outlined,
+            tooltip: 'Edit',
+            what: 'edit products',
             onPressed: _openEdit,
-            icon: const Icon(Icons.edit_outlined),
           ),
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert_rounded),
-            itemBuilder: (_) => [
-              const PopupMenuItem(
-                value: 'delete',
-                child: Text(AppStrings.delete),
-              ),
-            ],
-            onSelected: (value) {
-              if (value == 'delete') _deleteProduct();
-            },
-          ),
+          if (canWriteProducts)
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert_rounded),
+              itemBuilder: (_) => [
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: Text(AppStrings.delete),
+                ),
+              ],
+              onSelected: (value) {
+                if (value == 'delete') _deleteProduct();
+              },
+            ),
         ],
       ),
-      bottomNavigationBar: _StockActionBar(
-        onStockIn: () => _openStockSheet('STOCK_IN'),
-        onStockOut: () => _openStockSheet('STOCK_OUT'),
-      ),
+      // Stock in/out is inventory:write — Stockists keep it, Cashiers don't.
+      bottomNavigationBar: canStock
+          ? _StockActionBar(
+              onStockIn: () => _openStockSheet('STOCK_IN'),
+              onStockOut: () => _openStockSheet('STOCK_OUT'),
+            )
+          : null,
       body: RefreshIndicator(
         onRefresh: _refreshAll,
         color: AppColors.black,

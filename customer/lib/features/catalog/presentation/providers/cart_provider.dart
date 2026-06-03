@@ -310,6 +310,18 @@ class CartProvider extends ChangeNotifier {
     }
   }
 
+  /// Start an online gateway payment for a just-placed order. Thin delegate to
+  /// the orders data source — the checkout page opens the Razorpay sheet with
+  /// the returned [GatewayCheckout.clientParams].
+  Future<GatewayCheckout> payForOrder(int orderId) =>
+      _ordersDs.payForOrder(orderId);
+
+  /// Confirm-after-sheet: asks the server to settle the payment by checking the
+  /// live provider order (a backstop for the webhook, which can't reach a
+  /// localhost dev server and may lag in prod). Returns the paymentStatus.
+  Future<String> syncOrderPayment(int orderId) =>
+      _ordersDs.syncOrderPayment(orderId);
+
   /// Read the snapshot written by [_persist]. Wishlist/orders providers
   /// own their own restore loops; this one is fire-and-forget at boot.
   Future<void> restore() async {

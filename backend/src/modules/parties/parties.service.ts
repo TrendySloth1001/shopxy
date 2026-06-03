@@ -189,7 +189,7 @@ export class PartiesService {
             _sum: { total: true },
           }),
           prisma.payment.aggregate({
-            where: { partyId: id, shopId, type: 'RECEIPT' },
+            where: { partyId: id, shopId, type: 'RECEIPT', voidedAt: null },
             _sum: { amount: true },
           }),
         ]),

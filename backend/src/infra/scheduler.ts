@@ -7,6 +7,11 @@ import { promotionsService } from '../modules/promotions/promotions.service.js';
 import { embeddingService } from '../modules/search/embedding.service.js';
 import { productsService } from '../modules/products/products.service.js';
 import { marketplaceService } from '../modules/marketplace/marketplace.service.js';
+import { paymentGatewayService } from '../modules/payment-gateway/index.js';
+import { reconcileStaleTransfers } from '../modules/payment-gateway/settlement/transfer-reconcile.js';
+import { isRouteSplitEnabled } from '../modules/payment-gateway/settlement/order-split.js';
+import { linkedAccountsService } from '../modules/linked-accounts/linked-accounts.service.js';
+import { tryAcquireJobLock } from './redis.js';
 
 /// Lightweight in-process cron registry. We deliberately stay on
 /// node-cron (rather than BullMQ) until durability matters — every
@@ -144,6 +149,59 @@ export function startScheduler(): void {
       'search: embedding service disabled (no OLLAMA_KEY) — semantic search will fall back to FTS',
     );
   }
+
+  // Every 15 min — intent-level payment reconciliation. Re-checks open gateway
+  // intents whose webhook may have been missed (localhost dev; a dropped or
+  // delayed delivery in prod): PAID → mark CAPTURED + settle (idempotent with
+  // the webhook); definitively-unpaid past the abandon window → FAILED. The
+  // liveness net for online collection. Unlike the DB-only jobs above, this hits
+  // a rate-limited external API, so we best-effort lock to ONE instance per tick
+  // (degrades open when Redis is down — correctness is settlement-idempotent
+  // regardless). See PAYMENT_GATEWAY_ARCHITECTURE.md §8.
+  jobs.push(
+    cron.schedule('*/15 * * * *', () =>
+      runSafely('gateway:reconcile-intents', async () => {
+        // Lock TTL just under the interval so a held lock auto-releases before
+        // the next tick rather than wedging the sweep.
+        if (!(await tryAcquireJobLock('gateway:reconcile-intents', 14 * 60_000))) {
+          return { skipped: 'lock held by another instance' };
+        }
+        return paymentGatewayService.reconcileStaleIntents();
+      }),
+    ),
+  );
+
+  // Every 15 min — transfer-level reconciliation for the Route on-hold split:
+  // heal HELD rows whose provider transfer never landed (P1) and release holds
+  // past their window whose child has no open return (P2). Only runs when the
+  // split feature is on (no transfers exist otherwise). Same best-effort lock as
+  // the intent sweep so only one instance polls Razorpay per tick.
+  jobs.push(
+    cron.schedule('*/15 * * * *', () =>
+      runSafely('gateway:reconcile-transfers', async () => {
+        if (!isRouteSplitEnabled()) return { skipped: 'route split disabled' };
+        if (!(await tryAcquireJobLock('gateway:reconcile-transfers', 14 * 60_000))) {
+          return { skipped: 'lock held by another instance' };
+        }
+        return reconcileStaleTransfers();
+      }),
+    ),
+  );
+
+  // Every 30 min — re-poll linked-account KYC for accounts not yet payout-
+  // enabled, so a dropped/early account.activated webhook self-heals (the seller
+  // would otherwise be stranded KYC_GATED). Flag-gated + lock-guarded.
+  jobs.push(
+    cron.schedule('*/30 * * * *', () =>
+      runSafely('gateway:reconcile-kyc', async () => {
+        if (!isRouteSplitEnabled()) return { skipped: 'route split disabled' };
+        if (!(await tryAcquireJobLock('gateway:reconcile-kyc', 28 * 60_000))) {
+          return { skipped: 'lock held by another instance' };
+        }
+        return linkedAccountsService.reconcilePendingKyc();
+      }),
+    ),
+  );
 
   logger.info({ jobs: jobs.length }, 'scheduler started');
 }

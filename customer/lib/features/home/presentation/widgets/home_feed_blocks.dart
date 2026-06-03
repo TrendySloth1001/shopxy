@@ -1375,7 +1375,7 @@ class _LeaderboardRow extends StatelessWidget {
   }
 }
 
-/// "Spotlight: <brand>" — brand label + grid of products from that
+/// "Spotlight: `<brand>`" — brand label + grid of products from that
 /// brand. Helps customers shop by manufacturer rather than category.
 class _BrandFocusBlock extends StatelessWidget {
   const _BrandFocusBlock({required this.block});
@@ -1643,7 +1643,7 @@ class _DuoCard extends StatelessWidget {
   }
 }
 
-/// "Visit <shop>" — small-merchant spotlight. Shop name + tagline +
+/// "Visit `<shop>`" — small-merchant spotlight. Shop name + tagline +
 /// 4-tile product grid. Drives discovery of individual shops rather
 /// than just categories.
 class _ShopShowcaseBlock extends StatelessWidget {

@@ -1,13 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import 'package:shopxy/core/network/api_client.dart';
+import 'package:shopxy/features/shop/data/datasources/linked_account_remote_data_source.dart';
+import 'package:shopxy/features/shop/data/datasources/onboarding_draft_store.dart';
+import 'package:shopxy/features/shop/presentation/providers/linked_account_provider.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
-import 'package:shopxy/shared/theme/app_shapes.dart';
 
-/// Payouts scaffold — UI shell only, no backend wiring. Surfaces
-/// the structured fields a real Razorpay / Cashfree integration
-/// will need so the visual surface lands ahead of the wire. The
-/// "Save" button stays disabled until the gateway is connected;
-/// this page is purely so merchants can see what's coming.
+/// Payouts & settlement onboarding. Wires the shop to a Razorpay Route linked
+/// account so the shop's slice of each marketplace order can settle to its bank.
+///
+/// Onboarding is a 4-step wizard — Business → Identity (PAN/GST) → Registered
+/// address → Settlement bank — matching what Razorpay's `POST /v2/accounts`
+/// needs for a submittable account (legal_info + profile + bank). KYC then runs
+/// asynchronously at Razorpay; we poll status until payouts go live.
+///
+/// PAN/GST and bank details are sent straight to Razorpay and never stored.
+/// Layout is editorial: a fixed progress header, a scrollable step body, and a
+/// pinned footer — no cards.
 class ShopPayoutsPage extends StatefulWidget {
   const ShopPayoutsPage({super.key});
 
@@ -15,20 +26,236 @@ class ShopPayoutsPage extends StatefulWidget {
   State<ShopPayoutsPage> createState() => _ShopPayoutsPageState();
 }
 
-class _ShopPayoutsPageState extends State<ShopPayoutsPage> {
-  final _holder = TextEditingController();
+class _ShopPayoutsPageState extends State<ShopPayoutsPage>
+    with WidgetsBindingObserver {
+  late final LinkedAccountRemoteDataSource _ds;
+  // Cached in initState — safe to use in dispose (context.read isn't).
+  late final LinkedAccountProvider _provider;
+
+  // One form key per step so "Continue" only validates the visible fields.
+  final _stepKeys = List.generate(4, (_) => GlobalKey<FormState>());
+
+  // Business
+  final _legalName = TextEditingController();
+  final _customerFacing = TextEditingController();
+  final _contact = TextEditingController();
+  final _email = TextEditingController();
+  final _phone = TextEditingController();
+  String _businessType = 'proprietorship';
+  String _category = 'ecommerce';
+  // Identity
+  final _pan = TextEditingController();
+  final _gst = TextEditingController();
+  // Address
+  final _street1 = TextEditingController();
+  final _street2 = TextEditingController();
+  final _city = TextEditingController();
+  final _postal = TextEditingController();
+  String? _state;
+  // Bank
+  final _beneficiary = TextEditingController();
   final _account = TextEditingController();
   final _ifsc = TextEditingController();
-  final _upi = TextEditingController();
-  final String _payoutFrequency = 'WEEKLY';
+
+  int _step = 0;
+  bool _loading = true;
+  bool _submitting = false;
+  String? _error;
+  LinkedAccountStatus? _status;
+
+  /// A resumable draft exists and the user hasn't yet chosen Resume/Discard.
+  bool _resumeOffered = false;
+
+  static const _steps = ['Business', 'Identity', 'Address', 'Bank'];
+
+  @override
+  void initState() {
+    super.initState();
+    _ds = LinkedAccountRemoteDataSource(context.read<ApiClient>());
+    _provider = context.read<LinkedAccountProvider>();
+    WidgetsBinding.instance.addObserver(this);
+    _init();
+  }
 
   @override
   void dispose() {
-    _holder.dispose();
-    _account.dispose();
-    _ifsc.dispose();
-    _upi.dispose();
+    // Last-chance save in case the page is popped mid-edit. Runs unconditionally
+    // (mounted is already false here) via the cached provider.
+    _persist();
+    WidgetsBinding.instance.removeObserver(this);
+    for (final c in [
+      _legalName, _customerFacing, _contact, _email, _phone,
+      _pan, _gst, _street1, _street2, _city, _postal,
+      _beneficiary, _account, _ifsc,
+    ]) {
+      c.dispose();
+    }
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Save when backgrounded — catches "filled a step then left the app"
+    // without writing secure storage on every keystroke.
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.hidden) {
+      _autosave();
+    }
+  }
+
+  Future<void> _init() async {
+    await _load();
+    if (!mounted || _status != null) return;
+    // No account yet → see if there's a saved draft to resume.
+    await _provider.refreshDraft();
+    if (mounted && _provider.draft != null) {
+      setState(() => _resumeOffered = true);
+    }
+  }
+
+  Future<void> _load({bool refresh = false}) async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final status = await _ds.getStatus(refresh: refresh);
+      if (mounted) {
+        setState(() => _status = status);
+        _provider.setStatus(status);
+      }
+    } catch (e) {
+      if (mounted) setState(() => _error = e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  // ── Draft persistence ──────────────────────────────────────────────────────
+
+  /// True once the user has typed anything worth saving — avoids persisting an
+  /// empty draft that would wrongly flip the dashboard to "Continue".
+  bool _hasAnyInput() =>
+      _step > 0 ||
+      [_legalName, _customerFacing, _contact, _email, _phone, _pan, _gst,
+              _street1, _street2, _city, _postal, _beneficiary, _account, _ifsc]
+          .any((c) => c.text.trim().isNotEmpty) ||
+      _state != null;
+
+  OnboardingDraft _snapshot() => OnboardingDraft(
+        step: _step,
+        legalName: _legalName.text,
+        customerFacing: _customerFacing.text,
+        contact: _contact.text,
+        email: _email.text,
+        phone: _phone.text,
+        businessType: _businessType,
+        category: _category,
+        pan: _pan.text,
+        gst: _gst.text,
+        street1: _street1.text,
+        street2: _street2.text,
+        city: _city.text,
+        state: _state,
+        postal: _postal.text,
+        beneficiary: _beneficiary.text,
+        account: _account.text,
+        ifsc: _ifsc.text,
+        savedAtMs: DateTime.now().millisecondsSinceEpoch,
+      );
+
+  /// Persist the current form (best-effort) unless we've already submitted or
+  /// there's nothing meaningful to save. No `mounted` check — also called from
+  /// dispose(), where mounted is already false.
+  void _persist() {
+    if (_submitting || _status != null || !_hasAnyInput()) return;
+    _provider.saveDraft(_snapshot());
+  }
+
+  /// Mounted-safe wrapper for the lifecycle/step-transition callbacks.
+  void _autosave() {
+    if (!mounted) return;
+    _persist();
+  }
+
+  void _applyDraft(OnboardingDraft d) {
+    _legalName.text = d.legalName;
+    _customerFacing.text = d.customerFacing;
+    _contact.text = d.contact;
+    _email.text = d.email;
+    _phone.text = d.phone;
+    _pan.text = d.pan;
+    _gst.text = d.gst;
+    _street1.text = d.street1;
+    _street2.text = d.street2;
+    _city.text = d.city;
+    _postal.text = d.postal;
+    _beneficiary.text = d.beneficiary;
+    _account.text = d.account;
+    _ifsc.text = d.ifsc;
+    setState(() {
+      _businessType = d.businessType;
+      _category = d.category;
+      _state = d.state;
+      _step = d.step.clamp(0, _steps.length - 1);
+      _resumeOffered = false;
+    });
+  }
+
+  void _onContinue() {
+    if (!(_stepKeys[_step].currentState?.validate() ?? false)) return;
+    if (_step < _steps.length - 1) {
+      setState(() => _step++);
+      _autosave();
+    } else {
+      _submit();
+    }
+  }
+
+  Future<void> _submit() async {
+    setState(() {
+      _submitting = true;
+      _error = null;
+    });
+    try {
+      final status = await _ds.startOnboarding(
+        email: _email.text.trim(),
+        phone: _phone.text.trim(),
+        legalBusinessName: _legalName.text.trim(),
+        customerFacingBusinessName: _customerFacing.text.trim(),
+        businessType: _businessType,
+        contactName: _contact.text.trim(),
+        category: _category,
+        pan: _pan.text.trim().toUpperCase(),
+        gst: _gst.text.trim().toUpperCase(),
+        addressStreet1: _street1.text.trim(),
+        addressStreet2: _street2.text.trim(),
+        addressCity: _city.text.trim(),
+        addressState: (_state ?? '').toUpperCase(),
+        addressPostalCode: _postal.text.trim(),
+        beneficiaryName: _beneficiary.text.trim(),
+        bankAccountNumber: _account.text.trim(),
+        bankIfsc: _ifsc.text.trim().toUpperCase(),
+      );
+      if (mounted) {
+        setState(() => _status = status);
+        // Onboarding done → reflect status, stop the nudge, and wipe the draft
+        // (it holds PAN/bank and is no longer needed).
+        _provider
+          ..setStatus(status)
+          ..dismissPrompt();
+        await _provider.clearDraft();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Submitted — Razorpay will verify your account.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) setState(() => _error = e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
   }
 
   @override
@@ -36,105 +263,458 @@ class _ShopPayoutsPageState extends State<ShopPayoutsPage> {
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(title: const Text('Payouts & settlement')),
-      body: ListView(
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _status != null
+              ? _statusView()
+              : _wizard(),
+    );
+  }
+
+  // Existing account → just show its KYC status (no wizard).
+  Widget _statusView() {
+    return ListView(
+      padding: const EdgeInsets.only(top: AppSizes.lg, bottom: AppSizes.huge),
+      children: [
+        if (_error != null) _ErrorLine(message: _error!, onRetry: () => _load()),
+        _StatusSection(status: _status, onRefresh: () => _load(refresh: true)),
+      ],
+    );
+  }
+
+  Widget _wizard() {
+    final isLast = _step == _steps.length - 1;
+    final draft = _provider.draft;
+    return Column(
+      children: [
+        if (_error != null)
+          _ErrorLine(
+            message: _error!,
+            actionLabel: 'Dismiss',
+            onRetry: () => setState(() => _error = null),
+          ),
+        if (_resumeOffered && draft != null)
+          _ResumeBanner(
+            draft: draft,
+            onResume: () => _applyDraft(draft),
+            onDiscard: () {
+              _provider.clearDraft();
+              setState(() => _resumeOffered = false);
+            },
+          ),
+        _StepProgress(step: _step, total: _steps.length, title: _steps[_step]),
+        const Divider(height: 1, thickness: 1, color: AppColors.hairline),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(
+                AppSizes.lg, AppSizes.lg, AppSizes.lg, AppSizes.lg),
+            child: Form(
+              key: _stepKeys[_step],
+              child: _stepBody(),
+            ),
+          ),
+        ),
+        _footer(isLast: isLast),
+      ],
+    );
+  }
+
+  Widget _stepBody() {
+    switch (_step) {
+      case 0:
+        return _BusinessStep(
+          legalName: _legalName,
+          customerFacing: _customerFacing,
+          contact: _contact,
+          email: _email,
+          phone: _phone,
+          businessType: _businessType,
+          category: _category,
+          onBusinessType: (v) => setState(() => _businessType = v),
+          onCategory: (v) => setState(() => _category = v),
+          field: _field,
+          emailValidator: _emailValidator,
+        );
+      case 1:
+        return _IdentityStep(pan: _pan, gst: _gst, field: _field);
+      case 2:
+        return _AddressStep(
+          street1: _street1,
+          street2: _street2,
+          city: _city,
+          postal: _postal,
+          state: _state,
+          onState: (v) => setState(() => _state = v),
+          field: _field,
+        );
+      default:
+        return _BankStep(
+          beneficiary: _beneficiary,
+          account: _account,
+          ifsc: _ifsc,
+          field: _field,
+        );
+    }
+  }
+
+  Widget _footer({required bool isLast}) {
+    return SafeArea(
+      top: false,
+      child: Container(
+        decoration: const BoxDecoration(
+          border: Border(top: BorderSide(color: AppColors.hairline)),
+        ),
         padding: const EdgeInsets.fromLTRB(
-            AppSizes.lg, AppSizes.lg, AppSizes.lg, AppSizes.huge),
-        children: [
-          const _ComingSoonBanner(
-            message:
-                'Payouts go live when the payment gateway lands. '
-                'Wire-up needs Razorpay / Cashfree credentials and '
-                'KYC. Fields below are previews so you can see the '
-                'shape of what will be asked.',
-          ),
-          const SizedBox(height: AppSizes.lg),
-          _SectionTitle(label: 'Settlement account'),
-          const SizedBox(height: AppSizes.sm),
-          _Card(
-            child: Column(
-              children: [
-                TextField(
-                  controller: _holder,
-                  enabled: false,
-                  decoration: const InputDecoration(
-                    labelText: 'Account holder name',
-                  ),
-                ),
-                const SizedBox(height: AppSizes.md),
-                TextField(
-                  controller: _account,
-                  enabled: false,
-                  decoration: const InputDecoration(
-                    labelText: 'Bank account number',
-                  ),
-                  keyboardType: TextInputType.number,
-                ),
-                const SizedBox(height: AppSizes.md),
-                TextField(
-                  controller: _ifsc,
-                  enabled: false,
-                  decoration: const InputDecoration(labelText: 'IFSC'),
-                ),
-                const SizedBox(height: AppSizes.md),
-                TextField(
-                  controller: _upi,
-                  enabled: false,
-                  decoration: const InputDecoration(
-                    labelText: 'UPI VPA (alternative)',
-                    hintText: 'shop@upi',
-                  ),
-                ),
-                const SizedBox(height: AppSizes.md),
-                DropdownButtonFormField<String>(
-                  initialValue: _payoutFrequency,
-                  decoration: const InputDecoration(
-                    labelText: 'Payout frequency',
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 'DAILY', child: Text('Daily')),
-                    DropdownMenuItem(value: 'WEEKLY', child: Text('Weekly')),
-                    DropdownMenuItem(value: 'MONTHLY', child: Text('Monthly')),
-                  ],
-                  onChanged: null,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppSizes.lg),
-          _SectionTitle(label: 'Payout history'),
-          const SizedBox(height: AppSizes.sm),
-          _Card(
-            child: const Padding(
-              padding: EdgeInsets.symmetric(vertical: AppSizes.xl),
-              child: Center(
-                child: Column(
-                  children: [
-                    Icon(Icons.receipt_long_outlined,
-                        size: 40, color: AppColors.muted),
-                    SizedBox(height: AppSizes.sm),
-                    Text(
-                      'No payouts yet',
-                      style: TextStyle(
-                          color: AppColors.muted, fontWeight: FontWeight.w700),
-                    ),
-                    SizedBox(height: 2),
-                    Text(
-                      "Payouts will land here once the gateway is live.",
-                      style: TextStyle(color: AppColors.muted, fontSize: 12),
-                    ),
-                  ],
-                ),
+            AppSizes.lg, AppSizes.md, AppSizes.lg, AppSizes.md),
+        child: Row(
+          children: [
+            if (_step > 0)
+              TextButton(
+                onPressed: _submitting
+                    ? null
+                    : () {
+                        setState(() => _step--);
+                        _autosave();
+                      },
+                child: const Text('Back'),
               ),
+            const Spacer(),
+            FilledButton(
+              onPressed: _submitting ? null : _onContinue,
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.black,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppSizes.xl, vertical: AppSizes.md),
+              ),
+              child: _submitting
+                  ? const SizedBox(
+                      height: 18,
+                      width: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : Text(isLast ? 'Set up payouts' : 'Continue'),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _field(
+    TextEditingController c,
+    String label, {
+    TextInputType? keyboard,
+    List<TextInputFormatter>? formatters,
+    String? Function(String?)? validator,
+    String? helper,
+    bool optional = false,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSizes.md),
+      child: TextFormField(
+        controller: c,
+        keyboardType: keyboard,
+        inputFormatters: formatters,
+        decoration: InputDecoration(labelText: label, helperText: helper),
+        validator: validator ??
+            (optional
+                ? null
+                : (v) => (v == null || v.trim().isEmpty) ? 'Required' : null),
+      ),
+    );
+  }
+
+  String? _emailValidator(String? v) {
+    final s = (v ?? '').trim();
+    return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(s) ? null : 'Invalid email';
+  }
+}
+
+// ── Step bodies ──────────────────────────────────────────────────────────────
+
+typedef _FieldBuilder = Widget Function(
+  TextEditingController c,
+  String label, {
+  TextInputType? keyboard,
+  List<TextInputFormatter>? formatters,
+  String? Function(String?)? validator,
+  String? helper,
+  bool optional,
+});
+
+class _BusinessStep extends StatelessWidget {
+  const _BusinessStep({
+    required this.legalName,
+    required this.customerFacing,
+    required this.contact,
+    required this.email,
+    required this.phone,
+    required this.businessType,
+    required this.category,
+    required this.onBusinessType,
+    required this.onCategory,
+    required this.field,
+    required this.emailValidator,
+  });
+
+  final TextEditingController legalName, customerFacing, contact, email, phone;
+  final String businessType, category;
+  final ValueChanged<String> onBusinessType, onCategory;
+  final _FieldBuilder field;
+  final String? Function(String?) emailValidator;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const _StepIntro(
+          title: 'Your business',
+          subtitle: 'The legal entity that receives settlements.',
+        ),
+        field(legalName, 'Legal business name'),
+        field(customerFacing, 'Display name (optional)',
+            helper: 'Shown to customers. Defaults to the legal name.',
+            optional: true),
+        field(contact, 'Contact person name'),
+        field(email, 'Email',
+            keyboard: TextInputType.emailAddress, validator: emailValidator),
+        field(phone, 'Phone',
+            keyboard: TextInputType.phone,
+            formatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)],
+            validator: (v) => (v == null || v.trim().length < 10) ? 'Enter a 10-digit number' : null),
+        Padding(
+          padding: const EdgeInsets.only(bottom: AppSizes.md),
+          child: DropdownButtonFormField<String>(
+            initialValue: businessType,
+            decoration: const InputDecoration(labelText: 'Business type'),
+            items: const [
+              DropdownMenuItem(value: 'proprietorship', child: Text('Proprietorship')),
+              DropdownMenuItem(value: 'partnership', child: Text('Partnership')),
+              DropdownMenuItem(value: 'private_limited', child: Text('Private Limited')),
+              DropdownMenuItem(value: 'public_limited', child: Text('Public Limited')),
+              DropdownMenuItem(value: 'llp', child: Text('LLP')),
+              DropdownMenuItem(value: 'individual', child: Text('Individual')),
+              DropdownMenuItem(value: 'trust', child: Text('Trust')),
+              DropdownMenuItem(value: 'society', child: Text('Society')),
+              DropdownMenuItem(value: 'ngo', child: Text('NGO')),
+            ],
+            onChanged: (v) => onBusinessType(v ?? businessType),
           ),
-          const SizedBox(height: AppSizes.xl),
-          FilledButton(
-            onPressed: null,
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.black,
-              padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
+        ),
+        DropdownButtonFormField<String>(
+          initialValue: category,
+          decoration: const InputDecoration(labelText: 'Business category'),
+          items: const [
+            DropdownMenuItem(value: 'ecommerce', child: Text('E-commerce / Retail')),
+            DropdownMenuItem(value: 'food', child: Text('Food & Beverage')),
+            DropdownMenuItem(value: 'services', child: Text('Services')),
+            DropdownMenuItem(value: 'healthcare', child: Text('Healthcare')),
+            DropdownMenuItem(value: 'education', child: Text('Education')),
+            DropdownMenuItem(value: 'others', child: Text('Others')),
+          ],
+          onChanged: (v) => onCategory(v ?? category),
+        ),
+      ],
+    );
+  }
+}
+
+class _IdentityStep extends StatelessWidget {
+  const _IdentityStep({required this.pan, required this.gst, required this.field});
+  final TextEditingController pan, gst;
+  final _FieldBuilder field;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const _StepIntro(
+          title: 'Identity & tax',
+          subtitle: 'Verified with the tax authority. Sent to Razorpay, never '
+              'stored by this app.',
+        ),
+        field(
+          pan,
+          'PAN',
+          helper: 'Business or proprietor PAN (e.g. AAACL1234C).',
+          formatters: [
+            FilteringTextInputFormatter.allow(RegExp('[A-Za-z0-9]')),
+            LengthLimitingTextInputFormatter(10),
+            _UpperCaseFormatter(),
+          ],
+          validator: (v) {
+            final s = (v ?? '').trim().toUpperCase();
+            return RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]$').hasMatch(s) ? null : 'Invalid PAN';
+          },
+        ),
+        field(
+          gst,
+          'GSTIN (optional)',
+          helper: 'Add if your business is GST-registered.',
+          optional: true,
+          formatters: [
+            FilteringTextInputFormatter.allow(RegExp('[A-Za-z0-9]')),
+            LengthLimitingTextInputFormatter(15),
+            _UpperCaseFormatter(),
+          ],
+          validator: (v) {
+            final s = (v ?? '').trim().toUpperCase();
+            if (s.isEmpty) return null; // optional
+            return RegExp(r'^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][0-9A-Z]Z[0-9A-Z]$').hasMatch(s)
+                ? null
+                : 'Invalid GSTIN';
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _AddressStep extends StatelessWidget {
+  const _AddressStep({
+    required this.street1,
+    required this.street2,
+    required this.city,
+    required this.postal,
+    required this.state,
+    required this.onState,
+    required this.field,
+  });
+  final TextEditingController street1, street2, city, postal;
+  final String? state;
+  final ValueChanged<String?> onState;
+  final _FieldBuilder field;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const _StepIntro(
+          title: 'Registered address',
+          subtitle: 'The address on your business registration.',
+        ),
+        field(street1, 'Address line 1'),
+        field(street2, 'Address line 2 (optional)', optional: true),
+        field(city, 'City'),
+        Padding(
+          padding: const EdgeInsets.only(bottom: AppSizes.md),
+          child: DropdownButtonFormField<String>(
+            initialValue: state,
+            isExpanded: true,
+            decoration: const InputDecoration(labelText: 'State'),
+            items: _indianStates
+                .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                .toList(),
+            validator: (v) => (v == null || v.isEmpty) ? 'Select a state' : null,
+            onChanged: onState,
+          ),
+        ),
+        field(
+          postal,
+          'PIN code',
+          keyboard: TextInputType.number,
+          formatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(6)],
+          validator: (v) => RegExp(r'^\d{6}$').hasMatch((v ?? '').trim()) ? null : 'Enter a 6-digit PIN',
+        ),
+        const Padding(
+          padding: EdgeInsets.only(top: AppSizes.xs),
+          child: Text('Country: India',
+              style: TextStyle(color: AppColors.muted, fontSize: 12.5)),
+        ),
+      ],
+    );
+  }
+}
+
+class _BankStep extends StatelessWidget {
+  const _BankStep({
+    required this.beneficiary,
+    required this.account,
+    required this.ifsc,
+    required this.field,
+  });
+  final TextEditingController beneficiary, account, ifsc;
+  final _FieldBuilder field;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const _StepIntro(
+          title: 'Settlement bank account',
+          subtitle: 'Where your payouts land. Sent securely to Razorpay; this '
+              'app never stores your bank details.',
+        ),
+        field(beneficiary, 'Account holder name'),
+        field(
+          account,
+          'Bank account number',
+          keyboard: TextInputType.number,
+          formatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(20)],
+          validator: (v) => (v == null || v.trim().length < 6) ? 'Enter a valid account number' : null,
+        ),
+        field(
+          ifsc,
+          'IFSC',
+          formatters: [
+            FilteringTextInputFormatter.allow(RegExp('[A-Za-z0-9]')),
+            LengthLimitingTextInputFormatter(11),
+            _UpperCaseFormatter(),
+          ],
+          validator: (v) {
+            final s = (v ?? '').trim().toUpperCase();
+            return RegExp(r'^[A-Z]{4}0[A-Z0-9]{6}$').hasMatch(s) ? null : 'Invalid IFSC';
+          },
+        ),
+      ],
+    );
+  }
+}
+
+// ── Pieces ───────────────────────────────────────────────────────────────────
+
+class _StepProgress extends StatelessWidget {
+  const _StepProgress({required this.step, required this.total, required this.title});
+  final int step;
+  final int total;
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          AppSizes.lg, AppSizes.md, AppSizes.lg, AppSizes.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              for (var i = 0; i < total; i++) ...[
+                Expanded(
+                  child: Container(
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: i <= step ? AppColors.brand : AppColors.hairline,
+                      borderRadius: BorderRadius.circular(AppSizes.radiusFull),
+                    ),
+                  ),
+                ),
+                if (i < total - 1) const SizedBox(width: AppSizes.xs),
+              ],
+            ],
+          ),
+          const SizedBox(height: AppSizes.sm),
+          Text(
+            'Step ${step + 1} of $total · $title',
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: AppColors.muted,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.3,
             ),
-            child: const Text('Save (disabled until gateway is live)'),
           ),
         ],
       ),
@@ -142,58 +722,218 @@ class _ShopPayoutsPageState extends State<ShopPayoutsPage> {
   }
 }
 
-class _ComingSoonBanner extends StatelessWidget {
-  const _ComingSoonBanner({required this.message});
-  final String message;
+/// "You left off here — Resume / Start over" prompt shown on wizard entry when
+/// a saved draft exists. Asks before restoring, per the resume UX.
+class _ResumeBanner extends StatelessWidget {
+  const _ResumeBanner({required this.draft, required this.onResume, required this.onDiscard});
+  final OnboardingDraft draft;
+  final VoidCallback onResume;
+  final VoidCallback onDiscard;
+
   @override
   Widget build(BuildContext context) {
-    return Material(
+    final theme = Theme.of(context);
+    return Container(
       color: AppColors.infoSoft,
-      shape: AppShapes.squircle(AppSizes.radiusMd),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSizes.md),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Icon(Icons.info_outline, color: AppColors.info),
-            const SizedBox(width: AppSizes.sm),
-            Expanded(
-              child: Text(
-                message,
-                style:
-                    const TextStyle(color: AppColors.info, fontSize: 12.5),
+      padding: const EdgeInsets.fromLTRB(
+          AppSizes.lg, AppSizes.md, AppSizes.lg, AppSizes.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.history_rounded, color: AppColors.info, size: AppSizes.iconMd),
+              const SizedBox(width: AppSizes.sm),
+              Expanded(
+                child: Text(
+                  'Continue where you left off?',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppColors.info,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
               ),
+            ],
+          ),
+          const SizedBox(height: 2),
+          Padding(
+            padding: const EdgeInsets.only(left: AppSizes.xl),
+            child: Text(
+              'You had a saved draft up to the ${draft.stepLabel} step.',
+              style: theme.textTheme.bodySmall?.copyWith(color: AppColors.info),
             ),
-          ],
-        ),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(onPressed: onDiscard, child: const Text('Start over')),
+              const SizedBox(width: AppSizes.xs),
+              FilledButton(
+                onPressed: onResume,
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.info,
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: AppSizes.lg, vertical: AppSizes.sm),
+                ),
+                child: const Text('Resume'),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 }
 
-class _Card extends StatelessWidget {
-  const _Card({required this.child});
-  final Widget child;
+class _StepIntro extends StatelessWidget {
+  const _StepIntro({required this.title, required this.subtitle});
+  final String title;
+  final String subtitle;
+
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.white,
-      shape: AppShapes.squircle(AppSizes.radiusMd),
-      child: Padding(padding: const EdgeInsets.all(AppSizes.md), child: child),
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSizes.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.3,
+            ),
+          ),
+          const SizedBox(height: AppSizes.xs),
+          Text(
+            subtitle,
+            style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted),
+          ),
+        ],
+      ),
     );
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({required this.label});
-  final String label;
+class _StatusSection extends StatelessWidget {
+  const _StatusSection({required this.status, required this.onRefresh});
+  final LinkedAccountStatus? status;
+  final VoidCallback onRefresh;
+
   @override
-  Widget build(BuildContext context) => Text(
-        label.toUpperCase(),
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: AppColors.muted,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.6,
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final activated = status!.payoutsEnabled;
+    final (label, color, icon) = activated
+        ? ('Active — payouts enabled', AppColors.success, Icons.verified_rounded)
+        : switch (status!.kycStatus) {
+            'NEEDS_CLARIFICATION' => (
+                'Action needed — Razorpay needs more info',
+                AppColors.error,
+                Icons.error_outline,
+              ),
+            'SUSPENDED' => ('Suspended — contact support', AppColors.error, Icons.block),
+            _ => ('Under review by Razorpay', AppColors.info, Icons.hourglass_top_rounded),
+          };
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: color, size: AppSizes.iconMd),
+              const SizedBox(width: AppSizes.sm),
+              Expanded(
+                child: Text(
+                  label,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSizes.xs),
+          Text(
+            activated
+                ? 'Your settlement account is verified. Order payouts will land '
+                    'in your bank.'
+                : 'Verification usually takes a little while. Tap refresh to check '
+                    'again.',
+            style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
+          ),
+          if (!activated) ...[
+            const SizedBox(height: AppSizes.xs),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: onRefresh,
+                style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                icon: const Icon(Icons.refresh, size: 18),
+                label: const Text('Refresh status'),
+              ),
             ),
-      );
+          ],
+        ],
+      ),
+    );
+  }
 }
+
+/// Flat error line (icon + colored text + retry), no filled banner.
+class _ErrorLine extends StatelessWidget {
+  const _ErrorLine({required this.message, required this.onRetry, this.actionLabel = 'Retry'});
+  final String message;
+  final VoidCallback onRetry;
+  final String actionLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          AppSizes.lg, AppSizes.sm, AppSizes.lg, AppSizes.sm),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.error_outline, color: AppColors.error, size: AppSizes.iconMd),
+          const SizedBox(width: AppSizes.sm),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(color: AppColors.error, fontSize: 12.5),
+            ),
+          ),
+          TextButton(
+            onPressed: onRetry,
+            style: TextButton.styleFrom(padding: EdgeInsets.zero),
+            child: Text(actionLabel),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Force-uppercases input (PAN/GST/IFSC) as the user types so the on-screen
+/// value matches what we submit.
+class _UpperCaseFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    return newValue.copyWith(text: newValue.text.toUpperCase());
+  }
+}
+
+const _indianStates = <String>[
+  'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
+  'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka',
+  'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram',
+  'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu',
+  'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal',
+  'Andaman and Nicobar Islands', 'Chandigarh',
+  'Dadra and Nagar Haveli and Daman and Diu', 'Delhi', 'Jammu and Kashmir',
+  'Ladakh', 'Lakshadweep', 'Puducherry',
+];

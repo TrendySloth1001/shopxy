@@ -12,6 +12,7 @@ import 'package:shopxy_customer/features/catalog/presentation/providers/cart_pro
 import 'package:shopxy_customer/features/coupons/data/datasources/coupons_remote_data_source.dart';
 import 'package:shopxy_customer/features/coupons/domain/entities/coupon.dart';
 import 'package:shopxy_customer/features/wallet/data/datasources/wallet_remote_data_source.dart';
+import 'package:shopxy_customer/features/payments/razorpay_checkout.dart';
 import 'package:shopxy_customer/features/home/presentation/widgets/network_image_box.dart';
 import 'package:shopxy_customer/features/orders/presentation/pages/order_detail_page.dart';
 import 'package:shopxy_customer/features/orders/presentation/providers/orders_provider.dart';
@@ -19,6 +20,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_button.dart';
+import 'package:shopxy_customer/shared/widgets/app_dialog.dart';
 import 'package:shopxy_customer/shared/widgets/app_price_text.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 import 'package:shopxy_customer/shared/widgets/shop_chip.dart';
@@ -45,6 +47,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
   /// "− ₹X coupon" before the actual place-order RPC fires.
   CouponPreview? _appliedCoupon;
   bool _useWallet = false;
+  /// false = Cash on Delivery (default); true = pay now via Razorpay.
+  bool _payOnline = false;
   double _walletBalance = 0;
   bool _walletLoaded = false;
 
@@ -252,28 +256,17 @@ class _CheckoutPageState extends State<CheckoutPage> {
     final cart = context.read<CartProvider>();
     final estimatedTotal = cart.itemsTotal;
     if (estimatedTotal >= 500) {
-      final ok = await showDialog<bool>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Place this order?'),
-          content: Text(
+      final ok = await AppConfirmSheet.show(
+        context,
+        title: 'Place this order?',
+        message:
             'Estimated total ₹${estimatedTotal.toStringAsFixed(2)}. '
             'You can cancel a per-shop slice from the order detail page '
             'before it\'s confirmed by the merchant.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Review'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('Place order'),
-            ),
-          ],
-        ),
+        confirmLabel: 'Place order',
+        cancelLabel: 'Review',
       );
-      if (ok != true || !mounted) return;
+      if (!ok || !mounted) return;
     }
     setState(() => _submitting = true);
     final result = await cart.placeOrder(
@@ -296,12 +289,32 @@ class _CheckoutPageState extends State<CheckoutPage> {
     }
     // Refresh My Orders so the new parent shows up if the user pops
     // back to the inbox later.
+    final orderId = result.orderId!;
     // ignore: unawaited_futures
     context.read<OrdersProvider>().load();
+
+    // Online payment: open the Razorpay sheet for the order's payable
+    // remainder, then land on the order detail regardless of outcome (the
+    // order exists either way; the webhook is the source of truth for PAID).
+    if (_payOnline) {
+      final paid = await _startOnlinePayment(orderId);
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => OrderDetailPage(orderId: orderId)),
+      );
+      showAppSnackbar(
+        context,
+        message: paid
+            ? 'Payment successful'
+            : 'Order placed — you can complete payment from the order page',
+        tone: paid ? AppSnackbarTone.success : AppSnackbarTone.error,
+      );
+      return;
+    }
+
+    if (!mounted) return;
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => OrderDetailPage(orderId: result.orderId!),
-      ),
+      MaterialPageRoute(builder: (_) => OrderDetailPage(orderId: orderId)),
     );
     if (result.shopOrderCount > 1) {
       showAppSnackbar(
@@ -311,6 +324,113 @@ class _CheckoutPageState extends State<CheckoutPage> {
         tone: AppSnackbarTone.success,
       );
     }
+  }
+
+  /// Initiate the gateway payment for [orderId] and open the Razorpay sheet.
+  /// Returns true only on a client-side success handshake — the backend
+  /// webhook is what authoritatively flips the order to PAID.
+  Future<bool> _startOnlinePayment(int orderId) async {
+    try {
+      final cart = context.read<CartProvider>();
+      final checkout = await cart.payForOrder(orderId);
+      final result = await RazorpayCheckout().open(
+        clientParams: checkout.clientParams,
+        description: 'Order #$orderId',
+      );
+      if (result.isSuccess) {
+        // The webhook can't reach a localhost dev server (and may lag in
+        // prod), so confirm with the server now — it settles the payment by
+        // checking the live provider order. Best-effort: the webhook is still
+        // authoritative, so a sync failure shouldn't flip success to failure.
+        try {
+          await cart.syncOrderPayment(orderId);
+        } catch (_) {/* non-fatal — order page will reflect it once settled */}
+      }
+      return result.isSuccess;
+    } catch (e, st) {
+      // Surface the real cause instead of silently falling back to COD.
+      // ignore: avoid_print
+      print('[checkout] online payment failed: $e\n$st');
+      if (mounted) {
+        showAppSnackbar(
+          context,
+          message: 'Could not start payment: $e',
+          tone: AppSnackbarTone.error,
+        );
+      }
+      return false;
+    }
+  }
+
+  /// Cash-on-Delivery vs Pay-Online selector. Toggles [_payOnline].
+  Widget _buildPaymentMethod() {
+    return Column(
+      children: [
+        _payOption(
+          title: 'Cash on Delivery',
+          subtitle: 'Pay the shop when your order arrives.',
+          value: false,
+        ),
+        const SizedBox(height: AppSizes.sm),
+        _payOption(
+          title: 'Pay Online',
+          subtitle: 'UPI, cards & netbanking via Razorpay.',
+          value: true,
+        ),
+      ],
+    );
+  }
+
+  Widget _payOption({
+    required String title,
+    required String subtitle,
+    required bool value,
+  }) {
+    final selected = _payOnline == value;
+    return InkWell(
+      onTap: () => setState(() => _payOnline = value),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: selected ? AppColors.brandStrong : Colors.black12,
+            width: selected ? 1.5 : 1,
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              selected
+                  ? Icons.radio_button_checked_rounded
+                  : Icons.radio_button_unchecked_rounded,
+              color: selected ? AppColors.brandStrong : AppColors.muted,
+              size: 20,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w800, fontSize: 14),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                        color: AppColors.muted, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   String _friendlyError(String? code) {
@@ -451,7 +571,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   ],
                   const SizedBox(height: AppSizes.lg),
                   const _SectionLabel(label: 'PAYMENT METHOD'),
-                  const _PaymentCard(),
+                  _buildPaymentMethod(),
                   const SizedBox(height: AppSizes.lg),
                   const _SectionLabel(label: 'PRICE DETAILS'),
                   _PriceCard(
@@ -1196,57 +1316,7 @@ class _ItemRow extends StatelessWidget {
   }
 }
 
-// ─── Payment + price ────────────────────────────────────────────────
-
-class _PaymentCard extends StatelessWidget {
-  const _PaymentCard();
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
-      padding: const EdgeInsets.all(AppSizes.md),
-      decoration: ShapeDecoration(
-        color: AppColors.white,
-        shape: AppShapes.squircle(AppSizes.radiusMd),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.radio_button_checked_rounded,
-              color: AppColors.brandStrong),
-          const SizedBox(width: AppSizes.md),
-          Container(
-            width: 36, height: 36,
-            decoration: ShapeDecoration(
-              color: AppColors.heroPanel,
-              shape: AppShapes.squircle(AppSizes.radiusSm),
-            ),
-            alignment: Alignment.center,
-            child: const Icon(Icons.payments_outlined,
-                color: AppColors.black, size: 20),
-          ),
-          const SizedBox(width: AppSizes.md),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Cash on Delivery',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 14,
-                    )),
-                SizedBox(height: 2),
-                Text(
-                  'Pay the shop when your order arrives.',
-                  style: TextStyle(color: AppColors.muted, fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+// ─── Price ──────────────────────────────────────────────────────────
 
 class _PriceCard extends StatelessWidget {
   const _PriceCard({

@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
 import { nextPaymentRef, nextCautionRef } from '../../shared/numbering/sequences.js';
-import { toNumber } from '../../shared/numbering/decimal.js';
+import { toNumber, round2 } from '../../shared/numbering/decimal.js';
 import { HttpError } from '../../shared/http/errorHandler.js';
 
 export type CautionTxnType = 'DEPOSIT' | 'REFUND' | 'ADJUSTMENT' | 'FORFEIT';
@@ -163,7 +163,9 @@ export class CautionService {
     return prisma.$transaction(
       async (tx) => {
         const before = await this.balanceInTx(tx, shopId, partyId);
-        if (input.type === 'REFUND' && input.amount - before > 0.001) {
+        // Compare on whole paise (strict) so a refund can't drive the
+        // liability ledger to a negative sub-paisa via the old one-sided slack.
+        if (input.type === 'REFUND' && round2(input.amount - before) > 0) {
           throw new HttpError(
             400,
             'CAUTION_REFUND_EXCEEDS_BALANCE',
@@ -221,7 +223,7 @@ export class CautionService {
     return prisma.$transaction(
       async (tx) => {
         const before = await this.balanceInTx(tx, shopId, partyId);
-        if (input.amount - before > 0.001) {
+        if (round2(input.amount - before) > 0) {
           throw new HttpError(
             400,
             'CAUTION_FORFEIT_EXCEEDS_BALANCE',
@@ -265,10 +267,20 @@ export class CautionService {
       async (tx) => {
         const invoice = await tx.invoice.findFirst({
           where: { id: input.invoiceId, shopId },
-          select: { id: true, partyId: true, total: true },
+          select: { id: true, partyId: true, total: true, status: true, type: true },
         });
         if (!invoice) {
           throw new HttpError(404, 'INVOICE_NOT_FOUND', 'Invoice not found');
+        }
+        // Only a live sale invoice carries a settle-able liability — setting
+        // off caution against a DRAFT/CANCELLED invoice (or a purchase) would
+        // mint a phantom credit, exactly as a stray RECEIPT would (H7).
+        if (invoice.status !== 'CONFIRMED' || invoice.type !== 'SALE') {
+          throw new HttpError(
+            400,
+            'INVOICE_NOT_SETTLEABLE',
+            'Caution can only be set off against a confirmed sale invoice',
+          );
         }
         if (invoice.partyId !== partyId) {
           throw new HttpError(
@@ -280,7 +292,7 @@ export class CautionService {
 
         // Live caution balance inside the txn.
         const balance = await this.balanceInTx(tx, shopId, partyId);
-        if (input.amount - balance > 0.001) {
+        if (round2(input.amount - balance) > 0) {
           throw new HttpError(
             400,
             'CAUTION_ADJUST_EXCEEDS_BALANCE',
@@ -290,12 +302,13 @@ export class CautionService {
 
         // Live invoice outstanding (total − payments already applied).
         const allocated = await tx.payment.aggregate({
-          where: { invoiceId: invoice.id, shopId },
+          where: { invoiceId: invoice.id, shopId, voidedAt: null },
           _sum: { amount: true },
         });
-        const outstanding =
-          toNumber(invoice.total) - toNumber(allocated._sum.amount);
-        if (input.amount - outstanding > 0.001) {
+        const outstanding = round2(
+          toNumber(invoice.total) - toNumber(allocated._sum.amount),
+        );
+        if (round2(input.amount - outstanding) > 0) {
           throw new HttpError(
             400,
             'CAUTION_ADJUST_EXCEEDS_OUTSTANDING',

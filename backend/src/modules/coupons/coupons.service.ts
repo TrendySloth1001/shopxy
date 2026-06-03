@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
+import { round2 } from '../../shared/numbering/decimal.js';
 
 /// Customer-facing coupon module. Owns the validation + redemption
 /// flow; coupon creation (merchant + platform admin tooling) lives in
@@ -70,10 +71,6 @@ function computeDiscount(
   // Never refund more than the cart itself.
   if (discount > subtotal) discount = subtotal;
   return round2(discount);
-}
-
-function round2(n: number): number {
-  return Math.round(n * 100) / 100;
 }
 
 export interface CouponWriteInput {
