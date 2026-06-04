@@ -63,6 +63,8 @@ import 'package:shopxy/features/stock/presentation/providers/stock_provider.dart
 import 'package:shopxy/features/stock_adjustments/data/datasources/stock_adjustments_remote_data_source.dart';
 import 'package:shopxy/features/vendors/data/datasources/vendors_remote_data_source.dart';
 import 'package:shopxy/features/vendors/presentation/providers/vendors_provider.dart';
+import 'package:shopxy/features/coupons/data/datasources/merchant_coupons_remote_data_source.dart';
+import 'package:shopxy/features/returns/data/datasources/merchant_returns_remote_data_source.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -115,6 +117,8 @@ void main() async {
   final analyticsDs = AnalyticsRemoteDataSource(apiClient);
   final promotionsDs = PromotionsRemoteDataSource(apiClient);
   final reviewsDs = ReviewsRemoteDataSource(apiClient);
+  final couponsDs = MerchantCouponsRemoteDataSource(apiClient);
+  final returnsDs = MerchantReturnsRemoteDataSource(apiClient);
 
   final notificationsProvider = NotificationsProvider(notificationsDs, invitationsDs);
 
@@ -201,6 +205,8 @@ void main() async {
         Provider<CategoriesRemoteDataSource>.value(value: categoriesDs),
         Provider<CustomFieldsRemoteDataSource>.value(value: customFieldsDs),
         Provider<ReviewsRemoteDataSource>.value(value: reviewsDs),
+        Provider<MerchantCouponsRemoteDataSource>.value(value: couponsDs),
+        Provider<MerchantReturnsRemoteDataSource>.value(value: returnsDs),
 
         // Feature state providers
         ChangeNotifierProvider(create: (_) => DashboardProvider(dashboardDs)),
