@@ -331,8 +331,8 @@ class _IconChip extends StatelessWidget {
         onTap: onTap,
         customBorder: AppShapes.squircle(AppSizes.radiusSm),
         child: SizedBox(
-          width: AppSizes.fabSize,
-          height: AppSizes.fabSize,
+          width: AppSizes.avatarMd,
+          height: AppSizes.avatarMd,
           child: Icon(
             resolveCustomFieldIcon(iconName),
             color: AppColors.black,
@@ -349,11 +349,11 @@ class _GrabHandle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Container(
-        width: AppSizes.xxxl,
-        height: AppSizes.xs,
+        width: AppSizes.handleWidth,
+        height: AppSizes.handleHeight,
         decoration: BoxDecoration(
           color: AppColors.hairline,
-          borderRadius: BorderRadius.circular(2),
+          borderRadius: BorderRadius.circular(AppSizes.radiusXs),
         ),
       ),
     );

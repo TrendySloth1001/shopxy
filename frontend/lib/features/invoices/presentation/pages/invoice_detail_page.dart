@@ -391,7 +391,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
         children: [
           GlassHero.line(
             kind: LineArt.invoice,
-            height: 180,
+            height: AppSizes.heroHeightMd,
             illustrationSize: AppSizes.productImageSize,
             accent: invoice.isCancelled ? AppColors.error : AppColors.brand,
           ),

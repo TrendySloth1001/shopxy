@@ -179,7 +179,7 @@ class _CouponCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppSizes.sm,
-                    vertical: 4,
+                    vertical: AppSizes.xs,
                   ),
                   decoration: ShapeDecoration(
                     color: AppColors.brandSoft,

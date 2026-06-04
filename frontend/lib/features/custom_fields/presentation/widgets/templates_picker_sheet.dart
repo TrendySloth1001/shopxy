@@ -89,11 +89,11 @@ class _TemplatesPickerSheetState extends State<TemplatesPickerSheet> {
               const SizedBox(height: AppSizes.md),
               Center(
                 child: Container(
-                  width: AppSizes.xxxl,
-                  height: AppSizes.xs,
+                  width: AppSizes.handleWidth,
+                  height: AppSizes.handleHeight,
                   decoration: BoxDecoration(
                     color: AppColors.hairline,
-                    borderRadius: BorderRadius.circular(2),
+                    borderRadius: BorderRadius.circular(AppSizes.radiusXs),
                   ),
                 ),
               ),

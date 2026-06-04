@@ -201,8 +201,8 @@ class _DealTile extends StatelessWidget {
                 Row(
                   children: [
                     Container(
-                      width: AppSizes.fabSize,
-                      height: AppSizes.fabSize,
+                      width: AppSizes.avatarMd,
+                      height: AppSizes.avatarMd,
                       decoration: ShapeDecoration(
                         color: AppColors.heroPanel,
                         shape: AppShapes.squircle(AppSizes.radiusSm),

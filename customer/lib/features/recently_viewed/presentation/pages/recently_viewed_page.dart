@@ -161,7 +161,7 @@ class _ProductTile extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: AppColors.success,
-                    borderRadius: BorderRadius.circular(2),
+                    borderRadius: BorderRadius.circular(AppSizes.radiusXs),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,

@@ -39,7 +39,7 @@ class AppQuantityStepper extends StatelessWidget {
   bool get _canDec => quantity > minQuantity;
   bool get _canInc => maxQuantity == null || quantity < maxQuantity!;
 
-  double get _height => dense ? 36 : 44;
+  double get _height => dense ? 36 : AppSizes.tapTargetMin;
   double get _iconSize => dense ? AppSizes.iconSm : 18;
   double get _hPad => dense ? AppSizes.sm : AppSizes.md;
 

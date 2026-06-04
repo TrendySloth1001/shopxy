@@ -108,7 +108,7 @@ class _AdminCollectionsPageState extends State<AdminCollectionsPage> {
                         AppSizes.lg,
                         AppSizes.lg,
                         AppSizes.lg,
-                        96,
+                        AppSizes.fabClearance,
                       ),
                       itemCount: provider.list.length,
                       separatorBuilder: (_, _) =>

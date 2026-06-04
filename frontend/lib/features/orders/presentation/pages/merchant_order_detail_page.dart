@@ -1087,7 +1087,7 @@ class _CustomerNote extends StatelessWidget {
               children: [
                 const Icon(Icons.format_quote_rounded,
                     size: AppSizes.iconSm, color: AppColors.muted),
-                const SizedBox(width: 4),
+                const SizedBox(width: AppSizes.xs),
                 Text(
                   AppStrings.orderCustomerNote.toUpperCase(),
                   style: theme.textTheme.labelSmall?.copyWith(

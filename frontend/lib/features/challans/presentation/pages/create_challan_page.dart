@@ -201,7 +201,7 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
           children: [
             GlassHero.line(
               kind: LineArt.deliveryNote,
-              height: 160,
+              height: AppSizes.heroHeightSm,
               illustrationSize: AppSizes.productImageSize,
             ),
             Expanded(

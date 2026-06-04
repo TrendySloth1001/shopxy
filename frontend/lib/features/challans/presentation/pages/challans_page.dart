@@ -113,7 +113,7 @@ class _ChallansPageState extends State<ChallansPage> {
                         child: ListView.separated(
                           padding: const EdgeInsets.symmetric(
                             vertical: AppSizes.sm,
-                          ).copyWith(bottom: 100),
+                          ).copyWith(bottom: AppSizes.fabClearance),
                           itemCount: provider.challans.length,
                           separatorBuilder: (_, _) => const AppDivider(),
                           itemBuilder: (ctx, i) {

@@ -10,7 +10,7 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 /// carry a name + url (not a full Product), so this is lighter than
 /// [ProductThumbnail].
 class QuoteLineThumb extends StatelessWidget {
-  const QuoteLineThumb({super.key, required this.imageUrl, this.size = 40});
+  const QuoteLineThumb({super.key, required this.imageUrl, this.size = AppSizes.avatarSm});
   final String? imageUrl;
   final double size;
 
