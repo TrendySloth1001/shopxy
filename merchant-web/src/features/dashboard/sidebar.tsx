@@ -1,12 +1,13 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { PanelLeft, PanelLeftClose, LogOut } from "lucide-react";
 import { useAuth } from "@/features/auth/auth-context";
 import { Avatar } from "@/features/auth/components/avatar";
 import { Divider } from "@/shared/ui/divider";
-import { NAV_GROUPS, type NavItem } from "./nav-items";
+import { NAV_GROUPS, hrefForNav, type NavItem } from "./nav-items";
 
 const STORAGE_KEY = "sx_sidebar_collapsed";
 
@@ -31,15 +32,10 @@ function useCollapsed(): [boolean, () => void] {
   return [collapsed, toggle];
 }
 
-export function Sidebar({
-  active,
-  onSelect,
-}: {
-  active: string;
-  onSelect: (key: string) => void;
-}) {
+export function Sidebar() {
   const { user, logout } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const [collapsed, toggle] = useCollapsed();
 
   async function onSignOut() {
@@ -50,6 +46,11 @@ export function Sidebar({
   const groups = NAV_GROUPS.filter(
     (g) => !g.adminOnly || user?.isPlatformAdmin,
   );
+
+  function isActive(href: string): boolean {
+    if (href === "/dashboard") return pathname === "/dashboard";
+    return pathname === href || pathname.startsWith(`${href}/`);
+  }
 
   return (
     <aside
@@ -112,11 +113,10 @@ export function Sidebar({
             <ul className="flex flex-col gap-px">
               {group.items.map((item) => (
                 <li key={item.key}>
-                  <NavButton
+                  <NavLink
                     item={item}
-                    active={active === item.key}
+                    active={isActive(hrefForNav(item.key))}
                     collapsed={collapsed}
-                    onClick={() => onSelect(item.key)}
                   />
                 </li>
               ))}
@@ -152,34 +152,27 @@ export function Sidebar({
   );
 }
 
-function NavButton({
+function NavLink({
   item,
   active,
   collapsed,
-  onClick,
 }: {
   item: NavItem;
   active: boolean;
   collapsed: boolean;
-  onClick: () => void;
 }) {
   const Icon = item.icon;
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <Link
+      href={hrefForNav(item.key)}
       title={collapsed ? item.label : undefined}
       aria-current={active ? "page" : undefined}
       className={`flex w-full items-center gap-md rounded-md px-sm py-sm text-left text-body-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft ${
         collapsed ? "justify-center" : ""
-      } ${
-        active
-          ? "bg-ink text-white"
-          : "text-ink hover:bg-surface-tint"
-      }`}
+      } ${active ? "bg-ink text-white" : "text-ink hover:bg-surface-tint"}`}
     >
       <Icon size={18} className="shrink-0" />
       {!collapsed ? <span className="truncate">{item.label}</span> : null}
-    </button>
+    </Link>
   );
 }
