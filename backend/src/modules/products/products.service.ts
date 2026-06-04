@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
 import { ledgerService } from '../ledger/ledger.service.js';
 import { embeddingService } from '../search/embedding.service.js';
+import { HttpError } from '../../shared/http/errorHandler.js';
 
 /// Strip the obvious script-injection vectors from TEXT block markdown
 /// before it lands in the DB. We trust the Zod schema to enforce shape;
@@ -9,16 +10,41 @@ import { embeddingService } from '../search/embedding.service.js';
 /// turn into XSS if the customer renderer ever switches to HTML mode.
 /// Whitelist-rendering on the client (no raw HTML) is the real defence
 /// — this is the second line.
+///
+/// P-4 hardening: beyond quoted `on*=` handlers and a wider tag set, this
+/// now also strips UNQUOTED handlers (`onerror=alert(1)`), dangerous URI
+/// schemes (`javascript:` / `data:` / `vbscript:`), and runs to a fixed
+/// point so nested/obfuscated forms like `<scr<script>ipt>` can't survive
+/// a single pass. (A full DOMPurify-class sanitizer / store-as-AST remains
+/// the ideal; this stays dependency-free as defense-in-depth.)
+const DANGEROUS_TAGS =
+  /<\s*\/?\s*(script|iframe|object|embed|style|link|meta|base|form|svg|math)\b[^>]*>/gi;
+const EVENT_HANDLERS = /\son\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi;
+const DANGEROUS_URIS = /(?:javascript|vbscript|data)\s*:/gi;
+
+function scrubMarkdown(input: string): string {
+  let out = input;
+  // Iterate so a single removal that reveals a new match (nesting) is
+  // also caught. Bounded to avoid pathological input looping.
+  for (let i = 0; i < 5; i++) {
+    const next = out
+      .replace(DANGEROUS_TAGS, '')
+      .replace(EVENT_HANDLERS, '')
+      .replace(DANGEROUS_URIS, '');
+    if (next === out) break;
+    out = next;
+  }
+  return out;
+}
+
 function sanitizeContentBlocks(blocks: unknown): unknown {
   if (!Array.isArray(blocks)) return blocks;
-  const stripTags = /<\s*\/?\s*(script|iframe|object|embed|style)[^>]*>/gi;
-  const stripEvents = /\son\w+\s*=\s*"[^"]*"|\son\w+\s*=\s*'[^']*'/gi;
   return blocks.map((b) => {
     if (b && typeof b === 'object' && (b as { kind?: string }).kind === 'TEXT') {
       const cur = b as { kind: 'TEXT'; markdown: string };
       return {
         ...cur,
-        markdown: cur.markdown.replace(stripTags, '').replace(stripEvents, ''),
+        markdown: scrubMarkdown(cur.markdown),
       };
     }
     return b;
@@ -170,6 +196,15 @@ export class ProductsService {
         // inherits product-level pricing — every product has ≥1
         // variant so the customer client always has a variantId to
         // attach to add-to-cart.
+        //
+        // P-2: variant `stockQuantity` is DISPLAY-ONLY breakdown metadata.
+        // The authoritative on-hand figure is the product-level total,
+        // which is the only quantity funded through the inventory ledger
+        // (OPENING / SALE / PURCHASE / ADJUSTMENT, with FIFO cost layers
+        // and a SELECT…FOR UPDATE lock). Variant stock is written verbatim
+        // from the payload, carries no cost basis, and must not be treated
+        // as a competing source of truth — reconcile it against the
+        // ledgered product total, never the reverse.
         variants: {
           create: (variants && variants.length > 0)
             ? variants.map((v, i) => ({
@@ -312,6 +347,17 @@ export class ProductsService {
       const categoryClause = options.categoryId
         ? Prisma.sql`AND category_id = ${options.categoryId}`
         : Prisma.empty;
+      // P-3: the low-stock raw path must honour the same name/sku/barcode
+      // search the typed path applies, else "low stock + search" returns
+      // unfiltered low-stock results. Parameterised ILIKE (case-insensitive,
+      // matching the typed `mode:'insensitive'`); values are bound, not spliced.
+      const searchClause = options.search
+        ? Prisma.sql`AND (
+            name ILIKE ${'%' + options.search + '%'}
+            OR sku ILIKE ${'%' + options.search + '%'}
+            OR barcode ILIKE ${'%' + options.search + '%'}
+          )`
+        : Prisma.empty;
 
       const [countRow, pageRows] = await Promise.all([
         prisma.$queryRaw<{ count: bigint }[]>`
@@ -321,6 +367,7 @@ export class ProductsService {
              AND stock_quantity > 0
              AND stock_quantity <= low_stock_threshold
              ${categoryClause}
+             ${searchClause}
         `,
         prisma.$queryRaw<{ id: number }[]>`
           SELECT id FROM products
@@ -329,6 +376,7 @@ export class ProductsService {
              AND stock_quantity > 0
              AND stock_quantity <= low_stock_threshold
              ${categoryClause}
+             ${searchClause}
            ORDER BY updated_at DESC
            LIMIT ${options.limit} OFFSET ${options.skip}
         `,
@@ -557,6 +605,10 @@ export class ProductsService {
     // CartItem.variantId references survive an edit. Bare-minimum
     // implementation: existing variants not listed are soft-deleted
     // (isActive=false) so historical references don't break.
+    //
+    // P-2: variant `stockQuantity` here is display-only breakdown — see
+    // the create path. The ledgered product total is authoritative; this
+    // write does not (and must not) post to the inventory ledger.
     if (variants !== undefined) {
       const existing = await prisma.productVariant.findMany({
         where: { productId: id },
@@ -577,8 +629,14 @@ export class ProductsService {
       for (let i = 0; i < variants.length; i++) {
         const v = variants[i];
         if (v.id) {
-          await prisma.productVariant.update({
-            where: { id: v.id },
+          // Scope the update to THIS product (proven shop-owned by the
+          // outer product.updateMany). Without the productId predicate a
+          // caller could PATCH their own product with another shop's
+          // variant id and overwrite its price/stock/SKU (cross-tenant
+          // IDOR). updateMany lets us detect & skip a foreign/unknown id
+          // via count===0 instead of mutating it.
+          const res = await prisma.productVariant.updateMany({
+            where: { id: v.id, productId: id },
             data: {
               sku: v.sku,
               barcode: v.barcode ?? null,
@@ -592,6 +650,11 @@ export class ProductsService {
               sortOrder: v.sortOrder ?? i,
             },
           });
+          if (res.count === 0) {
+            // Variant id doesn't belong to this product — ignore it
+            // rather than touching a row in another shop.
+            continue;
+          }
         } else {
           await prisma.productVariant.create({
             data: {
@@ -636,6 +699,23 @@ export class ProductsService {
   }
 
   async setPublished(shopId: number, id: number, isPublished: boolean) {
+    // P-6 / MOD-2: a product must carry an explicit tax rate before it can
+    // go live, so a null `taxPercent` can never silently zero GST on a
+    // customer order. (Unpublishing is always allowed.)
+    if (isPublished) {
+      const target = await prisma.product.findFirst({
+        where: { id, shopId },
+        select: { taxPercent: true },
+      });
+      if (!target) return null;
+      if (target.taxPercent === null || target.taxPercent === undefined) {
+        throw new HttpError(
+          400,
+          'TAX_RATE_REQUIRED',
+          'Set a GST tax rate on this product before publishing it.',
+        );
+      }
+    }
     const result = await prisma.product.updateMany({
       where: { id, shopId },
       data: { isPublished },

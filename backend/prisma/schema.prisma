@@ -225,13 +225,21 @@ model ContactChangeLog {
 
 model RefreshToken {
   id        Int      @id @default(autoincrement())
+  /// SHA-256 hex of the issued refresh JWT — we never persist the raw
+  /// token, so a read-only DB leak can't be replayed as a live session
+  /// (B-AUTH-1). Lookups hash the presented token and match on this.
   token     String   @unique
+  /// Rotation-lineage id shared by every token descended from one login.
+  /// On presentation of an already-rotated token whose family still has
+  /// live members we revoke the whole family — reuse detection (B-AUTH-2).
+  family    String   @default("")
   userId    Int      @map("user_id")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime @map("expires_at")
   createdAt DateTime @default(now()) @map("created_at")
 
   @@index([userId])
+  @@index([family])
   @@map("refresh_tokens")
 }
 
@@ -870,6 +878,11 @@ model Invoice {
   /// "Rupees X and Paise Y only" — pre-rendered for the printed PDF.
   amountInWords          String?          @map("amount_in_words")
   note                   String?
+  /// One-shot conversion guard for ESTIMATE/PROFORMA → TAX_INVOICE
+  /// (INV-2). Set atomically to the new invoice's id when this source is
+  /// converted, so a repeat convert returns the existing invoice instead
+  /// of minting a duplicate confirmed tax invoice.
+  convertedToInvoiceId   Int?             @map("converted_to_invoice_id")
   invoiceDate            DateTime         @default(now()) @map("invoice_date")
   createdAt              DateTime         @default(now()) @map("created_at")
   updatedAt              DateTime         @updatedAt @map("updated_at")

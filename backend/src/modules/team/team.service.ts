@@ -1,10 +1,25 @@
-import { Prisma } from '@prisma/client';
+import { Prisma, ShopRole } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
 import {
   bumpTokensValidFromCache,
   invalidateMembershipCache,
 } from '../../shared/http/requireAuth.js';
 import { normalizeRights, presetFor } from '../../shared/http/permissions.js';
+
+/// Delegation cap (TEAM-1): a non-owner with `team:manage` must not be
+/// able to grant rights they don't themselves hold (which would let a
+/// limited staffer escalate a colleague — or, by cross-granting, bypass
+/// the own-role guard). OWNER bypasses every gate, so it can grant
+/// anything. Returns the requested rights the actor lacks (empty = ok).
+function rightsBeyondActor(
+  actorRole: ShopRole | undefined,
+  actorPermissions: string[] | undefined,
+  requested: string[],
+): string[] {
+  if (actorRole === 'OWNER') return [];
+  const held = new Set(normalizeRights(actorPermissions ?? []));
+  return normalizeRights(requested).filter((r) => !held.has(r));
+}
 
 const memberSelect = {
   id: true,
@@ -85,8 +100,17 @@ export class TeamService {
     });
   }
 
-  async createRole(opts: { shopId: number; name: string; permissions: string[] }) {
+  async createRole(opts: {
+    shopId: number;
+    name: string;
+    permissions: string[];
+    actingShopRole?: ShopRole;
+    actingPermissions?: string[];
+  }) {
     if (!isValidRoleName(opts.name)) return { error: 'INVALID_ROLE_NAME' as const };
+    if (rightsBeyondActor(opts.actingShopRole, opts.actingPermissions, opts.permissions).length > 0) {
+      return { error: 'CANNOT_GRANT_BEYOND_OWN_RIGHTS' as const };
+    }
     try {
       const role = await prisma.teamRole.create({
         data: {
@@ -111,9 +135,17 @@ export class TeamService {
     id: number;
     name?: string;
     permissions?: string[];
+    actingShopRole?: ShopRole;
+    actingPermissions?: string[];
   }) {
     if (opts.name !== undefined && !isValidRoleName(opts.name)) {
       return { error: 'INVALID_ROLE_NAME' as const };
+    }
+    if (
+      opts.permissions !== undefined &&
+      rightsBeyondActor(opts.actingShopRole, opts.actingPermissions, opts.permissions).length > 0
+    ) {
+      return { error: 'CANNOT_GRANT_BEYOND_OWN_RIGHTS' as const };
     }
     const existing = await prisma.teamRole.findFirst({
       where: { id: opts.id, shopId: opts.shopId },
@@ -160,6 +192,8 @@ export class TeamService {
   async setPermissions(opts: {
     shopId: number;
     actingUserId: number;
+    actingShopRole?: ShopRole;
+    actingPermissions?: string[];
     targetUserId: number;
     roleName: string;
     permissions: string[];
@@ -169,6 +203,10 @@ export class TeamService {
     }
     if (opts.targetUserId === opts.actingUserId) {
       return { error: 'CANNOT_CHANGE_OWN_ROLE' as const };
+    }
+    // Capped delegation (TEAM-1): can't grant a right the actor lacks.
+    if (rightsBeyondActor(opts.actingShopRole, opts.actingPermissions, opts.permissions).length > 0) {
+      return { error: 'CANNOT_GRANT_BEYOND_OWN_RIGHTS' as const };
     }
     const member = await prisma.shopMember.findUnique({
       where: { shopId_userId: { shopId: opts.shopId, userId: opts.targetUserId } },

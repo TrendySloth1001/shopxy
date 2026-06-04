@@ -8,6 +8,7 @@ const ERROR_STATUS: Record<string, number> = {
   MEMBER_NOT_FOUND: 404,
   ROLE_NOT_FOUND: 404,
   ROLE_EXISTS: 409,
+  CANNOT_GRANT_BEYOND_OWN_RIGHTS: 403,
 };
 function fail(res: Response, code: string) {
   res.status(ERROR_STATUS[code] ?? 400).json({ error: code });
@@ -85,6 +86,8 @@ export async function updatePermissions(req: Request, res: Response) {
   const result = await teamService.setPermissions({
     shopId: req.shopId!,
     actingUserId: req.user!.sub,
+    actingShopRole: req.user!.shopRole,
+    actingPermissions: req.user!.shopPermissions,
     targetUserId,
     roleName: parsed.data.roleName,
     permissions: parsed.data.permissions,
@@ -132,6 +135,8 @@ export async function createRole(req: Request, res: Response) {
     shopId: req.shopId!,
     name: parsed.data.name,
     permissions: parsed.data.permissions,
+    actingShopRole: req.user!.shopRole,
+    actingPermissions: req.user!.shopPermissions,
   });
   if ('error' in result && result.error) {
     fail(res, result.error);
@@ -161,6 +166,8 @@ export async function updateRole(req: Request, res: Response) {
     id,
     name: parsed.data.name,
     permissions: parsed.data.permissions,
+    actingShopRole: req.user!.shopRole,
+    actingPermissions: req.user!.shopPermissions,
   });
   if ('error' in result && result.error) {
     fail(res, result.error);

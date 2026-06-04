@@ -150,6 +150,7 @@ export class VendorsController {
     if (!owned) { res.status(404).json({ error: 'Vendor not found' }); return; }
     const params = parsePagination(req);
     const { rows, total } = await contactChangeLogService.listForEntity({
+      shopId,
       entityType: 'VENDOR',
       entityId: id,
       ...params,

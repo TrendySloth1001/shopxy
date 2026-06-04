@@ -408,6 +408,12 @@ export class CouponsService {
       return { error: 'SHOP_NOT_IN_CART' };
     }
     if (row.perUserLimit > 0) {
+      // CPN-1: serialize concurrent redemptions by the SAME user for this
+      // coupon so the count-then-create below can't be split by a racing
+      // self-checkout (which would let the user exceed perUserLimit by one).
+      // Transaction-scoped advisory lock on (couponId, userId); auto-released
+      // at commit. The global totalCap already uses a gated atomic increment.
+      await opts.tx.$executeRaw`SELECT pg_advisory_xact_lock(${row.id}, ${opts.userId})`;
       const used = await opts.tx.couponRedemption.count({
         where: { couponId: row.id, userId: opts.userId },
       });

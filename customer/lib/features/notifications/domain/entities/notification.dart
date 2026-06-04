@@ -1,3 +1,5 @@
+import 'package:shopxy_customer/shared/format/json_parse.dart';
+
 class AppNotification {
   const AppNotification({
     required this.id,
@@ -37,7 +39,7 @@ class AppNotification {
         title: j['title'] as String,
         body: j['body'] as String?,
         data: (j['data'] as Map?)?.cast<String, dynamic>() ?? const {},
-        readAt: j['readAt'] == null ? null : DateTime.parse(j['readAt'] as String),
-        createdAt: DateTime.parse(j['createdAt'] as String),
+        readAt: parseDateOrNull(j['readAt']),
+        createdAt: parseDate(j['createdAt']),
       );
 }

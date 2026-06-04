@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import { Role, ShopRole } from '@prisma/client';
+import { Role } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
 import { invitationsService } from '../invitations/invitations.service.js';
 import { notificationsService } from '../notifications/notifications.service.js';
@@ -51,23 +51,14 @@ async function signAccess(
   role: Role,
   isPlatformAdmin: boolean,
 ): Promise<string> {
-  // Bake the caller's shopId + shopRole into the JWT so handlers don't
-  // pay a per-request lookup on ShopMember. Resolved from the team
-  // membership (the owner has an OWNER row; staff have their granted
-  // role). Customer accounts — and merchant accounts not yet on any
-  // team — keep both undefined.
-  let shopId: number | undefined;
-  let shopRole: ShopRole | undefined;
-  if (role === 'OWNER') {
-    const membership = await prisma.shopMember.findUnique({
-      where: { userId },
-      select: { shopId: true, role: true },
-    });
-    shopId = membership?.shopId;
-    shopRole = membership?.role;
-  }
+  // shopId/shopRole are NOT baked into the JWT: requireAuth always
+  // re-resolves membership for OWNER accounts (so a role change takes
+  // effect within the cache TTL without re-login), which means a baked
+  // value would only ever be overwritten. Dropping the sign-time
+  // ShopMember lookup removes a wasted query on every token mint
+  // (B-AUTH-7).
   return jwt.sign(
-    { sub: userId, email, role, isPlatformAdmin, shopId, shopRole },
+    { sub: userId, email, role, isPlatformAdmin },
     ACCESS_SECRET,
     { expiresIn: '15m' },
   );
@@ -75,11 +66,27 @@ async function signAccess(
 
 const MAX_ACTIVE_REFRESH_TOKENS_PER_USER = 5;
 
-async function createRefreshToken(userId: number): Promise<string> {
+/// SHA-256 hex of a refresh token. We persist only this digest, never
+/// the raw JWT, so a read-only DB leak can't be replayed as a live
+/// session (B-AUTH-1). Lookups hash the presented token and match it.
+function hashToken(token: string): string {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
+
+/// Issues a refresh token and stores its hash. `family` ties the token
+/// to a rotation lineage: a fresh login starts a new family; a rotation
+/// keeps the parent's family so reuse of an already-rotated token can be
+/// traced back and the whole family revoked (B-AUTH-2).
+async function createRefreshToken(userId: number, family?: string): Promise<string> {
   const jti = crypto.randomUUID();
-  const token = jwt.sign({ sub: userId, jti }, REFRESH_SECRET, { expiresIn: '7d' });
+  const fam = family ?? crypto.randomUUID();
+  const token = jwt.sign({ sub: userId, jti, family: fam }, REFRESH_SECRET, {
+    expiresIn: '7d',
+  });
   const expiresAt = new Date(Date.now() + REFRESH_EXPIRES_MS);
-  await prisma.refreshToken.create({ data: { token, userId, expiresAt } });
+  await prisma.refreshToken.create({
+    data: { token: hashToken(token), family: fam, userId, expiresAt },
+  });
 
   // Cap the number of active sessions per user. If we're now over the limit,
   // drop the oldest tokens (FIFO by createdAt). Keeps a forgotten device or
@@ -224,8 +231,7 @@ export class AuthService {
       // pino emits JSON natively so a single structured call covers both the
       // human-readable warn and the machine-readable error record we used to
       // emit as two separate console calls.
-      logger.error({ event: 'invitation_claim_failed', userId: user.id, err });
-      logger.warn({ userId: user.id, err }, 'invitation claim failed');
+      logger.error({ event: 'invitation_claim_failed', userId: user.id, err }, 'invitation claim failed');
     }
 
     const accessToken = await signAccess(user.id, user.email, user.role, user.isPlatformAdmin);
@@ -370,6 +376,10 @@ export class AuthService {
   }
 
   async login(email: string, password: string) {
+    // Read the full row (incl. passwordHash + isActive) for the credential
+    // check, but only ever return the `safeUserSelect` projection so the
+    // wire response matches register/getMe and can't leak internal columns
+    // like tokensValidFrom (B-AUTH-5).
     const user = await prisma.user.findUnique({
       where: { email: email.toLowerCase().trim() },
     });
@@ -385,21 +395,44 @@ export class AuthService {
 
     const accessToken = await signAccess(user.id, user.email, user.role, user.isPlatformAdmin);
     const refreshToken = await createRefreshToken(user.id);
-    const { passwordHash: _p, ...safeUser } = user;
+    const safeUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: safeUserSelect,
+    });
     return { user: safeUser, accessToken, refreshToken };
   }
 
   async refresh(token: string) {
-    let payload: { sub: number };
+    let payload: { sub: number; family?: string };
     try {
-      payload = jwt.verify(token, REFRESH_SECRET) as unknown as { sub: number };
+      payload = jwt.verify(token, REFRESH_SECRET) as unknown as {
+        sub: number;
+        family?: string;
+      };
     } catch {
       return { error: 'Invalid refresh token' as const };
     }
 
-    const stored = await prisma.refreshToken.findUnique({ where: { token } });
-    if (!stored || stored.expiresAt < new Date()) {
-      if (stored) await prisma.refreshToken.delete({ where: { id: stored.id } });
+    const tokenHash = hashToken(token);
+    const stored = await prisma.refreshToken.findUnique({ where: { token: tokenHash } });
+    if (!stored) {
+      // The JWT verified (valid signature, unexpired) but its hash isn't
+      // stored — it was already rotated away or logged out. If its family
+      // still has live members, this is a replay of a rotated token, so
+      // revoke the entire family and force a fresh login (B-AUTH-2).
+      if (payload.family) {
+        const familyAlive = await prisma.refreshToken.findFirst({
+          where: { family: payload.family },
+          select: { id: true },
+        });
+        if (familyAlive) {
+          await prisma.refreshToken.deleteMany({ where: { family: payload.family } });
+        }
+      }
+      return { error: 'Refresh token expired or revoked' as const };
+    }
+    if (stored.expiresAt < new Date()) {
+      await prisma.refreshToken.delete({ where: { id: stored.id } });
       return { error: 'Refresh token expired or revoked' as const };
     }
 
@@ -412,15 +445,15 @@ export class AuthService {
       return { error: 'Account not found or deactivated' as const };
     }
 
-    // Rotate: delete old token, issue new pair
+    // Rotate within the same family: delete old token, issue new pair.
     await prisma.refreshToken.delete({ where: { id: stored.id } });
     const accessToken = await signAccess(user.id, user.email, user.role, user.isPlatformAdmin);
-    const refreshToken = await createRefreshToken(user.id);
+    const refreshToken = await createRefreshToken(user.id, stored.family);
     return { accessToken, refreshToken };
   }
 
   async logout(token: string) {
-    await prisma.refreshToken.deleteMany({ where: { token } });
+    await prisma.refreshToken.deleteMany({ where: { token: hashToken(token) } });
   }
 
   /// Revoke every refresh token for this user — drops other-device
@@ -569,7 +602,7 @@ export class AuthService {
         body: "Your password was changed. If this wasn't you, contact support.",
       });
     } catch (err) {
-      console.warn('Failed to write password-change notification', userId, err);
+      logger.warn({ event: 'password_change_notification_failed', userId, err }, 'Failed to write password-change notification');
     }
 
     return { ok: true };

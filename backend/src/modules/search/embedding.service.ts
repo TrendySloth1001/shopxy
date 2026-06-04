@@ -216,7 +216,17 @@ export class EmbeddingService {
 /// Pgvector's input parser is `'[0.1,0.2,...]'` (no spaces matter).
 /// Exported for tests; safe to splice into `$queryRaw` because the
 /// values come from the Ollama response, not user input.
+///
+/// SHM-1: enforce the "number-only" invariant rather than merely
+/// documenting it — assert every element is a finite number before
+/// formatting, so a future change that let a non-numeric value reach
+/// this splice fails loudly instead of becoming an injection vector.
 export function toPgVectorLiteral(v: number[]): string {
+  for (const x of v) {
+    if (typeof x !== 'number' || !Number.isFinite(x)) {
+      throw new Error('toPgVectorLiteral: embedding contains a non-finite element');
+    }
+  }
   return `[${v.join(',')}]`;
 }
 

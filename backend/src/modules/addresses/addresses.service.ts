@@ -126,10 +126,31 @@ export class AddressesService {
   }
 
   async delete(userId: number, id: number): Promise<'ok' | 'not_found'> {
-    const result = await prisma.userAddress.deleteMany({
-      where: { id, userId },
+    return prisma.$transaction(async (tx) => {
+      const target = await tx.userAddress.findFirst({
+        where: { id, userId },
+        select: { id: true, isDefault: true },
+      });
+      if (!target) return 'not_found' as const;
+      await tx.userAddress.delete({ where: { id: target.id } });
+      // ADDR-1: if we just removed the default, promote the most-recent
+      // remaining address so checkout always has a pre-selected address
+      // (getDefault would otherwise return null).
+      if (target.isDefault) {
+        const next = await tx.userAddress.findFirst({
+          where: { userId },
+          orderBy: { createdAt: 'desc' },
+          select: { id: true },
+        });
+        if (next) {
+          await tx.userAddress.update({
+            where: { id: next.id },
+            data: { isDefault: true },
+          });
+        }
+      }
+      return 'ok' as const;
     });
-    return result.count > 0 ? 'ok' : 'not_found';
   }
 
   /// Promote one address to default. Idempotent — already-default
