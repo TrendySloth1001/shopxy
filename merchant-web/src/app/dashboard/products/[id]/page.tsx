@@ -15,6 +15,7 @@ import { money, qty } from "@/features/products/format";
 import { unitLabel } from "@/features/products/units";
 import { ProductThumb, mediaSrc } from "@/features/products/components/product-thumb";
 import { StockBadge } from "@/features/products/components/stock-badge";
+import { ContentBlocksView } from "@/features/products/components/content-blocks-view";
 
 export default function ProductDetailPage({
   params,
@@ -282,11 +283,9 @@ export default function ProductDetailPage({
 
       {product.contentBlocks.length > 0 ? (
         <Section title="A+ content">
-          <p className="text-body-md text-muted">
-            {product.contentBlocks.length} content block
-            {product.contentBlocks.length === 1 ? "" : "s"} ·{" "}
-            {product.contentBlocks.map((b) => b.kind).join(", ")}
-          </p>
+          <ContentBlocksView
+            blocks={product.contentBlocks as Array<Record<string, unknown>>}
+          />
         </Section>
       ) : null}
     </div>
