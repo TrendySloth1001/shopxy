@@ -46,7 +46,7 @@ class CatalogProductThumbnail extends StatelessWidget {
     final hasImage = raw.isNotEmpty;
     final resolved = hasImage ? resolveImageUrl(raw) : '';
     final radius = cornerRadius ??
-        (size <= 64 ? AppSizes.radiusMd : AppSizes.radiusLg);
+        (size <= AppSizes.massive ? AppSizes.radiusMd : AppSizes.radiusLg);
     final shape = AppShapes.squircle(radius);
     final (bg, fg) = _palette;
 

@@ -288,7 +288,7 @@ class _SectionCard extends StatelessWidget {
                   Icon(
                     resolveCustomFieldIcon(section.icon),
                     color: AppColors.black,
-                    size: 22,
+                    size: AppSizes.iconLg,
                   ),
                   const SizedBox(width: AppSizes.md),
                   Expanded(
@@ -401,7 +401,7 @@ class _UngroupedSectionCard extends StatelessWidget {
                 const Icon(
                   Icons.label_outline_rounded,
                   color: AppColors.black,
-                  size: 22,
+                  size: AppSizes.iconLg,
                 ),
                 const SizedBox(width: AppSizes.md),
                 Expanded(
@@ -504,14 +504,14 @@ class _FieldRow extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSizes.md,
-          vertical: AppSizes.sm + 2,
+          vertical: AppSizes.md,
         ),
         child: Row(
           children: [
             Icon(
               resolveCustomFieldIcon(field.icon),
               color: AppColors.muted,
-              size: 20,
+              size: AppSizes.iconMd,
             ),
             const SizedBox(width: AppSizes.md),
             Expanded(
@@ -537,7 +537,7 @@ class _FieldRow extends StatelessWidget {
               icon: const Icon(
                 Icons.archive_outlined,
                 color: AppColors.muted,
-                size: 20,
+                size: AppSizes.iconMd,
               ),
               tooltip: AppStrings.archive,
               onPressed: onArchive,

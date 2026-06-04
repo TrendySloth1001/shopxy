@@ -176,15 +176,18 @@ class _CautionRequestsPageState extends State<CautionRequestsPage> {
                   onRefresh: _load,
                   child: _requests.isEmpty
                       ? ListView(
-                          children: const [
-                            SizedBox(height: 120),
-                            Icon(Icons.inbox_outlined,
-                                size: 44, color: AppColors.muted),
-                            SizedBox(height: AppSizes.md),
+                          children: [
+                            const SizedBox(height: AppSizes.productImageSize),
+                            const Icon(Icons.inbox_outlined,
+                                size: AppSizes.iconHuge, color: AppColors.muted),
+                            const SizedBox(height: AppSizes.md),
                             Center(
                               child: Text(
                                 'No pending caution requests.',
-                                style: TextStyle(color: AppColors.muted),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(color: AppColors.muted),
                               ),
                             ),
                           ],
@@ -253,7 +256,7 @@ class _RequestRow extends StatelessWidget {
                       style: theme.textTheme.titleMedium
                           ?.copyWith(fontWeight: FontWeight.w700),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSizes.xs),
                     Text(
                       subtitle,
                       style: theme.textTheme.bodySmall
@@ -280,8 +283,8 @@ class _RequestRow extends StatelessWidget {
             Row(
               children: [
                 const Icon(Icons.shopping_basket_outlined,
-                    size: 15, color: AppColors.brandStrong),
-                const SizedBox(width: 6),
+                    size: AppSizes.iconSm, color: AppColors.brandStrong),
+                const SizedBox(width: AppSizes.sm),
                 Text(
                   'Plans to buy${req.basketValue != null ? ' · ${currency.format(req.basketValue)}' : ''}',
                   style: theme.textTheme.labelMedium?.copyWith(
@@ -293,7 +296,7 @@ class _RequestRow extends StatelessWidget {
             ),
             for (final line in req.basket.take(4))
               Padding(
-                padding: const EdgeInsets.only(top: 2),
+                padding: const EdgeInsets.only(top: AppSizes.xs),
                 child: Text(
                   '${line.qty.toStringAsFixed(line.qty == line.qty.roundToDouble() ? 0 : 2)} × ${line.name} · ${currency.format(line.lineTotal)}',
                   style: theme.textTheme.bodySmall,
@@ -303,7 +306,7 @@ class _RequestRow extends StatelessWidget {
               ),
             if (req.basket.length > 4)
               Padding(
-                padding: const EdgeInsets.only(top: 2),
+                padding: const EdgeInsets.only(top: AppSizes.xs),
                 child: Text(
                   '+${req.basket.length - 4} more',
                   style: theme.textTheme.bodySmall
@@ -329,8 +332,8 @@ class _RequestRow extends StatelessWidget {
                   onPressed: busy ? null : onApprove,
                   child: busy
                       ? const SizedBox(
-                          width: 18,
-                          height: 18,
+                          width: AppSizes.xl,
+                          height: AppSizes.xl,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Text('Approve'),

@@ -96,10 +96,10 @@ class _PartyPickerSheetState extends State<_PartyPickerSheet> {
             const SizedBox(height: AppSizes.md),
             Container(
               width: 40,
-              height: 4,
+              height: AppSizes.xs,
               decoration: ShapeDecoration(
                 color: AppColors.hairline,
-                shape: AppShapes.squircle(2),
+                shape: AppShapes.squircle(AppSizes.radiusFull),
               ),
             ),
             Padding(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shopxy/core/auth/token_manager.dart';
 import 'package:shopxy/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:shopxy/features/auth/domain/entities/auth_user.dart';
+import 'package:shopxy/shared/constants/app_durations.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 
 class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
@@ -102,7 +103,7 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// Cooldown for the manual "refresh access" button so it can't be used
   /// to hammer /auth/me. The automatic version-header sync is unaffected
   /// (it only fires on an actual change).
-  static const refreshCooldown = Duration(seconds: 5);
+  static const refreshCooldown = AppDurations.snackbarLong;
   DateTime? _lastManualRefresh;
 
   /// Remaining cooldown before another manual refresh is allowed.

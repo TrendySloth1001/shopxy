@@ -61,7 +61,7 @@ class AppFilterPill extends StatelessWidget {
               children: [
                 if (icon != null) ...[
                   Icon(icon, size: AppSizes.iconSm - 2, color: iconColor),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: AppSizes.xs),
                 ],
                 Text(
                   label,
@@ -71,7 +71,7 @@ class AppFilterPill extends StatelessWidget {
                   ),
                 ),
                 if (trailingIcon != null) ...[
-                  const SizedBox(width: 4),
+                  const SizedBox(width: AppSizes.xs),
                   Icon(trailingIcon, size: AppSizes.iconSm - 2, color: fg),
                 ],
               ],

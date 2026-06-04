@@ -26,7 +26,7 @@ class ShopChip extends StatelessWidget {
     final padV = dense ? 2.0 : 3.0;
 
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 7, vertical: padV),
+      padding: EdgeInsets.symmetric(horizontal: AppSizes.sm, vertical: padV),
       decoration: ShapeDecoration(
         color: AppColors.brandSoft,
         shape: AppShapes.squircle(AppSizes.radiusFull),
@@ -39,18 +39,18 @@ class ShopChip extends StatelessWidget {
             size: iconSize,
             color: AppColors.brandStrong,
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: AppSizes.xs),
           Flexible(
             child: Text(
               name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: AppColors.brandStrong,
-                fontSize: fontSize,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.1,
-              ),
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: AppColors.brandStrong,
+                    fontSize: fontSize,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.1,
+                  ),
             ),
           ),
         ],

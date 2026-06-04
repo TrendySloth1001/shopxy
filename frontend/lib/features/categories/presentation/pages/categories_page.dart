@@ -7,6 +7,7 @@ import 'package:shopxy/features/categories/presentation/widgets/category_icon_ca
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
 
@@ -90,14 +91,14 @@ class _CategoryCard extends StatelessWidget {
     final theme = Theme.of(context);
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: AppShapes.squircleRadius(AppSizes.radiusButton),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           AspectRatio(
             aspectRatio: 1,
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: AppShapes.squircleRadius(AppSizes.radiusButton),
               child: _CategoryImage(category: category),
             ),
           ),
@@ -131,7 +132,7 @@ class _CategoryImage extends StatelessWidget {
       child: Icon(
         resolveCategoryIcon(category.iconName),
         color: AppColors.black,
-        size: 28,
+        size: AppSizes.iconLg,
       ),
     );
     if (url == null || url.isEmpty) return fallback;

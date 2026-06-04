@@ -243,13 +243,13 @@ class _ApprovalCard extends StatelessWidget {
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],
-                      const SizedBox(height: 4),
+                      const SizedBox(height: AppSizes.xs),
                       Text(
                         spotlight.shop.name,
-                        style: const TextStyle(
-                          color: AppColors.muted,
-                          fontSize: 12,
-                        ),
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodySmall
+                            ?.copyWith(color: AppColors.muted),
                       ),
                     ],
                   ),
@@ -264,8 +264,9 @@ class _ApprovalCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.schedule, size: 16, color: AppColors.muted),
-                    const SizedBox(width: 6),
+                    const Icon(Icons.schedule,
+                        size: AppSizes.iconSm, color: AppColors.muted),
+                    const SizedBox(width: AppSizes.sm),
                     Expanded(
                       child: Text(
                         '${df.format(spotlight.startAt)}  →  ${df.format(spotlight.endAt)}',
@@ -280,10 +281,10 @@ class _ApprovalCard extends StatelessWidget {
                     children: [
                       const Icon(
                         Icons.link,
-                        size: 16,
+                        size: AppSizes.iconSm,
                         color: AppColors.muted,
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: AppSizes.sm),
                       Expanded(child: Text(spotlight.ctaTarget!)),
                     ],
                   ),

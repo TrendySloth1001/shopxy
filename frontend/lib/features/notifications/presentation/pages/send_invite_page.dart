@@ -136,7 +136,7 @@ class _SendInvitePageState extends State<SendInvitePage> {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSizes.xs),
                   Text(
                     'They will see your request under Notifications. '
                     "If they don't have a Shopxy account yet, it shows "
@@ -229,7 +229,7 @@ class _SendInvitePageState extends State<SendInvitePage> {
                       child: Row(
                         children: [
                           const Icon(Icons.error_outline_rounded,
-                              color: AppColors.error, size: 18),
+                              color: AppColors.error, size: AppSizes.iconMd),
                           const SizedBox(width: AppSizes.sm),
                           Expanded(
                             child: Text(
@@ -261,14 +261,14 @@ class _SendInvitePageState extends State<SendInvitePage> {
                   onPressed: _canSend ? _send : null,
                   icon: _sending
                       ? const SizedBox(
-                          width: 16,
-                          height: 16,
+                          width: AppSizes.iconSm,
+                          height: AppSizes.iconSm,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
                             color: AppColors.white,
                           ),
                         )
-                      : const Icon(Icons.send_rounded, size: 18),
+                      : const Icon(Icons.send_rounded, size: AppSizes.iconMd),
                   label: const Text('Send invitation'),
                 ),
               ),
@@ -491,7 +491,7 @@ class _ContactPickerState extends State<_ContactPicker> {
                               const Icon(
                                 Icons.check_circle_rounded,
                                 color: AppColors.brand,
-                                size: 18,
+                                size: AppSizes.iconMd,
                               ),
                           ],
                         ),

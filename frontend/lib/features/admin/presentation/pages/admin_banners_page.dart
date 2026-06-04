@@ -67,7 +67,7 @@ class _AdminBannersPageState extends State<AdminBannersPage> {
               : RefreshIndicator(
                   onRefresh: provider.load,
                   child: ListView(
-                    padding: const EdgeInsets.only(bottom: 96),
+                    padding: const EdgeInsets.only(bottom: AppSizes.huge),
                     children: [
                       for (final entry in grouped.entries)
                         _PlacementSection(
@@ -189,7 +189,7 @@ class _EmptyTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onAdd,
-      borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+      borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
       child: Container(
         padding: const EdgeInsets.all(AppSizes.lg),
         decoration: ShapeDecoration(
@@ -309,11 +309,13 @@ class _BannerTile extends StatelessWidget {
                             ),
                             child: Text(
                               _status,
-                              style: TextStyle(
-                                color: _statusColor,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelSmall
+                                  ?.copyWith(
+                                    color: _statusColor,
+                                    fontWeight: FontWeight.w700,
+                                  ),
                             ),
                           ),
                           const SizedBox(width: AppSizes.sm),

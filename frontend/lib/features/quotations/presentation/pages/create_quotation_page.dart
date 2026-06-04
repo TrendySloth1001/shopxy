@@ -11,6 +11,7 @@ import 'package:shopxy/features/quotations/presentation/providers/quotations_pro
 import 'package:shopxy/features/quotations/presentation/widgets/quote_line_thumb.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
 
 /// Internal mutable bucket line.
@@ -268,16 +269,16 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
               prefixIcon: const Icon(Icons.search_rounded),
               suffixIcon: _searching
                   ? const Padding(
-                      padding: EdgeInsets.all(12),
+                      padding: EdgeInsets.all(AppSizes.md),
                       child: SizedBox(
-                        width: 16,
-                        height: 16,
+                        width: AppSizes.iconSm,
+                        height: AppSizes.iconSm,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       ),
                     )
                   : null,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+                borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
               ),
             ),
           ),
@@ -333,7 +334,7 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
             decoration: InputDecoration(
               labelText: 'Note (optional)',
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+                borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
               ),
             ),
           ),
@@ -361,8 +362,8 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
                 onPressed: (canSend && !prov.isSubmitting) ? _send : null,
                 child: prov.isSubmitting
                     ? const SizedBox(
-                        width: 18,
-                        height: 18,
+                        width: AppSizes.iconMd,
+                        height: AppSizes.iconMd,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : Text(canSend
@@ -418,10 +419,10 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
                           labelText: 'Rate',
                           isDense: true,
                           contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 10),
+                              horizontal: AppSizes.md, vertical: AppSizes.md),
                           border: OutlineInputBorder(
                             borderRadius:
-                                BorderRadius.circular(AppSizes.radiusSm),
+                                AppShapes.squircleRadius(AppSizes.radiusSm),
                           ),
                         ),
                       ),
@@ -461,8 +462,8 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
                     }),
                   ),
                   Text('${line.qty}',
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w800, fontSize: 16)),
+                      style: theme.textTheme.titleMedium
+                          ?.copyWith(fontWeight: FontWeight.w800)),
                   IconButton(
                     icon: const Icon(Icons.add_circle_outline_rounded),
                     color: AppColors.brand,
@@ -485,7 +486,7 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
 
   Widget _totalRow(String label, double value, ThemeData theme, {bool bold = false}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
+      padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -510,11 +511,10 @@ class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Text(
         label.toUpperCase(),
-        style: const TextStyle(
-          color: AppColors.muted,
-          fontWeight: FontWeight.w800,
-          fontSize: 11,
-          letterSpacing: 0.6,
-        ),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: AppColors.muted,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.6,
+            ),
       );
 }

@@ -477,10 +477,11 @@ class _DateField extends StatelessWidget {
           labelText: label,
           suffixIcon: onClear != null
               ? IconButton(
-                  icon: const Icon(Icons.close, size: 18),
+                  icon: const Icon(Icons.close, size: AppSizes.iconMd),
                   onPressed: onClear,
                 )
-              : const Icon(Icons.calendar_today_outlined, size: 18),
+              : const Icon(Icons.calendar_today_outlined,
+                  size: AppSizes.iconMd),
         ),
         child: Text(
           value == null ? 'Not set' : formatter.format(value!),
@@ -569,24 +570,22 @@ class _PreviewCard extends StatelessWidget {
                     ),
                     child: Text(
                       brandLabel!,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 10,
-                        letterSpacing: 0.6,
-                      ),
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: AppColors.white,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.6,
+                          ),
                     ),
                   ),
                 if (eyebrow != null) ...[
                   const SizedBox(height: AppSizes.xs),
                   Text(
                     eyebrow!,
-                    style: TextStyle(
-                      color: accentColor,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 10,
-                      letterSpacing: 1,
-                    ),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: accentColor,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1,
+                        ),
                   ),
                 ],
                 const SizedBox(height: AppSizes.sm),
@@ -594,22 +593,20 @@ class _PreviewCard extends StatelessWidget {
                   width: 200,
                   child: Text(
                     title,
-                    style: const TextStyle(
-                      color: AppColors.black,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 20,
-                      height: 1.1,
-                    ),
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: AppColors.black,
+                          fontWeight: FontWeight.w800,
+                          height: 1.1,
+                        ),
                   ),
                 ),
                 if (subtitle != null) ...[
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSizes.xs),
                   Text(
                     subtitle!,
-                    style: const TextStyle(
-                      color: AppColors.black,
-                      fontSize: 12,
-                    ),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.black,
+                        ),
                   ),
                 ],
                 if (ctaText != null) ...[
@@ -625,11 +622,10 @@ class _PreviewCard extends StatelessWidget {
                     ),
                     child: Text(
                       ctaText!,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
                     ),
                   ),
                 ],

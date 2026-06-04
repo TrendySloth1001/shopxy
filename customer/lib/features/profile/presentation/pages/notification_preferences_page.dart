@@ -147,12 +147,11 @@ class _SectionHeader extends StatelessWidget {
         ),
         child: Text(
           label.toUpperCase(),
-          style: const TextStyle(
-            color: AppColors.muted,
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.8,
-          ),
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: AppColors.muted,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.8,
+              ),
         ),
       );
 }
@@ -196,14 +195,17 @@ class _PrefTile extends StatelessWidget {
         ),
         title: Text(
           title,
-          style: const TextStyle(
-            color: AppColors.black,
-            fontWeight: FontWeight.w700,
-          ),
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: AppColors.black,
+                fontWeight: FontWeight.w700,
+              ),
         ),
         subtitle: Text(
           subtitle,
-          style: const TextStyle(color: AppColors.muted, fontSize: 12),
+          style: Theme.of(context)
+              .textTheme
+              .bodySmall
+              ?.copyWith(color: AppColors.muted),
         ),
       ),
     );

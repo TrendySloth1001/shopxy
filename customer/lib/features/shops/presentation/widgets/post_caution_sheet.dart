@@ -30,9 +30,7 @@ Future<bool?> showPostCautionSheet({
     isScrollControlled: true,
     backgroundColor: AppColors.canvas,
     useSafeArea: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
+    shape: AppShapes.squircleTop(AppSizes.radiusXl),
     builder: (_) => _Sheet(
       shop: shop,
       basket: basket,
@@ -161,7 +159,7 @@ class _SheetState extends State<_Sheet> {
                   Row(
                     children: [
                       const Icon(Icons.shopping_basket_outlined,
-                          size: 18, color: AppColors.brand),
+                          size: AppSizes.iconMd, color: AppColors.brand),
                       const SizedBox(width: AppSizes.sm),
                       Expanded(
                         child: Text(
@@ -192,10 +190,8 @@ class _SheetState extends State<_Sheet> {
                     prefixText: '${AppStrings.currencySymbol} ',
                     hint: '0',
                   ),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 22,
-                  ),
+                  style: theme.textTheme.titleLarge
+                      ?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: AppSizes.lg),
                 const _SectionLabel('How you\'re paying'),
@@ -230,7 +226,7 @@ class _SheetState extends State<_Sheet> {
                   const SizedBox(height: AppSizes.sm),
                   Text(
                     _error!,
-                    style: const TextStyle(
+                    style: theme.textTheme.bodyMedium?.copyWith(
                       color: AppColors.error,
                       fontWeight: FontWeight.w700,
                     ),
@@ -250,21 +246,22 @@ class _SheetState extends State<_Sheet> {
                 onPressed: _submitting ? null : _submit,
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.black,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  padding: const EdgeInsets.symmetric(vertical: AppSizes.lg),
                   shape: AppShapes.squircle(AppSizes.radiusMd),
                 ),
                 child: _submitting
                     ? const SizedBox(
-                        width: 18,
-                        height: 18,
+                        width: AppSizes.iconMd,
+                        height: AppSizes.iconMd,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.white,
+                          color: AppColors.white,
                         ),
                       )
-                    : const Text(
+                    : Text(
                         'Send request',
-                        style: TextStyle(fontWeight: FontWeight.w800),
+                        style: theme.textTheme.bodyMedium
+                            ?.copyWith(fontWeight: FontWeight.w800),
                       ),
               ),
             ),
@@ -280,11 +277,11 @@ class _SheetState extends State<_Sheet> {
         filled: true,
         fillColor: AppColors.white,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+          borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
           borderSide: const BorderSide(color: AppColors.hairline),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+          borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
           borderSide: const BorderSide(color: AppColors.hairline),
         ),
       );
@@ -298,12 +295,11 @@ class _SectionLabel extends StatelessWidget {
         padding: const EdgeInsets.only(bottom: AppSizes.sm),
         child: Text(
           label.toUpperCase(),
-          style: const TextStyle(
-            color: AppColors.muted,
-            fontWeight: FontWeight.w800,
-            fontSize: 11,
-            letterSpacing: 0.6,
-          ),
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: AppColors.muted,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.6,
+              ),
         ),
       );
 }
@@ -336,11 +332,10 @@ class _ModeChip extends StatelessWidget {
           ),
           child: Text(
             label,
-            style: TextStyle(
-              color: selected ? Colors.white : AppColors.black,
-              fontWeight: FontWeight.w700,
-              fontSize: 13,
-            ),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: selected ? AppColors.white : AppColors.black,
+                  fontWeight: FontWeight.w700,
+                ),
           ),
         ),
       ),

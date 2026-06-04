@@ -171,7 +171,7 @@ class _ReturnRow extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSizes.xs),
                 Text(
                   '$itemCount item${itemCount == 1 ? '' : 's'} · '
                   'Refund ${_currency.format(row.refundAmount)} · '
@@ -181,7 +181,7 @@ class _ReturnRow extends StatelessWidget {
                   ),
                 ),
                 if (row.items.isNotEmpty) ...[
-                  const SizedBox(height: 6),
+                  const SizedBox(height: AppSizes.sm),
                   Text(
                     row.items.map((i) => i.productName).join(', '),
                     maxLines: 2,
@@ -244,13 +244,16 @@ class _EmptyBlock extends StatelessWidget {
         padding: const EdgeInsets.all(AppSizes.xl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: const [
-            Icon(Icons.assignment_return_outlined,
-                size: 56, color: AppColors.subtle),
-            SizedBox(height: AppSizes.md),
+          children: [
+            const Icon(Icons.assignment_return_outlined,
+                size: AppSizes.iconHuge, color: AppColors.subtle),
+            const SizedBox(height: AppSizes.md),
             Text(
               'No returns in this view yet.',
-              style: TextStyle(color: AppColors.muted),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: AppColors.muted),
             ),
           ],
         ),

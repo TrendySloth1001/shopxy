@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/features/categories/data/datasources/categories_remote_data_source.dart';
 import 'package:shopxy/features/categories/domain/entities/category.dart';
+import 'package:shopxy/shared/constants/app_durations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
@@ -256,7 +257,7 @@ class _CategoryTreeTile extends StatelessWidget {
     final hasChildren = node.children.isNotEmpty;
 
     return Padding(
-      padding: EdgeInsets.only(left: depth * 14.0, bottom: AppSizes.sm),
+      padding: EdgeInsets.only(left: depth * AppSizes.lg, bottom: AppSizes.sm),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -274,7 +275,7 @@ class _CategoryTreeTile extends StatelessWidget {
                 child: Row(
                   children: [
                     IconButton(
-                      iconSize: 18,
+                      iconSize: AppSizes.iconMd,
                       icon: Icon(
                         hasChildren
                             ? (isExpanded
@@ -299,7 +300,7 @@ class _CategoryTreeTile extends StatelessWidget {
                         c.iconName != null
                             ? Icons.label_outline
                             : Icons.folder_outlined,
-                        size: 18,
+                        size: AppSizes.iconMd,
                         color: c.isActive ? AppColors.brand : AppColors.muted,
                       ),
                     ),
@@ -345,7 +346,7 @@ class _CategoryTreeTile extends StatelessWidget {
             ),
           ),
           AnimatedSize(
-            duration: const Duration(milliseconds: 180),
+            duration: AppDurations.short,
             curve: Curves.easeInOut,
             alignment: Alignment.topCenter,
             child: isExpanded

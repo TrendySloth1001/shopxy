@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/constants/app_strings.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
+import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_button.dart';
 
 /// A bottom-sheet confirmation with two actions. Returns `true` when the
@@ -53,9 +54,9 @@ class AppConfirmSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: AppShapes.squircleTopRadius(AppSizes.radiusDialog),
       ),
       child: SafeArea(
         top: false,
@@ -66,7 +67,7 @@ class AppConfirmSheet extends StatelessWidget {
             // Grab handle
             Container(
               width: 40,
-              height: 4,
+              height: AppSizes.xs,
               margin: const EdgeInsets.symmetric(vertical: AppSizes.sm),
               decoration: BoxDecoration(
                 color: AppColors.hairline,
@@ -85,19 +86,17 @@ class AppConfirmSheet extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 18,
-                    ),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
                   ),
                   const SizedBox(height: AppSizes.sm),
                   Text(
                     message,
-                    style: const TextStyle(
-                      color: AppColors.muted,
-                      fontSize: 14,
-                      height: 1.4,
-                    ),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppColors.muted,
+                          height: 1.4,
+                        ),
                   ),
                   const SizedBox(height: AppSizes.lg),
                   AppButton(

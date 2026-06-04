@@ -196,8 +196,8 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
             onPressed: _isSaving ? null : _save,
             child: _isSaving
                 ? const SizedBox(
-                    width: 20,
-                    height: 20,
+                    width: AppSizes.iconMd,
+                    height: AppSizes.iconMd,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Text(AppStrings.submit),
@@ -211,7 +211,7 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
             GlassHero.line(
               kind: LineArt.emptyClipboard,
               height: 160,
-              illustrationSize: 120,
+              illustrationSize: AppSizes.productImageSize,
               accent: AppColors.warning,
             ),
             Expanded(
@@ -267,8 +267,8 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
                     ? const Padding(
                         padding: EdgeInsets.all(AppSizes.md),
                         child: SizedBox(
-                          width: 16,
-                          height: 16,
+                          width: AppSizes.iconSm,
+                          height: AppSizes.iconSm,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         ),
                       )

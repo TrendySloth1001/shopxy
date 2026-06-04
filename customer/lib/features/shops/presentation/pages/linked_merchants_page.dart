@@ -101,10 +101,10 @@ class _MerchantCard extends StatelessWidget {
               child: Row(
                 children: [
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(AppSizes.radiusSm),
+                    borderRadius: AppShapes.squircleRadius(AppSizes.radiusSm),
                     child: Container(
-                      width: 52,
-                      height: 52,
+                      width: AppSizes.huge,
+                      height: AppSizes.huge,
                       color: AppColors.heroPanel,
                       child: merchant.logoUrl == null
                           ? const Icon(Icons.storefront_outlined,
@@ -121,33 +121,31 @@ class _MerchantCard extends StatelessWidget {
                       children: [
                         Text(
                           merchant.name,
-                          style: const TextStyle(
-                            color: AppColors.black,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 15,
-                            letterSpacing: -0.2,
-                          ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w800),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         if (merchant.tagline != null && merchant.tagline!.isNotEmpty)
                           Padding(
-                            padding: const EdgeInsets.only(top: 2),
+                            padding: const EdgeInsets.only(top: AppSizes.xs),
                             child: Text(
                               merchant.tagline!,
-                              style: const TextStyle(
-                                color: AppColors.muted,
-                                fontSize: 12,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(color: AppColors.muted),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         Padding(
-                          padding: const EdgeInsets.only(top: 6),
+                          padding: const EdgeInsets.only(top: AppSizes.sm),
                           child: Wrap(
-                            spacing: 6,
-                            runSpacing: 4,
+                            spacing: AppSizes.sm,
+                            runSpacing: AppSizes.xs,
                             crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
                               if (merchant.linkedAsParty)
@@ -161,14 +159,17 @@ class _MerchantCard extends StatelessWidget {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     const Icon(Icons.star_rounded,
-                                        size: 12, color: AppColors.warning),
+                                        size: AppSizes.iconSm,
+                                        color: AppColors.warning),
                                     Text(
                                       ' ${merchant.rating!.toStringAsFixed(1)} (${merchant.ratingCount})',
-                                      style: const TextStyle(
-                                        color: AppColors.muted,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelSmall
+                                          ?.copyWith(
+                                            color: AppColors.muted,
+                                            fontWeight: FontWeight.w600,
+                                          ),
                                     ),
                                   ],
                                 ),
@@ -179,7 +180,7 @@ class _MerchantCard extends StatelessWidget {
                     ),
                   ),
                   const Icon(Icons.arrow_forward_ios_rounded,
-                      size: 14, color: AppColors.subtle),
+                      size: AppSizes.iconSm, color: AppColors.subtle),
                 ],
               ),
             ),
@@ -204,19 +205,19 @@ class _Pill extends StatelessWidget {
       _PillTone.muted => (AppColors.heroPanel, AppColors.muted),
     };
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSizes.sm, vertical: AppSizes.xs),
       decoration: ShapeDecoration(
         color: bg,
         shape: AppShapes.squircle(AppSizes.radiusFull),
       ),
       child: Text(
         label,
-        style: TextStyle(
-          color: fg,
-          fontSize: 9,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 0.5,
-        ),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: fg,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.5,
+            ),
       ),
     );
   }
@@ -233,8 +234,8 @@ class _EmptyState extends StatelessWidget {
         const SizedBox(height: AppSizes.huge),
         Center(
           child: Container(
-            width: 120,
-            height: 120,
+            width: AppSizes.productImageSize,
+            height: AppSizes.productImageSize,
             decoration: ShapeDecoration(
               color: AppColors.heroPanel,
               shape: AppShapes.squircle(AppSizes.radiusLg),
@@ -242,26 +243,28 @@ class _EmptyState extends StatelessWidget {
             alignment: Alignment.center,
             child: const Icon(
               Icons.storefront_outlined,
-              size: 56,
+              size: AppSizes.iconHuge,
               color: AppColors.muted,
             ),
           ),
         ),
         const SizedBox(height: AppSizes.lg),
-        const Text(
+        Text(
           'No linked merchants yet',
           textAlign: TextAlign.center,
-          style: TextStyle(
-            color: AppColors.black,
-            fontSize: 17,
-            fontWeight: FontWeight.w800,
-          ),
+          style: Theme.of(context)
+              .textTheme
+              .titleMedium
+              ?.copyWith(fontWeight: FontWeight.w800),
         ),
-        const SizedBox(height: 4),
-        const Text(
+        const SizedBox(height: AppSizes.xs),
+        Text(
           "When a shop invites you and you accept, they'll appear here for you to browse.",
           textAlign: TextAlign.center,
-          style: TextStyle(color: AppColors.muted, fontSize: 13, height: 1.4),
+          style: Theme.of(context)
+              .textTheme
+              .bodySmall
+              ?.copyWith(color: AppColors.muted),
         ),
       ],
     );
@@ -279,18 +282,25 @@ class _ErrorState extends StatelessWidget {
       padding: const EdgeInsets.all(AppSizes.xl),
       children: [
         const SizedBox(height: AppSizes.huge),
-        const Icon(Icons.cloud_off_rounded, size: 48, color: AppColors.muted),
+        const Icon(Icons.cloud_off_rounded,
+            size: AppSizes.iconHuge, color: AppColors.muted),
         const SizedBox(height: AppSizes.md),
-        const Text(
+        Text(
           'Could not load',
           textAlign: TextAlign.center,
-          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+          style: Theme.of(context)
+              .textTheme
+              .titleMedium
+              ?.copyWith(fontWeight: FontWeight.w800),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: AppSizes.xs),
         Text(
           message,
           textAlign: TextAlign.center,
-          style: const TextStyle(color: AppColors.muted, fontSize: 13),
+          style: Theme.of(context)
+              .textTheme
+              .bodySmall
+              ?.copyWith(color: AppColors.muted),
         ),
         const SizedBox(height: AppSizes.lg),
         Center(

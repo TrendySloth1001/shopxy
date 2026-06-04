@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:shopxy_customer/features/auth/presentation/widgets/require_auth.dart';
 import 'package:shopxy_customer/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:shopxy_customer/features/notifications/presentation/pages/notifications_page.dart';
+import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 
 /// AppBar action that opens the notifications inbox and surfaces a
@@ -31,8 +32,8 @@ class NotificationBell extends StatelessWidget {
       tooltip: 'Notifications',
       onPressed: () => _open(context),
       icon: SizedBox(
-        width: 28,
-        height: 28,
+        width: AppSizes.xxl,
+        height: AppSizes.xxl,
         child: Stack(
           clipBehavior: Clip.none,
           children: [
@@ -42,8 +43,11 @@ class NotificationBell extends StatelessWidget {
                 right: -2,
                 top: -2,
                 child: Container(
-                  constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  constraints: const BoxConstraints(
+                    minWidth: AppSizes.iconSm,
+                    minHeight: AppSizes.iconSm,
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSizes.xs),
                   decoration: const BoxDecoration(
                     color: AppColors.error,
                     shape: BoxShape.circle,
@@ -51,12 +55,11 @@ class NotificationBell extends StatelessWidget {
                   alignment: Alignment.center,
                   child: Text(
                     unread > 99 ? '99+' : '$unread',
-                    style: const TextStyle(
-                      color: AppColors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                      height: 1.1,
-                    ),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: AppColors.white,
+                          fontWeight: FontWeight.w800,
+                          height: 1.1,
+                        ),
                   ),
                 ),
               ),

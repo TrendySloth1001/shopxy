@@ -182,7 +182,7 @@ class GlassHero extends StatelessWidget {
     Key? key,
     required String asset,
     double height = 260,
-    double verticalPadding = 20,
+    double verticalPadding = AppSizes.xl,
     Color backgroundColor = AppColors.heroPanel,
   }) : this(
           key: key,
@@ -195,7 +195,7 @@ class GlassHero extends StatelessWidget {
               // aren't bundled yet) instead of throwing a runtime image error.
               errorBuilder: (_, _, _) => const Center(
                 child: Icon(Icons.image_outlined,
-                    size: 56, color: AppColors.subtle),
+                    size: AppSizes.iconHuge, color: AppColors.subtle),
               ),
             ),
           ),
@@ -247,9 +247,9 @@ class GlassProgressBar extends StatelessWidget {
             final filled = (i + 1) / steps <= value + 1e-6;
             return Expanded(
               child: Padding(
-                padding: EdgeInsets.only(right: i == steps - 1 ? 0 : 4),
+                padding: EdgeInsets.only(right: i == steps - 1 ? 0 : AppSizes.xs),
                 child: Container(
-                  height: 4,
+                  height: AppSizes.xs,
                   color: filled ? AppColors.brand : AppColors.hairline,
                 ),
               ),
@@ -262,10 +262,10 @@ class GlassProgressBar extends StatelessWidget {
       padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
       child: Stack(
         children: [
-          Container(height: 4, color: AppColors.hairline),
+          Container(height: AppSizes.xs, color: AppColors.hairline),
           FractionallySizedBox(
             widthFactor: value,
-            child: Container(height: 4, color: AppColors.brand),
+            child: Container(height: AppSizes.xs, color: AppColors.brand),
           ),
         ],
       ),
@@ -423,13 +423,13 @@ class _PillButton extends StatelessWidget {
         customBorder: AppShapes.squircle(28),
         onTap: loading ? null : onPressed,
         child: Container(
-          height: 56,
+          height: AppSizes.fabSize,
           alignment: Alignment.center,
           padding: const EdgeInsets.symmetric(horizontal: AppSizes.xl),
           child: loading
               ? const SizedBox(
-                  width: 22,
-                  height: 22,
+                  width: AppSizes.xl,
+                  height: AppSizes.xl,
                   child: CircularProgressIndicator(
                     color: AppColors.white,
                     strokeWidth: 2.5,
@@ -439,17 +439,16 @@ class _PillButton extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     if (icon != null) ...[
-                      Icon(icon, color: AppColors.white, size: 20),
+                      Icon(icon, color: AppColors.white, size: AppSizes.iconMd),
                       const SizedBox(width: AppSizes.sm),
                     ],
                     Text(
                       label,
-                      style: const TextStyle(
-                        color: AppColors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                        letterSpacing: 0.1,
-                      ),
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            color: AppColors.white,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.1,
+                          ),
                     ),
                   ],
                 ),

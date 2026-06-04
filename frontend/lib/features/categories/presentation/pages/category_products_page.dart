@@ -235,8 +235,8 @@ class _Header extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 56,
-            height: 56,
+            width: AppSizes.fabSize,
+            height: AppSizes.fabSize,
             decoration: ShapeDecoration(
               color: AppColors.white,
               shape: AppShapes.squircle(AppSizes.radiusMd),
@@ -245,7 +245,7 @@ class _Header extends StatelessWidget {
             child: Icon(
               resolveCategoryIcon(category.iconName),
               color: AppColors.accentTeal,
-              size: 26,
+              size: AppSizes.iconLg,
             ),
           ),
           const SizedBox(width: AppSizes.lg),
@@ -264,7 +264,7 @@ class _Header extends StatelessWidget {
                 ),
                 if (category.description != null &&
                     category.description!.trim().isNotEmpty) ...[
-                  const SizedBox(height: 2),
+                  const SizedBox(height: AppSizes.xs),
                   Text(
                     category.description!,
                     style: theme.textTheme.bodySmall?.copyWith(
@@ -279,10 +279,10 @@ class _Header extends StatelessWidget {
                   children: [
                     Icon(
                       Icons.inventory_2_outlined,
-                      size: 14,
+                      size: AppSizes.iconSm,
                       color: AppColors.muted,
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: AppSizes.xs),
                     Text(
                       '${fmt.format(totalProducts)} '
                       '${totalProducts == 1 ? 'product' : 'products'}',

@@ -5,7 +5,9 @@ import 'package:shopxy_customer/features/categories/data/datasources/categories_
 import 'package:shopxy_customer/shared/domain/entities/category.dart';
 import 'package:shopxy_customer/features/marketplace/domain/entities/marketplace_product.dart';
 import 'package:shopxy_customer/features/marketplace/presentation/pages/product_detail_page.dart';
+import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
+import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 
 /// Paginated product feed for a single canonical category. Backend
 /// rolls children up under the parent slug, so picking "Electronics"
@@ -118,7 +120,7 @@ class _CategoryProductsPageState extends State<CategoryProductsPage> {
           : _error != null
               ? Center(
                   child: Padding(
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(AppSizes.xxl),
                     child: Text(_error!, style: theme.textTheme.bodyMedium),
                   ),
                 )
@@ -132,12 +134,12 @@ class _CategoryProductsPageState extends State<CategoryProductsPage> {
                       backgroundColor: AppColors.white,
                       child: GridView.builder(
                         controller: _scrollController,
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(AppSizes.md),
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
-                          mainAxisSpacing: 14,
-                          crossAxisSpacing: 12,
+                          mainAxisSpacing: AppSizes.lg,
+                          crossAxisSpacing: AppSizes.md,
                           childAspectRatio: 0.66,
                         ),
                         itemCount:
@@ -146,7 +148,7 @@ class _CategoryProductsPageState extends State<CategoryProductsPage> {
                           if (index >= _products.length) {
                             return const Center(
                               child: Padding(
-                                padding: EdgeInsets.all(16),
+                                padding: EdgeInsets.all(AppSizes.lg),
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
                                 ),
@@ -182,14 +184,14 @@ class _ProductTile extends StatelessWidget {
     final hero = product.images.isNotEmpty ? product.images.first : null;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           AspectRatio(
             aspectRatio: 1,
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
               child: hero == null
                   ? Container(color: AppColors.surfaceTint)
                   : Image.network(
@@ -200,7 +202,7 @@ class _ProductTile extends StatelessWidget {
                     ),
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSizes.sm),
           Text(
             product.name,
             style: theme.textTheme.bodySmall?.copyWith(
@@ -209,7 +211,7 @@ class _ProductTile extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSizes.xs),
           Row(
             children: [
               Text(
@@ -219,7 +221,7 @@ class _ProductTile extends StatelessWidget {
                 ),
               ),
               if (product.isDiscounted) ...[
-                const SizedBox(width: 6),
+                const SizedBox(width: AppSizes.sm),
                 Text(
                   '₹${product.mrp.toStringAsFixed(0)}',
                   style: theme.textTheme.bodySmall?.copyWith(
@@ -227,7 +229,7 @@ class _ProductTile extends StatelessWidget {
                     decoration: TextDecoration.lineThrough,
                   ),
                 ),
-                const SizedBox(width: 4),
+                const SizedBox(width: AppSizes.xs),
                 Text(
                   '${product.discountPct}% off',
                   style: theme.textTheme.bodySmall?.copyWith(

@@ -116,7 +116,7 @@ class _ColorCanvasState extends State<ColorCanvas> {
         ),
         const SizedBox(height: AppSizes.md),
         ClipRRect(
-          borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+          borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
           child: AspectRatio(
             aspectRatio: 2.2,
             child: _SVCanvas(
@@ -165,7 +165,7 @@ class _TargetSwatch extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+      borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
       child: Container(
         padding: const EdgeInsets.all(AppSizes.sm),
         decoration: ShapeDecoration(
@@ -181,11 +181,11 @@ class _TargetSwatch extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              width: 28,
-              height: 28,
+              width: AppSizes.xxxl,
+              height: AppSizes.xxxl,
               decoration: BoxDecoration(
                 color: color,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: AppShapes.squircleRadius(AppSizes.radiusSm),
                 border: Border.all(color: AppColors.hairline),
               ),
             ),
@@ -197,19 +197,17 @@ class _TargetSwatch extends StatelessWidget {
                 children: [
                   Text(
                     label,
-                    style: const TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.black,
-                    ),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.black,
+                        ),
                   ),
                   const SizedBox(height: 1),
                   Text(
                     hex,
-                    style: const TextStyle(
-                      fontSize: 11,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       color: AppColors.muted,
-                      fontFeatures: [FontFeature.tabularFigures()],
+                      fontFeatures: const [FontFeature.tabularFigures()],
                     ),
                   ),
                 ],
@@ -263,7 +261,7 @@ class _SVCanvas extends StatelessWidget {
                     gradient: LinearGradient(
                       begin: Alignment.centerLeft,
                       end: Alignment.centerRight,
-                      colors: [Colors.white, base],
+                      colors: [AppColors.white, base],
                     ),
                   ),
                 ),
@@ -324,7 +322,7 @@ class _HueStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (_, c) {
-        final size = Size(c.maxWidth, 24);
+        final size = Size(c.maxWidth, AppSizes.xxl);
         return GestureDetector(
           behavior: HitTestBehavior.opaque,
           onPanDown: (d) => _handle(d.localPosition, size),
@@ -333,9 +331,9 @@ class _HueStrip extends StatelessWidget {
           child: Stack(
             children: [
               Container(
-                height: 24,
+                height: AppSizes.xxl,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
                   gradient: const LinearGradient(colors: _hueStops),
                 ),
               ),
@@ -368,10 +366,10 @@ class _Thumb extends StatelessWidget {
         decoration: BoxDecoration(
           color: color,
           shape: BoxShape.circle,
-          border: Border.all(color: Colors.white, width: 2.5),
+          border: Border.all(color: AppColors.white, width: 2.5),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.25),
+              color: AppColors.black.withValues(alpha: 0.25),
               blurRadius: 4,
               offset: const Offset(0, 1),
             ),

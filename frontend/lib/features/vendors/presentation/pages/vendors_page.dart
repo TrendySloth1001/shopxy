@@ -297,7 +297,7 @@ class _VendorTile extends StatelessWidget {
                     const SizedBox(height: AppSizes.xs),
                     Wrap(
                       spacing: AppSizes.xs,
-                      runSpacing: 4,
+                      runSpacing: AppSizes.xs,
                       children: [
                         AppStatusBadge(
                           label: '${vendor.transactionCount} txns',
@@ -467,7 +467,7 @@ class _InviteChip extends StatelessWidget {
         ),
     };
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm, vertical: 2),
       decoration: ShapeDecoration(
         color: bg,
         shape: AppShapes.squircle(AppSizes.radiusFull),
@@ -475,8 +475,8 @@ class _InviteChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: fg),
-          const SizedBox(width: 4),
+          Icon(icon, size: AppSizes.md, color: fg),
+          const SizedBox(width: AppSizes.xs),
           Text(
             label,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(

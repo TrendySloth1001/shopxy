@@ -93,57 +93,55 @@ class _PdpPriceBlockState extends State<PdpPriceBlock> {
             children: [
               Text(
                 '₹${price.toStringAsFixed(0)}',
-                style: const TextStyle(
-                  color: AppColors.black,
-                  fontSize: 26,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -0.4,
-                ),
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: AppColors.black,
+                      fontSize: 26,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.4,
+                    ),
               ),
               const SizedBox(width: AppSizes.sm),
               if (isDiscounted)
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 3),
+                  padding: const EdgeInsets.only(bottom: AppSizes.xs),
                   child: Text(
                     'M.R.P. ₹${baseMrp.toStringAsFixed(0)}',
-                    style: const TextStyle(
-                      color: AppColors.muted,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      decoration: TextDecoration.lineThrough,
-                    ),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.muted,
+                          fontWeight: FontWeight.w600,
+                          decoration: TextDecoration.lineThrough,
+                        ),
                   ),
                 ),
               const SizedBox(width: AppSizes.sm),
               if (isDiscounted)
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 6, vertical: 2),
+                      horizontal: AppSizes.sm, vertical: AppSizes.xs),
                   decoration: BoxDecoration(
                     color: AppColors.successSoft,
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(AppSizes.radiusSm),
                   ),
                   child: Text(
                     '$pct% off',
-                    style: const TextStyle(
-                      color: AppColors.success,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 12,
-                    ),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: AppColors.success,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 12,
+                        ),
                   ),
                 ),
             ],
           ),
           if (p.taxPercent > 0)
-            const Padding(
-              padding: EdgeInsets.only(top: 2),
+            Padding(
+              padding: const EdgeInsets.only(top: AppSizes.xs),
               child: Text(
                 'Inclusive of all taxes',
-                style: TextStyle(
-                  color: AppColors.muted,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: AppColors.muted,
+                      fontWeight: FontWeight.w600,
+                    ),
               ),
             ),
           if (saleActive) ...[
@@ -174,25 +172,25 @@ class _FlashChip extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           const Icon(Icons.bolt_rounded,
-              color: Color(0xFFE05A2A), size: 16),
-          const SizedBox(width: 4),
+              color: Color(0xFFE05A2A), size: AppSizes.iconSm),
+          const SizedBox(width: AppSizes.xs),
           Text(
             'Flash deal · ends in $label',
-            style: const TextStyle(
-              color: Color(0xFFB45309),
-              fontWeight: FontWeight.w800,
-              fontSize: 12,
-            ),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: AppColors.warning,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12,
+                ),
           ),
           if (sale.stockLimit > 0) ...[
             const SizedBox(width: AppSizes.sm),
             Text(
               '${sale.remaining} left',
-              style: const TextStyle(
-                color: Color(0xFFB45309),
-                fontWeight: FontWeight.w700,
-                fontSize: 12,
-              ),
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: AppColors.warning,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12,
+                  ),
             ),
           ],
         ],

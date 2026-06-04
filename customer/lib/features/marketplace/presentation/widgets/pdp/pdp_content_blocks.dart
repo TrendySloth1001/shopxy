@@ -23,12 +23,13 @@ class PdpContentBlocks extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Product Description',
-            style: TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 15,
-                color: AppColors.black),
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 15,
+                  color: AppColors.black,
+                ),
           ),
           const SizedBox(height: AppSizes.sm),
           for (final b in blocks) ...[
@@ -76,12 +77,15 @@ class _HeroBlock extends StatelessWidget {
           children: [
             if (url.isNotEmpty)
               NetworkImageBox(url: resolveImageUrl(url), fit: BoxFit.cover),
-            const DecoratedBox(
+            DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Color(0xCC000000)],
+                  colors: [
+                    Colors.transparent,
+                    AppColors.black.withValues(alpha: 0.8),
+                  ],
                 ),
               ),
             ),
@@ -93,22 +97,21 @@ class _HeroBlock extends StatelessWidget {
                 children: [
                   Text(
                     headline,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 18,
-                    ),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: AppColors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 18,
+                        ),
                   ),
                   if (subtext != null && subtext.isNotEmpty)
                     Padding(
-                      padding: const EdgeInsets.only(top: 4),
+                      padding: const EdgeInsets.only(top: AppSizes.xs),
                       child: Text(
                         subtext,
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 13,
-                          height: 1.35,
-                        ),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.white.withValues(alpha: 0.7),
+                              height: 1.35,
+                            ),
                       ),
                     ),
                 ],
@@ -146,20 +149,20 @@ class _FeatureBlock extends StatelessWidget {
       children: [
         Text(
           title,
-          style: const TextStyle(
-              fontWeight: FontWeight.w800,
-              fontSize: 14, color: AppColors.black),
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+                color: AppColors.black,
+              ),
         ),
         if (body.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.only(top: 4),
+            padding: const EdgeInsets.only(top: AppSizes.xs),
             child: Text(
               body,
-              style: const TextStyle(
-                color: AppColors.muted,
-                fontSize: 13,
-                height: 1.4,
-              ),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppColors.muted,
+                    height: 1.4,
+                  ),
             ),
           ),
       ],
@@ -218,15 +221,14 @@ class _GalleryBlock extends StatelessWidget {
                 ),
                 if (caption != null && caption.isNotEmpty)
                   Padding(
-                    padding: const EdgeInsets.only(top: 4),
+                    padding: const EdgeInsets.only(top: AppSizes.xs),
                     child: Text(
                       caption,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.muted,
-                        fontSize: 12,
-                      ),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.muted,
+                          ),
                     ),
                   ),
               ],
@@ -259,14 +261,15 @@ class _ComparisonBlock extends StatelessWidget {
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: DataTable(
-          headingTextStyle: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
-              color: AppColors.black),
-          dataTextStyle: const TextStyle(
-              fontSize: 12, color: AppColors.black),
+          headingTextStyle: Theme.of(context).textTheme.labelSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+                color: AppColors.black,
+              ),
+          dataTextStyle: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: AppColors.black,
+              ),
           headingRowHeight: 36,
-          dataRowMinHeight: 32,
+          dataRowMinHeight: AppSizes.xxxl,
           dataRowMaxHeight: 36,
           columns: [
             const DataColumn(label: Text('')),
@@ -277,7 +280,10 @@ class _ComparisonBlock extends StatelessWidget {
             for (var r = 0; r < rows.length; r++)
               DataRow(cells: [
                 DataCell(Text(rows[r],
-                    style: const TextStyle(color: AppColors.muted))),
+                    style: Theme.of(context)
+                        .textTheme
+                        .labelSmall
+                        ?.copyWith(color: AppColors.muted))),
                 for (final c in columns)
                   DataCell(Text(((c['values'] as List?) ?? const [])
                           .cast<String>()
@@ -301,11 +307,10 @@ class _TextBlock extends StatelessWidget {
     if (md.isEmpty) return const SizedBox.shrink();
     return Text(
       md,
-      style: const TextStyle(
-        color: AppColors.black,
-        fontSize: 13,
-        height: 1.5,
-      ),
+      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: AppColors.black,
+            height: 1.5,
+          ),
     );
   }
 }

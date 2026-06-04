@@ -141,7 +141,7 @@ class _CollectionRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+      borderRadius: AppShapes.squircleRadius(AppSizes.radiusLg),
       child: Container(
         padding: const EdgeInsets.all(AppSizes.md),
         decoration: ShapeDecoration(
@@ -179,10 +179,10 @@ class _CollectionRow extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     '/${collection.slug}  ·  ${collection.itemCount} items',
-                    style: const TextStyle(
-                      color: AppColors.muted,
-                      fontSize: 12,
-                    ),
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(color: AppColors.muted),
                   ),
                 ],
               ),
@@ -208,7 +208,7 @@ class _StatusChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSizes.sm,
-        vertical: 4,
+        vertical: AppSizes.xs,
       ),
       decoration: ShapeDecoration(
         color: published ? AppColors.successSoft : AppColors.heroPanel,
@@ -216,11 +216,9 @@ class _StatusChip extends StatelessWidget {
       ),
       child: Text(
         published ? 'Published' : 'Draft',
-        style: TextStyle(
-          color: published ? AppColors.success : AppColors.black,
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-        ),
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: published ? AppColors.success : AppColors.black,
+            ),
       ),
     );
   }

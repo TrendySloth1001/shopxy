@@ -152,7 +152,7 @@ class _SectionRow extends StatelessWidget {
                   shape: AppShapes.squircle(AppSizes.radiusMd),
                 ),
                 alignment: Alignment.center,
-                child: Icon(icon, color: accent, size: 22),
+                child: Icon(icon, color: accent, size: AppSizes.iconLg),
               ),
               const SizedBox(width: AppSizes.md),
               Expanded(
@@ -171,17 +171,16 @@ class _SectionRow extends StatelessWidget {
               ),
               if (badge != null) ...[
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: AppSizes.sm, vertical: AppSizes.xs),
                   decoration: ShapeDecoration(
                     color: AppColors.accentIndigo,
                     shape: AppShapes.squircle(AppSizes.radiusFull),
                   ),
                   child: Text(badge!,
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 12)),
+                      style: theme.textTheme.labelSmall?.copyWith(
+                          color: AppColors.white,
+                          fontWeight: FontWeight.w800)),
                 ),
                 const SizedBox(width: AppSizes.sm),
               ],

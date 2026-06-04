@@ -101,7 +101,7 @@ class AppStatusBadge extends StatelessWidget {
         children: [
           if (icon != null) ...[
             Icon(icon, size: AppSizes.iconSm - 2, color: fg),
-            const SizedBox(width: 4),
+            const SizedBox(width: AppSizes.xs),
           ],
           Text(
             label,

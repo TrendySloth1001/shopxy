@@ -293,7 +293,7 @@ class _MosaicCard extends StatelessWidget {
                       maxLines: isHero ? 2 : 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppColors.white,
                         fontWeight: FontWeight.w800,
                         fontSize: isHero ? 15 : 12,
                       ),
@@ -302,7 +302,7 @@ class _MosaicCard extends StatelessWidget {
                     Text(
                       product.price,
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppColors.white,
                         fontWeight: FontWeight.w800,
                         fontSize: isHero ? 17 : 13,
                       ),
@@ -624,7 +624,7 @@ class _ReelCard extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            color: Colors.white,
+                            color: AppColors.white,
                             fontWeight: FontWeight.w700,
                             fontSize: 13,
                           ),
@@ -633,7 +633,7 @@ class _ReelCard extends StatelessWidget {
                         Text(
                           product.price,
                           style: const TextStyle(
-                            color: Colors.white,
+                            color: AppColors.white,
                             fontWeight: FontWeight.w800,
                             fontSize: 16,
                           ),
@@ -686,7 +686,7 @@ class _CategoryCapsuleBlock extends StatelessWidget {
                   child: Text(
                     block.category,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppColors.white,
                       fontWeight: FontWeight.w800,
                       fontSize: 11,
                       letterSpacing: 0.3,
@@ -940,7 +940,7 @@ class _QuickAddChip extends StatelessWidget {
               ),
               child: const Icon(
                 Icons.add_rounded,
-                color: Colors.white,
+                color: AppColors.white,
                 size: 18,
               ),
             ),
@@ -997,7 +997,7 @@ class _ComparisonBlock extends StatelessWidget {
                 child: const Text(
                   'vs',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppColors.white,
                     fontWeight: FontWeight.w800,
                     fontSize: 12,
                   ),
@@ -1149,7 +1149,7 @@ class _PosterProductBlock extends StatelessWidget {
                       Text(
                         block.eyebrow,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: AppColors.white,
                           letterSpacing: 1.2,
                           fontWeight: FontWeight.w800,
                           fontSize: 11,
@@ -1161,7 +1161,7 @@ class _PosterProductBlock extends StatelessWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: AppColors.white,
                           fontWeight: FontWeight.w800,
                           fontSize: 22,
                           height: 1.15,
@@ -1175,8 +1175,8 @@ class _PosterProductBlock extends StatelessWidget {
                               horizontal: 10, vertical: 5,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(99),
+                              color: AppColors.white,
+                              borderRadius: BorderRadius.circular(AppSizes.radiusFull),
                             ),
                             child: Text(
                               p.price,
@@ -1194,7 +1194,7 @@ class _PosterProductBlock extends StatelessWidget {
                             ),
                             decoration: BoxDecoration(
                               color: AppColors.brand,
-                              borderRadius: BorderRadius.circular(99),
+                              borderRadius: BorderRadius.circular(AppSizes.radiusFull),
                             ),
                             child: const Row(
                               mainAxisSize: MainAxisSize.min,
@@ -1202,7 +1202,7 @@ class _PosterProductBlock extends StatelessWidget {
                                 Text(
                                   'Shop now',
                                   style: TextStyle(
-                                    color: Colors.white,
+                                    color: AppColors.white,
                                     fontWeight: FontWeight.w800,
                                     fontSize: 13,
                                   ),
@@ -1210,7 +1210,7 @@ class _PosterProductBlock extends StatelessWidget {
                                 SizedBox(width: 4),
                                 Icon(
                                   Icons.arrow_forward_rounded,
-                                  color: Colors.white,
+                                  color: AppColors.white,
                                   size: 16,
                                 ),
                               ],
@@ -1296,12 +1296,12 @@ class _LeaderboardRow extends StatelessWidget {
                   color: rank == 1
                       ? AppColors.warning
                       : (rank <= 3 ? AppColors.brand : AppColors.heroPanel),
-                  borderRadius: BorderRadius.circular(99),
+                  borderRadius: BorderRadius.circular(AppSizes.radiusFull),
                 ),
                 child: Text(
                   '$rank',
                   style: TextStyle(
-                    color: rank <= 3 ? Colors.white : AppColors.black,
+                    color: rank <= 3 ? AppColors.white : AppColors.black,
                     fontWeight: FontWeight.w800,
                     fontSize: 15,
                   ),
@@ -1401,12 +1401,12 @@ class _BrandFocusBlock extends StatelessWidget {
                   ),
                   decoration: ShapeDecoration(
                     color: AppColors.black,
-                    shape: AppShapes.squircle(99),
+                    shape: AppShapes.squircle(AppSizes.radiusFull),
                   ),
                   child: const Text(
                     'BRAND SPOTLIGHT',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: AppColors.white,
                       fontWeight: FontWeight.w800,
                       fontSize: 10,
                       letterSpacing: 0.8,
@@ -1475,7 +1475,7 @@ class _PriceBandBlock extends StatelessWidget {
                 child: Text(
                   block.ceilingLabel,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: AppColors.white,
                     fontWeight: FontWeight.w800,
                     fontSize: 13,
                   ),
@@ -1556,12 +1556,12 @@ class _ZigZagDuoBlock extends StatelessWidget {
                         ),
                         decoration: ShapeDecoration(
                           color: AppColors.brand,
-                          shape: AppShapes.squircle(99),
+                          shape: AppShapes.squircle(AppSizes.radiusFull),
                         ),
                         child: const Text(
                           'BEST PAIR',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: AppColors.white,
                             fontWeight: FontWeight.w800,
                             fontSize: 10,
                             letterSpacing: 0.6,
@@ -1673,7 +1673,7 @@ class _ShopShowcaseBlock extends StatelessWidget {
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: AppColors.heroPanel,
-                    borderRadius: BorderRadius.circular(99),
+                    borderRadius: BorderRadius.circular(AppSizes.radiusFull),
                   ),
                   child: const Icon(
                     Icons.storefront_rounded,

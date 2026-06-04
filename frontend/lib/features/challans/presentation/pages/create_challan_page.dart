@@ -187,8 +187,8 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
             onPressed: _isSaving ? null : _save,
             child: _isSaving
                 ? const SizedBox(
-                    width: 20,
-                    height: 20,
+                    width: AppSizes.iconMd,
+                    height: AppSizes.iconMd,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Text(AppStrings.submit),
@@ -202,7 +202,7 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
             GlassHero.line(
               kind: LineArt.deliveryNote,
               height: 160,
-              illustrationSize: 120,
+              illustrationSize: AppSizes.productImageSize,
             ),
             Expanded(
               child: ListView(
@@ -269,8 +269,8 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
                     ? const Padding(
                         padding: EdgeInsets.all(AppSizes.md),
                         child: SizedBox(
-                          width: 16,
-                          height: 16,
+                          width: AppSizes.iconSm,
+                          height: AppSizes.iconSm,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         ),
                       )

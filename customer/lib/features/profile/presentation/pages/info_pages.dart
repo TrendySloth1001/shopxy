@@ -116,21 +116,19 @@ class _InfoScaffold extends StatelessWidget {
           for (final s in sections) ...[
             Text(
               s.title,
-              style: const TextStyle(
-                color: AppColors.black,
-                fontWeight: FontWeight.w800,
-                fontSize: 15,
-                letterSpacing: -0.2,
-              ),
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: AppColors.black,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.2,
+                  ),
             ),
             const SizedBox(height: AppSizes.xs),
             Text(
               s.body,
-              style: const TextStyle(
-                color: AppColors.muted,
-                fontSize: 14,
-                height: 1.5,
-              ),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.muted,
+                    height: 1.5,
+                  ),
             ),
             const SizedBox(height: AppSizes.xl),
           ],

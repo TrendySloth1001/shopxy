@@ -44,13 +44,14 @@ class PdpOffersStrip extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: AppSizes.lg),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
             child: Text('Offers',
-                style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 15,
-                    color: AppColors.black)),
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 15,
+                      color: AppColors.black,
+                    )),
           ),
           const SizedBox(height: AppSizes.sm),
           SizedBox(
@@ -105,7 +106,7 @@ class _BankOfferCard extends StatelessWidget {
                   ),
                   alignment: Alignment.center,
                   child: const Icon(Icons.account_balance_outlined,
-                      size: 18, color: AppColors.info),
+                      size: AppSizes.iconMd, color: AppColors.info),
                 ),
           const SizedBox(width: AppSizes.sm),
           Expanded(
@@ -114,36 +115,35 @@ class _BankOfferCard extends StatelessWidget {
               children: [
                 Text(
                   bank?.shortName ?? 'BANK OFFER',
-                  style: TextStyle(
-                    color: bank?.color ?? AppColors.info,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.6,
-                  ),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: bank?.color ?? AppColors.info,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.6,
+                      ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSizes.xs),
                 Text(
                   offer.headline,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppColors.black,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    height: 1.25,
-                  ),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.black,
+                        fontWeight: FontWeight.w700,
+                        height: 1.25,
+                      ),
                 ),
                 if (offer.terms != null && offer.terms!.isNotEmpty)
                   Padding(
-                    padding: const EdgeInsets.only(top: 2),
+                    padding: const EdgeInsets.only(top: AppSizes.xs),
                     child: Text(
                       offer.terms!,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.muted,
-                        fontSize: 10,
-                      ),
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: AppColors.muted,
+                            fontSize: 10,
+                          ),
                     ),
                   ),
               ],
@@ -207,7 +207,7 @@ class _OfferCard extends StatelessWidget {
               shape: AppShapes.squircle(AppSizes.radiusSm),
             ),
             alignment: Alignment.center,
-            child: Icon(meta.icon, size: 18, color: meta.fg),
+            child: Icon(meta.icon, size: AppSizes.iconMd, color: meta.fg),
           ),
           const SizedBox(width: AppSizes.sm),
           Expanded(
@@ -216,36 +216,35 @@ class _OfferCard extends StatelessWidget {
               children: [
                 Text(
                   meta.label,
-                  style: TextStyle(
-                    color: meta.fg,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.6,
-                  ),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: meta.fg,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.6,
+                      ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSizes.xs),
                 Text(
                   offer.headline,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppColors.black,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    height: 1.25,
-                  ),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.black,
+                        fontWeight: FontWeight.w700,
+                        height: 1.25,
+                      ),
                 ),
                 if (offer.detail != null)
                   Padding(
-                    padding: const EdgeInsets.only(top: 2),
+                    padding: const EdgeInsets.only(top: AppSizes.xs),
                     child: Text(
                       offer.detail!,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.muted,
-                        fontSize: 10,
-                      ),
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: AppColors.muted,
+                            fontSize: 10,
+                          ),
                     ),
                   ),
               ],
@@ -382,12 +381,12 @@ class _BankMonogram extends StatelessWidget {
       alignment: Alignment.center,
       child: Text(
         bank.monogram,
-        style: TextStyle(
-          color: AppColors.white,
-          fontWeight: FontWeight.w900,
-          fontSize: bank.monogram.length > 1 ? 13 : 16,
-          letterSpacing: 0.4,
-        ),
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: AppColors.white,
+              fontWeight: FontWeight.w900,
+              fontSize: bank.monogram.length > 1 ? 13 : 16,
+              letterSpacing: 0.4,
+            ),
       ),
     );
   }

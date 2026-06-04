@@ -51,7 +51,7 @@ class _MyReturnsPageState extends State<MyReturnsPage> {
           if (snap.hasError) {
             return Center(
               child: Padding(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(AppSizes.xxl),
                 child: Text(snap.error.toString()
                     .replaceFirst('Exception: ', '')),
               ),
@@ -105,30 +105,28 @@ class _ReturnRow extends StatelessWidget {
                   Expanded(
                     child: Text(
                       'Return #${r.id} · ${r.shop.name}',
-                      style: const TextStyle(
-                        color: AppColors.black,
-                        fontWeight: FontWeight.w800,
-                      ),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: AppColors.black,
+                            fontWeight: FontWeight.w800,
+                          ),
                     ),
                   ),
                   _StatusPill(status: r.status),
                 ],
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: AppSizes.xs),
               Text(
                 '${r.items.length} ${r.items.length == 1 ? "item" : "items"} · ₹${r.refundAmount.toStringAsFixed(0)}',
-                style: const TextStyle(
-                  color: AppColors.muted,
-                  fontSize: 12,
-                ),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.muted,
+                    ),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: AppSizes.xs),
               Text(
                 DateFormat('d MMM y · h:mm a').format(r.createdAt),
-                style: const TextStyle(
-                  color: AppColors.muted,
-                  fontSize: 11,
-                ),
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: AppColors.muted,
+                    ),
               ),
             ],
           ),
@@ -145,7 +143,7 @@ class _StatusPill extends StatelessWidget {
   (Color, Color, String) _visuals() {
     switch (status) {
       case 'REFUNDED':
-        return (AppColors.success, Colors.white, 'Refunded');
+        return (AppColors.success, AppColors.white, 'Refunded');
       case 'REJECTED':
         return (AppColors.errorSoft, AppColors.error, 'Rejected');
       case 'CANCELLED':
@@ -165,18 +163,20 @@ class _StatusPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final (bg, fg, label) = _visuals();
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.sm,
+        vertical: AppSizes.xs,
+      ),
       decoration: ShapeDecoration(
         color: bg,
         shape: AppShapes.squircle(AppSizes.radiusFull),
       ),
       child: Text(
         label,
-        style: TextStyle(
-          color: fg,
-          fontSize: 11,
-          fontWeight: FontWeight.w800,
-        ),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: fg,
+              fontWeight: FontWeight.w800,
+            ),
       ),
     );
   }
@@ -195,7 +195,7 @@ class _EmptyState extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(Icons.assignment_return_outlined,
-                size: 48, color: AppColors.muted),
+                size: AppSizes.iconHuge, color: AppColors.muted),
             const SizedBox(height: AppSizes.md),
             Text(
               'No returns yet',
@@ -204,10 +204,12 @@ class _EmptyState extends StatelessWidget {
               ),
             ),
             const SizedBox(height: AppSizes.xs),
-            const Text(
+            Text(
               'When you start a return from an order,\nit\'ll show up here.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.muted),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: AppColors.muted,
+              ),
             ),
           ],
         ),

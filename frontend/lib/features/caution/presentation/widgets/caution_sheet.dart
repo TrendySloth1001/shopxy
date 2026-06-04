@@ -6,6 +6,7 @@ import 'package:shopxy/features/payments/domain/entities/payment.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/shared/theme/app_shapes.dart';
 
 /// Bottom sheet for taking a caution deposit or refunding one.
 ///
@@ -39,11 +40,7 @@ class CautionSheet extends StatefulWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: AppColors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppSizes.bottomSheetRadius),
-        ),
-      ),
+      shape: AppShapes.squircleTop(AppSizes.bottomSheetRadius),
       builder: (_) => CautionSheet(
         type: type,
         partyId: partyId,
@@ -209,8 +206,8 @@ class _CautionSheetState extends State<CautionSheet> {
                         onPressed: prov.isSubmitting ? null : _submit,
                         child: prov.isSubmitting
                             ? const SizedBox(
-                                width: 18,
-                                height: 18,
+                                width: AppSizes.xl,
+                                height: AppSizes.xl,
                                 child:
                                     CircularProgressIndicator(strokeWidth: 2),
                               )
@@ -254,11 +251,7 @@ class CautionForfeitSheet extends StatefulWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: AppColors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppSizes.bottomSheetRadius),
-        ),
-      ),
+      shape: AppShapes.squircleTop(AppSizes.bottomSheetRadius),
       builder: (_) => CautionForfeitSheet(
         partyId: partyId,
         partyName: partyName,
@@ -400,7 +393,7 @@ class _CautionForfeitSheetState extends State<CautionForfeitSheet> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Icon(Icons.info_outline_rounded,
-                        size: 16, color: AppColors.muted),
+                        size: AppSizes.iconSm, color: AppColors.muted),
                     const SizedBox(width: AppSizes.xs),
                     Expanded(
                       child: Text(
@@ -430,8 +423,8 @@ class _CautionForfeitSheetState extends State<CautionForfeitSheet> {
                         ),
                         child: prov.isSubmitting
                             ? const SizedBox(
-                                width: 18,
-                                height: 18,
+                                width: AppSizes.xl,
+                                height: AppSizes.xl,
                                 child:
                                     CircularProgressIndicator(strokeWidth: 2),
                               )
@@ -475,11 +468,7 @@ class CautionAdjustSheet extends StatefulWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: AppColors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppSizes.bottomSheetRadius),
-        ),
-      ),
+      shape: AppShapes.squircleTop(AppSizes.bottomSheetRadius),
       builder: (_) => CautionAdjustSheet(
         partyId: partyId,
         partyName: partyName,
@@ -686,8 +675,8 @@ class _CautionAdjustSheetState extends State<CautionAdjustSheet> {
                           onPressed: prov.isSubmitting ? null : _submit,
                           child: prov.isSubmitting
                               ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
+                                  width: AppSizes.xl,
+                                  height: AppSizes.xl,
                                   child: CircularProgressIndicator(
                                       strokeWidth: 2),
                                 )

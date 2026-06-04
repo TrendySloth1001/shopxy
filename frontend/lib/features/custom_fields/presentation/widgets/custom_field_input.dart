@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import 'package:shopxy/features/custom_fields/domain/entities/custom_field.dart';
+import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/shared/theme/app_shapes.dart';
 
 /// Renders the right input for a [CustomFieldDefinition]'s type:
 ///   TEXT       → single-line TextField
@@ -120,9 +122,9 @@ class _CustomFieldInputState extends State<CustomFieldInput> {
             ),
             child: Text(
               display.isEmpty ? 'Pick a date' : display,
-              style: TextStyle(
-                color: display.isEmpty ? AppColors.muted : AppColors.black,
-              ),
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: display.isEmpty ? AppColors.muted : AppColors.black,
+                  ),
             ),
           ),
         );
@@ -130,15 +132,17 @@ class _CustomFieldInputState extends State<CustomFieldInput> {
       case CustomFieldType.BOOLEAN:
         final boolValue = widget.value == 'true';
         return Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: AppColors.hairline),
-            borderRadius: BorderRadius.circular(4),
+          decoration: ShapeDecoration(
+            shape: AppShapes.squircle(
+              AppSizes.radiusSm,
+              side: const BorderSide(color: AppColors.hairline, width: 1),
+            ),
           ),
           child: SwitchListTile(
             value: boolValue,
             onChanged: (v) => widget.onChanged(v ? 'true' : 'false'),
             title: Text(widget.definition.name),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+            contentPadding: const EdgeInsets.symmetric(horizontal: AppSizes.md),
           ),
         );
 

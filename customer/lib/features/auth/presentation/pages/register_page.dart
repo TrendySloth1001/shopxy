@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:shopxy_customer/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy_customer/features/auth/presentation/widgets/auth_scaffold.dart';
 import 'package:shopxy_customer/features/auth/presentation/widgets/require_auth.dart';
+import 'package:shopxy_customer/shared/constants/app_durations.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/constants/app_strings.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
@@ -135,7 +136,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 child: Form(
                   key: _formKey,
                   child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 300),
+                    duration: AppDurations.long,
                     transitionBuilder: (child, anim) => FadeTransition(
                       opacity: anim,
                       child: SlideTransition(
@@ -176,17 +177,16 @@ class _RegisterPageState extends State<RegisterPage> {
                       children: [
                         Text(
                           AppStrings.haveAccount,
-                          style: const TextStyle(
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: AppColors.muted,
-                              fontSize: 14,
                               fontWeight: FontWeight.w500),
                         ),
                         TextButton(
                           onPressed: () => Navigator.of(context).pop(),
                           style: TextButton.styleFrom(
                             foregroundColor: AppColors.brandStrong,
-                            textStyle: const TextStyle(
-                                fontWeight: FontWeight.w800, fontSize: 14),
+                            textStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w800),
                           ),
                           child: const Text(AppStrings.login),
                         ),
@@ -313,9 +313,8 @@ class _StepShell extends StatelessWidget {
       children: [
         Text(
           stepLabel,
-          style: const TextStyle(
+          style: theme.textTheme.labelMedium?.copyWith(
             color: AppColors.brand,
-            fontSize: 12,
             fontWeight: FontWeight.w800,
             letterSpacing: 1.2,
           ),
@@ -357,10 +356,10 @@ class _StepProgress extends StatelessWidget {
         final filled = i <= step;
         return Expanded(
           child: Padding(
-            padding: EdgeInsets.only(right: i == total - 1 ? 0 : 6),
+            padding: EdgeInsets.only(right: i == total - 1 ? 0 : AppSizes.sm),
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 260),
-              height: 5,
+              duration: AppDurations.medium,
+              height: AppSizes.xs,
               decoration: BoxDecoration(
                 color: filled ? AppColors.brand : AppColors.hairline,
                 borderRadius: BorderRadius.circular(3),
@@ -394,7 +393,7 @@ class _CircleBack extends StatelessWidget {
           width: 40,
           height: 40,
           child: Icon(Icons.arrow_back_rounded,
-              color: AppColors.black, size: 20),
+              color: AppColors.black, size: AppSizes.iconMd),
         ),
       ),
     );

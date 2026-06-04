@@ -141,9 +141,12 @@ class _ShopHoursPageState extends State<ShopHoursPage> {
                   contentPadding: EdgeInsets.zero,
                   value: _vacationMode,
                   onChanged: (v) => setState(() => _vacationMode = v),
-                  title: const Text(
+                  title: Text(
                     'Vacation mode',
-                    style: TextStyle(fontWeight: FontWeight.w800),
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w800),
                   ),
                   subtitle: const Text(
                     'Blocks new orders. Existing orders, stock, and '
@@ -201,10 +204,13 @@ class _ShopHoursPageState extends State<ShopHoursPage> {
           ),
         ),
         const SizedBox(height: AppSizes.lg),
-        const Text(
+        Text(
           'Hours are a hint to customers — orders outside hours still '
           'go through.',
-          style: TextStyle(color: AppColors.muted, fontSize: 12),
+          style: Theme.of(context)
+              .textTheme
+              .bodySmall
+              ?.copyWith(color: AppColors.muted),
         ),
       ],
     );
@@ -279,10 +285,10 @@ class _DayRow extends StatelessWidget {
             width: 90,
             child: Text(
               label,
-              style: const TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 13,
-              ),
+              style: Theme.of(context)
+                  .textTheme
+                  .labelLarge
+                  ?.copyWith(fontWeight: FontWeight.w700),
             ),
           ),
           Expanded(

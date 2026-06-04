@@ -213,13 +213,13 @@ class _ShopQuotationDetailPageState extends State<ShopQuotationDetailPage> {
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
               avatar: _sharing
                   ? const SizedBox(
-                      width: 14,
-                      height: 14,
+                      width: AppSizes.iconSm,
+                      height: AppSizes.iconSm,
                       child: CircularProgressIndicator(strokeWidth: 2))
                   : const Icon(Icons.share_rounded,
-                      size: 16, color: AppColors.brand),
-              label: const Text('Share',
-                  style: TextStyle(
+                      size: AppSizes.iconSm, color: AppColors.brand),
+              label: Text('Share',
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
                       color: AppColors.brand, fontWeight: FontWeight.w700)),
             ),
           ),
@@ -302,15 +302,16 @@ class _ShopQuotationDetailPageState extends State<ShopQuotationDetailPage> {
                     onPressed: _busy ? null : _cancel,
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.error,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: const EdgeInsets.symmetric(vertical: AppSizes.lg),
                     ),
                     child: _busy
                         ? const SizedBox(
-                            width: 18,
-                            height: 18,
+                            width: AppSizes.iconMd,
+                            height: AppSizes.iconMd,
                             child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Text('Withdraw request',
-                            style: TextStyle(fontWeight: FontWeight.w800)),
+                        : Text('Withdraw request',
+                            style: theme.textTheme.bodyMedium
+                                ?.copyWith(fontWeight: FontWeight.w800)),
                   ),
                 ),
               ),
@@ -326,7 +327,8 @@ class _ShopQuotationDetailPageState extends State<ShopQuotationDetailPage> {
                         onPressed: _busy ? null : _decline,
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.error,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          padding:
+                              const EdgeInsets.symmetric(vertical: AppSizes.lg),
                         ),
                         child: const Text('Decline'),
                       ),
@@ -338,17 +340,18 @@ class _ShopQuotationDetailPageState extends State<ShopQuotationDetailPage> {
                         onPressed: _busy ? null : _accept,
                         style: FilledButton.styleFrom(
                           backgroundColor: AppColors.brand,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          padding:
+                              const EdgeInsets.symmetric(vertical: AppSizes.lg),
                         ),
                         child: _busy
                             ? const SizedBox(
-                                width: 18,
-                                height: 18,
+                                width: AppSizes.iconMd,
+                                height: AppSizes.iconMd,
                                 child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: Colors.white))
+                                    strokeWidth: 2, color: AppColors.white))
                             : Text('Accept · ${_currency.format(q.total)}',
-                                style:
-                                    const TextStyle(fontWeight: FontWeight.w800)),
+                                style: theme.textTheme.bodyMedium
+                                    ?.copyWith(fontWeight: FontWeight.w800)),
                       ),
                     ),
                   ],
@@ -362,7 +365,7 @@ class _ShopQuotationDetailPageState extends State<ShopQuotationDetailPage> {
   Widget _totalRow(String label, String value, ThemeData theme,
       {bool bold = false}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
+      padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -405,7 +408,7 @@ class _ItemRow extends StatelessWidget {
               ),
               alignment: Alignment.center,
               child: const Icon(Icons.inventory_2_outlined,
-                  size: 18, color: AppColors.brand),
+                  size: AppSizes.iconMd, color: AppColors.brand),
             )
           else
             ClipPath(
@@ -453,10 +456,9 @@ class _Label extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Text(
         label.toUpperCase(),
-        style: const TextStyle(
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
             color: AppColors.muted,
             fontWeight: FontWeight.w800,
-            fontSize: 11,
             letterSpacing: 0.6),
       );
 }
