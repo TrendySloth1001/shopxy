@@ -77,7 +77,7 @@ class EmptyState extends StatelessWidget {
           children: [
             Container(
               width: 220,
-              height: 180,
+              height: AppSizes.heroHeightMd,
               alignment: Alignment.center,
               decoration: ShapeDecoration(
                 color: AppColors.heroPanel,

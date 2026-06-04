@@ -418,8 +418,8 @@ class _ItemRow extends StatelessWidget {
           const Icon(Icons.drag_handle, color: AppColors.muted),
           const SizedBox(width: AppSizes.sm),
           Container(
-            width: 40,
-            height: 40,
+            width: AppSizes.avatarSm,
+            height: AppSizes.avatarSm,
             clipBehavior: Clip.antiAlias,
             decoration: ShapeDecoration(
               color: AppColors.heroPanel,
@@ -499,12 +499,12 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 40,
-          height: 4,
+          width: AppSizes.handleWidth,
+          height: AppSizes.handleHeight,
           margin: const EdgeInsets.symmetric(vertical: AppSizes.sm),
           decoration: BoxDecoration(
             color: AppColors.hairline,
-            borderRadius: BorderRadius.circular(2),
+            borderRadius: BorderRadius.circular(AppSizes.radiusXs),
           ),
         ),
         Padding(
@@ -552,8 +552,8 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
                         child: Row(
                           children: [
                             Container(
-                              width: 40,
-                              height: 40,
+                              width: AppSizes.avatarSm,
+                              height: AppSizes.avatarSm,
                               clipBehavior: Clip.antiAlias,
                               decoration: ShapeDecoration(
                                 color: AppColors.heroPanel,

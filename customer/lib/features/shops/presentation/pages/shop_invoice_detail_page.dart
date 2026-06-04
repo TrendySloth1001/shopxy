@@ -247,8 +247,8 @@ class _Counterparty extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 40,
-            height: 40,
+            width: AppSizes.avatarSm,
+            height: AppSizes.avatarSm,
             decoration: ShapeDecoration(
               color: AppColors.brandSoft,
               shape: AppShapes.squircle(AppSizes.radiusSm),

@@ -109,7 +109,7 @@ class _AdminBankOffersPageState extends State<AdminBankOffersPage> {
                           AppSizes.lg,
                           AppSizes.sm,
                           AppSizes.lg,
-                          96,
+                          AppSizes.fabClearance,
                         ),
                         itemCount: provider.offers.length,
                         itemBuilder: (_, i) {

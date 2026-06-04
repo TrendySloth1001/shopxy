@@ -200,7 +200,7 @@ class _AdminCategoryTaxonomyPageState extends State<AdminCategoryTaxonomyPage> {
                       AppSizes.lg,
                       AppSizes.lg,
                       AppSizes.lg,
-                      96,
+                      AppSizes.fabClearance,
                     ),
                     children: [
                       for (final n in _tree)
@@ -474,11 +474,11 @@ class _CategoryEditorSheetState extends State<_CategoryEditorSheet> {
       children: [
         const SizedBox(height: AppSizes.sm),
         Container(
-          width: 40,
-          height: 4,
+          width: AppSizes.handleWidth,
+          height: AppSizes.handleHeight,
           decoration: BoxDecoration(
             color: AppColors.disabled,
-            borderRadius: BorderRadius.circular(2),
+            borderRadius: BorderRadius.circular(AppSizes.radiusXs),
           ),
         ),
         Padding(

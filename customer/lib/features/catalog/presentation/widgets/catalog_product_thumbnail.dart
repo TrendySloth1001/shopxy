@@ -14,7 +14,7 @@ class CatalogProductThumbnail extends StatelessWidget {
   const CatalogProductThumbnail({
     super.key,
     required this.product,
-    this.size = 56,
+    this.size = AppSizes.avatarMd,
     this.cornerRadius,
   });
 

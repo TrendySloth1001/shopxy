@@ -98,11 +98,11 @@ class _QrScannerPageState extends State<QrScannerPage> {
             children: [
               Center(
                 child: Container(
-                  width: 40,
-                  height: 4,
+                  width: AppSizes.handleWidth,
+                  height: AppSizes.handleHeight,
                   decoration: ShapeDecoration(
                     color: AppColors.hairline,
-                    shape: AppShapes.squircle(2),
+                    shape: AppShapes.squircle(AppSizes.radiusXs),
                   ),
                 ),
               ),

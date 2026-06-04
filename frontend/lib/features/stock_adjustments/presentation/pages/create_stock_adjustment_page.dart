@@ -210,7 +210,7 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
           children: [
             GlassHero.line(
               kind: LineArt.emptyClipboard,
-              height: 160,
+              height: AppSizes.heroHeightSm,
               illustrationSize: AppSizes.productImageSize,
               accent: AppColors.warning,
             ),

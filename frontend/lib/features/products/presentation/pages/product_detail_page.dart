@@ -689,7 +689,7 @@ class _ProductHeaderCard extends StatelessWidget {
               // Same thumbnail primitive used by the list row and the
               // hero — picks the product's photo when present, else
               // its hash-tinted monogram. Always identifies the row.
-              ProductThumbnail(product: product, size: 56),
+              ProductThumbnail(product: product, size: AppSizes.avatarMd),
               const SizedBox(width: AppSizes.lg),
               Expanded(
                 child: Column(
@@ -865,8 +865,8 @@ class _MarketplaceCard extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 36,
-            height: 36,
+            width: AppSizes.avatarXs,
+            height: AppSizes.avatarXs,
             decoration: ShapeDecoration(
               color: published
                   ? AppColors.brandSoft

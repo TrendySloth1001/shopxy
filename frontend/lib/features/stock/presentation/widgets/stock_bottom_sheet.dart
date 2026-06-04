@@ -266,8 +266,8 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
               // Handle
               Center(
                 child: Container(
-                  width: AppSizes.xxxl + AppSizes.sm,
-                  height: AppSizes.xs,
+                  width: AppSizes.handleWidth,
+                  height: AppSizes.handleHeight,
                   decoration: ShapeDecoration(
                     color: AppColors.hairline,
                     shape: AppShapes.squircle(AppSizes.radiusFull),

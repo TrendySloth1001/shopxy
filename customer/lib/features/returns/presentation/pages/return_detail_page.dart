@@ -167,7 +167,7 @@ class _Body extends StatelessWidget {
                         fontWeight: FontWeight.w800,
                       )),
               style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 14),
+                padding: const EdgeInsets.symmetric(vertical: AppSizes.lg),
                 shape: AppShapes.squircle(AppSizes.radiusMd),
                 side: const BorderSide(color: AppColors.errorSoft),
               ),

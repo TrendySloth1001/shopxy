@@ -400,8 +400,8 @@ class _ItemRow extends StatelessWidget {
         children: [
           if (raw.isEmpty)
             Container(
-              width: 40,
-              height: 40,
+              width: AppSizes.avatarSm,
+              height: AppSizes.avatarSm,
               decoration: ShapeDecoration(
                 color: AppColors.brandSoft,
                 shape: AppShapes.squircle(AppSizes.radiusSm),
@@ -416,8 +416,8 @@ class _ItemRow extends StatelessWidget {
                   ShapeBorderClipper(shape: AppShapes.squircle(AppSizes.radiusSm)),
               child: NetworkImageBox(
                 url: resolveImageUrl(raw),
-                width: 40,
-                height: 40,
+                width: AppSizes.avatarSm,
+                height: AppSizes.avatarSm,
                 placeholderColor: AppColors.brandSoft,
               ),
             ),

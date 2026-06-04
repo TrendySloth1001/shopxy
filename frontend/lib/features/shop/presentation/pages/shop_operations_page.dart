@@ -225,8 +225,8 @@ class _OpsTile extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              width: 40,
-              height: 40,
+              width: AppSizes.avatarSm,
+              height: AppSizes.avatarSm,
               decoration: BoxDecoration(
                 color: iconBg,
                 shape: BoxShape.circle,

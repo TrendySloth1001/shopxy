@@ -145,8 +145,8 @@ class _SectionRow extends StatelessWidget {
         child: Row(
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: AppSizes.tapTargetMin,
+                height: AppSizes.tapTargetMin,
                 decoration: ShapeDecoration(
                   color: accent.withValues(alpha: 0.12),
                   shape: AppShapes.squircle(AppSizes.radiusMd),

@@ -43,7 +43,7 @@ class _PayoutSetupSheet extends StatelessWidget {
             Center(
               child: Container(
                 width: 40,
-                height: 4,
+                height: AppSizes.handleHeight,
                 decoration: ShapeDecoration(
                   color: AppColors.hairline,
                   shape: AppShapes.squircle(AppSizes.radiusFull),
@@ -60,7 +60,7 @@ class _PayoutSetupSheet extends StatelessWidget {
               ),
               alignment: Alignment.center,
               child: const Icon(Icons.account_balance_outlined,
-                  color: AppColors.info, size: 24),
+                  color: AppColors.info, size: AppSizes.iconLg),
             ),
             const SizedBox(height: AppSizes.md),
             Text(

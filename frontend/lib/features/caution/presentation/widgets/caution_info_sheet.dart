@@ -47,8 +47,8 @@ class _CautionInfoBody extends StatelessWidget {
           const SizedBox(height: AppSizes.md),
           Center(
             child: Container(
-              width: AppSizes.xxxl,
-              height: AppSizes.xs,
+              width: AppSizes.handleWidth,
+              height: AppSizes.handleHeight,
               decoration: BoxDecoration(
                 color: AppColors.hairline,
                 borderRadius: AppShapes.squircleRadius(AppSizes.radiusFull),

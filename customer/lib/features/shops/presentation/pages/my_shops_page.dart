@@ -581,8 +581,8 @@ class _ShopLogo extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasLogo = logoUrl != null && logoUrl!.isNotEmpty;
     return Container(
-      width: 56,
-      height: 56,
+      width: AppSizes.avatarMd,
+      height: AppSizes.avatarMd,
       decoration: ShapeDecoration(
         color: AppColors.white,
         shape: AppShapes.squircle(

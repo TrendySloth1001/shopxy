@@ -548,7 +548,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
           children: [
             GlassHero.line(
               kind: LineArt.receipt,
-              height: 160,
+              height: AppSizes.heroHeightSm,
               illustrationSize: AppSizes.productImageSize,
             ),
             Expanded(

@@ -254,7 +254,8 @@ class HomeProductTile extends StatelessWidget {
                                 decoration: BoxDecoration(
                                   color:
                                       AppColors.info.withValues(alpha: 0.12),
-                                  borderRadius: BorderRadius.circular(2),
+                                  borderRadius:
+                                      BorderRadius.circular(AppSizes.radiusXs),
                                 ),
                                 child: const Text(
                                   'ASSURED',
@@ -336,7 +337,7 @@ class _Image extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       color: AppColors.black,
-                      borderRadius: BorderRadius.circular(2),
+                      borderRadius: BorderRadius.circular(AppSizes.radiusXs),
                     ),
                     child: Text(
                       product.tag!,
@@ -407,8 +408,8 @@ class _AdChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.92),
-        borderRadius: BorderRadius.circular(2),
+        color: AppColors.white.withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(AppSizes.radiusXs),
       ),
       child: const Text(
         'AD',
@@ -431,11 +432,11 @@ class _WishHeart extends StatelessWidget {
       width: 28,
       height: 28,
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.95),
+        color: AppColors.white.withValues(alpha: 0.95),
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: AppColors.black.withValues(alpha: 0.1),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -463,7 +464,7 @@ class _RatingPill extends StatelessWidget {
         borderRadius: BorderRadius.circular(3),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
+            color: AppColors.black.withValues(alpha: 0.08),
             blurRadius: 3,
             offset: const Offset(0, 1),
           ),

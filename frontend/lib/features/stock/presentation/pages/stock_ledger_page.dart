@@ -215,8 +215,8 @@ class _LedgerEntryCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: AppSizes.xxxl + AppSizes.sm,
-                height: AppSizes.xxxl + AppSizes.sm,
+                width: AppSizes.avatarSm,
+                height: AppSizes.avatarSm,
                 decoration: ShapeDecoration(
                   color: AppColors.white,
                   shape: AppShapes.squircle(

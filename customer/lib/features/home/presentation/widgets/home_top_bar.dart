@@ -487,12 +487,12 @@ class _AddressSheet extends StatelessWidget {
           children: [
             Center(
               child: Container(
-                width: 36,
-                height: 4,
+                width: AppSizes.handleWidth,
+                height: AppSizes.handleHeight,
                 margin: const EdgeInsets.only(bottom: AppSizes.md),
                 decoration: BoxDecoration(
                   color: AppColors.disabled,
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: BorderRadius.circular(AppSizes.radiusXs),
                 ),
               ),
             ),

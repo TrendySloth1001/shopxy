@@ -224,8 +224,8 @@ class _ProductThumb extends StatelessWidget {
     final shape = AppShapes.squircle(AppSizes.radiusSm);
     if (url == null || url!.isEmpty) {
       return Container(
-        width: 56,
-        height: 56,
+        width: AppSizes.avatarMd,
+        height: AppSizes.avatarMd,
         decoration: ShapeDecoration(
           color: AppColors.heroPanel,
           shape: shape,
@@ -238,12 +238,12 @@ class _ProductThumb extends StatelessWidget {
       clipper: ShapeBorderClipper(shape: shape),
       child: Image.network(
         resolveImageUrl(url!),
-        width: 56,
-        height: 56,
+        width: AppSizes.avatarMd,
+        height: AppSizes.avatarMd,
         fit: BoxFit.cover,
         errorBuilder: (_, _, _) => Container(
-          width: 56,
-          height: 56,
+          width: AppSizes.avatarMd,
+          height: AppSizes.avatarMd,
           color: AppColors.heroPanel,
           alignment: Alignment.center,
           child: const Icon(Icons.image_outlined, color: AppColors.subtle),
