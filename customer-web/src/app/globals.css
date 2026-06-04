@@ -1,0 +1,181 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens → Tailwind theme.
+ *
+ * Mirrors `src/shared/ui/tokens.ts` (the TS source of truth). Defining tokens
+ * here makes them available as first-class utilities: bg-canvas, text-muted,
+ * border-hairline, rounded-button, shadow-floating, p-md, max-w-content, etc.
+ *
+ * The default Tailwind color / radius / shadow scales are reset to `initial`
+ * so raw palette values (bg-red-500, rounded-3xl, shadow-2xl) simply do not
+ * exist — only house tokens compile. (CLAUDE.md §9: tokens-or-nothing.)
+ */
+
+@theme {
+  /* ── reset default scales so only tokens below are expressible ───────── */
+  --color-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+
+  /* ── Inks ────────────────────────────────────────────────────────────── */
+  --color-ink: #14181d;
+  --color-white: #ffffff;
+  --color-hairline: #14181d1f;
+  --color-surface-tint: #14181d0a;
+  --color-muted: #6a707a;
+  --color-subtle: #98a0aa;
+  --color-disabled: #c2c7ce;
+
+  /* ── Surfaces ────────────────────────────────────────────────────────── */
+  --color-canvas: #f8f7f3;
+  --color-page-tint: #fafaf7;
+  --color-hero-panel: #efeee7;
+
+  /* ── Brand ───────────────────────────────────────────────────────────── */
+  --color-brand: #1e8e5a;
+  --color-brand-strong: #146a42;
+  --color-brand-soft: #e6f2ec;
+
+  /* ── Status ──────────────────────────────────────────────────────────── */
+  --color-success: #16a34a;
+  --color-success-soft: #e7f4ec;
+  --color-warning: #b45309;
+  --color-warning-soft: #faebd0;
+  --color-error: #b42318;
+  --color-error-soft: #fce9e7;
+  --color-info: #1d4ed8;
+  --color-info-soft: #e3eafe;
+
+  /* ── Editorial accents ───────────────────────────────────────────────── */
+  --color-accent-teal: #0e7c8a;
+  --color-accent-teal-soft: #ddf1f3;
+  --color-accent-indigo: #4338ca;
+  --color-accent-indigo-soft: #e5e2fb;
+  --color-accent-amber: #a15c07;
+  --color-accent-amber-soft: #fae9cc;
+  --color-accent-rose: #b83a6f;
+  --color-accent-rose-soft: #fadfeb;
+
+  /* ── Named spacing (numeric p-4 etc. still works: same 4px rhythm) ────── */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 20px;
+  --spacing-xxl: 24px;
+  --spacing-xxxl: 32px;
+  --spacing-huge: 48px;
+  --spacing-massive: 64px;
+
+  /* ── Content rails (max-w-content / max-w-form) ──────────────────────── */
+  --container-content: 720px;
+  --container-form: 520px;
+
+  /* ── Radii ───────────────────────────────────────────────────────────── */
+  --radius-xs: 2px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-button: 14px;
+  --radius-input: 14px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-dialog: 20px;
+  --radius-bottom-sheet: 24px;
+  --radius-full: 100px;
+
+  /* ── Shadows (flat by default; faint lift for floating surfaces) ─────── */
+  --shadow-floating: 0 4px 12px rgba(20, 24, 29, 0.04);
+  --shadow-menu: 0 8px 20px rgba(20, 24, 29, 0.06);
+  --shadow-snackbar: 0 10px 24px rgba(20, 24, 29, 0.12);
+
+  /* ── Type scale (text-display-lg … text-label-md) ────────────────────── */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  --text-display-lg: 57px;
+  --text-display-lg--line-height: 1.1;
+  --text-display-lg--font-weight: 700;
+  --text-display-lg--letter-spacing: -0.5px;
+  --text-display-md: 45px;
+  --text-display-md--line-height: 1.15;
+  --text-display-md--font-weight: 700;
+  --text-display-md--letter-spacing: -0.5px;
+  --text-display-sm: 36px;
+  --text-display-sm--line-height: 1.2;
+  --text-display-sm--font-weight: 700;
+  --text-display-sm--letter-spacing: -0.4px;
+
+  --text-headline-lg: 32px;
+  --text-headline-lg--line-height: 1.25;
+  --text-headline-lg--font-weight: 700;
+  --text-headline-lg--letter-spacing: -0.3px;
+  --text-headline-md: 28px;
+  --text-headline-md--line-height: 1.3;
+  --text-headline-md--font-weight: 700;
+  --text-headline-md--letter-spacing: -0.3px;
+  --text-headline-sm: 24px;
+  --text-headline-sm--line-height: 1.33;
+  --text-headline-sm--font-weight: 600;
+  --text-headline-sm--letter-spacing: -0.2px;
+
+  --text-title-lg: 22px;
+  --text-title-lg--line-height: 1.4;
+  --text-title-lg--font-weight: 600;
+  --text-title-lg--letter-spacing: -0.2px;
+  --text-title-md: 16px;
+  --text-title-md--line-height: 1.5;
+  --text-title-md--font-weight: 600;
+  --text-title-sm: 14px;
+  --text-title-sm--line-height: 1.4;
+  --text-title-sm--font-weight: 600;
+
+  --text-body-lg: 16px;
+  --text-body-lg--line-height: 1.4;
+  --text-body-md: 14px;
+  --text-body-md--line-height: 1.4;
+  --text-body-sm: 12px;
+  --text-body-sm--line-height: 1.4;
+
+  --text-label-lg: 14px;
+  --text-label-lg--line-height: 1.2;
+  --text-label-lg--font-weight: 600;
+  --text-label-md: 12px;
+  --text-label-md--line-height: 1.2;
+  --text-label-md--font-weight: 600;
+
+  /* ── Breakpoints (Material window-size classes) ──────────────────────── */
+  --breakpoint-phone: 600px;
+  --breakpoint-tablet: 840px;
+  --breakpoint-desktop: 1200px;
+
+  /* ── Motion (consumed via var() in components / transitions) ─────────── */
+  --duration-micro: 100ms;
+  --duration-short: 180ms;
+  --duration-medium: 240ms;
+  --duration-long: 320ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* Global page defaults: warm canvas, primary ink, Inter. */
+html {
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: var(--font-sans);
+}
+
+/* Honour the OS Reduce Motion setting — short-circuit all motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
