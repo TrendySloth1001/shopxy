@@ -6,6 +6,7 @@ import 'package:shopxy_customer/features/notifications/presentation/widgets/invi
 import 'package:shopxy_customer/features/shops/presentation/providers/shops_provider.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
+import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 
 /// Dedicated screen for invitations addressed to the current user. Two
 /// tabs — Pending (actionable) and History — both read from
@@ -23,14 +24,16 @@ class InvitationsPage extends StatefulWidget {
 class _InvitationsPageState extends State<InvitationsPage>
     with SingleTickerProviderStateMixin {
   late final TabController _tabs;
+  bool _loadingIncoming = true;
 
   @override
   void initState() {
     super.initState();
     _tabs = TabController(length: 2, vsync: this);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
-      context.read<NotificationsProvider>().loadIncoming();
+      await context.read<NotificationsProvider>().loadIncoming();
+      if (mounted) setState(() => _loadingIncoming = false);
     });
   }
 
@@ -40,8 +43,11 @@ class _InvitationsPageState extends State<InvitationsPage>
     super.dispose();
   }
 
-  Future<void> _refresh() =>
-      context.read<NotificationsProvider>().loadIncoming();
+  Future<void> _refresh() async {
+    setState(() => _loadingIncoming = true);
+    await context.read<NotificationsProvider>().loadIncoming();
+    if (mounted) setState(() => _loadingIncoming = false);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -77,12 +83,14 @@ class _InvitationsPageState extends State<InvitationsPage>
               emptyHint:
                   'When a shop invites you to view their ledger, it will show up here.',
               isActionable: true,
+              isLoading: _loadingIncoming,
             ),
             _InvitationList(
               items: history,
               emptyTitle: 'No past invitations',
               emptyHint: 'Accepted and declined invitations will appear here.',
               isActionable: false,
+              isLoading: _loadingIncoming,
             ),
           ],
         ),
@@ -97,14 +105,29 @@ class _InvitationList extends StatelessWidget {
     required this.emptyTitle,
     required this.emptyHint,
     required this.isActionable,
+    required this.isLoading,
   });
   final List<Invitation> items;
   final String emptyTitle;
   final String emptyHint;
   final bool isActionable;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading && items.isEmpty) {
+      return ListView.separated(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSizes.lg,
+          vertical: AppSizes.md,
+        ),
+        itemCount: 4,
+        separatorBuilder: (context, index) =>
+            const SizedBox(height: AppSizes.md),
+        itemBuilder: (context, index) => const _InviteCardSkeleton(),
+      );
+    }
+
     if (items.isEmpty) {
       return ListView(
         children: [
@@ -156,6 +179,136 @@ class _InvitationList extends StatelessWidget {
     );
   }
 }
+
+// ── Skeleton ──────────────────────────────────────────────────────────────────
+
+/// Layout-mirroring placeholder for a single [InviteCard] row shown while
+/// [NotificationsProvider.isLoadingIncoming] is true and no data is cached yet.
+/// Mirrors: 86dp banner, overlapping circular logo, title + subtitle lines,
+/// optional message box shimmer, and two action-button shimmers.
+class _InviteCardSkeleton extends StatelessWidget {
+  const _InviteCardSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+        border: Border.all(color: AppColors.hairline, width: 0.8),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Banner (86dp) ────────────────────────────────────────────────
+          AppShimmerBox(width: double.infinity, height: 86, radius: 0),
+
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSizes.md,
+              0,
+              AppSizes.md,
+              AppSizes.md,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ── Logo overlapping banner + title/subtitle lines ─────────
+                Transform.translate(
+                  offset: const Offset(0, -18),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Circular logo
+                      AppShimmerBox(
+                        width: AppSizes.avatarMd,
+                        height: AppSizes.avatarMd,
+                        radius: AppSizes.radiusMd,
+                      ),
+                      const SizedBox(width: AppSizes.md),
+                      Expanded(
+                        child: Padding(
+                          padding:
+                              const EdgeInsets.only(top: AppSizes.xxl),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Status chip placeholder
+                              AppShimmerBox(
+                                width: 60,
+                                height: 18,
+                                radius: AppSizes.radiusFull,
+                              ),
+                              const SizedBox(height: AppSizes.sm),
+                              // Title line
+                              AppShimmerLine(
+                                widthFactor: 0.85,
+                                height: 14,
+                              ),
+                              const SizedBox(height: AppSizes.xs),
+                              // Subtitle line
+                              AppShimmerLine(
+                                widthFactor: 0.55,
+                                height: 12,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // ── Optional message box shimmer ─────────────────────────
+                Container(
+                  width: double.infinity,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    borderRadius:
+                        BorderRadius.circular(AppSizes.radiusSm),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: const AppShimmerBox(
+                    width: double.infinity,
+                    height: 44,
+                    radius: AppSizes.radiusSm,
+                  ),
+                ),
+
+                const SizedBox(height: AppSizes.md),
+
+                // ── Action buttons ───────────────────────────────────────
+                Row(
+                  children: [
+                    Expanded(
+                      child: AppShimmerBox(
+                        width: double.infinity,
+                        height: AppSizes.huge,
+                        radius: AppSizes.radiusMd,
+                      ),
+                    ),
+                    const SizedBox(width: AppSizes.sm),
+                    Expanded(
+                      flex: 2,
+                      child: AppShimmerBox(
+                        width: double.infinity,
+                        height: AppSizes.huge,
+                        radius: AppSizes.radiusMd,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── End skeleton ──────────────────────────────────────────────────────────────
 
 class _ActionableInviteRow extends StatefulWidget {
   const _ActionableInviteRow({

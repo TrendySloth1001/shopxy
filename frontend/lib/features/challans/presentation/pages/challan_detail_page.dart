@@ -17,6 +17,7 @@ import 'package:shopxy/shared/widgets/app_section_header.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/glass_widgets.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 
 class ChallanDetailPage extends StatefulWidget {
   const ChallanDetailPage({super.key, required this.challanId});
@@ -101,7 +102,7 @@ class _ChallanDetailPageState extends State<ChallanDetailPage> {
     final theme = Theme.of(context);
 
     if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const _ChallanDetailSkeleton();
     }
     if (_challan == null) {
       return Scaffold(
@@ -264,6 +265,111 @@ class _ChallanDetailPageState extends State<ChallanDetailPage> {
               ),
             )
           : null,
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Skeleton shown while challan detail is loading
+// ---------------------------------------------------------------------------
+
+class _ChallanDetailSkeleton extends StatelessWidget {
+  const _ChallanDetailSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: AppShimmerLine(widthFactor: 0.4, height: AppSizes.iconSm),
+      ),
+      body: Column(
+        children: [
+          // Mirror of GlassHero.line
+          AppShimmerBox(
+            width: double.infinity,
+            height: AppSizes.heroHeightMd,
+          ),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(AppSizes.lg),
+              children: [
+                // Info card
+                AppCard(
+                  padding: const EdgeInsets.all(AppSizes.lg),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Challan number / status row
+                      Row(
+                        children: [
+                          const Expanded(
+                            child: AppShimmerLine(widthFactor: 0.6, height: 20),
+                          ),
+                          const SizedBox(width: AppSizes.md),
+                          AppShimmerBox(
+                            width: 72,
+                            height: AppSizes.iconSm,
+                            radius: AppSizes.radiusFull,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSizes.xs),
+                      // Date line
+                      const AppShimmerLine(widthFactor: 0.45, height: 13),
+                      const SizedBox(height: AppSizes.md),
+                      // _InfoRow placeholders: party name, phone, note
+                      const AppShimmerLine(widthFactor: 0.75, height: 13),
+                      const SizedBox(height: AppSizes.xs),
+                      const AppShimmerLine(widthFactor: 0.5, height: 13),
+                      const SizedBox(height: AppSizes.xs),
+                      const AppShimmerLine(widthFactor: 0.85, height: 13),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSizes.md),
+                // Section header placeholder
+                const AppShimmerLine(widthFactor: 0.35, height: 13),
+                const SizedBox(height: AppSizes.sm),
+                // Items card
+                AppCard(
+                  padding: EdgeInsets.zero,
+                  child: Column(
+                    children: List.generate(3, (i) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSizes.lg,
+                          vertical: AppSizes.md,
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: const [
+                                  AppShimmerLine(widthFactor: 0.65, height: 14),
+                                  SizedBox(height: AppSizes.xs),
+                                  AppShimmerLine(widthFactor: 0.4, height: 12),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: AppSizes.md),
+                            AppShimmerBox(
+                              width: 48,
+                              height: 14,
+                              radius: AppSizes.radiusSm,
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                  ),
+                ),
+                const SizedBox(height: AppSizes.huge),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

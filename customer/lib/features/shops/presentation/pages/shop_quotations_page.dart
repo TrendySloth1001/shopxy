@@ -9,6 +9,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_list_section.dart';
+import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 
 /// Clean list of quotations the shop sent the customer. Tapping a row opens the
 /// full detail page (line items, totals, Accept / Decline).
@@ -64,7 +65,7 @@ class _ShopQuotationsPageState extends State<ShopQuotationsPage> {
         color: AppColors.brand,
         onRefresh: () => p.loadQuotations(widget.shop),
         child: loading && quotes.isEmpty
-            ? const Center(child: CircularProgressIndicator())
+            ? const _QuotationListSkeleton()
             : quotes.isEmpty
                 ? ListView(
                     children: [
@@ -112,6 +113,70 @@ class _ShopQuotationsPageState extends State<ShopQuotationsPage> {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Skeleton widgets — shown while quotations are loading
+// ---------------------------------------------------------------------------
+
+class _QuotationListSkeleton extends StatelessWidget {
+  const _QuotationListSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.only(top: AppSizes.sm),
+      physics: const NeverScrollableScrollPhysics(),
+      children: [
+        AppListSection(
+          flushDividers: true,
+          children: List.generate(6, (_) => const _QuotationRowSkeleton()),
+        ),
+      ],
+    );
+  }
+}
+
+class _QuotationRowSkeleton extends StatelessWidget {
+  const _QuotationRowSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSizes.lg, vertical: AppSizes.md),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    // Quotation number pill
+                    AppShimmerBox(width: 80, height: 20, radius: AppSizes.radiusSm),
+                    const SizedBox(width: AppSizes.sm),
+                    // Status badge
+                    AppShimmerBox(width: 60, height: 20, radius: AppSizes.radiusFull),
+                  ],
+                ),
+                const SizedBox(height: AppSizes.xs),
+                // Date + items subtitle
+                const AppShimmerLine(widthFactor: 0.65, height: 13),
+              ],
+            ),
+          ),
+          // Total price (right-aligned)
+          AppShimmerBox(width: 70, height: 20, radius: AppSizes.radiusSm),
+          const SizedBox(width: AppSizes.xs),
+          // Chevron placeholder
+          AppShimmerBox(width: 20, height: 20, radius: AppSizes.radiusSm),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 
 class _QuotationRow extends StatelessWidget {
   const _QuotationRow({

@@ -11,6 +11,7 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_bar.dart';
 import 'package:shopxy_customer/shared/widgets/app_button.dart';
+import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 
 /// "My reviews" — every review the caller has written, newest first.
 /// Tap a row → PDP. Cursor-paginated; loads next page when the user
@@ -98,7 +99,7 @@ class _MyReviewsPageState extends State<MyReviewsPage> {
 
   Widget _buildBody() {
     if (_initialLoad && _loading) {
-      return const Center(child: CircularProgressIndicator());
+      return const _ReviewsSkeleton();
     }
     if (_error != null && _rows.isEmpty) {
       return _ErrorBlock(message: _error!, onRetry: () => _load(reset: true));
@@ -126,6 +127,97 @@ class _MyReviewsPageState extends State<MyReviewsPage> {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Skeleton loading state
+// ---------------------------------------------------------------------------
+
+class _ReviewsSkeleton extends StatelessWidget {
+  const _ReviewsSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.md,
+      ),
+      itemCount: 5,
+      separatorBuilder: (_, _) => const SizedBox(height: AppSizes.md),
+      itemBuilder: (_, _) => const _ReviewCardSkeleton(),
+    );
+  }
+}
+
+class _ReviewCardSkeleton extends StatelessWidget {
+  const _ReviewCardSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    final shape = AppShapes.squircle(
+      AppSizes.radiusMd,
+      side: const BorderSide(color: AppColors.hairline),
+    );
+    return Material(
+      color: AppColors.white,
+      shape: shape,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSizes.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Product thumbnail placeholder
+                AppShimmerBox(
+                  width: AppSizes.avatarMd,
+                  height: AppSizes.avatarMd,
+                  radius: AppSizes.radiusSm,
+                ),
+                const SizedBox(width: AppSizes.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Product name line
+                      const AppShimmerLine(widthFactor: 0.7, height: 14),
+                      const SizedBox(height: AppSizes.xs),
+                      // Star row placeholder
+                      AppShimmerBox(
+                        width: AppSizes.lg * 5,
+                        height: AppSizes.lg,
+                        radius: AppSizes.radiusXs,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: AppSizes.sm),
+                // Date chip placeholder
+                AppShimmerBox(
+                  width: 64,
+                  height: 12,
+                  radius: AppSizes.radiusXs,
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSizes.sm),
+            // Review title line
+            const AppShimmerLine(widthFactor: 0.5, height: 13),
+            const SizedBox(height: AppSizes.xs),
+            // Review body lines
+            const AppShimmerLine(widthFactor: 1.0, height: 12),
+            const SizedBox(height: AppSizes.xs),
+            const AppShimmerLine(widthFactor: 0.85, height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 
 class _Row extends StatelessWidget {
   const _Row({required this.row});

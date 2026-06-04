@@ -11,6 +11,7 @@ import 'package:shopxy/features/spotlight/presentation/providers/spotlight_provi
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 
 /// Lets a merchant request a "brand of the day" placement. The request
 /// lands as PENDING — a platform admin must approve before it appears
@@ -53,7 +54,7 @@ class _SpotlightRequestPageState extends State<SpotlightRequestPage> {
         label: const Text('Request slot'),
       ),
       body: provider.isLoading && provider.items.isEmpty
-          ? const Center(child: CircularProgressIndicator())
+          ? const _SpotlightPageSkeleton()
           : RefreshIndicator(
               onRefresh: provider.load,
               child: ListView(
@@ -85,6 +86,161 @@ class _SpotlightRequestPageState extends State<SpotlightRequestPage> {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Skeleton (shimmer loading state)
+// ---------------------------------------------------------------------------
+
+class _SpotlightPageSkeleton extends StatelessWidget {
+  const _SpotlightPageSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.lg,
+        AppSizes.lg,
+        AppSizes.fabClearance,
+      ),
+      children: const [
+        _ExplainerCardSkeleton(),
+        SizedBox(height: AppSizes.lg),
+        _SpotlightCardSkeleton(),
+        SizedBox(height: AppSizes.md),
+        _SpotlightCardSkeleton(),
+        SizedBox(height: AppSizes.md),
+        _SpotlightCardSkeleton(),
+      ],
+    );
+  }
+}
+
+/// Mirrors the _ExplainerCard: a rounded panel with a small icon placeholder
+/// on the left and two lines of shimmer text on the right.
+class _ExplainerCardSkeleton extends StatelessWidget {
+  const _ExplainerCardSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSizes.lg),
+      decoration: ShapeDecoration(
+        color: AppColors.heroPanel,
+        shape: AppShapes.squircle(AppSizes.radiusLg),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppShimmerBox(
+            width: AppSizes.iconMd,
+            height: AppSizes.iconMd,
+            radius: AppSizes.radiusSm,
+          ),
+          const SizedBox(width: AppSizes.md),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppShimmerLine(widthFactor: 0.95, height: 12),
+                SizedBox(height: AppSizes.xs),
+                AppShimmerLine(widthFactor: 0.75, height: 12),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Mirrors _SpotlightCard: colored header with image + title/subtitle shimmer,
+/// then a footer with a schedule line and a button-area placeholder.
+class _SpotlightCardSkeleton extends StatelessWidget {
+  const _SpotlightCardSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: ShapeDecoration(
+        color: AppColors.white,
+        shape: AppShapes.squircle(AppSizes.radiusLg),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Header — mirrors the colored ClipPath section
+          ClipPath(
+            clipper: ShapeBorderClipper(
+              shape: AppShapes.squircleTop(AppSizes.radiusLg),
+            ),
+            child: Container(
+              color: AppColors.heroPanel,
+              padding: const EdgeInsets.all(AppSizes.lg),
+              child: Row(
+                children: [
+                  AppShimmerBox(
+                    width: AppSizes.massive,
+                    height: AppSizes.massive,
+                    radius: AppSizes.radiusMd,
+                  ),
+                  const SizedBox(width: AppSizes.md),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        AppShimmerLine(widthFactor: 0.7, height: 14),
+                        SizedBox(height: AppSizes.xs),
+                        AppShimmerLine(widthFactor: 0.5, height: 11),
+                      ],
+                    ),
+                  ),
+                  // Status chip placeholder
+                  AppShimmerBox(width: 64, height: 24, radius: AppSizes.radiusSm),
+                ],
+              ),
+            ),
+          ),
+          // Footer — schedule row + cancel button area
+          Padding(
+            padding: const EdgeInsets.all(AppSizes.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    AppShimmerBox(
+                      width: AppSizes.iconSm,
+                      height: AppSizes.iconSm,
+                      radius: AppSizes.radiusSm,
+                    ),
+                    const SizedBox(width: AppSizes.sm),
+                    const Expanded(
+                      child: AppShimmerLine(widthFactor: 0.65, height: 11),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSizes.md),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: AppShimmerBox(
+                    width: 120,
+                    height: 32,
+                    radius: AppSizes.radiusMd,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Real content widgets
+// ---------------------------------------------------------------------------
 
 class _ExplainerCard extends StatelessWidget {
   const _ExplainerCard();

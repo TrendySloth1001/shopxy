@@ -7,6 +7,7 @@ import 'package:shopxy_customer/features/notifications/presentation/providers/no
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 
 /// V2 notifications inbox. Was a static mock with invented "delivered
 /// today" / "price drop" rows until this build — now reads from
@@ -147,7 +148,7 @@ class _TabView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (provider.isLoadingInbox && items.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const _NotificationListSkeleton();
     }
     if (items.isEmpty) {
       return ListView(
@@ -183,6 +184,93 @@ class _TabView extends StatelessWidget {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Skeleton loading state
+// ---------------------------------------------------------------------------
+
+/// Renders [_count] placeholder rows that mirror the real [_NotificationTile]
+/// layout while data is being fetched.
+class _NotificationListSkeleton extends StatelessWidget {
+  const _NotificationListSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: 3,
+      separatorBuilder: (_, _) =>
+          const Divider(height: 1, color: AppColors.hairline),
+      itemBuilder: (_, _) => const _NotificationRowSkeleton(),
+    );
+  }
+}
+
+/// A single shimmer placeholder that mirrors one [_NotificationTile]:
+/// 48 dp squircle icon on the left, then two or three shimmer lines.
+class _NotificationRowSkeleton extends StatelessWidget {
+  const _NotificationRowSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.md,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Icon placeholder — 48 dp squircle
+          AppShimmerBox(
+            width: AppSizes.xxxl,
+            height: AppSizes.xxxl,
+            radius: AppSizes.radiusSm,
+          ),
+          const SizedBox(width: AppSizes.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Title row with timestamp stub on the right
+                Row(
+                  children: [
+                    Expanded(
+                      child: AppShimmerLine(
+                        widthFactor: 0.62,
+                        height: 14,
+                      ),
+                    ),
+                    const SizedBox(width: AppSizes.sm),
+                    AppShimmerLine(
+                      widthFactor: 0.18,
+                      height: 12,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSizes.xs),
+                // Body line
+                AppShimmerLine(
+                  widthFactor: 0.85,
+                  height: 12,
+                ),
+                const SizedBox(height: 3),
+                // Optional third line (shorter)
+                AppShimmerLine(
+                  widthFactor: 0.45,
+                  height: 12,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 
 class _NotificationTile extends StatelessWidget {
   const _NotificationTile({required this.item, required this.provider});

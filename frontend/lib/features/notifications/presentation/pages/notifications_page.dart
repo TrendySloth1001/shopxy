@@ -8,6 +8,7 @@ import 'package:shopxy/features/notifications/presentation/providers/notificatio
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});
@@ -96,7 +97,7 @@ class _InboxTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.watch<NotificationsProvider>();
     if (p.isLoadingInbox && p.items.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const _InboxSkeleton();
     }
     if (p.items.isEmpty) {
       return const _EmptyHint(
@@ -218,6 +219,70 @@ class _NotificationTile extends StatelessWidget {
       default:
         return (AppColors.accentIndigo, AppColors.accentIndigoSoft, Icons.notifications_none_rounded);
     }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Inbox skeleton
+// ─────────────────────────────────────────────────────────────────────
+
+class _InboxSkeleton extends StatelessWidget {
+  const _InboxSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: const EdgeInsets.only(
+        top: AppSizes.sm,
+        bottom: AppSizes.massive + AppSizes.xxxl,
+      ),
+      itemCount: 6,
+      separatorBuilder: (_, _) =>
+          Container(height: 1, color: AppColors.hairline),
+      itemBuilder: (_, _) => const _NotificationTileSkeleton(),
+    );
+  }
+}
+
+class _NotificationTileSkeleton extends StatelessWidget {
+  const _NotificationTileSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.md,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Icon squircle placeholder
+          AppShimmerBox(
+            width: AppSizes.xxxl,
+            height: AppSizes.xxxl,
+            radius: AppSizes.radiusSm,
+          ),
+          const SizedBox(width: AppSizes.md),
+          // Text column
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Title line
+                AppShimmerLine(widthFactor: 0.55, height: 14),
+                const SizedBox(height: AppSizes.xs),
+                // Optional body line
+                AppShimmerLine(widthFactor: 0.80, height: 12),
+                const SizedBox(height: AppSizes.xs),
+                // Timestamp line
+                AppShimmerLine(widthFactor: 0.35, height: 11),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

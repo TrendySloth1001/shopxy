@@ -8,6 +8,7 @@ import 'package:shopxy/features/vendors/domain/entities/vendor.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 
 /// Owner-facing page. Two modes via a segmented switch:
 ///   * **Existing contact** — search-pick a party / vendor; the FK
@@ -416,7 +417,7 @@ class _ContactPickerState extends State<_ContactPicker> {
             future: _future,
             builder: (context, snap) {
               if (snap.connectionState != ConnectionState.done) {
-                return const Center(child: CircularProgressIndicator());
+                return const _ContactListSkeleton();
               }
               if (snap.hasError) {
                 return Center(
@@ -442,7 +443,7 @@ class _ContactPickerState extends State<_ContactPicker> {
                 clipBehavior: Clip.antiAlias,
                 child: ListView.separated(
                   itemCount: list.length,
-                  separatorBuilder: (_, _) =>
+                  separatorBuilder: (context, index) =>
                       Container(height: 1, color: AppColors.hairline),
                   itemBuilder: (_, i) {
                     final item = list[i];
@@ -455,8 +456,8 @@ class _ContactPickerState extends State<_ContactPicker> {
                       onTap: () {
                         if (item is Party) {
                           widget.onPartyPicked(item);
-                        } else if (item is Vendor) {
-                          widget.onVendorPicked(item);
+                        } else {
+                          widget.onVendorPicked(item as Vendor);
                         }
                       },
                       child: Container(
@@ -504,6 +505,71 @@ class _ContactPickerState extends State<_ContactPicker> {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Skeleton widgets (loading state for _ContactPicker)
+// ─────────────────────────────────────────────────────────────────────
+
+/// Mirrors the 220 px squircle container that the real contact list uses.
+/// Renders 4 skeleton rows separated by hairlines.
+class _ContactListSkeleton extends StatelessWidget {
+  const _ContactListSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 220,
+      decoration: ShapeDecoration(
+        color: AppColors.white,
+        shape: AppShapes.squircle(
+          AppSizes.radiusMd,
+          side: const BorderSide(color: AppColors.hairline),
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: [
+          const _ContactRowSkeleton(nameWidthFactor: 0.55),
+          Container(height: 1, color: AppColors.hairline),
+          const _ContactRowSkeleton(nameWidthFactor: 0.45),
+          Container(height: 1, color: AppColors.hairline),
+          const _ContactRowSkeleton(nameWidthFactor: 0.60),
+          Container(height: 1, color: AppColors.hairline),
+          const _ContactRowSkeleton(nameWidthFactor: 0.50),
+        ],
+      ),
+    );
+  }
+}
+
+/// One skeleton row: bold-width name line + narrower email line, matching
+/// the padding of the real list item.
+class _ContactRowSkeleton extends StatelessWidget {
+  const _ContactRowSkeleton({required this.nameWidthFactor});
+
+  final double nameWidthFactor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSizes.lg,
+          vertical: AppSizes.md,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AppShimmerLine(widthFactor: nameWidthFactor, height: 14),
+            const SizedBox(height: AppSizes.xs),
+            AppShimmerLine(widthFactor: nameWidthFactor * 0.75, height: 11),
+          ],
+        ),
+      ),
     );
   }
 }

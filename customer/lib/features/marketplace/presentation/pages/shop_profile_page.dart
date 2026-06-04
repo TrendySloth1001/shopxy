@@ -11,6 +11,7 @@ import 'package:shopxy_customer/features/marketplace/presentation/pages/product_
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 
 /// Public shop landing page. Reached from any "brand" tap — brand
 /// spotlight cards, sponsored product rails, and the PDP "Visit shop"
@@ -128,7 +129,7 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
       body: RefreshIndicator(
         onRefresh: _loadFirstPage,
         child: _loading && _shop == null
-            ? const Center(child: CircularProgressIndicator())
+            ? const _ShopProfileSkeleton()
             : _error != null
                 ? _ErrorState(message: _error!, onRetry: _loadFirstPage)
                 : _Body(
@@ -839,6 +840,142 @@ class _ProductTile extends StatelessWidget {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Skeleton / shimmer loading state
+// ---------------------------------------------------------------------------
+
+/// Full-page skeleton that mirrors the real layout: SliverAppBar (banner +
+/// title area), shop-info row (logo + name + stats), sort-chips row, and a
+/// 2-column product grid with 6 shimmer tiles.
+class _ShopProfileSkeleton extends StatelessWidget {
+  const _ShopProfileSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomScrollView(
+      physics: const NeverScrollableScrollPhysics(),
+      slivers: [
+        // ── Banner (SliverAppBar stand-in) ──────────────────────────────
+        SliverToBoxAdapter(
+          child: AppShimmerBox(
+            width: double.infinity,
+            height: 200,
+            radius: 0,
+          ),
+        ),
+        // ── Shop-info row ────────────────────────────────────────────────
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+                AppSizes.lg, AppSizes.lg, AppSizes.lg, AppSizes.md),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Logo
+                AppShimmerBox(
+                  width: 56,
+                  height: 56,
+                  radius: AppSizes.radiusSm,
+                ),
+                const SizedBox(width: AppSizes.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Shop name
+                      const AppShimmerLine(widthFactor: 0.55, height: 18),
+                      const SizedBox(height: AppSizes.xs),
+                      // Tagline
+                      const AppShimmerLine(widthFactor: 0.75, height: 12),
+                      const SizedBox(height: AppSizes.sm),
+                      // Stat chips row
+                      Row(
+                        children: const [
+                          AppShimmerLine(widthFactor: 0.22, height: 12),
+                          SizedBox(width: AppSizes.md),
+                          AppShimmerLine(widthFactor: 0.22, height: 12),
+                          SizedBox(width: AppSizes.md),
+                          AppShimmerLine(widthFactor: 0.18, height: 12),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        // ── Sort chips row ───────────────────────────────────────────────
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppSizes.lg, vertical: AppSizes.sm),
+            child: Row(
+              children: [
+                for (final w in const [72.0, 64.0, 68.0, 72.0]) ...[
+                  AppShimmerBox(width: w, height: 32, radius: AppSizes.radiusFull),
+                  const SizedBox(width: AppSizes.sm),
+                ],
+              ],
+            ),
+          ),
+        ),
+        // ── Product grid skeleton (6 tiles) ──────────────────────────────
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(
+              AppSizes.lg, AppSizes.sm, AppSizes.lg, AppSizes.xl),
+          sliver: SliverGrid(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: AppSizes.md,
+              mainAxisSpacing: AppSizes.md,
+              childAspectRatio: 0.65,
+            ),
+            delegate: SliverChildBuilderDelegate(
+              (context, i) => const _ProductTileSkeleton(),
+              childCount: 6,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Single skeleton cell that mirrors _ProductTile:
+/// square image placeholder + two text lines + a price line.
+class _ProductTileSkeleton extends StatelessWidget {
+  const _ProductTileSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Square image block
+        AspectRatio(
+          aspectRatio: 1,
+          child: AppShimmerBox(
+            width: double.infinity,
+            height: double.infinity,
+            radius: AppSizes.radiusMd,
+          ),
+        ),
+        const SizedBox(height: AppSizes.sm),
+        // Product name — two lines
+        const AppShimmerLine(widthFactor: 0.9, height: 12),
+        const SizedBox(height: AppSizes.xs),
+        const AppShimmerLine(widthFactor: 0.65, height: 12),
+        const SizedBox(height: AppSizes.xs),
+        // Price line
+        const AppShimmerLine(widthFactor: 0.45, height: 14),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 
 class _ErrorState extends StatelessWidget {
   const _ErrorState({required this.message, required this.onRetry});

@@ -5,6 +5,7 @@ import 'package:shopxy/features/shop/presentation/providers/shop_provider.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 
 const _dayCodes = <String>['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 const _dayLabels = <String, String>{
@@ -116,7 +117,7 @@ class _ShopHoursPageState extends State<ShopHoursPage> {
         ],
       ),
       body: shop == null
-          ? const Center(child: CircularProgressIndicator())
+          ? const _ShopHoursSkeleton()
           : _buildForm(shop),
     );
   }
@@ -228,6 +229,132 @@ class _ShopHoursPageState extends State<ShopHoursPage> {
   static String _fmtTime(TimeOfDay t) =>
       '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 }
+
+// ---------------------------------------------------------------------------
+// Skeleton shown while shop data is loading
+// ---------------------------------------------------------------------------
+
+class _ShopHoursSkeleton extends StatelessWidget {
+  const _ShopHoursSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(
+          AppSizes.lg, AppSizes.lg, AppSizes.lg, AppSizes.huge),
+      children: [
+        // Vacation mode card skeleton
+        Material(
+          color: AppColors.white,
+          shape: AppShapes.squircle(AppSizes.radiusMd),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSizes.md),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          AppShimmerLine(widthFactor: 0.45, height: 16),
+                          SizedBox(height: AppSizes.xs),
+                          AppShimmerLine(widthFactor: 0.75, height: 12),
+                          SizedBox(height: 4),
+                          AppShimmerLine(widthFactor: 0.6, height: 12),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: AppSizes.md),
+                    // Switch placeholder
+                    AppShimmerBox(width: 48, height: 28, radius: 14),
+                  ],
+                ),
+                // Optional vacation message field skeleton
+                const SizedBox(height: AppSizes.sm),
+                AppShimmerBox(
+                  width: double.infinity,
+                  height: 56,
+                  radius: AppSizes.radiusSm,
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSizes.xl),
+        // "OPENING HOURS" section label
+        const AppShimmerLine(widthFactor: 0.3, height: 11),
+        const SizedBox(height: AppSizes.sm),
+        // 7-day rows card skeleton
+        Material(
+          color: AppColors.white,
+          shape: AppShapes.squircle(AppSizes.radiusMd),
+          child: Column(
+            children: [
+              for (var i = 0; i < 7; i++) ...[
+                if (i != 0)
+                  const Divider(
+                    height: 1,
+                    color: AppColors.hairline,
+                    indent: AppSizes.md,
+                    endIndent: AppSizes.md,
+                  ),
+                const _DayRowSkeleton(),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DayRowSkeleton extends StatelessWidget {
+  const _DayRowSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSizes.md, vertical: AppSizes.sm),
+      child: Row(
+        children: [
+          // Day label
+          const SizedBox(
+            width: 90,
+            child: AppShimmerLine(widthFactor: 0.7, height: 14),
+          ),
+          // Open time button placeholder
+          Expanded(
+            child: AppShimmerBox(
+              width: double.infinity,
+              height: 36,
+              radius: AppSizes.radiusSm,
+            ),
+          ),
+          const SizedBox(width: AppSizes.xs),
+          // Separator dash placeholder
+          AppShimmerBox(width: 10, height: 14, radius: 2),
+          const SizedBox(width: AppSizes.xs),
+          // Close time button placeholder
+          Expanded(
+            child: AppShimmerBox(
+              width: double.infinity,
+              height: 36,
+              radius: AppSizes.radiusSm,
+            ),
+          ),
+          const SizedBox(width: AppSizes.sm),
+          // Switch placeholder
+          AppShimmerBox(width: 48, height: 28, radius: 14),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 
 class _DayHours {
   const _DayHours({

@@ -8,6 +8,7 @@ import 'package:shopxy/features/admin/presentation/providers/admin_banners_provi
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 
 class AdminBannersPage extends StatefulWidget {
   const AdminBannersPage({super.key});
@@ -56,7 +57,7 @@ class _AdminBannersPageState extends State<AdminBannersPage> {
         label: const Text('New banner'),
       ),
       body: provider.isLoading && provider.banners.isEmpty
-          ? const Center(child: CircularProgressIndicator())
+          ? const _BannersSkeleton()
           : provider.error != null && provider.banners.isEmpty
               ? Center(
                   child: Padding(
@@ -360,5 +361,102 @@ class _BannerTile extends StatelessWidget {
     if (b.startAt != null) return 'from ${df.format(b.startAt!)}';
     if (b.endAt != null) return 'until ${df.format(b.endAt!)}';
     return '';
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Skeleton widgets (shown while isLoading && banners.isEmpty)
+// ---------------------------------------------------------------------------
+
+class _BannersSkeleton extends StatelessWidget {
+  const _BannersSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.only(bottom: AppSizes.huge),
+      children: const [
+        _PlacementSectionSkeleton(tileCount: 3),
+        _PlacementSectionSkeleton(tileCount: 2),
+        _PlacementSectionSkeleton(tileCount: 2),
+      ],
+    );
+  }
+}
+
+class _PlacementSectionSkeleton extends StatelessWidget {
+  const _PlacementSectionSkeleton({required this.tileCount});
+  final int tileCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.lg,
+        AppSizes.lg,
+        AppSizes.sm,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section header: label shimmer line + badge shimmer box
+          Row(
+            children: const [
+              AppShimmerLine(widthFactor: 0.35, height: 16),
+              SizedBox(width: AppSizes.sm),
+              AppShimmerBox(width: 28, height: 20, radius: AppSizes.radiusSm),
+            ],
+          ),
+          const SizedBox(height: AppSizes.sm),
+          for (int i = 0; i < tileCount; i++) const _BannerTileSkeleton(),
+        ],
+      ),
+    );
+  }
+}
+
+class _BannerTileSkeleton extends StatelessWidget {
+  const _BannerTileSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSizes.sm),
+      child: Material(
+        color: AppColors.white,
+        shape: AppShapes.squircle(
+          AppSizes.radiusMd,
+          side: const BorderSide(color: AppColors.hairline),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSizes.md),
+          child: Row(
+            children: [
+              // Image placeholder
+              AppShimmerBox(
+                width: 72,
+                height: 56,
+                radius: AppSizes.radiusSm,
+              ),
+              const SizedBox(width: AppSizes.md),
+              // Text lines
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    AppShimmerLine(widthFactor: 0.65, height: 14),
+                    SizedBox(height: AppSizes.xs),
+                    AppShimmerLine(widthFactor: 0.45, height: 11),
+                  ],
+                ),
+              ),
+              // Delete icon placeholder
+              const AppShimmerBox(width: 32, height: 32, radius: AppSizes.radiusFull),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

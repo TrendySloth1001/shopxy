@@ -8,6 +8,7 @@ import 'package:shopxy/features/quotations/presentation/providers/quotations_pro
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 
 /// Merchant list of quotations sent to customers. Clean divided rows; tap opens
 /// the detail page. FAB opens the catalogue → bucket → send flow.
@@ -50,7 +51,7 @@ class _QuotationsPageState extends State<QuotationsPage> {
         label: const Text('New quotation'),
       ),
       body: p.isLoading && p.items.isEmpty
-          ? const Center(child: CircularProgressIndicator())
+          ? const _QuotationsSkeleton()
           : p.error != null && p.items.isEmpty
               ? Center(
                   child: Padding(
@@ -114,6 +115,68 @@ class _QuotationsPageState extends State<QuotationsPage> {
                           ),
                         ),
                 ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Skeleton loading state — mirrors _QuotationRow layout
+// ---------------------------------------------------------------------------
+
+class _QuotationsSkeleton extends StatelessWidget {
+  const _QuotationsSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
+      itemCount: 6,
+      separatorBuilder: (_, _) => Container(
+        height: 1,
+        color: AppColors.hairline,
+        margin: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+      ),
+      itemBuilder: (_, _) => const _QuotationRowSkeleton(),
+    );
+  }
+}
+
+class _QuotationRowSkeleton extends StatelessWidget {
+  const _QuotationRowSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSizes.lg, vertical: AppSizes.md),
+      child: Row(
+        children: [
+          // Expanded left column — mirrors _QuotationRow's Column
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Top row: title shimmer + badge shimmer
+                Row(
+                  children: [
+                    AppShimmerLine(widthFactor: 0.35, height: 16),
+                    const SizedBox(width: AppSizes.sm),
+                    AppShimmerBox(width: 72, height: 20, radius: AppSizes.radiusXl),
+                  ],
+                ),
+                const SizedBox(height: AppSizes.xs),
+                // Subtitle line
+                AppShimmerLine(widthFactor: 0.6, height: 12),
+              ],
+            ),
+          ),
+          // Right side: price amount
+          AppShimmerLine(widthFactor: 0.15, height: 16),
+          const SizedBox(width: AppSizes.xs),
+          // Chevron placeholder
+          const SizedBox(width: AppSizes.iconSm),
+        ],
+      ),
     );
   }
 }

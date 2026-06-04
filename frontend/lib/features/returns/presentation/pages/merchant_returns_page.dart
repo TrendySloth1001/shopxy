@@ -7,6 +7,7 @@ import 'package:shopxy/features/returns/presentation/pages/merchant_return_detai
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
 
 /// Merchant returns inbox. Tabs filter by status; each row is tappable
@@ -95,7 +96,7 @@ class _MerchantReturnsPageState extends State<MerchantReturnsPage> {
           ),
           Expanded(
             child: _loading
-                ? const Center(child: CircularProgressIndicator())
+                ? const _ReturnsSkeleton()
                 : _error != null
                     ? _ErrorBlock(message: _error!, onRetry: _load)
                     : _rows.isEmpty
@@ -232,6 +233,67 @@ class _ReturnRow extends StatelessWidget {
       default:
         return s;
     }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Skeleton loading state
+// ---------------------------------------------------------------------------
+
+class _SkeletonRow extends StatelessWidget {
+  const _SkeletonRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSizes.sm),
+      child: Material(
+        color: AppColors.white,
+        shape: AppShapes.squircle(AppSizes.radiusMd),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSizes.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Title row: text (80%) + status badge placeholder
+              Row(
+                children: [
+                  const Expanded(
+                    child: AppShimmerLine(widthFactor: 0.8, height: 16),
+                  ),
+                  const SizedBox(width: AppSizes.sm),
+                  AppShimmerBox(
+                    width: 72,
+                    height: 22,
+                    radius: AppSizes.radiusSm,
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSizes.xs),
+              // Metadata line (60%)
+              const AppShimmerLine(widthFactor: 0.6, height: 12),
+              const SizedBox(height: AppSizes.sm),
+              // Product names line (70%)
+              const AppShimmerLine(widthFactor: 0.7, height: 13),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ReturnsSkeleton extends StatelessWidget {
+  const _ReturnsSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSizes.lg, vertical: AppSizes.sm),
+      itemCount: 5,
+      itemBuilder: (_, _) => const _SkeletonRow(),
+    );
   }
 }
 

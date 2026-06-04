@@ -14,6 +14,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_error_view.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
 
 /// Drill-down view from CategoriesPage. Loads the products for a single
@@ -138,7 +139,7 @@ class _CategoryProductsPageState extends State<CategoryProductsPage> {
         title: Text(widget.category.name),
       ),
       body: _isLoading && _products.isEmpty
-          ? const Center(child: CircularProgressIndicator())
+          ? const _CategoryProductsSkeleton()
           : _error != null && _products.isEmpty
               ? AppErrorView(onRetry: _load)
               : RefreshIndicator(
@@ -301,6 +302,150 @@ class _Header extends StatelessWidget {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Skeleton widgets
+// ---------------------------------------------------------------------------
+
+/// Full-page skeleton that mirrors the real layout while [_isLoading] is true.
+class _CategoryProductsSkeleton extends StatelessWidget {
+  const _CategoryProductsSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomScrollView(
+      physics: const NeverScrollableScrollPhysics(),
+      slivers: [
+        // Header card skeleton
+        const SliverToBoxAdapter(child: _HeaderSkeleton()),
+        // Search bar placeholder
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSizes.lg,
+              0,
+              AppSizes.lg,
+              AppSizes.md,
+            ),
+            child: AppShimmerBox(
+              width: double.infinity,
+              height: 44,
+              radius: AppSizes.radiusFull,
+            ),
+          ),
+        ),
+        // Product list tile skeletons
+        SliverList.separated(
+          itemCount: 6,
+          separatorBuilder: (context, index) => const AppDivider.flush(),
+          itemBuilder: (context, index) => const _ProductTileSkeleton(),
+        ),
+        const SliverToBoxAdapter(child: SizedBox(height: AppSizes.huge)),
+      ],
+    );
+  }
+}
+
+/// Mirrors the [_Header] card: icon box + three text lines.
+class _HeaderSkeleton extends StatelessWidget {
+  const _HeaderSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.md,
+        AppSizes.lg,
+        AppSizes.md,
+      ),
+      padding: const EdgeInsets.all(AppSizes.lg),
+      decoration: ShapeDecoration(
+        color: AppColors.canvas,
+        shape: AppShapes.squircle(AppSizes.radiusMd),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Icon box
+          AppShimmerBox(
+            width: AppSizes.fabSize,
+            height: AppSizes.fabSize,
+            radius: AppSizes.radiusMd,
+          ),
+          const SizedBox(width: AppSizes.lg),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Category name
+                const AppShimmerLine(widthFactor: 0.55, height: 18),
+                const SizedBox(height: AppSizes.sm),
+                // Description line 1
+                const AppShimmerLine(widthFactor: 0.9, height: 13),
+                const SizedBox(height: AppSizes.xs),
+                // Description line 2
+                const AppShimmerLine(widthFactor: 0.7, height: 13),
+                const SizedBox(height: AppSizes.sm),
+                // Product count chip
+                const AppShimmerLine(widthFactor: 0.35, height: 12),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Mirrors one [ProductListTile]: image thumbnail + name/shop/rating/price lines.
+class _ProductTileSkeleton extends StatelessWidget {
+  const _ProductTileSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.md,
+      ),
+      child: Row(
+        children: [
+          // Product thumbnail
+          AppShimmerBox(
+            width: 56,
+            height: 56,
+            radius: AppSizes.radiusSm,
+          ),
+          const SizedBox(width: AppSizes.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Product name
+                const AppShimmerLine(widthFactor: 0.65, height: 14),
+                const SizedBox(height: AppSizes.xs),
+                // Shop / subtitle
+                const AppShimmerLine(widthFactor: 0.45, height: 12),
+                const SizedBox(height: AppSizes.xs),
+                // Rating + price row
+                Row(
+                  children: [
+                    const AppShimmerLine(widthFactor: 0.25, height: 12),
+                    const SizedBox(width: AppSizes.sm),
+                    const AppShimmerLine(widthFactor: 0.2, height: 12),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 
 class _SearchField extends StatelessWidget {
   const _SearchField({required this.controller, required this.onChanged});

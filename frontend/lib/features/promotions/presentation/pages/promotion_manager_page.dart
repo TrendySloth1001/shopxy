@@ -8,6 +8,7 @@ import 'package:shopxy/features/promotions/presentation/providers/promotions_pro
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 
 /// Lists every promotion the merchant has set up and provides an entry
 /// to the create sheet. Each tile shows a budget progress bar, a daily
@@ -80,7 +81,7 @@ class _PromotionManagerPageState extends State<PromotionManagerPage> {
         label: const Text('New promo'),
       ),
       body: provider.isLoading && provider.items.isEmpty
-          ? const Center(child: CircularProgressIndicator())
+          ? const _PromoListSkeleton()
           : RefreshIndicator(
               onRefresh: provider.load,
               child: provider.items.isEmpty
@@ -117,6 +118,87 @@ class _PromotionManagerPageState extends State<PromotionManagerPage> {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Skeleton widgets — shown while provider.isLoading && items.isEmpty
+// ---------------------------------------------------------------------------
+
+class _PromoListSkeleton extends StatelessWidget {
+  const _PromoListSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.lg,
+        AppSizes.lg,
+        AppSizes.massive,
+      ),
+      itemCount: 4,
+      separatorBuilder: (_, _) => const SizedBox(height: AppSizes.md),
+      itemBuilder: (_, _) => const _PromoCardSkeleton(),
+    );
+  }
+}
+
+class _PromoCardSkeleton extends StatelessWidget {
+  const _PromoCardSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSizes.lg),
+      decoration: ShapeDecoration(
+        color: AppColors.white,
+        shape: AppShapes.squircle(AppSizes.radiusLg),
+      ),
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Row: product name + status chip
+          Row(
+            children: [
+              Expanded(
+                child: AppShimmerLine(widthFactor: 0.6, height: 16),
+              ),
+              SizedBox(width: AppSizes.sm),
+              AppShimmerBox(width: 64, height: 24, radius: AppSizes.radiusSm),
+            ],
+          ),
+          SizedBox(height: AppSizes.xs),
+          // Date range
+          AppShimmerLine(widthFactor: 0.75, height: 12),
+          SizedBox(height: AppSizes.md),
+          // Spend bar — label row
+          Row(
+            children: [
+              Expanded(child: AppShimmerLine(widthFactor: 0.3, height: 12)),
+              AppShimmerLine(widthFactor: 0.2, height: 12),
+            ],
+          ),
+          SizedBox(height: AppSizes.xs),
+          AppShimmerBox(width: double.infinity, height: AppSizes.sm, radius: 2),
+          SizedBox(height: AppSizes.sm),
+          // Daily-cap bar — label row
+          Row(
+            children: [
+              Expanded(child: AppShimmerLine(widthFactor: 0.35, height: 12)),
+              AppShimmerLine(widthFactor: 0.2, height: 12),
+            ],
+          ),
+          SizedBox(height: AppSizes.xs),
+          AppShimmerBox(width: double.infinity, height: AppSizes.sm, radius: 2),
+          SizedBox(height: AppSizes.sm),
+          // Impressions text
+          AppShimmerLine(widthFactor: 0.55, height: 12),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 
 class _PromoCard extends StatelessWidget {
   const _PromoCard({required this.promotion, this.onCancel});

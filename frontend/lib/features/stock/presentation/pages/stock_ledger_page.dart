@@ -15,6 +15,7 @@ import 'package:shopxy/shared/widgets/app_error_view.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 
 /// Full chronological stock ledger for a single product.
 ///
@@ -125,7 +126,7 @@ class _StockLedgerPageState extends State<StockLedgerPage> {
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const _StockLedgerSkeleton();
     }
     if (_error != null) {
       return AppErrorView(onRetry: _load);
@@ -160,6 +161,92 @@ class _StockLedgerPageState extends State<StockLedgerPage> {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Skeleton widgets
+// ---------------------------------------------------------------------------
+
+class _StockLedgerSkeleton extends StatelessWidget {
+  const _StockLedgerSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.md,
+      ),
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: 6,
+      separatorBuilder: (_, _) => const SizedBox(height: AppSizes.sm),
+      itemBuilder: (_, _) => const _LedgerEntryCardSkeleton(),
+    );
+  }
+}
+
+class _LedgerEntryCardSkeleton extends StatelessWidget {
+  const _LedgerEntryCardSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      padding: const EdgeInsets.all(AppSizes.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Primary row: squircle icon + text column + quantity
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Squircle icon placeholder
+              AppShimmerBox(
+                width: AppSizes.avatarSm,
+                height: AppSizes.avatarSm,
+                radius: AppSizes.radiusSm,
+              ),
+              const SizedBox(width: AppSizes.md),
+              // Reason-code label + date
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AppShimmerLine(widthFactor: 0.45, height: 13),
+                    const SizedBox(height: AppSizes.xs),
+                    AppShimmerLine(widthFactor: 0.65, height: 11),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSizes.md),
+              // Quantity box
+              AppShimmerBox(width: 52, height: 18, radius: AppSizes.radiusXs),
+            ],
+          ),
+          // Secondary section (badge + metadata lines)
+          const SizedBox(height: AppSizes.md),
+          const AppDivider.flush(),
+          const SizedBox(height: AppSizes.md),
+          Row(
+            children: [
+              // Source-type badge placeholder
+              AppShimmerBox(width: 60, height: 20, radius: AppSizes.radiusSm),
+              const SizedBox(width: AppSizes.sm),
+              // Supplier / created-by text line
+              Expanded(
+                child: AppShimmerLine(widthFactor: 0.5, height: 11),
+              ),
+              // Balance text
+              AppShimmerLine(widthFactor: 0.18, height: 11),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Entry card
+// ---------------------------------------------------------------------------
 
 class _LedgerEntryCard extends StatelessWidget {
   const _LedgerEntryCard({required this.entry, required this.unit, this.onTap});

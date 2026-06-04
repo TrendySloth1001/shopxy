@@ -22,6 +22,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/theme/app_shadows.dart';
+import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 
 /// Customer-facing product detail page.
@@ -102,7 +103,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     return Scaffold(
       backgroundColor: AppColors.canvas,
       body: _loading && _product == null
-          ? const Center(child: CircularProgressIndicator())
+          ? const _ProductDetailSkeleton()
           : _error != null
               ? _ErrorState(message: _error!, onRetry: _load)
               : _Body(
@@ -1187,6 +1188,397 @@ class _PrimaryPillButton extends StatelessWidget {
                   ],
                 ),
         ),
+      ),
+    );
+  }
+}
+
+// ── Skeleton / shimmer loading state ────────────────────────────────────────
+
+/// Full-page skeleton that mirrors the real [_Body] layout so the user
+/// sees the structural chrome immediately while the product data fetches.
+/// Uses [CustomScrollView] + slivers so scroll physics match the real page.
+class _ProductDetailSkeleton extends StatelessWidget {
+  const _ProductDetailSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomScrollView(
+      physics: const NeverScrollableScrollPhysics(),
+      slivers: [
+        // ── App bar placeholder ──────────────────────────────────
+        SliverAppBar(
+          backgroundColor: AppColors.canvas,
+          foregroundColor: AppColors.black,
+          pinned: true,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+        ),
+
+        // ── Gallery placeholder ──────────────────────────────────
+        const SliverToBoxAdapter(child: _GallerySkeleton()),
+
+        // ── Title block placeholder ──────────────────────────────
+        const SliverToBoxAdapter(child: _TitleSkeleton()),
+
+        // ── Variant picker placeholder ───────────────────────────
+        const SliverToBoxAdapter(child: _VariantPickerSkeleton()),
+
+        // ── Price block placeholder ──────────────────────────────
+        const SliverToBoxAdapter(child: _PriceBlockSkeleton()),
+
+        // ── Stock chip placeholder ───────────────────────────────
+        const SliverToBoxAdapter(child: _StockChipSkeleton()),
+
+        // ── Offers strip placeholder ─────────────────────────────
+        const SliverToBoxAdapter(child: _OffersStripSkeleton()),
+
+        // ── FBT rail placeholder ─────────────────────────────────
+        const SliverToBoxAdapter(child: _FbtRailSkeleton()),
+
+        // ── Details section ──────────────────────────────────────
+        const SliverToBoxAdapter(child: _SectionDivider()),
+        const SliverToBoxAdapter(child: _SkeletonSectionHeader()),
+        const SliverToBoxAdapter(child: _DetailsSkeleton()),
+
+        // ── Specs section ────────────────────────────────────────
+        const SliverToBoxAdapter(child: _SectionDivider()),
+        const SliverToBoxAdapter(child: _SkeletonSectionHeader()),
+        const SliverToBoxAdapter(child: _SpecsSkeleton()),
+
+        // ── Reviews section ──────────────────────────────────────
+        const SliverToBoxAdapter(child: _SectionDivider()),
+        const SliverToBoxAdapter(child: _SkeletonSectionHeader()),
+        const SliverToBoxAdapter(child: _ReviewsSkeleton()),
+
+        const SliverToBoxAdapter(child: SizedBox(height: AppSizes.huge)),
+      ],
+    );
+  }
+}
+
+/// Tall image gallery rectangle.
+class _GallerySkeleton extends StatelessWidget {
+  const _GallerySkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppShimmerBox(
+      width: double.infinity,
+      height: 320,
+      radius: 0,
+    );
+  }
+}
+
+/// Brand label + two-line product name + short description lines.
+class _TitleSkeleton extends StatelessWidget {
+  const _TitleSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          AppSizes.lg, AppSizes.lg, AppSizes.lg, AppSizes.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Brand label
+          AppShimmerLine(widthFactor: 0.25, height: 10),
+          const SizedBox(height: AppSizes.sm),
+          // Product name line 1
+          AppShimmerLine(widthFactor: 0.85, height: 18),
+          const SizedBox(height: AppSizes.xs),
+          // Product name line 2
+          AppShimmerLine(widthFactor: 0.65, height: 18),
+          const SizedBox(height: AppSizes.sm),
+          // Sold-by chip
+          AppShimmerBox(width: 140, height: 14, radius: AppSizes.radiusSm),
+          const SizedBox(height: AppSizes.sm),
+          // Description line 1
+          AppShimmerLine(widthFactor: 1.0, height: 12),
+          const SizedBox(height: AppSizes.xs),
+          // Description line 2
+          AppShimmerLine(widthFactor: 0.75, height: 12),
+          const SizedBox(height: AppSizes.sm),
+          // Rating chip
+          AppShimmerBox(width: 90, height: 22, radius: AppSizes.radiusSm),
+        ],
+      ),
+    );
+  }
+}
+
+/// Row of variant chips.
+class _VariantPickerSkeleton extends StatelessWidget {
+  const _VariantPickerSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          AppSizes.lg, AppSizes.sm, AppSizes.lg, AppSizes.sm),
+      child: Row(
+        children: [
+          for (var i = 0; i < 4; i++) ...[
+            AppShimmerBox(width: 56, height: 32, radius: AppSizes.radiusFull),
+            if (i < 3) const SizedBox(width: AppSizes.sm),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Price + MRP + discount badge block.
+class _PriceBlockSkeleton extends StatelessWidget {
+  const _PriceBlockSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          AppSizes.lg, AppSizes.sm, AppSizes.lg, AppSizes.xs),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          AppShimmerBox(width: 100, height: 28, radius: AppSizes.radiusSm),
+          const SizedBox(width: AppSizes.sm),
+          AppShimmerBox(width: 60, height: 16, radius: AppSizes.radiusSm),
+          const SizedBox(width: AppSizes.sm),
+          AppShimmerBox(width: 48, height: 20, radius: AppSizes.radiusSm),
+        ],
+      ),
+    );
+  }
+}
+
+/// Small stock-availability chip.
+class _StockChipSkeleton extends StatelessWidget {
+  const _StockChipSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          AppSizes.lg, AppSizes.xs, AppSizes.lg, AppSizes.sm),
+      child: AppShimmerBox(width: 80, height: 22, radius: AppSizes.radiusFull),
+    );
+  }
+}
+
+/// Horizontal offers strip (one wide rectangle).
+class _OffersStripSkeleton extends StatelessWidget {
+  const _OffersStripSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          AppSizes.lg, AppSizes.sm, AppSizes.lg, AppSizes.sm),
+      child: AppShimmerBox(
+          width: double.infinity, height: 44, radius: AppSizes.radiusSm),
+    );
+  }
+}
+
+/// Frequently-bought-together horizontal rail — 4 thumbnail cards.
+class _FbtRailSkeleton extends StatelessWidget {
+  const _FbtRailSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          AppSizes.lg, AppSizes.sm, 0, AppSizes.sm),
+      child: SizedBox(
+        height: 120,
+        child: Row(
+          children: [
+            for (var i = 0; i < 4; i++) ...[
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AppShimmerBox(
+                      width: 80, height: 80, radius: AppSizes.radiusSm),
+                  const SizedBox(height: AppSizes.xs),
+                  AppShimmerLine(widthFactor: 0.6, height: 10),
+                ],
+              ),
+              const SizedBox(width: AppSizes.md),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Section header line — mirrors [_SectionHeader] width.
+class _SkeletonSectionHeader extends StatelessWidget {
+  const _SkeletonSectionHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          AppSizes.lg, AppSizes.lg, AppSizes.lg, AppSizes.sm),
+      child: AppShimmerBox(width: 120, height: 16, radius: AppSizes.radiusSm),
+    );
+  }
+}
+
+/// Details section — highlight rows + description lines.
+class _DetailsSkeleton extends StatelessWidget {
+  const _DetailsSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          AppSizes.lg, AppSizes.xs, AppSizes.lg, AppSizes.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (var i = 0; i < 4; i++) ...[
+            Row(
+              children: [
+                AppShimmerBox(
+                    width: 16, height: 16, radius: AppSizes.radiusSm),
+                const SizedBox(width: AppSizes.sm),
+                AppShimmerLine(widthFactor: 0.7, height: 12),
+              ],
+            ),
+            const SizedBox(height: AppSizes.sm),
+          ],
+          const SizedBox(height: AppSizes.sm),
+          AppShimmerLine(widthFactor: 1.0, height: 12),
+          const SizedBox(height: AppSizes.xs),
+          AppShimmerLine(widthFactor: 0.9, height: 12),
+          const SizedBox(height: AppSizes.xs),
+          AppShimmerLine(widthFactor: 0.8, height: 12),
+        ],
+      ),
+    );
+  }
+}
+
+/// Specs section — two-column key/value rows inside a rounded card.
+class _SpecsSkeleton extends StatelessWidget {
+  const _SpecsSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          AppSizes.lg, AppSizes.xs, AppSizes.lg, AppSizes.sm),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(AppSizes.radiusSm),
+          border: Border.all(color: AppColors.hairline),
+        ),
+        padding: const EdgeInsets.all(AppSizes.md),
+        child: Column(
+          children: [
+            for (var i = 0; i < 5; i++) ...[
+              Row(
+                children: [
+                  SizedBox(
+                    width: 110,
+                    child: AppShimmerLine(widthFactor: 0.75, height: 11),
+                  ),
+                  const SizedBox(width: AppSizes.sm),
+                  Expanded(
+                    child: AppShimmerLine(widthFactor: 0.55, height: 11),
+                  ),
+                ],
+              ),
+              if (i < 4) ...[
+                const SizedBox(height: AppSizes.sm),
+                const Divider(height: 1, color: AppColors.hairline),
+                const SizedBox(height: AppSizes.sm),
+              ],
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Reviews section — rating summary bar + 2 review card placeholders.
+class _ReviewsSkeleton extends StatelessWidget {
+  const _ReviewsSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          AppSizes.lg, AppSizes.xs, AppSizes.lg, AppSizes.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Rating summary row
+          Row(
+            children: [
+              AppShimmerBox(width: 56, height: 56, radius: AppSizes.radiusSm),
+              const SizedBox(width: AppSizes.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (var i = 0; i < 3; i++) ...[
+                      AppShimmerLine(widthFactor: 0.9 - i * 0.2, height: 8),
+                      if (i < 2) const SizedBox(height: AppSizes.xs),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSizes.md),
+          // 2 review card placeholders
+          for (var i = 0; i < 2; i++) ...[
+            Container(
+              padding: const EdgeInsets.all(AppSizes.md),
+              margin: const EdgeInsets.only(bottom: AppSizes.sm),
+              decoration: BoxDecoration(
+                color: AppColors.white,
+                borderRadius: BorderRadius.circular(AppSizes.radiusSm),
+                border: Border.all(color: AppColors.hairline),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      AppShimmerBox(
+                          width: 32,
+                          height: 32,
+                          radius: AppSizes.radiusFull),
+                      const SizedBox(width: AppSizes.sm),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          AppShimmerLine(widthFactor: 0.4, height: 11),
+                          const SizedBox(height: AppSizes.xs),
+                          AppShimmerLine(widthFactor: 0.25, height: 9),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSizes.sm),
+                  AppShimmerLine(widthFactor: 1.0, height: 11),
+                  const SizedBox(height: AppSizes.xs),
+                  AppShimmerLine(widthFactor: 0.8, height: 11),
+                  const SizedBox(height: AppSizes.xs),
+                  AppShimmerLine(widthFactor: 0.6, height: 11),
+                ],
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

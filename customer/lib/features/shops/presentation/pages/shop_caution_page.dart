@@ -11,6 +11,7 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_divider.dart';
 import 'package:shopxy_customer/shared/widgets/app_list_section.dart';
+import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 
 /// The caution / security deposit a shop holds against the customer. Flat,
 /// divider-based layout: a balance + breakdown header, the customer's own
@@ -87,7 +88,7 @@ class _ShopCautionPageState extends State<ShopCautionPage> {
         color: AppColors.brand,
         onRefresh: _refresh,
         child: loading && ledger == null
-            ? const Center(child: CircularProgressIndicator())
+            ? const _CautionSkeleton()
             : err != null && ledger == null
                 ? _Error(err: err, onRetry: _refresh)
                 : ListView(
@@ -223,6 +224,126 @@ class _ShopCautionPageState extends State<ShopCautionPage> {
     );
   }
 }
+
+// ── Skeleton ─────────────────────────────────────────────────────────────────
+
+class _CautionSkeleton extends StatelessWidget {
+  const _CautionSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.only(bottom: AppSizes.xxl),
+      physics: const NeverScrollableScrollPhysics(),
+      children: [
+        // Header: icon + label chip
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+              AppSizes.lg, AppSizes.lg, AppSizes.lg, AppSizes.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  AppShimmerBox(
+                    width: AppSizes.iconMd,
+                    height: AppSizes.iconMd,
+                    radius: AppSizes.radiusSm,
+                  ),
+                  const SizedBox(width: AppSizes.sm),
+                  AppShimmerLine(widthFactor: 0.45, height: 12),
+                ],
+              ),
+              const SizedBox(height: AppSizes.xs),
+              // Large balance amount
+              AppShimmerLine(widthFactor: 0.55, height: 36),
+              const SizedBox(height: AppSizes.md),
+              // Stats row (3 columns)
+              Row(
+                children: [
+                  for (int i = 0; i < 3; i++) ...[
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          AppShimmerLine(widthFactor: 0.6, height: 10),
+                          const SizedBox(height: AppSizes.xs),
+                          AppShimmerLine(widthFactor: 0.8, height: 16),
+                        ],
+                      ),
+                    ),
+                    if (i < 2) const SizedBox(width: AppSizes.md),
+                  ],
+                ],
+              ),
+            ],
+          ),
+        ),
+        const AppDivider.flush(),
+
+        // Full-width button placeholder
+        Padding(
+          padding: const EdgeInsets.all(AppSizes.lg),
+          child: AppShimmerBox(
+            width: double.infinity,
+            height: 52,
+            radius: AppSizes.radiusMd,
+          ),
+        ),
+        const AppDivider.flush(),
+
+        // History section header
+        const SizedBox(height: AppSizes.lg),
+        Padding(
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSizes.lg, vertical: AppSizes.sm),
+          child: AppShimmerLine(widthFactor: 0.25, height: 14),
+        ),
+
+        // 6 skeleton transaction rows
+        for (int i = 0; i < 6; i++) const _CautionTxnRowSkeleton(),
+      ],
+    );
+  }
+}
+
+class _CautionTxnRowSkeleton extends StatelessWidget {
+  const _CautionTxnRowSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSizes.lg, vertical: AppSizes.md),
+      child: Row(
+        children: [
+          // Icon placeholder (squircle avatar)
+          AppShimmerBox(
+            width: AppSizes.avatarSm,
+            height: AppSizes.avatarSm,
+            radius: AppSizes.radiusSm,
+          ),
+          const SizedBox(width: AppSizes.md),
+          // Text lines
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppShimmerLine(widthFactor: 0.5, height: 14),
+                const SizedBox(height: AppSizes.xs),
+                AppShimmerLine(widthFactor: 0.72, height: 11),
+              ],
+            ),
+          ),
+          // Amount value
+          AppShimmerLine(widthFactor: 0.18, height: 14),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _Stat extends StatelessWidget {
   const _Stat({required this.label, required this.value});

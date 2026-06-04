@@ -11,6 +11,7 @@ import 'package:shopxy/features/shop/presentation/providers/shop_provider.dart';
 import 'package:shopxy/features/shop/presentation/providers/linked_account_provider.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
 
 /// "Shop operations" hub — entry tiles for Hours/Vacation, Payouts,
@@ -47,7 +48,8 @@ class _ShopOperationsPageState extends State<ShopOperationsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final shop = context.watch<ShopProvider>().shop;
+    final shopProvider = context.watch<ShopProvider>();
+    final shop = shopProvider.shop;
     final payouts = context.watch<LinkedAccountProvider>();
     final (canShop, canBilling, canTeam) =
         context.select<AuthProvider, (bool, bool, bool)>((a) {
@@ -58,6 +60,9 @@ class _ShopOperationsPageState extends State<ShopOperationsPage> {
         u?.canView('team') ?? false,
       );
     });
+
+    final isLoading = shopProvider.isLoading || payouts.isLoading;
+
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
@@ -66,10 +71,10 @@ class _ShopOperationsPageState extends State<ShopOperationsPage> {
           AccessReloadButton(onReload: () => context.read<ShopProvider>().load()),
         ],
       ),
-      // Editorial layout: flat rows separated by full-bleed hairlines, no
-      // cards. Each row owns its own horizontal padding so the dividers run
-      // edge-to-edge under the list.
-      body: ListView(
+      // Show layout-mirroring skeleton while either provider is still loading.
+      body: isLoading && shop == null
+          ? const _OperationsSkeleton()
+          : ListView(
         padding: const EdgeInsets.only(top: AppSizes.sm, bottom: AppSizes.huge),
         children: [
           if (canShop)
@@ -139,6 +144,80 @@ class _ShopOperationsPageState extends State<ShopOperationsPage> {
             ),
         ],
       ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Skeleton widgets — private to this file
+// ---------------------------------------------------------------------------
+
+/// One shimmer tile that mirrors the shape of [_OpsTile]:
+/// circle icon placeholder, two text lines, optional right-side badge block.
+class _OpsTileSkeleton extends StatelessWidget {
+  const _OpsTileSkeleton({this.showBadge = false});
+
+  final bool showBadge;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        border: Border(top: BorderSide(color: AppColors.hairline)),
+      ),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.md,
+      ),
+      child: Row(
+        children: [
+          // Circle — icon placeholder
+          AppShimmerBox(
+            width: AppSizes.avatarSm,
+            height: AppSizes.avatarSm,
+            radius: AppSizes.avatarSm / 2,
+          ),
+          const SizedBox(width: AppSizes.md),
+          // Title + subtitle
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppShimmerLine(widthFactor: 0.55, height: 14),
+                const SizedBox(height: 6),
+                AppShimmerLine(widthFactor: 0.80, height: 11),
+              ],
+            ),
+          ),
+          if (showBadge) ...[
+            const SizedBox(width: AppSizes.sm),
+            AppShimmerBox(width: 64, height: 22, radius: 6),
+          ],
+          const SizedBox(width: AppSizes.sm),
+          // Chevron placeholder
+          AppShimmerBox(width: 16, height: 16, radius: 4),
+        ],
+      ),
+    );
+  }
+}
+
+/// Four skeleton tiles — shown while [ShopProvider] or
+/// [LinkedAccountProvider] is still loading.
+class _OperationsSkeleton extends StatelessWidget {
+  const _OperationsSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.only(top: AppSizes.sm, bottom: AppSizes.huge),
+      physics: const NeverScrollableScrollPhysics(),
+      children: const [
+        _OpsTileSkeleton(),
+        _OpsTileSkeleton(showBadge: true),
+        _OpsTileSkeleton(showBadge: true),
+        _OpsTileSkeleton(),
+      ],
     );
   }
 }
