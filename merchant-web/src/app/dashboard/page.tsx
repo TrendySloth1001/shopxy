@@ -1,60 +1,47 @@
 "use client";
 
-import Link from "next/link";
-import { useAuth } from "@/features/auth/auth-context";
+import { useState } from "react";
 import { RequireAuth } from "@/features/auth/components/require-auth";
-import { AppHeader } from "@/features/auth/components/app-header";
+import { Sidebar } from "@/features/dashboard/sidebar";
+import { DashboardHome } from "@/features/dashboard/dashboard-home";
+import { NAV_LABELS } from "@/features/dashboard/nav-items";
 import { Divider } from "@/shared/ui/divider";
 
 export default function DashboardPage() {
   return (
     <RequireAuth>
-      <AppHeader />
-      <DashboardBody />
+      <DashboardShell />
     </RequireAuth>
   );
 }
 
-function DashboardBody() {
-  const { user } = useAuth();
-  if (!user) return null;
-
-  const facts: Array<[string, string]> = [
-    ["Name", user.name],
-    ["Email", user.email],
-    ["Shop", user.shopName ?? "—"],
-    ["Role", user.shopRoleName ?? user.shopRole ?? user.role],
-  ];
+function DashboardShell() {
+  const [active, setActive] = useState("dashboard");
 
   return (
-    <main className="mx-auto max-w-content px-lg py-xxxl">
-      <p className="text-label-md uppercase tracking-wide text-brand">Dashboard</p>
-      <h1 className="mt-xs text-headline-md text-ink">
-        Welcome back, {user.name}
-      </h1>
-      <p className="mt-sm text-body-md text-muted">
-        {user.shopName ? `Managing ${user.shopName}` : "Your merchant account"}
+    <div className="flex min-h-dvh">
+      <Sidebar active={active} onSelect={setActive} />
+      {/* Full-width content — no centered rail (CLAUDE.md layout rule). */}
+      <main className="min-w-0 flex-1 overflow-x-hidden">
+        {active === "dashboard" ? (
+          <DashboardHome />
+        ) : (
+          <Placeholder section={active} />
+        )}
+      </main>
+    </div>
+  );
+}
+
+function Placeholder({ section }: { section: string }) {
+  const label = NAV_LABELS[section] ?? section;
+  return (
+    <div className="w-full px-lg py-xxl md:px-xxl">
+      <h1 className="text-headline-md text-ink">{label}</h1>
+      <Divider className="my-xxl" />
+      <p className="text-body-md text-muted">
+        This section isn’t built yet — the {label} screen is coming soon.
       </p>
-
-      <Divider className="my-xxl" />
-
-      <dl className="grid grid-cols-1 gap-lg sm:grid-cols-2">
-        {facts.map(([label, value]) => (
-          <div key={label} className="flex flex-col gap-xs">
-            <dt className="text-label-md text-subtle">{label}</dt>
-            <dd className="text-body-lg text-ink">{value}</dd>
-          </div>
-        ))}
-      </dl>
-
-      <Divider className="my-xxl" />
-
-      <Link
-        href="/account"
-        className="text-body-md text-brand-strong underline-offset-2 hover:underline focus-visible:underline focus-visible:outline-none"
-      >
-        Manage your account →
-      </Link>
-    </main>
+    </div>
   );
 }
