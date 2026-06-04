@@ -1,5 +1,41 @@
 import Image from "next/image";
+import ReactMarkdown, { type Components } from "react-markdown";
 import { mediaSrc } from "./product-thumb";
+
+/** Token-styled element overrides so rendered markdown matches the design system. */
+const mdComponents: Components = {
+  p: ({ children }) => <p className="mb-md text-body-md text-ink">{children}</p>,
+  strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+  em: ({ children }) => <em className="italic">{children}</em>,
+  ul: ({ children }) => (
+    <ul className="mb-md list-disc space-y-xs pl-lg text-body-md text-ink">{children}</ul>
+  ),
+  ol: ({ children }) => (
+    <ol className="mb-md list-decimal space-y-xs pl-lg text-body-md text-ink">{children}</ol>
+  ),
+  li: ({ children }) => <li>{children}</li>,
+  h1: ({ children }) => <h3 className="mb-sm mt-md text-headline-sm text-ink">{children}</h3>,
+  h2: ({ children }) => <h3 className="mb-sm mt-md text-title-lg text-ink">{children}</h3>,
+  h3: ({ children }) => <h4 className="mb-xs mt-md text-title-md text-ink">{children}</h4>,
+  a: ({ children, href }) => (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-brand-strong underline underline-offset-2"
+    >
+      {children}
+    </a>
+  ),
+  code: ({ children }) => (
+    <code className="rounded-xs bg-surface-tint px-xs py-px text-body-sm">{children}</code>
+  ),
+  blockquote: ({ children }) => (
+    <blockquote className="mb-md border-l border-hairline pl-md text-body-md text-muted">
+      {children}
+    </blockquote>
+  ),
+};
 
 /**
  * Read-only renderer for A+ content blocks — mirrors the customer PDP. Blocks
@@ -74,15 +110,11 @@ function BlockView({ block }: { block: Block }) {
 
   if (kind === "TEXT") {
     const md = str(block.markdown) ?? "";
-    // Lightweight render: preserve paragraph + line breaks (backend sanitises
-    // the markdown; full markdown rendering is a future enhancement).
+    // Real markdown rendering. react-markdown does not emit raw HTML by default,
+    // and the backend already sanitises the stored markdown — safe to render.
     return (
-      <div className="flex max-w-content flex-col gap-md">
-        {md.split(/\n{2,}/).map((para, i) => (
-          <p key={i} className="whitespace-pre-line text-body-md text-ink">
-            {para}
-          </p>
-        ))}
+      <div className="max-w-content">
+        <ReactMarkdown components={mdComponents}>{md}</ReactMarkdown>
       </div>
     );
   }
