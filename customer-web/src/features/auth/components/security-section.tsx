@@ -1,0 +1,121 @@
+"use client";
+
+import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../auth-context";
+import { changePasswordSchema } from "../schema";
+import { Field } from "./field";
+import { SubmitButton } from "./submit-button";
+import { Banner } from "./banner";
+
+/**
+ * Change password + sign out everywhere. A successful password change revokes
+ * every session on the backend, so we send the user back to sign-in afterwards.
+ */
+export function SecuritySection() {
+  const { changePassword, logoutEverywhere } = useAuth();
+  const router = useRouter();
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<{
+    currentPassword?: string;
+    newPassword?: string;
+    confirmPassword?: string;
+  }>({});
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+
+  async function onChangePassword(event: FormEvent) {
+    event.preventDefault();
+    setError(null);
+    const parsed = changePasswordSchema.safeParse({
+      currentPassword,
+      newPassword,
+      confirmPassword,
+    });
+    if (!parsed.success) {
+      const f = parsed.error.flatten().fieldErrors;
+      setFieldErrors({
+        currentPassword: f.currentPassword?.[0],
+        newPassword: f.newPassword?.[0],
+        confirmPassword: f.confirmPassword?.[0],
+      });
+      return;
+    }
+    setFieldErrors({});
+    setSubmitting(true);
+    try {
+      await changePassword(parsed.data.currentPassword, parsed.data.newPassword);
+      router.replace("/login?reason=password-changed");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not change your password.");
+      setSubmitting(false);
+    }
+  }
+
+  async function onSignOutEverywhere() {
+    setSigningOut(true);
+    try {
+      await logoutEverywhere();
+      router.replace("/login?reason=signed-out-everywhere");
+    } catch {
+      setSigningOut(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-xl">
+      <form onSubmit={onChangePassword} noValidate className="flex flex-col gap-lg">
+        {error ? <Banner variant="error" message={error} /> : null}
+        <Field
+          label="Current password"
+          autoComplete="current-password"
+          toggleable
+          value={currentPassword}
+          onChange={(e) => setCurrentPassword(e.target.value)}
+          error={fieldErrors.currentPassword}
+        />
+        <Field
+          label="New password"
+          autoComplete="new-password"
+          toggleable
+          helper="At least 8 characters, with a letter and a number."
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          error={fieldErrors.newPassword}
+        />
+        <Field
+          label="Confirm new password"
+          autoComplete="new-password"
+          toggleable
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          error={fieldErrors.confirmPassword}
+        />
+        <p className="text-body-sm text-subtle">
+          Changing your password signs you out of every device.
+        </p>
+        <div>
+          <SubmitButton loading={submitting}>Change password</SubmitButton>
+        </div>
+      </form>
+
+      <div className="flex flex-col gap-sm">
+        <p className="text-body-md text-ink">Sign out of all devices</p>
+        <p className="text-body-sm text-muted">
+          Revoke every active session, including this one.
+        </p>
+        <button
+          type="button"
+          onClick={onSignOutEverywhere}
+          disabled={signingOut}
+          className="mt-xs inline-flex h-11 w-fit items-center justify-center rounded-button border border-hairline px-lg text-label-md text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:text-disabled"
+        >
+          {signingOut ? "Signing out…" : "Sign out everywhere"}
+        </button>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,59 @@
+import { NextResponse } from "next/server";
+import { registerSchema } from "@/features/auth/schema";
+import { authResultSchema } from "@/features/auth/types";
+import {
+  ALLOWED_ROLE,
+  ROLE_REJECTED_MESSAGE,
+  backendFetch,
+  extractError,
+  fetchMeUser,
+  setSessionCookies,
+} from "@/server/auth/session";
+
+// POST /api/auth/register — merchant signup. Creates an OWNER account and its
+// Shop atomically on the backend, then persists the session as httpOnly
+// cookies. Consent literals are forwarded as the backend requires them.
+export async function POST(req: Request) {
+  const json = await req.json().catch(() => null);
+  const parsed = registerSchema.safeParse(json);
+  if (!parsed.success) {
+    const first =
+      parsed.error.issues[0]?.message ?? "Please check the form and try again.";
+    return NextResponse.json({ error: first }, { status: 400 });
+  }
+
+  const res = await backendFetch("/auth/register", {
+    method: "POST",
+    body: JSON.stringify({
+      name: parsed.data.name,
+      email: parsed.data.email,
+      password: parsed.data.password,
+      role: "OWNER",
+      shopName: parsed.data.shopName,
+      acceptedTerms: true,
+      acceptedPrivacy: true,
+    }),
+  });
+  if (!res.ok) {
+    return NextResponse.json(
+      { error: await extractError(res, "Could not create your account.") },
+      { status: res.status === 409 ? 409 : 400 },
+    );
+  }
+
+  const result = authResultSchema.safeParse(await res.json());
+  if (!result.success) {
+    return NextResponse.json(
+      { error: "Unexpected response from the server." },
+      { status: 502 },
+    );
+  }
+
+  if (result.data.user.role !== ALLOWED_ROLE) {
+    return NextResponse.json({ error: ROLE_REJECTED_MESSAGE }, { status: 403 });
+  }
+
+  await setSessionCookies(result.data);
+  const user = (await fetchMeUser(result.data.accessToken)) ?? result.data.user;
+  return NextResponse.json({ user }, { status: 201 });
+}
