@@ -10,12 +10,11 @@ this should be revisited.
 
 ## Deferred wiring (stubbed — connect when the trigger lands)
 
-- [ ] **Sidebar nav → real screens.** `src/features/dashboard/sidebar.tsx`
-  buttons only set the active section; non-dashboard keys render a placeholder
-  in `src/app/dashboard/page.tsx`. Trigger: building each section (products,
-  orders, invoices, quotations, challans, stock-adjustments, returns, reports,
-  analytics, vendors, parties, categories, coupons, promotions, flash-deals,
-  spotlight, carousels, shop) — replace the placeholder with the real screen.
+- [ ] **Sidebar nav → real screens.** `Products` is built; the rest still land
+  on the `/dashboard/[...section]` placeholder. Trigger: building each remaining
+  section (orders, invoices, quotations, challans, stock-adjustments, returns,
+  reports, analytics, vendors, parties, categories, coupons, promotions,
+  flash-deals, spotlight, carousels, shop) — add `app/dashboard/<section>/…`.
 - [ ] **Dashboard row tap-through.** In `src/features/dashboard/dashboard-home.tsx`
   `DraftRow` and `ActivityRow` are display-only. Trigger: invoice / challan
   detail screens exist → link a draft to its invoice detail, and an activity row
@@ -34,15 +33,32 @@ this should be revisited.
 - [ ] **Notification bell.** Flutter's dashboard app bar has a notification bell.
   Trigger: notifications feature on web → add it to the merchant shell header.
 
+## Products — deferred / known gaps
+
+- [ ] **Variants don't re-read on merchant detail/edit.** Backend
+  `getProductById` (`backend/src/modules/products/products.service.ts`) uses
+  `include: { category, images, stockTransactions }` and OMITS the `variants`
+  relation, so `GET /products/:id` returns `variants: []`. Variants ARE persisted
+  on create/update (create response includes them; the customer marketplace shows
+  them) — but the merchant edit form's Variants section starts empty on reload and
+  the detail page can't list them. Fix = backend includes variants in getById (or
+  the web reads them elsewhere). We already guard against wiping: variants are only
+  sent when axes are defined.
+- [ ] **Custom-field definitions UI.** The product editor reads shop-wide
+  definitions (`GET /custom-fields`) but there's no web screen to create/edit the
+  definitions themselves (the POST/PATCH endpoints exist).
+- [ ] **OCR / barcode-scan helpers** from the Flutter add/edit (camera scan to
+  prefill SKU/barcode) are not ported — native-camera features.
+- [ ] **List filters aren't in the URL** (search/category/sort/page are local
+  state) so they don't deep-link or survive refresh. Move to query params.
+
 ## Layout / shell debt
 
+- [x] **Sidebar is route-based.** The dashboard area is a nested-route shell
+  (`app/dashboard/layout.tsx` + link-based sidebar); deep-links + back/forward work.
 - [ ] **Unify `/account` into the sidebar shell.** `/account` still uses the old
-  top `AppHeader` (`src/features/auth/components/app-header.tsx`), while
-  `/dashboard` uses the sidebar. Move account under the sidebar layout, and make
-  the sidebar **Profile/Account** button actually navigate to `/account`
-  (currently a no-op placeholder button).
-- [ ] **Sidebar buttons are local state, not routes.** Consider real routes
-  (`/dashboard/products` …) so deep links + back/forward work, once sections exist.
+  top `AppHeader` (`src/features/auth/components/app-header.tsx`), while the
+  dashboard area uses the sidebar layout. Move account under the dashboard shell.
 
 ## Quality / infra debt (applies to both web apps)
 
