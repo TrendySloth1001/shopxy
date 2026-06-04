@@ -105,3 +105,8 @@ export const NAV_GROUPS: NavGroup[] = [
 export const NAV_LABELS: Record<string, string> = Object.fromEntries(
   NAV_GROUPS.flatMap((g) => g.items.map((i) => [i.key, i.label])),
 );
+
+/** Route for a nav key. Dashboard is the index; everything else nests under it. */
+export function hrefForNav(key: string): string {
+  return key === "dashboard" ? "/dashboard" : `/dashboard/${key}`;
+}

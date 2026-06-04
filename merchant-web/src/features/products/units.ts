@@ -1,0 +1,52 @@
+/** Stock units — mirrors the backend `UNITS` enum (`shared/constants/units.ts`). */
+export const UNITS = [
+  "PCS",
+  "KG",
+  "GM",
+  "LTR",
+  "ML",
+  "MTR",
+  "CM",
+  "FT",
+  "IN",
+  "BOX",
+  "PKT",
+  "SET",
+  "PAIR",
+  "DOZ",
+  "ROLL",
+  "BAG",
+  "BTL",
+  "CAN",
+  "CTN",
+  "TBS",
+] as const;
+
+export type Unit = (typeof UNITS)[number];
+
+export const UNIT_LABELS: Record<Unit, string> = {
+  PCS: "Pieces",
+  KG: "Kilograms",
+  GM: "Grams",
+  LTR: "Litres",
+  ML: "Millilitres",
+  MTR: "Metres",
+  CM: "Centimetres",
+  FT: "Feet",
+  IN: "Inches",
+  BOX: "Boxes",
+  PKT: "Packets",
+  SET: "Sets",
+  PAIR: "Pairs",
+  DOZ: "Dozens",
+  ROLL: "Rolls",
+  BAG: "Bags",
+  BTL: "Bottles",
+  CAN: "Cans",
+  CTN: "Cartons",
+  TBS: "Tablets",
+};
+
+export function unitLabel(code: string): string {
+  return UNIT_LABELS[code as Unit] ?? code;
+}
