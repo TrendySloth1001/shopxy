@@ -6,6 +6,7 @@ import 'package:shopxy/shared/constants/app_durations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 
 /// Platform-admin editor for the marketplace taxonomy tree. Each node
 /// is rendered as an expandable tile; tapping it opens an inline editor
@@ -185,7 +186,7 @@ class _AdminCategoryTaxonomyPageState extends State<AdminCategoryTaxonomyPage> {
         label: const Text('Root category'),
       ),
       body: _loading && _tree.isEmpty
-          ? const Center(child: CircularProgressIndicator())
+          ? const _CategoryListSkeleton()
           : _error != null && _tree.isEmpty
               ? Center(
                   child: Padding(
@@ -228,6 +229,96 @@ class _AdminCategoryTaxonomyPageState extends State<AdminCategoryTaxonomyPage> {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Skeleton widgets — shown while the taxonomy tree is loading.
+// ---------------------------------------------------------------------------
+
+/// A single shimmer tile that mirrors the card layout of [_CategoryTreeTile].
+class _CategoryTileSkeleton extends StatelessWidget {
+  const _CategoryTileSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSizes.sm),
+      child: Material(
+        color: AppColors.white,
+        shape: AppShapes.squircle(
+          AppSizes.radiusMd,
+          side: const BorderSide(color: AppColors.hairline),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSizes.sm),
+          child: Row(
+            children: [
+              // Chevron icon skeleton
+              const SizedBox(
+                width: AppSizes.iconMd + AppSizes.sm * 2,
+                height: AppSizes.iconMd + AppSizes.sm * 2,
+                child: Center(
+                  child: AppShimmerBox(
+                    width: AppSizes.iconMd,
+                    height: AppSizes.iconMd,
+                    radius: AppSizes.radiusSm,
+                  ),
+                ),
+              ),
+              // Category icon box (32×32 coloured square)
+              const AppShimmerBox(width: 32, height: 32, radius: AppSizes.radiusSm),
+              const SizedBox(width: AppSizes.sm),
+              // Title + subtitle lines
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AppShimmerLine(widthFactor: 0.60, height: 13),
+                    SizedBox(height: 4),
+                    AppShimmerLine(widthFactor: 0.40, height: 10),
+                  ],
+                ),
+              ),
+              // Action icon placeholders
+              const AppShimmerBox(
+                width: AppSizes.iconMd,
+                height: AppSizes.iconMd,
+                radius: AppSizes.radiusSm,
+              ),
+              const SizedBox(width: AppSizes.sm),
+              const AppShimmerBox(
+                width: AppSizes.iconMd,
+                height: AppSizes.iconMd,
+                radius: AppSizes.radiusSm,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Renders 5 skeleton tiles inside a scrollable list, mirroring the real
+/// category list while [_loading] is true and [_tree] is still empty.
+class _CategoryListSkeleton extends StatelessWidget {
+  const _CategoryListSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.lg,
+        AppSizes.lg,
+        AppSizes.fabClearance,
+      ),
+      itemCount: 5,
+      itemBuilder: (_, _) => const _CategoryTileSkeleton(),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 
 /// Single tile in the tree. Recursively renders children inside an
 /// AnimatedSize so the expand/collapse animation is consistent.

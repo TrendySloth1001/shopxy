@@ -14,6 +14,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
 import 'package:shopxy/shared/widgets/app_dialog.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
 
 /// Settings → Custom Fields.
@@ -103,7 +104,7 @@ class _CustomFieldsSettingsPageState extends State<CustomFieldsSettingsPage> {
         ],
       ),
       body: !provider.hasLoadedOnce && provider.isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const _CustomFieldsSkeleton()
           : tree.isEmpty
               ? _EmptyState(
                   onAddField: () => _addFieldTo(null),
@@ -470,6 +471,138 @@ class _UngroupedSectionCard extends StatelessWidget {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Skeleton / shimmer loading state
+// ---------------------------------------------------------------------------
+
+/// Full-page skeleton that mirrors the loaded layout:
+/// templates callout card → ungrouped section card → 2 section cards.
+class _CustomFieldsSkeleton extends StatelessWidget {
+  const _CustomFieldsSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.md,
+        AppSizes.lg,
+        AppSizes.huge,
+      ),
+      children: const [
+        _TemplatesCalloutSkeleton(),
+        SizedBox(height: AppSizes.lg),
+        _SectionCardSkeleton(fieldCount: 2),
+        SizedBox(height: AppSizes.md),
+        _SectionCardSkeleton(fieldCount: 3),
+        SizedBox(height: AppSizes.md),
+        _SectionCardSkeleton(fieldCount: 2),
+      ],
+    );
+  }
+}
+
+/// Shimmer block that mirrors the brand-tinted templates callout card.
+class _TemplatesCalloutSkeleton extends StatelessWidget {
+  const _TemplatesCalloutSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppShimmerBox(
+      width: double.infinity,
+      height: 64,
+      radius: AppSizes.radiusMd,
+    );
+  }
+}
+
+/// Shimmer block that mirrors one section card (header + N field rows).
+class _SectionCardSkeleton extends StatelessWidget {
+  const _SectionCardSkeleton({required this.fieldCount});
+
+  final int fieldCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: ShapeDecoration(
+        color: AppColors.white,
+        shape: AppShapes.squircle(
+          AppSizes.radiusMd,
+          side: const BorderSide(color: AppColors.hairline, width: 1),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSizes.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Section header: icon + two text lines
+            Row(
+              children: [
+                AppShimmerBox(
+                  width: AppSizes.iconLg,
+                  height: AppSizes.iconLg,
+                  radius: AppSizes.radiusSm,
+                ),
+                const SizedBox(width: AppSizes.md),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppShimmerLine(widthFactor: 0.45, height: 13),
+                      SizedBox(height: AppSizes.xs),
+                      AppShimmerLine(widthFactor: 0.25, height: 11),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSizes.md),
+            // Field rows
+            for (int i = 0; i < fieldCount; i++) ...[
+              _FieldRowSkeleton(),
+              if (i < fieldCount - 1) const SizedBox(height: AppSizes.sm),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Single shimmer row that mirrors a _FieldRow (icon + two text lines).
+class _FieldRowSkeleton extends StatelessWidget {
+  const _FieldRowSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: const [
+        AppShimmerBox(
+          width: AppSizes.iconMd,
+          height: AppSizes.iconMd,
+          radius: AppSizes.radiusSm,
+        ),
+        SizedBox(width: AppSizes.md),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AppShimmerLine(widthFactor: 0.55, height: 13),
+              SizedBox(height: AppSizes.xs),
+              AppShimmerLine(widthFactor: 0.35, height: 11),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 
 class _FieldRow extends StatelessWidget {
   const _FieldRow({

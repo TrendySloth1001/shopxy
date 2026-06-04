@@ -13,6 +13,7 @@ import 'package:shopxy/shared/widgets/app_card.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
 import 'package:shopxy/shared/widgets/app_section_header.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/widgets/contact_changes_section.dart';
 
@@ -94,7 +95,7 @@ class _VendorDetailPageState extends State<VendorDetailPage> {
             )
           : null,
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const _VendorDetailSkeleton()
           : _error != null
               ? Center(
                   child: Padding(
@@ -548,6 +549,203 @@ class _BalanceTile extends StatelessWidget {
     );
   }
 }
+
+// ── Skeleton ────────────────────────────────────────────────────────────────
+
+class _VendorDetailSkeleton extends StatelessWidget {
+  const _VendorDetailSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
+      children: const [
+        _HeaderSkeleton(),
+        SizedBox(height: AppSizes.lg),
+        _BalanceCardSkeleton(),
+        SizedBox(height: AppSizes.lg),
+        _StatRowSkeleton(),
+        SizedBox(height: AppSizes.xl),
+        _LedgerSectionSkeleton(),
+      ],
+    );
+  }
+}
+
+class _HeaderSkeleton extends StatelessWidget {
+  const _HeaderSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppShimmerBox(
+            width: AppSizes.avatarMd,
+            height: AppSizes.avatarMd,
+            radius: AppSizes.radiusFull,
+          ),
+          const SizedBox(width: AppSizes.md),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppShimmerLine(widthFactor: 0.6, height: AppSizes.lg),
+                SizedBox(height: AppSizes.xs),
+                AppShimmerLine(widthFactor: 0.45, height: AppSizes.md),
+                SizedBox(height: AppSizes.sm),
+                AppShimmerLine(widthFactor: 0.55, height: AppSizes.md),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BalanceCardSkeleton extends StatelessWidget {
+  const _BalanceCardSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+      child: AppCard(
+        padding: const EdgeInsets.all(AppSizes.lg),
+        child: Row(
+          children: [
+            const AppShimmerBox(
+              width: AppSizes.iconLg,
+              height: AppSizes.iconLg,
+              radius: AppSizes.radiusFull,
+            ),
+            const SizedBox(width: AppSizes.md),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AppShimmerLine(widthFactor: 0.3, height: AppSizes.sm),
+                  SizedBox(height: AppSizes.xs),
+                  AppShimmerLine(widthFactor: 0.5, height: AppSizes.md),
+                ],
+              ),
+            ),
+            const SizedBox(width: AppSizes.md),
+            const AppShimmerLine(widthFactor: 0.25, height: AppSizes.xl),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StatBlockSkeleton extends StatelessWidget {
+  const _StatBlockSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AppShimmerLine(widthFactor: 0.7, height: AppSizes.sm),
+        SizedBox(height: AppSizes.xs),
+        AppShimmerLine(widthFactor: 0.9, height: AppSizes.xl),
+        SizedBox(height: AppSizes.xs),
+        AppShimmerLine(widthFactor: 0.5, height: AppSizes.sm),
+      ],
+    );
+  }
+}
+
+class _StatRowSkeleton extends StatelessWidget {
+  const _StatRowSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(horizontal: AppSizes.lg),
+      child: Row(
+        children: [
+          Expanded(child: _StatBlockSkeleton()),
+          SizedBox(width: AppSizes.md),
+          Expanded(child: _StatBlockSkeleton()),
+          SizedBox(width: AppSizes.md),
+          Expanded(child: _StatBlockSkeleton()),
+        ],
+      ),
+    );
+  }
+}
+
+class _LedgerRowSkeleton extends StatelessWidget {
+  const _LedgerRowSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.md,
+      ),
+      child: Row(
+        children: [
+          const AppShimmerBox(
+            width: AppSizes.iconMd,
+            height: AppSizes.iconMd,
+            radius: AppSizes.radiusSm,
+          ),
+          const SizedBox(width: AppSizes.md),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppShimmerLine(widthFactor: 0.55, height: AppSizes.md),
+                SizedBox(height: AppSizes.xs),
+                AppShimmerLine(widthFactor: 0.35, height: AppSizes.sm),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSizes.md),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: const [
+              AppShimmerLine(widthFactor: 0.2, height: AppSizes.md),
+              SizedBox(height: AppSizes.xs),
+              AppShimmerLine(widthFactor: 0.15, height: AppSizes.sm),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LedgerSectionSkeleton extends StatelessWidget {
+  const _LedgerSectionSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+      child: AppCard(
+        padding: EdgeInsets.zero,
+        child: Column(
+          children: [
+            for (int i = 0; i < 4; i++) ...[
+              if (i > 0) const AppDivider.flush(),
+              const _LedgerRowSkeleton(),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Ledger row ───────────────────────────────────────────────────────────────
 
 class _LedgerRow extends StatelessWidget {
   const _LedgerRow({

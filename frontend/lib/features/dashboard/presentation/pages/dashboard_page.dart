@@ -21,6 +21,7 @@ import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_error_view.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 
 /// Editorial-style dashboard. No boxed cards — every section flows
 /// inline, separated by full-bleed hairlines and quiet section labels.
@@ -106,7 +107,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   'owner if you need it.',
             )
           : provider.isLoading && stats == null
-          ? const Center(child: CircularProgressIndicator())
+          ? const _DashboardSkeleton()
           : provider.error != null && stats == null
               ? AppErrorView(onRetry: () => provider.loadStats())
               : RefreshIndicator(
@@ -879,6 +880,288 @@ class _TransactionRow extends StatelessWidget {
         ],
       ),
     ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Skeleton / shimmer loading state
+// ─────────────────────────────────────────────────────────────────────
+
+/// Full-page skeleton that mirrors the editorial dashboard layout while
+/// data is loading. Rendered only when [DashboardProvider.isLoading] is
+/// true and [DashboardProvider.stats] is still null.
+class _DashboardSkeleton extends StatelessWidget {
+  const _DashboardSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: EdgeInsets.zero,
+      physics: const NeverScrollableScrollPhysics(),
+      children: const [
+        _GreetingSkeleton(),
+        SizedBox(height: AppSizes.lg),
+        _ValueHeadlineSkeleton(),
+        SizedBox(height: AppSizes.xl),
+        _QuickStatsSkeleton(),
+        _SectionBreak(),
+        _StockPulseSkeleton(),
+        _SectionBreak(),
+        _ActivitySkeleton(),
+        SizedBox(height: AppSizes.huge),
+      ],
+    );
+  }
+}
+
+/// Static greeting block — text is real; no shimmer needed for a fixed label.
+class _GreetingSkeleton extends StatelessWidget {
+  const _GreetingSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.md,
+        AppSizes.lg,
+        AppSizes.md,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppShimmerLine(widthFactor: 0.55, height: 22),
+                SizedBox(height: 6),
+                AppShimmerLine(widthFactor: 0.75, height: 14),
+              ],
+            ),
+          ),
+          AppShimmerLine(widthFactor: 0.22, height: 12),
+        ],
+      ),
+    );
+  }
+}
+
+/// Value headline: colored indicator dot + two shimmer lines (big number + hint).
+class _ValueHeadlineSkeleton extends StatelessWidget {
+  const _ValueHeadlineSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              // Real colored indicator — mirrors actual widget.
+              Container(
+                width: AppSizes.sm,
+                height: AppSizes.sm,
+                decoration: const BoxDecoration(
+                  color: AppColors.brand,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: AppSizes.sm),
+              const AppShimmerLine(widthFactor: 0.38, height: 11),
+            ],
+          ),
+          const SizedBox(height: AppSizes.sm),
+          // Display-size number placeholder.
+          const AppShimmerLine(widthFactor: 0.72, height: 44),
+          const SizedBox(height: AppSizes.xs),
+          // Hint line.
+          const AppShimmerLine(widthFactor: 0.55, height: 12),
+        ],
+      ),
+    );
+  }
+}
+
+/// 3-column quick-stats block with vertical hairline dividers.
+class _QuickStatsSkeleton extends StatelessWidget {
+  const _QuickStatsSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const Expanded(child: _StatColumnSkeleton()),
+            Container(
+              width: 1,
+              margin: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+              color: AppColors.hairline,
+            ),
+            const Expanded(child: _StatColumnSkeleton()),
+            Container(
+              width: 1,
+              margin: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+              color: AppColors.hairline,
+            ),
+            const Expanded(child: _StatColumnSkeleton()),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StatColumnSkeleton extends StatelessWidget {
+  const _StatColumnSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AppShimmerLine(widthFactor: 0.55, height: 28),
+        SizedBox(height: 4),
+        AppShimmerLine(widthFactor: 0.8, height: 11),
+      ],
+    );
+  }
+}
+
+/// Stock-pulse section: eyebrow + stacked bar + 3-item legend.
+class _StockPulseSkeleton extends StatelessWidget {
+  const _StockPulseSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Eyebrow row (label left, pct right).
+          const Row(
+            children: [
+              AppShimmerLine(widthFactor: 0.3, height: 11),
+              Spacer(),
+              AppShimmerLine(widthFactor: 0.22, height: 11),
+            ],
+          ),
+          const SizedBox(height: AppSizes.md),
+          // Bar placeholder.
+          AppShimmerBox(
+            height: AppSizes.sm,
+            radius: AppSizes.radiusFull,
+          ),
+          const SizedBox(height: AppSizes.md),
+          // 3-item legend.
+          const Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: _PulseLegendSkeleton()),
+              SizedBox(width: AppSizes.sm),
+              Expanded(child: _PulseLegendSkeleton()),
+              SizedBox(width: AppSizes.sm),
+              Expanded(child: _PulseLegendSkeleton()),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PulseLegendSkeleton extends StatelessWidget {
+  const _PulseLegendSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            AppShimmerBox(
+              width: AppSizes.sm,
+              height: AppSizes.sm,
+              radius: AppSizes.radiusFull,
+            ),
+            SizedBox(width: AppSizes.sm),
+            AppShimmerLine(widthFactor: 0.55, height: 18),
+          ],
+        ),
+        SizedBox(height: 2),
+        Padding(
+          padding: EdgeInsets.only(left: AppSizes.lg),
+          child: AppShimmerLine(widthFactor: 0.9, height: 11),
+        ),
+      ],
+    );
+  }
+}
+
+/// 4 activity rows, each mirroring the icon-container + two text lines + value.
+class _ActivitySkeleton extends StatelessWidget {
+  const _ActivitySkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: AppSizes.lg),
+          child: AppShimmerLine(widthFactor: 0.35, height: 11),
+        ),
+        const SizedBox(height: AppSizes.md),
+        for (var i = 0; i < 4; i++) const _ActivityRowSkeleton(),
+      ],
+    );
+  }
+}
+
+class _ActivityRowSkeleton extends StatelessWidget {
+  const _ActivityRowSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        border: Border(top: BorderSide(color: AppColors.hairline)),
+      ),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.md,
+      ),
+      child: const Row(
+        children: [
+          // Icon container placeholder.
+          AppShimmerBox(
+            width: AppSizes.xxxl,
+            height: AppSizes.xxxl,
+            radius: AppSizes.radiusSm,
+          ),
+          SizedBox(width: AppSizes.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppShimmerLine(widthFactor: 0.65, height: 14),
+                SizedBox(height: 4),
+                AppShimmerLine(widthFactor: 0.45, height: 11),
+              ],
+            ),
+          ),
+          SizedBox(width: AppSizes.md),
+          AppShimmerLine(widthFactor: 0.18, height: 18),
+        ],
+      ),
     );
   }
 }

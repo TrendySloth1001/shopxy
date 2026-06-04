@@ -7,6 +7,7 @@ import 'package:shopxy/features/admin/presentation/providers/admin_bank_offers_p
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
 
 /// Admin-only page (drawer entry gated by `User.isPlatformAdmin`). One
@@ -97,7 +98,7 @@ class _AdminBankOffersPageState extends State<AdminBankOffersPage> {
         label: const Text('New offer'),
       ),
       body: provider.isLoading && provider.offers.isEmpty
-          ? const Center(child: CircularProgressIndicator())
+          ? const _OfferListSkeleton()
           : provider.error != null && provider.offers.isEmpty
               ? _ErrorBlock(message: provider.error!, onRetry: provider.load)
               : provider.offers.isEmpty
@@ -124,6 +125,80 @@ class _AdminBankOffersPageState extends State<AdminBankOffersPage> {
                         },
                       ),
                     ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Skeleton widgets — shown while isLoading && offers.isEmpty
+// ---------------------------------------------------------------------------
+
+class _OfferListSkeleton extends StatelessWidget {
+  const _OfferListSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.sm,
+        AppSizes.lg,
+        AppSizes.fabClearance,
+      ),
+      itemCount: 4,
+      itemBuilder: (_, _) => const _OfferRowSkeleton(),
+    );
+  }
+}
+
+class _OfferRowSkeleton extends StatelessWidget {
+  const _OfferRowSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSizes.sm),
+      child: DecoratedBox(
+        decoration: ShapeDecoration(
+          color: AppColors.white,
+          shape: AppShapes.squircle(
+            AppSizes.radiusMd,
+            side: const BorderSide(color: AppColors.hairline, width: 1),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSizes.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Row 1: bank · discount (bold) + status chip placeholder
+              Row(
+                children: [
+                  const Expanded(
+                    child: AppShimmerLine(widthFactor: 0.6, height: 16),
+                  ),
+                  const SizedBox(width: AppSizes.sm),
+                  AppShimmerBox(
+                    width: 64,
+                    height: 22,
+                    radius: AppSizes.radiusSm,
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSizes.xs),
+              // Row 2: card-type · min-order
+              const AppShimmerLine(widthFactor: 0.75, height: 13),
+              const SizedBox(height: AppSizes.xs),
+              // Row 3: optional terms (slightly shorter)
+              const AppShimmerLine(widthFactor: 0.9, height: 12),
+              const SizedBox(height: AppSizes.xs),
+              // Row 4: valid date range
+              const AppShimmerLine(widthFactor: 0.5, height: 12),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

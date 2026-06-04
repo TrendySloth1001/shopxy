@@ -7,6 +7,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 
 class ReportsPage extends StatefulWidget {
   const ReportsPage({super.key});
@@ -111,7 +112,7 @@ class _ReportsPageState extends State<ReportsPage> {
           const SizedBox(height: AppSizes.md),
           Expanded(
             child: p.isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const _ReportSkeleton()
                 : p.error != null
                     ? _ErrorBlock(error: p.error!, onRetry: p.load)
                     : _ReportBody(provider: p),
@@ -219,8 +220,139 @@ class _ReportBody extends StatelessWidget {
 class _LoadingHint extends StatelessWidget {
   const _LoadingHint();
   @override
-  Widget build(BuildContext context) =>
-      const Center(child: CircularProgressIndicator());
+  Widget build(BuildContext context) => const _ReportSkeleton();
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Skeleton widgets
+// ─────────────────────────────────────────────────────────────────────
+
+/// Full-page skeleton that mirrors the report layout while data loads.
+class _ReportSkeleton extends StatelessWidget {
+  const _ReportSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.only(bottom: AppSizes.huge),
+      children: const [
+        _BigStatSkeleton(),
+        SizedBox(height: AppSizes.xl),
+        _MiniBarSkeleton(),
+        _SkeletonDivider(),
+        _EyebrowSkeleton(),
+        _LeaderRowSkeleton(),
+        _LeaderRowSkeleton(),
+        _LeaderRowSkeleton(),
+        _SkeletonDivider(),
+        _EyebrowSkeleton(),
+        _LeaderRowSkeleton(),
+        _LeaderRowSkeleton(),
+        _LeaderRowSkeleton(),
+      ],
+    );
+  }
+}
+
+/// Skeleton for _BigStat: small label line + large value block.
+class _BigStatSkeleton extends StatelessWidget {
+  const _BigStatSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: const [
+          AppShimmerLine(widthFactor: 0.32, height: 10),
+          SizedBox(height: AppSizes.sm),
+          AppShimmerBox(width: 200, height: 44, radius: AppSizes.radiusSm),
+          SizedBox(height: AppSizes.xs),
+          AppShimmerLine(widthFactor: 0.55, height: 10),
+        ],
+      ),
+    );
+  }
+}
+
+/// Skeleton for the _MiniBar area.
+class _MiniBarSkeleton extends StatelessWidget {
+  const _MiniBarSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+      child: AppShimmerBox(
+        width: double.infinity,
+        height: 110,
+        radius: AppSizes.radiusMd,
+      ),
+    );
+  }
+}
+
+/// Skeleton for an _Eyebrow label.
+class _EyebrowSkeleton extends StatelessWidget {
+  const _EyebrowSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.fromLTRB(AppSizes.lg, AppSizes.xl, AppSizes.lg, AppSizes.sm),
+      child: AppShimmerLine(widthFactor: 0.28, height: 9),
+    );
+  }
+}
+
+/// Skeleton for a _LeaderRow: title+amount line, subtitle line, progress bar.
+class _LeaderRowSkeleton extends StatelessWidget {
+  const _LeaderRowSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.lg, AppSizes.sm, AppSizes.lg, AppSizes.sm,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: const [
+              Expanded(child: AppShimmerLine(widthFactor: 0.55, height: 13)),
+              SizedBox(width: AppSizes.md),
+              AppShimmerBox(width: 64, height: 13, radius: AppSizes.radiusXs),
+            ],
+          ),
+          const SizedBox(height: AppSizes.xs),
+          const AppShimmerLine(widthFactor: 0.38, height: 10),
+          const SizedBox(height: AppSizes.sm),
+          AppShimmerBox(
+            width: double.infinity,
+            height: AppSizes.xs,
+            radius: AppSizes.radiusFull,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SkeletonDivider extends StatelessWidget {
+  const _SkeletonDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.lg,
+      ),
+      child: Container(height: 1, color: AppColors.hairline),
+    );
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────

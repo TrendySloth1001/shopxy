@@ -6,6 +6,7 @@ import 'package:shopxy/features/analytics/presentation/providers/analytics_provi
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 
 /// Merchant-facing analytics dashboard. One scroll: date range, KPI
 /// strip, per-product table. All sorting + range manipulation lives in
@@ -58,7 +59,7 @@ class _MerchantAnalyticsPageState extends State<MerchantAnalyticsPage> {
         ],
       ),
       body: provider.isLoading && data == null
-          ? const Center(child: CircularProgressIndicator())
+          ? const _AnalyticsSkeleton()
           : RefreshIndicator(
               onRefresh: provider.load,
               child: ListView(
@@ -212,6 +213,135 @@ class _Empty extends StatelessWidget {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Skeleton (shown while provider.isLoading && data == null)
+// ---------------------------------------------------------------------------
+
+class _AnalyticsSkeleton extends StatelessWidget {
+  const _AnalyticsSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.lg,
+        AppSizes.lg,
+        AppSizes.huge,
+      ),
+      children: const [
+        // Date-range button shimmer
+        _RangeBarSkeleton(),
+        SizedBox(height: AppSizes.lg),
+        // 8 KPI card placeholders
+        _KpiStripSkeleton(),
+        SizedBox(height: AppSizes.lg),
+        // "By product" section header
+        AppShimmerLine(widthFactor: 0.35, height: 16),
+        SizedBox(height: AppSizes.sm),
+        // Table skeleton
+        _ProductTableSkeleton(),
+      ],
+    );
+  }
+}
+
+class _RangeBarSkeleton extends StatelessWidget {
+  const _RangeBarSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppShimmerBox(
+      width: double.infinity,
+      height: 44,
+      radius: AppSizes.radiusMd,
+    );
+  }
+}
+
+class _KpiStripSkeleton extends StatelessWidget {
+  const _KpiStripSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: AppSizes.sm,
+      runSpacing: AppSizes.sm,
+      children: List.generate(
+        8,
+        (_) => const AppShimmerBox(width: 150, height: 120, radius: AppSizes.radiusMd),
+      ),
+    );
+  }
+}
+
+class _ProductTableSkeleton extends StatelessWidget {
+  const _ProductTableSkeleton();
+
+  // Approximate column widths that mirror the real DataTable columns.
+  static const List<double> _colWidths = [200, 60, 60, 60, 60, 60, 60, 60];
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header row
+          _TableRowSkeleton(heights: 20, colWidths: _colWidths, isHeader: true),
+          const SizedBox(height: AppSizes.xs),
+          // 5 placeholder data rows
+          ...List.generate(
+            5,
+            (_) => Padding(
+              padding: const EdgeInsets.only(bottom: AppSizes.xs),
+              child: _TableRowSkeleton(
+                heights: 16,
+                colWidths: _colWidths,
+                isHeader: false,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TableRowSkeleton extends StatelessWidget {
+  const _TableRowSkeleton({
+    required this.heights,
+    required this.colWidths,
+    required this.isHeader,
+  });
+
+  final double heights;
+  final List<double> colWidths;
+  final bool isHeader;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: List.generate(colWidths.length, (i) {
+        // First column (product name) uses a wide shimmer line;
+        // numeric columns use a short centered shimmer line.
+        final w = colWidths[i];
+        final lineFactor = isHeader ? 0.7 : (i == 0 ? 0.85 : 0.6);
+        return SizedBox(
+          width: w,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSizes.xs),
+            child: AppShimmerLine(widthFactor: lineFactor, height: heights),
+          ),
+        );
+      }),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 
 class _ProductTable extends StatelessWidget {
   const _ProductTable({

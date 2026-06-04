@@ -8,6 +8,7 @@ import 'package:shopxy_customer/shared/constants/app_strings.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_divider.dart';
+import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 
 class ShopInvoiceDetailPage extends StatefulWidget {
   const ShopInvoiceDetailPage({
@@ -53,7 +54,7 @@ class _ShopInvoiceDetailPageState extends State<ShopInvoiceDetailPage> {
         future: _future,
         builder: (context, snap) {
           if (snap.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
+            return const _ShopInvoiceDetailSkeleton();
           }
           if (snap.hasError) {
             return Padding(
@@ -528,6 +529,226 @@ class _Note extends StatelessWidget {
                   ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Skeleton
+// ---------------------------------------------------------------------------
+
+class _ShopInvoiceDetailSkeleton extends StatelessWidget {
+  const _ShopInvoiceDetailSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(0, AppSizes.md, 0, AppSizes.huge),
+      children: const [
+        _SkeletonHeader(),
+        _SkeletonSpacedDivider(),
+        _SkeletonCounterparty(),
+        SizedBox(height: AppSizes.xl),
+        _SkeletonItemsSection(),
+        _SkeletonSpacedDivider(),
+        _SkeletonTotals(),
+      ],
+    );
+  }
+}
+
+class _SkeletonHeader extends StatelessWidget {
+  const _SkeletonHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: const [
+          // Eyebrow label row
+          Row(
+            children: [
+              Expanded(child: AppShimmerLine(widthFactor: 0.35, height: 12)),
+              AppShimmerBox(width: 56, height: 22, radius: AppSizes.radiusFull),
+            ],
+          ),
+          SizedBox(height: AppSizes.sm),
+          // Large invoice number
+          AppShimmerLine(widthFactor: 0.6, height: 22),
+          SizedBox(height: AppSizes.xs),
+          // Date row with icon placeholder
+          Row(
+            children: [
+              AppShimmerBox(width: 14, height: 14, radius: 3),
+              SizedBox(width: AppSizes.xs),
+              AppShimmerLine(widthFactor: 0.3, height: 12),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SkeletonSpacedDivider extends StatelessWidget {
+  const _SkeletonSpacedDivider();
+
+  @override
+  Widget build(BuildContext context) => const Padding(
+        padding: EdgeInsets.symmetric(vertical: AppSizes.lg),
+        child: AppDivider.flush(),
+      );
+}
+
+class _SkeletonCounterparty extends StatelessWidget {
+  const _SkeletonCounterparty();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: const [
+          // Rounded icon placeholder
+          AppShimmerBox(
+            width: AppSizes.avatarSm,
+            height: AppSizes.avatarSm,
+            radius: AppSizes.radiusSm,
+          ),
+          SizedBox(width: AppSizes.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppShimmerLine(widthFactor: 0.25, height: 11),
+                SizedBox(height: AppSizes.xs),
+                AppShimmerLine(widthFactor: 0.55, height: 16),
+                SizedBox(height: AppSizes.xs),
+                AppShimmerLine(widthFactor: 0.4, height: 11),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SkeletonItemsSection extends StatelessWidget {
+  const _SkeletonItemsSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: const [
+        // Items eyebrow
+        Padding(
+          padding: EdgeInsets.fromLTRB(
+            AppSizes.lg,
+            0,
+            AppSizes.lg,
+            AppSizes.sm,
+          ),
+          child: Row(
+            children: [
+              Expanded(child: AppShimmerLine(widthFactor: 0.2, height: 11)),
+              AppShimmerLine(widthFactor: 0.1, height: 11),
+            ],
+          ),
+        ),
+        AppDivider.flush(),
+        _SkeletonItemRow(),
+        AppDivider.flush(),
+        _SkeletonItemRow(),
+        AppDivider.flush(),
+        _SkeletonItemRow(),
+        AppDivider.flush(),
+        _SkeletonItemRow(),
+      ],
+    );
+  }
+}
+
+class _SkeletonItemRow extends StatelessWidget {
+  const _SkeletonItemRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.md,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: const [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppShimmerLine(widthFactor: 0.55, height: 14),
+                SizedBox(height: AppSizes.xs),
+                AppShimmerLine(widthFactor: 0.75, height: 11),
+              ],
+            ),
+          ),
+          SizedBox(width: AppSizes.md),
+          AppShimmerLine(widthFactor: 0.18, height: 14),
+        ],
+      ),
+    );
+  }
+}
+
+class _SkeletonTotals extends StatelessWidget {
+  const _SkeletonTotals();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+      child: Column(
+        children: const [
+          _SkeletonTotalsRow(labelFactor: 0.2, valueFactor: 0.22),
+          _SkeletonTotalsRow(labelFactor: 0.12, valueFactor: 0.18),
+          _SkeletonTotalsRow(labelFactor: 0.18, valueFactor: 0.20),
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: AppSizes.sm),
+            child: AppDivider.flush(),
+          ),
+          _SkeletonTotalsRow(labelFactor: 0.14, valueFactor: 0.26, strong: true),
+        ],
+      ),
+    );
+  }
+}
+
+class _SkeletonTotalsRow extends StatelessWidget {
+  const _SkeletonTotalsRow({
+    required this.labelFactor,
+    required this.valueFactor,
+    this.strong = false,
+  });
+
+  final double labelFactor;
+  final double valueFactor;
+  final bool strong;
+
+  @override
+  Widget build(BuildContext context) {
+    final h = strong ? 16.0 : 12.0;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
+      child: Row(
+        children: [
+          Expanded(child: AppShimmerLine(widthFactor: labelFactor, height: h)),
+          AppShimmerLine(widthFactor: valueFactor, height: h),
         ],
       ),
     );

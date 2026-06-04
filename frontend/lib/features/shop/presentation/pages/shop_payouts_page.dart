@@ -8,6 +8,7 @@ import 'package:shopxy/features/shop/presentation/providers/linked_account_provi
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 
 /// Payouts & settlement onboarding. Wires the shop to a Razorpay Route linked
 /// account so the shop's slice of each marketplace order can settle to its bank.
@@ -265,7 +266,7 @@ class _ShopPayoutsPageState extends State<ShopPayoutsPage>
       backgroundColor: AppColors.canvas,
       appBar: AppBar(title: const Text('Payouts & settlement')),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const _PayoutsWizardSkeleton()
           : _status != null
               ? _statusView()
               : _wizard(),
@@ -427,6 +428,110 @@ class _ShopPayoutsPageState extends State<ShopPayoutsPage>
   String? _emailValidator(String? v) {
     final s = (v ?? '').trim();
     return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(s) ? null : 'Invalid email';
+  }
+}
+
+// ── Skeleton ─────────────────────────────────────────────────────────────────
+
+/// Mirrors the wizard's fixed chrome (progress header, divider, form fields,
+/// footer) while the initial status fetch is in flight.
+class _PayoutsWizardSkeleton extends StatelessWidget {
+  const _PayoutsWizardSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // ── Progress header (4-step indicator + step label) ──────────────────
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+              AppSizes.lg, AppSizes.md, AppSizes.lg, AppSizes.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  for (var i = 0; i < 4; i++) ...[
+                    Expanded(
+                      child: AppShimmerBox(
+                        height: AppSizes.xs,
+                        radius: AppSizes.radiusFull,
+                      ),
+                    ),
+                    if (i < 3) const SizedBox(width: AppSizes.xs),
+                  ],
+                ],
+              ),
+              const SizedBox(height: AppSizes.sm),
+              const AppShimmerLine(widthFactor: 0.45, height: 12),
+            ],
+          ),
+        ),
+        const Divider(height: 1, thickness: 1, color: AppColors.hairline),
+        // ── Form body — mirrors _BusinessStep's label + input structure ───────
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+                AppSizes.lg, AppSizes.lg, AppSizes.lg, AppSizes.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Step intro title + subtitle
+                const AppShimmerLine(widthFactor: 0.55, height: 22),
+                const SizedBox(height: AppSizes.xs),
+                const AppShimmerLine(widthFactor: 0.85, height: 13),
+                const SizedBox(height: AppSizes.lg),
+                // Field 1 — label chip + input box
+                const AppShimmerLine(widthFactor: 0.3, height: 11),
+                const SizedBox(height: AppSizes.xs),
+                AppShimmerBox(height: 48, radius: AppSizes.radiusSm),
+                const SizedBox(height: AppSizes.md),
+                // Field 2
+                const AppShimmerLine(widthFactor: 0.4, height: 11),
+                const SizedBox(height: AppSizes.xs),
+                AppShimmerBox(height: 48, radius: AppSizes.radiusSm),
+                const SizedBox(height: AppSizes.md),
+                // Field 3
+                const AppShimmerLine(widthFactor: 0.35, height: 11),
+                const SizedBox(height: AppSizes.xs),
+                AppShimmerBox(height: 48, radius: AppSizes.radiusSm),
+                const SizedBox(height: AppSizes.md),
+                // Field 4
+                const AppShimmerLine(widthFactor: 0.25, height: 11),
+                const SizedBox(height: AppSizes.xs),
+                AppShimmerBox(height: 48, radius: AppSizes.radiusSm),
+              ],
+            ),
+          ),
+        ),
+        // ── Footer — buttons visible but disabled ────────────────────────────
+        SafeArea(
+          top: false,
+          child: Container(
+            decoration: const BoxDecoration(
+              border: Border(top: BorderSide(color: AppColors.hairline)),
+            ),
+            padding: const EdgeInsets.fromLTRB(
+                AppSizes.lg, AppSizes.md, AppSizes.lg, AppSizes.md),
+            child: Row(
+              children: [
+                const Spacer(),
+                FilledButton(
+                  onPressed: null,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.black,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: AppSizes.xl, vertical: AppSizes.md),
+                  ),
+                  child: const Text('Continue'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
 

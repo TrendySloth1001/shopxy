@@ -7,6 +7,7 @@ import 'package:shopxy/features/returns/domain/merchant_return.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
 
 /// Workflow-heavy detail page. Header shows the customer + refund
@@ -159,7 +160,7 @@ class _MerchantReturnDetailPageState extends State<MerchantReturnDetailPage> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const _ReturnDetailSkeleton();
     }
     if (_error != null) {
       return Scaffold(
@@ -305,6 +306,220 @@ class _MerchantReturnDetailPageState extends State<MerchantReturnDetailPage> {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Skeleton
+// ---------------------------------------------------------------------------
+
+class _ReturnDetailSkeleton extends StatelessWidget {
+  const _ReturnDetailSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const AppShimmerLine(widthFactor: 0.4, height: 18)),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.all(AppSizes.lg),
+                children: const [
+                  _HeaderCardSkeleton(),
+                  SizedBox(height: AppSizes.md),
+                  _ItemsCardSkeleton(),
+                  SizedBox(height: AppSizes.md),
+                  _TimelineCardSkeleton(),
+                ],
+              ),
+            ),
+            _ActionBarSkeleton(),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HeaderCardSkeleton extends StatelessWidget {
+  const _HeaderCardSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSizes.lg),
+      decoration: ShapeDecoration(
+        color: AppColors.white,
+        shape: AppShapes.squircle(AppSizes.radiusMd),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Expanded(
+                child: AppShimmerLine(widthFactor: 0.55, height: 16),
+              ),
+              const SizedBox(width: AppSizes.md),
+              AppShimmerBox(
+                width: 72,
+                height: 24,
+                radius: AppSizes.radiusSm,
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSizes.sm),
+          const AppShimmerLine(widthFactor: 0.70, height: 12),
+          const SizedBox(height: AppSizes.xs),
+          const AppShimmerLine(widthFactor: 0.85, height: 12),
+          const SizedBox(height: AppSizes.md),
+          Row(
+            children: [
+              AppShimmerBox(
+                width: AppSizes.iconSm,
+                height: AppSizes.iconSm,
+                radius: AppSizes.radiusSm,
+              ),
+              const SizedBox(width: AppSizes.xs),
+              const AppShimmerLine(widthFactor: 0.35, height: 14),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ItemsCardSkeleton extends StatelessWidget {
+  const _ItemsCardSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSizes.md),
+      decoration: ShapeDecoration(
+        color: AppColors.white,
+        shape: AppShapes.squircle(AppSizes.radiusMd),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const AppShimmerLine(widthFactor: 0.25, height: 14),
+          const SizedBox(height: AppSizes.sm),
+          for (int i = 0; i < 3; i++)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSizes.sm),
+              child: Row(
+                children: [
+                  AppShimmerBox(
+                    width: AppSizes.productThumbSize,
+                    height: AppSizes.productThumbSize,
+                    radius: AppSizes.radiusSm,
+                  ),
+                  const SizedBox(width: AppSizes.md),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        AppShimmerLine(widthFactor: 0.65, height: 14),
+                        SizedBox(height: AppSizes.xs),
+                        AppShimmerLine(widthFactor: 0.50, height: 12),
+                        SizedBox(height: AppSizes.xs),
+                        AppShimmerLine(widthFactor: 0.30, height: 20),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TimelineCardSkeleton extends StatelessWidget {
+  const _TimelineCardSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSizes.md),
+      decoration: ShapeDecoration(
+        color: AppColors.white,
+        shape: AppShapes.squircle(AppSizes.radiusMd),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const AppShimmerLine(widthFactor: 0.30, height: 14),
+          const SizedBox(height: AppSizes.sm),
+          for (int i = 0; i < 5; i++)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
+              child: Row(
+                children: [
+                  AppShimmerBox(
+                    width: AppSizes.iconSm,
+                    height: AppSizes.iconSm,
+                    radius: AppSizes.radiusSm,
+                  ),
+                  const SizedBox(width: AppSizes.sm),
+                  Expanded(
+                    child: AppShimmerLine(
+                      widthFactor: 0.45 + (i % 3) * 0.1,
+                      height: 12,
+                    ),
+                  ),
+                  const SizedBox(width: AppSizes.sm),
+                  AppShimmerBox(width: 72, height: 12, radius: AppSizes.radiusSm),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActionBarSkeleton extends StatelessWidget {
+  const _ActionBarSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.white,
+        border: Border(top: BorderSide(color: AppColors.hairline)),
+      ),
+      padding: const EdgeInsets.fromLTRB(
+          AppSizes.lg, AppSizes.md, AppSizes.lg, AppSizes.md),
+      child: Row(
+        children: [
+          Expanded(
+            child: AppShimmerBox(
+              width: double.infinity,
+              height: 44,
+              radius: AppSizes.radiusMd,
+            ),
+          ),
+          const SizedBox(width: AppSizes.md),
+          Expanded(
+            child: AppShimmerBox(
+              width: double.infinity,
+              height: 44,
+              radius: AppSizes.radiusMd,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Real content widgets
+// ---------------------------------------------------------------------------
 
 class _HeaderCard extends StatelessWidget {
   const _HeaderCard({required this.row});

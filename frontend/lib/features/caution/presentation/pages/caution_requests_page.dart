@@ -7,6 +7,7 @@ import 'package:shopxy/features/caution/presentation/widgets/caution_info_sheet.
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 
 /// Shop-wide inbox of party-initiated caution requests awaiting review.
 /// Approving one turns it into a confirmed deposit on that party's ledger;
@@ -154,7 +155,7 @@ class _CautionRequestsPageState extends State<CautionRequestsPage> {
         ],
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const _CautionRequestsSkeletonList()
           : _error != null
               ? Center(
                   child: Padding(
@@ -210,6 +211,94 @@ class _CautionRequestsPageState extends State<CautionRequestsPage> {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Skeleton widgets
+// ---------------------------------------------------------------------------
+
+/// Renders 4 repeated skeleton rows while the request list is loading.
+class _CautionRequestsSkeletonList extends StatelessWidget {
+  const _CautionRequestsSkeletonList();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
+      itemCount: 4,
+      separatorBuilder: (context, index) => const AppDivider.flush(),
+      itemBuilder: (context, index) => const _CautionRequestRowSkeleton(),
+    );
+  }
+}
+
+/// A shimmer placeholder that mirrors the real [_RequestRow] layout.
+class _CautionRequestRowSkeleton extends StatelessWidget {
+  const _CautionRequestRowSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.md,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Party name + amount row
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Party name
+                    AppShimmerLine(widthFactor: 0.55, height: AppSizes.md),
+                    const SizedBox(height: AppSizes.xs),
+                    // Subtitle (date · mode · ref)
+                    AppShimmerLine(widthFactor: 0.75, height: AppSizes.sm),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSizes.sm),
+              // Amount (right-aligned)
+              AppShimmerLine(widthFactor: 0.18, height: AppSizes.lg),
+            ],
+          ),
+          // Optional note line
+          const SizedBox(height: AppSizes.sm),
+          AppShimmerLine(widthFactor: 0.9, height: AppSizes.sm),
+          const SizedBox(height: AppSizes.md),
+          // Decline / Approve buttons
+          Row(
+            children: [
+              Expanded(
+                child: AppShimmerBox(
+                  width: double.infinity,
+                  height: AppSizes.xxxl,
+                  radius: AppSizes.radiusSm,
+                ),
+              ),
+              const SizedBox(width: AppSizes.sm),
+              Expanded(
+                child: AppShimmerBox(
+                  width: double.infinity,
+                  height: AppSizes.xxxl,
+                  radius: AppSizes.radiusSm,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Real row widget
+// ---------------------------------------------------------------------------
 
 class _RequestRow extends StatelessWidget {
   const _RequestRow({

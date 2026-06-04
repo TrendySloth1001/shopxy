@@ -12,6 +12,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_error_view.dart';
 import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
@@ -79,7 +80,7 @@ class _StockAdjustmentsPageState extends State<StockAdjustmentsPage> {
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const _StockAdjustmentsSkeleton();
     }
     if (_error != null) {
       return AppErrorView(onRetry: _load);
@@ -104,6 +105,75 @@ class _StockAdjustmentsPageState extends State<StockAdjustmentsPage> {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Skeleton
+// ---------------------------------------------------------------------------
+
+class _StockAdjustmentsSkeleton extends StatelessWidget {
+  const _StockAdjustmentsSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
+      itemCount: 6,
+      separatorBuilder: (_, _) => const AppDivider(),
+      itemBuilder: (_, _) => const _AdjustmentTileSkeleton(),
+    );
+  }
+}
+
+class _AdjustmentTileSkeleton extends StatelessWidget {
+  const _AdjustmentTileSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.md,
+      ),
+      child: Row(
+        children: [
+          // Icon avatar placeholder
+          AppShimmerBox(
+            width: AppSizes.avatarXs,
+            height: AppSizes.avatarXs,
+            radius: AppSizes.avatarXs / 2,
+          ),
+          const SizedBox(width: AppSizes.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    // Adjustment number line
+                    const Expanded(
+                      child: AppShimmerLine(widthFactor: 0.55, height: 14),
+                    ),
+                    const SizedBox(width: AppSizes.sm),
+                    // Status badge placeholder
+                    AppShimmerBox(width: 60, height: 20, radius: AppSizes.xs),
+                  ],
+                ),
+                const SizedBox(height: AppSizes.xs),
+                // Subtitle line (count · date)
+                const AppShimmerLine(widthFactor: 0.75, height: 12),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Tile
+// ---------------------------------------------------------------------------
 
 class _AdjustmentTile extends StatelessWidget {
   const _AdjustmentTile({required this.adjustment});

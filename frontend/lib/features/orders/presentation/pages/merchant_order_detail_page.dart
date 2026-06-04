@@ -19,6 +19,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class MerchantOrderDetailPage extends StatefulWidget {
@@ -361,7 +362,7 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
             : null,
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const _OrderDetailSkeleton()
           : _error != null
               ? _ErrorState(message: _error!, onRetry: _load)
               : RefreshIndicator(
@@ -1835,6 +1836,363 @@ class _SheetHandle extends StatelessWidget {
     );
   }
 }
+
+// ─── Skeleton ────────────────────────────────────────────────────────────────
+
+/// Full-page skeleton shown while the order detail is loading.
+/// Mirrors the scrollable layout: decision summary strip → optional
+/// shortfall banner placeholder → customer avatar + info lines →
+/// address line → date + status journey → item rows (×4) → dividers →
+/// totals section → optional invoice button placeholder.
+class _OrderDetailSkeleton extends StatelessWidget {
+  const _OrderDetailSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
+      children: const [
+        _SummaryStripSkeleton(),
+        SizedBox(height: AppSizes.md),
+        _ShortfallBannerSkeleton(),
+        SizedBox(height: AppSizes.md),
+        _CustomerCardSkeleton(),
+        SizedBox(height: AppSizes.sm),
+        _AddressLineSkeleton(),
+        SizedBox(height: AppSizes.md),
+        _DateStatusSkeleton(),
+        SizedBox(height: AppSizes.sm),
+        _StatusJourneySkeleton(),
+        SizedBox(height: AppSizes.lg),
+        _ItemsDivider(),
+        _ItemRowSkeleton(),
+        _ItemRowSkeleton(),
+        _ItemRowSkeleton(),
+        _ItemRowSkeleton(),
+        _ItemsDivider(),
+        _TotalsBlockSkeleton(),
+        SizedBox(height: AppSizes.lg),
+        _InvoiceButtonSkeleton(),
+        SizedBox(height: AppSizes.huge),
+      ],
+    );
+  }
+}
+
+/// Three stat boxes separated by hairline dividers (Items / Qty / Total).
+class _SummaryStripSkeleton extends StatelessWidget {
+  const _SummaryStripSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // relative-time line
+          const AppShimmerLine(widthFactor: 0.45, height: AppSizes.md),
+          const SizedBox(height: AppSizes.sm),
+          IntrinsicHeight(
+            child: Row(
+              children: [
+                _StatBoxSkeleton(),
+                const _ThinVRule(),
+                _StatBoxSkeleton(),
+                const _ThinVRule(),
+                _StatBoxSkeleton(),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatBoxSkeleton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: const [
+          AppShimmerLine(widthFactor: 0.55, height: AppSizes.xxl),
+          SizedBox(height: 4),
+          AppShimmerLine(widthFactor: 0.7, height: AppSizes.sm),
+        ],
+      ),
+    );
+  }
+}
+
+/// Placeholder for the optional shortfall warning banner.
+class _ShortfallBannerSkeleton extends StatelessWidget {
+  const _ShortfallBannerSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+      child: AppShimmerBox(
+        width: double.infinity,
+        height: AppSizes.massive,
+        radius: AppSizes.radiusMd,
+      ),
+    );
+  }
+}
+
+/// Squircle avatar + name / phone / email lines.
+class _CustomerCardSkeleton extends StatelessWidget {
+  const _CustomerCardSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppShimmerBox(
+            width: AppSizes.huge,
+            height: AppSizes.huge,
+            radius: AppSizes.radiusMd,
+          ),
+          const SizedBox(width: AppSizes.md),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppShimmerLine(widthFactor: 0.6, height: AppSizes.lg),
+                SizedBox(height: AppSizes.xs),
+                AppShimmerLine(widthFactor: 0.5, height: AppSizes.md),
+                SizedBox(height: AppSizes.xs),
+                AppShimmerLine(widthFactor: 0.7, height: AppSizes.md),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Single address text line (icon placeholder + text).
+class _AddressLineSkeleton extends StatelessWidget {
+  const _AddressLineSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+      child: Row(
+        children: const [
+          AppShimmerBox(
+            width: AppSizes.iconSm,
+            height: AppSizes.iconSm,
+            radius: AppSizes.radiusFull,
+          ),
+          SizedBox(width: AppSizes.xs),
+          Expanded(child: AppShimmerLine(widthFactor: 0.8, height: AppSizes.md)),
+        ],
+      ),
+    );
+  }
+}
+
+/// Date text on the left, status badge placeholder on the right.
+class _DateStatusSkeleton extends StatelessWidget {
+  const _DateStatusSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+      child: Row(
+        children: const [
+          Expanded(child: AppShimmerLine(widthFactor: 0.5, height: AppSizes.md)),
+          SizedBox(width: AppSizes.md),
+          AppShimmerBox(width: 72, height: AppSizes.xl, radius: AppSizes.radiusFull),
+        ],
+      ),
+    );
+  }
+}
+
+/// Four dots connected by lines — mirrors _StatusJourney.
+class _StatusJourneySkeleton extends StatelessWidget {
+  const _StatusJourneySkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+      child: Row(
+        children: [
+          for (int i = 0; i < 4; i++) ...[
+            _JourneyDotSkeleton(),
+            if (i < 3)
+              const Expanded(
+                child: AppShimmerBox(height: 1, radius: 0),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _JourneyDotSkeleton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: const [
+        AppShimmerBox(
+          width: AppSizes.md,
+          height: AppSizes.md,
+          radius: AppSizes.radiusFull,
+        ),
+        SizedBox(height: AppSizes.xs),
+        AppShimmerBox(width: 40, height: AppSizes.sm, radius: AppSizes.radiusFull),
+      ],
+    );
+  }
+}
+
+/// Thin horizontal rule matching AppDivider visual weight.
+class _ItemsDivider extends StatelessWidget {
+  const _ItemsDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Divider(height: 1, color: Color(0xFFEEEEEE));
+  }
+}
+
+/// Single item row skeleton: thumbnail box + name/sku/chip lines + qty/total.
+class _ItemRowSkeleton extends StatelessWidget {
+  const _ItemRowSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.sm,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppShimmerBox(
+            width: AppSizes.productThumbSize,
+            height: AppSizes.productThumbSize,
+            radius: AppSizes.radiusSm,
+          ),
+          const SizedBox(width: AppSizes.md),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppShimmerLine(widthFactor: 0.65, height: AppSizes.md),
+                SizedBox(height: AppSizes.xs),
+                AppShimmerLine(widthFactor: 0.5, height: AppSizes.md),
+                SizedBox(height: AppSizes.xs),
+                // Stock chip placeholder
+                AppShimmerBox(width: 100, height: AppSizes.lg, radius: AppSizes.radiusFull),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSizes.md),
+          const Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              AppShimmerBox(width: 48, height: AppSizes.md, radius: AppSizes.radiusSm),
+              SizedBox(height: AppSizes.xs),
+              AppShimmerBox(width: 64, height: AppSizes.md, radius: AppSizes.radiusSm),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Four label/value pairs with a divider before the total row.
+class _TotalsBlockSkeleton extends StatelessWidget {
+  const _TotalsBlockSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.md,
+      ),
+      child: Column(
+        children: [
+          _TotalLineSkeleton(labelFactor: 0.3, valueFactor: 0.25),
+          SizedBox(height: AppSizes.xs),
+          _TotalLineSkeleton(labelFactor: 0.2, valueFactor: 0.2),
+          SizedBox(height: AppSizes.xs),
+          _TotalLineSkeleton(labelFactor: 0.25, valueFactor: 0.2),
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: AppSizes.xs),
+            child: Divider(height: 1, color: Color(0xFFEEEEEE)),
+          ),
+          _TotalLineSkeleton(labelFactor: 0.2, valueFactor: 0.3),
+        ],
+      ),
+    );
+  }
+}
+
+class _TotalLineSkeleton extends StatelessWidget {
+  const _TotalLineSkeleton({
+    required this.labelFactor,
+    required this.valueFactor,
+  });
+  final double labelFactor;
+  final double valueFactor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: AppShimmerLine(widthFactor: labelFactor, height: AppSizes.md),
+        ),
+        AppShimmerBox(
+          width: 72 * valueFactor / 0.25,
+          height: AppSizes.md,
+          radius: AppSizes.radiusSm,
+        ),
+      ],
+    );
+  }
+}
+
+/// Placeholder for the "Open invoice" button shown once an order has
+/// been confirmed.
+class _InvoiceButtonSkeleton extends StatelessWidget {
+  const _InvoiceButtonSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(horizontal: AppSizes.lg),
+      child: AppShimmerBox(
+        width: double.infinity,
+        height: AppSizes.huge,
+        radius: AppSizes.radiusButton,
+      ),
+    );
+  }
+}
+
+// ─── End skeleton ─────────────────────────────────────────────────────────────
 
 /// Local model for a stock-in draft created during the current detail
 /// session. We only need enough to render the inline confirm card and

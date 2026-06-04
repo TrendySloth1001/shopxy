@@ -8,6 +8,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_button.dart';
+import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 
 /// Manage delivery addresses. Reached from the home top-bar
@@ -86,7 +87,7 @@ class _AddressesPageState extends State<AddressesPage> {
       body: RefreshIndicator(
         onRefresh: () => p.load(),
         child: p.isLoading && p.items.isEmpty
-            ? const Center(child: CircularProgressIndicator())
+            ? const _AddressesLoadingSkeleton()
             : p.items.isEmpty
                 ? _Empty(onAdd: () => _add(context))
                 : ListView(
@@ -110,6 +111,64 @@ class _AddressesPageState extends State<AddressesPage> {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Skeleton widgets (loading state)
+// ---------------------------------------------------------------------------
+
+class _AddressesLoadingSkeleton extends StatelessWidget {
+  const _AddressesLoadingSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
+      physics: const NeverScrollableScrollPhysics(),
+      children: const [
+        _AddressTileSkeleton(),
+        _AddressTileSkeleton(),
+        _AddressTileSkeleton(),
+      ],
+    );
+  }
+}
+
+class _AddressTileSkeleton extends StatelessWidget {
+  const _AddressTileSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(AppSizes.lg, AppSizes.sm, AppSizes.lg, 0),
+      padding: const EdgeInsets.all(AppSizes.md),
+      decoration: ShapeDecoration(
+        color: AppColors.white,
+        shape: AppShapes.squircle(AppSizes.radiusMd),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: const [
+          // Label / title row
+          AppShimmerLine(widthFactor: 0.35, height: 14),
+          SizedBox(height: AppSizes.xs),
+          // Full name
+          AppShimmerLine(widthFactor: 0.55, height: 13),
+          SizedBox(height: AppSizes.xs),
+          // Address one-liner
+          AppShimmerLine(widthFactor: 0.85, height: 13),
+          SizedBox(height: AppSizes.xs),
+          // Phone number
+          AppShimmerLine(widthFactor: 0.4, height: 12),
+          SizedBox(height: AppSizes.sm),
+          // Action row (button area)
+          AppShimmerBox(width: 120, height: 32, radius: AppSizes.radiusSm),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 
 class _AddressTile extends StatelessWidget {
   const _AddressTile({

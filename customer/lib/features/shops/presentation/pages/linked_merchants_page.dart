@@ -10,6 +10,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_bar.dart';
+import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 
 /// Customer-side directory of merchants the user has an active Party
 /// or Vendor link with. Each card opens the marketplace `ShopProfilePage`
@@ -44,7 +45,7 @@ class _LinkedMerchantsPageState extends State<LinkedMerchantsPage> {
         onRefresh: p.load,
         color: AppColors.brand,
         child: p.isLoading && p.items.isEmpty
-            ? const Center(child: CircularProgressIndicator())
+            ? const _MerchantListSkeleton()
             : p.error != null && p.items.isEmpty
                 ? _ErrorState(message: p.error!, onRetry: p.load)
                 : p.items.isEmpty
@@ -222,6 +223,101 @@ class _Pill extends StatelessWidget {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Skeleton loading state
+// ---------------------------------------------------------------------------
+
+/// Renders 3 skeleton merchant cards that mirror [_MerchantCard]'s layout.
+class _MerchantListSkeleton extends StatelessWidget {
+  const _MerchantListSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.md,
+      ),
+      itemCount: 3,
+      separatorBuilder: (_, _) => const SizedBox(height: AppSizes.md),
+      itemBuilder: (_, _) => const _MerchantCardSkeleton(),
+    );
+  }
+}
+
+/// A single skeleton card whose structure mirrors [_MerchantCard].
+class _MerchantCardSkeleton extends StatelessWidget {
+  const _MerchantCardSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: ShapeDecoration(
+        color: AppColors.white,
+        shape: AppShapes.squircle(
+          AppSizes.radiusLg,
+          side: const BorderSide(color: AppColors.hairline),
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Banner placeholder (aspect ratio 16:6)
+          AspectRatio(
+            aspectRatio: 16 / 6,
+            child: AppShimmerBox(
+              width: double.infinity,
+              height: double.infinity,
+              radius: 0,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(AppSizes.md),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Logo placeholder
+                AppShimmerBox(
+                  width: AppSizes.huge,
+                  height: AppSizes.huge,
+                  radius: AppSizes.radiusSm,
+                ),
+                const SizedBox(width: AppSizes.md),
+                // Text column
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Shop name
+                      AppShimmerLine(widthFactor: 0.55, height: 14),
+                      const SizedBox(height: AppSizes.xs),
+                      // Tagline
+                      AppShimmerLine(widthFactor: 0.75, height: 11),
+                      const SizedBox(height: AppSizes.sm),
+                      // Pill row (two pill-shaped blobs)
+                      Row(
+                        children: [
+                          AppShimmerBox(width: 62, height: 20, radius: AppSizes.radiusFull),
+                          const SizedBox(width: AppSizes.sm),
+                          AppShimmerBox(width: 52, height: 20, radius: AppSizes.radiusFull),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 
 class _EmptyState extends StatelessWidget {
   const _EmptyState();

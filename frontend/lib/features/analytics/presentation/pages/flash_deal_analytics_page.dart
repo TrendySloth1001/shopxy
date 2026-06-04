@@ -6,6 +6,7 @@ import 'package:shopxy/features/analytics/presentation/providers/analytics_provi
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 
 /// Per-flash-deal report — sold count + traffic per hour during the
 /// scheduled window. Renders the time series as a custom-painted bar
@@ -47,13 +48,153 @@ class _FlashDealAnalyticsPageState extends State<FlashDealAnalyticsPage> {
       backgroundColor: AppColors.canvas,
       appBar: AppBar(title: const Text('Flash deal analytics')),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const _FlashDealSkeleton()
           : _data == null
               ? Center(child: Text(_error ?? 'No data'))
               : _Body(data: _data!),
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Skeleton
+// ---------------------------------------------------------------------------
+
+class _FlashDealSkeleton extends StatelessWidget {
+  const _FlashDealSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.lg,
+        AppSizes.lg,
+        AppSizes.huge,
+      ),
+      children: const [
+        _TopCardSkeleton(),
+        SizedBox(height: AppSizes.lg),
+        _BarChartSkeleton(),
+      ],
+    );
+  }
+}
+
+/// Mirrors the top summary card: product name, date range, progress bar, sold count.
+class _TopCardSkeleton extends StatelessWidget {
+  const _TopCardSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSizes.lg),
+      decoration: ShapeDecoration(
+        color: AppColors.white,
+        shape: AppShapes.squircle(AppSizes.radiusLg),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Product name — titleMedium (~20 dp tall, 60 % width)
+          AppShimmerLine(widthFactor: 0.6, height: 20),
+          const SizedBox(height: AppSizes.xs),
+          // Date range — bodyMedium (~14 dp tall, 80 % width)
+          AppShimmerLine(widthFactor: 0.8, height: 14),
+          const SizedBox(height: AppSizes.md),
+          // LinearProgressIndicator height bar (full width, AppSizes.sm tall)
+          AppShimmerLine(widthFactor: 1.0, height: AppSizes.sm),
+          const SizedBox(height: AppSizes.sm),
+          // "sold count" text — bodyMedium (~14 dp, 40 % width)
+          AppShimmerLine(widthFactor: 0.4, height: 14),
+        ],
+      ),
+    );
+  }
+}
+
+/// Mirrors the bar-chart card: legend labels + grid of bar columns.
+class _BarChartSkeleton extends StatelessWidget {
+  const _BarChartSkeleton();
+
+  // Render 12 skeleton bar-group columns.
+  static const int _barCount = 12;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSizes.md),
+      decoration: ShapeDecoration(
+        color: AppColors.white,
+        shape: AppShapes.squircle(AppSizes.radiusLg),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Legend row — three shimmer pills
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm),
+            child: Row(
+              children: [
+                AppShimmerLine(widthFactor: 0.12, height: 14),
+                const SizedBox(width: AppSizes.md),
+                AppShimmerLine(widthFactor: 0.12, height: 14),
+                const SizedBox(width: AppSizes.md),
+                AppShimmerLine(widthFactor: 0.14, height: 14),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSizes.sm),
+          // Bar chart area
+          SizedBox(
+            height: AppSizes.qrCodeSize,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                for (int i = 0; i < _barCount; i++)
+                  Expanded(
+                    child: Padding(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: AppSizes.xs),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          // Three bars per column with varying heights
+                          AppShimmerBox(
+                            width: double.infinity,
+                            height: AppSizes.qrCodeSize *
+                                _barHeightFactor(i, 0),
+                            radius: AppSizes.radiusXs,
+                          ),
+                          const SizedBox(height: 2),
+                          // Hour label placeholder
+                          AppShimmerLine(widthFactor: 0.8, height: 10),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Produces a varied height factor (0.2–0.85) so the skeleton looks organic
+  /// rather than a flat line.
+  static double _barHeightFactor(int index, int offset) {
+    const factors = <double>[
+      0.4, 0.65, 0.3, 0.75, 0.5, 0.85,
+      0.35, 0.6, 0.45, 0.7, 0.25, 0.55,
+    ];
+    return factors[(index + offset) % factors.length];
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Real content
+// ---------------------------------------------------------------------------
 
 class _Body extends StatelessWidget {
   const _Body({required this.data});

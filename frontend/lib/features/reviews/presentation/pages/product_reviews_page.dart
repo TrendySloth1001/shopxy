@@ -6,6 +6,7 @@ import 'package:shopxy/features/reviews/data/models/product_review.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 
 /// Merchant-facing read-only listing of reviews for one of their
 /// products. Reply / moderation deferred to a later phase.
@@ -78,7 +79,7 @@ class _ProductReviewsPageState extends State<ProductReviewsPage> {
     return Scaffold(
       appBar: AppBar(title: Text('Reviews · ${widget.productName}')),
       body: _loading && _reviews.isEmpty
-          ? const Center(child: CircularProgressIndicator())
+          ? const _ReviewsPageSkeleton()
           : _error != null && _reviews.isEmpty
               ? Center(
                   child: Padding(
@@ -235,6 +236,105 @@ class _ReviewTile extends StatelessWidget {
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Skeleton widgets — shown while the initial page load is in flight.
+// ---------------------------------------------------------------------------
+
+/// Full-page skeleton that mirrors the real ListView layout:
+/// one _SummarySkeleton followed by [_kSkeletonTileCount] _ReviewTileSkeleton items.
+class _ReviewsPageSkeleton extends StatelessWidget {
+  const _ReviewsPageSkeleton();
+
+  static const int _kSkeletonTileCount = 3;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.only(bottom: AppSizes.huge),
+      itemCount: 1 + _kSkeletonTileCount,
+      separatorBuilder: (context, index) => const Divider(height: 0),
+      itemBuilder: (context, i) {
+        if (i == 0) return const _SummarySkeleton();
+        return const _ReviewTileSkeleton();
+      },
+    );
+  }
+}
+
+/// Skeleton for the _Summary hero panel: rating badge box + review-count line.
+class _SummarySkeleton extends StatelessWidget {
+  const _SummarySkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSizes.lg),
+      color: AppColors.heroPanel,
+      child: Row(
+        children: [
+          // Rating badge placeholder — matches the squircle container in _Summary.
+          AppShimmerBox(
+            width: 64,
+            height: 40,
+            radius: AppSizes.radiusSm,
+          ),
+          const SizedBox(width: AppSizes.md),
+          // Review-count text line.
+          const Expanded(
+            child: AppShimmerLine(widthFactor: 0.45, height: 14),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Skeleton for a single _ReviewTile:
+/// star row, reviewer-name + date, optional title, two-line body.
+class _ReviewTileSkeleton extends StatelessWidget {
+  const _ReviewTileSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(AppSizes.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Row: star blocks | reviewer name | date
+          Row(
+            children: [
+              // Five star-icon placeholders rendered as a single wide box.
+              AppShimmerBox(
+                width: AppSizes.iconSm * 5 + AppSizes.xs * 4,
+                height: AppSizes.iconSm,
+                radius: 4,
+              ),
+              const SizedBox(width: AppSizes.sm),
+              // Reviewer name
+              const Expanded(
+                child: AppShimmerLine(widthFactor: 0.5, height: 13),
+              ),
+              const SizedBox(width: AppSizes.sm),
+              // Date
+              AppShimmerBox(width: 64, height: 11, radius: 4),
+            ],
+          ),
+          // Title line
+          const SizedBox(height: AppSizes.sm),
+          const AppShimmerLine(widthFactor: 0.6, height: 13),
+          // Body — two lines
+          const SizedBox(height: AppSizes.xs),
+          const AppShimmerLine(widthFactor: 1.0, height: 13),
+          const SizedBox(height: AppSizes.xs),
+          const AppShimmerLine(widthFactor: 0.75, height: 13),
         ],
       ),
     );
