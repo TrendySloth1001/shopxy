@@ -11,6 +11,7 @@ import 'package:shopxy_customer/features/marketplace/presentation/pages/shop_pro
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 
 /// The V2 deals screen. Was a static mock with hardcoded "GRWM SALE"
 /// / "WEDDING EDIT" / "GLOW-UP SALE" stories and a fake countdown
@@ -84,19 +85,21 @@ class _DealsPageState extends State<DealsPage> {
       ),
       body: RefreshIndicator(
         onRefresh: () => feed.refresh(),
-        child: ListView(
-          padding: const EdgeInsets.only(bottom: AppSizes.huge),
-          children: [
-            if (flashDeals.isNotEmpty)
-              _FlashHeader(remaining: remaining == null ? null : _fmt(remaining)),
-            if (flashDeals.isEmpty && spotlights.isEmpty)
-              const _Empty()
-            else ...[
-              if (flashDeals.isNotEmpty) _FlashGrid(deals: flashDeals),
-              if (spotlights.isNotEmpty) _Spotlights(brands: spotlights),
-            ],
-          ],
-        ),
+        child: feed.isLoading && flashDeals.isEmpty && spotlights.isEmpty
+            ? const _DealsSkeleton()
+            : ListView(
+                padding: const EdgeInsets.only(bottom: AppSizes.huge),
+                children: [
+                  if (flashDeals.isNotEmpty)
+                    _FlashHeader(remaining: remaining == null ? null : _fmt(remaining)),
+                  if (flashDeals.isEmpty && spotlights.isEmpty)
+                    const _Empty()
+                  else ...[
+                    if (flashDeals.isNotEmpty) _FlashGrid(deals: flashDeals),
+                    if (spotlights.isNotEmpty) _Spotlights(brands: spotlights),
+                  ],
+                ],
+              ),
       ),
     );
   }
@@ -379,6 +382,160 @@ class _SpotlightTile extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Skeleton widgets
+// ---------------------------------------------------------------------------
+
+/// Top-level skeleton that mirrors the full DealsPage layout.
+class _DealsSkeleton extends StatelessWidget {
+  const _DealsSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.only(bottom: AppSizes.huge),
+      children: const [
+        _FlashHeaderSkeleton(),
+        _FlashGridSkeleton(),
+        _SpotlightsSkeleton(),
+      ],
+    );
+  }
+}
+
+/// Mirrors [_FlashHeader]: rounded container with icon stub + text + timer chip.
+class _FlashHeaderSkeleton extends StatelessWidget {
+  const _FlashHeaderSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.all(AppSizes.lg),
+      padding: const EdgeInsets.all(AppSizes.md),
+      decoration: ShapeDecoration(
+        color: AppColors.hairline,
+        shape: AppShapes.squircle(AppSizes.radiusMd),
+      ),
+      child: Row(
+        children: [
+          // icon stub
+          AppShimmerBox(width: AppSizes.iconMd, height: AppSizes.iconMd, radius: AppSizes.radiusSm),
+          const SizedBox(width: AppSizes.sm),
+          // title line
+          const Expanded(child: AppShimmerLine(widthFactor: 0.55, height: 14)),
+          const SizedBox(width: AppSizes.sm),
+          // timer chip stub
+          AppShimmerBox(width: 72, height: 28, radius: AppSizes.radiusSm),
+        ],
+      ),
+    );
+  }
+}
+
+/// Mirrors [_FlashGrid]: 2-column grid of 6 [_FlashTile] skeletons.
+class _FlashGridSkeleton extends StatelessWidget {
+  const _FlashGridSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: 6,
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          mainAxisSpacing: AppSizes.md,
+          crossAxisSpacing: AppSizes.md,
+          childAspectRatio: 0.62,
+        ),
+        itemBuilder: (context, _) => const _FlashTileSkeleton(),
+      ),
+    );
+  }
+}
+
+/// Mirrors a single [_FlashTile]: square image, 2-line title, price row,
+/// thin progress bar, "claimed" label.
+class _FlashTileSkeleton extends StatelessWidget {
+  const _FlashTileSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // square image
+        AspectRatio(
+          aspectRatio: 1,
+          child: AppShimmerBox(
+            width: double.infinity,
+            height: double.infinity,
+            radius: AppSizes.radiusMd,
+          ),
+        ),
+        const SizedBox(height: AppSizes.sm),
+        // title line 1
+        const AppShimmerLine(widthFactor: 0.9, height: 12),
+        const SizedBox(height: 4),
+        // title line 2
+        const AppShimmerLine(widthFactor: 0.65, height: 12),
+        const SizedBox(height: AppSizes.xs),
+        // price row
+        Row(
+          children: [
+            AppShimmerBox(width: 48, height: 12, radius: AppSizes.radiusSm),
+            const SizedBox(width: AppSizes.xs),
+            AppShimmerBox(width: 36, height: 10, radius: AppSizes.radiusSm),
+            const SizedBox(width: AppSizes.xs),
+            AppShimmerBox(width: 36, height: 10, radius: AppSizes.radiusSm),
+          ],
+        ),
+        const SizedBox(height: AppSizes.xs),
+        // progress bar
+        AppShimmerBox(width: double.infinity, height: 5, radius: AppSizes.radiusSm),
+        const SizedBox(height: 2),
+        // claimed label
+        AppShimmerBox(width: 56, height: 10, radius: AppSizes.radiusSm),
+      ],
+    );
+  }
+}
+
+/// Mirrors [_Spotlights]: section title + 3 × 16:9 brand cards.
+class _SpotlightsSkeleton extends StatelessWidget {
+  const _SpotlightsSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          AppSizes.lg, AppSizes.xl, AppSizes.lg, AppSizes.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // section title
+          AppShimmerBox(width: 160, height: 16, radius: AppSizes.radiusSm),
+          const SizedBox(height: AppSizes.md),
+          for (int i = 0; i < 3; i++) ...[
+            // 16:9 brand card
+            AspectRatio(
+              aspectRatio: 16 / 9,
+              child: AppShimmerBox(
+                width: double.infinity,
+                height: double.infinity,
+                radius: AppSizes.radiusMd,
+              ),
+            ),
+            const SizedBox(height: AppSizes.md),
+          ],
+        ],
       ),
     );
   }

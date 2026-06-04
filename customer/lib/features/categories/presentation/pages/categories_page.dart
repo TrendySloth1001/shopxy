@@ -7,6 +7,7 @@ import 'package:shopxy_customer/features/categories/presentation/widgets/categor
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 
 /// Customer landing for "All categories". Big image grid; tap drills
 /// down into a [CategoryDetailPage] that lists subcategories + the
@@ -36,7 +37,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('All categories')),
       body: provider.isLoading && tree.isEmpty
-          ? const Center(child: CircularProgressIndicator())
+          ? const _CategoryGridSkeleton()
           : tree.isEmpty
               ? const Center(child: Text('No categories yet'))
               : RefreshIndicator(
@@ -74,6 +75,65 @@ class _CategoriesPageState extends State<CategoriesPage> {
     );
   }
 }
+
+// ── Skeleton ─────────────────────────────────────────────────────────────────
+
+/// 3-column grid of 6 skeleton tiles — mirrors the real [GridView.builder]
+/// layout while [CategoriesProvider.isLoading] is true and the tree is empty.
+class _CategoryGridSkeleton extends StatelessWidget {
+  const _CategoryGridSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.builder(
+      padding: const EdgeInsets.all(AppSizes.md),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        mainAxisSpacing: AppSizes.lg,
+        crossAxisSpacing: AppSizes.md,
+        childAspectRatio: 0.7,
+      ),
+      itemCount: 6,
+      itemBuilder: (context, index) => const _CategoryTileSkeleton(),
+    );
+  }
+}
+
+/// Single skeleton tile that mirrors [_CategoryTile]:
+///   • square [AppShimmerBox]  — category image placeholder
+///   • two [AppShimmerLine]s   — 2-line category name placeholder
+///   • one narrower [AppShimmerLine] — subcategory count placeholder
+class _CategoryTileSkeleton extends StatelessWidget {
+  const _CategoryTileSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Square thumb — AspectRatio 1:1, same corner radius as the real tile.
+        AspectRatio(
+          aspectRatio: 1,
+          child: AppShimmerBox(
+            height: double.infinity,
+            radius: AppSizes.radiusButton,
+          ),
+        ),
+        const SizedBox(height: AppSizes.sm),
+        // First name line (full width).
+        const AppShimmerLine(widthFactor: 0.9, height: AppSizes.md),
+        const SizedBox(height: AppSizes.xs),
+        // Second name line (slightly shorter to feel natural).
+        const AppShimmerLine(widthFactor: 0.6, height: AppSizes.md),
+        const SizedBox(height: AppSizes.xs),
+        // Subcategory count line — narrower, matches bodySmall visual weight.
+        const AppShimmerLine(widthFactor: 0.45, height: AppSizes.sm),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _CategoryTile extends StatelessWidget {
   const _CategoryTile({

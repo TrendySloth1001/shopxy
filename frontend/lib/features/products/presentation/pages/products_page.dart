@@ -20,6 +20,7 @@ import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/app_error_view.dart';
 import 'package:shopxy/shared/widgets/app_filter_pill.dart';
 import 'package:shopxy/shared/widgets/app_search_bar.dart';
@@ -307,7 +308,7 @@ class _ProductsPageState extends State<ProductsPage> {
           ),
           Expanded(
             child: provider.isLoading && provider.products.isEmpty
-                ? const Center(child: CircularProgressIndicator())
+                ? const _ProductListSkeleton()
                 : provider.error != null && provider.products.isEmpty
                     ? AppErrorView(onRetry: () => provider.loadProducts())
                     : provider.products.isEmpty
@@ -502,6 +503,85 @@ class _CategoryHeader extends StatelessWidget {
                 fontWeight: FontWeight.w800,
                 letterSpacing: 1.4,
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Full-list skeleton shown while the initial product fetch is in
+/// flight. Renders 6 placeholder rows that mirror the real
+/// [ProductListTile] layout (thumbnail + name lines + SKU line +
+/// price line + stock pill), separated by [AppDivider]s exactly as
+/// the real list is. Density is read from [NavigationPrefsProvider]
+/// so the skeleton matches whichever mode the user last chose.
+class _ProductListSkeleton extends StatelessWidget {
+  const _ProductListSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    final compact = context.watch<NavigationPrefsProvider>().isCompact;
+    return ListView.separated(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
+      itemCount: 6,
+      separatorBuilder: (context, index) => const AppDivider(),
+      itemBuilder: (context, index) => _ProductRowSkeleton(compact: compact),
+    );
+  }
+}
+
+/// One skeleton row. Mirrors [ProductListTile] for the given density.
+class _ProductRowSkeleton extends StatelessWidget {
+  const _ProductRowSkeleton({required this.compact});
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final imageSide = compact ? AppSizes.avatarMd : 96.0;
+    final vPad = compact ? AppSizes.sm : AppSizes.lg;
+
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSizes.lg,
+        vertical: vPad,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Thumbnail placeholder
+          AppShimmerBox(
+            width: imageSide,
+            height: imageSide,
+            radius: AppSizes.radiusMd,
+          ),
+          const SizedBox(width: AppSizes.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Name — 1 line compact, 2 lines card
+                AppShimmerLine(widthFactor: 0.75),
+                if (!compact) ...[
+                  const SizedBox(height: 4),
+                  AppShimmerLine(widthFactor: 0.55),
+                ],
+                const SizedBox(height: AppSizes.xs),
+                // SKU / identifier line — narrower
+                AppShimmerLine(widthFactor: 0.45, height: AppSizes.sm),
+                const SizedBox(height: AppSizes.sm),
+                // Price line
+                AppShimmerLine(widthFactor: 0.6),
+                const SizedBox(height: AppSizes.xs),
+                // Stock pill — fixed width rounded capsule
+                AppShimmerBox(
+                  width: 96,
+                  height: AppSizes.lg,
+                  radius: AppSizes.radiusFull,
+                ),
+              ],
             ),
           ),
         ],

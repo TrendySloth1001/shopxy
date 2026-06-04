@@ -24,6 +24,7 @@ import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
 import 'package:shopxy/shared/widgets/app_search_bar.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
 
 class InvoicesPage extends StatefulWidget {
@@ -181,7 +182,7 @@ class _InvoicesPageState extends State<InvoicesPage> {
           const AppDivider.flush(),
           Expanded(
             child: provider.isLoading && provider.invoices.isEmpty
-                ? const Center(child: CircularProgressIndicator())
+                ? const _InvoicesListSkeleton()
                 : provider.error != null && provider.invoices.isEmpty
                     ? EmptyState.line(
                         kind: LineArt.warning,
@@ -506,6 +507,98 @@ class _InvoiceFilterSheetState extends State<_InvoiceFilterSheet> {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Skeleton loading state — mirrors the _InvoiceTile layout
+// ---------------------------------------------------------------------------
+
+class _InvoicesListSkeleton extends StatelessWidget {
+  const _InvoicesListSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(vertical: AppSizes.sm)
+          .copyWith(bottom: 100),
+      itemCount: 6,
+      separatorBuilder: (context, index) => const AppDivider(),
+      itemBuilder: (context, index) => const _InvoiceTileSkeleton(),
+    );
+  }
+}
+
+class _InvoiceTileSkeleton extends StatelessWidget {
+  const _InvoiceTileSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.md,
+      ),
+      child: Row(
+        children: [
+          // Icon avatar placeholder
+          AppShimmerBox(
+            width: AppSizes.iconHuge,
+            height: AppSizes.iconHuge,
+            radius: AppSizes.radiusMd,
+          ),
+          const SizedBox(width: AppSizes.md),
+          // Left column: invoice number + badge, party name, date
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: AppShimmerLine(
+                        widthFactor: 0.45,
+                        height: AppSizes.md,
+                      ),
+                    ),
+                    const SizedBox(width: AppSizes.sm),
+                    AppShimmerBox(
+                      width: AppSizes.xxxl,
+                      height: AppSizes.md,
+                      radius: AppSizes.radiusFull,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSizes.xs),
+                AppShimmerLine(widthFactor: 0.6, height: AppSizes.sm),
+                const SizedBox(height: AppSizes.xs),
+                AppShimmerLine(widthFactor: 0.35, height: AppSizes.sm),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSizes.md),
+          // Right column: amount and item count
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              AppShimmerLine(widthFactor: 1.0, height: AppSizes.md),
+              const SizedBox(height: AppSizes.xs),
+              AppShimmerLine(widthFactor: 0.7, height: AppSizes.sm),
+              const SizedBox(height: AppSizes.xs),
+              // Placeholder for the download icon button area
+              AppShimmerBox(
+                width: AppSizes.iconMd + AppSizes.sm,
+                height: AppSizes.iconMd + AppSizes.sm,
+                radius: AppSizes.radiusSm,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 
 class _InvoiceTile extends StatelessWidget {
   const _InvoiceTile({

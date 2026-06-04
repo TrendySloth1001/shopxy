@@ -7,6 +7,7 @@ import 'package:shopxy/features/carousel/presentation/providers/carousels_provid
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 
 /// Top-level merchant page: lists every carousel the shop owns,
 /// grouped visually by placement. Tap a row to open the carousel
@@ -75,7 +76,7 @@ class _MyCarouselsPageState extends State<MyCarouselsPage> {
 
   Widget _body(CarouselsProvider p) {
     if (p.isLoading && p.carousels.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const _CarouselListSkeleton();
     }
     if (p.error != null && p.carousels.isEmpty) {
       return _ErrorView(message: p.error!, onRetry: () => p.load());
@@ -102,6 +103,77 @@ class _MyCarouselsPageState extends State<MyCarouselsPage> {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Skeleton loading state — mirrors _CarouselCard layout
+// ---------------------------------------------------------------------------
+
+class _CarouselListSkeleton extends StatelessWidget {
+  const _CarouselListSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.md,
+        AppSizes.lg,
+        AppSizes.huge,
+      ),
+      itemCount: 5,
+      separatorBuilder: (_, _) => const SizedBox(height: AppSizes.md),
+      itemBuilder: (_, _) => const _CarouselCardSkeleton(),
+    );
+  }
+}
+
+class _CarouselCardSkeleton extends StatelessWidget {
+  const _CarouselCardSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.white,
+      shape: AppShapes.squircle(
+        AppSizes.radiusLg,
+        side: const BorderSide(color: AppColors.hairline),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSizes.lg),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Icon area — matches the squircle container in _CarouselCard
+            AppShimmerBox(
+              width: AppSizes.huge,
+              height: AppSizes.huge,
+              radius: AppSizes.radiusMd,
+            ),
+            const SizedBox(width: AppSizes.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Carousel name
+                  const AppShimmerLine(widthFactor: 0.55, height: 14),
+                  const SizedBox(height: AppSizes.xs),
+                  // Metadata chip row — placement, slide count, live/paused
+                  const AppShimmerLine(widthFactor: 0.30, height: 10),
+                  const SizedBox(height: AppSizes.xs),
+                  const AppShimmerLine(widthFactor: 0.22, height: 10),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 
 class _CarouselCard extends StatelessWidget {
   const _CarouselCard({required this.carousel, required this.onTap});

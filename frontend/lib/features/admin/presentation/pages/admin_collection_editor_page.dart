@@ -12,6 +12,7 @@ import 'package:shopxy/shared/constants/app_durations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 
 /// Single-page editor for an editorial collection. Two states:
 ///   * new      — title/slug/etc, can't manage items until saved once
@@ -210,7 +211,11 @@ class _AdminCollectionEditorPageState extends State<AdminCollectionEditorPage> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        backgroundColor: AppColors.canvas,
+        appBar: AppBar(title: const Text('Edit collection')),
+        body: const _CollectionEditorSkeleton(),
+      );
     }
     final isEdit = _existing != null;
     return Scaffold(
@@ -456,6 +461,111 @@ class _ItemRow extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Skeleton that mirrors the collection editor form while data loads.
+class _CollectionEditorSkeleton extends StatelessWidget {
+  const _CollectionEditorSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.lg,
+        AppSizes.lg,
+        AppSizes.huge,
+      ),
+      children: [
+        // Cover row: 90×60 squircle + button placeholder
+        Row(
+          children: [
+            AppShimmerBox(
+              width: 90,
+              height: 60,
+              radius: AppSizes.radiusMd,
+            ),
+            const SizedBox(width: AppSizes.md),
+            const Expanded(
+              child: AppShimmerBox(height: 40, radius: AppSizes.radiusMd),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSizes.md),
+        // Title field
+        const _SkeletonField(widthFactor: 0.55),
+        const SizedBox(height: AppSizes.md),
+        // Slug field
+        const _SkeletonField(widthFactor: 0.45),
+        const SizedBox(height: AppSizes.md),
+        // Eyebrow field
+        const _SkeletonField(widthFactor: 0.50),
+        const SizedBox(height: AppSizes.md),
+        // Subtitle field
+        const _SkeletonField(widthFactor: 0.65),
+        const SizedBox(height: AppSizes.md),
+        // CTA text + CTA target (side-by-side)
+        Row(
+          children: const [
+            Expanded(child: _SkeletonField(widthFactor: 0.7)),
+            SizedBox(width: AppSizes.md),
+            Expanded(child: _SkeletonField(widthFactor: 0.7)),
+          ],
+        ),
+        const SizedBox(height: AppSizes.md),
+        // BG color field
+        const _SkeletonField(widthFactor: 0.40),
+        const SizedBox(height: AppSizes.lg),
+        // Published switch row
+        Row(
+          children: const [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AppShimmerLine(widthFactor: 0.30, height: 14),
+                  SizedBox(height: 6),
+                  AppShimmerLine(widthFactor: 0.55, height: 12),
+                ],
+              ),
+            ),
+            SizedBox(width: AppSizes.md),
+            AppShimmerBox(width: 48, height: 28, radius: AppSizes.radiusXl),
+          ],
+        ),
+        const SizedBox(height: AppSizes.lg),
+        // "Items" section label
+        const AppShimmerLine(widthFactor: 0.20, height: 16),
+        const SizedBox(height: AppSizes.sm),
+        // Items hint placeholder
+        AppShimmerBox(
+          width: double.infinity,
+          height: 52,
+          radius: AppSizes.radiusMd,
+        ),
+      ],
+    );
+  }
+}
+
+/// One labelled text-field skeleton: a narrow label line + a full-width input bar.
+class _SkeletonField extends StatelessWidget {
+  const _SkeletonField({required this.widthFactor});
+  final double widthFactor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AppShimmerLine(widthFactor: widthFactor * 0.5, height: 11),
+        const SizedBox(height: 6),
+        AppShimmerLine(widthFactor: widthFactor, height: 18),
+        const SizedBox(height: 4),
+        const AppShimmerLine(widthFactor: 1.0, height: 1),
+      ],
     );
   }
 }

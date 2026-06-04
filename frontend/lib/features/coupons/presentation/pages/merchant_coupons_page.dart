@@ -7,6 +7,7 @@ import 'package:shopxy/features/coupons/presentation/widgets/coupon_editor_sheet
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
 
 /// Merchant-facing list of coupons attached to the caller's shop.
@@ -114,7 +115,7 @@ class _MerchantCouponsPageState extends State<MerchantCouponsPage> {
         label: const Text('New coupon'),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const _CouponListSkeleton()
           : _error != null
               ? _ErrorBlock(message: _error!, onRetry: _load)
               : _rows.isEmpty
@@ -262,6 +263,79 @@ class _CouponRow extends StatelessWidget {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Skeleton loading widgets
+// ---------------------------------------------------------------------------
+
+/// A single skeleton card that mirrors the visual structure of [_CouponRow].
+class _CouponRowSkeleton extends StatelessWidget {
+  const _CouponRowSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSizes.sm),
+      child: Material(
+        color: AppColors.white,
+        shape: AppShapes.squircle(AppSizes.radiusMd),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSizes.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header row: code + discount text on the left, status badge on right
+              Row(
+                children: [
+                  Expanded(
+                    child: AppShimmerLine(widthFactor: 0.55, height: 16),
+                  ),
+                  const SizedBox(width: AppSizes.sm),
+                  AppShimmerBox(width: 56, height: 22, radius: AppSizes.radiusSm),
+                ],
+              ),
+              const SizedBox(height: AppSizes.xs),
+              // Title line
+              AppShimmerLine(widthFactor: 0.75, height: 13),
+              const SizedBox(height: AppSizes.xs),
+              // Optional feature badge row (Public / First order)
+              Row(
+                children: [
+                  AppShimmerBox(width: 100, height: 20, radius: AppSizes.radiusSm),
+                  const SizedBox(width: AppSizes.sm),
+                  AppShimmerBox(width: 80, height: 20, radius: AppSizes.radiusSm),
+                ],
+              ),
+              const SizedBox(height: AppSizes.xs),
+              // Metadata line: dates + redemption count
+              AppShimmerLine(widthFactor: 0.9, height: 11),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Renders 4 skeleton coupon cards inside the same padding as the real list.
+class _CouponListSkeleton extends StatelessWidget {
+  const _CouponListSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.sm,
+      ),
+      itemCount: 4,
+      itemBuilder: (context, i) => const _CouponRowSkeleton(),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 
 class _EmptyBlock extends StatelessWidget {
   const _EmptyBlock();

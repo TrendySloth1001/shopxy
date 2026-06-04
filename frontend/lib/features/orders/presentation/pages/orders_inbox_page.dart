@@ -16,6 +16,7 @@ import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
 
 class OrdersInboxPage extends StatefulWidget {
@@ -185,7 +186,7 @@ class _OrdersInboxPageState extends State<OrdersInboxPage> {
             child: RefreshIndicator(
               onRefresh: p.load,
               child: p.isLoading && p.orders.isEmpty
-                  ? const Center(child: CircularProgressIndicator())
+                  ? const _OrdersInboxSkeleton()
                   : p.error != null && p.orders.isEmpty
                       ? _ErrorState(message: p.error!, onRetry: p.load)
                       : p.orders.isEmpty
@@ -519,6 +520,97 @@ class _EmptyInbox extends StatelessWidget {
     );
   }
 }
+
+// ── Skeleton widgets ─────────────────────────────────────────────────────────
+
+/// Full-list skeleton — 4 repeated [_OrderRowSkeleton] items separated by
+/// [AppDivider]s, mirroring the real [ListView.separated] layout.
+class _OrdersInboxSkeleton extends StatelessWidget {
+  const _OrdersInboxSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: 4,
+      separatorBuilder: (_, _) => const AppDivider(),
+      itemBuilder: (_, _) => const _OrderRowSkeleton(),
+    );
+  }
+}
+
+/// Single-row skeleton that mirrors [_OrderRow]:
+///   • Left column: title line (order ID + customer name), optional preview
+///     line, metadata line
+///   • Right column: price line + status-badge block
+class _OrderRowSkeleton extends StatelessWidget {
+  const _OrderRowSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.md,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Left column
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Title row: order-id chip + customer name
+                Row(
+                  children: [
+                    AppShimmerBox(
+                      width: 48,
+                      height: 14,
+                      radius: AppSizes.radiusSm,
+                    ),
+                    const SizedBox(width: AppSizes.sm),
+                    const Expanded(
+                      child: AppShimmerLine(widthFactor: 0.55, height: 14),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                // Preview line (item names)
+                const AppShimmerLine(widthFactor: 0.8, height: 12),
+                const SizedBox(height: 6),
+                // Metadata line (date · item count)
+                const AppShimmerLine(widthFactor: 0.5, height: 11),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSizes.sm),
+          // Right column
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              // Price
+              AppShimmerBox(
+                width: 64,
+                height: 14,
+                radius: AppSizes.radiusSm,
+              ),
+              const SizedBox(height: AppSizes.xs),
+              // Status badge
+              AppShimmerBox(
+                width: 72,
+                height: 22,
+                radius: AppSizes.radiusFull,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _ErrorState extends StatelessWidget {
   const _ErrorState({required this.message, required this.onRetry});

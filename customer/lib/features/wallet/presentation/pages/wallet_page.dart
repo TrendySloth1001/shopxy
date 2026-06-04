@@ -7,6 +7,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_bar.dart';
+import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 
 /// Wallet page — header balance card + ledger of credits/debits.
 /// Phase 3 ships read-only; Phase 4 (coupons) and Phase 5 (loyalty /
@@ -46,7 +47,7 @@ class _WalletPageState extends State<WalletPage> {
         future: _future,
         builder: (context, snap) {
           if (snap.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
+            return const _WalletSkeleton();
           }
           if (snap.hasError) {
             return Center(
@@ -262,6 +263,132 @@ class _EmptyLedger extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ── Skeleton loading state ────────────────────────────────────────────────────
+
+/// Full-page skeleton that mirrors the wallet layout while data loads.
+/// Mirrors: balance card at the top, "RECENT ACTIVITY" label, 4 ledger rows.
+class _WalletSkeleton extends StatelessWidget {
+  const _WalletSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.md, AppSizes.md, AppSizes.md, AppSizes.huge,
+      ),
+      children: [
+        const _BalanceCardSkeleton(),
+        const SizedBox(height: AppSizes.lg),
+        // "RECENT ACTIVITY" label placeholder
+        const AppShimmerLine(widthFactor: 0.38, height: AppSizes.md),
+        const SizedBox(height: AppSizes.sm),
+        Container(
+          decoration: ShapeDecoration(
+            color: AppColors.white,
+            shape: AppShapes.squircle(AppSizes.radiusMd),
+          ),
+          child: Column(
+            children: [
+              for (var i = 0; i < 4; i++) ...[
+                if (i != 0)
+                  const Divider(
+                    height: 1,
+                    color: AppColors.hairline,
+                    indent: AppSizes.md,
+                    endIndent: AppSizes.md,
+                  ),
+                const _LedgerRowSkeleton(),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Skeleton for the black balance card: icon chip + label, large amount line,
+/// description line — all using dark shimmer tones on a black background.
+class _BalanceCardSkeleton extends StatelessWidget {
+  const _BalanceCardSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSizes.lg),
+      decoration: ShapeDecoration(
+        color: AppColors.black,
+        shape: AppShapes.squircle(AppSizes.radiusLg),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Icon + "WALLET BALANCE" label row
+          Row(
+            children: [
+              AppShimmerBox(
+                width: AppSizes.iconMd,
+                height: AppSizes.iconMd,
+                radius: AppSizes.radiusSm,
+              ),
+              const SizedBox(width: AppSizes.sm),
+              const AppShimmerLine(widthFactor: 0.4, height: AppSizes.md),
+            ],
+          ),
+          const SizedBox(height: AppSizes.sm),
+          // Large amount
+          const AppShimmerLine(widthFactor: 0.55, height: AppSizes.xxxl),
+          const SizedBox(height: AppSizes.sm),
+          // Description text
+          const AppShimmerLine(widthFactor: 0.85, height: AppSizes.md),
+        ],
+      ),
+    );
+  }
+}
+
+/// Skeleton for one ledger row: circular icon, description + date lines,
+/// amount placeholder on the right — matching _LedgerRow geometry.
+class _LedgerRowSkeleton extends StatelessWidget {
+  const _LedgerRowSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(AppSizes.md),
+      child: Row(
+        children: [
+          // Circular icon placeholder
+          AppShimmerBox(
+            width: AppSizes.xxxl,
+            height: AppSizes.xxxl,
+            radius: AppSizes.xxxl / 2,
+          ),
+          const SizedBox(width: AppSizes.md),
+          // Description + date lines
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppShimmerLine(widthFactor: 0.72, height: AppSizes.md),
+                SizedBox(height: AppSizes.xs),
+                AppShimmerLine(widthFactor: 0.45, height: AppSizes.sm),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSizes.sm),
+          // Amount placeholder
+          const AppShimmerBox(
+            width: AppSizes.massive,
+            height: AppSizes.md,
+            radius: AppSizes.radiusSm,
+          ),
+        ],
       ),
     );
   }

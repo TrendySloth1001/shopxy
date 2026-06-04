@@ -7,6 +7,7 @@ import 'package:shopxy/features/admin/presentation/providers/admin_collections_p
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 
 /// Index of all editorial collections (curated product lists). Tap a
 /// row to open the editor — that's where meta, cover, and items get
@@ -93,7 +94,7 @@ class _AdminCollectionsPageState extends State<AdminCollectionsPage> {
         label: const Text('New collection'),
       ),
       body: provider.isLoading && provider.list.isEmpty
-          ? const Center(child: CircularProgressIndicator())
+          ? const _CollectionsListSkeleton()
           : RefreshIndicator(
               onRefresh: provider.load,
               child: provider.list.isEmpty
@@ -219,6 +220,71 @@ class _StatusChip extends StatelessWidget {
         style: Theme.of(context).textTheme.labelMedium?.copyWith(
               color: published ? AppColors.success : AppColors.black,
             ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Skeleton widgets — shown while provider.isLoading && list.isEmpty
+// ---------------------------------------------------------------------------
+
+class _CollectionsListSkeleton extends StatelessWidget {
+  const _CollectionsListSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.lg,
+        AppSizes.lg,
+        AppSizes.fabClearance,
+      ),
+      itemCount: 4,
+      separatorBuilder: (_, _) => const SizedBox(height: AppSizes.md),
+      itemBuilder: (_, _) => const _CollectionRowSkeleton(),
+    );
+  }
+}
+
+class _CollectionRowSkeleton extends StatelessWidget {
+  const _CollectionRowSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSizes.md),
+      decoration: ShapeDecoration(
+        color: AppColors.white,
+        shape: AppShapes.squircle(AppSizes.radiusLg),
+      ),
+      child: Row(
+        children: [
+          // Cover image placeholder
+          AppShimmerBox(
+            width: 60,
+            height: 60,
+            radius: AppSizes.radiusMd,
+          ),
+          const SizedBox(width: AppSizes.md),
+          // Title + subtitle lines
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppShimmerLine(widthFactor: 0.6, height: 14),
+                SizedBox(height: AppSizes.xs),
+                AppShimmerLine(widthFactor: 0.4, height: 11),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSizes.sm),
+          // Status chip placeholder
+          AppShimmerBox(width: 58, height: 24, radius: AppSizes.radiusSm),
+          // Delete icon space
+          const SizedBox(width: AppSizes.lg + AppSizes.md),
+        ],
       ),
     );
   }

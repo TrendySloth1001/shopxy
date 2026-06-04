@@ -5,6 +5,7 @@ import 'package:shopxy/features/admin/data/datasources/admin_shops_remote_data_s
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
 
 /// Admin-only listing of marketplace shops with a verified toggle.
@@ -116,7 +117,7 @@ class _AdminShopsPageState extends State<AdminShopsPage> {
           ),
           Expanded(
             child: _loading && _rows.isEmpty
-                ? const Center(child: CircularProgressIndicator())
+                ? const _ShopsLoadingSkeleton()
                 : _error != null && _rows.isEmpty
                     ? Center(
                         child: Padding(
@@ -231,6 +232,65 @@ class _Row extends StatelessWidget {
               ),
               const SizedBox(width: AppSizes.sm),
               Switch.adaptive(value: row.isVerified, onChanged: (_) => onToggle()),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Full-page skeleton shown while the initial shop list is loading.
+class _ShopsLoadingSkeleton extends StatelessWidget {
+  const _ShopsLoadingSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(AppSizes.lg, 0, AppSizes.lg, 96),
+      itemCount: 5,
+      itemBuilder: (_, _) => const _ShopRowSkeleton(),
+    );
+  }
+}
+
+/// Single skeleton row that mirrors the shape of [_Row].
+class _ShopRowSkeleton extends StatelessWidget {
+  const _ShopRowSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSizes.sm),
+      child: Material(
+        color: AppColors.white,
+        shape: AppShapes.squircle(AppSizes.radiusMd),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSizes.md),
+          child: Row(
+            children: [
+              // Logo placeholder — 44×44 rounded block.
+              AppShimmerBox(width: 44, height: 44, radius: AppSizes.radiusSm),
+              const SizedBox(width: AppSizes.md),
+              // Text column.
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Shop name line (bold, ~70 % width).
+                    AppShimmerLine(widthFactor: 0.7, height: 14),
+                    const SizedBox(height: 6),
+                    // Slug / status line (~50 % width).
+                    AppShimmerLine(widthFactor: 0.5, height: 11),
+                    const SizedBox(height: 4),
+                    // Optional location line (~40 % width).
+                    AppShimmerLine(widthFactor: 0.4, height: 11),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSizes.sm),
+              // Toggle switch placeholder.
+              AppShimmerBox(width: 46, height: 26, radius: 13),
             ],
           ),
         ),

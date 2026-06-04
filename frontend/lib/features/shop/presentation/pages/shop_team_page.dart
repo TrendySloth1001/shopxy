@@ -10,6 +10,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_dialog.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 
 /// Team & roles — editorial layout (flat rows + hairline dividers, no
 /// boxed cards). Owners (or anyone with team:manage) invite staff,
@@ -203,7 +204,7 @@ class _ShopTeamPageState extends State<ShopTeamPage> {
         ],
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const _ShopTeamSkeleton()
           : _error != null
               ? _ErrorState(message: _error!, onRetry: _load)
               : RefreshIndicator(onRefresh: _load, child: _content()),
@@ -265,6 +266,203 @@ class _ShopTeamPageState extends State<ShopTeamPage> {
             onDelete: () => _deleteRole(_roles[i]),
           ),
       ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Skeleton (shimmer loading state)
+// ─────────────────────────────────────────────────────────────────────
+
+class _ShopTeamSkeleton extends StatelessWidget {
+  const _ShopTeamSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.only(top: AppSizes.md, bottom: AppSizes.huge),
+      children: [
+        // Info banner placeholder
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+              AppSizes.lg, 0, AppSizes.lg, AppSizes.md),
+          child: AppShimmerBox(
+            width: double.infinity,
+            height: 52,
+            radius: AppSizes.radiusMd,
+          ),
+        ),
+
+        // TEAM section header
+        const _SkeletonSectionHeader(),
+
+        // 4 member rows
+        for (var i = 0; i < 4; i++) _SkeletonMemberRow(first: i == 0),
+
+        // PENDING INVITES section header
+        const SizedBox(height: AppSizes.xl),
+        const _SkeletonSectionHeader(),
+
+        // 2 invite rows
+        for (var i = 0; i < 2; i++) _SkeletonInviteRow(first: i == 0),
+
+        // ROLES section header
+        const SizedBox(height: AppSizes.xl),
+        const _SkeletonSectionHeader(withAction: true),
+
+        // 3 role rows
+        for (var i = 0; i < 3; i++) _SkeletonRoleRow(first: i == 0),
+      ],
+    );
+  }
+}
+
+class _SkeletonSectionHeader extends StatelessWidget {
+  const _SkeletonSectionHeader({this.withAction = false});
+  final bool withAction;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          AppSizes.lg, AppSizes.sm, AppSizes.lg, AppSizes.sm),
+      child: Row(
+        children: [
+          AppShimmerLine(widthFactor: 0.35, height: 11),
+          if (withAction) ...[
+            const Spacer(),
+            AppShimmerBox(width: 72, height: 22, radius: AppSizes.radiusFull),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _SkeletonMemberRow extends StatelessWidget {
+  const _SkeletonMemberRow({required this.first});
+  final bool first;
+
+  @override
+  Widget build(BuildContext context) {
+    return _Divided(
+      first: first,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.lg, vertical: AppSizes.md),
+        child: Row(
+          children: [
+            // Avatar circle
+            AppShimmerBox(
+              width: AppSizes.avatarSm,
+              height: AppSizes.avatarSm,
+              radius: AppSizes.avatarSm / 2,
+            ),
+            const SizedBox(width: AppSizes.md),
+            // Name + email
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AppShimmerLine(widthFactor: 0.55, height: 14),
+                  const SizedBox(height: 5),
+                  AppShimmerLine(widthFactor: 0.75, height: 11),
+                ],
+              ),
+            ),
+            const SizedBox(width: AppSizes.sm),
+            // Role pill
+            AppShimmerBox(width: 56, height: 22, radius: AppSizes.radiusFull),
+            const SizedBox(width: AppSizes.sm),
+            // Menu button
+            AppShimmerBox(
+                width: 20, height: 20, radius: AppSizes.radiusFull),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SkeletonInviteRow extends StatelessWidget {
+  const _SkeletonInviteRow({required this.first});
+  final bool first;
+
+  @override
+  Widget build(BuildContext context) {
+    return _Divided(
+      first: first,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.lg, vertical: AppSizes.md),
+        child: Row(
+          children: [
+            // Mail icon placeholder
+            AppShimmerBox(width: 20, height: 20, radius: AppSizes.radiusSm),
+            const SizedBox(width: AppSizes.md),
+            // Email + status
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AppShimmerLine(widthFactor: 0.65, height: 14),
+                  const SizedBox(height: 5),
+                  AppShimmerLine(widthFactor: 0.50, height: 11),
+                ],
+              ),
+            ),
+            const SizedBox(width: AppSizes.sm),
+            // Cancel button
+            AppShimmerBox(
+                width: 60, height: 28, radius: AppSizes.radiusSm),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SkeletonRoleRow extends StatelessWidget {
+  const _SkeletonRoleRow({required this.first});
+  final bool first;
+
+  @override
+  Widget build(BuildContext context) {
+    return _Divided(
+      first: first,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.lg, vertical: AppSizes.md),
+        child: Row(
+          children: [
+            // Badge icon placeholder
+            AppShimmerBox(width: 20, height: 20, radius: AppSizes.radiusSm),
+            const SizedBox(width: AppSizes.md),
+            // Role name + description
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      AppShimmerLine(widthFactor: 0.40, height: 14),
+                      const SizedBox(width: AppSizes.sm),
+                      AppShimmerBox(
+                          width: 52, height: 18, radius: AppSizes.radiusFull),
+                    ],
+                  ),
+                  const SizedBox(height: 5),
+                  AppShimmerLine(widthFactor: 0.55, height: 11),
+                ],
+              ),
+            ),
+            const SizedBox(width: AppSizes.sm),
+            // Menu button
+            AppShimmerBox(
+                width: 20, height: 20, radius: AppSizes.radiusFull),
+          ],
+        ),
+      ),
     );
   }
 }

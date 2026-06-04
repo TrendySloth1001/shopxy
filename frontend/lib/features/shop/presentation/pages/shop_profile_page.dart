@@ -9,6 +9,7 @@ import 'package:shopxy/features/shop/presentation/providers/shop_provider.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 
 /// Merchant-side editor for the marketplace shop profile. Distinct from
 /// the legal/GST shop details on EditProfilePage — those drive invoice
@@ -271,7 +272,7 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
         ],
       ),
       body: provider.isLoading && shop == null
-          ? const Center(child: CircularProgressIndicator())
+          ? const _ShopProfileSkeleton()
           : shop == null
               ? Center(
                   child: Padding(
@@ -483,6 +484,178 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Skeleton shown while provider.isLoading && shop == null
+// ---------------------------------------------------------------------------
+
+class _ShopProfileSkeleton extends StatelessWidget {
+  const _ShopProfileSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.only(bottom: AppSizes.huge),
+      children: const [
+        _BannerSkeleton(),
+        _HeaderRowSkeleton(),
+        SizedBox(height: AppSizes.xl),
+        _FormFieldsSkeleton(),
+        SizedBox(height: AppSizes.lg),
+        _PublishCardSkeleton(),
+      ],
+    );
+  }
+}
+
+class _BannerSkeleton extends StatelessWidget {
+  const _BannerSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return AspectRatio(
+      aspectRatio: 2.5,
+      child: AppShimmerBox(
+        width: double.infinity,
+        height: double.infinity,
+        radius: 0,
+      ),
+    );
+  }
+}
+
+class _HeaderRowSkeleton extends StatelessWidget {
+  const _HeaderRowSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg)
+          .copyWith(top: AppSizes.lg),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Logo placeholder
+          AppShimmerBox(width: 72, height: 72, radius: AppSizes.radiusLg),
+          const SizedBox(width: AppSizes.lg),
+          // Title + metadata lines
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const AppShimmerLine(widthFactor: 0.55, height: 20),
+                const SizedBox(height: AppSizes.sm),
+                const AppShimmerLine(widthFactor: 0.75, height: 13),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FormFieldsSkeleton extends StatelessWidget {
+  const _FormFieldsSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Shop name field
+          const AppShimmerLine(widthFactor: 1.0, height: 48),
+          const SizedBox(height: AppSizes.lg),
+          // Tagline field
+          const AppShimmerLine(widthFactor: 1.0, height: 48),
+          const SizedBox(height: AppSizes.lg),
+          // Location section header
+          const AppShimmerLine(widthFactor: 0.3, height: 16),
+          const SizedBox(height: AppSizes.md),
+          // City + State row
+          Row(
+            children: [
+              Expanded(
+                child: AppShimmerLine(widthFactor: 1.0, height: 48),
+              ),
+              const SizedBox(width: AppSizes.md),
+              Expanded(
+                child: AppShimmerLine(widthFactor: 1.0, height: 48),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSizes.xl),
+          // Policies section header
+          const AppShimmerLine(widthFactor: 0.25, height: 16),
+          const SizedBox(height: AppSizes.md),
+          // Return policy (multi-line)
+          AppShimmerBox(
+            width: double.infinity,
+            height: 88,
+            radius: AppSizes.radiusMd,
+          ),
+          const SizedBox(height: AppSizes.md),
+          // Shipping policy (multi-line)
+          AppShimmerBox(
+            width: double.infinity,
+            height: 88,
+            radius: AppSizes.radiusMd,
+          ),
+          const SizedBox(height: AppSizes.md),
+          // Refund policy (multi-line)
+          AppShimmerBox(
+            width: double.infinity,
+            height: 88,
+            radius: AppSizes.radiusMd,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PublishCardSkeleton extends StatelessWidget {
+  const _PublishCardSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+      child: Container(
+        padding: const EdgeInsets.all(AppSizes.lg),
+        decoration: ShapeDecoration(
+          color: AppColors.white,
+          shape: AppShapes.squircle(
+            AppSizes.radiusLg,
+            side: const BorderSide(color: AppColors.hairline),
+          ),
+        ),
+        child: Row(
+          children: [
+            AppShimmerBox(width: 24, height: 24, radius: AppSizes.radiusSm),
+            const SizedBox(width: AppSizes.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const AppShimmerLine(widthFactor: 0.5, height: 16),
+                  const SizedBox(height: AppSizes.xs),
+                  const AppShimmerLine(widthFactor: 0.9, height: 12),
+                ],
+              ),
+            ),
+            const SizedBox(width: AppSizes.md),
+            AppShimmerBox(width: 48, height: 28, radius: AppSizes.radiusFull),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 
 class _SectionHeader extends StatelessWidget {
   const _SectionHeader({required this.title, this.subtitle});

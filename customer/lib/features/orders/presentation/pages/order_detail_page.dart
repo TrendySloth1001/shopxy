@@ -26,6 +26,7 @@ import 'package:shopxy_customer/shared/widgets/app_bar.dart';
 import 'package:shopxy_customer/shared/widgets/app_button.dart';
 import 'package:shopxy_customer/shared/widgets/app_dialog.dart';
 import 'package:shopxy_customer/shared/widgets/app_price_text.dart';
+import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 
 /// Customer-facing order detail. One parent CustomerOrder = one
@@ -306,7 +307,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
             )
           : null,
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const _OrderDetailSkeleton()
           : _error != null
           ? _ErrorState(message: _error!, onRetry: _load)
           : RefreshIndicator(
@@ -1500,6 +1501,289 @@ class _NoteCard extends StatelessWidget {
               height: 1.5,
             ),
       ),
+    );
+  }
+}
+
+// ─── Skeleton loading state ──────────────────────────────────────────
+
+/// Full-page skeleton that mirrors the real order-detail layout while
+/// the API call is in flight. Rendered as a non-scrolling ListView so
+/// the layout proportions match exactly what appears once data loads.
+class _OrderDetailSkeleton extends StatelessWidget {
+  const _OrderDetailSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.only(bottom: AppSizes.xl),
+      children: const [
+        // ── Delivering to section ──────────────────────────────────
+        _SkeletonSectionLabel(),
+        _DeliveryAddressSkeleton(),
+        _SectionDivider(),
+        // ── Vendor package section (2 packages) ───────────────────
+        _ShopOrderSkeleton(),
+        _SectionDivider(),
+        _ShopOrderSkeleton(),
+        _SectionDivider(),
+        // ── Order summary section ──────────────────────────────────
+        _SkeletonSectionLabel(),
+        _OrderSummarySkeleton(),
+      ],
+    );
+  }
+}
+
+/// Skeleton for the "DELIVERING TO" / "ORDER SUMMARY" section label.
+class _SkeletonSectionLabel extends StatelessWidget {
+  const _SkeletonSectionLabel();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.md,
+        AppSizes.lg,
+        AppSizes.sm,
+      ),
+      child: AppShimmerLine(widthFactor: 0.3, height: 12),
+    );
+  }
+}
+
+/// Skeleton for the delivery-address row: location icon + customer-name
+/// line + address snippet line.
+class _DeliveryAddressSkeleton extends StatelessWidget {
+  const _DeliveryAddressSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.xs,
+        AppSizes.lg,
+        AppSizes.md,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Location icon placeholder
+          AppShimmerBox(
+            width: AppSizes.iconMd,
+            height: AppSizes.iconMd,
+            radius: AppSizes.radiusSm,
+          ),
+          const SizedBox(width: AppSizes.sm),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Customer name
+                AppShimmerLine(widthFactor: 0.45, height: 14),
+                SizedBox(height: AppSizes.xs),
+                // Address snippet
+                AppShimmerLine(widthFactor: 0.7, height: 12),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Skeleton for one vendor-package section:
+///   - status pill + "Sold by" row
+///   - 3 item rows (thumbnail + name line + qty/price line)
+class _ShopOrderSkeleton extends StatelessWidget {
+  const _ShopOrderSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Header: status pill on the right + "Sold by" row
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSizes.lg,
+            AppSizes.md,
+            AppSizes.lg,
+            AppSizes.sm,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Spacer(),
+                  // Status pill
+                  AppShimmerBox(
+                    width: 72,
+                    height: 20,
+                    radius: AppSizes.radiusFull,
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSizes.xs),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Storefront icon
+                  AppShimmerBox(
+                    width: AppSizes.iconSm,
+                    height: AppSizes.iconSm,
+                    radius: AppSizes.radiusXs,
+                  ),
+                  const SizedBox(width: AppSizes.sm),
+                  // "Sold by <name>"
+                  const AppShimmerLine(widthFactor: 0.5, height: 14),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const Divider(
+          height: 1,
+          color: AppColors.hairline,
+          indent: AppSizes.lg,
+          endIndent: AppSizes.lg,
+        ),
+        // 3 item rows
+        const _ItemRowSkeleton(),
+        const Divider(
+          height: 1,
+          color: AppColors.hairline,
+          indent: AppSizes.lg,
+          endIndent: AppSizes.lg,
+        ),
+        const _ItemRowSkeleton(),
+        const Divider(
+          height: 1,
+          color: AppColors.hairline,
+          indent: AppSizes.lg,
+          endIndent: AppSizes.lg,
+        ),
+        const _ItemRowSkeleton(),
+      ],
+    );
+  }
+}
+
+/// Skeleton for a single item row: image thumbnail + two text lines +
+/// price block on the trailing edge.
+class _ItemRowSkeleton extends StatelessWidget {
+  const _ItemRowSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.md,
+        AppSizes.lg,
+        AppSizes.md,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Product thumbnail
+          AppShimmerBox(
+            width: AppSizes.avatarMd,
+            height: AppSizes.avatarMd,
+            radius: AppSizes.radiusSm,
+          ),
+          const SizedBox(width: AppSizes.md),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Product name
+                AppShimmerLine(widthFactor: 0.8, height: 14),
+                SizedBox(height: AppSizes.xs),
+                // Qty / unit / price line
+                AppShimmerLine(widthFactor: 0.55, height: 11),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSizes.sm),
+          // Price on trailing edge
+          const AppShimmerLine(widthFactor: 0.15, height: 13),
+        ],
+      ),
+    );
+  }
+}
+
+/// Skeleton for the order-summary section:
+///   - status icon + headline
+///   - 3 bill rows (items total, delivery, grand total)
+class _OrderSummarySkeleton extends StatelessWidget {
+  const _OrderSummarySkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.xs,
+        AppSizes.lg,
+        AppSizes.md,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Status row: icon + headline
+          Row(
+            children: [
+              AppShimmerBox(
+                width: AppSizes.iconSm,
+                height: AppSizes.iconSm,
+                radius: AppSizes.radiusXs,
+              ),
+              const SizedBox(width: AppSizes.sm),
+              const AppShimmerLine(widthFactor: 0.4, height: 14),
+            ],
+          ),
+          const SizedBox(height: AppSizes.sm),
+          const Divider(height: 1, color: AppColors.hairline),
+          const SizedBox(height: AppSizes.sm),
+          // Bill row: items total
+          const _BillRowSkeleton(labelFactor: 0.35, valueFactor: 0.2),
+          const SizedBox(height: 6),
+          // Bill row: delivery
+          const _BillRowSkeleton(labelFactor: 0.25, valueFactor: 0.15),
+          const Divider(height: AppSizes.lg, color: AppColors.hairline),
+          // Bill row: grand total (slightly taller)
+          const _BillRowSkeleton(labelFactor: 0.4, valueFactor: 0.25),
+        ],
+      ),
+    );
+  }
+}
+
+/// One bill-row skeleton with a label on the left and a value on the
+/// right, sized by [labelFactor] / [valueFactor] of parent width.
+class _BillRowSkeleton extends StatelessWidget {
+  const _BillRowSkeleton({
+    required this.labelFactor,
+    required this.valueFactor,
+  });
+
+  final double labelFactor;
+  final double valueFactor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(child: AppShimmerLine(widthFactor: labelFactor, height: 13)),
+        AppShimmerLine(widthFactor: valueFactor, height: 13),
+      ],
     );
   }
 }
