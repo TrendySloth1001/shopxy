@@ -301,8 +301,8 @@ class _LedgerRow extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 40,
-            height: 40,
+            width: AppSizes.avatarSm,
+            height: AppSizes.avatarSm,
             decoration: ShapeDecoration(
                 color: soft, shape: AppShapes.squircle(AppSizes.radiusSm)),
             alignment: Alignment.center,

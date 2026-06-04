@@ -67,11 +67,11 @@ class AppConfirmSheet extends StatelessWidget {
             // Grab handle
             Container(
               width: 40,
-              height: AppSizes.xs,
+              height: AppSizes.handleHeight,
               margin: const EdgeInsets.symmetric(vertical: AppSizes.sm),
               decoration: BoxDecoration(
                 color: AppColors.hairline,
-                borderRadius: BorderRadius.circular(2),
+                borderRadius: BorderRadius.circular(AppSizes.radiusXs),
               ),
             ),
             Padding(

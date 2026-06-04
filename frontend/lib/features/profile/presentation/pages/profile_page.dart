@@ -654,7 +654,7 @@ class ProfileAvatar extends StatelessWidget {
     super.key,
     required this.name,
     this.imageUrl,
-    this.size = 40,
+    this.size = AppSizes.avatarSm,
   });
 
   final String name;

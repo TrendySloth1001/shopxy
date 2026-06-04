@@ -390,8 +390,8 @@ class _CircleBack extends StatelessWidget {
         customBorder: AppShapes.squircle(AppSizes.radiusMd),
         onTap: onTap,
         child: const SizedBox(
-          width: 40,
-          height: 40,
+          width: AppSizes.avatarSm,
+          height: AppSizes.avatarSm,
           child: Icon(Icons.arrow_back_rounded,
               color: AppColors.black, size: AppSizes.iconMd),
         ),

@@ -61,7 +61,7 @@ class _SpotlightRequestPageState extends State<SpotlightRequestPage> {
                   AppSizes.lg,
                   AppSizes.lg,
                   AppSizes.lg,
-                  96,
+                  AppSizes.fabClearance,
                 ),
                 children: [
                   const _ExplainerCard(),

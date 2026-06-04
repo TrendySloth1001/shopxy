@@ -127,8 +127,8 @@ class _BackChip extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: Container(
-        width: 44,
-        height: 44,
+        width: AppSizes.tapTargetMin,
+        height: AppSizes.tapTargetMin,
         decoration: ShapeDecoration(
           color: AppColors.white,
           shape: AppShapes.squircle(
@@ -165,7 +165,7 @@ class _SearchField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 44,
+      height: AppSizes.tapTargetMin,
       decoration: ShapeDecoration(
         color: AppColors.white,
         shape: AppShapes.squircle(
@@ -592,7 +592,10 @@ class _LoadingResults extends StatelessWidget {
       separatorBuilder: (_, index) => const SizedBox(height: AppSizes.md),
       itemBuilder: (_, index) => Row(
         children: const [
-          AppShimmerBox(width: 56, height: 56, radius: AppSizes.radiusMd),
+          AppShimmerBox(
+              width: AppSizes.avatarMd,
+              height: AppSizes.avatarMd,
+              radius: AppSizes.radiusMd),
           SizedBox(width: AppSizes.md),
           Expanded(
             child: Column(
@@ -670,7 +673,8 @@ class _ResultsList extends StatelessWidget {
                 ClipRRect(
                   borderRadius: AppShapes.squircleRadius(AppSizes.radiusSm),
                   child: Container(
-                    width: 56, height: 56,
+                    width: AppSizes.avatarMd,
+                    height: AppSizes.avatarMd,
                     color: AppColors.heroPanel,
                     child: p.imageUrl == null || p.imageUrl!.isEmpty
                         ? const Icon(Icons.image_outlined, color: AppColors.muted)

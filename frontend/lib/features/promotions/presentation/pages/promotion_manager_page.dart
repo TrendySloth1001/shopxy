@@ -85,12 +85,13 @@ class _PromotionManagerPageState extends State<PromotionManagerPage> {
               onRefresh: provider.load,
               child: provider.items.isEmpty
                   ? ListView(
-                      children: const [
-                        SizedBox(height: AppSizes.huge),
+                      children: [
+                        const SizedBox(height: AppSizes.huge),
                         Center(
                           child: Text(
                             'No promotions yet — tap + to create one',
-                            style: TextStyle(color: AppColors.muted),
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(color: AppColors.muted),
                           ),
                         ),
                       ],
@@ -438,8 +439,8 @@ class _CreatePromotionSheetState extends State<_CreatePromotionSheet> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: AppSizes.xxxl,
-          height: AppSizes.xs,
+          width: AppSizes.handleWidth,
+          height: AppSizes.handleHeight,
           margin: const EdgeInsets.symmetric(vertical: AppSizes.sm),
           decoration: ShapeDecoration(
             color: AppColors.hairline,

@@ -1827,10 +1827,10 @@ class _Grabber extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.only(top: AppSizes.sm),
         child: Container(
-          width: AppSizes.xxxl, height: AppSizes.xs,
+          width: AppSizes.handleWidth, height: AppSizes.handleHeight,
           decoration: BoxDecoration(
             color: AppColors.hairline,
-            borderRadius: AppShapes.squircleRadius(AppSizes.radiusSm),
+            borderRadius: AppShapes.squircleRadius(AppSizes.radiusXs),
           ),
         ),
       );

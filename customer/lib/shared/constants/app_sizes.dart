@@ -46,4 +46,34 @@ class AppSizes {
 
   // QR code
   static const double qrCodeSize = 200;
+
+  // ── Component sizes ──────────────────────────────────
+  // Recurring values that sit *off* the spacing scale on purpose: fixed
+  // component dimensions, not padding. Added so widespread patterns
+  // (FAB clearance, drag handles, avatars, hero panels) stop being raw
+  // literals. See design.md §3.
+
+  /// Scroll-list bottom inset so the last row clears a FloatingActionButton.
+  static const double fabClearance = 96;
+
+  /// Bottom-sheet drag-handle pill dimensions.
+  static const double handleWidth = 36;
+  static const double handleHeight = 4;
+
+  /// Micro corner radius — drag-handle pills, chart bars, tiny badges.
+  /// Below radiusSm (8); reproduces the 2px rounding those primitives use.
+  static const double radiusXs = 2;
+
+  /// Avatars / icon chips / thumbnails that fall between spacing tokens.
+  static const double avatarXs = 36;
+  static const double avatarSm = 40;
+  static const double avatarMd = 56;
+
+  /// Minimum comfortable tap target (icon-only buttons, grid cells).
+  static const double tapTargetMin = 44;
+
+  /// GlassHero panel height + illustration size for detail/create pages.
+  static const double heroHeightSm = 160;
+  static const double heroHeightMd = 180;
+  static const double heroIllustration = 130;
 }

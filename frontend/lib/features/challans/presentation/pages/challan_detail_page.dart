@@ -135,7 +135,7 @@ class _ChallanDetailPageState extends State<ChallanDetailPage> {
         children: [
           GlassHero.line(
             kind: LineArt.deliveryNote,
-            height: 180,
+            height: AppSizes.heroHeightMd,
             illustrationSize: AppSizes.productImageSize,
             accent: c.isConverted
                 ? AppColors.brand

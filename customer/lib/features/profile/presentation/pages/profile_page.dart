@@ -313,8 +313,8 @@ class _GuestProfileBody extends StatelessWidget {
                 Row(
                   children: [
                     Container(
-                      width: 56,
-                      height: 56,
+                      width: AppSizes.avatarMd,
+                      height: AppSizes.avatarMd,
                       decoration: ShapeDecoration(
                         color: AppColors.heroPanel,
                         shape: AppShapes.squircle(AppSizes.radiusMd),

@@ -697,7 +697,7 @@ class _ClassicCard extends StatelessWidget {
                       ),
                 ),
                 if (subtitle.isNotEmpty) ...[
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSizes.xs),
                   Text(
                     subtitle,
                     maxLines: 2,
@@ -789,7 +789,7 @@ class _MinimalCard extends StatelessWidget {
                         ),
                   ),
                   if (subtitle.isNotEmpty) ...[
-                    const SizedBox(height: 4),
+                    const SizedBox(height: AppSizes.xs),
                     Text(
                       subtitle,
                       maxLines: 2,
@@ -941,7 +941,7 @@ class _SplitCard extends StatelessWidget {
                                   ),
                         ),
                       ],
-                      const SizedBox(height: 4),
+                      const SizedBox(height: AppSizes.xs),
                       Text(
                         data.title,
                         maxLines: 2,
@@ -955,7 +955,7 @@ class _SplitCard extends StatelessWidget {
                                 ),
                       ),
                       if (subtitle.isNotEmpty) ...[
-                        const SizedBox(height: 4),
+                        const SizedBox(height: AppSizes.xs),
                         Text(
                           subtitle,
                           maxLines: 2,
@@ -1096,7 +1096,7 @@ class _OverlayCard extends StatelessWidget {
                         ),
                   ),
                 ],
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSizes.xs),
                 Text(
                   data.title,
                   maxLines: 2,
@@ -1232,7 +1232,7 @@ class _DealCard extends StatelessWidget {
                                 ),
                       ),
                       if (subtitle.isNotEmpty) ...[
-                        const SizedBox(height: 4),
+                        const SizedBox(height: AppSizes.xs),
                         Text(
                           subtitle,
                           maxLines: 2,

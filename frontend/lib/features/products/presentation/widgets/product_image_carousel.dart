@@ -173,7 +173,7 @@ class _ThumbnailStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 56,
+      height: AppSizes.avatarMd,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
@@ -185,8 +185,8 @@ class _ThumbnailStrip extends StatelessWidget {
             onTap: () => onTap(i),
             child: AnimatedContainer(
               duration: AppDurations.short,
-              width: 56,
-              height: 56,
+              width: AppSizes.avatarMd,
+              height: AppSizes.avatarMd,
               decoration: ShapeDecoration(
                 color: AppColors.white,
                 shape: AppShapes.squircle(

@@ -198,7 +198,7 @@ class _BrandMark extends StatelessWidget {
               color: AppColors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.15),
+                  color: AppColors.black.withValues(alpha: 0.15),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -249,7 +249,7 @@ class _PillCta extends StatelessWidget {
         shape: AppShapes.squircle(AppSizes.radiusFull),
         shadows: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
+            color: AppColors.black.withValues(alpha: 0.12),
             blurRadius: 8,
             offset: const Offset(0, 3),
           ),
@@ -325,7 +325,7 @@ class _ShimmerPillState extends State<_ShimmerPill>
                           end: const Alignment(1, 0),
                           colors: [
                             Colors.transparent,
-                            Colors.white.withValues(alpha: 0.35),
+                            AppColors.white.withValues(alpha: 0.35),
                             Colors.transparent,
                           ],
                           stops: const [0.35, 0.5, 0.65],
@@ -451,7 +451,7 @@ class _CornerVignette extends StatelessWidget {
               colors: [
                 Colors.transparent,
                 Colors.transparent,
-                Colors.black.withValues(alpha: 0.18),
+                AppColors.black.withValues(alpha: 0.18),
               ],
               stops: const [0.0, 0.7, 1.0],
             ),
@@ -789,7 +789,7 @@ class _MinimalCard extends StatelessWidget {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.12),
+                      color: AppColors.black.withValues(alpha: 0.12),
                       blurRadius: 16,
                       offset: const Offset(0, 6),
                     ),
@@ -806,7 +806,7 @@ class _MinimalCard extends StatelessWidget {
                             center: const Alignment(-0.4, -0.5),
                             radius: 0.95,
                             colors: [
-                              Colors.white.withValues(alpha: 0.18),
+                              AppColors.white.withValues(alpha: 0.18),
                               Colors.transparent,
                             ],
                           ),
@@ -1008,8 +1008,8 @@ class _OverlayCard extends StatelessWidget {
                 center: Alignment.center,
                 radius: 0.9,
                 colors: [
-                  Colors.black.withValues(alpha: 0.50),
-                  Colors.black.withValues(alpha: 0.20),
+                  AppColors.black.withValues(alpha: 0.50),
+                  AppColors.black.withValues(alpha: 0.20),
                 ],
               ),
             ),
@@ -1021,7 +1021,7 @@ class _OverlayCard extends StatelessWidget {
                 end: Alignment.bottomCenter,
                 colors: [
                   Colors.transparent,
-                  Colors.black.withValues(alpha: 0.35),
+                  AppColors.black.withValues(alpha: 0.35),
                 ],
                 stops: const [0.55, 1.0],
               ),
@@ -1059,7 +1059,7 @@ class _OverlayCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.88),
+                      color: AppColors.white.withValues(alpha: 0.88),
                       fontSize: 11,
                       fontStyle: FontStyle.italic,
                     ),
@@ -1079,7 +1079,7 @@ class _OverlayCard extends StatelessWidget {
                     letterSpacing: -0.5,
                     shadows: [
                       Shadow(
-                        color: Colors.black.withValues(alpha: 0.4),
+                        color: AppColors.black.withValues(alpha: 0.4),
                         blurRadius: 14,
                       ),
                     ],
@@ -1093,7 +1093,7 @@ class _OverlayCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.92),
+                      color: AppColors.white.withValues(alpha: 0.92),
                       fontSize: 11,
                     ),
                   ),

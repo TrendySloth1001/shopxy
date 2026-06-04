@@ -87,8 +87,8 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
               // Filled brand affordance — anchors the bar and reads as
               // the primary entry point (vs. mic/camera as secondaries).
               Container(
-                width: 36,
-                height: 36,
+                width: AppSizes.avatarXs,
+                height: AppSizes.avatarXs,
                 decoration: ShapeDecoration(
                   color: AppColors.brand,
                   shape: AppShapes.squircle(AppSizes.radiusSm),
@@ -178,8 +178,8 @@ class _SearchAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 36,
-      height: 36,
+      width: AppSizes.avatarXs,
+      height: AppSizes.avatarXs,
       decoration: BoxDecoration(
         color: filled ? AppColors.brandSoft : Colors.transparent,
         shape: BoxShape.circle,
