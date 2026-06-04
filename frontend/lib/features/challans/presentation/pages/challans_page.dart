@@ -17,6 +17,7 @@ import 'package:shopxy/shared/widgets/app_search_bar.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 
 class ChallansPage extends StatefulWidget {
   const ChallansPage({super.key});
@@ -93,7 +94,7 @@ class _ChallansPageState extends State<ChallansPage> {
           ),
           Expanded(
             child: provider.isLoading && provider.challans.isEmpty
-                ? const Center(child: CircularProgressIndicator())
+                ? const _ChallanListSkeleton()
                 : provider.error != null && provider.challans.isEmpty
                     ? AppErrorView(
                         onRetry: () =>
@@ -163,6 +164,53 @@ AppStatusTone challanStatusTone(String status) {
       return AppStatusTone.error;
     default:
       return AppStatusTone.neutral;
+  }
+}
+
+class _ChallanListSkeleton extends StatelessWidget {
+  const _ChallanListSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
+      itemCount: 5,
+      separatorBuilder: (_, _) => const AppDivider(),
+      itemBuilder: (_, _) => const _ChallanTileSkeleton(),
+    );
+  }
+}
+
+class _ChallanTileSkeleton extends StatelessWidget {
+  const _ChallanTileSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.md,
+      ),
+      child: Row(
+        children: [
+          AppShimmerBox(width: 48, height: 48, radius: AppSizes.sm),
+          const SizedBox(width: AppSizes.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppShimmerLine(widthFactor: 1.0, height: 14),
+                const SizedBox(height: AppSizes.xs),
+                AppShimmerLine(widthFactor: 0.7, height: 12),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSizes.md),
+          AppShimmerBox(width: 64, height: 24, radius: AppSizes.xs),
+        ],
+      ),
+    );
   }
 }
 

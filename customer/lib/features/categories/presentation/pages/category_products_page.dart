@@ -8,6 +8,7 @@ import 'package:shopxy_customer/features/marketplace/presentation/pages/product_
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 
 /// Paginated product feed for a single canonical category. Backend
 /// rolls children up under the parent slug, so picking "Electronics"
@@ -116,7 +117,7 @@ class _CategoryProductsPageState extends State<CategoryProductsPage> {
         ],
       ),
       body: _isLoading && _products.isEmpty
-          ? const Center(child: CircularProgressIndicator())
+          ? const _CategoryProductsSkeleton()
           : _error != null
               ? Center(
                   child: Padding(
@@ -172,6 +173,70 @@ class _CategoryProductsPageState extends State<CategoryProductsPage> {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Skeleton widgets
+// ---------------------------------------------------------------------------
+
+/// Full-page skeleton that mirrors the 2-column product grid.
+class _CategoryProductsSkeleton extends StatelessWidget {
+  const _CategoryProductsSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.builder(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(AppSizes.md),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: AppSizes.lg,
+        crossAxisSpacing: AppSizes.md,
+        childAspectRatio: 0.66,
+      ),
+      itemCount: 6,
+      itemBuilder: (_, _) => const _ProductTileSkeleton(),
+    );
+  }
+}
+
+/// Single skeleton tile mirroring _ProductTile layout.
+class _ProductTileSkeleton extends StatelessWidget {
+  const _ProductTileSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Image area — 1:1
+        AspectRatio(
+          aspectRatio: 1,
+          child: AppShimmerBox(
+            width: double.infinity,
+            height: double.infinity,
+            radius: AppSizes.radiusMd,
+          ),
+        ),
+        const SizedBox(height: AppSizes.sm),
+        // Product name — two lines
+        AppShimmerLine(widthFactor: 0.9, height: 12),
+        const SizedBox(height: AppSizes.xs),
+        AppShimmerLine(widthFactor: 0.65, height: 12),
+        const Spacer(),
+        // Price row
+        Row(
+          children: [
+            AppShimmerLine(widthFactor: 0.4, height: 14),
+            const SizedBox(width: AppSizes.sm),
+            AppShimmerLine(widthFactor: 0.3, height: 11),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 
 class _ProductTile extends StatelessWidget {
   const _ProductTile({required this.product, required this.onTap});

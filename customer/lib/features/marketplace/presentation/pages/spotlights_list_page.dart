@@ -8,6 +8,7 @@ import 'package:shopxy_customer/features/marketplace/presentation/pages/shop_pro
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 
 /// Reachable from the home "Brands in spotlight → View all" affordance.
 /// Renders every active brand spotlight in a tall single-column list so
@@ -29,28 +30,85 @@ class SpotlightsListPage extends StatelessWidget {
       ),
       body: RefreshIndicator(
         onRefresh: () => feed.refresh(),
-        child: brands.isEmpty
-            ? ListView(children: [
-                const SizedBox(height: 120),
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: AppSizes.xl),
-                    child: Text(
-                      'No spotlights running right now.',
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodyMedium
-                          ?.copyWith(color: AppColors.muted),
-                    ),
-                  ),
-                ),
-              ])
-            : ListView.separated(
+        child: feed.isLoading && brands.isEmpty
+            ? ListView.separated(
                 padding: const EdgeInsets.all(AppSizes.lg),
-                itemCount: brands.length,
+                itemCount: 6,
                 separatorBuilder: (_, _) => const SizedBox(height: AppSizes.md),
-                itemBuilder: (_, i) => _Card(brand: brands[i]),
+                itemBuilder: (_, _) => const _SpotlightCardSkeleton(),
+              )
+            : brands.isEmpty
+                ? ListView(children: [
+                    const SizedBox(height: 120),
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: AppSizes.xl),
+                        child: Text(
+                          'No spotlights running right now.',
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(color: AppColors.muted),
+                        ),
+                      ),
+                    ),
+                  ])
+                : ListView.separated(
+                    padding: const EdgeInsets.all(AppSizes.lg),
+                    itemCount: brands.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: AppSizes.md),
+                    itemBuilder: (_, i) => _Card(brand: brands[i]),
+                  ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Skeleton card — mirrors the 16:9 AspectRatio layout of _Card
+// ---------------------------------------------------------------------------
+class _SpotlightCardSkeleton extends StatelessWidget {
+  const _SpotlightCardSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+      child: AspectRatio(
+        aspectRatio: 16 / 9,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Image area — fills the whole card
+            AppShimmerBox(
+              width: double.infinity,
+              height: double.infinity,
+              radius: AppSizes.radiusMd,
+            ),
+            // Text overlay at the bottom, same padding as _Card
+            Padding(
+              padding: const EdgeInsets.all(AppSizes.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  // Deal label chip
+                  AppShimmerBox(
+                    width: 72,
+                    height: 18,
+                    radius: 2,
+                  ),
+                  const SizedBox(height: AppSizes.sm),
+                  // Brand name
+                  AppShimmerLine(widthFactor: 0.55, height: 18),
+                  const SizedBox(height: AppSizes.xs),
+                  // Subtitle
+                  AppShimmerLine(widthFactor: 0.40, height: 13),
+                ],
               ),
+            ),
+          ],
+        ),
       ),
     );
   }

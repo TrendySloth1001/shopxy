@@ -13,6 +13,7 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_bottom_sheet.dart';
 import 'package:shopxy_customer/shared/widgets/app_divider.dart';
+import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 
 /// Browse a *single linked shop's* catalogue, build a basket of what the
@@ -240,7 +241,7 @@ class _RequestQuotationPageState extends State<RequestQuotationPage> {
         ),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const _CatalogueSkeleton()
           : _error != null
               ? _ErrorView(err: _error!, onRetry: _load)
               : _products.isEmpty
@@ -272,6 +273,113 @@ class _RequestQuotationPageState extends State<RequestQuotationPage> {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Skeleton / shimmer loading state — mirrors the _CatalogueBody layout
+// ---------------------------------------------------------------------------
+
+/// Full-page skeleton shown while the catalogue is loading.
+/// Renders a fake search bar, a chip rail, and 6 product-row skeletons.
+class _CatalogueSkeleton extends StatelessWidget {
+  const _CatalogueSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        // Fake search bar
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+              AppSizes.lg, AppSizes.sm, AppSizes.lg, AppSizes.xs),
+          child: AppShimmerBox(
+            width: double.infinity,
+            height: 44,
+            radius: AppSizes.radiusMd,
+          ),
+        ),
+        // Fake chip rail
+        SizedBox(
+          height: 50,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppSizes.lg, vertical: AppSizes.sm),
+            children: [
+              AppShimmerBox(width: 56, height: 30, radius: AppSizes.radiusFull),
+              const SizedBox(width: AppSizes.sm),
+              AppShimmerBox(width: 72, height: 30, radius: AppSizes.radiusFull),
+              const SizedBox(width: AppSizes.sm),
+              AppShimmerBox(width: 64, height: 30, radius: AppSizes.radiusFull),
+              const SizedBox(width: AppSizes.sm),
+              AppShimmerBox(width: 80, height: 30, radius: AppSizes.radiusFull),
+            ],
+          ),
+        ),
+        const AppDivider.flush(),
+        Expanded(
+          child: ListView.separated(
+            padding: const EdgeInsets.fromLTRB(0, AppSizes.sm, 0, 140),
+            itemCount: 6,
+            separatorBuilder: (_, _) => const AppDivider.flush(),
+            itemBuilder: (_, _) => const _SkeletonProductRow(),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// One shimmer row that mirrors the real [_ProductRow] layout:
+/// thumbnail box · name lines · price/unit lines · add-button placeholder.
+class _SkeletonProductRow extends StatelessWidget {
+  const _SkeletonProductRow();
+
+  static const double _thumbSize = AppSizes.productThumbSize;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.md,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Thumbnail placeholder
+          AppShimmerBox(
+            width: _thumbSize,
+            height: _thumbSize,
+            radius: AppSizes.radiusSm,
+          ),
+          const SizedBox(width: AppSizes.md),
+          // Text block
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppShimmerLine(widthFactor: 0.8, height: 14),
+                const SizedBox(height: AppSizes.xs),
+                AppShimmerLine(widthFactor: 0.55, height: 12),
+                const SizedBox(height: AppSizes.xs),
+                AppShimmerLine(widthFactor: 0.4, height: 12),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSizes.sm),
+          // Add-button placeholder
+          AppShimmerBox(
+            width: 58,
+            height: 32,
+            radius: AppSizes.radiusFull,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 
 /// Search + category chips + the filtered product list.
 class _CatalogueBody extends StatelessWidget {

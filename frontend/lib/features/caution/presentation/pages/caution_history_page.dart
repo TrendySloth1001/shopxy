@@ -8,6 +8,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_list_section.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 
 /// Full caution ledger for a party: held balance + every deposit, refund and
 /// set-off, most recent first.
@@ -78,7 +79,7 @@ class _CautionHistoryPageState extends State<CautionHistoryPage> {
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const _CautionHistorySkeleton()
           : _error != null
               ? Center(
                   child: Padding(
@@ -165,6 +166,100 @@ class _CautionHistoryPageState extends State<CautionHistoryPage> {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Skeleton widgets — shown while _isLoading is true
+// ---------------------------------------------------------------------------
+
+/// Full-page skeleton that mirrors the layout of [_buildBody] + [_CautionRow].
+class _CautionHistorySkeleton extends StatelessWidget {
+  const _CautionHistorySkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
+      physics: const NeverScrollableScrollPhysics(),
+      children: [
+        // Header card — icon + two-line text column + large balance amount
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.lg,
+            vertical: AppSizes.sm,
+          ),
+          child: Row(
+            children: [
+              AppShimmerBox(
+                width: AppSizes.iconMd,
+                height: AppSizes.iconMd,
+                radius: AppSizes.iconMd / 2,
+              ),
+              const SizedBox(width: AppSizes.md),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AppShimmerLine(widthFactor: 0.35, height: 10),
+                    SizedBox(height: AppSizes.xs),
+                    AppShimmerLine(widthFactor: 0.55, height: 13),
+                  ],
+                ),
+              ),
+              const AppShimmerLine(widthFactor: 0.22, height: 22),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSizes.md),
+        const AppDivider.flush(),
+        const SizedBox(height: AppSizes.md),
+        // 5 transaction row skeletons
+        for (var i = 0; i < 5; i++) ...[
+          const _CautionRowSkeleton(),
+          if (i < 4) const AppDivider.flush(),
+        ],
+        const SizedBox(height: AppSizes.xl),
+      ],
+    );
+  }
+}
+
+/// Single transaction row skeleton — mirrors [_CautionRow].
+class _CautionRowSkeleton extends StatelessWidget {
+  const _CautionRowSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.md,
+      ),
+      child: Row(
+        children: [
+          AppShimmerBox(
+            width: AppSizes.iconMd,
+            height: AppSizes.iconMd,
+            radius: AppSizes.iconMd / 2,
+          ),
+          const SizedBox(width: AppSizes.md),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppShimmerLine(widthFactor: 0.3, height: 13),
+                SizedBox(height: AppSizes.xs),
+                AppShimmerLine(widthFactor: 0.55, height: 11),
+              ],
+            ),
+          ),
+          const AppShimmerLine(widthFactor: 0.2, height: 13),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 
 class _CautionRow extends StatelessWidget {
   const _CautionRow({

@@ -30,6 +30,7 @@ import 'package:shopxy/shared/constants/app_units.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/app_card.dart';
 import 'package:shopxy/shared/widgets/app_dialog.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
@@ -429,7 +430,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     if (_isLoading) {
       return Scaffold(
         appBar: AppBar(),
-        body: const Center(child: CircularProgressIndicator()),
+        body: const _ProductDetailSkeleton(),
       );
     }
 
@@ -667,6 +668,213 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Full-page skeleton that mirrors the product detail layout while data
+/// loads. Sections rendered in the same order as the real page:
+///   1. Full-width image carousel placeholder
+///   2. Header card (thumbnail + name/brand/category)
+///   3. Marketplace card (icon + two text lines + toggle area)
+///   4. Stock status card (large qty line + threshold line + badge)
+///   5. Pricing details section (5 rows)
+///
+/// Variants/specs/offers are omitted because they appear conditionally
+/// and collapsing them keeps the skeleton faithful to the common case.
+class _ProductDetailSkeleton extends StatelessWidget {
+  const _ProductDetailSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: EdgeInsets.zero,
+      children: [
+        // ── Carousel placeholder ────────────────────────────────────
+        AppShimmerBox(
+          width: double.infinity,
+          height: 260,
+          radius: 0,
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSizes.lg,
+            AppSizes.lg,
+            AppSizes.lg,
+            AppSizes.huge,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // ── Header card ─────────────────────────────────────
+              AppCard(
+                padding: const EdgeInsets.all(AppSizes.lg),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Thumbnail placeholder
+                        AppShimmerBox(
+                          width: AppSizes.avatarMd,
+                          height: AppSizes.avatarMd,
+                          radius: AppSizes.radiusMd,
+                        ),
+                        const SizedBox(width: AppSizes.lg),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Brand line
+                              const AppShimmerLine(
+                                  widthFactor: 0.35, height: 10),
+                              const SizedBox(height: 6),
+                              // Product name
+                              const AppShimmerLine(
+                                  widthFactor: 0.8, height: 16),
+                              const SizedBox(height: 6),
+                              // Category badge
+                              AppShimmerBox(
+                                width: 90,
+                                height: 22,
+                                radius: AppSizes.radiusSm,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSizes.md),
+                    // Status chips row
+                    Row(
+                      children: [
+                        AppShimmerBox(
+                            width: 70, height: 22, radius: AppSizes.radiusSm),
+                        const SizedBox(width: AppSizes.sm),
+                        AppShimmerBox(
+                            width: 100, height: 22, radius: AppSizes.radiusSm),
+                      ],
+                    ),
+                    const SizedBox(height: AppSizes.md),
+                    // SKU / barcode chips
+                    Row(
+                      children: [
+                        AppShimmerBox(
+                            width: 80, height: 24, radius: AppSizes.lg),
+                        const SizedBox(width: AppSizes.sm),
+                        AppShimmerBox(
+                            width: 100, height: 24, radius: AppSizes.lg),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSizes.md),
+
+              // ── Marketplace card ─────────────────────────────────
+              AppCard(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSizes.lg,
+                  AppSizes.md,
+                  AppSizes.md,
+                  AppSizes.md,
+                ),
+                child: Row(
+                  children: [
+                    // Icon box
+                    AppShimmerBox(
+                      width: AppSizes.avatarXs,
+                      height: AppSizes.avatarXs,
+                      radius: AppSizes.radiusSm,
+                    ),
+                    const SizedBox(width: AppSizes.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          AppShimmerLine(widthFactor: 0.55, height: 14),
+                          SizedBox(height: 5),
+                          AppShimmerLine(widthFactor: 0.9, height: 11),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: AppSizes.md),
+                    // Toggle placeholder
+                    AppShimmerBox(
+                      width: 44,
+                      height: 26,
+                      radius: AppSizes.lg,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSizes.md),
+
+              // ── Stock status card ────────────────────────────────
+              AppCard(
+                padding: const EdgeInsets.all(AppSizes.lg),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          AppShimmerLine(widthFactor: 0.5, height: 22),
+                          SizedBox(height: 6),
+                          AppShimmerLine(widthFactor: 0.7, height: 12),
+                        ],
+                      ),
+                    ),
+                    AppShimmerBox(
+                      width: 80,
+                      height: 24,
+                      radius: AppSizes.radiusSm,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSizes.xl),
+
+              // ── Pricing section ──────────────────────────────────
+              AppShimmerBox(width: 80, height: 12, radius: AppSizes.radiusSm),
+              const SizedBox(height: AppSizes.sm),
+              AppCard(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSizes.lg,
+                  vertical: AppSizes.md,
+                ),
+                child: Column(
+                  children: [
+                    for (int i = 0; i < 5; i++) ...[
+                      if (i > 0) const AppDivider.flush(),
+                      Padding(
+                        padding:
+                            const EdgeInsets.symmetric(vertical: AppSizes.sm),
+                        child: Row(
+                          children: [
+                            AppShimmerBox(
+                              width: 90,
+                              height: 13,
+                              radius: AppSizes.radiusSm,
+                            ),
+                            const Spacer(),
+                            AppShimmerBox(
+                              width: 60,
+                              height: 13,
+                              radius: AppSizes.radiusSm,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

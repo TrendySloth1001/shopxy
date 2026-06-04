@@ -23,6 +23,7 @@ import 'package:shopxy/shared/widgets/app_search_bar.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 
 class PartiesPage extends StatefulWidget {
   const PartiesPage({super.key});
@@ -91,7 +92,7 @@ class _PartiesPageState extends State<PartiesPage> {
           ),
           Expanded(
             child: provider.isLoading && provider.parties.isEmpty
-                ? const Center(child: CircularProgressIndicator())
+                ? const _PartiesListSkeleton()
                 : provider.error != null && provider.parties.isEmpty
                     ? AppErrorView(
                         onRetry: () => context
@@ -229,6 +230,78 @@ class _PartiesPageState extends State<PartiesPage> {
     }
   }
 }
+
+// ---------------------------------------------------------------------------
+// Skeleton / shimmer loading state
+// ---------------------------------------------------------------------------
+
+class _PartiesListSkeleton extends StatelessWidget {
+  const _PartiesListSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
+      itemCount: 5,
+      separatorBuilder: (_, _) => const AppDivider(),
+      itemBuilder: (_, _) => const _PartyTileSkeleton(),
+    );
+  }
+}
+
+class _PartyTileSkeleton extends StatelessWidget {
+  const _PartyTileSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.md,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Avatar placeholder — 48 dp circular
+          AppShimmerBox(width: 48, height: 48, radius: 24),
+          const SizedBox(width: AppSizes.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Party name line (~70 % width)
+                AppShimmerLine(widthFactor: 0.7, height: AppSizes.md),
+                const SizedBox(height: AppSizes.xs),
+                // Phone line (~50 % width)
+                AppShimmerLine(widthFactor: 0.5, height: AppSizes.sm),
+                const SizedBox(height: AppSizes.xs),
+                // GSTIN line (~60 % width)
+                AppShimmerLine(widthFactor: 0.6, height: AppSizes.sm),
+                const SizedBox(height: AppSizes.sm),
+                // Status badge placeholders — three small chips
+                Wrap(
+                  spacing: AppSizes.xs,
+                  runSpacing: AppSizes.xs,
+                  children: [
+                    AppShimmerBox(width: 72, height: 22, radius: AppSizes.radiusFull),
+                    AppShimmerBox(width: 80, height: 22, radius: AppSizes.radiusFull),
+                    AppShimmerBox(width: 68, height: 22, radius: AppSizes.radiusFull),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          // Trailing menu-button icon placeholder
+          const SizedBox(width: AppSizes.md),
+          AppShimmerBox(width: 24, height: 24, radius: AppSizes.radiusSm),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 
 class _PartyTile extends StatelessWidget {
   const _PartyTile({

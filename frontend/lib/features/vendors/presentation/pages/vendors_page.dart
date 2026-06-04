@@ -23,6 +23,7 @@ import 'package:shopxy/shared/widgets/app_search_bar.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 
 class VendorsPage extends StatefulWidget {
   const VendorsPage({super.key});
@@ -94,7 +95,7 @@ class _VendorsPageState extends State<VendorsPage> {
           ),
           Expanded(
             child: provider.isLoading && provider.vendors.isEmpty
-                ? const Center(child: CircularProgressIndicator())
+                ? const _VendorListSkeleton()
                 : provider.error != null && provider.vendors.isEmpty
                     ? AppErrorView(
                         onRetry: () => context
@@ -484,6 +485,79 @@ class _InviteChip extends StatelessWidget {
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.3,
                 ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Skeleton loading state — mirrors _VendorTile layout
+// ---------------------------------------------------------------------------
+
+class _VendorListSkeleton extends StatelessWidget {
+  const _VendorListSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
+      itemCount: 6,
+      separatorBuilder: (_, _) => const AppDivider(),
+      itemBuilder: (context, index) => const _VendorTileSkeleton(),
+    );
+  }
+}
+
+class _VendorTileSkeleton extends StatelessWidget {
+  const _VendorTileSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.md,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Avatar placeholder — circular
+          AppShimmerBox(
+            width: AppSizes.avatarSm,
+            height: AppSizes.avatarSm,
+            radius: AppSizes.avatarSm / 2,
+          ),
+          const SizedBox(width: AppSizes.md),
+          // Text + badge column
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Vendor name line
+                AppShimmerLine(widthFactor: 0.55, height: 13),
+                const SizedBox(height: AppSizes.xs),
+                // Phone / GSTIN line
+                AppShimmerLine(widthFactor: 0.40, height: 11),
+                const SizedBox(height: AppSizes.sm),
+                // Status badge row
+                Row(
+                  children: [
+                    AppShimmerBox(width: 64, height: 20, radius: AppSizes.radiusFull),
+                    const SizedBox(width: AppSizes.xs),
+                    AppShimmerBox(width: 72, height: 20, radius: AppSizes.radiusFull),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          // Action icon placeholder
+          AppShimmerBox(
+            width: AppSizes.iconMd,
+            height: AppSizes.iconMd,
+            radius: AppSizes.iconMd / 2,
           ),
         ],
       ),

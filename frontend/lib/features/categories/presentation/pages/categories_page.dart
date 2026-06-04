@@ -9,6 +9,7 @@ import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
 
 /// Read-only browse of the canonical taxonomy. Merchants don't manage
@@ -41,7 +42,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
     return Scaffold(
       appBar: AppBar(title: const Text(AppStrings.navCategories)),
       body: provider.isLoading && tree.isEmpty
-          ? const Center(child: CircularProgressIndicator())
+          ? const _CategoriesGridSkeleton()
           : tree.isEmpty
               ? EmptyState.line(
                   kind: LineArt.productTag,
@@ -113,6 +114,57 @@ class _CategoryCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Skeleton widgets (loading state)
+// ---------------------------------------------------------------------------
+
+/// Full-grid skeleton: 6 placeholder cells in the same 3-column layout.
+class _CategoriesGridSkeleton extends StatelessWidget {
+  const _CategoriesGridSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.builder(
+      padding: const EdgeInsets.all(AppSizes.md),
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        mainAxisSpacing: AppSizes.md,
+        crossAxisSpacing: AppSizes.md,
+        childAspectRatio: 0.82,
+      ),
+      itemCount: 6,
+      itemBuilder: (_, _) => const _CategoryCardSkeleton(),
+    );
+  }
+}
+
+/// Single skeleton cell: square image block + two text lines.
+class _CategoryCardSkeleton extends StatelessWidget {
+  const _CategoryCardSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AspectRatio(
+          aspectRatio: 1,
+          child: AppShimmerBox(
+            width: double.infinity,
+            height: double.infinity,
+            radius: AppSizes.radiusButton,
+          ),
+        ),
+        const SizedBox(height: AppSizes.xs),
+        const AppShimmerLine(widthFactor: 1.0, height: AppSizes.sm),
+        const SizedBox(height: AppSizes.xs),
+        const AppShimmerLine(widthFactor: 0.7, height: AppSizes.sm),
+      ],
     );
   }
 }

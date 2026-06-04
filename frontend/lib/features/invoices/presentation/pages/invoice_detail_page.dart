@@ -21,6 +21,7 @@ import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_section_header.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/glass_widgets.dart';
 
 class InvoiceDetailPage extends StatefulWidget {
@@ -319,7 +320,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
     final theme = Theme.of(context);
 
     if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const _InvoiceDetailSkeleton();
     }
 
     if (_invoice == null) {
@@ -879,6 +880,221 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
       default:
         return AppStatusTone.neutral;
     }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Skeleton shown while the invoice is loading.
+// Mirrors the real page layout: hero → header block → party info →
+// items section → totals section.
+// ---------------------------------------------------------------------------
+class _InvoiceDetailSkeleton extends StatelessWidget {
+  const _InvoiceDetailSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(),
+      body: Column(
+        children: [
+          // Hero illustration placeholder
+          const AppShimmerBox(
+            width: double.infinity,
+            height: AppSizes.heroHeightMd,
+            radius: 0,
+          ),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(AppSizes.lg),
+              children: const [
+                // Invoice number + status badge row
+                _SkeletonHeaderRow(),
+                SizedBox(height: AppSizes.sm),
+                // Document-type badge rows (two chip-sized boxes)
+                _SkeletonBadgeRow(),
+                SizedBox(height: AppSizes.sm),
+                // Sale/purchase label + date lines
+                AppShimmerLine(widthFactor: 0.45, height: AppSizes.md),
+                SizedBox(height: AppSizes.xs),
+                AppShimmerLine(widthFactor: 0.55, height: AppSizes.sm),
+                SizedBox(height: AppSizes.lg),
+                // Party details — 4 info rows
+                _SkeletonInfoRow(labelFactor: 0.2, valueFactor: 0.55),
+                _SkeletonInfoRow(labelFactor: 0.15, valueFactor: 0.45),
+                _SkeletonInfoRow(labelFactor: 0.18, valueFactor: 0.6),
+                _SkeletonInfoRow(labelFactor: 0.22, valueFactor: 0.5),
+                SizedBox(height: AppSizes.lg),
+                // Items section header + divider
+                AppShimmerLine(widthFactor: 0.35, height: AppSizes.md),
+                SizedBox(height: AppSizes.sm),
+                _SkeletonDivider(),
+                // 3 sample item rows
+                _SkeletonItemRow(),
+                _SkeletonDivider(),
+                _SkeletonItemRow(),
+                _SkeletonDivider(),
+                _SkeletonItemRow(),
+                SizedBox(height: AppSizes.md),
+                _SkeletonDivider(),
+                SizedBox(height: AppSizes.md),
+                // Totals breakdown — 6 rows (subtotal, tax, cess, discount, divider, total)
+                _SkeletonTotalRow(labelFactor: 0.3, valueFactor: 0.25),
+                _SkeletonTotalRow(labelFactor: 0.25, valueFactor: 0.28),
+                _SkeletonTotalRow(labelFactor: 0.2, valueFactor: 0.22),
+                _SkeletonTotalRow(labelFactor: 0.22, valueFactor: 0.2),
+                SizedBox(height: AppSizes.xs),
+                _SkeletonDivider(),
+                SizedBox(height: AppSizes.xs),
+                _SkeletonTotalRow(
+                  labelFactor: 0.2,
+                  valueFactor: 0.3,
+                  tall: true,
+                ),
+                SizedBox(height: AppSizes.huge),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SkeletonHeaderRow extends StatelessWidget {
+  const _SkeletonHeaderRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: const [
+        Expanded(
+          child: AppShimmerLine(widthFactor: 0.65, height: AppSizes.xl),
+        ),
+        SizedBox(width: AppSizes.md),
+        AppShimmerBox(
+          width: 72,
+          height: AppSizes.xl,
+          radius: AppSizes.radiusFull,
+        ),
+      ],
+    );
+  }
+}
+
+class _SkeletonBadgeRow extends StatelessWidget {
+  const _SkeletonBadgeRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Row(
+      children: [
+        AppShimmerBox(width: 90, height: AppSizes.lg, radius: AppSizes.radiusFull),
+        SizedBox(width: AppSizes.xs),
+        AppShimmerBox(width: 80, height: AppSizes.lg, radius: AppSizes.radiusFull),
+      ],
+    );
+  }
+}
+
+class _SkeletonInfoRow extends StatelessWidget {
+  const _SkeletonInfoRow({
+    required this.labelFactor,
+    required this.valueFactor,
+  });
+  final double labelFactor;
+  final double valueFactor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSizes.xs),
+      child: Row(
+        children: [
+          Flexible(
+            flex: 2,
+            child: AppShimmerLine(widthFactor: labelFactor, height: AppSizes.md),
+          ),
+          const SizedBox(width: AppSizes.sm),
+          Flexible(
+            flex: 5,
+            child: AppShimmerLine(widthFactor: valueFactor, height: AppSizes.md),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SkeletonItemRow extends StatelessWidget {
+  const _SkeletonItemRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.md,
+      ),
+      child: Row(
+        children: [
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppShimmerLine(widthFactor: 0.7, height: AppSizes.md),
+                SizedBox(height: AppSizes.xs),
+                AppShimmerLine(widthFactor: 0.5, height: AppSizes.sm),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSizes.md),
+          AppShimmerBox(
+            width: AppSizes.massive,
+            height: AppSizes.md,
+            radius: AppSizes.radiusSm,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SkeletonTotalRow extends StatelessWidget {
+  const _SkeletonTotalRow({
+    required this.labelFactor,
+    required this.valueFactor,
+    this.tall = false,
+  });
+  final double labelFactor;
+  final double valueFactor;
+  final bool tall;
+
+  @override
+  Widget build(BuildContext context) {
+    final h = tall ? AppSizes.lg : AppSizes.md;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          AppShimmerLine(widthFactor: labelFactor, height: h),
+          AppShimmerLine(widthFactor: valueFactor, height: h),
+        ],
+      ),
+    );
+  }
+}
+
+class _SkeletonDivider extends StatelessWidget {
+  const _SkeletonDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return const AppShimmerBox(
+      width: double.infinity,
+      height: 1,
+      radius: 0,
+    );
   }
 }
 

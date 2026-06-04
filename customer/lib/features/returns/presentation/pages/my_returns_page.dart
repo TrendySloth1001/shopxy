@@ -8,6 +8,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_bar.dart';
+import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 
 /// Customer-side list of return requests. Each row links to the
 /// return detail page.
@@ -46,7 +47,7 @@ class _MyReturnsPageState extends State<MyReturnsPage> {
         future: _future,
         builder: (context, snap) {
           if (snap.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
+            return const _ReturnListSkeleton();
           }
           if (snap.hasError) {
             return Center(
@@ -177,6 +178,68 @@ class _StatusPill extends StatelessWidget {
               color: fg,
               fontWeight: FontWeight.w800,
             ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Skeleton loading state — mirrors _ReturnRow layout
+// ---------------------------------------------------------------------------
+
+class _ReturnListSkeleton extends StatelessWidget {
+  const _ReturnListSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: const EdgeInsets.all(AppSizes.md),
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: 4,
+      separatorBuilder: (_, _) => const SizedBox(height: AppSizes.sm),
+      itemBuilder: (_, _) => const _ReturnRowSkeleton(),
+    );
+  }
+}
+
+class _ReturnRowSkeleton extends StatelessWidget {
+  const _ReturnRowSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.white,
+      shape: AppShapes.squircle(
+        AppSizes.radiusMd,
+        side: const BorderSide(color: AppColors.hairline),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSizes.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header row: Return ID + shop name on the left, status pill on right
+            Row(
+              children: [
+                const Expanded(
+                  child: AppShimmerLine(widthFactor: 0.65, height: 14),
+                ),
+                const SizedBox(width: AppSizes.sm),
+                AppShimmerBox(
+                  width: 72,
+                  height: 22,
+                  radius: AppSizes.radiusFull,
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSizes.xs),
+            // Subtext: item count + refund amount
+            const AppShimmerLine(widthFactor: 0.45, height: 12),
+            const SizedBox(height: AppSizes.xs),
+            // Date line
+            const AppShimmerLine(widthFactor: 0.35, height: 11),
+          ],
+        ),
       ),
     );
   }

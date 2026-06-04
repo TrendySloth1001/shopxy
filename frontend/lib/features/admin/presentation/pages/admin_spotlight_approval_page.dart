@@ -8,6 +8,7 @@ import 'package:shopxy/features/spotlight/data/models/spotlight.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 
 /// Platform-admin queue for brand spotlight requests. Defaults to the
 /// PENDING filter — the actionable queue — with chips to swap to the
@@ -128,7 +129,7 @@ class _AdminSpotlightApprovalPageState
           ),
           Expanded(
             child: provider.isLoading && provider.items.isEmpty
-                ? const Center(child: CircularProgressIndicator())
+                ? const _ApprovalCardListSkeleton()
                 : provider.items.isEmpty
                     ? const Center(child: Text('Nothing to review'))
                     : RefreshIndicator(
@@ -338,6 +339,122 @@ class _ApprovalCard extends StatelessWidget {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Skeleton widgets
+// ---------------------------------------------------------------------------
+
+/// Repeating list of [_ApprovalCardSkeleton] items shown while the first
+/// load is in progress.
+class _ApprovalCardListSkeleton extends StatelessWidget {
+  const _ApprovalCardListSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.sm,
+        AppSizes.lg,
+        AppSizes.huge,
+      ),
+      itemCount: 3,
+      separatorBuilder: (_, _) => const SizedBox(height: AppSizes.md),
+      itemBuilder: (_, _) => const _ApprovalCardSkeleton(),
+    );
+  }
+}
+
+/// Mirrors the two-section layout of [_ApprovalCard]:
+///  - coloured top section: 72×72 image box + 3 text lines
+///  - white bottom section: date line, optional link line, button area
+class _ApprovalCardSkeleton extends StatelessWidget {
+  const _ApprovalCardSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: ShapeDecoration(
+        color: AppColors.white,
+        shape: AppShapes.squircle(AppSizes.radiusLg),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // ── coloured top panel ──────────────────────────────────────────
+          Container(
+            color: AppColors.heroPanel,
+            padding: const EdgeInsets.all(AppSizes.lg),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // hero image placeholder
+                AppShimmerBox(
+                  width: 72,
+                  height: 72,
+                  radius: AppSizes.radiusMd,
+                ),
+                const SizedBox(width: AppSizes.md),
+                // title + subtitle + shop name
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppShimmerLine(widthFactor: 0.65, height: 14),
+                      const SizedBox(height: AppSizes.xs),
+                      AppShimmerLine(widthFactor: 0.48, height: 12),
+                      const SizedBox(height: AppSizes.xs),
+                      AppShimmerLine(widthFactor: 0.38, height: 11),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // ── white bottom panel ──────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.all(AppSizes.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // date range line
+                AppShimmerLine(widthFactor: 0.80, height: 12),
+                const SizedBox(height: AppSizes.xs),
+                // optional link line
+                AppShimmerLine(widthFactor: 0.55, height: 12),
+                const SizedBox(height: AppSizes.md),
+                // button area: two side-by-side pill buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: AppShimmerBox(
+                        width: double.infinity,
+                        height: 38,
+                        radius: AppSizes.radiusMd,
+                      ),
+                    ),
+                    const SizedBox(width: AppSizes.md),
+                    Expanded(
+                      child: AppShimmerBox(
+                        width: double.infinity,
+                        height: 38,
+                        radius: AppSizes.radiusMd,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 
 Color _parseColor(String hex, {Color fallback = AppColors.heroPanel}) {
   final m = RegExp(r'^#([0-9a-fA-F]{6}|[0-9a-fA-F]{8})$').firstMatch(hex);

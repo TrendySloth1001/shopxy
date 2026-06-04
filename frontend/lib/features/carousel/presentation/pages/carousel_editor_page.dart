@@ -9,6 +9,7 @@ import 'package:shopxy/features/carousel/presentation/providers/carousels_provid
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 
 /// Full-page carousel editor. Shows:
 ///   1. Carousel-level meta — name, placement, schedule, on/off.
@@ -151,7 +152,7 @@ class _CarouselEditorPageState extends State<CarouselEditorPage> {
               label: const Text('Add slide'),
             ),
       body: c == null
-          ? const Center(child: CircularProgressIndicator())
+          ? const _CarouselEditorSkeleton()
           : RefreshIndicator(
               onRefresh: () => context
                   .read<CarouselsProvider>()
@@ -515,6 +516,156 @@ class _EmptySlides extends StatelessWidget {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Skeleton shown while the carousel object is still loading
+// ---------------------------------------------------------------------------
+
+class _CarouselEditorSkeleton extends StatelessWidget {
+  const _CarouselEditorSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.md,
+        AppSizes.lg,
+        AppSizes.huge,
+      ),
+      children: const [
+        _MetaCardSkeleton(),
+        SizedBox(height: AppSizes.lg),
+        _SlidesHeaderSkeleton(),
+        SizedBox(height: AppSizes.sm),
+        _SlideRowSkeleton(),
+        SizedBox(height: AppSizes.sm),
+        _SlideRowSkeleton(),
+        SizedBox(height: AppSizes.sm),
+        _SlideRowSkeleton(),
+      ],
+    );
+  }
+}
+
+class _MetaCardSkeleton extends StatelessWidget {
+  const _MetaCardSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: ShapeDecoration(
+        color: AppColors.white,
+        shape: AppShapes.squircle(
+          AppSizes.radiusLg,
+          side: const BorderSide(color: AppColors.hairline),
+        ),
+      ),
+      padding: const EdgeInsets.all(AppSizes.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Name field
+          AppShimmerLine(widthFactor: 0.85, height: 48),
+          const SizedBox(height: AppSizes.sm),
+          // Placement dropdown
+          AppShimmerLine(widthFactor: 1.0, height: 48),
+          const SizedBox(height: AppSizes.md),
+          // Date fields — side-by-side, each ~50 %
+          Row(
+            children: [
+              Expanded(
+                child: AppShimmerLine(
+                  widthFactor: 1.0,
+                  height: 48,
+                ),
+              ),
+              const SizedBox(width: AppSizes.md),
+              Expanded(
+                child: AppShimmerLine(
+                  widthFactor: 1.0,
+                  height: 48,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSizes.sm),
+          // Switch row — narrow label line + switch placeholder
+          Row(
+            children: [
+              Expanded(
+                child: AppShimmerLine(widthFactor: 0.35, height: 14),
+              ),
+              AppShimmerBox(
+                width: AppSizes.huge,
+                height: AppSizes.md + 4,
+                radius: (AppSizes.md + 4) / 2,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SlidesHeaderSkeleton extends StatelessWidget {
+  const _SlidesHeaderSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppShimmerLine(widthFactor: 0.22, height: 14);
+  }
+}
+
+class _SlideRowSkeleton extends StatelessWidget {
+  const _SlideRowSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: ShapeDecoration(
+        color: AppColors.white,
+        shape: AppShapes.squircle(
+          AppSizes.radiusMd,
+          side: const BorderSide(color: AppColors.hairline),
+        ),
+      ),
+      padding: const EdgeInsets.all(AppSizes.sm),
+      child: Row(
+        children: [
+          // Image placeholder
+          AppShimmerBox(
+            width: AppSizes.huge,
+            height: AppSizes.huge,
+            radius: AppSizes.radiusSm,
+          ),
+          const SizedBox(width: AppSizes.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Title
+                AppShimmerLine(widthFactor: 0.65, height: 14),
+                const SizedBox(height: AppSizes.xs),
+                // Template chip / metadata row
+                AppShimmerLine(widthFactor: 0.4, height: 11),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSizes.sm),
+          AppShimmerBox(
+            width: AppSizes.iconMd,
+            height: AppSizes.iconMd,
+            radius: AppSizes.radiusSm,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 
 class _DateField extends StatelessWidget {
   const _DateField({

@@ -8,6 +8,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_bar.dart';
+import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 
 /// "My coupons" — read-only list of redeemable promo codes. Customers
@@ -48,7 +49,12 @@ class _MyCouponsPageState extends State<MyCouponsPage> {
         future: _future,
         builder: (context, snap) {
           if (snap.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
+            return ListView.separated(
+              padding: const EdgeInsets.all(AppSizes.md),
+              itemCount: 4,
+              separatorBuilder: (_, _) => const SizedBox(height: AppSizes.sm),
+              itemBuilder: (_, _) => const _CouponCardSkeleton(),
+            );
           }
           if (snap.hasError) {
             return Center(
@@ -70,6 +76,68 @@ class _MyCouponsPageState extends State<MyCouponsPage> {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+/// Skeleton card that mirrors the layout of [_CouponCard].
+class _CouponCardSkeleton extends StatelessWidget {
+  const _CouponCardSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSizes.md),
+      decoration: ShapeDecoration(
+        color: AppColors.white,
+        shape: AppShapes.squircle(
+          AppSizes.radiusMd,
+          side: const BorderSide(color: AppColors.hairline),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Title row — wide line + small pill placeholder on the right
+          Row(
+            children: [
+              const Expanded(
+                child: AppShimmerLine(widthFactor: 0.55, height: 14),
+              ),
+              const SizedBox(width: AppSizes.sm),
+              AppShimmerBox(
+                width: 72,
+                height: 20,
+                radius: AppSizes.radiusFull,
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSizes.xs),
+          // Headline / benefit line
+          const AppShimmerLine(widthFactor: 0.40, height: 13),
+          const SizedBox(height: AppSizes.xs),
+          // Optional min-order label
+          const AppShimmerLine(widthFactor: 0.30, height: 11),
+          const SizedBox(height: AppSizes.sm),
+          // Optional description — two shorter lines
+          const AppShimmerLine(widthFactor: 0.85, height: 11),
+          const SizedBox(height: AppSizes.xs),
+          const AppShimmerLine(widthFactor: 0.65, height: 11),
+          const SizedBox(height: AppSizes.sm),
+          // Bottom row: code badge + expiry date
+          Row(
+            children: [
+              AppShimmerBox(
+                width: 90,
+                height: 28,
+                radius: AppSizes.radiusSm,
+              ),
+              const Spacer(),
+              const AppShimmerLine(widthFactor: 0.22, height: 11),
+            ],
+          ),
+        ],
       ),
     );
   }

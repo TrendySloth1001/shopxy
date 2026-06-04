@@ -9,6 +9,7 @@ import 'package:shopxy_customer/shared/constants/app_strings.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_divider.dart';
+import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 
 class ShopInvoicesPage extends StatefulWidget {
   const ShopInvoicesPage({super.key, required this.shop});
@@ -41,7 +42,7 @@ class _ShopInvoicesPageState extends State<ShopInvoicesPage> {
         onRefresh: () => p.loadInvoices(widget.shop),
         color: AppColors.brand,
         child: loading && invoices.isEmpty
-            ? const Center(child: CircularProgressIndicator())
+            ? const _InvoiceListSkeleton()
             : err != null && invoices.isEmpty
                 ? _Error(err: err, onRetry: () => p.loadInvoices(widget.shop))
                 : invoices.isEmpty
@@ -132,6 +133,65 @@ class _InvoiceTile extends StatelessWidget {
             const Icon(Icons.chevron_right_rounded, color: AppColors.subtle),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Skeleton widgets (loading state)
+// ---------------------------------------------------------------------------
+
+class _InvoiceListSkeleton extends StatelessWidget {
+  const _InvoiceListSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: 5,
+      separatorBuilder: (_, _) => const AppDivider.flush(),
+      itemBuilder: (_, _) => const _InvoiceTileSkeleton(),
+    );
+  }
+}
+
+class _InvoiceTileSkeleton extends StatelessWidget {
+  const _InvoiceTileSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.md,
+      ),
+      child: Row(
+        children: [
+          // Icon placeholder — mirrors the squircle avatar
+          AppShimmerBox(
+            width: AppSizes.avatarSm,
+            height: AppSizes.avatarSm,
+            radius: AppSizes.radiusSm,
+          ),
+          const SizedBox(width: AppSizes.md),
+          // Title + subtitle column
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Invoice number (bold title line)
+                const AppShimmerLine(widthFactor: 0.55, height: 14),
+                const SizedBox(height: AppSizes.xs),
+                // Date · item count (subtitle line)
+                const AppShimmerLine(widthFactor: 0.75, height: 11),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSizes.md),
+          // Amount box (right-aligned)
+          AppShimmerBox(width: 64, height: 16, radius: AppSizes.radiusXs),
+        ],
       ),
     );
   }

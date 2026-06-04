@@ -9,6 +9,7 @@ import 'package:shopxy/features/flash_deals/presentation/providers/flash_deals_p
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/widgets/app_shimmer.dart';
 
 class FlashDealsPage extends StatefulWidget {
   const FlashDealsPage({super.key});
@@ -117,7 +118,7 @@ class _FlashDealsPageState extends State<FlashDealsPage>
   Widget _list(FlashDealsProvider provider, FlashDealStatus status) {
     final deals = provider.ofStatus(status);
     if (provider.isLoading && deals.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const _FlashDealListSkeleton();
     }
     if (provider.error != null && deals.isEmpty) {
       return Center(
@@ -165,6 +166,99 @@ class _FlashDealsPageState extends State<FlashDealsPage>
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Skeleton widgets
+// ---------------------------------------------------------------------------
+
+class _FlashDealListSkeleton extends StatelessWidget {
+  const _FlashDealListSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.lg,
+        AppSizes.lg,
+        AppSizes.massive + AppSizes.xxxl,
+      ),
+      itemCount: 3,
+      itemBuilder: (context, _) => const _DealTileSkeleton(),
+    );
+  }
+}
+
+class _DealTileSkeleton extends StatelessWidget {
+  const _DealTileSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSizes.sm),
+      child: Material(
+        color: AppColors.white,
+        shape: AppShapes.squircle(
+          AppSizes.radiusMd,
+          side: const BorderSide(color: AppColors.hairline),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSizes.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Image + name/price row
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Square product image
+                  AppShimmerBox(
+                    width: AppSizes.avatarMd,
+                    height: AppSizes.avatarMd,
+                    radius: AppSizes.radiusSm,
+                  ),
+                  const SizedBox(width: AppSizes.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Product name line (full width)
+                        const AppShimmerLine(widthFactor: 1.0, height: 14),
+                        const SizedBox(height: AppSizes.xs),
+                        // Price row: flash price + MRP shimmer side-by-side
+                        Row(
+                          children: const [
+                            AppShimmerLine(widthFactor: 0.3, height: 12),
+                            SizedBox(width: AppSizes.sm),
+                            AppShimmerLine(widthFactor: 0.2, height: 12),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Placeholder for icon buttons space
+                  const SizedBox(width: AppSizes.xxxl),
+                ],
+              ),
+              const SizedBox(height: AppSizes.sm),
+              // Progress bar shimmer (thin)
+              AppShimmerBox(
+                width: double.infinity,
+                height: AppSizes.sm,
+                radius: AppSizes.radiusFull,
+              ),
+              const SizedBox(height: AppSizes.xs),
+              // Date range text line
+              const AppShimmerLine(widthFactor: 0.7, height: 10),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 
 class _DealTile extends StatelessWidget {
   const _DealTile({
