@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/domain/entities/category.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 
@@ -16,7 +17,8 @@ class CategoryImage extends StatelessWidget {
     final fallback = Container(
       color: AppColors.surfaceTint,
       alignment: Alignment.center,
-      child: const Icon(Icons.category_outlined, color: AppColors.muted, size: 28),
+      child: const Icon(Icons.category_outlined,
+          color: AppColors.muted, size: AppSizes.iconXl),
     );
     if (url == null || url.isEmpty) return fallback;
     return Image.network(

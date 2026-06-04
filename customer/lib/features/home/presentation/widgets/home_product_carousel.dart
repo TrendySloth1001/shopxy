@@ -85,7 +85,7 @@ class HomeProductCarousel extends StatelessWidget {
                   ),
                   child: const Icon(
                     Icons.arrow_forward_rounded,
-                    color: Colors.white,
+                    color: AppColors.white,
                     size: 18,
                   ),
                 ),
@@ -341,7 +341,7 @@ class _Image extends StatelessWidget {
                     child: Text(
                       product.tag!,
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: AppColors.white,
                         fontSize: 9,
                         fontWeight: FontWeight.w700,
                       ),
@@ -390,7 +390,7 @@ class _DiscountChip extends StatelessWidget {
       child: Text(
         '$percent% OFF',
         style: const TextStyle(
-          color: Colors.white,
+          color: AppColors.white,
           fontWeight: FontWeight.w800,
           fontSize: 10,
           letterSpacing: 0.4,
@@ -459,7 +459,7 @@ class _RatingPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(3),
         boxShadow: [
           BoxShadow(

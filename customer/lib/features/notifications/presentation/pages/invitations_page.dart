@@ -108,7 +108,7 @@ class _InvitationList extends StatelessWidget {
     if (items.isEmpty) {
       return ListView(
         children: [
-          const SizedBox(height: 120),
+          const SizedBox(height: AppSizes.productImageSize),
           Center(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: AppSizes.xl),
@@ -116,27 +116,24 @@ class _InvitationList extends StatelessWidget {
                 children: [
                   const Icon(
                     Icons.mark_email_unread_outlined,
-                    size: 56,
+                    size: AppSizes.iconHuge,
                     color: AppColors.muted,
                   ),
                   const SizedBox(height: AppSizes.md),
                   Text(
                     emptyTitle,
-                    style: const TextStyle(
-                      color: AppColors.black,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 16,
-                    ),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: AppColors.black,
+                          fontWeight: FontWeight.w800,
+                        ),
                   ),
                   const SizedBox(height: AppSizes.xs),
                   Text(
                     emptyHint,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: AppColors.muted,
-                      fontSize: 13,
-                      height: 1.4,
-                    ),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.muted,
+                        ),
                   ),
                 ],
               ),

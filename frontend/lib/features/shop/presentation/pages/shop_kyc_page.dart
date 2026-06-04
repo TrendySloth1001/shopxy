@@ -110,7 +110,7 @@ class _KycRow extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             alignment: Alignment.center,
-            child: Icon(doc.icon, color: AppColors.brandStrong, size: 20),
+            child: Icon(doc.icon, color: AppColors.brandStrong, size: AppSizes.iconMd),
           ),
           const SizedBox(width: AppSizes.md),
           Expanded(
@@ -143,7 +143,7 @@ class _KycRow extends StatelessWidget {
                 const SizedBox(height: AppSizes.sm),
                 OutlinedButton.icon(
                   onPressed: null,
-                  icon: const Icon(Icons.upload_file_rounded, size: 16),
+                  icon: const Icon(Icons.upload_file_rounded, size: AppSizes.iconSm),
                   label: const Text('Upload (coming soon)'),
                 ),
               ],

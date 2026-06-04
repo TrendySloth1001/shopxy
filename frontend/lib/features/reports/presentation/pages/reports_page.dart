@@ -64,7 +64,7 @@ class _ReportsPageState extends State<ReportsPage> {
             ),
             child: InkWell(
               onTap: () => _pickRange(p),
-              borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+              borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
               child: Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSizes.lg,
@@ -76,7 +76,7 @@ class _ReportsPageState extends State<ReportsPage> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.calendar_today_outlined, size: 18),
+                    const Icon(Icons.calendar_today_outlined, size: AppSizes.iconMd),
                     const SizedBox(width: AppSizes.sm),
                     Expanded(
                       child: Text(
@@ -86,7 +86,7 @@ class _ReportsPageState extends State<ReportsPage> {
                             ),
                       ),
                     ),
-                    const Icon(Icons.expand_more_rounded, size: 20),
+                    const Icon(Icons.expand_more_rounded, size: AppSizes.iconMd),
                   ],
                 ),
               ),
@@ -175,7 +175,7 @@ class _ErrorBlock extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 36),
+          const Icon(Icons.error_outline_rounded, color: AppColors.error, size: AppSizes.iconXl),
           const SizedBox(height: AppSizes.sm),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSizes.xxl),
@@ -272,7 +272,7 @@ class _BigStat extends StatelessWidget {
               letterSpacing: 1.6,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSizes.xs),
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
@@ -286,7 +286,7 @@ class _BigStat extends StatelessWidget {
             ),
           ),
           if (helper != null) ...[
-            const SizedBox(height: 2),
+            const SizedBox(height: AppSizes.xs),
             Text(helper!, style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted)),
           ],
         ],
@@ -340,7 +340,7 @@ class _MiniBar extends StatelessWidget {
                     child: Container(
                       margin: const EdgeInsets.symmetric(horizontal: 1.5),
                       height: maxV == 0
-                          ? 4
+                          ? AppSizes.xs
                           : (p.amount / maxV).clamp(0.04, 1.0) * c.maxHeight,
                       decoration: ShapeDecoration(
                         color: AppColors.brand,
@@ -400,7 +400,7 @@ class _LeaderRow extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: AppSizes.xs),
           Text(
             subtitle,
             style: theme.textTheme.labelSmall?.copyWith(
@@ -414,7 +414,7 @@ class _LeaderRow extends StatelessWidget {
               shape: AppShapes.squircle(AppSizes.radiusFull),
             ),
             child: Container(
-              height: 4,
+              height: AppSizes.xs,
               color: AppColors.hairline,
               child: FractionallySizedBox(
                 alignment: Alignment.centerLeft,
@@ -612,8 +612,8 @@ class _StatBlock extends StatelessWidget {
           Row(
             children: [
               Container(
-                width: 6,
-                height: 6,
+                width: AppSizes.sm,
+                height: AppSizes.sm,
                 decoration: BoxDecoration(color: color, shape: BoxShape.circle),
               ),
               const SizedBox(width: AppSizes.xs),
@@ -640,7 +640,7 @@ class _StatBlock extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: AppSizes.xs),
           Text(
             helper,
             style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
@@ -665,7 +665,7 @@ class _GstRow extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm, vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm, vertical: AppSizes.xs),
             decoration: ShapeDecoration(
               color: AppColors.heroPanel,
               shape: AppShapes.squircle(AppSizes.radiusFull),

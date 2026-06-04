@@ -117,32 +117,32 @@ class _FlashHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.bolt_rounded, color: Color(0xFFE05A2A), size: 22),
+          const Icon(Icons.bolt_rounded, color: Color(0xFFE05A2A), size: AppSizes.iconMd),
           const SizedBox(width: AppSizes.sm),
-          const Expanded(
+          Expanded(
             child: Text(
               'Flash deals — ending soon',
-              style: TextStyle(
-                color: Color(0xFFE05A2A),
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
-              ),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: const Color(0xFFE05A2A),
+                    fontWeight: FontWeight.w800,
+                  ),
             ),
           ),
           if (remaining != null)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(6),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSizes.sm, vertical: AppSizes.xs),
+              decoration: ShapeDecoration(
+                color: AppColors.white,
+                shape: AppShapes.squircle(AppSizes.radiusSm),
               ),
               child: Text(
                 remaining!,
-                style: const TextStyle(
-                  color: Color(0xFFE05A2A),
-                  fontWeight: FontWeight.w800,
-                  fontFeatures: [FontFeature.tabularFigures()],
-                ),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: const Color(0xFFE05A2A),
+                      fontWeight: FontWeight.w800,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
               ),
             ),
         ],
@@ -194,7 +194,7 @@ class _FlashTile extends StatelessWidget {
           AspectRatio(
             aspectRatio: 1,
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+              borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
               child: Container(
                 color: AppColors.heroPanel,
                 child: deal.imageUrl.isEmpty
@@ -208,48 +208,44 @@ class _FlashTile extends StatelessWidget {
             deal.name,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: AppColors.black,
-              fontWeight: FontWeight.w700,
-              fontSize: 13,
-            ),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.black,
+                  fontWeight: FontWeight.w700,
+                ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSizes.xs),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
                 deal.price,
-                style: const TextStyle(
-                  color: AppColors.black,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 14,
-                ),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.black,
+                      fontWeight: FontWeight.w800,
+                    ),
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: AppSizes.xs),
               if (deal.originalPrice.isNotEmpty)
                 Text(
                   deal.originalPrice,
-                  style: const TextStyle(
-                    color: AppColors.muted,
-                    fontSize: 11,
-                    decoration: TextDecoration.lineThrough,
-                  ),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: AppColors.muted,
+                        decoration: TextDecoration.lineThrough,
+                      ),
                 ),
-              const SizedBox(width: 4),
+              const SizedBox(width: AppSizes.xs),
               Text(
                 '${deal.discountPct}% off',
-                style: const TextStyle(
-                  color: AppColors.success,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 11,
-                ),
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: AppColors.success,
+                      fontWeight: FontWeight.w800,
+                    ),
               ),
             ],
           ),
           const SizedBox(height: AppSizes.xs),
           ClipRRect(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: AppShapes.squircleRadius(AppSizes.radiusSm),
             child: LinearProgressIndicator(
               value: deal.soldPct,
               minHeight: 5,
@@ -260,11 +256,10 @@ class _FlashTile extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             '${(deal.soldPct * 100).round()}% claimed',
-            style: const TextStyle(
-              color: AppColors.muted,
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-            ),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: AppColors.muted,
+                  fontWeight: FontWeight.w600,
+                ),
           ),
         ],
       ),
@@ -284,8 +279,11 @@ class _Spotlights extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Brands in spotlight',
-              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+          Text('Brands in spotlight',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w800)),
           const SizedBox(height: AppSizes.md),
           for (final b in brands) ...[
             _SpotlightTile(brand: b),
@@ -312,7 +310,7 @@ class _SpotlightTile extends StatelessWidget {
                 ),
               ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+        borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
         child: AspectRatio(
           aspectRatio: 16 / 9,
           child: Stack(
@@ -331,9 +329,9 @@ class _SpotlightTile extends StatelessWidget {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Colors.black.withValues(alpha: 0.1),
+                      AppColors.black.withValues(alpha: 0.1),
                       Colors.transparent,
-                      Colors.black.withValues(alpha: 0.55),
+                      AppColors.black.withValues(alpha: 0.55),
                     ],
                   ),
                 ),
@@ -345,38 +343,35 @@ class _SpotlightTile extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     Container(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: AppSizes.xs, vertical: 2),
+                      decoration: ShapeDecoration(
                         color: const Color(0xFFF4F757),
-                        borderRadius: BorderRadius.circular(2),
+                        shape: AppShapes.squircle(AppSizes.radiusSm),
                       ),
                       child: Text(
                         brand.dealLabel,
-                        style: const TextStyle(
-                          color: AppColors.black,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 11,
-                        ),
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: AppColors.black,
+                              fontWeight: FontWeight.w800,
+                            ),
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: AppSizes.sm),
                     Text(
                       brand.brand,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 18,
-                      ),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: AppColors.white,
+                            fontWeight: FontWeight.w800,
+                          ),
                     ),
                     if (brand.subtitle.isNotEmpty)
                       Text(
                         brand.subtitle,
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.9),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.white.withValues(alpha: 0.9),
+                              fontWeight: FontWeight.w500,
+                            ),
                       ),
                   ],
                 ),
@@ -393,21 +388,29 @@ class _Empty extends StatelessWidget {
   const _Empty();
   @override
   Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.fromLTRB(AppSizes.xl, AppSizes.huge, AppSizes.xl, 0),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          AppSizes.xl, AppSizes.huge, AppSizes.xl, 0),
       child: Column(
         children: [
-          Icon(Icons.bolt_outlined, color: AppColors.muted, size: 48),
-          SizedBox(height: AppSizes.sm),
+          const Icon(Icons.bolt_outlined,
+              color: AppColors.muted, size: AppSizes.iconHuge),
+          const SizedBox(height: AppSizes.sm),
           Text(
             'No deals running right now',
-            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+            style: Theme.of(context)
+                .textTheme
+                .bodyLarge
+                ?.copyWith(fontWeight: FontWeight.w700),
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: AppSizes.xs),
           Text(
             'Pull to refresh — flash sales drop without notice.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.muted),
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(color: AppColors.muted),
           ),
         ],
       ),

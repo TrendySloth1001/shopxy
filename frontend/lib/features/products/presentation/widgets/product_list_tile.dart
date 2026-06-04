@@ -442,10 +442,9 @@ class _MerchantPriceLine extends StatelessWidget {
             ),
             child: Text(
               '${marginPct! >= 0 ? '' : ''}${marginPct!.toStringAsFixed(0)}%',
-              style: TextStyle(
+              style: theme.textTheme.labelSmall?.copyWith(
                 color: marginPalette!.fg,
                 fontWeight: FontWeight.w800,
-                fontSize: 11,
                 letterSpacing: 0.2,
               ),
             ),

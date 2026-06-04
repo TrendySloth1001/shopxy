@@ -57,7 +57,7 @@ class AuthScaffold extends StatelessWidget {
             child: Container(
               decoration: ShapeDecoration(
                 color: AppColors.white,
-                shape: AppShapes.squircleTop(28),
+                shape: AppShapes.squircleTop(AppSizes.bottomSheetRadius),
               ),
               clipBehavior: Clip.antiAlias,
               child: SafeArea(
@@ -116,18 +116,18 @@ class _HeroArt extends StatelessWidget {
       fit: StackFit.expand,
       children: [
         NetworkImageBox(url: imageUrl, fit: BoxFit.cover),
-        const DecoratedBox(
+        DecoratedBox(
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                Color(0x4D000000),
-                Color(0x00000000),
-                Color(0x80000000),
-                Color(0xD9000000),
+                AppColors.black.withValues(alpha: 0.302),
+                AppColors.black.withValues(alpha: 0),
+                AppColors.black.withValues(alpha: 0.502),
+                AppColors.black.withValues(alpha: 0.851),
               ],
-              stops: [0.0, 0.32, 0.68, 1.0],
+              stops: const [0.0, 0.32, 0.68, 1.0],
             ),
           ),
         ),
@@ -145,32 +145,30 @@ class _HeroArt extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    width: 30,
-                    height: 30,
+                    width: AppSizes.xxxl,
+                    height: AppSizes.xxxl,
                     decoration: ShapeDecoration(
                       color: AppColors.brand,
                       shape: AppShapes.squircle(AppSizes.radiusSm),
                     ),
                     alignment: Alignment.center,
                     child: const Icon(Icons.storefront_rounded,
-                        color: AppColors.white, size: 18),
+                        color: AppColors.white, size: AppSizes.iconMd),
                   ),
                   const SizedBox(width: AppSizes.sm),
-                  const Text(
+                  Text(
                     'shop',
-                    style: TextStyle(
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       color: AppColors.white,
-                      fontSize: 22,
                       fontWeight: FontWeight.w800,
                       letterSpacing: -0.5,
                       height: 1,
                     ),
                   ),
-                  const Text(
+                  Text(
                     'xy.',
-                    style: TextStyle(
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       color: AppColors.brand,
-                      fontSize: 22,
                       fontWeight: FontWeight.w900,
                       letterSpacing: -0.5,
                       height: 1,
@@ -181,9 +179,8 @@ class _HeroArt extends StatelessWidget {
               const SizedBox(height: AppSizes.sm),
               Text(
                 tagline,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: AppColors.white,
                   fontWeight: FontWeight.w500,
                   height: 1.3,
                 ),
@@ -208,9 +205,11 @@ class _WhiteSkip extends StatelessWidget {
       data: Theme.of(context).copyWith(
         textButtonTheme: TextButtonThemeData(
           style: TextButton.styleFrom(
-            foregroundColor: Colors.white,
-            textStyle:
-                const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+            foregroundColor: AppColors.white,
+            textStyle: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(fontWeight: FontWeight.w700),
           ),
         ),
       ),
@@ -305,8 +304,8 @@ class AuthErrorBanner extends StatelessWidget {
           Expanded(
             child: Text(
               message,
-              style: const TextStyle(
-                  color: AppColors.error, fontSize: 13, height: 1.3),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.error, height: 1.3),
             ),
           ),
         ],

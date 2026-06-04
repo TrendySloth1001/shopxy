@@ -663,7 +663,7 @@ class _AddressRow extends StatelessWidget {
                           child: const Text(
                             'DEFAULT',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: AppColors.white,
                               fontSize: 9,
                               fontWeight: FontWeight.w800,
                               letterSpacing: 0.4,
@@ -778,7 +778,7 @@ class _TopBarIcon extends StatelessWidget {
                       const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                   decoration: BoxDecoration(
                     color: AppColors.brand,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(AppSizes.radiusSm),
                     border: Border.all(color: AppColors.canvas, width: 1.5),
                   ),
                   constraints: const BoxConstraints(minWidth: 16),

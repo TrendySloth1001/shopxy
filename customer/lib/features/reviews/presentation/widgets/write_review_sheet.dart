@@ -138,13 +138,13 @@ class _WriteReviewSheetState extends State<WriteReviewSheet> {
             ),
             child: Row(
               children: [
-                const Expanded(
+                Expanded(
                   child: Text(
                     'Rate this product',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 18,
-                    ),
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleLarge
+                        ?.copyWith(fontWeight: FontWeight.w800),
                   ),
                 ),
                 IconButton(
@@ -167,11 +167,10 @@ class _WriteReviewSheetState extends State<WriteReviewSheet> {
                   widget.productName,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                    color: AppColors.muted,
-                  ),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.muted,
+                      ),
                 ),
                 const SizedBox(height: AppSizes.lg),
                 _TapStars(
@@ -182,15 +181,14 @@ class _WriteReviewSheetState extends State<WriteReviewSheet> {
                 Center(
                   child: Text(
                     _ratingLabels[_rating]!,
-                    style: TextStyle(
-                      color: _rating <= 2
-                          ? AppColors.error
-                          : _rating == 3
-                              ? AppColors.warning
-                              : AppColors.success,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 13,
-                    ),
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: _rating <= 2
+                              ? AppColors.error
+                              : _rating == 3
+                                  ? AppColors.warning
+                                  : AppColors.success,
+                          fontWeight: FontWeight.w800,
+                        ),
                   ),
                 ),
                 const SizedBox(height: AppSizes.xl),
@@ -201,22 +199,24 @@ class _WriteReviewSheetState extends State<WriteReviewSheet> {
                       color: AppColors.warning.withValues(alpha: 0.12),
                       shape: AppShapes.squircle(AppSizes.radiusMd),
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.info_outline_rounded,
                           color: AppColors.warning,
                         ),
-                        SizedBox(width: AppSizes.sm),
+                        const SizedBox(width: AppSizes.sm),
                         Expanded(
                           child: Text(
                             'Only buyers who purchased this product on Shopxy can leave a review. Your order needs to be confirmed first.',
-                            style: TextStyle(
-                              color: AppColors.warning,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              height: 1.35,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(
+                                  color: AppColors.warning,
+                                  fontWeight: FontWeight.w700,
+                                  height: 1.35,
+                                ),
                           ),
                         ),
                       ],
@@ -248,11 +248,10 @@ class _WriteReviewSheetState extends State<WriteReviewSheet> {
                   const SizedBox(height: AppSizes.sm),
                   Text(
                     _serverError!,
-                    style: const TextStyle(
-                      color: AppColors.error,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 12,
-                    ),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.error,
+                          fontWeight: FontWeight.w700,
+                        ),
                   ),
                 ],
                 const SizedBox(height: AppSizes.lg),
@@ -260,8 +259,8 @@ class _WriteReviewSheetState extends State<WriteReviewSheet> {
                   onPressed: _busy ? null : _submit,
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.brand,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    foregroundColor: AppColors.white,
+                    padding: const EdgeInsets.symmetric(vertical: AppSizes.lg),
                     shape: AppShapes.squircle(AppSizes.radiusMd),
                   ),
                   child: Text(_busy ? 'Posting…' : 'Post review'),
@@ -290,10 +289,10 @@ class _TapStars extends StatelessWidget {
           onTap: () => onChanged(i + 1),
           behavior: HitTestBehavior.opaque,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6),
+            padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm),
             child: Icon(
               filled ? Icons.star_rounded : Icons.star_outline_rounded,
-              size: 44,
+              size: AppSizes.iconHuge,
               color: filled ? AppColors.success : AppColors.subtle,
             ),
           ),
@@ -310,10 +309,10 @@ class _DragHandle extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
       child: Container(
         width: 40,
-        height: 4,
-        decoration: BoxDecoration(
+        height: AppSizes.xs,
+        decoration: ShapeDecoration(
           color: AppColors.disabled,
-          borderRadius: BorderRadius.circular(2),
+          shape: AppShapes.squircle(AppSizes.radiusSm),
         ),
       ),
     );

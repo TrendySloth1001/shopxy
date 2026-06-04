@@ -4,7 +4,9 @@ import 'package:shopxy_customer/shared/domain/entities/category.dart';
 import 'package:shopxy_customer/features/categories/presentation/pages/category_detail_page.dart';
 import 'package:shopxy_customer/features/categories/presentation/providers/categories_provider.dart';
 import 'package:shopxy_customer/features/categories/presentation/widgets/category_image.dart';
+import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
+import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 
 /// Customer landing for "All categories". Big image grid; tap drills
 /// down into a [CategoryDetailPage] that lists subcategories + the
@@ -42,12 +44,12 @@ class _CategoriesPageState extends State<CategoriesPage> {
                   color: AppColors.black,
                   backgroundColor: AppColors.white,
                   child: GridView.builder(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(AppSizes.md),
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 3,
-                      mainAxisSpacing: 14,
-                      crossAxisSpacing: 12,
+                      mainAxisSpacing: AppSizes.lg,
+                      crossAxisSpacing: AppSizes.md,
                       // Tile has a square thumb + 2-line name + "N subs"
                       // chip. 0.82 clipped the chip at default text scale;
                       // 0.7 gives every tile enough vertical room.
@@ -88,18 +90,18 @@ class _CategoryTile extends StatelessWidget {
     final theme = Theme.of(context);
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: AppShapes.squircleRadius(AppSizes.radiusButton),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           AspectRatio(
             aspectRatio: 1,
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: AppShapes.squircleRadius(AppSizes.radiusButton),
               child: CategoryImage(category: category),
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSizes.sm),
           Text(
             category.name,
             style: theme.textTheme.bodyMedium?.copyWith(

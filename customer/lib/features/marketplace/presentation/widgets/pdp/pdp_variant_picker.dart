@@ -75,33 +75,33 @@ class _PdpVariantPickerState extends State<PdpVariantPicker> {
               children: [
                 Text(
                   '${axis.name}: ',
-                  style: const TextStyle(
-                      color: AppColors.muted,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.muted,
+                        fontWeight: FontWeight.w600,
+                      ),
                 ),
                 Flexible(
                   child: Text(
                     _selected[axis.name] ?? '',
-                    style: const TextStyle(
-                        color: AppColors.black,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 13),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.black,
+                          fontWeight: FontWeight.w800,
+                        ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: AppSizes.sm),
             Wrap(
               spacing: AppSizes.sm,
-              runSpacing: 6,
+              runSpacing: AppSizes.sm,
               children: [
                 for (final v in axis.values)
                   GestureDetector(
                     onTap: () => _pick(axis.name, v),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
+                          horizontal: AppSizes.md, vertical: AppSizes.sm),
                       decoration: BoxDecoration(
                         color: _selected[axis.name] == v
                             ? AppColors.brand
@@ -117,13 +117,13 @@ class _PdpVariantPickerState extends State<PdpVariantPicker> {
                       ),
                       child: Text(
                         v,
-                        style: TextStyle(
-                          color: _selected[axis.name] == v
-                              ? Colors.white
-                              : AppColors.black,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: _selected[axis.name] == v
+                                  ? AppColors.white
+                                  : AppColors.black,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
                       ),
                     ),
                   ),

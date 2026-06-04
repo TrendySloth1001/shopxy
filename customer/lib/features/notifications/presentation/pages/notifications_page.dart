@@ -151,22 +151,22 @@ class _TabView extends StatelessWidget {
     }
     if (items.isEmpty) {
       return ListView(
-        children: const [
-          SizedBox(height: 120),
+        children: [
+          const SizedBox(height: AppSizes.productImageSize),
           Center(
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: AppSizes.xl),
+              padding: const EdgeInsets.symmetric(horizontal: AppSizes.xl),
               child: Column(
                 children: [
-                  Icon(Icons.notifications_off_outlined,
-                      size: 48, color: AppColors.muted),
-                  SizedBox(height: AppSizes.sm),
+                  const Icon(Icons.notifications_off_outlined,
+                      size: AppSizes.iconHuge, color: AppColors.muted),
+                  const SizedBox(height: AppSizes.sm),
                   Text(
                     'No notifications here yet',
-                    style: TextStyle(
-                      color: AppColors.muted,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(color: AppColors.muted),
                   ),
                 ],
               ),
@@ -212,14 +212,14 @@ class _NotificationTile extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              width: 36,
-              height: 36,
+              width: AppSizes.xxxl,
+              height: AppSizes.xxxl,
               decoration: ShapeDecoration(
                 color: spec.tint,
                 shape: AppShapes.squircle(AppSizes.radiusSm),
               ),
               alignment: Alignment.center,
-              child: Icon(spec.icon, size: 18, color: spec.accent),
+              child: Icon(spec.icon, size: AppSizes.iconMd, color: spec.accent),
             ),
             const SizedBox(width: AppSizes.md),
             Expanded(
@@ -231,23 +231,27 @@ class _NotificationTile extends StatelessWidget {
                       Expanded(
                         child: Text(
                           item.title,
-                          style: TextStyle(
-                            color: AppColors.black,
-                            fontSize: 14,
-                            fontWeight: item.isUnread
-                                ? FontWeight.w800
-                                : FontWeight.w700,
-                          ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(
+                                color: AppColors.black,
+                                fontWeight: item.isUnread
+                                    ? FontWeight.w800
+                                    : FontWeight.w700,
+                              ),
                         ),
                       ),
                       const SizedBox(width: AppSizes.sm),
                       Text(
                         _formatTime(item.createdAt),
-                        style: const TextStyle(
-                          color: AppColors.muted,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: Theme.of(context)
+                            .textTheme
+                            .labelSmall
+                            ?.copyWith(
+                              color: AppColors.muted,
+                              fontWeight: FontWeight.w600,
+                            ),
                       ),
                     ],
                   ),
@@ -255,11 +259,10 @@ class _NotificationTile extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       item.body!,
-                      style: const TextStyle(
-                        color: AppColors.muted,
-                        fontSize: 13,
-                        height: 1.35,
-                      ),
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(color: AppColors.muted),
                     ),
                   ],
                 ],
@@ -363,7 +366,7 @@ class _PendingInviteBanner extends StatelessWidget {
         0,
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+        borderRadius: AppShapes.squircleRadius(AppSizes.radiusLg),
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute(builder: (_) => const InvitationsPage()),
         ),
@@ -379,8 +382,8 @@ class _PendingInviteBanner extends StatelessWidget {
           child: Row(
             children: [
               Container(
-                width: 32,
-                height: 32,
+                width: AppSizes.xxxl,
+                height: AppSizes.xxxl,
                 decoration: const BoxDecoration(
                   color: AppColors.brand,
                   shape: BoxShape.circle,
@@ -389,7 +392,7 @@ class _PendingInviteBanner extends StatelessWidget {
                 child: const Icon(
                   Icons.mark_email_unread_rounded,
                   color: AppColors.white,
-                  size: 16,
+                  size: AppSizes.iconSm,
                 ),
               ),
               const SizedBox(width: AppSizes.md),
@@ -401,19 +404,17 @@ class _PendingInviteBanner extends StatelessWidget {
                       pending == 1
                           ? 'You have 1 pending invitation'
                           : 'You have $pending pending invitations',
-                      style: const TextStyle(
-                        color: AppColors.brandStrong,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 14,
-                      ),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: AppColors.brandStrong,
+                            fontWeight: FontWeight.w800,
+                          ),
                     ),
                     const SizedBox(height: 1),
-                    const Text(
+                    Text(
                       'Tap to review and accept',
-                      style: TextStyle(
-                        color: AppColors.brandStrong,
-                        fontSize: 12,
-                      ),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.brandStrong,
+                          ),
                     ),
                   ],
                 ),

@@ -185,7 +185,7 @@ class _OfferRow extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSizes.xs),
                 Text(
                   '${offer.cardType} · min order '
                   '${currencyFormat.format(offer.minOrderAmount)}'
@@ -193,7 +193,7 @@ class _OfferRow extends StatelessWidget {
                   style: theme.textTheme.bodyMedium,
                 ),
                 if (offer.terms != null && offer.terms!.isNotEmpty) ...[
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSizes.xs),
                   Text(
                     offer.terms!,
                     style: theme.textTheme.bodySmall?.copyWith(
@@ -203,7 +203,7 @@ class _OfferRow extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSizes.xs),
                 Text(
                   'Valid ${dateFormat.format(offer.validFrom)} – '
                   '${dateFormat.format(offer.validUntil)}',
@@ -217,7 +217,8 @@ class _OfferRow extends StatelessWidget {
                     alignment: Alignment.centerRight,
                     child: TextButton.icon(
                       onPressed: onDeactivate,
-                      icon: const Icon(Icons.power_settings_new, size: 16),
+                      icon: const Icon(Icons.power_settings_new,
+                          size: AppSizes.iconSm),
                       label: const Text('Deactivate'),
                       style: TextButton.styleFrom(
                         foregroundColor: AppColors.error,
@@ -246,7 +247,7 @@ class _EmptyBlock extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: const [
             Icon(Icons.account_balance_outlined,
-                size: 56, color: AppColors.subtle),
+                size: AppSizes.iconHuge, color: AppColors.subtle),
             SizedBox(height: AppSizes.md),
             Text(
               'No bank offers yet. Tap "New offer" to curate the first one.',

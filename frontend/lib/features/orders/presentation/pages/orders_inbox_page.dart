@@ -10,6 +10,7 @@ import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/orders/domain/entities/merchant_order.dart';
 import 'package:shopxy/features/orders/presentation/pages/merchant_order_detail_page.dart';
 import 'package:shopxy/features/orders/presentation/providers/orders_provider.dart';
+import 'package:shopxy/shared/constants/app_durations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
@@ -56,9 +57,9 @@ class _OrdersInboxPageState extends State<OrdersInboxPage> {
 
   void _onSearchChanged(String value) {
     _searchDebounce?.cancel();
-    // 250ms debounce — types like "sol" hit the backend once, not three
+    // Debounce — types like "sol" hit the backend once, not three
     // times. Cheap to debounce client-side; saves a chatty inbox.
-    _searchDebounce = Timer(const Duration(milliseconds: 250), () {
+    _searchDebounce = Timer(AppDurations.searchDebounce, () {
       if (!mounted) return;
       context.read<OrdersProvider>().setSearch(value.trim());
     });
@@ -151,18 +152,21 @@ class _OrdersInboxPageState extends State<OrdersInboxPage> {
                     decoration: InputDecoration(
                       isDense: true,
                       hintText: AppStrings.inboxSearchHint,
-                      prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                      prefixIcon:
+                          const Icon(Icons.search_rounded, size: AppSizes.iconMd),
                       suffixIcon: p.search.isEmpty
                           ? null
                           : IconButton(
-                              icon: const Icon(Icons.close_rounded, size: 18),
+                              icon: const Icon(Icons.close_rounded,
+                                  size: AppSizes.iconMd),
                               onPressed: () {
                                 _searchCtrl.clear();
                                 _onSearchChanged('');
                               },
                             ),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius:
+                            AppShapes.squircleRadius(AppSizes.radiusMd),
                       ),
                     ),
                   ),
@@ -220,6 +224,7 @@ class _Pill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Material(
       color: selected ? AppColors.black : AppColors.surfaceTint,
       shape: AppShapes.squircle(AppSizes.radiusFull),
@@ -236,27 +241,25 @@ class _Pill extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: TextStyle(
+                style: theme.textTheme.labelLarge?.copyWith(
                   color: selected ? AppColors.white : AppColors.black,
                   fontWeight: FontWeight.w700,
-                  fontSize: 13,
                 ),
               ),
               if (badge != null) ...[
-                const SizedBox(width: 6),
+                const SizedBox(width: AppSizes.sm),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: AppSizes.sm, vertical: 1),
                   decoration: BoxDecoration(
                     color: selected ? AppColors.white : AppColors.warning,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
                   ),
                   child: Text(
                     '$badge',
-                    style: TextStyle(
+                    style: theme.textTheme.labelSmall?.copyWith(
                       color: selected ? AppColors.black : AppColors.white,
                       fontWeight: FontWeight.w800,
-                      fontSize: 11,
                     ),
                   ),
                 ),
@@ -285,6 +288,7 @@ class _DateFilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final active = from != null && to != null;
     final label =
         active ? '${_fmt.format(from!)} – ${_fmt.format(to!)}' : 'Any date';
@@ -304,26 +308,25 @@ class _DateFilterChip extends StatelessWidget {
             children: [
               Icon(
                 Icons.event_rounded,
-                size: 16,
+                size: AppSizes.iconSm,
                 color: active ? AppColors.white : AppColors.black,
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: AppSizes.sm),
               Text(
                 label,
-                style: TextStyle(
+                style: theme.textTheme.labelMedium?.copyWith(
                   color: active ? AppColors.white : AppColors.black,
                   fontWeight: FontWeight.w700,
-                  fontSize: 12,
                 ),
               ),
               if (active) ...[
-                const SizedBox(width: 6),
+                const SizedBox(width: AppSizes.sm),
                 InkWell(
                   onTap: onClear,
                   customBorder: const CircleBorder(),
                   child: const Icon(
                     Icons.close_rounded,
-                    size: 14,
+                    size: AppSizes.iconSm,
                     color: AppColors.white,
                   ),
                 ),
@@ -479,7 +482,7 @@ class _EmptyInbox extends StatelessWidget {
                   : hasFilters
                       ? Icons.search_off_rounded
                       : Icons.inbox_outlined,
-              size: 48,
+              size: AppSizes.iconHuge,
               color: AppColors.muted,
             ),
           ),
@@ -496,7 +499,7 @@ class _EmptyInbox extends StatelessWidget {
                 ?.copyWith(fontWeight: FontWeight.w700),
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: AppSizes.xs),
         Center(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSizes.xl),
@@ -529,7 +532,8 @@ class _ErrorState extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       children: [
         const SizedBox(height: AppSizes.massive),
-        const Icon(Icons.cloud_off_rounded, size: 48, color: AppColors.muted),
+        const Icon(Icons.cloud_off_rounded,
+            size: AppSizes.iconHuge, color: AppColors.muted),
         const SizedBox(height: AppSizes.md),
         Text(
           AppStrings.error,
@@ -537,7 +541,7 @@ class _ErrorState extends StatelessWidget {
               ?.copyWith(fontWeight: FontWeight.w700),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: AppSizes.xs),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSizes.xl),
           child: Text(

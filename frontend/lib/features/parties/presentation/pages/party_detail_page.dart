@@ -257,7 +257,7 @@ class _Header extends StatelessWidget {
         children: [
           Row(
             children: [
-              AppMonogramAvatar(label: party.name, size: 56),
+              AppMonogramAvatar(label: party.name, size: AppSizes.fabSize),
               const SizedBox(width: AppSizes.md),
               Expanded(
                 child: Column(
@@ -270,7 +270,7 @@ class _Header extends StatelessWidget {
                     ),
                     if (party.contactName != null && party.contactName!.isNotEmpty)
                       Padding(
-                        padding: const EdgeInsets.only(top: 2),
+                        padding: const EdgeInsets.only(top: AppSizes.xs),
                         child: Text(
                           party.contactName!,
                           style: theme.textTheme.bodyMedium
@@ -390,12 +390,12 @@ class _StatBlock extends StatelessWidget {
             fontWeight: FontWeight.w600,
           ),
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: AppSizes.xs),
         Text(
           value,
           style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: AppSizes.xs),
         Text(
           hint,
           style: theme.textTheme.bodySmall?.copyWith(color: AppColors.subtle),
@@ -459,7 +459,7 @@ class _InvoiceRow extends StatelessWidget {
                     style: theme.textTheme.titleSmall
                         ?.copyWith(fontWeight: FontWeight.w700),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: AppSizes.xs),
                   AppStatusBadge(
                     label: invoice.status,
                     dense: true,
@@ -527,7 +527,7 @@ class _BalanceTile extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: AppSizes.xs),
                   Text(
                     label,
                     style: theme.textTheme.bodyMedium
@@ -596,7 +596,7 @@ class _CautionCard extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: AppSizes.xs),
                       Text(
                         hasBalance ? 'Held on file' : 'None on file',
                         style: theme.textTheme.bodyMedium
@@ -620,7 +620,7 @@ class _CautionCard extends StatelessWidget {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: () => onAction('DEPOSIT'),
-                    icon: const Icon(Icons.add_rounded, size: 18),
+                    icon: const Icon(Icons.add_rounded, size: AppSizes.iconMd),
                     label: const Text('Add'),
                   ),
                 ),
@@ -628,7 +628,7 @@ class _CautionCard extends StatelessWidget {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: hasBalance ? () => onAction('REFUND') : null,
-                    icon: const Icon(Icons.undo_rounded, size: 18),
+                    icon: const Icon(Icons.undo_rounded, size: AppSizes.iconMd),
                     label: const Text('Refund'),
                   ),
                 ),
@@ -636,7 +636,7 @@ class _CautionCard extends StatelessWidget {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: hasBalance ? () => onAction('ADJUST') : null,
-                    icon: const Icon(Icons.call_merge_rounded, size: 18),
+                    icon: const Icon(Icons.call_merge_rounded, size: AppSizes.iconMd),
                     label: const Text('Set off'),
                   ),
                 ),
@@ -648,7 +648,7 @@ class _CautionCard extends StatelessWidget {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: hasBalance ? () => onAction('FORFEIT') : null,
-                    icon: const Icon(Icons.gavel_rounded, size: 18),
+                    icon: const Icon(Icons.gavel_rounded, size: AppSizes.iconMd),
                     label: const Text('Forfeit'),
                   ),
                 ),
@@ -656,7 +656,7 @@ class _CautionCard extends StatelessWidget {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: onTapRequests,
-                    icon: const Icon(Icons.inbox_rounded, size: 18),
+                    icon: const Icon(Icons.inbox_rounded, size: AppSizes.iconMd),
                     label: const Text('Requests'),
                   ),
                 ),
@@ -728,7 +728,7 @@ class _LedgerRow extends StatelessWidget {
                   color: isInvoice ? AppColors.error : AppColors.success,
                 ),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: AppSizes.xs),
               Text(
                 'Bal ${currency.format(entry.runningBalance)}',
                 style: theme.textTheme.bodySmall

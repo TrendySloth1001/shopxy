@@ -122,16 +122,18 @@ class _EmptyState extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: AppSizes.huge),
       child: Column(
         children: [
-          const Icon(Icons.auto_awesome, size: 56, color: AppColors.muted),
+          const Icon(Icons.auto_awesome, size: AppSizes.iconHuge, color: AppColors.muted),
           const SizedBox(height: AppSizes.md),
           Text(
             'No spotlight requests yet',
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: AppSizes.xs),
-          const Text(
+          Text(
             'Tap "Request slot" to submit your first one.',
-            style: TextStyle(color: AppColors.muted),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.muted,
+                ),
           ),
         ],
       ),
@@ -166,8 +168,8 @@ class _SpotlightCard extends StatelessWidget {
               child: Row(
                 children: [
                   Container(
-                    width: 64,
-                    height: 64,
+                    width: AppSizes.massive,
+                    height: AppSizes.massive,
                     clipBehavior: Clip.antiAlias,
                     decoration: ShapeDecoration(
                       color: AppColors.heroPanel,
@@ -190,7 +192,7 @@ class _SpotlightCard extends StatelessWidget {
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         if (spotlight.subtitle != null) ...[
-                          const SizedBox(height: 2),
+                          const SizedBox(height: AppSizes.xs),
                           Text(
                             spotlight.subtitle!,
                             style: Theme.of(context).textTheme.bodySmall,
@@ -211,8 +213,8 @@ class _SpotlightCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.schedule, size: 16, color: AppColors.muted),
-                    const SizedBox(width: 6),
+                    const Icon(Icons.schedule, size: AppSizes.iconSm, color: AppColors.muted),
+                    const SizedBox(width: AppSizes.sm),
                     Expanded(
                       child: Text(
                         '${df.format(spotlight.startAt)}  →  ${df.format(spotlight.endAt)}',
@@ -233,7 +235,9 @@ class _SpotlightCard extends StatelessWidget {
                     ),
                     child: Text(
                       'Reason: ${spotlight.rejectionReason!}',
-                      style: const TextStyle(color: AppColors.error),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: AppColors.error,
+                          ),
                     ),
                   ),
                 ],
@@ -243,7 +247,7 @@ class _SpotlightCard extends StatelessWidget {
                     alignment: Alignment.centerRight,
                     child: TextButton.icon(
                       onPressed: onCancel,
-                      icon: const Icon(Icons.close, size: 16),
+                      icon: const Icon(Icons.close, size: AppSizes.iconSm),
                       label: const Text('Cancel request'),
                     ),
                   ),
@@ -282,7 +286,7 @@ class _StatusChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSizes.sm,
-        vertical: 4,
+        vertical: AppSizes.xs,
       ),
       decoration: ShapeDecoration(
         color: bg,
@@ -290,7 +294,7 @@ class _StatusChip extends StatelessWidget {
       ),
       child: Text(
         status.label,
-        style: TextStyle(color: fg, fontSize: 12, fontWeight: FontWeight.w600),
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(color: fg),
       ),
     );
   }
@@ -630,8 +634,8 @@ class _ImageRow extends StatelessWidget {
     return Row(
       children: [
         Container(
-          width: 90,
-          height: 60,
+          width: AppSizes.massive,
+          height: AppSizes.massive,
           decoration: ShapeDecoration(
             color: AppColors.heroPanel,
             shape: AppShapes.squircle(AppSizes.radiusMd),
@@ -675,7 +679,7 @@ class _DateField extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+      borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
       child: InputDecorator(
         decoration: InputDecoration(labelText: label),
         child: Text(value == null ? 'Pick…' : formatter.format(value!)),
@@ -773,12 +777,12 @@ class _DragHandle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 40,
-      height: 4,
+      width: AppSizes.xxxl,
+      height: AppSizes.xs,
       margin: const EdgeInsets.symmetric(vertical: AppSizes.sm),
       decoration: BoxDecoration(
         color: AppColors.hairline,
-        borderRadius: BorderRadius.circular(2),
+        borderRadius: AppShapes.squircleRadius(AppSizes.radiusFull),
       ),
     );
   }

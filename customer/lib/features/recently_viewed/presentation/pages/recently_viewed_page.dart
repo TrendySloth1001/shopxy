@@ -69,8 +69,8 @@ class _RecentlyViewedPageState extends State<RecentlyViewedPage> {
               ),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
-                mainAxisSpacing: 14,
-                crossAxisSpacing: 12,
+                mainAxisSpacing: AppSizes.lg,
+                crossAxisSpacing: AppSizes.md,
                 childAspectRatio: 0.66,
               ),
               itemCount: items.length,
@@ -91,7 +91,7 @@ class _ProductTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return InkWell(
-      borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+      borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute(
           builder: (_) => ProductDetailPage(productId: product.productId),
@@ -103,7 +103,7 @@ class _ProductTile extends StatelessWidget {
           AspectRatio(
             aspectRatio: 1,
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+              borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
               child: Stack(
                 children: [
                   Positioned.fill(
@@ -118,12 +118,12 @@ class _ProductTile extends StatelessWidget {
                   ),
                   if (product.discountPct > 0)
                     Positioned(
-                      top: 6,
-                      left: 6,
+                      top: AppSizes.sm,
+                      left: AppSizes.sm,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
+                          horizontal: AppSizes.sm,
+                          vertical: AppSizes.xs,
                         ),
                         decoration: ShapeDecoration(
                           color: AppColors.brand,
@@ -131,9 +131,8 @@ class _ProductTile extends StatelessWidget {
                         ),
                         child: Text(
                           '${product.discountPct}% off',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: AppColors.white,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
@@ -143,7 +142,7 @@ class _ProductTile extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSizes.sm),
           Text(
             product.name,
             style: theme.textTheme.bodySmall?.copyWith(
@@ -153,12 +152,12 @@ class _ProductTile extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
           if (product.ratingCountRaw > 0) ...[
-            const SizedBox(height: 2),
+            const SizedBox(height: AppSizes.xs),
             Row(
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 4, vertical: 1,
+                    horizontal: AppSizes.xs, vertical: 1,
                   ),
                   decoration: BoxDecoration(
                     color: AppColors.success,
@@ -169,31 +168,29 @@ class _ProductTile extends StatelessWidget {
                     children: [
                       Text(
                         product.rating.toStringAsFixed(1),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 9,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: AppColors.white,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
-                      const SizedBox(width: 2),
+                      const SizedBox(width: AppSizes.xs),
                       const Icon(Icons.star_rounded,
-                          color: Colors.white, size: 9),
+                          color: AppColors.white, size: 9),
                     ],
                   ),
                 ),
-                const SizedBox(width: 4),
+                const SizedBox(width: AppSizes.xs),
                 Text(
                   '(${product.ratingCount})',
-                  style: const TextStyle(
+                  style: theme.textTheme.labelSmall?.copyWith(
                     color: AppColors.muted,
-                    fontSize: 10,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
             ),
           ],
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSizes.xs),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -204,7 +201,7 @@ class _ProductTile extends StatelessWidget {
                 ),
               ),
               if (product.originalPrice.isNotEmpty) ...[
-                const SizedBox(width: 6),
+                const SizedBox(width: AppSizes.sm),
                 Padding(
                   padding: const EdgeInsets.only(bottom: 1),
                   child: Text(
@@ -238,7 +235,7 @@ class _EmptyState extends StatelessWidget {
           children: [
             const Icon(
               Icons.history_rounded,
-              size: 48,
+              size: AppSizes.iconHuge,
               color: AppColors.muted,
             ),
             const SizedBox(height: AppSizes.md),
@@ -273,8 +270,8 @@ class _LoadingGrid extends StatelessWidget {
       padding: const EdgeInsets.all(AppSizes.md),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        mainAxisSpacing: 14,
-        crossAxisSpacing: 12,
+        mainAxisSpacing: AppSizes.lg,
+        crossAxisSpacing: AppSizes.md,
         childAspectRatio: 0.66,
       ),
       itemCount: 6,
@@ -284,14 +281,14 @@ class _LoadingGrid extends StatelessWidget {
           AspectRatio(
             aspectRatio: 1,
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+              borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
               child: Container(color: AppColors.surfaceTint),
             ),
           ),
-          const SizedBox(height: 6),
-          const AppShimmerLine(widthFactor: 0.85, height: 11),
-          const SizedBox(height: 4),
-          const AppShimmerLine(widthFactor: 0.5, height: 10),
+          const SizedBox(height: AppSizes.sm),
+          const AppShimmerLine(widthFactor: 0.85, height: AppSizes.md),
+          const SizedBox(height: AppSizes.xs),
+          const AppShimmerLine(widthFactor: 0.5, height: AppSizes.md),
         ],
       ),
     );

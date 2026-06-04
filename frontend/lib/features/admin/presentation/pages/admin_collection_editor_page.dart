@@ -8,6 +8,7 @@ import 'package:shopxy/core/network/image_url.dart';
 import 'package:shopxy/features/admin/data/models/admin_collection.dart';
 import 'package:shopxy/features/admin/presentation/providers/admin_collections_provider.dart';
 import 'package:shopxy/features/shop/presentation/providers/shop_provider.dart';
+import 'package:shopxy/shared/constants/app_durations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
@@ -441,13 +442,16 @@ class _ItemRow extends StatelessWidget {
                 Text(item.product.name, maxLines: 1, overflow: TextOverflow.ellipsis),
                 Text(
                   '${item.product.sku}${item.product.shopName != null ? '  ·  ${item.product.shopName!}' : ''}',
-                  style: const TextStyle(color: AppColors.muted, fontSize: 12),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: AppColors.muted),
                 ),
               ],
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.close, size: 18),
+            icon: const Icon(Icons.close, size: AppSizes.iconMd),
             onPressed: onRemove,
           ),
         ],
@@ -477,7 +481,7 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
 
   void _onChanged(String value) {
     _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 250), () async {
+    _debounce = Timer(AppDurations.searchDebounce, () async {
       if (!mounted) return;
       setState(() => _searching = true);
       final hits = await context.read<AdminCollectionsProvider>().searchProducts(value);
@@ -538,7 +542,7 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
                     final p = _results[i];
                     return InkWell(
                       onTap: () => Navigator.of(context).pop(p),
-                      borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+                      borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
                       child: Container(
                         padding: const EdgeInsets.all(AppSizes.sm),
                         decoration: ShapeDecoration(
@@ -574,10 +578,10 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
                                       maxLines: 1, overflow: TextOverflow.ellipsis),
                                   Text(
                                     '${p.sku}${p.shopName != null ? '  ·  ${p.shopName!}' : ''}',
-                                    style: const TextStyle(
-                                      color: AppColors.muted,
-                                      fontSize: 12,
-                                    ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
+                                        ?.copyWith(color: AppColors.muted),
                                   ),
                                 ],
                               ),

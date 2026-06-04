@@ -3,6 +3,7 @@ import 'package:shopxy/core/network/image_url.dart';
 import 'package:shopxy/features/products/domain/entities/product.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/shared/theme/app_shapes.dart';
 
 /// Phase C — A+ content blocks editor used inside the add/edit product
 /// page. Each block is one of HERO / FEATURE / COMPARISON / GALLERY /
@@ -105,12 +106,15 @@ class _ContentBlocksEditorState extends State<ContentBlocksEditor> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (widget.blocks.isEmpty)
-          const Padding(
-            padding: EdgeInsets.only(bottom: AppSizes.sm),
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSizes.sm),
             child: Text(
               'Build a rich product story shoppers scroll through — add a '
               'block to start.',
-              style: TextStyle(color: AppColors.muted, fontSize: 12.5, height: 1.4),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: AppColors.muted),
             ),
           ),
         for (var i = 0; i < widget.blocks.length; i++)
@@ -158,29 +162,32 @@ class _AddBlockTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+      borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
       child: Container(
         padding: const EdgeInsets.all(AppSizes.md),
-        decoration: BoxDecoration(
-          border: Border.all(color: AppColors.hairline),
-          borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+        decoration: ShapeDecoration(
+          shape: AppShapes.squircle(
+            AppSizes.radiusMd,
+            side: const BorderSide(color: AppColors.hairline, width: 1),
+          ),
         ),
         child: Row(
           children: [
-            Icon(icon, size: 20, color: AppColors.muted),
+            Icon(icon, size: AppSizes.iconMd, color: AppColors.muted),
             const SizedBox(width: AppSizes.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(label,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w700, fontSize: 14)),
+                      style: theme.textTheme.bodyMedium
+                          ?.copyWith(fontWeight: FontWeight.w700)),
                   Text(hint,
-                      style: const TextStyle(
-                          color: AppColors.muted, fontSize: 12)),
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: AppColors.muted)),
                 ],
               ),
             ),
@@ -222,12 +229,15 @@ class _BlockCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        border: Border.all(color: AppColors.hairline),
-        borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+      margin: const EdgeInsets.only(bottom: AppSizes.md),
+      padding: const EdgeInsets.all(AppSizes.md),
+      decoration: ShapeDecoration(
+        shape: AppShapes.squircle(
+          AppSizes.radiusMd,
+          side: const BorderSide(color: AppColors.hairline, width: 1),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -235,22 +245,22 @@ class _BlockCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppSizes.sm, vertical: 3),
+                decoration: ShapeDecoration(
                   color: AppColors.heroPanel,
-                  borderRadius: BorderRadius.circular(6),
+                  shape: AppShapes.squircle(AppSizes.radiusSm),
                 ),
                 child: Text(
                   _titles[block.kind] ?? block.kind,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 11.5,
-                  ),
+                  style: theme.textTheme.labelSmall
+                      ?.copyWith(fontWeight: FontWeight.w800),
                 ),
               ),
               const SizedBox(width: AppSizes.sm),
               Text('${index + 1} of $total',
-                  style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: AppColors.muted)),
               const Spacer(),
               IconButton(
                 tooltip: 'Move up',
@@ -272,7 +282,7 @@ class _BlockCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSizes.sm),
           _BlockForm(block: block, onUpdate: onUpdate, onPickImage: onPickImage),
         ],
       ),
@@ -506,18 +516,20 @@ class _ComparisonEditorState extends State<_ComparisonEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Name what you’re comparing, then add a row for each feature '
           'and fill in a cell under every column.',
-          style: TextStyle(color: AppColors.muted, fontSize: 12, height: 1.4),
+          style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
         ),
-        const SizedBox(height: 10),
-        const Text('Columns',
-            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5)),
-        const SizedBox(height: 6),
+        const SizedBox(height: AppSizes.md),
+        Text('Columns',
+            style: theme.textTheme.labelMedium
+                ?.copyWith(fontWeight: FontWeight.w800)),
+        const SizedBox(height: AppSizes.sm),
         for (var c = 0; c < _columns.length; c++)
           Padding(
             padding: const EdgeInsets.only(bottom: 6),
@@ -554,17 +566,18 @@ class _ComparisonEditorState extends State<_ComparisonEditor> {
                   .add(<String, dynamic>{'label': '', 'values': <String>[]})),
             ),
           ),
-        const SizedBox(height: 10),
-        const Text('Rows',
-            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5)),
-        const SizedBox(height: 6),
+        const SizedBox(height: AppSizes.md),
+        Text('Rows',
+            style: theme.textTheme.labelMedium
+                ?.copyWith(fontWeight: FontWeight.w800)),
+        const SizedBox(height: AppSizes.sm),
         for (var r = 0; r < _rows.length; r++)
           Container(
-            margin: const EdgeInsets.only(bottom: 8),
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
+            margin: const EdgeInsets.only(bottom: AppSizes.sm),
+            padding: const EdgeInsets.all(AppSizes.md),
+            decoration: ShapeDecoration(
               color: AppColors.surfaceTint,
-              borderRadius: BorderRadius.circular(AppSizes.radiusSm),
+              shape: AppShapes.squircle(AppSizes.radiusSm),
             ),
             child: Column(
               children: [
@@ -675,7 +688,7 @@ class _ImageFieldState extends State<_ImageField> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
-              borderRadius: BorderRadius.circular(AppSizes.radiusSm),
+              borderRadius: AppShapes.squircleRadius(AppSizes.radiusSm),
               child: Container(
                 width: 64,
                 height: 64,
@@ -697,9 +710,11 @@ class _ImageFieldState extends State<_ImageField> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(widget.label,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w600, fontSize: 13)),
-                  const SizedBox(height: 6),
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: AppSizes.sm),
                   Row(
                     children: [
                       OutlinedButton.icon(
@@ -729,7 +744,7 @@ class _ImageFieldState extends State<_ImageField> {
                     ),
                     onPressed: () => setState(() => _showUrl = !_showUrl),
                     child: Text(_showUrl ? 'Hide link field' : 'or paste a link',
-                        style: const TextStyle(fontSize: 12)),
+                        style: Theme.of(context).textTheme.bodySmall),
                   ),
                 ],
               ),

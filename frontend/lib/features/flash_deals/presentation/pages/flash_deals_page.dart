@@ -138,7 +138,9 @@ class _FlashDealsPageState extends State<FlashDealsPage>
               FlashDealStatus.past => 'No past flash deals yet.',
             },
             textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.muted),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.muted,
+                ),
           ),
         ),
       );
@@ -146,7 +148,12 @@ class _FlashDealsPageState extends State<FlashDealsPage>
     return RefreshIndicator(
       onRefresh: provider.load,
       child: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(AppSizes.lg, AppSizes.lg, AppSizes.lg, 96),
+        padding: const EdgeInsets.fromLTRB(
+          AppSizes.lg,
+          AppSizes.lg,
+          AppSizes.lg,
+          AppSizes.massive + AppSizes.xxxl,
+        ),
         itemCount: deals.length,
         itemBuilder: (context, i) => _DealTile(
           deal: deals[i],
@@ -194,8 +201,8 @@ class _DealTile extends StatelessWidget {
                 Row(
                   children: [
                     Container(
-                      width: 56,
-                      height: 56,
+                      width: AppSizes.fabSize,
+                      height: AppSizes.fabSize,
                       decoration: ShapeDecoration(
                         color: AppColors.heroPanel,
                         shape: AppShapes.squircle(AppSizes.radiusSm),
@@ -221,35 +228,33 @@ class _DealTile extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             style: Theme.of(context).textTheme.titleSmall,
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: AppSizes.xs),
                           Row(
                             children: [
                               Text(
                                 '₹${deal.flashPrice.toStringAsFixed(2)}',
-                                style: const TextStyle(
-                                  color: AppColors.flashDeal,
-                                  fontWeight: FontWeight.w800,
-                                ),
+                                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                      color: AppColors.flashDeal,
+                                      fontWeight: FontWeight.w800,
+                                    ),
                               ),
                               if (product != null) ...[
-                                const SizedBox(width: 4),
+                                const SizedBox(width: AppSizes.xs),
                                 Text(
                                   '₹${product.mrp.toStringAsFixed(2)}',
-                                  style: const TextStyle(
-                                    color: AppColors.muted,
-                                    fontSize: 12,
-                                    decoration: TextDecoration.lineThrough,
-                                  ),
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                        color: AppColors.muted,
+                                        decoration: TextDecoration.lineThrough,
+                                      ),
                                 ),
                                 const SizedBox(width: AppSizes.sm),
                                 if (deal.discountPct > 0)
                                   Text(
                                     '${deal.discountPct}% off',
-                                    style: const TextStyle(
-                                      color: AppColors.flashDeal,
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 12,
-                                    ),
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                          color: AppColors.flashDeal,
+                                          fontWeight: FontWeight.w700,
+                                        ),
                                   ),
                               ],
                             ],
@@ -311,32 +316,31 @@ class _SoldBar extends StatelessWidget {
         Stack(
           children: [
             Container(
-              height: 6,
+              height: AppSizes.sm,
               decoration: BoxDecoration(
                 color: AppColors.flashDealSoft,
-                borderRadius: BorderRadius.circular(3),
+                borderRadius: AppShapes.squircleRadius(AppSizes.radiusFull),
               ),
             ),
             FractionallySizedBox(
               widthFactor: soldPct,
               child: Container(
-                height: 6,
+                height: AppSizes.sm,
                 decoration: BoxDecoration(
                   color: AppColors.flashDeal,
-                  borderRadius: BorderRadius.circular(3),
+                  borderRadius: AppShapes.squircleRadius(AppSizes.radiusFull),
                 ),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: AppSizes.xs),
         Text(
           '$sold / $limit claimed  ·  ${(soldPct * 100).round()}%',
-          style: const TextStyle(
-            color: AppColors.flashDeal,
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-          ),
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: AppColors.flashDeal,
+                fontWeight: FontWeight.w700,
+              ),
         ),
       ],
     );

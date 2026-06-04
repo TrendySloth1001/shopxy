@@ -15,7 +15,7 @@ class AppPillButton extends StatelessWidget {
     this.loading = false,
     this.color = AppColors.black,
     this.foreground = AppColors.white,
-    this.height = 56,
+    this.height = AppSizes.fabSize,
   });
 
   final String label;
@@ -41,8 +41,8 @@ class AppPillButton extends StatelessWidget {
           child: loading
               ? Center(
                   child: SizedBox(
-                    width: 22,
-                    height: 22,
+                    width: AppSizes.xl,
+                    height: AppSizes.xl,
                     child: CircularProgressIndicator(
                         color: foreground, strokeWidth: 2.5),
                   ),
@@ -52,16 +52,15 @@ class AppPillButton extends StatelessWidget {
                   children: [
                     Text(
                       label,
-                      style: TextStyle(
-                        color: foreground,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                        letterSpacing: 0.1,
-                      ),
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            color: foreground,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.1,
+                          ),
                     ),
                     if (icon != null) ...[
                       const SizedBox(width: AppSizes.sm),
-                      Icon(icon, color: foreground, size: 20),
+                      Icon(icon, color: foreground, size: AppSizes.iconMd),
                     ],
                   ],
                 ),

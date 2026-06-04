@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 
 /// Static 5-star row rendered from a 0..5 double. Renders half-stars
@@ -8,7 +9,7 @@ class StarRow extends StatelessWidget {
   const StarRow({
     super.key,
     required this.rating,
-    this.size = 14,
+    this.size = AppSizes.iconSm,
     this.color = AppColors.success,
   });
 

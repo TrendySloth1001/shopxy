@@ -202,8 +202,10 @@ class _BodyState extends State<_Body> {
           children: [
             Text(
               isEdit ? 'Edit bank offer' : 'New bank offer',
-              style:
-                  const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: AppSizes.md),
             DropdownButtonFormField<String>(
@@ -344,22 +346,21 @@ class _BodyState extends State<_Body> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'PDP preview',
-                    style: TextStyle(
-                      color: AppColors.muted,
-                      fontSize: 11,
-                      letterSpacing: 0.6,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: AppColors.muted,
+                          letterSpacing: 0.6,
+                          fontWeight: FontWeight.w700,
+                        ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSizes.xs),
                   Text(
                     preview,
-                    style: const TextStyle(
-                      color: AppColors.black,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(fontWeight: FontWeight.w700),
                   ),
                 ],
               ),

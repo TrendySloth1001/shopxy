@@ -50,7 +50,7 @@ class AppFilterChip extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (icon != null) ...[
-                Icon(icon, size: dense ? 14 : 16, color: fg),
+                Icon(icon, size: dense ? 14 : AppSizes.iconSm, color: fg),
                 const SizedBox(width: AppSizes.xs + 2),
               ],
               Text(
@@ -64,7 +64,7 @@ class AppFilterChip extends StatelessWidget {
               ),
               if (trailingIcon != null) ...[
                 const SizedBox(width: AppSizes.xs + 2),
-                Icon(trailingIcon, size: dense ? 14 : 16, color: fg),
+                Icon(trailingIcon, size: dense ? 14 : AppSizes.iconSm, color: fg),
               ],
             ],
           ),

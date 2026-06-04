@@ -23,6 +23,7 @@ import 'package:shopxy/features/stock/data/datasources/stock_remote_data_source.
 import 'package:shopxy/features/stock/domain/entities/stock_transaction.dart';
 import 'package:shopxy/features/stock/presentation/pages/stock_ledger_page.dart';
 import 'package:shopxy/features/stock/presentation/widgets/stock_bottom_sheet.dart';
+import 'package:shopxy/shared/constants/app_durations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/constants/app_units.dart';
@@ -809,23 +810,23 @@ class _SystemTagsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Wrap(
-      spacing: 6,
-      runSpacing: 4,
+      spacing: AppSizes.sm,
+      runSpacing: AppSizes.xs,
       children: [
         for (final t in tags)
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppSizes.sm, vertical: 3),
+            decoration: ShapeDecoration(
               color: _palette(t).bg,
-              borderRadius: BorderRadius.circular(3),
+              shape: AppShapes.squircle(AppSizes.radiusSm),
             ),
             child: Text(
               _label(t),
-              style: TextStyle(
+              style: theme.textTheme.labelSmall?.copyWith(
                 color: _palette(t).fg,
-                fontSize: 10,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 0.4,
               ),
@@ -1172,7 +1173,7 @@ class _VariantsSection extends StatelessWidget {
                               horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
                             color: AppColors.brandSoft,
-                            borderRadius: BorderRadius.circular(
+                            borderRadius: AppShapes.squircleRadius(
                                 AppSizes.radiusFull),
                           ),
                           child: Text(
@@ -1204,20 +1205,21 @@ class _VariantsSection extends StatelessWidget {
                               children: [
                                 if (active[i].isDefault)
                                   Padding(
-                                    padding: const EdgeInsets.only(right: 6),
+                                    padding:
+                                        const EdgeInsets.only(right: AppSizes.sm),
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(
-                                          horizontal: 5, vertical: 1),
-                                      decoration: BoxDecoration(
+                                          horizontal: AppSizes.xs, vertical: 1),
+                                      decoration: ShapeDecoration(
                                         color: AppColors.brand,
-                                        borderRadius:
-                                            BorderRadius.circular(3),
+                                        shape: AppShapes.squircle(
+                                            AppSizes.radiusSm),
                                       ),
-                                      child: const Text(
+                                      child: Text(
                                         'DEFAULT',
-                                        style: TextStyle(
+                                        style: theme.textTheme.labelSmall
+                                            ?.copyWith(
                                           color: AppColors.white,
-                                          fontSize: 9,
                                           fontWeight: FontWeight.w800,
                                           letterSpacing: 0.6,
                                         ),
@@ -1226,20 +1228,21 @@ class _VariantsSection extends StatelessWidget {
                                   ),
                                 if (!active[i].isActive)
                                   Padding(
-                                    padding: const EdgeInsets.only(right: 6),
+                                    padding:
+                                        const EdgeInsets.only(right: AppSizes.sm),
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(
-                                          horizontal: 5, vertical: 1),
-                                      decoration: BoxDecoration(
+                                          horizontal: AppSizes.xs, vertical: 1),
+                                      decoration: ShapeDecoration(
                                         color: AppColors.muted,
-                                        borderRadius:
-                                            BorderRadius.circular(3),
+                                        shape: AppShapes.squircle(
+                                            AppSizes.radiusSm),
                                       ),
-                                      child: const Text(
+                                      child: Text(
                                         'INACTIVE',
-                                        style: TextStyle(
+                                        style: theme.textTheme.labelSmall
+                                            ?.copyWith(
                                           color: AppColors.white,
-                                          fontSize: 9,
                                           fontWeight: FontWeight.w800,
                                           letterSpacing: 0.6,
                                         ),
@@ -1416,7 +1419,7 @@ class _ProductSpecsSection extends StatelessWidget {
                                   horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
                                 color: AppColors.surfaceTint,
-                                borderRadius: BorderRadius.circular(
+                                borderRadius: AppShapes.squircleRadius(
                                     AppSizes.radiusFull),
                               ),
                               child: Text(
@@ -1494,9 +1497,9 @@ class _OffersSection extends StatelessWidget {
   void _copy(BuildContext context, String code) {
     Clipboard.setData(ClipboardData(text: code));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Coupon code copied'),
-        duration: Duration(seconds: 2),
+      SnackBar(
+        content: const Text('Coupon code copied'),
+        duration: AppDurations.snackbar,
       ),
     );
   }
@@ -1563,7 +1566,7 @@ class _OffersSection extends StatelessWidget {
                                         horizontal: 8, vertical: 3),
                                     decoration: BoxDecoration(
                                       color: AppColors.surfaceTint,
-                                      borderRadius: BorderRadius.circular(
+                                      borderRadius: AppShapes.squircleRadius(
                                           AppSizes.radiusSm),
                                       border: Border.all(
                                         color: AppColors.hairline,
@@ -1758,7 +1761,7 @@ class _TagsSection extends StatelessWidget {
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: AppColors.brandSoft,
-                    borderRadius: BorderRadius.circular(AppSizes.radiusFull),
+                    borderRadius: AppShapes.squircleRadius(AppSizes.radiusFull),
                   ),
                   child: Text(
                     '#$t',
@@ -2252,7 +2255,7 @@ class _IdentifierRibbon extends StatelessWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('$label copied'),
-        duration: const Duration(seconds: 2),
+        duration: AppDurations.snackbar,
       ),
     );
   }

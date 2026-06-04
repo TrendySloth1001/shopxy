@@ -201,7 +201,7 @@ class _ChallanTile extends StatelessWidget {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSizes.xs),
                     Text(
                       '${challan.partyName} • ${df.format(challan.createdAt as DateTime)} • ${challan.itemCount} ${AppStrings.items}',
                       style: theme.textTheme.bodySmall?.copyWith(

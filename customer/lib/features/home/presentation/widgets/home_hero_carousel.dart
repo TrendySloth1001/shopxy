@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:shopxy_customer/features/banner_slide/presentation/pages/banner_slide_detail_page.dart';
 import 'package:shopxy_customer/features/home/data/models/home_feed_models.dart';
 import 'package:shopxy_customer/features/home/presentation/widgets/hero_slide_templates.dart';
+import 'package:shopxy_customer/shared/constants/app_durations.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 
@@ -95,7 +96,7 @@ class _HomeHeroCarouselState extends State<HomeHeroCarousel> {
               children: List.generate(slides.length, (i) {
                 final active = i == _page;
                 return AnimatedContainer(
-                  duration: const Duration(milliseconds: 220),
+                  duration: AppDurations.searchDebounce,
                   margin: const EdgeInsets.symmetric(horizontal: 3),
                   height: 6,
                   width: active ? 18 : 6,

@@ -23,9 +23,7 @@ Future<int?> showRequestReturnSheet({
     isScrollControlled: true,
     backgroundColor: AppColors.canvas,
     useSafeArea: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
+    shape: AppShapes.squircleTop(AppSizes.radiusXl),
     builder: (_) => _Sheet(parentOrderId: parentOrderId, shopOrder: shopOrder),
   );
 }
@@ -174,7 +172,7 @@ class _SheetState extends State<_Sheet> {
                   decoration: InputDecoration(
                     hintText: 'Tell the seller what happened',
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+                      borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
                       borderSide: const BorderSide(color: AppColors.hairline),
                     ),
                   ),
@@ -183,7 +181,7 @@ class _SheetState extends State<_Sheet> {
                   const SizedBox(height: AppSizes.md),
                   Text(
                     _error!,
-                    style: const TextStyle(
+                    style: theme.textTheme.bodyMedium?.copyWith(
                       color: AppColors.error,
                       fontWeight: FontWeight.w700,
                     ),
@@ -203,21 +201,19 @@ class _SheetState extends State<_Sheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Refund to wallet',
-                        style: TextStyle(
+                        style: theme.textTheme.labelSmall?.copyWith(
                           color: AppColors.muted,
-                          fontSize: 11,
                           fontWeight: FontWeight.w800,
                           letterSpacing: 0.4,
                         ),
                       ),
                       Text(
                         '₹${_refundEstimate.toStringAsFixed(0)}',
-                        style: const TextStyle(
+                        style: theme.textTheme.titleLarge?.copyWith(
                           color: AppColors.black,
                           fontWeight: FontWeight.w800,
-                          fontSize: 20,
                         ),
                       ),
                     ],
@@ -239,12 +235,14 @@ class _SheetState extends State<_Sheet> {
                           height: 18,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: Colors.white,
+                            color: AppColors.white,
                           ),
                         )
-                      : const Text(
+                      : Text(
                           'Submit return',
-                          style: TextStyle(fontWeight: FontWeight.w800),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                 ),
               ],
@@ -264,12 +262,11 @@ class _SectionLabel extends StatelessWidget {
         padding: const EdgeInsets.only(bottom: AppSizes.sm),
         child: Text(
           label.toUpperCase(),
-          style: const TextStyle(
-            color: AppColors.muted,
-            fontWeight: FontWeight.w800,
-            fontSize: 11,
-            letterSpacing: 0.6,
-          ),
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: AppColors.muted,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.6,
+              ),
         ),
       );
 }
@@ -315,20 +312,19 @@ class _ItemPickerRow extends StatelessWidget {
                   children: [
                     Text(
                       item.productName,
-                      style: const TextStyle(
-                        color: AppColors.black,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: AppColors.black,
+                            fontWeight: FontWeight.w700,
+                          ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSizes.xs),
                     Text(
                       'Ordered: ${item.quantity.toStringAsFixed(item.quantity == item.quantity.roundToDouble() ? 0 : 2)} ${item.unit} · ₹${item.unitPrice.toStringAsFixed(0)} each',
-                      style: const TextStyle(
-                        color: AppColors.muted,
-                        fontSize: 12,
-                      ),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.muted,
+                          ),
                     ),
                   ],
                 ),
@@ -339,13 +335,12 @@ class _ItemPickerRow extends StatelessWidget {
             const SizedBox(height: AppSizes.sm),
             Row(
               children: [
-                const Text(
+                Text(
                   'Quantity:',
-                  style: TextStyle(
-                    color: AppColors.muted,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.muted,
+                        fontWeight: FontWeight.w700,
+                      ),
                 ),
                 const SizedBox(width: AppSizes.sm),
                 _QtyStepper(
@@ -385,10 +380,10 @@ class _QtyStepper extends StatelessWidget {
         ),
         Text(
           value.toStringAsFixed(value == value.roundToDouble() ? 0 : 2),
-          style: const TextStyle(
-            color: AppColors.black,
-            fontWeight: FontWeight.w800,
-          ),
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: AppColors.black,
+                fontWeight: FontWeight.w800,
+              ),
         ),
         IconButton(
           icon: const Icon(Icons.add_circle_outline_rounded),
@@ -431,11 +426,10 @@ class _ReasonChip extends StatelessWidget {
           ),
           child: Text(
             label,
-            style: TextStyle(
-              color: selected ? Colors.white : AppColors.black,
-              fontWeight: FontWeight.w700,
-              fontSize: 13,
-            ),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: selected ? AppColors.white : AppColors.black,
+                  fontWeight: FontWeight.w700,
+                ),
           ),
         ),
       ),

@@ -138,7 +138,7 @@ class _InfoRow extends StatelessWidget {
                   style: theme.textTheme.bodyLarge
                       ?.copyWith(fontWeight: FontWeight.w700),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSizes.xs),
                 Text(
                   body,
                   style: theme.textTheme.bodyMedium

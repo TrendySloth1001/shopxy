@@ -172,29 +172,34 @@ class _CarouselEditorPageState extends State<CarouselEditorPage> {
                   const SizedBox(height: AppSizes.lg),
                   Row(
                     children: [
-                      const Text(
+                      Text(
                         'Slides',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 14,
-                          letterSpacing: 0.4,
-                        ),
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleSmall
+                            ?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.4,
+                            ),
                       ),
                       const SizedBox(width: AppSizes.sm),
                       if (loadingSlides)
                         const SizedBox(
-                          width: 14,
-                          height: 14,
+                          width: AppSizes.lg,
+                          height: AppSizes.lg,
                           child:
                               CircularProgressIndicator(strokeWidth: 2),
                         )
                       else
                         Text(
                           '· ${slides.length}',
-                          style: const TextStyle(
-                            color: AppColors.muted,
-                            fontWeight: FontWeight.w700,
-                          ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(
+                                color: AppColors.muted,
+                                fontWeight: FontWeight.w700,
+                              ),
                         ),
                     ],
                   ),
@@ -415,10 +420,10 @@ class _SlideRow extends StatelessWidget {
           child: Row(
             children: [
               ClipRRect(
-                borderRadius: BorderRadius.circular(AppSizes.radiusSm),
+                borderRadius: AppShapes.squircleRadius(AppSizes.radiusSm),
                 child: SizedBox(
-                  width: 56,
-                  height: 56,
+                  width: AppSizes.huge,
+                  height: AppSizes.huge,
                   child: Image.network(
                     resolveImageUrl(slide.imageUrl),
                     fit: BoxFit.cover,
@@ -439,33 +444,37 @@ class _SlideRow extends StatelessWidget {
                   children: [
                     Text(
                       slide.title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                      ),
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleSmall
+                          ?.copyWith(fontWeight: FontWeight.w700),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: AppSizes.xs),
                     Row(
                       children: [
                         Text(
                           slide.template.label,
-                          style: const TextStyle(
-                            color: AppColors.muted,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelSmall
+                              ?.copyWith(
+                                color: AppColors.muted,
+                                fontWeight: FontWeight.w600,
+                              ),
                         ),
                         const Spacer(),
                         if (!slide.isActive)
-                          const Text(
+                          Text(
                             'Off',
-                            style: TextStyle(
-                              color: AppColors.muted,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelSmall
+                                ?.copyWith(
+                                  color: AppColors.muted,
+                                  fontWeight: FontWeight.w700,
+                                ),
                           ),
                       ],
                     ),
@@ -495,10 +504,13 @@ class _EmptySlides extends StatelessWidget {
           side: const BorderSide(color: AppColors.hairline),
         ),
       ),
-      child: const Text(
+      child: Text(
         "No slides yet — tap \"Add slide\" to design your first one.",
         textAlign: TextAlign.center,
-        style: TextStyle(color: AppColors.muted, fontSize: 13),
+        style: Theme.of(context)
+            .textTheme
+            .bodySmall
+            ?.copyWith(color: AppColors.muted),
       ),
     );
   }
@@ -522,22 +534,25 @@ class _DateField extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(AppSizes.radiusInput),
+      borderRadius: AppShapes.squircleRadius(AppSizes.radiusInput),
       child: InputDecorator(
         decoration: InputDecoration(
           labelText: label,
           suffixIcon: onClear != null
               ? IconButton(
-                  icon: const Icon(Icons.close, size: 18),
+                  icon: const Icon(Icons.close, size: AppSizes.iconMd),
                   onPressed: onClear,
                 )
-              : const Icon(Icons.calendar_today_outlined, size: 18),
+              : const Icon(
+                  Icons.calendar_today_outlined,
+                  size: AppSizes.iconMd,
+                ),
         ),
         child: Text(
           value == null ? 'Not set' : _fmt.format(value!),
-          style: TextStyle(
-            color: value == null ? AppColors.muted : AppColors.black,
-          ),
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: value == null ? AppColors.muted : AppColors.black,
+              ),
         ),
       ),
     );

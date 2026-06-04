@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shopxy/core/network/image_url.dart';
 import 'package:shopxy/features/products/domain/entities/product.dart';
 import 'package:shopxy/features/products/presentation/widgets/product_thumbnail.dart';
+import 'package:shopxy/shared/constants/app_durations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
@@ -41,7 +42,7 @@ class _ProductImageCarouselState extends State<ProductImageCarousel> {
   void _jumpTo(int i) {
     _pageController.animateToPage(
       i,
-      duration: const Duration(milliseconds: 220),
+      duration: AppDurations.medium,
       curve: Curves.easeOutCubic,
     );
   }
@@ -97,8 +98,8 @@ class _ProductImageCarouselState extends State<ProductImageCarousel> {
                       color: AppColors.heroPanel,
                       alignment: Alignment.center,
                       child: const SizedBox(
-                        width: 24,
-                        height: 24,
+                        width: AppSizes.iconLg,
+                        height: AppSizes.iconLg,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       ),
                     ),
@@ -144,8 +145,8 @@ class _DotIndicator extends StatelessWidget {
       children: [
         for (int i = 0; i < count; i++)
           AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            width: i == active ? 16 : 6,
+            duration: AppDurations.short,
+            width: i == active ? AppSizes.iconSm : 6,
             height: 6,
             margin: const EdgeInsets.symmetric(horizontal: 3),
             decoration: BoxDecoration(
@@ -183,7 +184,7 @@ class _ThumbnailStrip extends StatelessWidget {
           return GestureDetector(
             onTap: () => onTap(i),
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
+              duration: AppDurations.short,
               width: 56,
               height: 56,
               decoration: ShapeDecoration(
@@ -207,8 +208,8 @@ class _ThumbnailStrip extends StatelessWidget {
                     color: AppColors.heroPanel,
                     alignment: Alignment.center,
                     child: const SizedBox(
-                      width: 16,
-                      height: 16,
+                      width: AppSizes.iconSm,
+                      height: AppSizes.iconSm,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     ),
                   ),
@@ -256,14 +257,17 @@ class _ProductLightboxState extends State<_ProductLightbox> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppColors.black,
       appBar: AppBar(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
+        backgroundColor: AppColors.black,
+        foregroundColor: AppColors.white,
         elevation: 0,
         title: Text(
           '${_index + 1} / ${widget.urls.length}',
-          style: const TextStyle(color: Colors.white, fontSize: 14),
+          style: Theme.of(context)
+              .textTheme
+              .bodyMedium
+              ?.copyWith(color: AppColors.white),
         ),
       ),
       body: PageView.builder(
@@ -278,17 +282,17 @@ class _ProductLightboxState extends State<_ProductLightbox> {
               child: CachedNetworkImage(
                 imageUrl: resolveImageUrl(widget.urls[i]),
                 fit: BoxFit.contain,
-                placeholder: (_, _) => const SizedBox(
-                  width: 24,
-                  height: 24,
+                placeholder: (_, _) => SizedBox(
+                  width: AppSizes.iconLg,
+                  height: AppSizes.iconLg,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Colors.white54,
+                    color: AppColors.white.withValues(alpha: 0.54),
                   ),
                 ),
-                errorWidget: (_, _, _) => const Icon(
+                errorWidget: (_, _, _) => Icon(
                   Icons.image_not_supported_outlined,
-                  color: Colors.white54,
+                  color: AppColors.white.withValues(alpha: 0.54),
                   size: 64,
                 ),
               ),

@@ -428,12 +428,11 @@ class _SectionLabel extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: const TextStyle(
-            color: AppColors.muted,
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.8,
-          ),
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: AppColors.muted,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.8,
+              ),
         ),
       );
 }

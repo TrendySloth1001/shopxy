@@ -103,28 +103,35 @@ class _ShopCautionPageState extends State<ShopCautionPage> {
                             Row(
                               children: [
                                 const Icon(Icons.savings_rounded,
-                                    color: AppColors.brand, size: 18),
-                                const SizedBox(width: 6),
+                                    color: AppColors.brand,
+                                    size: AppSizes.iconMd),
+                                const SizedBox(width: AppSizes.sm),
                                 Text(
                                   'HELD BY ${(widget.shop.shopName ?? widget.shop.name).toUpperCase()}',
-                                  style: const TextStyle(
-                                    color: AppColors.muted,
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 11,
-                                    letterSpacing: 0.5,
-                                  ),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelSmall
+                                      ?.copyWith(
+                                        color: AppColors.muted,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 0.5,
+                                      ),
                                 ),
                               ],
                             ),
                             const SizedBox(height: AppSizes.xs),
                             Text(
                               _money(balance),
-                              style: const TextStyle(
-                                color: AppColors.brandStrong,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 32,
-                                fontFeatures: [FontFeature.tabularFigures()],
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineMedium
+                                  ?.copyWith(
+                                    color: AppColors.brandStrong,
+                                    fontWeight: FontWeight.w800,
+                                    fontFeatures: const [
+                                      FontFeature.tabularFigures()
+                                    ],
+                                  ),
                             ),
                             if (stats.isNotEmpty) ...[
                               const SizedBox(height: AppSizes.md),
@@ -153,12 +160,14 @@ class _ShopCautionPageState extends State<ShopCautionPage> {
                               shop: widget.shop,
                               onSubmitted: _refresh,
                             ),
-                            icon: const Icon(Icons.add_rounded, size: 18),
+                            icon:
+                                const Icon(Icons.add_rounded, size: AppSizes.iconMd),
                             label: const Text(AppStrings.cautionPostCta),
                             style: FilledButton.styleFrom(
                               backgroundColor: AppColors.brand,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              foregroundColor: AppColors.white,
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: AppSizes.lg),
                               shape: AppShapes.squircle(AppSizes.radiusMd),
                               textStyle:
                                   const TextStyle(fontWeight: FontWeight.w800),
@@ -226,12 +235,11 @@ class _Stat extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label.toUpperCase(),
-            style: const TextStyle(
+            style: theme.textTheme.labelSmall?.copyWith(
                 color: AppColors.muted,
                 fontWeight: FontWeight.w800,
-                fontSize: 10,
                 letterSpacing: 0.5)),
-        const SizedBox(height: 2),
+        const SizedBox(height: AppSizes.xs),
         Text(value,
             style: theme.textTheme.bodyLarge
                 ?.copyWith(fontWeight: FontWeight.w700)),
@@ -298,7 +306,7 @@ class _LedgerRow extends StatelessWidget {
             decoration: ShapeDecoration(
                 color: soft, shape: AppShapes.squircle(AppSizes.radiusSm)),
             alignment: Alignment.center,
-            child: Icon(icon, color: color, size: 18),
+            child: Icon(icon, color: color, size: AppSizes.iconMd),
           ),
           const SizedBox(width: AppSizes.md),
           Expanded(
@@ -370,19 +378,17 @@ class _RequestRow extends StatelessWidget {
                     const SizedBox(width: AppSizes.sm),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2),
+                          horizontal: AppSizes.sm, vertical: AppSizes.xs),
                       decoration: ShapeDecoration(
                           color: soft,
                           shape: AppShapes.squircle(AppSizes.radiusFull)),
                       child: Text(label,
-                          style: TextStyle(
-                              color: color,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 11)),
+                          style: theme.textTheme.labelSmall?.copyWith(
+                              color: color, fontWeight: FontWeight.w800)),
                     ),
                   ],
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSizes.xs),
                 Text(subtitle,
                     style: theme.textTheme.bodySmall
                         ?.copyWith(color: AppColors.muted)),
@@ -393,8 +399,9 @@ class _RequestRow extends StatelessWidget {
             TextButton(
               onPressed: () => _cancel(context),
               style: TextButton.styleFrom(foregroundColor: AppColors.error),
-              child: const Text('Cancel',
-                  style: TextStyle(fontWeight: FontWeight.w700)),
+              child: Text('Cancel',
+                  style: theme.textTheme.bodyMedium
+                      ?.copyWith(fontWeight: FontWeight.w700)),
             ),
         ],
       ),
@@ -430,7 +437,7 @@ class _Error extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(Icons.error_outline_rounded,
-                color: AppColors.error, size: 36),
+                color: AppColors.error, size: AppSizes.iconXl),
             const SizedBox(height: AppSizes.sm),
             Text(err, textAlign: TextAlign.center),
             const SizedBox(height: AppSizes.md),

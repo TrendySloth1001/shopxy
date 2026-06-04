@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shopxy/core/network/image_url.dart';
 import 'package:shopxy/features/admin/data/models/banner.dart';
+import 'package:shopxy/shared/constants/app_durations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
@@ -96,7 +97,7 @@ class HeroSlidePreview extends StatelessWidget {
 // ─── Shared visual helpers ──────────────────────────────────────────
 
 Color _autoFg(Color bg) =>
-    bg.computeLuminance() > 0.55 ? AppColors.black : Colors.white;
+    bg.computeLuminance() > 0.55 ? AppColors.black : AppColors.white;
 
 Color _shade(Color base, double amount) {
   final r = (base.r * 255 * (1 - amount)).round();
@@ -116,16 +117,16 @@ LinearGradient _panelGradient(Color base) => LinearGradient(
       colors: [base, _shade(base, 0.08)],
     );
 
-const List<BoxShadow> _kCardShadows = [
+final List<BoxShadow> _kCardShadows = [
   BoxShadow(
-    color: Color(0x14000000),
+    color: AppColors.black.withValues(alpha: 0.08),
     blurRadius: 18,
-    offset: Offset(0, 8),
+    offset: const Offset(0, 8),
   ),
   BoxShadow(
-    color: Color(0x0A000000),
+    color: AppColors.black.withValues(alpha: 0.04),
     blurRadius: 4,
-    offset: Offset(0, 1),
+    offset: const Offset(0, 1),
   ),
 ];
 
@@ -226,10 +227,10 @@ class _BrandMark extends StatelessWidget {
             height: size,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.white,
+              color: AppColors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.15),
+                  color: AppColors.black.withValues(alpha: 0.15),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -256,7 +257,7 @@ class _BrandMark extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           logo,
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSizes.sm),
           Flexible(child: label),
         ],
       );
@@ -278,13 +279,16 @@ class _PillCta extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSizes.md, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.md,
+        vertical: AppSizes.sm,
+      ),
       decoration: ShapeDecoration(
         color: bg,
         shape: AppShapes.squircle(AppSizes.radiusFull),
         shadows: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
+            color: AppColors.black.withValues(alpha: 0.12),
             blurRadius: 8,
             offset: const Offset(0, 3),
           ),
@@ -292,12 +296,11 @@ class _PillCta extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(
-          color: fg,
-          fontSize: 12,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 0.2,
-        ),
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: fg,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.2,
+            ),
       ),
     );
   }
@@ -326,7 +329,7 @@ class _ShimmerPillState extends State<_ShimmerPill>
     super.initState();
     _ctrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 5000),
+      duration: AppDurations.snackbarLong,
     )..repeat();
   }
 
@@ -360,7 +363,7 @@ class _ShimmerPillState extends State<_ShimmerPill>
                           end: const Alignment(1, 0),
                           colors: [
                             Colors.transparent,
-                            Colors.white.withValues(alpha: 0.35),
+                            AppColors.white.withValues(alpha: 0.35),
                             Colors.transparent,
                           ],
                           stops: const [0.35, 0.5, 0.65],
@@ -414,7 +417,7 @@ class _GlowPulseState extends State<_GlowPulse>
         final t = Curves.easeInOut.transform(_ctrl.value);
         return Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+            borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
             boxShadow: [
               BoxShadow(
                 color: widget.color.withValues(alpha: 0.25 + t * 0.35),
@@ -486,7 +489,7 @@ class _CornerVignette extends StatelessWidget {
               colors: [
                 Colors.transparent,
                 Colors.transparent,
-                Colors.black.withValues(alpha: 0.18),
+                AppColors.black.withValues(alpha: 0.18),
               ],
               stops: const [0.0, 0.7, 1.0],
             ),
@@ -515,7 +518,10 @@ class _DealBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final parts = _split();
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.md,
+      ),
       decoration: ShapeDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -536,13 +542,12 @@ class _DealBadge extends StatelessWidget {
               text,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w900,
-                fontSize: 22,
-                letterSpacing: 0.5,
-                height: 1.0,
-              ),
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: AppColors.white,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.5,
+                    height: 1.0,
+                  ),
             )
           : Column(
               mainAxisSize: MainAxisSize.min,
@@ -550,24 +555,22 @@ class _DealBadge extends StatelessWidget {
               children: [
                 Text(
                   parts.number,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 36,
-                    height: 1.0,
-                    letterSpacing: -1,
-                  ),
+                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                        color: AppColors.white,
+                        fontWeight: FontWeight.w900,
+                        height: 1.0,
+                        letterSpacing: -1,
+                      ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   parts.suffix.toUpperCase(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 12,
-                    letterSpacing: 1.5,
-                    height: 1.0,
-                  ),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.white,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.5,
+                        height: 1.0,
+                      ),
                 ),
               ],
             ),
@@ -660,12 +663,11 @@ class _ClassicCard extends StatelessWidget {
                       brand,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 10,
-                        letterSpacing: 0.6,
-                      ),
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: AppColors.white,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.6,
+                          ),
                     ),
                   ),
                 ),
@@ -675,12 +677,11 @@ class _ClassicCard extends StatelessWidget {
                     eyebrow,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: fg.withValues(alpha: 0.72),
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.2,
-                    ),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: fg.withValues(alpha: 0.72),
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.2,
+                        ),
                   ),
                   const SizedBox(height: 2),
                 ],
@@ -688,13 +689,12 @@ class _ClassicCard extends StatelessWidget {
                   data.title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: fg,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 26,
-                    height: 1.0,
-                    letterSpacing: -0.5,
-                  ),
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        color: fg,
+                        fontWeight: FontWeight.w900,
+                        height: 1.0,
+                        letterSpacing: -0.5,
+                      ),
                 ),
                 if (subtitle.isNotEmpty) ...[
                   const SizedBox(height: 4),
@@ -702,18 +702,17 @@ class _ClassicCard extends StatelessWidget {
                     subtitle,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: fg.withValues(alpha: 0.78),
-                      fontSize: 12,
-                      height: 1.3,
-                    ),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: fg.withValues(alpha: 0.78),
+                          height: 1.3,
+                        ),
                   ),
                 ],
                 const SizedBox(height: AppSizes.sm),
                 _ShimmerPill(
                   label: data._resolvedCta,
                   bg: AppColors.black,
-                  fg: Colors.white,
+                  fg: AppColors.white,
                 ),
               ],
                   ),
@@ -758,12 +757,11 @@ class _MinimalCard extends StatelessWidget {
                       brand.toUpperCase(),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: data.accent,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 10,
-                        letterSpacing: 1.4,
-                      ),
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: data.accent,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.4,
+                          ),
                     ),
                   ),
                   if (eyebrow.isNotEmpty) ...[
@@ -772,11 +770,10 @@ class _MinimalCard extends StatelessWidget {
                       eyebrow,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: fg.withValues(alpha: 0.6),
-                        fontSize: 11,
-                        fontStyle: FontStyle.italic,
-                      ),
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: fg.withValues(alpha: 0.6),
+                            fontStyle: FontStyle.italic,
+                          ),
                     ),
                   ],
                   const SizedBox(height: AppSizes.xs),
@@ -784,13 +781,12 @@ class _MinimalCard extends StatelessWidget {
                     data.title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: fg,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 28,
-                      height: 1.0,
-                      letterSpacing: -0.6,
-                    ),
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          color: fg,
+                          fontWeight: FontWeight.w900,
+                          height: 1.0,
+                          letterSpacing: -0.6,
+                        ),
                   ),
                   if (subtitle.isNotEmpty) ...[
                     const SizedBox(height: 4),
@@ -798,11 +794,10 @@ class _MinimalCard extends StatelessWidget {
                       subtitle,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: fg.withValues(alpha: 0.65),
-                        fontSize: 12,
-                        height: 1.3,
-                      ),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: fg.withValues(alpha: 0.65),
+                            height: 1.3,
+                          ),
                     ),
                   ],
                   const SizedBox(height: AppSizes.sm),
@@ -814,7 +809,7 @@ class _MinimalCard extends StatelessWidget {
                   _PillCta(
                     label: data._resolvedCta,
                     bg: data.accent,
-                    fg: Colors.white,
+                    fg: AppColors.white,
                   ),
                 ],
               ),
@@ -830,7 +825,7 @@ class _MinimalCard extends StatelessWidget {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.12),
+                      color: AppColors.black.withValues(alpha: 0.12),
                       blurRadius: 16,
                       offset: const Offset(0, 6),
                     ),
@@ -847,7 +842,7 @@ class _MinimalCard extends StatelessWidget {
                             center: const Alignment(-0.4, -0.5),
                             radius: 0.95,
                             colors: [
-                              Colors.white.withValues(alpha: 0.18),
+                              AppColors.white.withValues(alpha: 0.18),
                               Colors.transparent,
                             ],
                           ),
@@ -925,12 +920,12 @@ class _SplitCard extends StatelessWidget {
                           brand.toUpperCase(),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: data.accent,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 10,
-                            letterSpacing: 1.4,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.labelSmall?.copyWith(
+                                    color: data.accent,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 1.4,
+                                  ),
                         ),
                       ),
                       if (eyebrow.isNotEmpty) ...[
@@ -939,11 +934,11 @@ class _SplitCard extends StatelessWidget {
                           eyebrow,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: fg.withValues(alpha: 0.6),
-                            fontSize: 11,
-                            fontStyle: FontStyle.italic,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.labelSmall?.copyWith(
+                                    color: fg.withValues(alpha: 0.6),
+                                    fontStyle: FontStyle.italic,
+                                  ),
                         ),
                       ],
                       const SizedBox(height: 4),
@@ -951,13 +946,13 @@ class _SplitCard extends StatelessWidget {
                         data.title,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: fg,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 26,
-                          height: 1.0,
-                          letterSpacing: -0.5,
-                        ),
+                        style:
+                            Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                  color: fg,
+                                  fontWeight: FontWeight.w900,
+                                  height: 1.0,
+                                  letterSpacing: -0.5,
+                                ),
                       ),
                       if (subtitle.isNotEmpty) ...[
                         const SizedBox(height: 4),
@@ -965,17 +960,17 @@ class _SplitCard extends StatelessWidget {
                           subtitle,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: fg.withValues(alpha: 0.8),
-                            fontSize: 12,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: fg.withValues(alpha: 0.8),
+                                  ),
                         ),
                       ],
                       const SizedBox(height: AppSizes.sm),
                       _ShimmerPill(
                         label: data._resolvedCta,
                         bg: data.accent,
-                        fg: Colors.white,
+                        fg: AppColors.white,
                       ),
                     ],
                   ),
@@ -1043,8 +1038,8 @@ class _OverlayCard extends StatelessWidget {
                   center: Alignment.center,
                   radius: 0.9,
                   colors: [
-                    Colors.black.withValues(alpha: 0.50),
-                    Colors.black.withValues(alpha: 0.20),
+                    AppColors.black.withValues(alpha: 0.50),
+                    AppColors.black.withValues(alpha: 0.20),
                   ],
                 ),
               ),
@@ -1058,7 +1053,7 @@ class _OverlayCard extends StatelessWidget {
                   end: Alignment.bottomCenter,
                   colors: [
                     Colors.transparent,
-                    Colors.black.withValues(alpha: 0.35),
+                    AppColors.black.withValues(alpha: 0.35),
                   ],
                   stops: const [0.55, 1.0],
                 ),
@@ -1081,12 +1076,11 @@ class _OverlayCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 10,
-                      letterSpacing: 1.6,
-                    ),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: AppColors.white,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.6,
+                        ),
                   ),
                 ),
                 if (eyebrow.isNotEmpty) ...[
@@ -1096,11 +1090,10 @@ class _OverlayCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.88),
-                      fontSize: 11,
-                      fontStyle: FontStyle.italic,
-                    ),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: AppColors.white.withValues(alpha: 0.88),
+                          fontStyle: FontStyle.italic,
+                        ),
                   ),
                 ],
                 const SizedBox(height: 4),
@@ -1109,19 +1102,18 @@ class _OverlayCard extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 22,
-                    height: 1.05,
-                    letterSpacing: -0.5,
-                    shadows: [
-                      Shadow(
-                        color: Colors.black.withValues(alpha: 0.4),
-                        blurRadius: 14,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: AppColors.white,
+                        fontWeight: FontWeight.w900,
+                        height: 1.05,
+                        letterSpacing: -0.5,
+                        shadows: [
+                          Shadow(
+                            color: AppColors.black.withValues(alpha: 0.4),
+                            blurRadius: 14,
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
                 ),
                 if (subtitle.isNotEmpty) ...[
                   const SizedBox(height: 2),
@@ -1130,16 +1122,15 @@ class _OverlayCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.92),
-                      fontSize: 11,
-                    ),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: AppColors.white.withValues(alpha: 0.92),
+                        ),
                   ),
                 ],
                 const SizedBox(height: AppSizes.xs),
                 _ShimmerPill(
                   label: data._resolvedCta,
-                  bg: Colors.white,
+                  bg: AppColors.white,
                   fg: AppColors.black,
                 ),
               ],
@@ -1195,8 +1186,8 @@ class _DealCard extends StatelessWidget {
             ),
           ),
           Positioned(
-            top: 16,
-            left: 16,
+            top: AppSizes.lg,
+            left: AppSizes.lg,
             child: _GlowPulse(
               color: data.accent,
               child: _DealBadge(text: dealText, accent: data.accent),
@@ -1219,12 +1210,12 @@ class _DealCard extends StatelessWidget {
                           eyebrow,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: fg.withValues(alpha: 0.72),
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 1.2,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.labelSmall?.copyWith(
+                                    color: fg.withValues(alpha: 0.72),
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 1.2,
+                                  ),
                         ),
                         const SizedBox(height: 2),
                       ],
@@ -1232,13 +1223,13 @@ class _DealCard extends StatelessWidget {
                         data.title,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: fg,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 26,
-                          height: 1.0,
-                          letterSpacing: -0.5,
-                        ),
+                        style:
+                            Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                  color: fg,
+                                  fontWeight: FontWeight.w900,
+                                  height: 1.0,
+                                  letterSpacing: -0.5,
+                                ),
                       ),
                       if (subtitle.isNotEmpty) ...[
                         const SizedBox(height: 4),
@@ -1246,17 +1237,17 @@ class _DealCard extends StatelessWidget {
                           subtitle,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: fg.withValues(alpha: 0.8),
-                            fontSize: 12,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: fg.withValues(alpha: 0.8),
+                                  ),
                         ),
                       ],
                       const SizedBox(height: AppSizes.sm),
                       _PillCta(
                         label: data._resolvedCta,
                         bg: data.accent,
-                        fg: Colors.white,
+                        fg: AppColors.white,
                       ),
                     ],
                   ),
@@ -1342,12 +1333,12 @@ class _PosterCard extends StatelessWidget {
                             brand.toUpperCase(),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: data.accent,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 10,
-                              letterSpacing: 1.2,
-                            ),
+                            style:
+                                Theme.of(context).textTheme.labelSmall?.copyWith(
+                                      color: data.accent,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 1.2,
+                                    ),
                           ),
                         ),
                         if (eyebrow.isNotEmpty)
@@ -1355,33 +1346,33 @@ class _PosterCard extends StatelessWidget {
                             eyebrow,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: fg.withValues(alpha: 0.6),
-                              fontSize: 10,
-                              fontStyle: FontStyle.italic,
-                            ),
+                            style:
+                                Theme.of(context).textTheme.labelSmall?.copyWith(
+                                      color: fg.withValues(alpha: 0.6),
+                                      fontStyle: FontStyle.italic,
+                                    ),
                           ),
                         Text(
                           data.title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: fg,
-                            fontWeight: FontWeight.w900,
-                            fontSize: 20,
-                            height: 1.05,
-                            letterSpacing: -0.4,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    color: fg,
+                                    fontWeight: FontWeight.w900,
+                                    height: 1.05,
+                                    letterSpacing: -0.4,
+                                  ),
                         ),
                         if (subtitle.isNotEmpty)
                           Text(
                             subtitle,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: fg.withValues(alpha: 0.7),
-                              fontSize: 11,
-                            ),
+                            style:
+                                Theme.of(context).textTheme.labelSmall?.copyWith(
+                                      color: fg.withValues(alpha: 0.7),
+                                    ),
                           ),
                       ],
                     ),
@@ -1393,7 +1384,7 @@ class _PosterCard extends StatelessWidget {
                   _PillCta(
                     label: data._resolvedCta,
                     bg: data.accent,
-                    fg: Colors.white,
+                    fg: AppColors.white,
                   ),
                 ],
               ),

@@ -53,7 +53,7 @@ class _MyCouponsPageState extends State<MyCouponsPage> {
           if (snap.hasError) {
             return Center(
               child: Padding(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(AppSizes.xxl),
                 child: Text(snap.error.toString().replaceFirst('Exception: ', '')),
               ),
             );
@@ -119,7 +119,7 @@ class _CouponCard extends StatelessWidget {
                 ),
                 if (coupon.firstOrderOnly)
                   Padding(
-                    padding: const EdgeInsets.only(left: 6),
+                    padding: const EdgeInsets.only(left: AppSizes.sm),
                     child: _CouponPill(
                       label: 'First order only',
                       bg: AppColors.accentAmberSoft,
@@ -128,7 +128,7 @@ class _CouponCard extends StatelessWidget {
                   ),
                 if (coupon.isPublic)
                   Padding(
-                    padding: const EdgeInsets.only(left: 6),
+                    padding: const EdgeInsets.only(left: AppSizes.sm),
                     child: _CouponPill(
                       label: 'Auto-applies',
                       bg: AppColors.brandSoft,
@@ -137,7 +137,7 @@ class _CouponCard extends StatelessWidget {
                   ),
                 if (exhausted)
                   Padding(
-                    padding: const EdgeInsets.only(left: 6),
+                    padding: const EdgeInsets.only(left: AppSizes.sm),
                     child: _CouponPill(
                       label: 'Used',
                       bg: AppColors.surfaceTint,
@@ -146,27 +146,25 @@ class _CouponCard extends StatelessWidget {
                   ),
               ],
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSizes.xs),
             Text(
               coupon.headline,
-              style: const TextStyle(
+              style: theme.textTheme.bodyMedium?.copyWith(
                 color: AppColors.brand,
                 fontWeight: FontWeight.w800,
-                fontSize: 13,
               ),
             ),
             if (coupon.minOrderLabel.isNotEmpty) ...[
-              const SizedBox(height: 2),
+              const SizedBox(height: AppSizes.xs),
               Text(
                 coupon.minOrderLabel,
-                style: const TextStyle(
+                style: theme.textTheme.bodySmall?.copyWith(
                   color: AppColors.muted,
-                  fontSize: 12,
                 ),
               ),
             ],
             if (coupon.description != null && coupon.description!.isNotEmpty) ...[
-              const SizedBox(height: 6),
+              const SizedBox(height: AppSizes.sm),
               Text(
                 coupon.description!,
                 style: theme.textTheme.bodySmall?.copyWith(
@@ -189,7 +187,7 @@ class _CouponCard extends StatelessWidget {
                   ),
                   child: Text(
                     coupon.code,
-                    style: const TextStyle(
+                    style: theme.textTheme.bodyMedium?.copyWith(
                       color: AppColors.brandStrong,
                       fontWeight: FontWeight.w800,
                       letterSpacing: 0.5,
@@ -199,7 +197,7 @@ class _CouponCard extends StatelessWidget {
                 const SizedBox(width: AppSizes.sm),
                 TextButton.icon(
                   onPressed: exhausted ? null : () => _copy(context),
-                  icon: const Icon(Icons.copy_rounded, size: 16),
+                  icon: const Icon(Icons.copy_rounded, size: AppSizes.iconSm),
                   label: const Text('Copy'),
                   style: TextButton.styleFrom(
                     foregroundColor: AppColors.brand,
@@ -209,9 +207,8 @@ class _CouponCard extends StatelessWidget {
                 const Spacer(),
                 Text(
                   'Expires ${DateFormat('d MMM').format(coupon.validUntil.toLocal())}',
-                  style: const TextStyle(
+                  style: theme.textTheme.labelSmall?.copyWith(
                     color: AppColors.muted,
-                    fontSize: 11,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -237,19 +234,21 @@ class _CouponPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.sm,
+        vertical: AppSizes.xs,
+      ),
       decoration: ShapeDecoration(
         color: bg,
         shape: AppShapes.squircle(AppSizes.radiusFull),
       ),
       child: Text(
         label,
-        style: TextStyle(
-          color: fg,
-          fontWeight: FontWeight.w800,
-          fontSize: 10,
-          letterSpacing: 0.4,
-        ),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: fg,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.4,
+            ),
       ),
     );
   }
@@ -268,7 +267,7 @@ class _EmptyState extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(Icons.local_offer_outlined,
-                size: 48, color: AppColors.muted),
+                size: AppSizes.iconHuge, color: AppColors.muted),
             const SizedBox(height: AppSizes.md),
             Text(
               'No coupons yet',
@@ -277,9 +276,9 @@ class _EmptyState extends StatelessWidget {
               ),
             ),
             const SizedBox(height: AppSizes.xs),
-            const Text(
+            Text(
               'Promo codes you earn will appear here.',
-              style: TextStyle(color: AppColors.muted),
+              style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted),
             ),
           ],
         ),

@@ -6,6 +6,7 @@ import 'package:shopxy_customer/features/home/data/models/home_feed_models.dart'
 import 'package:shopxy_customer/features/home/presentation/widgets/network_image_box.dart';
 import 'package:shopxy_customer/features/marketplace/presentation/pages/shop_profile_page.dart';
 import 'package:shopxy_customer/features/marketplace/presentation/pages/spotlights_list_page.dart';
+import 'package:shopxy_customer/shared/constants/app_durations.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
@@ -114,7 +115,7 @@ class _HomeBrandSpotlightState extends State<HomeBrandSpotlight> {
             children: List.generate(brands.length, (i) {
               final active = i == _page;
               return AnimatedContainer(
-                duration: const Duration(milliseconds: 220),
+                duration: AppDurations.searchDebounce,
                 margin: const EdgeInsets.symmetric(horizontal: 3),
                 height: 6,
                 width: active ? 18 : 6,
@@ -256,7 +257,7 @@ class _BrandCard extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: AppColors.white,
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         height: 1.25,

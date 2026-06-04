@@ -7,6 +7,7 @@ import 'package:shopxy/features/quotations/presentation/pages/quotation_detail_p
 import 'package:shopxy/features/quotations/presentation/providers/quotations_provider.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/shared/theme/app_shapes.dart';
 
 /// Merchant list of quotations sent to customers. Clean divided rows; tap opens
 /// the detail page. FAB opens the catalogue → bucket → send flow.
@@ -70,16 +71,19 @@ class _QuotationsPageState extends State<QuotationsPage> {
                   onRefresh: () => p.load(),
                   child: p.items.isEmpty
                       ? ListView(
-                          children: const [
-                            SizedBox(height: 120),
-                            Icon(Icons.request_quote_outlined,
-                                size: 44, color: AppColors.muted),
-                            SizedBox(height: AppSizes.md),
+                          children: [
+                            const SizedBox(height: AppSizes.productImageSize),
+                            const Icon(Icons.request_quote_outlined,
+                                size: AppSizes.iconHuge, color: AppColors.muted),
+                            const SizedBox(height: AppSizes.md),
                             Center(
                               child: Text(
                                 'No quotations yet.\nTap “New quotation” to build one.',
                                 textAlign: TextAlign.center,
-                                style: TextStyle(color: AppColors.muted),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(color: AppColors.muted),
                               ),
                             ),
                           ],
@@ -166,19 +170,17 @@ class _QuotationRow extends StatelessWidget {
                       const SizedBox(width: AppSizes.sm),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
+                            horizontal: AppSizes.sm, vertical: AppSizes.xs),
+                        decoration: ShapeDecoration(
                             color: bg,
-                            borderRadius: BorderRadius.circular(20)),
+                            shape: AppShapes.squircle(AppSizes.radiusXl)),
                         child: Text(label,
-                            style: TextStyle(
-                                color: fg,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 11)),
+                            style: theme.textTheme.labelSmall?.copyWith(
+                                color: fg, fontWeight: FontWeight.w800)),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: AppSizes.xs),
                   Text(
                     '${q.partyName} · ${dateFmt.format(q.createdAt)} · ${q.items.length} item(s)',
                     style: theme.textTheme.bodySmall

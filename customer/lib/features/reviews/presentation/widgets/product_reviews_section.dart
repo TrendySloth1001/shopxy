@@ -96,6 +96,7 @@ class _ProductReviewsSectionState extends State<ProductReviewsSection> {
     if (_error != null) return const SizedBox.shrink();
     if (_loading) return const _SectionSkeleton();
     final s = _summary!;
+    final theme = Theme.of(context);
 
     return Container(
       margin: const EdgeInsets.only(top: AppSizes.md),
@@ -112,13 +113,11 @@ class _ProductReviewsSectionState extends State<ProductReviewsSection> {
             ),
             child: Row(
               children: [
-                const Expanded(
+                Expanded(
                   child: Text(
                     'Ratings & Reviews',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 16,
-                    ),
+                    style: theme.textTheme.titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w800),
                   ),
                 ),
                 TextButton(
@@ -129,17 +128,15 @@ class _ProductReviewsSectionState extends State<ProductReviewsSection> {
                       horizontal: AppSizes.sm,
                     ),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.edit_outlined, size: 14),
-                      SizedBox(width: 4),
+                      const Icon(Icons.edit_outlined, size: AppSizes.iconSm),
+                      const SizedBox(width: AppSizes.xs),
                       Text(
                         'Rate product',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 12,
-                        ),
+                        style: theme.textTheme.labelMedium
+                            ?.copyWith(fontWeight: FontWeight.w800),
                       ),
                     ],
                   ),
@@ -174,17 +171,16 @@ class _ProductReviewsSectionState extends State<ProductReviewsSection> {
                   children: [
                     Text(
                       'See all ${s.ratingCount} ${s.ratingCount == 1 ? "review" : "reviews"}',
-                      style: const TextStyle(
+                      style: theme.textTheme.titleSmall?.copyWith(
                         color: AppColors.brandStrong,
                         fontWeight: FontWeight.w800,
-                        fontSize: 13,
                       ),
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: AppSizes.xs),
                     const Icon(
                       Icons.chevron_right_rounded,
                       color: AppColors.brandStrong,
-                      size: 18,
+                      size: AppSizes.iconMd,
                     ),
                   ],
                 ),
@@ -206,6 +202,7 @@ class _SummaryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final avg = summary.ratingAvg ?? 0;
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -225,36 +222,32 @@ class _SummaryRow extends StatelessWidget {
                 children: [
                   Text(
                     avg.toStringAsFixed(1),
-                    style: const TextStyle(
-                      fontSize: 36,
+                    style: theme.textTheme.displaySmall?.copyWith(
                       fontWeight: FontWeight.w800,
                       height: 1,
                       color: AppColors.black,
                     ),
                   ),
-                  const SizedBox(width: 4),
-                  const Padding(
-                    padding: EdgeInsets.only(bottom: 6),
+                  const SizedBox(width: AppSizes.xs),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: AppSizes.sm),
                     child: Text(
                       '/ 5',
-                      style: TextStyle(
+                      style: theme.textTheme.bodySmall?.copyWith(
                         color: AppColors.muted,
-                        fontSize: 13,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 4),
-              StarRow(rating: avg, size: 16),
-              const SizedBox(height: 4),
+              const SizedBox(height: AppSizes.xs),
+              StarRow(rating: avg, size: AppSizes.lg),
+              const SizedBox(height: AppSizes.xs),
               Text(
                 '${summary.ratingCount} ${summary.ratingCount == 1 ? "rating" : "ratings"}',
-                style: const TextStyle(
+                style: theme.textTheme.labelMedium?.copyWith(
                   color: AppColors.muted,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
@@ -297,56 +290,55 @@ class _HistogramRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final fraction = total == 0 ? 0.0 : (value / total).clamp(0.0, 1.0);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
+      padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
       child: Row(
         children: [
           SizedBox(
-            width: 14,
+            width: AppSizes.lg,
             child: Text(
               '$label',
               textAlign: TextAlign.right,
-              style: const TextStyle(
+              style: theme.textTheme.labelSmall?.copyWith(
                 fontWeight: FontWeight.w700,
-                fontSize: 11,
               ),
             ),
           ),
-          const SizedBox(width: 3),
+          const SizedBox(width: AppSizes.xs),
           const Icon(
             Icons.star_rounded,
-            size: 11,
+            size: AppSizes.iconSm,
             color: AppColors.subtle,
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: AppSizes.sm),
           Expanded(
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(AppSizes.radiusFull),
+              borderRadius: AppShapes.squircleRadius(AppSizes.radiusFull),
               child: Stack(
                 children: [
-                  Container(height: 6, color: AppColors.heroPanel),
+                  Container(height: AppSizes.sm, color: AppColors.heroPanel),
                   // FractionallySizedBox in a Stack would clip to parent
                   // width; AnimatedContainer with LayoutBuilder works
                   // but for a static read of fraction a plain width
                   // multiplier on the inner bar is fine and cheap.
                   FractionallySizedBox(
                     widthFactor: fraction,
-                    child: Container(height: 6, color: _barColor),
+                    child: Container(height: AppSizes.sm, color: _barColor),
                   ),
                 ],
               ),
             ),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: AppSizes.sm),
           SizedBox(
-            width: 28,
+            width: AppSizes.xxl,
             child: Text(
               '$value',
               textAlign: TextAlign.right,
-              style: const TextStyle(
+              style: theme.textTheme.labelSmall?.copyWith(
                 color: AppColors.muted,
-                fontSize: 11,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -374,14 +366,14 @@ class _EmptyState extends StatelessWidget {
           color: AppColors.heroPanel,
           shape: AppShapes.squircle(AppSizes.radiusMd),
         ),
-        child: const Row(
+        child: Row(
           children: [
-            Icon(
+            const Icon(
               Icons.reviews_outlined,
               color: AppColors.muted,
-              size: 28,
+              size: AppSizes.iconXl,
             ),
-            SizedBox(width: AppSizes.md),
+            const SizedBox(width: AppSizes.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -389,19 +381,18 @@ class _EmptyState extends StatelessWidget {
                 children: [
                   Text(
                     'No reviews yet',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 14,
-                    ),
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleSmall
+                        ?.copyWith(fontWeight: FontWeight.w800),
                   ),
-                  SizedBox(height: 2),
+                  const SizedBox(height: AppSizes.xs),
                   Text(
                     'Be the first to rate this product after your purchase is delivered.',
-                    style: TextStyle(
-                      color: AppColors.muted,
-                      fontSize: 12,
-                      height: 1.35,
-                    ),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.muted,
+                          height: 1.35,
+                        ),
                   ),
                 ],
               ),
@@ -417,13 +408,17 @@ class _SectionSkeleton extends StatelessWidget {
   const _SectionSkeleton();
   @override
   Widget build(BuildContext context) {
-    Widget bar({double w = double.infinity, double h = 12, double r = 6}) =>
+    Widget bar({
+      double w = double.infinity,
+      double h = AppSizes.md,
+      double r = AppSizes.radiusSm,
+    }) =>
         Container(
           width: w,
           height: h,
-          decoration: BoxDecoration(
+          decoration: ShapeDecoration(
             color: AppColors.heroPanel,
-            borderRadius: BorderRadius.circular(r),
+            shape: AppShapes.squircle(r),
           ),
         );
     return Container(
@@ -441,11 +436,11 @@ class _SectionSkeleton extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              bar(w: 60, h: 36, r: 8),
-              const SizedBox(height: 8),
+              bar(w: AppSizes.massive, h: AppSizes.xxxl, r: AppSizes.radiusSm),
+              const SizedBox(height: AppSizes.sm),
               bar(w: 80),
-              const SizedBox(height: 6),
-              bar(w: 50),
+              const SizedBox(height: AppSizes.sm),
+              bar(w: AppSizes.huge),
             ],
           ),
           const SizedBox(width: AppSizes.xl),
@@ -453,8 +448,8 @@ class _SectionSkeleton extends StatelessWidget {
             child: Column(
               children: [
                 for (int i = 0; i < 5; i++) ...[
-                  bar(h: 6),
-                  if (i < 4) const SizedBox(height: 4),
+                  bar(h: AppSizes.sm),
+                  if (i < 4) const SizedBox(height: AppSizes.xs),
                 ],
               ],
             ),
