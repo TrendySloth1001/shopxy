@@ -10,6 +10,9 @@ export const LEDGER_SOURCE_TYPES = [
   'CHALLAN',
   'ADJUSTMENT',
   'OPENING',
+  /// Customer return restock — a RETURN_IN movement sourced from a
+  /// ReturnRequest when the merchant refunds (RET-1).
+  'RETURN',
 ] as const;
 export type LedgerSourceType = (typeof LEDGER_SOURCE_TYPES)[number];
 

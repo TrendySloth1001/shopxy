@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
+import { HttpError } from '../../shared/http/errorHandler.js';
 
 export type WalletSource =
   | 'REFUND'
@@ -27,6 +28,44 @@ export type WalletSource =
 /// post a positive amount as a debit by flipping a flag — sign is the
 /// only state.
 export class WalletService {
+  /// Applies a signed amount to the denormalised balance and returns the
+  /// new total. Credits (amount ≥ 0) increment unconditionally. Debits
+  /// (amount < 0) use a gated `updateMany` with a `walletBalance >= |amount|`
+  /// predicate so two concurrent spends can't each read-then-write and
+  /// drive the balance negative — `count===0` means the funds weren't
+  /// there at write time → reject. (The idempotency key only stops the
+  /// *same* debit double-applying; it doesn't serialise *different* spends.)
+  private async applyBalance(
+    db: Prisma.TransactionClient,
+    userId: number,
+    amount: number,
+  ): Promise<number> {
+    if (amount < 0) {
+      const upd = await db.user.updateMany({
+        where: { id: userId, walletBalance: { gte: Math.abs(amount) } },
+        data: { walletBalance: { increment: amount } },
+      });
+      if (upd.count === 0) {
+        throw new HttpError(
+          400,
+          'INSUFFICIENT_WALLET_BALANCE',
+          'Insufficient wallet balance.',
+        );
+      }
+      const u = await db.user.findUniqueOrThrow({
+        where: { id: userId },
+        select: { walletBalance: true },
+      });
+      return Number(u.walletBalance);
+    }
+    const u = await db.user.update({
+      where: { id: userId },
+      data: { walletBalance: { increment: amount } },
+      select: { walletBalance: true },
+    });
+    return Number(u.walletBalance);
+  }
+
   /// Posts a ledger entry + bumps the denorm. The entry's
   /// `balanceAfter` is the new running total — lets the customer-facing
   /// ledger render without a window-function recompute.
@@ -76,12 +115,11 @@ export class WalletService {
               idempotencyKey: opts.idempotencyKey,
             },
           });
-          const user = await db.user.update({
-            where: { id: opts.userId },
-            data: { walletBalance: { increment: opts.amount } },
-            select: { walletBalance: true },
-          });
-          const balanceAfter = Number(user.walletBalance);
+          const balanceAfter = await this.applyBalance(
+            db,
+            opts.userId,
+            opts.amount,
+          );
           const entry = await db.walletEntry.update({
             where: { id: placeholder.id },
             data: { balanceAfter },
@@ -120,13 +158,8 @@ export class WalletService {
         }
       }
 
-      // No idempotency key — straightforward increment + insert.
-      const user = await db.user.update({
-        where: { id: opts.userId },
-        data: { walletBalance: { increment: opts.amount } },
-        select: { walletBalance: true },
-      });
-      const balanceAfter = Number(user.walletBalance);
+      // No idempotency key — straightforward signed apply + insert.
+      const balanceAfter = await this.applyBalance(db, opts.userId, opts.amount);
       const entry = await db.walletEntry.create({
         data: {
           userId: opts.userId,

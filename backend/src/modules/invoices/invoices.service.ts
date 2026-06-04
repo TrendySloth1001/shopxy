@@ -765,13 +765,16 @@ export class InvoicesService {
           },
         });
         if (party) {
+          // Refresh pure-contact fields only. The tax-determinant fields
+          // (state / stateCode / gstin) are FROZEN at draft time: the
+          // per-line IGST-vs-CGST/SGST split and isInterstate flag were
+          // computed against the draft's place-of-supply, so refreshing
+          // the printed state here without recomputing the split would
+          // emit an internally inconsistent GST document (INV-1).
           snapshotRefresh.customerName = party.name;
           snapshotRefresh.customerPhone = party.phone ?? null;
-          snapshotRefresh.customerGstin = party.gstin ?? null;
           snapshotRefresh.customerAddress = party.address ?? null;
           snapshotRefresh.customerCity = party.city ?? null;
-          snapshotRefresh.customerState = party.state ?? null;
-          snapshotRefresh.customerStateCode = party.stateCode ?? null;
           snapshotRefresh.customerPinCode = party.pinCode ?? null;
           snapshotRefresh.customerPanNumber = party.panNumber ?? null;
         }
@@ -786,13 +789,12 @@ export class InvoicesService {
           },
         });
         if (vendor) {
+          // Tax-determinant fields (state / stateCode / gstin) frozen at
+          // draft — see the party block above (INV-1).
           snapshotRefresh.vendorName = vendor.name;
           snapshotRefresh.vendorPhone = vendor.phone ?? null;
-          snapshotRefresh.vendorGstin = vendor.gstin ?? null;
           snapshotRefresh.vendorAddress = vendor.address ?? null;
           snapshotRefresh.vendorCity = vendor.city ?? null;
-          snapshotRefresh.vendorState = vendor.state ?? null;
-          snapshotRefresh.vendorStateCode = vendor.stateCode ?? null;
           snapshotRefresh.vendorPinCode = vendor.pinCode ?? null;
           snapshotRefresh.vendorPanNumber = vendor.panNumber ?? null;
         }
@@ -895,8 +897,17 @@ export class InvoicesService {
     if (source.status === 'CANCELLED') {
       return { error: 'Cannot convert a cancelled estimate' as const };
     }
+    // Idempotency (INV-2): if this estimate was already converted, return
+    // the existing invoice rather than minting a second one.
+    if (source.convertedToInvoiceId) {
+      const existing = await prisma.invoice.findFirst({
+        where: { id: source.convertedToInvoiceId, shopId },
+        include: { items: true, vendor: true, party: true },
+      });
+      if (existing) return { invoice: existing, confirmed: existing.status === 'CONFIRMED' };
+    }
 
-    return this.createInvoice({
+    const result = await this.createInvoice({
       shopId,
       type: source.type as InvoiceType,
       documentType: 'TAX_INVOICE',
@@ -917,6 +928,32 @@ export class InvoicesService {
         discount: Number(it.discount),
       })),
     });
+    if ('error' in result) return result;
+
+    // Claim the conversion atomically. If another concurrent convert won
+    // the race (count===0), discard our just-created draft and return the
+    // invoice they created instead — so one estimate yields exactly one
+    // converted invoice.
+    const claim = await prisma.invoice.updateMany({
+      where: { id: source.id, shopId, convertedToInvoiceId: null },
+      data: { convertedToInvoiceId: result.invoice.id },
+    });
+    if (claim.count === 0) {
+      await prisma.invoice.delete({ where: { id: result.invoice.id } }).catch(() => {});
+      const winner = await prisma.invoice.findFirst({
+        where: { id: invoiceId, shopId },
+        select: { convertedToInvoiceId: true },
+      });
+      const existing = winner?.convertedToInvoiceId
+        ? await prisma.invoice.findFirst({
+            where: { id: winner.convertedToInvoiceId, shopId },
+            include: { items: true, vendor: true, party: true },
+          })
+        : null;
+      if (existing) return { invoice: existing, confirmed: existing.status === 'CONFIRMED' };
+      return { error: 'Conversion already in progress' as const };
+    }
+    return result;
   }
 
   async deleteInvoice(shopId: number, id: number) {
@@ -925,8 +962,17 @@ export class InvoicesService {
       select: { status: true },
     });
     if (!invoice) return { error: 'Invoice not found' as const };
-    if (invoice.status === 'CONFIRMED') {
-      return { error: 'Cannot delete a confirmed invoice. Cancel it first.' as const };
+    // Retention (GST §36 / Companies Act §128): a CONFIRMED invoice number,
+    // once issued, must be retained even after cancellation — deleting a
+    // CANCELLED invoice would leave a gap in the issued sequence and erase
+    // the audit record. Only a never-confirmed DRAFT may be hard-deleted
+    // (INV-3).
+    if (invoice.status !== 'DRAFT') {
+      return {
+        error: invoice.status === 'CONFIRMED'
+          ? ('Cannot delete a confirmed invoice. Cancel it first.' as const)
+          : ('Cannot delete an issued invoice — cancelled invoice numbers must be retained.' as const),
+      };
     }
     await prisma.invoice.delete({ where: { id } });
     return { ok: true };

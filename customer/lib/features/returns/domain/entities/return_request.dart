@@ -1,5 +1,7 @@
 // Customer-side projections of the backend ReturnRequest models.
 
+import 'package:shopxy_customer/shared/format/json_parse.dart';
+
 const List<String> kReturnReasons = [
   'DAMAGED',
   'WRONG_ITEM',
@@ -52,7 +54,7 @@ class ReturnEvent {
   factory ReturnEvent.fromJson(Map<String, dynamic> j) => ReturnEvent(
         id: j['id'] as int,
         type: j['type'] as String,
-        occurredAt: DateTime.parse(j['occurredAt'] as String),
+        occurredAt: parseDate(j['occurredAt']),
         note: j['note'] as String?,
       );
 }
@@ -171,8 +173,8 @@ class ReturnRequest {
       status: j['status'] as String,
       refundAmount: _d(j['refundAmount']),
       refundMethod: j['refundMethod'] as String?,
-      createdAt: DateTime.parse(j['createdAt'] as String),
-      updatedAt: DateTime.parse(j['updatedAt'] as String),
+      createdAt: parseDate(j['createdAt']),
+      updatedAt: parseDate(j['updatedAt']),
       shop: ReturnShop.fromJson(j['shop'] as Map<String, dynamic>),
       parentOrderId: (request['customerOrderId'] as num).toInt(),
       shopOrderId: (request['id'] as num).toInt(),

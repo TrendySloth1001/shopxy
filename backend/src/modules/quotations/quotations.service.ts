@@ -236,6 +236,17 @@ export class QuotationsService {
   /// it back, and notifies the merchant. The status claim is the race guard;
   /// if the invoice can't be confirmed (e.g. stock) the claim is rolled back.
   async accept(shopId: number, partyId: number, id: number, userId: number) {
+    // QUO-1 (defense-in-depth): re-assert the party-link ownership inside
+    // the service rather than trusting the controller's `assertOwnsParty`.
+    // If a second, unguarded caller is ever added this prevents an IDOR.
+    const party = await prisma.party.findFirst({
+      where: { id: partyId, shopId },
+      select: { linkedUserId: true },
+    });
+    if (!party || party.linkedUserId !== userId) {
+      throw new HttpError(403, 'FORBIDDEN', 'Not your party');
+    }
+
     const quotation = await prisma.quotation.findFirst({
       where: { id, shopId, partyId },
       select: {

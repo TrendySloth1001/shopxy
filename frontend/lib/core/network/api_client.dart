@@ -117,6 +117,12 @@ class ApiClient {
   Future<T> _withRetry<T extends http.BaseResponse>(Future<T> Function() call) async {
     var response = await call();
     if (response.statusCode == 401) {
+      // No token attached → nothing to refresh. Return the 401 as-is
+      // rather than driving _tryRefresh → onUnauthorized → a spurious
+      // logout fan-out (C-AUTH-2, parity with the customer app).
+      if (_tokenManager.accessToken == null) {
+        return response;
+      }
       final refreshed = await _tryRefresh();
       if (!refreshed) {
         _tokenManager.onUnauthorized?.call();

@@ -1,3 +1,5 @@
+import 'package:shopxy_customer/shared/format/json_parse.dart';
+
 enum InviteStatus { pending, accepted, declined, cancelled, expired }
 
 InviteStatus _statusFrom(String raw) {
@@ -101,11 +103,9 @@ class Invitation {
       message: j['message'] as String?,
       fromShopName: j['fromShopName'] as String?,
       displayName: j['displayName'] as String?,
-      expiresAt: DateTime.parse(j['expiresAt'] as String),
-      respondedAt: j['respondedAt'] == null
-          ? null
-          : DateTime.parse(j['respondedAt'] as String),
-      createdAt: DateTime.parse(j['createdAt'] as String),
+      expiresAt: parseDate(j['expiresAt']),
+      respondedAt: parseDateOrNull(j['respondedAt']),
+      createdAt: parseDate(j['createdAt']),
       fromUserName: fromUser?['name'] as String?,
       fromUserEmail: fromUser?['email'] as String?,
       fromUserAvatarUrl: fromUser?['avatarUrl'] as String?,

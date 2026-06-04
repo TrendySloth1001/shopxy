@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
 import { round2 } from '../../shared/numbering/decimal.js';
 import { walletService } from '../wallet/wallet.service.js';
+import { ledgerService } from '../ledger/ledger.service.js';
 import { reverseTransferForReturn } from '../payment-gateway/settlement/transfer-actions.js';
 
 /// Canonical return reasons. Kept loose (string) on the DB so adding
@@ -441,6 +442,9 @@ export class ReturnsService {
     // Captured inside the tx for the post-commit Route reversal (below).
     let reverseChildId: number | null = null;
     let reverseAmount = 0;
+    // Captured inside the tx for the post-commit inventory restock (RET-1).
+    let restockLines: Array<{ productId: number; quantity: number; sourceLineId: number }> = [];
+    let restockReturnId: number | null = null;
     const result = await prisma.$transaction(async (tx) => {
       // Claim the row from a refund-eligible state.
       const claim = await tx.returnRequest.updateMany({
@@ -470,6 +474,14 @@ export class ReturnsService {
           customerUserId: true,
           refundAmount: true,
           requestId: true,
+          // Returned line items — used to restock inventory (RET-1).
+          items: {
+            select: {
+              id: true,
+              quantity: true,
+              purchaseRequestItem: { select: { productId: true } },
+            },
+          },
           // Reach into the parent order so we know how much of the
           // original payment came from wallet credit. We must credit
           // wallet money BACK to the wallet regardless of refund method.
@@ -547,6 +559,15 @@ export class ReturnsService {
       });
       reverseChildId = row.requestId;
       reverseAmount = refundAmount;
+      // Collect the returned quantities for the post-commit restock.
+      restockReturnId = row.id;
+      restockLines = row.items
+        .filter((it) => it.purchaseRequestItem?.productId != null && Number(it.quantity) > 0)
+        .map((it) => ({
+          productId: it.purchaseRequestItem!.productId,
+          quantity: Number(it.quantity),
+          sourceLineId: it.id,
+        }));
       return {
         ok: true as const,
         walletEntryId: entry?.id ?? null,
@@ -567,6 +588,31 @@ export class ReturnsService {
         });
       } catch {
         /* reconciliation re-drives a transient failure; refund stands. */
+      }
+    }
+
+    // Post-commit: restock the returned goods via a RETURN_IN ledger
+    // movement (RET-1). The original sale posted a STOCK_OUT, so without
+    // this the on-hand permanently understates after a sale+return. Kept
+    // out of the refund tx and best-effort so a vanished/inactive product
+    // (e.g. the SKU was deleted) can't roll back a committed refund; the
+    // idempotency key makes a retry a no-op. A failure leaves the goods
+    // to be re-added via a manual stock adjustment.
+    if ('ok' in result && result.ok && restockReturnId != null && restockLines.length > 0) {
+      try {
+        await ledgerService.post({
+          shopId: opts.shopId,
+          direction: 'IN',
+          reasonCode: 'RETURN_IN',
+          sourceType: 'RETURN',
+          sourceId: restockReturnId,
+          idempotencyKey: `RETURN:${restockReturnId}:RESTOCK`,
+          createdById: opts.actorId,
+          note: `Restock from return #${restockReturnId}`,
+          lines: restockLines,
+        });
+      } catch {
+        /* manual stock adjustment can re-add; refund stands. */
       }
     }
     return result;

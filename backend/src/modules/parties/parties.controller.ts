@@ -156,6 +156,7 @@ export class PartiesController {
     if (!owned) { res.status(404).json({ error: 'Party not found' }); return; }
     const params = parsePagination(req);
     const { rows, total } = await contactChangeLogService.listForEntity({
+      shopId,
       entityType: 'PARTY',
       entityId: id,
       ...params,

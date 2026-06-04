@@ -1,12 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { AuthPayload } from './requireAuth.js';
-
-function requireEnv(name: string): string {
-  const v = process.env[name];
-  if (!v) throw new Error(`${name} is required — refusing to start with a default secret`);
-  return v;
-}
+import { requireEnv } from '../env.js';
 
 const ACCESS_SECRET = requireEnv('JWT_ACCESS_SECRET');
 
@@ -26,7 +21,12 @@ export function optionalAuth(req: Request, _res: Response, next: NextFunction): 
   }
   const token = header.slice(7);
   try {
-    req.user = jwt.verify(token, ACCESS_SECRET) as unknown as AuthPayload;
+    // Pin the algorithm (mirror requireAuth) so a token can't be coerced
+    // into a weaker/none verification on these public-but-privilege-
+    // bearing mounts (B-AUTH-4).
+    req.user = jwt.verify(token, ACCESS_SECRET, {
+      algorithms: ['HS256'],
+    }) as unknown as AuthPayload;
   } catch {
     // Silently ignore — endpoint is public.
   }

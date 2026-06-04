@@ -6,6 +6,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/validation/auth_validators.dart';
 import 'package:shopxy/shared/widgets/glass_widgets.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -160,13 +161,7 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
               obscureText: _obscurePass,
               textInputAction: TextInputAction.next,
-              validator: (v) {
-                if (v == null || v.isEmpty) return AppStrings.fieldRequired;
-                if (v.length < 8) return AppStrings.passwordTooShort;
-                if (!v.contains(RegExp(r'[A-Za-z]'))) return AppStrings.passwordNeedsLetter;
-                if (!v.contains(RegExp(r'[0-9]'))) return AppStrings.passwordNeedsNumber;
-                return null;
-              },
+              validator: AuthValidators.password,
             ),
             const SizedBox(height: AppSizes.md),
             TextFormField(

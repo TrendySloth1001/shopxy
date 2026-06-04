@@ -93,34 +93,56 @@ export async function resolveMembershipForUser(
   return membership;
 }
 
-/// Per-user "tokens issued before this stamp are invalid" cache. The
-/// requireAuth hot path can't afford a SELECT-per-request; this lets
-/// us cache the floor for a minute. Bumped via [bumpTokensValidFrom]
-/// at password-change / logout-all time so the next refresh picks up
-/// the new floor within the TTL.
-const tokensValidFromCache = new Map<number, { stamp: Date | null; expiresAt: number }>();
+/// Per-user security snapshot cache. The requireAuth hot path can't
+/// afford a SELECT-per-request; this caches the `tokensValidFrom` floor
+/// **plus the live `role`/`isPlatformAdmin`/`isActive`** for a minute.
+/// Re-reading the privilege flags here (rather than trusting the 15-min
+/// JWT claims) means a demoted platform-admin or deactivated account
+/// loses access within the TTL without waiting for token expiry, and
+/// without needing a `tokensValidFrom` bump on every privilege change
+/// (B-AUTH-3). Bumped via [bumpTokensValidFromCache] at password-change
+/// / logout-all time so the next request picks up the new floor at once.
+interface UserSecurity {
+  tokensValidFrom: Date | null;
+  role: Role;
+  isPlatformAdmin: boolean;
+  isActive: boolean;
+}
+const userSecurityCache = new Map<number, { value: UserSecurity; expiresAt: number }>();
 const TOKENS_VALID_CACHE_TTL_MS = 60_000;
 
-async function getTokensValidFrom(userId: number): Promise<Date | null> {
-  const cached = tokensValidFromCache.get(userId);
-  if (cached && cached.expiresAt > Date.now()) return cached.stamp;
+async function getUserSecurity(userId: number): Promise<UserSecurity | null> {
+  const cached = userSecurityCache.get(userId);
+  if (cached && cached.expiresAt > Date.now()) return cached.value;
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { tokensValidFrom: true },
+    select: { tokensValidFrom: true, role: true, isPlatformAdmin: true, isActive: true },
   });
-  const stamp = user?.tokensValidFrom ?? null;
-  tokensValidFromCache.set(userId, {
-    stamp,
-    expiresAt: Date.now() + TOKENS_VALID_CACHE_TTL_MS,
-  });
-  return stamp;
+  if (!user) return null;
+  const value: UserSecurity = {
+    tokensValidFrom: user.tokensValidFrom ?? null,
+    role: user.role,
+    isPlatformAdmin: user.isPlatformAdmin,
+    isActive: user.isActive,
+  };
+  userSecurityCache.set(userId, { value, expiresAt: Date.now() + TOKENS_VALID_CACHE_TTL_MS });
+  return value;
 }
 
-export function bumpTokensValidFromCache(userId: number, stamp: Date): void {
-  tokensValidFromCache.set(userId, {
-    stamp,
-    expiresAt: Date.now() + TOKENS_VALID_CACHE_TTL_MS,
-  });
+/// Force the next request to re-read this user's security snapshot. Used
+/// by password-change / logout-all so the bumped `tokensValidFrom` floor
+/// (and any role/admin change) takes effect immediately, not after TTL.
+export function bumpTokensValidFromCache(userId: number, _stamp: Date): void {
+  userSecurityCache.delete(userId);
+}
+
+/// Live (cached) platform-admin flag for a user. Lets privileged gates on
+/// `optionalAuth` mounts (e.g. category writes) confirm the flag against
+/// the DB instead of trusting a possibly-stale JWT claim (B-AUTH-4). On a
+/// `requireAuth` route the snapshot is already warm from this same request.
+export async function isPlatformAdminLive(userId: number): Promise<boolean> {
+  const security = await getUserSecurity(userId);
+  return !!security && security.isActive && security.isPlatformAdmin;
 }
 
 export async function requireAuth(
@@ -142,14 +164,35 @@ export async function requireAuth(
     return;
   }
 
-  // Hydrate shopId + shopRole from the cache/DB when the JWT didn't
-  // carry them (older JWTs, or a token minted before the caller's
-  // membership/role changed). Cheap: indexed by the @unique(userId)
-  // constraint on ShopMember. Only merchant-side accounts have a
-  // membership; CUSTOMER accounts skip the lookup.
-  // Always resolve membership for merchant accounts: shopPermissions
-  // aren't carried in the JWT, so we read them (cached) every request.
-  // shopId/shopRole are confirmed/refreshed from the same row.
+  // Re-read the live security snapshot (role / isPlatformAdmin / isActive
+  // / tokensValidFrom) instead of trusting the 15-min JWT claims. A
+  // demoted admin, a flipped role, or a deactivated account is rejected
+  // within the cache TTL — the JWT's stale privilege bits never apply
+  // (B-AUTH-3). Cached for 60s; one indexed PK lookup on miss.
+  const security = await getUserSecurity(payload.sub);
+  if (!security || !security.isActive) {
+    res.status(401).json({ error: 'Token expired or invalid' });
+    return;
+  }
+  payload.role = security.role;
+  payload.isPlatformAdmin = security.isPlatformAdmin;
+
+  // Enforce `tokensValidFrom`. Lets password-change and logout-all
+  // invalidate every previously-issued access token even before its
+  // 15-minute TTL expires.
+  if (typeof payload.iat === 'number' && security.tokensValidFrom) {
+    const iatMs = payload.iat * 1000;
+    if (iatMs < security.tokensValidFrom.getTime()) {
+      res.status(401).json({ error: 'Token expired or invalid' });
+      return;
+    }
+  }
+
+  // Hydrate shopId + shopRole from the cache/DB. shopPermissions aren't
+  // carried in the JWT, so we read them (cached) every request; shopId/
+  // shopRole are confirmed/refreshed from the same ShopMember row. Cheap:
+  // indexed by the @unique(userId) constraint. Only merchant-side
+  // accounts have a membership; CUSTOMER accounts skip the lookup.
   if (payload.role === 'OWNER') {
     const membership = await resolveMembershipForUser(payload.sub);
     payload.shopId = membership?.shopId;
@@ -161,20 +204,6 @@ export async function requireAuth(
     // re-login (see ApiClient.onPermsVersion / AuthProvider).
     if (membership) {
       res.setHeader('X-Shop-Perms', String(membership.version));
-    }
-  }
-
-  // Enforce `tokensValidFrom`. Lets password-change and logout-all
-  // invalidate every previously-issued access token even before its
-  // 15-minute TTL expires. The DB lookup is cached for 60s.
-  if (typeof payload.iat === 'number') {
-    const floor = await getTokensValidFrom(payload.sub);
-    if (floor) {
-      const iatMs = payload.iat * 1000;
-      if (iatMs < floor.getTime()) {
-        res.status(401).json({ error: 'Token expired or invalid' });
-        return;
-      }
     }
   }
 

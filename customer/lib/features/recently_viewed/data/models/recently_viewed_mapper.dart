@@ -1,6 +1,5 @@
-import 'package:intl/intl.dart';
-
 import 'package:shopxy_customer/features/home/data/models/home_feed_models.dart';
+import 'package:shopxy_customer/shared/format/app_format.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 
 /// Maps a row from `GET /me/recently-viewed` into a `ProductCard` so the
@@ -63,10 +62,6 @@ class RecentlyViewedMapper {
     return null;
   }
 
-  static final NumberFormat _inr = NumberFormat.currency(
-    locale: 'en_IN',
-    symbol: '₹',
-    decimalDigits: 0,
-  );
-  static String _money(double v) => _inr.format(v);
+  // MOD-1: shared formatter — see AppFormat.
+  static String _money(double v) => AppFormat.rupees(v);
 }

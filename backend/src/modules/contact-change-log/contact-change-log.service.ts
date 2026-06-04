@@ -69,12 +69,29 @@ export class ContactChangeLogService {
   }
 
   async listForEntity(args: {
+    shopId: number;
     entityType: ContactEntityType;
     entityId: number;
     page: number;
     limit: number;
     skip: number;
   }) {
+    // CCL-1: verify the entity belongs to this shop *inside the service*
+    // (the log rows carry no shopId) so safety doesn't depend on every
+    // caller pre-checking ownership. A foreign/unknown entity returns an
+    // empty page rather than leaking another shop's contact PII history.
+    const owns =
+      args.entityType === 'PARTY'
+        ? await prisma.party.findFirst({
+            where: { id: args.entityId, shopId: args.shopId },
+            select: { id: true },
+          })
+        : await prisma.vendor.findFirst({
+            where: { id: args.entityId, shopId: args.shopId },
+            select: { id: true },
+          });
+    if (!owns) return { rows: [], total: 0 };
+
     const where = { entityType: args.entityType, entityId: args.entityId };
     const [rows, total] = await Promise.all([
       prisma.contactChangeLog.findMany({
