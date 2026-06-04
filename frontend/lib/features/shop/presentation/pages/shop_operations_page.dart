@@ -232,7 +232,7 @@ class _OpsTile extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               alignment: Alignment.center,
-              child: Icon(icon, color: iconColor, size: 20),
+              child: Icon(icon, color: iconColor, size: AppSizes.iconMd),
             ),
             const SizedBox(width: AppSizes.md),
             Expanded(

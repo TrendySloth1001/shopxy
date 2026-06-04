@@ -98,7 +98,7 @@ class _StockLedgerPageState extends State<StockLedgerPage> {
       appBar: AppBar(
         title: const Text('Stock Ledger'),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(28),
+          preferredSize: const Size.fromHeight(AppSizes.xxl + AppSizes.xs),
           child: Padding(
             padding: const EdgeInsets.only(
               left: AppSizes.lg,
@@ -215,8 +215,8 @@ class _LedgerEntryCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 40,
-                height: 40,
+                width: AppSizes.xxxl + AppSizes.sm,
+                height: AppSizes.xxxl + AppSizes.sm,
                 decoration: ShapeDecoration(
                   color: AppColors.white,
                   shape: AppShapes.squircle(
@@ -255,7 +255,7 @@ class _LedgerEntryCard extends StatelessWidget {
                           ),
                       ],
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSizes.xs),
                     Text(
                       dateStr,
                       style: theme.textTheme.bodySmall?.copyWith(

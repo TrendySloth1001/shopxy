@@ -112,8 +112,8 @@ class _CustomSectionEditorSheetState extends State<CustomSectionEditorSheet> {
               children: [
                 Center(
                   child: Container(
-                    width: 36,
-                    height: 4,
+                    width: AppSizes.xxxl,
+                    height: AppSizes.xs,
                     decoration: BoxDecoration(
                       color: AppColors.hairline,
                       borderRadius: BorderRadius.circular(2),
@@ -141,12 +141,12 @@ class _CustomSectionEditorSheetState extends State<CustomSectionEditorSheet> {
                         ),
                       ),
                       child: SizedBox(
-                        width: 56,
-                        height: 56,
+                        width: AppSizes.fabSize,
+                        height: AppSizes.fabSize,
                         child: Icon(
                           resolveCustomFieldIcon(_iconName),
                           color: AppColors.black,
-                          size: 26,
+                          size: AppSizes.iconLg,
                         ),
                       ),
                     ),

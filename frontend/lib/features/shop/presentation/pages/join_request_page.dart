@@ -107,15 +107,15 @@ class _JoinRequestPageState extends State<JoinRequestPage> {
               AppSizes.lg, AppSizes.sm, AppSizes.lg, AppSizes.huge),
           children: [
             Container(
-              width: 64,
-              height: 64,
+              width: AppSizes.massive,
+              height: AppSizes.massive,
               decoration: const BoxDecoration(
                 color: AppColors.brandSoft,
                 shape: BoxShape.circle,
               ),
               alignment: Alignment.center,
               child: const Icon(Icons.groups_rounded,
-                  color: AppColors.brandStrong, size: 32),
+                  color: AppColors.brandStrong, size: AppSizes.iconXl),
             ),
             const SizedBox(height: AppSizes.lg),
             Text(
@@ -136,7 +136,7 @@ class _JoinRequestPageState extends State<JoinRequestPage> {
                         ?.copyWith(color: AppColors.muted)),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: AppSizes.md, vertical: 4),
+                      horizontal: AppSizes.md, vertical: AppSizes.xs),
                   decoration: ShapeDecoration(
                     color: AppColors.brandSoft,
                     shape: AppShapes.squircle(AppSizes.radiusFull),
@@ -201,7 +201,7 @@ class _JoinRequestPageState extends State<JoinRequestPage> {
                         width: 18,
                         height: 18,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white),
+                            strokeWidth: 2, color: AppColors.white),
                       )
                     : Text('Join ${shop.length > 18 ? 'the team' : shop}'),
               ),

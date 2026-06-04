@@ -30,14 +30,17 @@ class SpotlightsListPage extends StatelessWidget {
       body: RefreshIndicator(
         onRefresh: () => feed.refresh(),
         child: brands.isEmpty
-            ? ListView(children: const [
-                SizedBox(height: 120),
+            ? ListView(children: [
+                const SizedBox(height: 120),
                 Center(
                   child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: AppSizes.xl),
+                    padding: const EdgeInsets.symmetric(horizontal: AppSizes.xl),
                     child: Text(
                       'No spotlights running right now.',
-                      style: TextStyle(color: AppColors.muted),
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(color: AppColors.muted),
                     ),
                   ),
                 ),
@@ -103,37 +106,35 @@ class _Card extends StatelessWidget {
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
+                          horizontal: AppSizes.sm, vertical: AppSizes.xs),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF4F757),
                         borderRadius: BorderRadius.circular(2),
                       ),
                       child: Text(
                         brand.dealLabel,
-                        style: const TextStyle(
-                          color: AppColors.black,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 11,
-                        ),
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: AppColors.black,
+                              fontWeight: FontWeight.w800,
+                            ),
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: AppSizes.sm),
                     Text(
                       brand.brand,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 18,
-                      ),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: AppColors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 18,
+                          ),
                     ),
                     if (brand.subtitle.isNotEmpty)
                       Text(
                         brand.subtitle,
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.9),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.white.withValues(alpha: 0.9),
+                              fontWeight: FontWeight.w500,
+                            ),
                       ),
                   ],
                 ),

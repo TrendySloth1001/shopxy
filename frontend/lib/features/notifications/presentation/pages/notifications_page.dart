@@ -109,7 +109,10 @@ class _InboxTab extends StatelessWidget {
       onRefresh: () => p.loadInbox(),
       color: AppColors.brand,
       child: ListView.separated(
-        padding: const EdgeInsets.only(top: AppSizes.sm, bottom: 96),
+        padding: const EdgeInsets.only(
+          top: AppSizes.sm,
+          bottom: AppSizes.massive + AppSizes.xxxl,
+        ),
         itemCount: p.items.length,
         separatorBuilder: (_, _) =>
             Container(height: 1, color: AppColors.hairline),
@@ -142,14 +145,14 @@ class _NotificationTile extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              width: 36,
-              height: 36,
+              width: AppSizes.xxxl,
+              height: AppSizes.xxxl,
               decoration: ShapeDecoration(
                 color: accent.$2,
                 shape: AppShapes.squircle(AppSizes.radiusSm),
               ),
               alignment: Alignment.center,
-              child: Icon(accent.$3, size: 18, color: accent.$1),
+              child: Icon(accent.$3, size: AppSizes.iconMd, color: accent.$1),
             ),
             const SizedBox(width: AppSizes.md),
             Expanded(
@@ -165,7 +168,7 @@ class _NotificationTile extends StatelessWidget {
                     ),
                   ),
                   if (notification.body != null) ...[
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSizes.xs),
                     Text(
                       notification.body!,
                       style: theme.textTheme.bodySmall?.copyWith(
@@ -186,9 +189,9 @@ class _NotificationTile extends StatelessWidget {
             ),
             if (notification.isUnread)
               Container(
-                margin: const EdgeInsets.only(left: AppSizes.sm, top: 6),
-                width: 8,
-                height: 8,
+                margin: const EdgeInsets.only(left: AppSizes.sm, top: AppSizes.sm),
+                width: AppSizes.sm,
+                height: AppSizes.sm,
                 decoration: const BoxDecoration(
                   color: AppColors.brand,
                   shape: BoxShape.circle,
@@ -239,7 +242,10 @@ class _IncomingTab extends StatelessWidget {
       onRefresh: () => p.loadIncoming(),
       color: AppColors.brand,
       child: ListView.separated(
-        padding: const EdgeInsets.only(top: AppSizes.sm, bottom: 96),
+        padding: const EdgeInsets.only(
+          top: AppSizes.sm,
+          bottom: AppSizes.massive + AppSizes.xxxl,
+        ),
         itemCount: p.incoming.length,
         separatorBuilder: (_, _) =>
             Container(height: 1, color: AppColors.hairline),
@@ -273,8 +279,8 @@ class _IncomingInviteTile extends StatelessWidget {
           Row(
             children: [
               Container(
-                width: 36,
-                height: 36,
+                width: AppSizes.xxxl,
+                height: AppSizes.xxxl,
                 decoration: ShapeDecoration(
                   color: invite.isParty
                       ? AppColors.accentRoseSoft
@@ -287,7 +293,7 @@ class _IncomingInviteTile extends StatelessWidget {
                   color: invite.isParty
                       ? AppColors.accentRose
                       : AppColors.accentIndigo,
-                  size: 18,
+                  size: AppSizes.iconMd,
                 ),
               ),
               const SizedBox(width: AppSizes.md),
@@ -338,7 +344,7 @@ class _IncomingInviteTile extends StatelessWidget {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: () => _decline(context, p),
-                    icon: const Icon(Icons.close_rounded, size: 18),
+                    icon: const Icon(Icons.close_rounded, size: AppSizes.iconMd),
                     label: const Text('Decline'),
                   ),
                 ),
@@ -346,7 +352,7 @@ class _IncomingInviteTile extends StatelessWidget {
                 Expanded(
                   child: FilledButton.icon(
                     onPressed: () => _accept(context, p),
-                    icon: const Icon(Icons.check_rounded, size: 18),
+                    icon: const Icon(Icons.check_rounded, size: AppSizes.iconMd),
                     label: const Text('Accept'),
                   ),
                 ),
@@ -410,7 +416,10 @@ class _OutgoingTab extends StatelessWidget {
       onRefresh: () => p.loadOutgoing(),
       color: AppColors.brand,
       child: ListView.separated(
-        padding: const EdgeInsets.only(top: AppSizes.sm, bottom: 96),
+        padding: const EdgeInsets.only(
+          top: AppSizes.sm,
+          bottom: AppSizes.massive + AppSizes.xxxl,
+        ),
         itemCount: p.outgoing.length,
         separatorBuilder: (_, _) =>
             Container(height: 1, color: AppColors.hairline),
@@ -439,8 +448,8 @@ class _OutgoingInviteTile extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 36,
-            height: 36,
+            width: AppSizes.xxxl,
+            height: AppSizes.xxxl,
             decoration: ShapeDecoration(
               color: invite.isParty
                   ? AppColors.accentRoseSoft
@@ -453,7 +462,7 @@ class _OutgoingInviteTile extends StatelessWidget {
               color: invite.isParty
                   ? AppColors.accentRose
                   : AppColors.accentIndigo,
-              size: 18,
+              size: AppSizes.iconMd,
             ),
           ),
           const SizedBox(width: AppSizes.md),
@@ -481,7 +490,7 @@ class _OutgoingInviteTile extends StatelessWidget {
           if (invite.isPending)
             IconButton(
               tooltip: 'Cancel',
-              icon: const Icon(Icons.close_rounded, size: 18),
+              icon: const Icon(Icons.close_rounded, size: AppSizes.iconMd),
               onPressed: () async {
                 try {
                   await p.cancel(invite.id);
@@ -523,7 +532,7 @@ class _StatusChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSizes.sm,
-        vertical: 2,
+        vertical: AppSizes.xs,
       ),
       decoration: ShapeDecoration(
         color: bg,
@@ -557,14 +566,14 @@ class _EmptyHint extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 64,
-              height: 64,
+              width: AppSizes.massive,
+              height: AppSizes.massive,
               decoration: ShapeDecoration(
                 color: AppColors.heroPanel,
                 shape: AppShapes.squircle(AppSizes.radiusLg),
               ),
               alignment: Alignment.center,
-              child: Icon(icon, color: AppColors.muted, size: 28),
+              child: Icon(icon, color: AppColors.muted, size: AppSizes.iconXl),
             ),
             const SizedBox(height: AppSizes.lg),
             Text(

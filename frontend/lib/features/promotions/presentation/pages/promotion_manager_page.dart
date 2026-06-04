@@ -100,7 +100,7 @@ class _PromotionManagerPageState extends State<PromotionManagerPage> {
                         AppSizes.lg,
                         AppSizes.lg,
                         AppSizes.lg,
-                        96,
+                        AppSizes.massive,
                       ),
                       itemCount: provider.items.length,
                       separatorBuilder: (_, _) => const SizedBox(height: AppSizes.md),
@@ -155,10 +155,12 @@ class _PromoCard extends StatelessWidget {
                 ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSizes.xs),
           Text(
             '${df.format(promotion.startAt)}  →  ${df.format(promotion.endAt)}',
-            style: const TextStyle(color: AppColors.muted, fontSize: 12),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: AppColors.muted,
+            ),
           ),
           const SizedBox(height: AppSizes.md),
           _Bar(
@@ -179,11 +181,17 @@ class _PromoCard extends StatelessWidget {
           const SizedBox(height: AppSizes.sm),
           Row(
             children: [
-              const Icon(Icons.visibility_outlined, size: 14, color: AppColors.muted),
-              const SizedBox(width: 4),
+              const Icon(
+                Icons.visibility_outlined,
+                size: AppSizes.iconSm,
+                color: AppColors.muted,
+              ),
+              const SizedBox(width: AppSizes.xs),
               Text(
                 '${promotion.deliveredImpressions} impressions @ ${_rupees(promotion.cpmPaise)}/1k',
-                style: const TextStyle(color: AppColors.muted, fontSize: 12),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.muted,
+                ),
               ),
             ],
           ),
@@ -204,7 +212,7 @@ class _StatusChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSizes.sm,
-        vertical: 4,
+        vertical: AppSizes.xs,
       ),
       decoration: ShapeDecoration(
         color: bg,
@@ -212,7 +220,7 @@ class _StatusChip extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(color: fg, fontSize: 12, fontWeight: FontWeight.w600),
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(color: fg),
       ),
     );
   }
@@ -241,19 +249,21 @@ class _Bar extends StatelessWidget {
             Expanded(
               child: Text(
                 label,
-                style: const TextStyle(color: AppColors.muted, fontSize: 12),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.muted,
+                ),
               ),
             ),
             Text(
               '$value / $cap',
-              style: const TextStyle(fontSize: 12),
+              style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: AppSizes.xs),
         LinearProgressIndicator(
           value: pct,
-          minHeight: 6,
+          minHeight: AppSizes.sm,
           backgroundColor: AppColors.heroPanel,
           valueColor: AlwaysStoppedAnimation(color),
         ),
@@ -428,12 +438,12 @@ class _CreatePromotionSheetState extends State<_CreatePromotionSheet> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 40,
-          height: 4,
+          width: AppSizes.xxxl,
+          height: AppSizes.xs,
           margin: const EdgeInsets.symmetric(vertical: AppSizes.sm),
-          decoration: BoxDecoration(
+          decoration: ShapeDecoration(
             color: AppColors.hairline,
-            borderRadius: BorderRadius.circular(2),
+            shape: AppShapes.squircle(AppSizes.radiusSm),
           ),
         ),
         Padding(
@@ -493,7 +503,8 @@ class _CreatePromotionSheetState extends State<_CreatePromotionSheet> {
                   ),
                   onChanged: _searchProducts,
                 ),
-                if (_searching) const LinearProgressIndicator(minHeight: 2),
+                if (_searching)
+                  const LinearProgressIndicator(minHeight: AppSizes.xs),
                 for (final p in _searchResults)
                   ListTile(
                     title: Text(p.name),

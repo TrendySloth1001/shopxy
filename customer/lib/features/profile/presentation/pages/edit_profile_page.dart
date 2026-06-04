@@ -215,11 +215,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           customBorder: const CircleBorder(),
                           onTap: _uploadingAvatar ? null : _changePhoto,
                           child: Padding(
-                            padding: const EdgeInsets.all(8),
+                            padding: const EdgeInsets.all(AppSizes.sm),
                             child: _uploadingAvatar
                                 ? const SizedBox(
-                                    width: 16,
-                                    height: 16,
+                                    width: AppSizes.iconSm,
+                                    height: AppSizes.iconSm,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
                                       color: AppColors.white,
@@ -228,7 +228,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                 : const Icon(
                                     Icons.camera_alt_outlined,
                                     color: AppColors.white,
-                                    size: 16,
+                                    size: AppSizes.iconSm,
                                   ),
                           ),
                         ),

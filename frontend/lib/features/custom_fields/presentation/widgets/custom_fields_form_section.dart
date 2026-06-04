@@ -159,7 +159,7 @@ class _SectionGroup extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, size: 18, color: AppColors.black),
+              Icon(icon, size: AppSizes.iconMd, color: AppColors.black),
               const SizedBox(width: AppSizes.sm),
               Text(
                 title,
@@ -195,9 +195,9 @@ class _EmptyHint extends StatelessWidget {
         horizontal: AppSizes.lg,
         vertical: AppSizes.md,
       ),
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: AppColors.surfaceTint,
-        borderRadius: BorderRadius.circular(8),
+        shape: AppShapes.squircle(AppSizes.radiusSm),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

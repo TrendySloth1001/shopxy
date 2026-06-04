@@ -104,11 +104,11 @@ class _InvoicesPageState extends State<InvoicesPage> {
               ),
               if (activeSecondary.isNotEmpty)
                 Positioned(
-                  right: 6,
-                  top: 6,
+                  right: AppSizes.sm,
+                  top: AppSizes.sm,
                   child: Container(
-                    width: 8,
-                    height: 8,
+                    width: AppSizes.sm,
+                    height: AppSizes.sm,
                     decoration: const BoxDecoration(
                       color: AppColors.brand,
                       shape: BoxShape.circle,
@@ -321,22 +321,21 @@ class _ActiveSecondaryFiltersRow extends StatelessWidget {
         customBorder: AppShapes.squircle(AppSizes.radiusFull),
         onTap: onClear,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(AppSizes.md, 6, 6, 6),
+          padding: const EdgeInsets.fromLTRB(AppSizes.md, AppSizes.sm, AppSizes.sm, AppSizes.sm),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 label,
-                style: TextStyle(
-                  color: c,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13,
-                ),
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: c,
+                      fontWeight: FontWeight.w700,
+                    ),
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: AppSizes.xs),
               Padding(
-                padding: const EdgeInsets.all(2),
-                child: Icon(Icons.close_rounded, size: 14, color: c),
+                padding: const EdgeInsets.all(AppSizes.xs),
+                child: Icon(Icons.close_rounded, size: AppSizes.iconSm, color: c),
               ),
             ],
           ),
@@ -420,11 +419,11 @@ class _InvoiceFilterSheetState extends State<_InvoiceFilterSheet> {
             children: [
               Center(
                 child: Container(
-                  width: 36,
-                  height: 4,
+                  width: AppSizes.xxxl,
+                  height: AppSizes.xs,
                   decoration: BoxDecoration(
                     color: AppColors.hairline,
-                    borderRadius: BorderRadius.circular(2),
+                    borderRadius: AppShapes.squircleRadius(AppSizes.radiusFull),
                   ),
                 ),
               ),
@@ -552,7 +551,7 @@ class _InvoiceTile extends StatelessWidget {
                 icon: invoice.isSale
                     ? Icons.arrow_upward_rounded
                     : Icons.arrow_downward_rounded,
-                size: 44,
+                size: AppSizes.iconHuge,
                 filled: invoice.isSale,
               ),
               const SizedBox(width: AppSizes.md),
@@ -579,7 +578,7 @@ class _InvoiceTile extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSizes.xs),
                     Text(
                       invoice.partyName,
                       style: theme.textTheme.bodySmall,

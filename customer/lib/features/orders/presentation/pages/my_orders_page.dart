@@ -209,7 +209,7 @@ class _FilterBar extends StatelessWidget {
         border: Border(bottom: BorderSide(color: AppColors.hairline)),
       ),
       child: SizedBox(
-        height: 52,
+        height: AppSizes.huge,
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(
@@ -265,20 +265,20 @@ class _FilterChip extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: TextStyle(
-                  color: fg,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13,
-                ),
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: fg,
+                      fontWeight: FontWeight.w700,
+                    ),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: AppSizes.sm),
               Text(
                 '$count',
-                style: TextStyle(
-                  color: selected ? Colors.white70 : AppColors.muted,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 12,
-                ),
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: selected
+                          ? AppColors.white.withValues(alpha: 0.7)
+                          : AppColors.muted,
+                      fontWeight: FontWeight.w700,
+                    ),
               ),
             ],
           ),
@@ -326,11 +326,10 @@ class _OrderCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       'Order #${order.id}',
-                      style: const TextStyle(
-                        color: AppColors.black,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 14,
-                      ),
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            color: AppColors.black,
+                            fontWeight: FontWeight.w800,
+                          ),
                     ),
                   ),
                   const SizedBox(width: AppSizes.sm),
@@ -342,22 +341,24 @@ class _OrderCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: AppSizes.xs),
               Text(
                 _sellerLine(order),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: AppColors.muted,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.muted,
+                      fontWeight: FontWeight.w600,
+                    ),
               ),
               const SizedBox(height: 2),
               Text(
                 '${itemCount == 1 ? "1 item" : "$itemCount items"} · '
                 '${_date.format(order.createdAt)}',
-                style: const TextStyle(color: AppColors.muted, fontSize: 12),
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(color: AppColors.muted),
               ),
               const SizedBox(height: AppSizes.sm),
               const Divider(height: 1, color: AppColors.hairline),
@@ -365,13 +366,12 @@ class _OrderCard extends StatelessWidget {
               // Bottom: grand total + a "to pay" nudge + chevron
               Row(
                 children: [
-                  const Text(
+                  Text(
                     'Total',
-                    style: TextStyle(
-                      color: AppColors.muted,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.muted,
+                          fontWeight: FontWeight.w700,
+                        ),
                   ),
                   const SizedBox(width: AppSizes.xs),
                   AppPriceText.precise(
@@ -383,7 +383,7 @@ class _OrderCard extends StatelessWidget {
                   if (order.needsOnlinePayment)
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
+                          horizontal: AppSizes.sm, vertical: 3),
                       decoration: ShapeDecoration(
                         color: AppColors.warning.withValues(alpha: 0.12),
                         shape: AppShapes.squircle(AppSizes.radiusFull),
@@ -402,7 +402,7 @@ class _OrderCard extends StatelessWidget {
                     const Icon(
                       Icons.chevron_right_rounded,
                       color: AppColors.subtle,
-                      size: 20,
+                      size: AppSizes.iconMd,
                     ),
                 ],
               ),
@@ -470,7 +470,7 @@ class _StatusPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm, vertical: 3),
       decoration: ShapeDecoration(
         color: soft,
         shape: AppShapes.squircle(AppSizes.radiusFull),
@@ -479,7 +479,7 @@ class _StatusPill extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, color: color, size: 12),
-          const SizedBox(width: 4),
+          const SizedBox(width: AppSizes.xs),
           Text(
             label.toUpperCase(),
             style: TextStyle(
@@ -508,16 +508,15 @@ class _FilteredEmpty extends StatelessWidget {
       children: [
         const SizedBox(height: AppSizes.massive),
         const Icon(Icons.filter_list_off_rounded,
-            size: 44, color: AppColors.subtle),
+            size: AppSizes.iconHuge, color: AppColors.subtle),
         const SizedBox(height: AppSizes.md),
         Text(
           filter.emptyLine,
           textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: AppColors.muted,
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: AppColors.muted,
+                fontWeight: FontWeight.w600,
+              ),
         ),
       ],
     );
@@ -552,29 +551,32 @@ class _LoadingState extends StatelessWidget {
           children: const [
             Row(
               children: [
-                AppShimmerBox(width: 80, height: 18, radius: 999),
+                AppShimmerBox(width: 80, height: 18, radius: AppSizes.radiusFull),
                 Spacer(),
-                AppShimmerBox(width: 70, height: 18, radius: 999),
+                AppShimmerBox(width: 70, height: 18, radius: AppSizes.radiusFull),
               ],
             ),
             SizedBox(height: AppSizes.md),
             Row(
               children: [
-                AppShimmerBox(width: 52, height: 52, radius: 8),
+                AppShimmerBox(
+                    width: AppSizes.productThumbSize,
+                    height: AppSizes.productThumbSize,
+                    radius: AppSizes.radiusSm),
                 SizedBox(width: AppSizes.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       AppShimmerLine(widthFactor: 0.8, height: 12),
-                      SizedBox(height: 8),
+                      SizedBox(height: AppSizes.sm),
                       AppShimmerLine(widthFactor: 0.5, height: 10),
-                      SizedBox(height: 6),
+                      SizedBox(height: AppSizes.sm),
                       AppShimmerLine(widthFactor: 0.3, height: 10),
                     ],
                   ),
                 ),
-                AppShimmerBox(width: 60, height: 16, radius: 6),
+                AppShimmerBox(width: 60, height: 16, radius: AppSizes.radiusSm),
               ],
             ),
           ],
@@ -595,8 +597,8 @@ class _EmptyOrders extends StatelessWidget {
         const SizedBox(height: AppSizes.xxl),
         Center(
           child: Container(
-            width: 120,
-            height: 120,
+            width: AppSizes.productImageSize,
+            height: AppSizes.productImageSize,
             decoration: ShapeDecoration(
               color: AppColors.heroPanel,
               shape: AppShapes.squircle(AppSizes.radiusLg),
@@ -604,7 +606,7 @@ class _EmptyOrders extends StatelessWidget {
             alignment: Alignment.center,
             child: const Icon(
               Icons.receipt_long_outlined,
-              size: 48,
+              size: AppSizes.iconHuge,
               color: AppColors.muted,
             ),
           ),
@@ -650,7 +652,8 @@ class _ErrorState extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       children: [
         const SizedBox(height: AppSizes.massive),
-        const Icon(Icons.cloud_off_rounded, size: 48, color: AppColors.muted),
+        const Icon(Icons.cloud_off_rounded,
+            size: AppSizes.iconHuge, color: AppColors.muted),
         const SizedBox(height: AppSizes.md),
         Text(
           AppStrings.somethingWentWrong,
@@ -658,7 +661,7 @@ class _ErrorState extends StatelessWidget {
               theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: AppSizes.xs),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSizes.xl),
           child: Text(

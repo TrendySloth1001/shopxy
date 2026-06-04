@@ -357,8 +357,8 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
             const Padding(
               padding: EdgeInsets.all(AppSizes.md),
               child: SizedBox(
-                width: 20,
-                height: 20,
+                width: AppSizes.iconMd,
+                height: AppSizes.iconMd,
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
             ),
@@ -392,7 +392,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
           GlassHero.line(
             kind: LineArt.invoice,
             height: 180,
-            illustrationSize: 130,
+            illustrationSize: AppSizes.productImageSize,
             accent: invoice.isCancelled ? AppColors.error : AppColors.brand,
           ),
           Expanded(
@@ -421,7 +421,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                 const SizedBox(height: AppSizes.xs),
                 Wrap(
                   spacing: AppSizes.xs,
-                  runSpacing: 4,
+                  runSpacing: AppSizes.xs,
                   children: [
                     AppStatusBadge(
                       label: _documentTypeLabel(invoice.documentType),
@@ -584,7 +584,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                     const SizedBox(height: AppSizes.xs),
                     for (final p in _payments)
                       Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 3),
+                        padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -637,7 +637,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                     const SizedBox(height: AppSizes.xs),
                     for (final p in _payments)
                       Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 3),
+                        padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -816,7 +816,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
           vertical: AppSizes.md,
         ),
         child: SizedBox(
-          height: 52,
+          height: AppSizes.huge,
           child: Row(
             children: [
               Expanded(
@@ -891,7 +891,7 @@ class _InfoRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.only(top: 4),
+      padding: const EdgeInsets.only(top: AppSizes.xs),
       child: Row(
         children: [
           Text(
@@ -934,7 +934,7 @@ class _ItemTile extends StatelessWidget {
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSizes.xs),
                 Text(
                   '${item.quantity} ${item.unit} × ${AppStrings.currencySymbol}${item.unitPrice.toStringAsFixed(2)}'
                   '${item.taxPercent > 0 ? ' + ${item.taxPercent.toStringAsFixed(0)}% GST' : ''}',
@@ -976,7 +976,7 @@ class _TotalRow extends StatelessWidget {
         ? theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)
         : theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
+      padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [

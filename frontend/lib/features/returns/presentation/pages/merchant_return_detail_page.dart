@@ -110,8 +110,8 @@ class _MerchantReturnDetailPageState extends State<MerchantReturnDetailPage> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(title, style: const TextStyle(
-              fontWeight: FontWeight.w800, fontSize: 16,
+            Text(title, style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w800,
             )),
             const SizedBox(height: AppSizes.md),
             TextField(
@@ -219,7 +219,7 @@ class _MerchantReturnDetailPageState extends State<MerchantReturnDetailPage> {
                               'Refunded ${_currency.format(row.refundAmount)} '
                               'to ${row.customerName}\'s wallet '
                               '(${row.refundMethod})',
-                              style: const TextStyle(
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -344,7 +344,7 @@ class _HeaderCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSizes.xs),
           Text(
             'Order #${row.parentOrderId} · Slice #${row.shopOrderId}',
             style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
@@ -360,8 +360,8 @@ class _HeaderCard extends StatelessWidget {
           Row(
             children: [
               const Icon(Icons.account_balance_wallet_outlined,
-                  size: 16, color: AppColors.muted),
-              const SizedBox(width: 4),
+                  size: AppSizes.iconSm, color: AppColors.muted),
+              const SizedBox(width: AppSizes.xs),
               Text(
                 'Refund preview: ',
                 style: theme.textTheme.bodySmall?.copyWith(
@@ -408,22 +408,22 @@ class _ItemsCard extends StatelessWidget {
               child: Row(
                 children: [
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: AppShapes.squircleRadius(AppSizes.radiusSm),
                     child: it.imageUrl != null
                         ? CachedNetworkImage(
                             imageUrl: it.imageUrl!,
-                            width: 56,
-                            height: 56,
+                            width: AppSizes.productThumbSize,
+                            height: AppSizes.productThumbSize,
                             fit: BoxFit.cover,
                             errorWidget: (_, _, _) => Container(
-                              width: 56,
-                              height: 56,
+                              width: AppSizes.productThumbSize,
+                              height: AppSizes.productThumbSize,
                               color: AppColors.surfaceTint,
                             ),
                           )
                         : Container(
-                            width: 56,
-                            height: 56,
+                            width: AppSizes.productThumbSize,
+                            height: AppSizes.productThumbSize,
                             color: AppColors.surfaceTint,
                           ),
                   ),
@@ -443,19 +443,18 @@ class _ItemsCard extends StatelessWidget {
                             color: AppColors.muted,
                           ),
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: AppSizes.xs),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 2,
+                            horizontal: AppSizes.sm, vertical: AppSizes.xs,
                           ),
-                          decoration: BoxDecoration(
+                          decoration: ShapeDecoration(
                             color: AppColors.brandSoft,
-                            borderRadius: BorderRadius.circular(6),
+                            shape: AppShapes.squircle(AppSizes.radiusSm),
                           ),
                           child: Text(
                             reasonLabel(it.reason),
-                            style: const TextStyle(
-                              fontSize: 11,
+                            style: theme.textTheme.labelSmall?.copyWith(
                               fontWeight: FontWeight.w700,
                               color: AppColors.brandStrong,
                             ),
@@ -497,10 +496,10 @@ class _TimelineCard extends StatelessWidget {
           const SizedBox(height: AppSizes.sm),
           for (final e in events)
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
+              padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
               child: Row(
                 children: [
-                  Icon(_iconFor(e.type), size: 16, color: AppColors.brand),
+                  Icon(_iconFor(e.type), size: AppSizes.iconSm, color: AppColors.brand),
                   const SizedBox(width: AppSizes.sm),
                   Expanded(child: Text(_label(e.type))),
                   Text(_date.format(e.occurredAt),
@@ -567,6 +566,7 @@ class _NoteCard extends StatelessWidget {
   final IconData icon;
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(AppSizes.md),
       decoration: ShapeDecoration(
@@ -576,16 +576,16 @@ class _NoteCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 18, color: AppColors.brand),
+          Icon(icon, size: AppSizes.iconMd, color: AppColors.brand),
           const SizedBox(width: AppSizes.sm),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(
+                Text(title, style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w700,
                 )),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSizes.xs),
                 Text(body),
               ],
             ),

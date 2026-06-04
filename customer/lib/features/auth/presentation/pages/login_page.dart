@@ -120,9 +120,8 @@ class _LoginPageState extends State<LoginPage> {
               children: [
                 Text(
                   AppStrings.noAccount,
-                  style: const TextStyle(
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: AppColors.muted,
-                      fontSize: 14,
                       fontWeight: FontWeight.w500),
                 ),
                 TextButton(
@@ -132,8 +131,8 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   style: TextButton.styleFrom(
                     foregroundColor: AppColors.brandStrong,
-                    textStyle: const TextStyle(
-                        fontWeight: FontWeight.w800, fontSize: 14),
+                    textStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w800),
                   ),
                   child: const Text(AppStrings.register),
                 ),

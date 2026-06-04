@@ -67,12 +67,12 @@ class _IconTile extends StatelessWidget {
         onTap: onTap,
         customBorder: AppShapes.squircle(AppSizes.radiusSm),
         child: SizedBox(
-          width: 44,
-          height: 44,
+          width: AppSizes.huge,
+          height: AppSizes.huge,
           child: Icon(
             icon,
             color: selected ? AppColors.white : AppColors.black,
-            size: 22,
+            size: AppSizes.iconLg,
           ),
         ),
       ),

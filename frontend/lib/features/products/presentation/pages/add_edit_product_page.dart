@@ -963,13 +963,15 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                 title: 'MORE DETAILS',
                 padding: const EdgeInsets.only(bottom: AppSizes.xs),
               ),
-              const Padding(
-                padding: EdgeInsets.only(bottom: AppSizes.md),
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSizes.md),
                 child: Text(
                   'All optional. Add as much as you like to make the product '
                   'page richer — you can come back any time.',
-                  style: TextStyle(
-                      color: AppColors.muted, fontSize: 12.5, height: 1.4),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: AppColors.muted),
                 ),
               ),
               ..._detailTiles(),
@@ -1032,13 +1034,13 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
           });
         }
       },
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: AppShapes.squircleRadius(AppSizes.radiusSm),
       child: InputDecorator(
         decoration: const InputDecoration(labelText: AppStrings.category),
         child: Row(
           children: [
             Icon(iconData, size: 18, color: AppColors.muted),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSizes.sm),
             Expanded(child: Text(label, overflow: TextOverflow.ellipsis)),
             const Icon(Icons.unfold_more_rounded,
                 size: 18, color: AppColors.muted),
@@ -1064,7 +1066,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
             itemBuilder: (ctx, i) => Stack(
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+                  borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
                   child: Image.network(
                     resolveImageUrl(_imageUrls[i]),
                     width: 96,
@@ -1088,8 +1090,8 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                   ),
                 ),
                 Positioned(
-                  top: 4,
-                  right: 4,
+                  top: AppSizes.xs,
+                  right: AppSizes.xs,
                   child: GestureDetector(
                     onTap: () => setState(() {
                       final url = _imageUrls[i];
@@ -1143,12 +1145,15 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
         ],
       ),
       Padding(
-        padding: const EdgeInsets.only(top: 4),
+        padding: const EdgeInsets.only(top: AppSizes.xs),
         child: Text(
           _imageUrls.isEmpty
               ? 'Tap "Pick from gallery" to select multiple images at once. Up to $_maxGalleryImages per product.'
               : '${_imageUrls.length}/$_maxGalleryImages images added.',
-          style: const TextStyle(color: AppColors.muted, fontSize: 12),
+          style: Theme.of(context)
+              .textTheme
+              .bodySmall
+              ?.copyWith(color: AppColors.muted),
         ),
       ),
       if (_isUploading) ...[
@@ -1163,8 +1168,11 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
         child: ExpansionTile(
           tilePadding: EdgeInsets.zero,
           childrenPadding: const EdgeInsets.only(bottom: AppSizes.sm),
-          title: const Text('Add by image link',
-              style: TextStyle(fontSize: 13, color: AppColors.muted)),
+          title: Text('Add by image link',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: AppColors.muted)),
           children: [
             Row(
               children: [
@@ -1378,9 +1386,10 @@ class _DetailTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+      borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
       child: Container(
         padding: const EdgeInsets.all(AppSizes.md),
         decoration: ShapeDecoration(
@@ -1400,7 +1409,7 @@ class _DetailTile extends StatelessWidget {
                 shape: AppShapes.squircle(AppSizes.radiusSm),
               ),
               alignment: Alignment.center,
-              child: Icon(icon, size: 20, color: AppColors.black),
+              child: Icon(icon, size: AppSizes.iconMd, color: AppColors.black),
             ),
             const SizedBox(width: AppSizes.md),
             Expanded(
@@ -1409,13 +1418,13 @@ class _DetailTile extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w700, fontSize: 14.5),
+                    style: theme.textTheme.bodyMedium
+                        ?.copyWith(fontWeight: FontWeight.w700),
                   ),
                   Text(
                     subtitle,
-                    style: const TextStyle(
-                        color: AppColors.muted, fontSize: 12, height: 1.3),
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: AppColors.muted),
                   ),
                 ],
               ),
@@ -1423,15 +1432,16 @@ class _DetailTile extends StatelessWidget {
             if (count > 0) ...[
               Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    const EdgeInsets.symmetric(
+                        horizontal: AppSizes.sm, vertical: 3),
                 decoration: ShapeDecoration(
                   color: AppColors.heroPanel,
                   shape: AppShapes.squircle(AppSizes.radiusFull),
                 ),
                 child: Text(
                   '$count',
-                  style: const TextStyle(
-                      fontWeight: FontWeight.w800, fontSize: 12),
+                  style: theme.textTheme.labelSmall
+                      ?.copyWith(fontWeight: FontWeight.w800),
                 ),
               ),
               const SizedBox(width: AppSizes.sm),
@@ -1483,8 +1493,10 @@ class _EditorScaffoldState extends State<_EditorScaffold> {
             if (widget.intro != null) ...[
               Text(
                 widget.intro!,
-                style: const TextStyle(
-                    color: AppColors.muted, fontSize: 13, height: 1.45),
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(color: AppColors.muted),
               ),
               const SizedBox(height: AppSizes.lg),
             ],
@@ -1623,10 +1635,14 @@ class _HighlightsEditor extends StatelessWidget {
       children: [
         for (var i = 0; i < items.length; i++)
           Padding(
-            padding: const EdgeInsets.only(bottom: 6),
+            padding: const EdgeInsets.only(bottom: AppSizes.sm),
             child: Row(
               children: [
-                const Text('• ', style: TextStyle(fontWeight: FontWeight.w800)),
+                Text('• ',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(fontWeight: FontWeight.w800)),
                 Expanded(child: Text(items[i])),
                 IconButton(
                   icon: const Icon(Icons.close_rounded, size: 18),
@@ -1652,7 +1668,7 @@ class _HighlightsEditor extends StatelessWidget {
                   onSubmitted: (_) => onAdd(),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSizes.sm),
               IconButton.filled(
                 onPressed: onAdd,
                 icon: const Icon(Icons.add),
@@ -1765,11 +1781,11 @@ class _GroupCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: AppSizes.md),
+      padding: const EdgeInsets.all(AppSizes.md),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.black12),
-        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.hairline),
+        borderRadius: AppShapes.squircleRadius(AppSizes.radiusSm),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1794,7 +1810,7 @@ class _GroupCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSizes.sm),
           // Optional subtab — when any group on a product carries one,
           // the customer PDP chips the unique tabs above the spec
           // table and filters groups by selection. Leave blank for a
@@ -1808,17 +1824,18 @@ class _GroupCard extends StatelessWidget {
               isDense: true,
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSizes.md),
           // Each attribute stacks label-over-value full width so long
           // labels ("In the box") and long values aren't clipped the way
           // the old side-by-side layout cut them off.
           for (var i = 0; i < group.rows.length; i++)
             Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.fromLTRB(10, 4, 4, 10),
+              margin: const EdgeInsets.only(bottom: AppSizes.sm),
+              padding: const EdgeInsets.fromLTRB(
+                  AppSizes.md, AppSizes.xs, AppSizes.xs, AppSizes.md),
               decoration: BoxDecoration(
                 color: AppColors.surfaceTint,
-                borderRadius: BorderRadius.circular(AppSizes.radiusSm),
+                borderRadius: AppShapes.squircleRadius(AppSizes.radiusSm),
               ),
               child: Column(
                 children: [
@@ -1844,9 +1861,9 @@ class _GroupCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: AppSizes.sm),
                   Padding(
-                    padding: const EdgeInsets.only(right: 6),
+                    padding: const EdgeInsets.only(right: AppSizes.sm),
                     child: TextFormField(
                       initialValue: group.rows[i].value,
                       onChanged: (v) =>
@@ -1907,24 +1924,27 @@ class _OffersEditorState extends State<_OffersEditor> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          margin: const EdgeInsets.only(bottom: 10),
-          padding: const EdgeInsets.all(10),
+          margin: const EdgeInsets.only(bottom: AppSizes.md),
+          padding: const EdgeInsets.all(AppSizes.md),
           decoration: BoxDecoration(
             color: AppColors.infoSoft,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: AppShapes.squircleRadius(AppSizes.radiusSm),
           ),
-          child: const Row(
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.account_balance_outlined,
-                  size: 16, color: AppColors.info),
-              SizedBox(width: 8),
+              const Icon(Icons.account_balance_outlined,
+                  size: AppSizes.iconSm, color: AppColors.info),
+              const SizedBox(width: AppSizes.sm),
               Expanded(
                 child: Text(
                   'Bank offers are platform-wide and managed centrally. '
                   'Customers will still see HDFC / ICICI / SBI etc. on this '
                   'product\'s page if a platform offer is active.',
-                  style: TextStyle(color: AppColors.info, fontSize: 12),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: AppColors.info),
                 ),
               ),
             ],
@@ -1999,11 +2019,11 @@ class _OfferRowState extends State<_OfferRow> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(10),
+      margin: const EdgeInsets.only(bottom: AppSizes.md),
+      padding: const EdgeInsets.all(AppSizes.md),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.black12),
-        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.hairline),
+        borderRadius: AppShapes.squircleRadius(AppSizes.radiusSm),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2042,7 +2062,7 @@ class _OfferRowState extends State<_OfferRow> {
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSizes.sm),
           TextFormField(
             controller: _headline,
             onChanged: (v) =>
@@ -2054,7 +2074,7 @@ class _OfferRowState extends State<_OfferRow> {
               isDense: true,
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSizes.sm),
           Row(
             children: [
               Expanded(
@@ -2069,7 +2089,7 @@ class _OfferRowState extends State<_OfferRow> {
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSizes.sm),
               SizedBox(
                 width: 140,
                 child: TextFormField(

@@ -143,22 +143,22 @@ class _TotalDueHeader extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'TOTAL DUE',
-            style: TextStyle(
-                color: AppColors.muted,
-                fontWeight: FontWeight.w800,
-                fontSize: 11,
-                letterSpacing: 0.8),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: AppColors.muted,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.8,
+                ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSizes.xs),
           Text(
             formatPendingAmount(total),
-            style: const TextStyle(
-                color: AppColors.black,
-                fontWeight: FontWeight.w800,
-                fontSize: 24,
-                letterSpacing: -0.5),
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: AppColors.black,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.5,
+                ),
           ),
         ],
       ),
@@ -198,19 +198,19 @@ class _PendingOrderRow extends StatelessWidget {
                 children: [
                   Text(
                     'Order #${order.id}',
-                    style: const TextStyle(
-                        color: AppColors.muted,
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.muted,
+                          fontWeight: FontWeight.w600,
+                        ),
                   ),
                   const SizedBox(height: 3),
                   Text(
                     formatPendingAmount(order.payableRemainder),
-                    style: const TextStyle(
-                        color: AppColors.black,
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.3),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: AppColors.black,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.3,
+                        ),
                   ),
                 ],
               ),
@@ -241,21 +241,25 @@ class _AllSettled extends StatelessWidget {
         padding: const EdgeInsets.all(AppSizes.xl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: const [
-            Icon(Icons.verified_outlined, size: 56, color: AppColors.success),
-            SizedBox(height: AppSizes.md),
+          children: [
+            const Icon(Icons.verified_outlined,
+                size: 56, color: AppColors.success),
+            const SizedBox(height: AppSizes.md),
             Text(
               "You're all paid up",
-              style: TextStyle(
-                  color: AppColors.black,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 17),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: AppColors.black,
+                    fontWeight: FontWeight.w800,
+                  ),
             ),
-            SizedBox(height: AppSizes.xs),
+            const SizedBox(height: AppSizes.xs),
             Text(
               'No orders are waiting on a payment right now.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.muted, fontSize: 13),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: AppColors.muted),
             ),
           ],
         ),

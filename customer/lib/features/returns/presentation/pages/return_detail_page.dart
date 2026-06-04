@@ -96,7 +96,7 @@ class _ReturnDetailPageState extends State<ReturnDetailPage> {
           ? const Center(child: CircularProgressIndicator())
           : _error != null
               ? Center(child: Padding(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(AppSizes.xxl),
                   child: Text(_error!),
                 ))
               : RefreshIndicator(
@@ -161,11 +161,11 @@ class _Body extends StatelessWidget {
                       ),
                     )
                   : const Icon(Icons.close_rounded, color: AppColors.error),
-              label: const Text('Cancel return',
-                  style: TextStyle(
-                    color: AppColors.error,
-                    fontWeight: FontWeight.w800,
-                  )),
+              label: Text('Cancel return',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.error,
+                        fontWeight: FontWeight.w800,
+                      )),
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: AppShapes.squircle(AppSizes.radiusMd),
@@ -199,45 +199,43 @@ class _HeroCard extends StatelessWidget {
           children: [
             Text(
               data.shop.name,
-              style: const TextStyle(
-                color: AppColors.brand,
-                fontWeight: FontWeight.w800,
-                fontSize: 14,
-              ),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.brand,
+                    fontWeight: FontWeight.w800,
+                  ),
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: AppSizes.xs),
             Text(
               stamp,
-              style: const TextStyle(color: AppColors.muted, fontSize: 12),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppColors.muted,
+                  ),
             ),
             const SizedBox(height: AppSizes.md),
-            const Text(
+            Text(
               'REFUND',
-              style: TextStyle(
-                color: AppColors.muted,
-                fontWeight: FontWeight.w800,
-                fontSize: 11,
-                letterSpacing: 0.5,
-              ),
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: AppColors.muted,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.5,
+                  ),
             ),
             Text(
               '₹${data.refundAmount.toStringAsFixed(0)}',
-              style: const TextStyle(
-                color: AppColors.black,
-                fontWeight: FontWeight.w800,
-                fontSize: 24,
-              ),
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: AppColors.black,
+                    fontWeight: FontWeight.w800,
+                  ),
             ),
             if (data.isRefunded)
-              const Padding(
-                padding: EdgeInsets.only(top: 4),
+              Padding(
+                padding: const EdgeInsets.only(top: AppSizes.xs),
                 child: Text(
                   'Credited to your wallet',
-                  style: TextStyle(
-                    color: AppColors.success,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 12,
-                  ),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.success,
+                        fontWeight: FontWeight.w700,
+                      ),
                 ),
               ),
           ],
@@ -291,8 +289,8 @@ class _ItemRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 48,
-            height: 48,
+            width: AppSizes.productThumbSize,
+            height: AppSizes.productThumbSize,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(AppSizes.radiusSm),
               child: item.imageUrl == null
@@ -307,20 +305,19 @@ class _ItemRow extends StatelessWidget {
               children: [
                 Text(
                   item.productName,
-                  style: const TextStyle(
-                    color: AppColors.black,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.black,
+                        fontWeight: FontWeight.w700,
+                      ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSizes.xs),
                 Text(
                   '${item.quantity.toStringAsFixed(item.quantity == item.quantity.roundToDouble() ? 0 : 2)} ${item.unit} · ${reasonLabel(item.reason)}',
-                  style: const TextStyle(
-                    color: AppColors.muted,
-                    fontSize: 12,
-                  ),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.muted,
+                      ),
                 ),
               ],
             ),
@@ -328,10 +325,10 @@ class _ItemRow extends StatelessWidget {
           const SizedBox(width: AppSizes.sm),
           Text(
             '₹${item.refundAmount.toStringAsFixed(0)}',
-            style: const TextStyle(
-              color: AppColors.black,
-              fontWeight: FontWeight.w800,
-            ),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.black,
+                  fontWeight: FontWeight.w800,
+                ),
           ),
         ],
       ),
@@ -389,17 +386,18 @@ class _NoteBlock extends StatelessWidget {
           children: [
             Text(
               label.toUpperCase(),
-              style: TextStyle(
-                color: fg.withValues(alpha: 0.7),
-                fontWeight: FontWeight.w800,
-                fontSize: 11,
-                letterSpacing: 0.5,
-              ),
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: fg.withValues(alpha: 0.7),
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.5,
+                  ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSizes.xs),
             Text(
               text,
-              style: TextStyle(color: fg, height: 1.4, fontSize: 13),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: fg,
+                  ),
             ),
           ],
         ),

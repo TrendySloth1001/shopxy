@@ -122,7 +122,7 @@ class _StopRow extends StatelessWidget {
       case _Tone.danger:
         return AppColors.error;
       case _Tone.warning:
-        return Colors.orange.shade700;
+        return AppColors.warning;
       case _Tone.normal:
         return AppColors.success;
     }
@@ -165,7 +165,7 @@ class _StopRow extends StatelessWidget {
                   child: Icon(
                     stop.icon,
                     size: 12,
-                    color: reached ? Colors.white : AppColors.muted,
+                    color: reached ? AppColors.white : AppColors.muted,
                   ),
                 ),
                 Expanded(
@@ -182,16 +182,15 @@ class _StopRow extends StatelessWidget {
           const SizedBox(width: AppSizes.md),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
+              padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     stop.label,
-                    style: TextStyle(
+                    style: theme.textTheme.bodyMedium?.copyWith(
                       color: reached ? AppColors.black : AppColors.muted,
                       fontWeight: reached ? FontWeight.w800 : FontWeight.w600,
-                      fontSize: 13,
                     ),
                   ),
                   if (e != null) ...[
@@ -210,7 +209,7 @@ class _StopRow extends StatelessWidget {
                           if (e.courier != null) e.courier!,
                           if (e.awb != null) 'AWB ${e.awb!}',
                         ].join(' · '),
-                        style: const TextStyle(
+                        style: theme.textTheme.labelSmall?.copyWith(
                           color: AppColors.brandStrong,
                           fontWeight: FontWeight.w700,
                           fontSize: 11,
@@ -221,7 +220,7 @@ class _StopRow extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         'ETA ${_formatEta(e.eta!)}',
-                        style: const TextStyle(
+                        style: theme.textTheme.labelSmall?.copyWith(
                           color: AppColors.brandStrong,
                           fontWeight: FontWeight.w700,
                           fontSize: 11,
@@ -240,7 +239,7 @@ class _StopRow extends StatelessWidget {
                       ),
                     ],
                   ],
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSizes.xs),
                 ],
               ),
             ),

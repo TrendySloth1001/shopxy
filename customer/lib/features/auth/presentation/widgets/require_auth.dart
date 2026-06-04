@@ -85,10 +85,10 @@ class SkipToGuestButton extends StatelessWidget {
           horizontal: AppSizes.md,
           vertical: AppSizes.xs,
         ),
-        textStyle: const TextStyle(
-          fontWeight: FontWeight.w700,
-          fontSize: 14,
-        ),
+        textStyle: Theme.of(context)
+            .textTheme
+            .bodyMedium
+            ?.copyWith(fontWeight: FontWeight.w700),
       ),
       child: const Text('Skip'),
     );
@@ -176,7 +176,7 @@ class _SkipBullet extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 18, color: AppColors.muted),
+          Icon(icon, size: AppSizes.iconMd, color: AppColors.muted),
           const SizedBox(width: AppSizes.sm),
           Expanded(
             child: Text(

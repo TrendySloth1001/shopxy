@@ -171,8 +171,11 @@ class _Row extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 2),
-                        StarRow(rating: row.review.rating.toDouble(), size: 14),
+                        const SizedBox(height: AppSizes.xs),
+                        StarRow(
+                          rating: row.review.rating.toDouble(),
+                          size: AppSizes.lg,
+                        ),
                       ],
                     ),
                   ),
@@ -194,7 +197,7 @@ class _Row extends StatelessWidget {
                 ),
               ],
               if ((row.review.body ?? '').isNotEmpty) ...[
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSizes.xs),
                 Text(
                   row.review.body!,
                   style: theme.textTheme.bodyMedium?.copyWith(
@@ -269,7 +272,7 @@ class _EmptyState extends StatelessWidget {
           ),
           child: const Icon(
             Icons.rate_review_outlined,
-            size: 36,
+            size: AppSizes.iconXl,
             color: AppColors.warning,
           ),
         ),
@@ -308,7 +311,7 @@ class _ErrorBlock extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(Icons.error_outline_rounded,
-                size: 40, color: AppColors.error),
+                size: AppSizes.iconHuge, color: AppColors.error),
             const SizedBox(height: AppSizes.md),
             Text(message, textAlign: TextAlign.center),
             const SizedBox(height: AppSizes.md),

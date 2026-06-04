@@ -229,11 +229,11 @@ class _FlashDealEditorSheetState extends State<FlashDealEditorSheet> {
       children: [
         const SizedBox(height: AppSizes.sm),
         Container(
-          width: 40,
-          height: 4,
+          width: AppSizes.xxxl,
+          height: AppSizes.xs,
           decoration: BoxDecoration(
             color: AppColors.disabled,
-            borderRadius: BorderRadius.circular(2),
+            borderRadius: AppShapes.squircleRadius(AppSizes.radiusSm),
           ),
         ),
         Padding(
@@ -339,7 +339,12 @@ class _FlashDealEditorSheetState extends State<FlashDealEditorSheet> {
               ),
               if (_error != null) ...[
                 const SizedBox(height: AppSizes.md),
-                Text(_error!, style: const TextStyle(color: AppColors.error)),
+                Text(
+                  _error!,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.error,
+                      ),
+                ),
               ],
               const SizedBox(height: AppSizes.lg),
               FilledButton(
@@ -375,13 +380,13 @@ class _DateField extends StatelessWidget {
       child: InputDecorator(
         decoration: InputDecoration(
           labelText: label,
-          suffixIcon: const Icon(Icons.calendar_today_outlined, size: 18),
+          suffixIcon: const Icon(Icons.calendar_today_outlined, size: AppSizes.iconSm),
         ),
         child: Text(
           value == null ? 'Not set' : formatter.format(value!),
-          style: TextStyle(
-            color: value == null ? AppColors.muted : AppColors.black,
-          ),
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: value == null ? AppColors.muted : AppColors.black,
+              ),
         ),
       ),
     );
@@ -450,11 +455,11 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 40,
-            height: 4,
+            width: AppSizes.xxxl,
+            height: AppSizes.xs,
             decoration: BoxDecoration(
               color: AppColors.disabled,
-              borderRadius: BorderRadius.circular(2),
+              borderRadius: AppShapes.squircleRadius(AppSizes.radiusSm),
             ),
           ),
           const SizedBox(height: AppSizes.md),
@@ -482,11 +487,12 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
                       return ListTile(
                         leading: p.primaryImageUrl != null
                             ? ClipRRect(
-                                borderRadius: BorderRadius.circular(6),
+                                borderRadius:
+                                    AppShapes.squircleRadius(AppSizes.radiusSm),
                                 child: Image.network(
                                   resolveImageUrl(p.primaryImageUrl!),
-                                  width: 40,
-                                  height: 40,
+                                  width: AppSizes.productThumbSize,
+                                  height: AppSizes.productThumbSize,
                                   fit: BoxFit.cover,
                                   errorBuilder: (_, _, _) =>
                                       const Icon(Icons.inventory_2_outlined),
@@ -560,21 +566,23 @@ class _PreviewCard extends StatelessWidget {
                   ),
                 if (discountPct > 0)
                   Positioned(
-                    top: 4,
-                    left: 4,
+                    top: AppSizes.xs,
+                    left: AppSizes.xs,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSizes.xs,
+                        vertical: 1,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.flashDeal,
-                        borderRadius: BorderRadius.circular(2),
+                        borderRadius: AppShapes.squircleRadius(AppSizes.radiusSm),
                       ),
                       child: Text(
                         '-$discountPct%',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 10,
-                        ),
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: AppColors.white,
+                              fontWeight: FontWeight.w800,
+                            ),
                       ),
                     ),
                   ),
@@ -586,52 +594,49 @@ class _PreviewCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Row(
+                Row(
                   children: [
-                    Icon(Icons.bolt_rounded, color: AppColors.flashDeal, size: 16),
-                    SizedBox(width: 2),
+                    const Icon(Icons.bolt_rounded,
+                        color: AppColors.flashDeal, size: AppSizes.iconSm),
+                    const SizedBox(width: AppSizes.xs),
                     Text(
                       'Flash deal preview',
-                      style: TextStyle(
-                        color: AppColors.flashDeal,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 11,
-                      ),
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: AppColors.flashDeal,
+                            fontWeight: FontWeight.w700,
+                          ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSizes.xs),
                 Text(
                   product?.name ?? 'Pick a product to preview',
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppColors.black,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                  ),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.black,
+                        fontWeight: FontWeight.w700,
+                      ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSizes.xs),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
                       '₹${flashPrice.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        color: AppColors.flashDeal,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                      ),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: AppColors.flashDeal,
+                            fontWeight: FontWeight.w800,
+                          ),
                     ),
                     if (product != null) ...[
-                      const SizedBox(width: 6),
+                      const SizedBox(width: AppSizes.sm),
                       Text(
                         '₹${product!.mrp.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          color: AppColors.muted,
-                          fontSize: 11,
-                          decoration: TextDecoration.lineThrough,
-                        ),
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: AppColors.muted,
+                              decoration: TextDecoration.lineThrough,
+                            ),
                       ),
                     ],
                   ],

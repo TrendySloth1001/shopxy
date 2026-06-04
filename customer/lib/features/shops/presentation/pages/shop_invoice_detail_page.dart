@@ -63,7 +63,7 @@ class _ShopInvoiceDetailPageState extends State<ShopInvoiceDetailPage> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Icon(Icons.error_outline_rounded,
-                        color: AppColors.error, size: 36),
+                        color: AppColors.error, size: AppSizes.iconXl),
                     const SizedBox(height: AppSizes.sm),
                     Text(
                       snap.error.toString().replaceFirst('Exception: ', ''),
@@ -141,44 +141,41 @@ class _Header extends StatelessWidget {
               Expanded(
                 child: Text(
                   eyebrow,
-                  style: const TextStyle(
-                    color: AppColors.brand,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.2,
-                  ),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: AppColors.brand,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.2,
+                      ),
                 ),
               ),
               _StatusPill(status: invoice.status),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSizes.sm),
           Text(
             invoice.invoiceNo,
-            style: const TextStyle(
-              color: AppColors.black,
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.5,
-              height: 1.15,
-            ),
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: AppColors.black,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.5,
+                  height: 1.15,
+                ),
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: AppSizes.xs),
           Row(
             children: [
               const Icon(
                 Icons.event_rounded,
                 color: AppColors.muted,
-                size: 14,
+                size: AppSizes.iconSm,
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: AppSizes.xs),
               Text(
                 DateFormat('d MMM yyyy').format(invoice.invoiceDate.toLocal()),
-                style: const TextStyle(
-                  color: AppColors.muted,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.muted,
+                      fontWeight: FontWeight.w600,
+                    ),
               ),
             ],
           ),
@@ -210,19 +207,19 @@ class _StatusPill extends StatelessWidget {
         ),
     };
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSizes.sm, vertical: AppSizes.xs),
       decoration: ShapeDecoration(
         color: bg,
         shape: AppShapes.squircle(AppSizes.radiusFull),
       ),
       child: Text(
         label,
-        style: TextStyle(
-          color: fg,
-          fontSize: 10,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 0.5,
-        ),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: fg,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.5,
+            ),
       ),
     );
   }
@@ -257,52 +254,48 @@ class _Counterparty extends StatelessWidget {
               shape: AppShapes.squircle(AppSizes.radiusSm),
             ),
             alignment: Alignment.center,
-            child: Icon(iconData, color: AppColors.brand, size: 20),
+            child: Icon(iconData, color: AppColors.brand, size: AppSizes.iconMd),
           ),
-          const SizedBox(width: AppSizes.sm + 2),
+          const SizedBox(width: AppSizes.sm),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   eyebrow,
-                  style: const TextStyle(
-                    color: AppColors.muted,
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.9,
-                  ),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: AppColors.muted,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.9,
+                      ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSizes.xs),
                 Text(
                   name,
-                  style: const TextStyle(
-                    color: AppColors.black,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.1,
-                    height: 1.2,
-                  ),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: AppColors.black,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.1,
+                        height: 1.2,
+                      ),
                 ),
                 if (invoice.shopPhone != null) ...[
-                  const SizedBox(height: 2),
+                  const SizedBox(height: AppSizes.xs),
                   Text(
                     invoice.shopPhone!,
-                    style: const TextStyle(
-                      color: AppColors.muted,
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.muted,
+                          fontWeight: FontWeight.w500,
+                        ),
                   ),
                 ],
                 if (invoice.shopGstin != null)
                   Text(
                     'GSTIN ${invoice.shopGstin!}',
-                    style: const TextStyle(
-                      color: AppColors.muted,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.muted,
+                          fontWeight: FontWeight.w500,
+                        ),
                   ),
               ],
             ),
@@ -332,22 +325,20 @@ class _Eyebrow extends StatelessWidget {
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(
-                color: AppColors.muted,
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.4,
-              ),
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: AppColors.muted,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.4,
+                  ),
             ),
           ),
           if (trailing != null)
             Text(
               trailing!,
-              style: const TextStyle(
-                color: AppColors.muted,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-              ),
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: AppColors.muted,
+                    fontWeight: FontWeight.w700,
+                  ),
             ),
         ],
       ),
@@ -392,22 +383,20 @@ class _ItemRow extends StatelessWidget {
               children: [
                 Text(
                   item.productName,
-                  style: const TextStyle(
-                    color: AppColors.black,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    height: 1.3,
-                    letterSpacing: -0.1,
-                  ),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.black,
+                        fontWeight: FontWeight.w700,
+                        height: 1.3,
+                        letterSpacing: -0.1,
+                      ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSizes.xs),
                 Text(
                   _meta(),
-                  style: const TextStyle(
-                    color: AppColors.muted,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.muted,
+                        fontWeight: FontWeight.w500,
+                      ),
                 ),
               ],
             ),
@@ -415,12 +404,11 @@ class _ItemRow extends StatelessWidget {
           const SizedBox(width: AppSizes.md),
           Text(
             money.format(item.total),
-            style: const TextStyle(
-              color: AppColors.black,
-              fontSize: 14,
-              fontWeight: FontWeight.w800,
-              fontFeatures: [FontFeature.tabularFigures()],
-            ),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.black,
+                  fontWeight: FontWeight.w800,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
           ),
         ],
       ),
@@ -476,16 +464,17 @@ class _TotalsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
+      padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
       child: Row(
         children: [
           Expanded(
             child: Text(
               label,
-              style: TextStyle(
+              style: (strong ? theme.textTheme.bodyMedium : theme.textTheme.bodySmall)
+                  ?.copyWith(
                 color: strong ? AppColors.black : AppColors.muted,
-                fontSize: strong ? 14 : 13,
                 fontWeight: strong ? FontWeight.w800 : FontWeight.w500,
                 letterSpacing: strong ? -0.1 : 0,
               ),
@@ -493,9 +482,9 @@ class _TotalsRow extends StatelessWidget {
           ),
           Text(
             value,
-            style: TextStyle(
+            style: (strong ? theme.textTheme.titleMedium : theme.textTheme.bodySmall)
+                ?.copyWith(
               color: valueColor ?? AppColors.black,
-              fontSize: strong ? 17 : 13,
               fontWeight: strong ? FontWeight.w800 : FontWeight.w700,
               fontFeatures: const [FontFeature.tabularFigures()],
               letterSpacing: strong ? -0.2 : 0,
@@ -526,18 +515,17 @@ class _Note extends StatelessWidget {
           const Icon(
             Icons.sticky_note_2_outlined,
             color: AppColors.muted,
-            size: 16,
+            size: AppSizes.iconSm,
           ),
           const SizedBox(width: AppSizes.sm),
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(
-                color: AppColors.black,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                height: 1.4,
-              ),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppColors.black,
+                    fontWeight: FontWeight.w500,
+                    height: 1.4,
+                  ),
             ),
           ),
         ],

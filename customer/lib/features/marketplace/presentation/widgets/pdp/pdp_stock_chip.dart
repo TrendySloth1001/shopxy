@@ -61,7 +61,7 @@ class _Pill extends StatelessWidget {
       alignment: Alignment.centerLeft,
       child: Container(
         padding: const EdgeInsets.symmetric(
-            horizontal: AppSizes.sm, vertical: 4),
+            horizontal: AppSizes.sm, vertical: AppSizes.xs),
         decoration: BoxDecoration(
           color: bg,
           borderRadius: BorderRadius.circular(AppSizes.radiusFull),
@@ -69,14 +69,15 @@ class _Pill extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: fg, size: 14),
-            const SizedBox(width: 4),
+            Icon(icon, color: fg, size: AppSizes.iconSm),
+            const SizedBox(width: AppSizes.xs),
             Text(
               label,
-              style: TextStyle(
-                  color: fg,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 12),
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: fg,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 12,
+                  ),
             ),
           ],
         ),

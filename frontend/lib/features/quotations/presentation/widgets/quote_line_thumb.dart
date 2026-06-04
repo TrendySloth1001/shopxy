@@ -25,7 +25,7 @@ class QuoteLineThumb extends StatelessWidget {
         decoration: ShapeDecoration(color: AppColors.brandSoft, shape: shape),
         alignment: Alignment.center,
         child: const Icon(Icons.inventory_2_outlined,
-            size: 18, color: AppColors.brand),
+            size: AppSizes.iconMd, color: AppColors.brand),
       );
     }
     return Container(
@@ -42,7 +42,7 @@ class QuoteLineThumb extends StatelessWidget {
             color: AppColors.brandSoft,
             alignment: Alignment.center,
             child: const Icon(Icons.inventory_2_outlined,
-                size: 18, color: AppColors.brand),
+                size: AppSizes.iconMd, color: AppColors.brand),
           ),
         ),
       ),

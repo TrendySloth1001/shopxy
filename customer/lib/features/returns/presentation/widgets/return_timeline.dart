@@ -43,14 +43,13 @@ class ReturnTimeline extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'TIMELINE',
-          style: TextStyle(
-            color: AppColors.muted,
-            fontWeight: FontWeight.w800,
-            fontSize: 11,
-            letterSpacing: 0.5,
-          ),
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: AppColors.muted,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.5,
+              ),
         ),
         const SizedBox(height: AppSizes.sm),
         for (var i = 0; i < stops.length; i++)
@@ -91,7 +90,7 @@ class _StopRow extends StatelessWidget {
       case _Tone.danger:
         return AppColors.error;
       case _Tone.warn:
-        return Colors.orange.shade700;
+        return AppColors.warning;
       case _Tone.normal:
         return AppColors.success;
     }
@@ -132,7 +131,7 @@ class _StopRow extends StatelessWidget {
                   child: Icon(
                     stop.icon,
                     size: 12,
-                    color: reached ? Colors.white : AppColors.muted,
+                    color: reached ? AppColors.white : AppColors.muted,
                   ),
                 ),
                 Expanded(
@@ -149,30 +148,28 @@ class _StopRow extends StatelessWidget {
           const SizedBox(width: AppSizes.md),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
+              padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     stop.label,
-                    style: TextStyle(
-                      color: reached ? AppColors.black : AppColors.muted,
-                      fontWeight:
-                          reached ? FontWeight.w800 : FontWeight.w600,
-                      fontSize: 13,
-                    ),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: reached ? AppColors.black : AppColors.muted,
+                          fontWeight:
+                              reached ? FontWeight.w800 : FontWeight.w600,
+                        ),
                   ),
                   if (e != null) ...[
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSizes.xs),
                     Text(
                       DateFormat('EEE d MMM · h:mm a').format(e.occurredAt.toLocal()),
-                      style: const TextStyle(
-                        color: AppColors.muted,
-                        fontSize: 11,
-                      ),
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: AppColors.muted,
+                          ),
                     ),
                   ],
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSizes.xs),
                 ],
               ),
             ),

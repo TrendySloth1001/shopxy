@@ -5,6 +5,7 @@ import 'package:shopxy_customer/features/marketplace/domain/entities/marketplace
 import 'package:shopxy_customer/features/wishlist/presentation/widgets/wishlist_heart_button.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
+import 'package:shopxy_customer/shared/theme/app_shadows.dart';
 
 /// PDP gallery — paginated image carousel with page indicator and an
 /// overlaid coupon pill when the product carries an `offers[]` row with
@@ -52,7 +53,7 @@ class _PdpGalleryState extends State<PdpGallery> {
         color: AppColors.heroPanel,
         alignment: Alignment.center,
         child: const Icon(Icons.image_outlined,
-            size: 48, color: AppColors.muted),
+            size: AppSizes.iconHuge, color: AppColors.muted),
       );
     }
     final coupon = _couponOffer;
@@ -101,9 +102,9 @@ class _PdpGalleryState extends State<PdpGallery> {
               children: [
                 for (var i = 0; i < widget.urls.length; i++)
                   Container(
-                    width: i == _index ? 16 : 6,
-                    height: 6,
-                    margin: const EdgeInsets.symmetric(horizontal: 2),
+                    width: i == _index ? AppSizes.lg : AppSizes.sm,
+                    height: AppSizes.sm,
+                    margin: const EdgeInsets.symmetric(horizontal: AppSizes.xs),
                     decoration: BoxDecoration(
                       color: i == _index
                           ? AppColors.black
@@ -127,31 +128,26 @@ class _CouponPill extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.sm, vertical: 6),
+          horizontal: AppSizes.sm, vertical: AppSizes.sm),
       decoration: BoxDecoration(
         color: const Color(0xFFE05A2A),
         borderRadius: BorderRadius.circular(AppSizes.radiusFull),
-        boxShadow: const [
-          BoxShadow(
-              color: Color(0x33000000),
-              blurRadius: 6,
-              offset: Offset(0, 2)),
-        ],
+        boxShadow: AppShadows.floating,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           const Icon(Icons.local_offer_rounded,
-              color: Colors.white, size: 13),
-          const SizedBox(width: 6),
+              color: AppColors.white, size: AppSizes.iconSm),
+          const SizedBox(width: AppSizes.sm),
           Text(
             offer.code != null && offer.code!.isNotEmpty
                 ? '${offer.headline} · ${offer.code}'
                 : offer.headline,
-            style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.w800),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.white,
+                  fontWeight: FontWeight.w800,
+                ),
           ),
         ],
       ),

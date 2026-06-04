@@ -18,6 +18,7 @@ import 'package:shopxy/features/vendors/presentation/pages/vendors_page.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/shared/theme/app_shadows.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 
 /// Profile tab — polished snapshot of the merchant identity plus the
@@ -75,7 +76,6 @@ class ProfilePage extends StatelessWidget {
               '${AppStrings.appName} · ${AppStrings.appTagline}',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     color: AppColors.muted,
-                    letterSpacing: 1.2,
                   ),
             ),
           ),
@@ -261,17 +261,11 @@ class _ProfileHero extends StatelessWidget {
             children: [
               // Slightly larger avatar with a ring to feel like a portrait.
               Container(
-                padding: const EdgeInsets.all(3),
+                padding: const EdgeInsets.all(AppSizes.xs),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: AppColors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.black.withValues(alpha: 0.04),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                  boxShadow: AppShadows.floating,
                 ),
                 child: ProfileAvatar(
                   name: name,
@@ -288,7 +282,6 @@ class _ProfileHero extends StatelessWidget {
                       name,
                       style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w800,
-                        letterSpacing: -0.4,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -317,7 +310,7 @@ class _ProfileHero extends StatelessWidget {
                     const SizedBox(height: AppSizes.sm),
                     Wrap(
                       spacing: AppSizes.xs,
-                      runSpacing: 4,
+                      runSpacing: AppSizes.xs,
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         _RoleChip(shopRole: shopRole),
@@ -345,7 +338,7 @@ class _ProfileHero extends StatelessWidget {
                 context,
                 MaterialPageRoute(builder: (_) => const EditProfilePage()),
               ),
-              icon: const Icon(Icons.edit_outlined, size: 16),
+              icon: const Icon(Icons.edit_outlined, size: AppSizes.iconSm),
               label: const Text(AppStrings.editProfile),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.brandStrong,
@@ -390,8 +383,8 @@ class _ShopSetupCallout extends StatelessWidget {
           child: Row(
             children: [
               Container(
-                width: 36,
-                height: 36,
+                width: AppSizes.xxxl,
+                height: AppSizes.xxxl,
                 decoration: ShapeDecoration(
                   color: AppColors.white,
                   shape: AppShapes.squircle(AppSizes.radiusSm),
@@ -399,7 +392,7 @@ class _ShopSetupCallout extends StatelessWidget {
                 alignment: Alignment.center,
                 child: const Icon(
                   Icons.storefront_rounded,
-                  size: 18,
+                  size: AppSizes.iconMd,
                   color: AppColors.accentAmber,
                 ),
               ),
@@ -454,7 +447,6 @@ class _SectionLabel extends StatelessWidget {
         style: Theme.of(context).textTheme.titleSmall?.copyWith(
               color: AppColors.muted,
               fontWeight: FontWeight.w700,
-              letterSpacing: 0.4,
             ),
       ),
     );
@@ -475,7 +467,7 @@ class _ManageCard extends StatelessWidget {
       if (i > 0) {
         rows.add(
           const Padding(
-            padding: EdgeInsets.only(left: AppSizes.lg + 36 + AppSizes.md),
+            padding: EdgeInsets.only(left: AppSizes.lg + AppSizes.xxxl + AppSizes.md),
             child: Divider(height: 1, color: AppColors.hairline),
           ),
         );
@@ -518,7 +510,7 @@ class _ManageTile extends StatelessWidget {
     final theme = Theme.of(context);
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+      borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
       child: Padding(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSizes.lg,
@@ -527,14 +519,14 @@ class _ManageTile extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              width: 36,
-              height: 36,
+              width: AppSizes.xxxl,
+              height: AppSizes.xxxl,
               decoration: ShapeDecoration(
                 color: accentSoft,
                 shape: AppShapes.squircle(AppSizes.radiusSm),
               ),
               alignment: Alignment.center,
-              child: Icon(icon, size: 18, color: accent),
+              child: Icon(icon, size: AppSizes.iconMd, color: accent),
             ),
             const SizedBox(width: AppSizes.md),
             Expanded(
@@ -610,7 +602,6 @@ class _RoleChip extends StatelessWidget {
         style: theme.textTheme.labelSmall?.copyWith(
           color: fg,
           fontWeight: FontWeight.w700,
-          letterSpacing: 0.4,
         ),
       ),
     );
@@ -637,8 +628,8 @@ class _MetaChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: AppColors.muted),
-          const SizedBox(width: 4),
+          Icon(icon, size: AppSizes.iconSm, color: AppColors.muted),
+          const SizedBox(width: AppSizes.xs),
           Text(
             label,
             style: theme.textTheme.labelSmall?.copyWith(

@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:shopxy_customer/shared/domain/entities/category.dart';
 import 'package:shopxy_customer/features/categories/presentation/pages/category_products_page.dart';
 import 'package:shopxy_customer/features/categories/presentation/widgets/category_image.dart';
+import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
+import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 
 /// Subcategory drill-down. Two pieces:
 ///   1. A hero card for the parent — tap pushes the rolled-up products
@@ -31,13 +33,13 @@ class CategoryDetailPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(node.category.name)),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSizes.lg),
         children: [
           InkWell(
             onTap: () => _open(context, node.category),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: AppShapes.squircleRadius(AppSizes.radiusLg),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: AppShapes.squircleRadius(AppSizes.radiusLg),
               child: AspectRatio(
                 aspectRatio: 1.9,
                 child: Stack(
@@ -45,36 +47,38 @@ class CategoryDetailPage extends StatelessWidget {
                   children: [
                     CategoryImage(category: node.category),
                     Container(
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
-                          colors: [Colors.transparent, Colors.black54],
+                          colors: [
+                            Colors.transparent,
+                            AppColors.black.withValues(alpha: 0.54),
+                          ],
                         ),
                       ),
                     ),
                     Positioned(
-                      left: 16,
-                      right: 16,
-                      bottom: 12,
+                      left: AppSizes.lg,
+                      right: AppSizes.lg,
+                      bottom: AppSizes.md,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             'Shop all in ${node.category.name}',
                             style: theme.textTheme.titleMedium?.copyWith(
-                              color: Colors.white,
+                              color: AppColors.white,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: AppSizes.xs),
                           Row(
-                            children: const [
+                            children: [
                               Text(
                                 'Across every subcategory →',
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 12,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: AppColors.white.withValues(alpha: 0.7),
                                 ),
                               ),
                             ],
@@ -88,21 +92,21 @@ class CategoryDetailPage extends StatelessWidget {
             ),
           ),
           if (children.isNotEmpty) ...[
-            const SizedBox(height: 18),
+            const SizedBox(height: AppSizes.xl),
             Text(
               'Subcategories',
               style: theme.textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: AppSizes.md),
             GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 3,
-                mainAxisSpacing: 14,
-                crossAxisSpacing: 12,
+                mainAxisSpacing: AppSizes.lg,
+                crossAxisSpacing: AppSizes.md,
                 childAspectRatio: 0.7,
               ),
               itemCount: children.length,
@@ -110,18 +114,19 @@ class CategoryDetailPage extends StatelessWidget {
                 final child = children[index];
                 return InkWell(
                   onTap: () => _open(context, child.category),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       AspectRatio(
                         aspectRatio: 1,
                         child: ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius:
+                              AppShapes.squircleRadius(AppSizes.radiusMd),
                           child: CategoryImage(category: child.category),
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: AppSizes.sm),
                       Text(
                         child.category.name,
                         style: theme.textTheme.bodySmall?.copyWith(

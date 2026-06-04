@@ -140,7 +140,7 @@ class _BackChip extends StatelessWidget {
         child: const Icon(
           Icons.arrow_back_rounded,
           color: AppColors.black,
-          size: 20,
+          size: AppSizes.iconMd,
         ),
       ),
     );
@@ -187,7 +187,7 @@ class _SearchField extends StatelessWidget {
             child: const Icon(
               Icons.search_rounded,
               color: AppColors.white,
-              size: 16,
+              size: AppSizes.iconSm,
             ),
           ),
           const SizedBox(width: AppSizes.sm),
@@ -198,18 +198,16 @@ class _SearchField extends StatelessWidget {
               textInputAction: TextInputAction.search,
               onChanged: onChanged,
               onSubmitted: onSubmitted,
-              style: const TextStyle(
-                color: AppColors.black,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.black,
+                    fontWeight: FontWeight.w600,
+                  ),
               decoration: InputDecoration(
                 hintText: AppStrings.searchProducts,
-                hintStyle: const TextStyle(
-                  color: AppColors.muted,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
+                hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.muted,
+                      fontWeight: FontWeight.w500,
+                    ),
                 isDense: true,
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
@@ -233,7 +231,7 @@ class _SearchField extends StatelessWidget {
                 child: const Icon(
                   Icons.close_rounded,
                   color: AppColors.muted,
-                  size: 14,
+                  size: AppSizes.iconSm,
                 ),
               ),
             ),
@@ -301,7 +299,7 @@ class _IdleView extends StatelessWidget {
                 alignment: Alignment.center,
                 child: const Icon(
                   Icons.search_rounded,
-                  size: 28,
+                  size: AppSizes.iconXl,
                   color: AppColors.brand,
                 ),
               ),
@@ -371,8 +369,8 @@ class _IdleView extends StatelessWidget {
                 onTap: p.clearRecent,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: AppSizes.sm + 2,
-                    vertical: 6,
+                    horizontal: AppSizes.md,
+                    vertical: AppSizes.sm,
                   ),
                   decoration: ShapeDecoration(
                     color: Colors.transparent,
@@ -384,14 +382,12 @@ class _IdleView extends StatelessWidget {
                       ),
                     ),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Clear',
-                    style: TextStyle(
-                      color: AppColors.muted,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 11.5,
-                      letterSpacing: 0.2,
-                    ),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: AppColors.muted,
+                          fontWeight: FontWeight.w700,
+                        ),
                   ),
                 ),
               ),
@@ -432,30 +428,29 @@ class _SectionHeading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           eyebrow,
-          style: const TextStyle(
+          style: theme.textTheme.labelSmall?.copyWith(
             color: AppColors.brand,
-            fontSize: 9.5,
             fontWeight: FontWeight.w800,
             letterSpacing: 0.9,
             height: 1.1,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: AppSizes.xs),
         Row(
           children: [
-            Icon(icon, color: AppColors.black, size: 18),
-            const SizedBox(width: 6),
+            Icon(icon, color: AppColors.black, size: AppSizes.iconMd),
+            const SizedBox(width: AppSizes.sm),
             Text(
               title,
-              style: const TextStyle(
+              style: theme.textTheme.titleMedium?.copyWith(
                 color: AppColors.black,
-                fontSize: 16,
                 fontWeight: FontWeight.w800,
                 letterSpacing: -0.2,
                 height: 1.15,
@@ -487,9 +482,9 @@ class _TrendingChip extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(
             AppSizes.sm,
-            AppSizes.xs + 2,
+            AppSizes.sm,
             AppSizes.md,
-            AppSizes.xs + 2,
+            AppSizes.sm,
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -505,22 +500,21 @@ class _TrendingChip extends StatelessWidget {
                 child: const Icon(
                   Icons.local_fire_department_rounded,
                   color: AppColors.brand,
-                  size: 13,
+                  size: AppSizes.iconSm,
                 ),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: AppSizes.sm),
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 200),
                 child: Text(
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppColors.black,
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.1,
-                  ),
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: AppColors.black,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.1,
+                      ),
                 ),
               ),
             ],
@@ -555,28 +549,27 @@ class _RecentRow extends StatelessWidget {
               child: const Icon(
                 Icons.history_rounded,
                 color: AppColors.muted,
-                size: 14,
+                size: AppSizes.iconSm,
               ),
             ),
-            const SizedBox(width: AppSizes.sm + 2),
+            const SizedBox(width: AppSizes.md),
             Expanded(
               child: Text(
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: AppColors.black,
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: -0.1,
-                ),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.black,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: -0.1,
+                    ),
               ),
             ),
             const SizedBox(width: AppSizes.sm),
             const Icon(
               Icons.north_west_rounded,
               color: AppColors.muted,
-              size: 16,
+              size: AppSizes.iconSm,
             ),
           ],
         ),
@@ -599,14 +592,14 @@ class _LoadingResults extends StatelessWidget {
       separatorBuilder: (_, index) => const SizedBox(height: AppSizes.md),
       itemBuilder: (_, index) => Row(
         children: const [
-          AppShimmerBox(width: 56, height: 56, radius: 12),
+          AppShimmerBox(width: 56, height: 56, radius: AppSizes.radiusMd),
           SizedBox(width: AppSizes.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 AppShimmerLine(widthFactor: 0.7, height: 12),
-                SizedBox(height: 6),
+                SizedBox(height: AppSizes.sm),
                 AppShimmerLine(widthFactor: 0.4, height: 10),
               ],
             ),
@@ -675,7 +668,7 @@ class _ResultsList extends StatelessWidget {
             child: Row(
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(AppSizes.radiusSm),
+                  borderRadius: AppShapes.squircleRadius(AppSizes.radiusSm),
                   child: Container(
                     width: 56, height: 56,
                     color: AppColors.heroPanel,
@@ -698,7 +691,7 @@ class _ResultsList extends StatelessWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: AppSizes.xs),
                       if (p.shopName.isNotEmpty)
                         GestureDetector(
                           onTap: () => Navigator.push(
@@ -717,17 +710,16 @@ class _ResultsList extends StatelessWidget {
                         ),
                       if (p.ratingAvg != null)
                         Padding(
-                          padding: const EdgeInsets.only(top: 2),
+                          padding: const EdgeInsets.only(top: AppSizes.xs),
                           child: Row(
                             children: [
                               const Icon(Icons.star_rounded,
-                                  color: AppColors.success, size: 12),
-                              const SizedBox(width: 2),
+                                  color: AppColors.success, size: AppSizes.iconSm),
+                              const SizedBox(width: AppSizes.xs),
                               Text(
                                 '${p.ratingAvg!.toStringAsFixed(1)} (${p.ratingCount})',
-                                style: const TextStyle(
+                                style: theme.textTheme.labelSmall?.copyWith(
                                   color: AppColors.muted,
-                                  fontSize: 11,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -766,20 +758,19 @@ class _SemanticBadge extends StatelessWidget {
         children: [
           Icon(
             semantic ? Icons.auto_awesome_rounded : Icons.search_rounded,
-            size: 14,
+            size: AppSizes.iconSm,
             color: semantic ? AppColors.brand : AppColors.muted,
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: AppSizes.xs),
           Text(
             semantic
                 ? '$count results · ranked by AI'
                 : '$count results',
-            style: TextStyle(
-              color: semantic ? AppColors.brand : AppColors.muted,
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.3,
-            ),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: semantic ? AppColors.brand : AppColors.muted,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.3,
+                ),
           ),
         ],
       ),
@@ -802,7 +793,7 @@ class _NoMatches extends StatelessWidget {
           children: [
             const Icon(
               Icons.search_off_rounded,
-              size: 48,
+              size: AppSizes.iconHuge,
               color: AppColors.muted,
             ),
             const SizedBox(height: AppSizes.md),
@@ -879,16 +870,15 @@ class _FilterButton extends StatelessWidget {
       onPressed: disabled ? null : onTap,
       icon: Icon(
         Icons.tune_rounded,
-        size: 18,
+        size: AppSizes.iconMd,
         color: hasActive ? AppColors.brand : AppColors.muted,
       ),
       label: Text(
         hasActive ? 'Filters · $activeCount' : 'Filters',
-        style: TextStyle(
-          color: hasActive ? AppColors.brand : AppColors.muted,
-          fontWeight: FontWeight.w700,
-          fontSize: 12,
-        ),
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: hasActive ? AppColors.brand : AppColors.muted,
+              fontWeight: FontWeight.w700,
+            ),
       ),
       style: TextButton.styleFrom(
         visualDensity: VisualDensity.compact,

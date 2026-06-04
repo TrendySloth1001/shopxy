@@ -51,7 +51,7 @@ class _WalletPageState extends State<WalletPage> {
           if (snap.hasError) {
             return Center(
               child: Padding(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(AppSizes.xxl),
                 child: Text(snap.error.toString()
                     .replaceFirst('Exception: ', '')),
               ),
@@ -67,14 +67,12 @@ class _WalletPageState extends State<WalletPage> {
               children: [
                 _BalanceCard(balance: data.balance),
                 const SizedBox(height: AppSizes.lg),
-                const Text(
+                Text(
                   'RECENT ACTIVITY',
-                  style: TextStyle(
-                    color: AppColors.muted,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 11,
-                    letterSpacing: 0.5,
-                  ),
+                  style: Theme.of(context)
+                      .textTheme
+                      .labelSmall
+                      ?.copyWith(color: AppColors.muted),
                 ),
                 const SizedBox(height: AppSizes.sm),
                 if (data.entries.isEmpty)
@@ -124,35 +122,34 @@ class _BalanceCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.account_balance_wallet_rounded,
-                  color: Colors.white, size: 18),
-              SizedBox(width: 6),
+              const Icon(Icons.account_balance_wallet_rounded,
+                  color: AppColors.white, size: AppSizes.iconMd),
+              const SizedBox(width: AppSizes.sm),
               Text(
                 'WALLET BALANCE',
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 11,
-                  letterSpacing: 0.5,
-                ),
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: AppColors.white.withValues(alpha: 0.7),
+                    ),
               ),
             ],
           ),
           const SizedBox(height: AppSizes.sm),
           Text(
             '₹${balance.toStringAsFixed(balance == balance.roundToDouble() ? 0 : 2)}',
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w800,
-              fontSize: 36,
-            ),
+            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                  color: AppColors.white,
+                  fontWeight: FontWeight.w800,
+                ),
           ),
-          const SizedBox(height: 4),
-          const Text(
+          const SizedBox(height: AppSizes.xs),
+          Text(
             'Use at checkout — refunds, coupons and rewards land here.',
-            style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.4),
+            style: Theme.of(context)
+                .textTheme
+                .bodySmall
+                ?.copyWith(color: AppColors.white.withValues(alpha: 0.7)),
           ),
         ],
       ),
@@ -192,13 +189,13 @@ class _LedgerRow extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 36,
-            height: 36,
+            width: AppSizes.xxxl,
+            height: AppSizes.xxxl,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: color.withValues(alpha: 0.1),
             ),
-            child: Icon(_icon(), color: color, size: 18),
+            child: Icon(_icon(), color: color, size: AppSizes.iconMd),
           ),
           const SizedBox(width: AppSizes.md),
           Expanded(
@@ -207,20 +204,20 @@ class _LedgerRow extends StatelessWidget {
               children: [
                 Text(
                   entry.description,
-                  style: const TextStyle(
-                    color: AppColors.black,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(fontWeight: FontWeight.w700),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSizes.xs),
                 Text(
                   DateFormat('d MMM · h:mm a').format(entry.createdAt.toLocal()),
-                  style: const TextStyle(
-                    color: AppColors.muted,
-                    fontSize: 11,
-                  ),
+                  style: Theme.of(context)
+                      .textTheme
+                      .labelSmall
+                      ?.copyWith(color: AppColors.muted),
                 ),
               ],
             ),
@@ -228,11 +225,10 @@ class _LedgerRow extends StatelessWidget {
           const SizedBox(width: AppSizes.sm),
           Text(
             '$sign₹${entry.amount.abs().toStringAsFixed(0)}',
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.w800,
-              fontSize: 14,
-            ),
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w800,
+                ),
           ),
         ],
       ),
@@ -251,17 +247,18 @@ class _EmptyLedger extends StatelessWidget {
         color: AppColors.white,
         shape: AppShapes.squircle(AppSizes.radiusMd),
       ),
-      child: const Center(
+      child: Center(
         child: Column(
           children: [
-            Icon(Icons.history_rounded, color: AppColors.muted, size: 32),
-            SizedBox(height: 6),
+            const Icon(Icons.history_rounded,
+                color: AppColors.muted, size: AppSizes.iconXl),
+            const SizedBox(height: AppSizes.sm),
             Text(
               'No activity yet',
-              style: TextStyle(
-                color: AppColors.muted,
-                fontWeight: FontWeight.w700,
-              ),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.muted,
+                    fontWeight: FontWeight.w700,
+                  ),
             ),
           ],
         ),

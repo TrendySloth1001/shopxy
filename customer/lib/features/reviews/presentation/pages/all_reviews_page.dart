@@ -7,6 +7,7 @@ import 'package:shopxy_customer/features/reviews/presentation/widgets/review_til
 import 'package:shopxy_customer/features/reviews/presentation/widgets/star_row.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
+import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 
 /// Paginated all-reviews page. Loads page 1 on mount; appends pages as
 /// the user scrolls within ~400px of the bottom. Filter chips switch
@@ -139,7 +140,7 @@ class _AllReviewsPageState extends State<AllReviewsPage> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openWriteSheet,
         backgroundColor: AppColors.brand,
-        foregroundColor: Colors.white,
+        foregroundColor: AppColors.white,
         icon: const Icon(Icons.edit_outlined),
         label: const Text('Rate product'),
       ),
@@ -159,21 +160,21 @@ class _AllReviewsPageState extends State<AllReviewsPage> {
     if (list.isEmpty) {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        children: const [
-          SizedBox(height: 80),
+        children: [
+          const SizedBox(height: 80),
           Center(
             child: Padding(
-              padding: EdgeInsets.all(AppSizes.xl),
+              padding: const EdgeInsets.all(AppSizes.xl),
               child: Column(
                 children: [
-                  StarRow(rating: 0, size: 28),
-                  SizedBox(height: AppSizes.sm),
+                  const StarRow(rating: 0, size: AppSizes.iconXl),
+                  const SizedBox(height: AppSizes.sm),
                   Text(
                     'No reviews match this filter.',
-                    style: TextStyle(
-                      color: AppColors.muted,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(color: AppColors.muted),
                   ),
                 ],
               ),
@@ -219,24 +220,21 @@ class _FilterChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: selected ? AppColors.brand : AppColors.heroPanel,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppSizes.radiusFull),
-      ),
+      shape: AppShapes.squircle(AppSizes.radiusFull),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(AppSizes.radiusFull),
+        customBorder: AppShapes.squircle(AppSizes.radiusFull),
         child: Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppSizes.md,
-            vertical: 6,
+            vertical: AppSizes.sm,
           ),
           child: Text(
             label,
-            style: TextStyle(
-              color: selected ? Colors.white : AppColors.black,
-              fontWeight: FontWeight.w800,
-              fontSize: 12,
-            ),
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: selected ? AppColors.white : AppColors.black,
+                  fontWeight: FontWeight.w800,
+                ),
           ),
         ),
       ),
@@ -258,17 +256,23 @@ class _ErrorView extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(Icons.cloud_off_outlined,
-                size: 48, color: AppColors.muted),
+                size: AppSizes.iconHuge, color: AppColors.muted),
             const SizedBox(height: AppSizes.sm),
-            const Text(
+            Text(
               "Couldn't load reviews",
-              style: TextStyle(fontWeight: FontWeight.w800),
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w800),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSizes.xs),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.muted, fontSize: 12),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: AppColors.muted),
             ),
             const SizedBox(height: AppSizes.md),
             FilledButton.icon(

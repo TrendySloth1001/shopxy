@@ -166,7 +166,7 @@ class _ChangeRow extends StatelessWidget {
                     fontFeatures: const [FontFeature.tabularFigures()],
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSizes.xs),
                 Text(
                   actor == null
                       ? dateFmt.format(entry.changedAt.toLocal())

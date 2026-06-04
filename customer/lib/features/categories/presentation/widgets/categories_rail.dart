@@ -20,10 +20,10 @@ class CategoriesRail extends StatelessWidget {
   const CategoriesRail({super.key});
 
   /// Diameter of the round thumbnail inside each chip.
-  static const double _thumb = 30;
+  static const double _thumb = AppSizes.iconXl;
 
-  /// Fixed chip height = thumbnail + the 5px inset above and below it.
-  static const double _chipHeight = _thumb + 10;
+  /// Fixed chip height = thumbnail + the inset above and below it.
+  static const double _chipHeight = _thumb + AppSizes.md;
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +31,7 @@ class CategoriesRail extends StatelessWidget {
     if (tree.isEmpty) return const SizedBox.shrink();
     return Container(
       color: AppColors.white,
-      padding: const EdgeInsets.symmetric(vertical: AppSizes.sm + 2),
+      padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
       child: SizedBox(
         height: _chipHeight,
         child: ListView.separated(
@@ -83,6 +83,7 @@ class _CategoryChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     const d = CategoriesRail._thumb;
     final Widget leading = category != null
         ? ClipOval(
@@ -101,7 +102,7 @@ class _CategoryChip extends StatelessWidget {
             ),
             alignment: Alignment.center,
             child: const Icon(Icons.apps_rounded,
-                color: AppColors.black, size: 18),
+                color: AppColors.black, size: AppSizes.iconMd),
           );
 
     return Material(
@@ -114,7 +115,8 @@ class _CategoryChip extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(5, 5, AppSizes.md, 5),
+          padding: const EdgeInsets.fromLTRB(
+              AppSizes.xs, AppSizes.xs, AppSizes.md, AppSizes.xs),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -124,11 +126,8 @@ class _CategoryChip extends StatelessWidget {
                 category?.name ?? label!,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: theme.textTheme.labelLarge?.copyWith(
                   color: AppColors.black,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: -0.1,
                 ),
               ),
             ],

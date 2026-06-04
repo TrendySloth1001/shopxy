@@ -7,6 +7,7 @@ import 'package:shopxy/features/parties/domain/entities/party.dart';
 import 'package:shopxy/features/products/domain/entities/product.dart';
 import 'package:shopxy/features/stock/data/datasources/stock_remote_data_source.dart';
 import 'package:shopxy/features/stock/presentation/providers/stock_provider.dart';
+import 'package:shopxy/shared/constants/app_durations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
@@ -103,7 +104,7 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
       _selectedParty = null;
     }
     _partyDebounce?.cancel();
-    _partyDebounce = Timer(const Duration(milliseconds: 240), () {
+    _partyDebounce = Timer(AppDurations.medium, () {
       _searchParties(query);
     });
   }
@@ -154,7 +155,7 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
     if (query == _lastSupplierQuery) return;
     _lastSupplierQuery = query;
     _supplierDebounce?.cancel();
-    _supplierDebounce = Timer(const Duration(milliseconds: 240), () {
+    _supplierDebounce = Timer(AppDurations.medium, () {
       _loadSupplierOptions(query: query.isEmpty ? null : query);
     });
   }
@@ -265,11 +266,11 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
               // Handle
               Center(
                 child: Container(
-                  width: 40,
-                  height: 4,
+                  width: AppSizes.xxxl + AppSizes.sm,
+                  height: AppSizes.xs,
                   decoration: ShapeDecoration(
                     color: AppColors.hairline,
-                    shape: AppShapes.squircle(2),
+                    shape: AppShapes.squircle(AppSizes.radiusFull),
                   ),
                 ),
               ),
@@ -278,7 +279,7 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
               Center(
                 child: LineIllustration(
                   kind: _type == 'STOCK_IN' ? LineArt.cable : LineArt.receipt,
-                  size: 76,
+                  size: AppSizes.massive + AppSizes.md,
                   accent: AppColors.brand,
                 ),
               ),
@@ -424,8 +425,8 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
                         ? const Padding(
                             padding: EdgeInsets.all(AppSizes.md),
                             child: SizedBox(
-                              width: 16,
-                              height: 16,
+                              width: AppSizes.lg,
+                              height: AppSizes.lg,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             ),
                           )
@@ -444,7 +445,7 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
                           p.name == 'Walk-in Customer'
                               ? Icons.directions_walk_rounded
                               : Icons.person_rounded,
-                          size: 16,
+                          size: AppSizes.iconSm,
                         ),
                         onPressed: () => _pickParty(p),
                       );
@@ -481,7 +482,7 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
                             isSelected ? _clearVendor() : _selectVendor(v),
                         avatar: Icon(
                           Icons.business_rounded,
-                          size: 14,
+                          size: AppSizes.iconSm,
                           color: isSelected
                               ? Theme.of(
                                   context,

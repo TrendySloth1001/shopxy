@@ -52,10 +52,13 @@ class _ShopQuotationsPageState extends State<ShopQuotationsPage> {
           if (sent == true) prov.loadQuotations(widget.shop);
         },
         backgroundColor: AppColors.brand,
-        foregroundColor: Colors.white,
+        foregroundColor: AppColors.white,
         icon: const Icon(Icons.add_rounded),
-        label: const Text('Request a quote',
-            style: TextStyle(fontWeight: FontWeight.w800)),
+        label: Text('Request a quote',
+            style: Theme.of(context)
+                .textTheme
+                .labelLarge
+                ?.copyWith(fontWeight: FontWeight.w800)),
       ),
       body: RefreshIndicator(
         color: AppColors.brand,
@@ -64,16 +67,19 @@ class _ShopQuotationsPageState extends State<ShopQuotationsPage> {
             ? const Center(child: CircularProgressIndicator())
             : quotes.isEmpty
                 ? ListView(
-                    children: const [
-                      SizedBox(height: 120),
-                      Icon(Icons.request_quote_outlined,
-                          size: 44, color: AppColors.muted),
-                      SizedBox(height: AppSizes.md),
+                    children: [
+                      const SizedBox(height: 120),
+                      const Icon(Icons.request_quote_outlined,
+                          size: AppSizes.iconHuge, color: AppColors.muted),
+                      const SizedBox(height: AppSizes.md),
                       Center(
                         child: Text(
                             'No quotations yet. Tap “Request a quote” to ask\nthis shop to price a basket for you.',
                             textAlign: TextAlign.center,
-                            style: TextStyle(color: AppColors.muted)),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(color: AppColors.muted)),
                       ),
                     ],
                   )
@@ -159,19 +165,17 @@ class _QuotationRow extends StatelessWidget {
                       const SizedBox(width: AppSizes.sm),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 2),
+                            horizontal: AppSizes.sm, vertical: AppSizes.xs),
                         decoration: ShapeDecoration(
                             color: bg,
                             shape: AppShapes.squircle(AppSizes.radiusFull)),
                         child: Text(label,
-                            style: TextStyle(
-                                color: fg,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 11)),
+                            style: theme.textTheme.labelSmall?.copyWith(
+                                color: fg, fontWeight: FontWeight.w800)),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: AppSizes.xs),
                   Text(
                     '${dateFmt.format(q.createdAt.toLocal())} · ${q.items.length} item(s)',
                     style: theme.textTheme.bodySmall

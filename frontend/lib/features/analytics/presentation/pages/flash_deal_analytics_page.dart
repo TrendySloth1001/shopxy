@@ -92,22 +92,28 @@ class _Body extends StatelessWidget {
                 data.productName,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: AppSizes.xs),
               Text(
                 '${df.format(data.startAt)}  →  ${df.format(data.endAt)}',
-                style: const TextStyle(color: AppColors.muted),
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: AppColors.muted),
               ),
               const SizedBox(height: AppSizes.md),
               LinearProgressIndicator(
                 value: pct,
-                minHeight: 8,
+                minHeight: AppSizes.sm,
                 backgroundColor: AppColors.heroPanel,
                 valueColor: const AlwaysStoppedAnimation(AppColors.brand),
               ),
               const SizedBox(height: AppSizes.sm),
               Text(
                 '${data.soldCount} / ${data.stockLimit} sold',
-                style: const TextStyle(color: AppColors.muted),
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: AppColors.muted),
               ),
             ],
           ),
@@ -120,9 +126,12 @@ class _Body extends StatelessWidget {
               color: AppColors.heroPanel,
               shape: AppShapes.squircle(AppSizes.radiusMd),
             ),
-            child: const Text(
+            child: Text(
               'No traffic during this window yet.',
-              style: TextStyle(color: AppColors.muted),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: AppColors.muted),
             ),
           )
         else
@@ -163,14 +172,14 @@ class _BarChart extends StatelessWidget {
           ),
           const SizedBox(height: AppSizes.sm),
           SizedBox(
-            height: 200,
+            height: AppSizes.qrCodeSize,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 for (final p in series)
                   Expanded(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: AppSizes.xs),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
@@ -180,27 +189,30 @@ class _BarChart extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
                                 _Bar(
-                                  height: 200 * (p.sold / maxValue),
+                                  height:
+                                      AppSizes.qrCodeSize * (p.sold / maxValue),
                                   color: AppColors.brand,
                                 ),
                                 _Bar(
-                                  height: 200 * (p.taps / maxValue),
+                                  height:
+                                      AppSizes.qrCodeSize * (p.taps / maxValue),
                                   color: AppColors.accentIndigo,
                                 ),
                                 _Bar(
-                                  height: 200 * (p.views / maxValue),
+                                  height:
+                                      AppSizes.qrCodeSize * (p.views / maxValue),
                                   color: AppColors.accentTeal,
                                 ),
                               ],
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: AppSizes.xs),
                           Text(
                             df.format(p.hour.toLocal()),
-                            style: const TextStyle(
-                              fontSize: 10,
-                              color: AppColors.muted,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelSmall
+                                ?.copyWith(color: AppColors.muted),
                           ),
                         ],
                       ),
@@ -224,8 +236,8 @@ class _Bar extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 1),
       child: Container(
-        width: 6,
-        height: height.clamp(2.0, 200.0),
+        width: AppSizes.sm,
+        height: height.clamp(2.0, AppSizes.qrCodeSize),
         decoration: BoxDecoration(
           color: color,
           borderRadius: BorderRadius.circular(2),
@@ -244,12 +256,12 @@ class _LegendDot extends StatelessWidget {
     return Row(
       children: [
         Container(
-          width: 10,
-          height: 10,
+          width: AppSizes.md,
+          height: AppSizes.md,
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
-        const SizedBox(width: 6),
-        Text(label, style: const TextStyle(fontSize: 12)),
+        const SizedBox(width: AppSizes.sm),
+        Text(label, style: Theme.of(context).textTheme.labelMedium),
       ],
     );
   }

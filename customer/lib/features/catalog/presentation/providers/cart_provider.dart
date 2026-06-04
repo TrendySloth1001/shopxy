@@ -8,6 +8,7 @@ import 'package:shopxy_customer/features/catalog/data/datasources/cart_remote_da
 import 'package:shopxy_customer/features/catalog/domain/entities/cart_item.dart';
 import 'package:shopxy_customer/shared/domain/entities/catalog_product.dart';
 import 'package:shopxy_customer/features/orders/data/datasources/orders_remote_data_source.dart';
+import 'package:shopxy_customer/shared/constants/app_durations.dart';
 
 /// Outcome of [CartProvider.placeOrder]. On success [orderId] is the
 /// parent CustomerOrder id and [shopOrderCount] is how many vendor
@@ -466,10 +467,10 @@ class CartProvider extends ChangeNotifier {
   }
 
   void _persist() {
-    // Coalesce rapid mutations (stepper hold) into one write. 250ms is
-    // imperceptible but cuts the I/O by 10x during a tap-storm.
+    // Coalesce rapid mutations (stepper hold) into one write. A short
+    // debounce is imperceptible but cuts the I/O by 10x during a tap-storm.
     _saveDebounce?.cancel();
-    _saveDebounce = Timer(const Duration(milliseconds: 250), _writeNow);
+    _saveDebounce = Timer(AppDurations.medium, _writeNow);
   }
 
   Future<void> _writeNow() async {

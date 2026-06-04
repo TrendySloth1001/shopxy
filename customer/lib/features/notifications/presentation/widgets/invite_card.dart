@@ -109,7 +109,7 @@ class InviteCard extends StatelessWidget {
               AppSizes.md,
               0,
               AppSizes.md,
-              AppSizes.sm + 2,
+              AppSizes.md,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -124,10 +124,10 @@ class InviteCard extends StatelessWidget {
                         logoUrl: invite.shopLogoUrl,
                         fallbackInitial: _initial(shopName ?? userName),
                       ),
-                      const SizedBox(width: AppSizes.sm + 2),
+                      const SizedBox(width: AppSizes.md),
                       Expanded(
                         child: Padding(
-                          padding: const EdgeInsets.only(top: 22),
+                          padding: const EdgeInsets.only(top: AppSizes.xxl),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -140,37 +140,43 @@ class InviteCard extends StatelessWidget {
                                   if (extraCount > 0)
                                     Text(
                                       '+$extraCount more',
-                                      style: const TextStyle(
-                                        color: AppColors.muted,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w700,
-                                      ),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelSmall
+                                          ?.copyWith(
+                                            color: AppColors.muted,
+                                            fontWeight: FontWeight.w700,
+                                          ),
                                     ),
                                   if (!actionable) _StatusChip(invite: invite),
                                 ],
                               ),
-                              const SizedBox(height: 6),
+                              const SizedBox(height: AppSizes.sm),
                               Text(
                                 title,
-                                style: const TextStyle(
-                                  color: AppColors.black,
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 14.5,
-                                  letterSpacing: -0.1,
-                                  height: 1.25,
-                                ),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                      color: AppColors.black,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: -0.1,
+                                      height: 1.25,
+                                    ),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 2),
                               Text(
                                 subtitle,
-                                style: const TextStyle(
-                                  color: AppColors.muted,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                  height: 1.3,
-                                ),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                      color: AppColors.muted,
+                                      fontWeight: FontWeight.w500,
+                                      height: 1.3,
+                                    ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -185,7 +191,7 @@ class InviteCard extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.only(top: AppSizes.xs),
                     child: Container(
-                      padding: const EdgeInsets.all(AppSizes.sm + 2),
+                      padding: const EdgeInsets.all(AppSizes.md),
                       decoration: ShapeDecoration(
                         color: AppColors.heroPanel,
                         shape: AppShapes.squircle(AppSizes.radiusSm),
@@ -195,19 +201,21 @@ class InviteCard extends StatelessWidget {
                         children: [
                           const Icon(
                             Icons.format_quote_rounded,
-                            size: 14,
+                            size: AppSizes.iconSm,
                             color: AppColors.muted,
                           ),
                           const SizedBox(width: AppSizes.xs),
                           Expanded(
                             child: Text(
                               invite.message!,
-                              style: const TextStyle(
-                                color: AppColors.black,
-                                fontSize: 12.5,
-                                height: 1.4,
-                                fontWeight: FontWeight.w500,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: AppColors.black,
+                                    height: 1.4,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                             ),
                           ),
                         ],
@@ -257,11 +265,10 @@ class InviteCard extends StatelessWidget {
                     ),
                     child: Text(
                       'Expires ${_formatExpiry(invite.expiresAt)}',
-                      style: const TextStyle(
-                        color: AppColors.muted,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: AppColors.muted,
+                            fontWeight: FontWeight.w600,
+                          ),
                     ),
                   ),
                 if (reviewAllLabel != null && onReviewAll != null) ...[
@@ -271,17 +278,16 @@ class InviteCard extends StatelessWidget {
                       style: TextButton.styleFrom(
                         foregroundColor: AppColors.brand,
                         padding: EdgeInsets.zero,
-                        minimumSize: const Size(0, 28),
+                        minimumSize: const Size(0, AppSizes.xxl),
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
                       onPressed: onReviewAll,
                       child: Text(
                         reviewAllLabel!,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.brand,
-                        ),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.brand,
+                            ),
                       ),
                     ),
                   ),
@@ -349,7 +355,7 @@ class _Cover extends StatelessWidget {
                     child: const Icon(
                       Icons.storefront_rounded,
                       color: AppColors.brand,
-                      size: 36,
+                      size: AppSizes.iconXl,
                     ),
                   ),
           ),
@@ -378,8 +384,8 @@ class _Cover extends StatelessWidget {
                 behavior: HitTestBehavior.opaque,
                 onTap: onDismiss,
                 child: Container(
-                  width: 28,
-                  height: 28,
+                  width: AppSizes.xxl,
+                  height: AppSizes.xxl,
                   decoration: BoxDecoration(
                     color: AppColors.black.withValues(alpha: 0.55),
                     shape: BoxShape.circle,
@@ -388,7 +394,7 @@ class _Cover extends StatelessWidget {
                   child: const Icon(
                     Icons.close_rounded,
                     color: AppColors.white,
-                    size: 16,
+                    size: AppSizes.iconSm,
                   ),
                 ),
               ),
@@ -419,7 +425,7 @@ class _ShopLogo extends StatelessWidget {
       ),
       padding: const EdgeInsets.all(3),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppSizes.radiusSm),
+        borderRadius: AppShapes.squircleRadius(AppSizes.radiusSm),
         child: hasLogo
             ? NetworkImageBox(url: resolveImageUrl(logoUrl!))
             : Container(
@@ -427,11 +433,10 @@ class _ShopLogo extends StatelessWidget {
                 alignment: Alignment.center,
                 child: Text(
                   fallbackInitial,
-                  style: const TextStyle(
-                    color: AppColors.brand,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                  ),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: AppColors.brand,
+                        fontWeight: FontWeight.w900,
+                      ),
                 ),
               ),
       ),
@@ -443,19 +448,18 @@ class _NewBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm, vertical: 2),
+      decoration: ShapeDecoration(
         color: AppColors.brand,
-        borderRadius: BorderRadius.circular(3),
+        shape: AppShapes.squircle(AppSizes.radiusSm),
       ),
-      child: const Text(
+      child: Text(
         'NEW INVITE',
-        style: TextStyle(
-          color: AppColors.white,
-          fontSize: 9,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 0.6,
-        ),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: AppColors.white,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.6,
+            ),
       ),
     );
   }
@@ -479,19 +483,18 @@ class _StatusChip extends StatelessWidget {
       InviteStatus.pending => ('Pending', AppColors.info, AppColors.infoSoft),
     };
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm, vertical: 3),
       decoration: ShapeDecoration(
         color: soft,
         shape: AppShapes.squircle(AppSizes.radiusFull),
       ),
       child: Text(
         label,
-        style: TextStyle(
-          color: color,
-          fontSize: 10,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 0.4,
-        ),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.4,
+            ),
       ),
     );
   }
@@ -515,15 +518,14 @@ class _GhostButton extends StatelessWidget {
         onTap: onTap,
         customBorder: AppShapes.squircle(AppSizes.radiusMd),
         child: Container(
-          height: 42,
+          height: AppSizes.huge,
           alignment: Alignment.center,
           child: Text(
             label,
-            style: TextStyle(
-              color: disabled ? AppColors.disabled : AppColors.muted,
-              fontWeight: FontWeight.w700,
-              fontSize: 13.5,
-            ),
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: disabled ? AppColors.disabled : AppColors.muted,
+                  fontWeight: FontWeight.w700,
+                ),
           ),
         ),
       ),
@@ -550,12 +552,12 @@ class _SolidButton extends StatelessWidget {
         onTap: onTap,
         customBorder: AppShapes.squircle(AppSizes.radiusMd),
         child: Container(
-          height: 42,
+          height: AppSizes.huge,
           alignment: Alignment.center,
           child: busy
               ? const SizedBox(
-                  width: 16,
-                  height: 16,
+                  width: AppSizes.iconSm,
+                  height: AppSizes.iconSm,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
                     color: AppColors.white,
@@ -566,18 +568,17 @@ class _SolidButton extends StatelessWidget {
                   children: [
                     Text(
                       label,
-                      style: const TextStyle(
-                        color: AppColors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 13.5,
-                        letterSpacing: 0.2,
-                      ),
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            color: AppColors.white,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.2,
+                          ),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: AppSizes.sm),
                     const Icon(
                       Icons.arrow_forward_rounded,
                       color: AppColors.white,
-                      size: 16,
+                      size: AppSizes.iconSm,
                     ),
                   ],
                 ),

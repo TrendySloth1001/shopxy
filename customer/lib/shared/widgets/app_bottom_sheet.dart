@@ -52,7 +52,7 @@ Future<T?> showAppBottomSheet<T>(
                     ),
                     IconButton(
                       onPressed: () => Navigator.of(ctx).pop(),
-                      icon: const Icon(Icons.close_rounded, size: 20),
+                      icon: const Icon(Icons.close_rounded, size: AppSizes.iconMd),
                       tooltip: 'Close',
                       visualDensity: VisualDensity.compact,
                     ),
@@ -75,8 +75,8 @@ class _GrabHandle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Container(
-        width: 36,
-        height: 4,
+        width: AppSizes.xxxl,
+        height: AppSizes.xs,
         decoration: BoxDecoration(
           color: AppColors.hairline,
           borderRadius: BorderRadius.circular(2),

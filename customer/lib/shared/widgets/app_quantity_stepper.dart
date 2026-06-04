@@ -40,7 +40,7 @@ class AppQuantityStepper extends StatelessWidget {
   bool get _canInc => maxQuantity == null || quantity < maxQuantity!;
 
   double get _height => dense ? 36 : 44;
-  double get _iconSize => dense ? 16 : 18;
+  double get _iconSize => dense ? AppSizes.iconSm : 18;
   double get _hPad => dense ? AppSizes.sm : AppSizes.md;
 
   @override
@@ -95,7 +95,7 @@ class AppQuantityStepper extends StatelessWidget {
               onTap: () => onChanged(quantity - 1),
             ),
             SizedBox(
-              width: dense ? 28 : 36,
+              width: dense ? AppSizes.xxl : AppSizes.xxxl,
               child: Center(
                 child: Text(
                   '$quantity',

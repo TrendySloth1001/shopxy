@@ -126,8 +126,8 @@ class _CarouselCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: AppSizes.huge,
+                height: AppSizes.huge,
                 decoration: ShapeDecoration(
                   color: live ? AppColors.brandSoft : AppColors.surfaceTint,
                   shape: AppShapes.squircle(AppSizes.radiusMd),
@@ -145,15 +145,15 @@ class _CarouselCard extends StatelessWidget {
                   children: [
                     Text(
                       carousel.name,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 16,
-                      ),
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleMedium
+                          ?.copyWith(fontWeight: FontWeight.w800),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: AppSizes.xs),
                     Wrap(
                       spacing: AppSizes.sm,
-                      runSpacing: 4,
+                      runSpacing: AppSizes.xs,
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         _MetaChip(
@@ -206,7 +206,7 @@ class _MetaChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSizes.sm,
-        vertical: 2,
+        vertical: AppSizes.xs,
       ),
       decoration: ShapeDecoration(
         color: AppColors.surfaceTint,
@@ -215,15 +215,14 @@ class _MetaChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: tint),
-          const SizedBox(width: 4),
+          Icon(icon, size: AppSizes.iconSm, color: tint),
+          const SizedBox(width: AppSizes.xs),
           Text(
             label,
-            style: TextStyle(
-              color: tint,
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-            ),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: tint,
+                  fontWeight: FontWeight.w700,
+                ),
           ),
         ],
       ),
@@ -245,21 +244,27 @@ class _EmptyView extends StatelessWidget {
           children: [
             const Icon(
               Icons.view_carousel_outlined,
-              size: 48,
+              size: AppSizes.iconHuge,
               color: AppColors.muted,
             ),
             const SizedBox(height: AppSizes.md),
-            const Text(
+            Text(
               'No carousels yet',
-              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w800),
             ),
-            const SizedBox(height: 4),
-            const Text(
+            const SizedBox(height: AppSizes.xs),
+            Text(
               'Group your slides into named campaigns — "Spring sale", '
               '"New drops" — and toggle the whole campaign on or off in '
               'one tap.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.muted, fontSize: 13),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: AppColors.muted),
             ),
             const SizedBox(height: AppSizes.lg),
             FilledButton.icon(
@@ -289,14 +294,17 @@ class _ErrorView extends StatelessWidget {
           children: [
             const Icon(
               Icons.error_outline,
-              size: 48,
+              size: AppSizes.iconHuge,
               color: AppColors.error,
             ),
             const SizedBox(height: AppSizes.md),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.muted, fontSize: 13),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: AppColors.muted),
             ),
             const SizedBox(height: AppSizes.md),
             OutlinedButton(onPressed: onRetry, child: const Text('Retry')),
@@ -386,9 +394,12 @@ class _NewCarouselSheetState extends State<_NewCarouselSheet> {
       children: [
         Row(
           children: [
-            const Text(
+            Text(
               'New carousel',
-              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w800),
             ),
             const Spacer(),
             IconButton(

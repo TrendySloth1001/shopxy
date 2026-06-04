@@ -509,7 +509,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                   icon: const Icon(Icons.save_outlined),
                   label: Text(_isEditing ? 'Update draft' : 'Save as draft'),
                   style: OutlinedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(48),
+                    minimumSize: const Size.fromHeight(AppSizes.huge),
                     side: const BorderSide(color: AppColors.hairline),
                   ),
                 ),
@@ -521,8 +521,8 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                   onPressed: _isSaving ? null : () => _save(confirm: true),
                   icon: _isSaving
                       ? const SizedBox(
-                          width: 16,
-                          height: 16,
+                          width: AppSizes.iconSm,
+                          height: AppSizes.iconSm,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
                             color: AppColors.white,
@@ -534,7 +534,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                   ),
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.brand,
-                    minimumSize: const Size.fromHeight(48),
+                    minimumSize: const Size.fromHeight(AppSizes.huge),
                   ),
                 ),
               ),
@@ -549,7 +549,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
             GlassHero.line(
               kind: LineArt.receipt,
               height: 160,
-              illustrationSize: 120,
+              illustrationSize: AppSizes.productImageSize,
             ),
             Expanded(
               child: ListView(
@@ -699,8 +699,8 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                           ? const Padding(
                               padding: EdgeInsets.all(AppSizes.md),
                               child: SizedBox(
-                                width: 16,
-                                height: 16,
+                                width: AppSizes.iconSm,
+                                height: AppSizes.iconSm,
                                 child: CircularProgressIndicator(strokeWidth: 2),
                               ),
                             )
@@ -1071,7 +1071,7 @@ class _TotalRow extends StatelessWidget {
         ? theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)
         : theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
+      padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [

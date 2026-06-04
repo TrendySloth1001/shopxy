@@ -226,7 +226,7 @@ class _FlashDealCard extends StatelessWidget {
                     child: Text(
                       '-${product.discountPct}%',
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: AppColors.white,
                         fontWeight: FontWeight.w800,
                         fontSize: 11,
                       ),

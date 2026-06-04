@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:shopxy_customer/features/auth/presentation/widgets/require_auth.dart';
 import 'package:shopxy_customer/features/wishlist/presentation/providers/wishlist_provider.dart';
 import 'package:shopxy_customer/shared/constants/app_durations.dart';
+import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 
@@ -20,11 +21,11 @@ class WishlistHeartButton extends StatelessWidget {
   const WishlistHeartButton({
     super.key,
     required this.productId,
-    this.size = 32,
+    this.size = AppSizes.iconXl,
   }) : flat = false;
 
   const WishlistHeartButton.flat({super.key, required this.productId})
-      : size = 40,
+      : size = AppSizes.iconHuge,
         flat = true;
 
   final int productId;
@@ -36,7 +37,7 @@ class WishlistHeartButton extends StatelessWidget {
     final saved = context.select<WishlistProvider, bool>(
       (p) => p.contains(productId),
     );
-    final iconSize = flat ? 22.0 : size * 0.55;
+    final iconSize = flat ? AppSizes.iconMd : size * 0.55;
 
     return Semantics(
       label: saved ? 'Remove from saved' : 'Save for later',

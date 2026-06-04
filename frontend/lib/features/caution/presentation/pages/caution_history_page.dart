@@ -115,11 +115,10 @@ class _CautionHistoryPageState extends State<CautionHistoryPage> {
                       'CAUTION HELD',
                       style: theme.textTheme.labelSmall?.copyWith(
                         color: AppColors.muted,
-                        letterSpacing: 0.6,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSizes.xs),
                     Text(
                       widget.partyName,
                       style: theme.textTheme.bodyMedium

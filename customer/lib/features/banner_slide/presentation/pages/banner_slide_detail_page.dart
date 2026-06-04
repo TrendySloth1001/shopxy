@@ -7,6 +7,7 @@ import 'package:shopxy_customer/features/home/presentation/widgets/network_image
 import 'package:shopxy_customer/features/marketplace/presentation/pages/product_detail_page.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
+import 'package:shopxy_customer/shared/theme/app_shadows.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 
 /// Customer-facing detail page for a single carousel slide. Hits
@@ -206,10 +207,10 @@ class _HeroSliver extends StatelessWidget {
         title,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: const TextStyle(
-          fontWeight: FontWeight.w800,
-          color: AppColors.black,
-        ),
+        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w800,
+              color: AppColors.black,
+            ),
       ),
       titleSpacing: 0,
       flexibleSpace: FlexibleSpaceBar(
@@ -238,9 +239,9 @@ class _HeroSliver extends StatelessWidget {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Colors.black.withValues(alpha: 0.22),
-                      Colors.black.withValues(alpha: 0.05),
-                      Colors.black.withValues(alpha: 0.78),
+                      AppColors.black.withValues(alpha: 0.22),
+                      AppColors.black.withValues(alpha: 0.05),
+                      AppColors.black.withValues(alpha: 0.78),
                     ],
                     stops: const [0.0, 0.45, 1.0],
                   ),
@@ -263,20 +264,19 @@ class _HeroSliver extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: AppSizes.sm,
-                        vertical: 4,
+                        vertical: AppSizes.xs,
                       ),
-                      decoration: BoxDecoration(
+                      decoration: ShapeDecoration(
                         color: accent,
-                        borderRadius: BorderRadius.circular(4),
+                        shape: AppShapes.squircle(AppSizes.radiusSm),
                       ),
                       child: Text(
                         brand.toUpperCase(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 11,
-                          letterSpacing: 0.8,
-                        ),
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: AppColors.white,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.8,
+                            ),
                       ),
                     ),
                   const SizedBox(height: AppSizes.sm),
@@ -284,27 +284,28 @@ class _HeroSliver extends StatelessWidget {
                     title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 26,
-                      height: 1.1,
-                      shadows: [
-                        Shadow(color: Color(0x66000000), blurRadius: 8),
-                      ],
-                    ),
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          color: AppColors.white,
+                          fontWeight: FontWeight.w800,
+                          height: 1.1,
+                          shadows: [
+                            Shadow(
+                              color: AppColors.black.withValues(alpha: 0.4),
+                              blurRadius: 8,
+                            ),
+                          ],
+                        ),
                   ),
                   if (subtitle.isNotEmpty) ...[
-                    const SizedBox(height: 4),
+                    const SizedBox(height: AppSizes.xs),
                     Text(
                       subtitle,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Color(0xFFF4F4F4),
-                        fontSize: 13,
-                        height: 1.3,
-                      ),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: AppColors.white,
+                            height: 1.3,
+                          ),
                     ),
                   ],
                   const SizedBox(height: AppSizes.md),
@@ -314,19 +315,18 @@ class _HeroSliver extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: AppSizes.md,
-                            vertical: 8,
+                            vertical: AppSizes.sm,
                           ),
                           decoration: ShapeDecoration(
-                            color: Colors.white,
+                            color: AppColors.white,
                             shape: AppShapes.squircle(AppSizes.radiusFull),
                           ),
                           child: Text(
                             ctaText,
-                            style: const TextStyle(
-                              color: AppColors.black,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 13,
-                            ),
+                            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                                  color: AppColors.black,
+                                  fontWeight: FontWeight.w800,
+                                ),
                           ),
                         ),
                       const Spacer(),
@@ -334,22 +334,19 @@ class _HeroSliver extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: AppSizes.sm,
-                            vertical: 4,
+                            vertical: AppSizes.xs,
                           ),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.35),
-                            borderRadius: BorderRadius.circular(
-                              AppSizes.radiusFull,
-                            ),
+                          decoration: ShapeDecoration(
+                            color: AppColors.black.withValues(alpha: 0.35),
+                            shape: AppShapes.squircle(AppSizes.radiusFull),
                           ),
                           child: Text(
                             '$productCount ITEMS',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 10,
-                              letterSpacing: 0.6,
-                            ),
+                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                  color: AppColors.white,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.6,
+                                ),
                           ),
                         ),
                     ],
@@ -391,7 +388,7 @@ class _DealStrip extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSizes.md,
-                vertical: 6,
+                vertical: AppSizes.sm,
               ),
               decoration: ShapeDecoration(
                 color: AppColors.brand,
@@ -402,18 +399,17 @@ class _DealStrip extends StatelessWidget {
                 children: [
                   const Icon(
                     Icons.local_offer_rounded,
-                    color: Colors.white,
-                    size: 14,
+                    color: AppColors.white,
+                    size: AppSizes.iconSm,
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: AppSizes.sm),
                   Text(
                     'Up to $maxDiscount% OFF',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 12,
-                      letterSpacing: 0.2,
-                    ),
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          color: AppColors.white,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.2,
+                        ),
                   ),
                 ],
               ),
@@ -421,10 +417,9 @@ class _DealStrip extends StatelessWidget {
           else if (productCount > 0)
             Text(
               '$productCount curated picks',
-              style: const TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 14,
-              ),
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
             ),
           const Spacer(),
           const _TrustChip(
@@ -450,24 +445,28 @@ class _TrustChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.sm,
+        vertical: AppSizes.xs,
+      ),
+      decoration: ShapeDecoration(
         color: AppColors.surfaceTint,
-        borderRadius: BorderRadius.circular(AppSizes.radiusFull),
-        border: Border.all(color: AppColors.hairline),
+        shape: AppShapes.squircle(
+          AppSizes.radiusFull,
+          side: const BorderSide(color: AppColors.hairline),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: AppColors.muted),
-          const SizedBox(width: 4),
+          Icon(icon, size: AppSizes.iconSm, color: AppColors.muted),
+          const SizedBox(width: AppSizes.xs),
           Text(
             label,
-            style: const TextStyle(
-              color: AppColors.muted,
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-            ),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: AppColors.muted,
+                  fontWeight: FontWeight.w700,
+                ),
           ),
         ],
       ),
@@ -483,9 +482,13 @@ class _CircleBackButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(left: AppSizes.sm, top: 4, bottom: 4),
+      padding: const EdgeInsets.only(
+        left: AppSizes.sm,
+        top: AppSizes.xs,
+        bottom: AppSizes.xs,
+      ),
       child: Material(
-        color: Colors.black.withValues(alpha: 0.35),
+        color: AppColors.black.withValues(alpha: 0.35),
         shape: const CircleBorder(),
         child: InkWell(
           customBorder: const CircleBorder(),
@@ -495,8 +498,8 @@ class _CircleBackButton extends StatelessWidget {
             height: 40,
             child: Icon(
               Icons.arrow_back_rounded,
-              color: Colors.white,
-              size: 20,
+              color: AppColors.white,
+              size: AppSizes.iconMd,
             ),
           ),
         ),
@@ -538,19 +541,13 @@ class _ProductCard extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 14,
-            offset: const Offset(0, 6),
-          ),
-        ],
+        borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
+        boxShadow: AppShadows.floating,
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+          borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute(
               builder: (_) => ProductDetailPage(productId: id),
@@ -565,8 +562,8 @@ class _ProductCard extends StatelessWidget {
                   children: [
                     Positioned.fill(
                       child: ClipRRect(
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(AppSizes.radiusMd),
+                        borderRadius: AppShapes.squircleTopRadius(
+                          AppSizes.radiusMd,
                         ),
                         child: image.isEmpty
                             ? Container(color: AppColors.heroPanel)
@@ -601,53 +598,49 @@ class _ProductCard extends StatelessWidget {
                       name,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13,
-                        height: 1.25,
-                      ),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            height: 1.25,
+                          ),
                     ),
                     if (ratingCount > 0) ...[
-                      const SizedBox(height: 4),
+                      const SizedBox(height: AppSizes.xs),
                       _RatingPill(rating: ratingAvg, count: ratingCount),
                     ],
-                    const SizedBox(height: 6),
+                    const SizedBox(height: AppSizes.sm),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
                           '₹${priceShown.toStringAsFixed(0)}',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w800,
-                            fontSize: 16,
-                            height: 1,
-                          ),
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                height: 1,
+                              ),
                         ),
                         if (priceCrossed > priceShown) ...[
-                          const SizedBox(width: 6),
+                          const SizedBox(width: AppSizes.sm),
                           Padding(
                             padding: const EdgeInsets.only(bottom: 1),
                             child: Text(
                               '₹${priceCrossed.toStringAsFixed(0)}',
-                              style: const TextStyle(
-                                color: AppColors.muted,
-                                fontSize: 11,
-                                decoration: TextDecoration.lineThrough,
-                              ),
+                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                    color: AppColors.muted,
+                                    decoration: TextDecoration.lineThrough,
+                                  ),
                             ),
                           ),
                         ],
                       ],
                     ),
                     if (saves > 0) ...[
-                      const SizedBox(height: 4),
+                      const SizedBox(height: AppSizes.xs),
                       Text(
                         'You save ₹${saves.toStringAsFixed(0)}',
-                        style: const TextStyle(
-                          color: Color(0xFF1B8A3A),
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                        ),
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: AppColors.success,
+                              fontWeight: FontWeight.w800,
+                            ),
                       ),
                     ],
                   ],
@@ -667,14 +660,17 @@ class _DiscountChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.sm,
+        vertical: AppSizes.xs,
+      ),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [AppColors.brand, AppColors.brandStrong],
         ),
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: AppShapes.squircleRadius(AppSizes.radiusSm),
         boxShadow: [
           BoxShadow(
             color: AppColors.brand.withValues(alpha: 0.35),
@@ -685,12 +681,11 @@ class _DiscountChip extends StatelessWidget {
       ),
       child: Text(
         '$percent% OFF',
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w800,
-          fontSize: 10,
-          letterSpacing: 0.4,
-        ),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: AppColors.white,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.4,
+            ),
       ),
     );
   }
@@ -700,23 +695,17 @@ class _WishlistFab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 32,
-      height: 32,
+      width: AppSizes.xxxl,
+      height: AppSizes.xxxl,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.white,
         shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: AppShadows.floating,
       ),
       alignment: Alignment.center,
       child: const Icon(
         Icons.favorite_border_rounded,
-        size: 16,
+        size: AppSizes.iconSm,
         color: AppColors.muted,
       ),
     );
@@ -730,32 +719,37 @@ class _RatingPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1B8A3A),
-        borderRadius: BorderRadius.circular(3),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.sm,
+        vertical: AppSizes.xs,
+      ),
+      decoration: ShapeDecoration(
+        color: AppColors.success,
+        shape: AppShapes.squircle(AppSizes.radiusSm),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             rating.toStringAsFixed(1),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 10,
-              fontWeight: FontWeight.w800,
-            ),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: AppColors.white,
+                  fontWeight: FontWeight.w800,
+                ),
           ),
-          const SizedBox(width: 2),
-          const Icon(Icons.star_rounded, color: Colors.white, size: 10),
-          const SizedBox(width: 4),
+          const SizedBox(width: AppSizes.xs),
+          const Icon(
+            Icons.star_rounded,
+            color: AppColors.white,
+            size: AppSizes.iconSm,
+          ),
+          const SizedBox(width: AppSizes.xs),
           Text(
             count > 999 ? '${(count / 1000).toStringAsFixed(1)}k' : '$count',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-            ),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: AppColors.white,
+                  fontWeight: FontWeight.w600,
+                ),
           ),
         ],
       ),
@@ -767,27 +761,31 @@ class _EmptyProducts extends StatelessWidget {
   const _EmptyProducts();
   @override
   Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.all(AppSizes.xl),
+    return Padding(
+      padding: const EdgeInsets.all(AppSizes.xl),
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
+            const Icon(
               Icons.local_offer_outlined,
-              size: 48,
+              size: AppSizes.iconHuge,
               color: AppColors.muted,
             ),
-            SizedBox(height: AppSizes.sm),
+            const SizedBox(height: AppSizes.sm),
             Text(
               'No products in this drop yet',
-              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
             ),
-            SizedBox(height: 4),
+            const SizedBox(height: AppSizes.xs),
             Text(
               'The shop is curating this slide — check back soon.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.muted, fontSize: 13),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.muted,
+                  ),
             ),
           ],
         ),
@@ -804,15 +802,15 @@ class _SlideSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     Widget block({
       double? width,
-      double height = 16,
-      double radius = 8,
+      double height = AppSizes.lg,
+      double radius = AppSizes.radiusSm,
     }) =>
         Container(
           width: width,
           height: height,
           decoration: BoxDecoration(
             color: AppColors.heroPanel,
-            borderRadius: BorderRadius.circular(radius),
+            borderRadius: AppShapes.squircleRadius(radius),
           ),
         );
     return ListView(
@@ -825,7 +823,11 @@ class _SlideSkeleton extends StatelessWidget {
         const SizedBox(height: AppSizes.lg),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
-          child: block(height: 28, width: 140, radius: 14),
+          child: block(
+            height: AppSizes.xxl,
+            width: 140,
+            radius: AppSizes.radiusButton,
+          ),
         ),
         const SizedBox(height: AppSizes.lg),
         Padding(
@@ -843,7 +845,7 @@ class _SlideSkeleton extends StatelessWidget {
             itemBuilder: (_, _) => Container(
               decoration: BoxDecoration(
                 color: AppColors.heroPanel,
-                borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+                borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
               ),
             ),
           ),
@@ -869,19 +871,23 @@ class _ErrorView extends StatelessWidget {
             children: [
               const Icon(
                 Icons.cloud_off_outlined,
-                size: 48,
+                size: AppSizes.iconHuge,
                 color: AppColors.muted,
               ),
               const SizedBox(height: AppSizes.sm),
-              const Text(
+              Text(
                 "Couldn't load this slide",
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: AppSizes.xs),
               Text(
                 message,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: AppColors.muted, fontSize: 13),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.muted,
+                    ),
               ),
               const SizedBox(height: AppSizes.md),
               FilledButton.icon(
@@ -901,14 +907,16 @@ class _MissingView extends StatelessWidget {
   const _MissingView();
   @override
   Widget build(BuildContext context) {
-    return const SafeArea(
+    return SafeArea(
       child: Center(
         child: Padding(
-          padding: EdgeInsets.all(AppSizes.xl),
+          padding: const EdgeInsets.all(AppSizes.xl),
           child: Text(
             'This slide has ended or is no longer available.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.muted),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.muted,
+                ),
           ),
         ),
       ),
