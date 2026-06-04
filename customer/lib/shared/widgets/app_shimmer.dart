@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shopxy_customer/shared/constants/app_durations.dart';
+import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 
@@ -17,8 +18,8 @@ class AppShimmerBox extends StatefulWidget {
   const AppShimmerBox({
     super.key,
     this.width,
-    this.height = 16,
-    this.radius = 8,
+    this.height = AppSizes.lg,
+    this.radius = AppSizes.radiusSm,
   });
 
   final double? width;
@@ -85,7 +86,7 @@ class _AppShimmerBoxState extends State<AppShimmerBox>
 /// One line of skeleton text. `widthFactor` controls how wide the line
 /// is relative to its parent (0.6 means 60% — useful for headings).
 class AppShimmerLine extends StatelessWidget {
-  const AppShimmerLine({super.key, this.widthFactor = 1.0, this.height = 12});
+  const AppShimmerLine({super.key, this.widthFactor = 1.0, this.height = AppSizes.md});
   final double widthFactor;
   final double height;
 

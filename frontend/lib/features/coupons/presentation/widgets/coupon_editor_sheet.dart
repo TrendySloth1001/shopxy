@@ -183,7 +183,9 @@ class _CouponEditorSheetState extends State<_CouponEditorSheet> {
           children: [
             Text(
               isEdit ? 'Edit coupon' : 'New coupon',
-              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
             ),
             const SizedBox(height: AppSizes.md),
             TextField(

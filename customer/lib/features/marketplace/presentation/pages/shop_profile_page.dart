@@ -196,7 +196,7 @@ class _Body extends StatelessWidget {
                 },
               );
             }),
-            const SizedBox(width: 4),
+            const SizedBox(width: AppSizes.xs),
           ],
           flexibleSpace: FlexibleSpaceBar(
             background: Stack(
@@ -222,7 +222,13 @@ class _Body extends StatelessWidget {
               ],
             ),
           ),
-          title: Text(shop.name, style: const TextStyle(fontWeight: FontWeight.w800)),
+          title: Text(
+            shop.name,
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(fontWeight: FontWeight.w800),
+          ),
         ),
         SliverToBoxAdapter(
           child: Padding(
@@ -248,11 +254,11 @@ class _Body extends StatelessWidget {
                     alignment: Alignment.center,
                     child: Text(
                       shop.name.isEmpty ? '?' : shop.name[0].toUpperCase(),
-                      style: const TextStyle(
-                        color: AppColors.brand,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 22,
-                      ),
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            color: AppColors.brand,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 22,
+                          ),
                     ),
                   ),
                 const SizedBox(width: AppSizes.md),
@@ -265,40 +271,42 @@ class _Body extends StatelessWidget {
                           Flexible(
                             child: Text(
                               shop.name,
-                              style: const TextStyle(
-                                color: AppColors.black,
-                                fontSize: 18,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: -0.2,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
+                                    color: AppColors.black,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: -0.2,
+                                  ),
                             ),
                           ),
                           if (shop.isVerified) ...[
-                            const SizedBox(width: 6),
+                            const SizedBox(width: AppSizes.sm),
                             const Icon(
                               Icons.verified_rounded,
                               color: AppColors.info,
-                              size: 16,
+                              size: AppSizes.iconSm,
                             ),
                           ],
                         ],
                       ),
                       if (shop.tagline != null && shop.tagline!.isNotEmpty)
                         Padding(
-                          padding: const EdgeInsets.only(top: 2),
+                          padding: const EdgeInsets.only(top: AppSizes.xs),
                           child: Text(
                             shop.tagline!,
-                            style: const TextStyle(
-                              color: AppColors.muted,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                            ),
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: AppColors.muted,
+                                  fontWeight: FontWeight.w500,
+                                ),
                           ),
                         ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: AppSizes.sm),
                       Wrap(
-                        spacing: 10,
-                        runSpacing: 2,
+                        spacing: AppSizes.md,
+                        runSpacing: AppSizes.xs,
                         crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           if (shop.rating != null)
@@ -384,14 +392,17 @@ class _Body extends StatelessWidget {
             ),
           ),
         if (products.isEmpty)
-          const SliverFillRemaining(
+          SliverFillRemaining(
             hasScrollBody: false,
             child: Center(
               child: Padding(
-                padding: EdgeInsets.all(AppSizes.xl),
+                padding: const EdgeInsets.all(AppSizes.xl),
                 child: Text(
                   'No products published yet.',
-                  style: TextStyle(color: AppColors.muted, fontWeight: FontWeight.w600),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.muted,
+                        fontWeight: FontWeight.w600,
+                      ),
                 ),
               ),
             ),
@@ -421,18 +432,17 @@ class _Body extends StatelessWidget {
               ),
             )
           else if (!hasMore && products.isNotEmpty)
-            const SliverToBoxAdapter(
+            SliverToBoxAdapter(
               child: Padding(
-                padding: EdgeInsets.fromLTRB(
+                padding: const EdgeInsets.fromLTRB(
                     AppSizes.lg, AppSizes.lg, AppSizes.lg, AppSizes.xl),
                 child: Center(
                   child: Text(
                     "You've reached the end.",
-                    style: TextStyle(
-                      color: AppColors.muted,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
-                    ),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.muted,
+                          fontWeight: FontWeight.w600,
+                        ),
                   ),
                 ),
               ),
@@ -464,21 +474,20 @@ class _VacationBanner extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'On vacation',
-                    style: TextStyle(
-                      color: AppColors.warning,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.3,
-                    ),
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: AppColors.warning,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.3,
+                        ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: AppSizes.xs),
                   Text(
                     message,
-                    style: const TextStyle(
-                      color: AppColors.black,
-                      fontSize: 13,
-                    ),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.black,
+                        ),
                   ),
                 ],
               ),
@@ -507,15 +516,14 @@ class _InlineStat extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, color: iconColor, size: 14),
-        const SizedBox(width: 3),
+        Icon(icon, color: iconColor, size: AppSizes.iconSm),
+        const SizedBox(width: AppSizes.xs),
         Text(
           label,
-          style: TextStyle(
-            color: labelColor ?? AppColors.muted,
-            fontWeight: FontWeight.w700,
-            fontSize: 12,
-          ),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: labelColor ?? AppColors.muted,
+                fontWeight: FontWeight.w700,
+              ),
         ),
       ],
     );
@@ -567,29 +575,28 @@ class _PoliciesCard extends StatelessWidget {
           child: Row(
             children: [
               const Icon(Icons.fact_check_outlined,
-                  color: AppColors.brandStrong, size: 18),
+                  color: AppColors.brandStrong, size: AppSizes.iconMd),
               const SizedBox(width: AppSizes.sm),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Shop policies',
-                      style: TextStyle(
-                        color: AppColors.black,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 13,
-                      ),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.black,
+                            fontWeight: FontWeight.w800,
+                          ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: AppSizes.xs),
                     Wrap(
-                      spacing: 6,
-                      runSpacing: 4,
+                      spacing: AppSizes.sm,
+                      runSpacing: AppSizes.xs,
                       children: [
                         for (final p in pills)
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 3),
+                                horizontal: AppSizes.sm, vertical: AppSizes.xs),
                             decoration: ShapeDecoration(
                               color: AppColors.brandSoft,
                               shape: AppShapes.squircle(AppSizes.radiusFull),
@@ -599,14 +606,16 @@ class _PoliciesCard extends StatelessWidget {
                               children: [
                                 Icon(p.icon,
                                     size: 12, color: AppColors.brandStrong),
-                                const SizedBox(width: 3),
+                                const SizedBox(width: AppSizes.xs),
                                 Text(
                                   p.label,
-                                  style: const TextStyle(
-                                    color: AppColors.brandStrong,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 11,
-                                  ),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelSmall
+                                      ?.copyWith(
+                                        color: AppColors.brandStrong,
+                                        fontWeight: FontWeight.w700,
+                                      ),
                                 ),
                               ],
                             ),
@@ -652,11 +661,11 @@ class _PoliciesSheet extends StatelessWidget {
                 Expanded(
                   child: Text(
                     '${shop.name} policies',
-                    style: const TextStyle(
-                      color: AppColors.black,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                    ),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: AppColors.black,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
                   ),
                 ),
                 IconButton(
@@ -709,27 +718,25 @@ class _PolicyBlock extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, size: 16, color: AppColors.brandStrong),
-              const SizedBox(width: 6),
+              Icon(icon, size: AppSizes.iconSm, color: AppColors.brandStrong),
+              const SizedBox(width: AppSizes.sm),
               Text(
                 title,
-                style: const TextStyle(
-                  color: AppColors.brandStrong,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 13,
-                  letterSpacing: 0.4,
-                ),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.brandStrong,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.4,
+                    ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSizes.sm),
           Text(
             body,
-            style: const TextStyle(
-              color: AppColors.black,
-              fontSize: 13.5,
-              height: 1.45,
-            ),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.black,
+                  height: 1.45,
+                ),
           ),
         ],
       ),
@@ -774,60 +781,55 @@ class _ProductTile extends StatelessWidget {
             product.name,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: AppColors.black,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.black,
+                  fontWeight: FontWeight.w600,
+                ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSizes.xs),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
                 '₹${product.sellingPrice.toStringAsFixed(0)}',
-                style: const TextStyle(
-                  color: AppColors.black,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                ),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.black,
+                      fontWeight: FontWeight.w800,
+                    ),
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: AppSizes.xs),
               if (product.isDiscounted)
                 Text(
                   '₹${product.mrp.toStringAsFixed(0)}',
-                  style: const TextStyle(
-                    color: AppColors.muted,
-                    fontSize: 11,
-                    decoration: TextDecoration.lineThrough,
-                  ),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: AppColors.muted,
+                        decoration: TextDecoration.lineThrough,
+                      ),
                 ),
-              const SizedBox(width: 4),
+              const SizedBox(width: AppSizes.xs),
               if (product.isDiscounted)
                 Text(
                   '${product.discountPct}% off',
-                  style: const TextStyle(
-                    color: AppColors.success,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 11,
-                  ),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: AppColors.success,
+                        fontWeight: FontWeight.w700,
+                      ),
                 ),
             ],
           ),
           if (product.ratingAvg != null)
             Padding(
-              padding: const EdgeInsets.only(top: 2),
+              padding: const EdgeInsets.only(top: AppSizes.xs),
               child: Row(
                 children: [
                   const Icon(Icons.star_rounded, color: AppColors.success, size: 12),
-                  const SizedBox(width: 2),
+                  const SizedBox(width: AppSizes.xs),
                   Text(
                     '${product.ratingAvg!.toStringAsFixed(1)} (${product.ratingCount})',
-                    style: const TextStyle(
-                      color: AppColors.muted,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: AppColors.muted,
+                          fontWeight: FontWeight.w600,
+                        ),
                   ),
                 ],
               ),
@@ -849,19 +851,23 @@ class _ErrorState extends StatelessWidget {
       padding: const EdgeInsets.all(AppSizes.xl),
       children: [
         const SizedBox(height: 80),
-        const Icon(Icons.cloud_off_rounded, size: 56, color: AppColors.muted),
+        const Icon(Icons.cloud_off_rounded,
+            size: AppSizes.iconHuge, color: AppColors.muted),
         const SizedBox(height: AppSizes.md),
-        const Center(
+        Center(
           child: Text(
             "Couldn't load this shop",
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            style: Theme.of(context).textTheme.titleMedium,
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: AppSizes.sm),
         Center(
           child: Text(
             message,
-            style: const TextStyle(color: AppColors.muted),
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(color: AppColors.muted),
           ),
         ),
         const SizedBox(height: AppSizes.lg),

@@ -17,9 +17,11 @@ import 'package:shopxy_customer/features/marketplace/presentation/widgets/pdp/pd
 import 'package:shopxy_customer/features/marketplace/presentation/widgets/pdp/pdp_variant_picker.dart';
 import 'package:shopxy_customer/features/reviews/presentation/widgets/product_reviews_section.dart';
 import 'package:shopxy_customer/shared/domain/entities/catalog_product.dart';
+import 'package:shopxy_customer/shared/constants/app_durations.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+import 'package:shopxy_customer/shared/theme/app_shadows.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 
 /// Customer-facing product detail page.
@@ -239,12 +241,11 @@ class _SectionHeader extends StatelessWidget {
           AppSizes.lg, AppSizes.lg, AppSizes.lg, AppSizes.sm),
       child: Text(
         title,
-        style: const TextStyle(
-          color: AppColors.black,
-          fontSize: 16,
-          fontWeight: FontWeight.w800,
-          letterSpacing: -0.2,
-        ),
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: AppColors.black,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.2,
+            ),
       ),
     );
   }
@@ -264,43 +265,41 @@ class _TitleBlock extends StatelessWidget {
         children: [
           if (product.systemTags.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.only(bottom: 6),
+              padding: const EdgeInsets.only(bottom: AppSizes.sm),
               child: _SystemTagsRow(tags: product.systemTags),
             ),
           if (product.brand != null) ...[
             Text(
               product.brand!.toUpperCase(),
-              style: const TextStyle(
-                color: AppColors.muted,
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.0,
-              ),
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: AppColors.muted,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.0,
+                  ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSizes.xs),
           ],
           Text(
             product.name,
-            style: const TextStyle(
-              color: AppColors.black,
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.2,
-              height: 1.25,
-            ),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: AppColors.black,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.2,
+                  height: 1.25,
+                ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSizes.sm),
           _SoldByChip(product: product),
           if (product.soldLast30d >= 50)
             Padding(
-              padding: const EdgeInsets.only(top: 4),
+              padding: const EdgeInsets.only(top: AppSizes.xs),
               child: Text(
                 '${_compact(product.soldLast30d)}+ bought in the past month',
-                style: const TextStyle(
-                  color: AppColors.muted,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 12,
-                ),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.muted,
+                      fontWeight: FontWeight.w700,
+                    ),
               ),
             ),
           if (product.description != null && product.description!.isNotEmpty)
@@ -310,11 +309,10 @@ class _TitleBlock extends StatelessWidget {
                 product.description!,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: AppColors.muted,
-                  fontSize: 13,
-                  height: 1.35,
-                ),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.muted,
+                      height: 1.35,
+                    ),
               ),
             ),
           const SizedBox(height: AppSizes.sm),
@@ -364,24 +362,25 @@ class _SystemTagsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Wrap(
-      spacing: 6,
-      runSpacing: 4,
+      spacing: AppSizes.sm,
+      runSpacing: AppSizes.xs,
       children: [
         for (final t in tags)
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppSizes.sm, vertical: AppSizes.xs),
             decoration: BoxDecoration(
               color: _palette(t).bg,
               borderRadius: BorderRadius.circular(3),
             ),
             child: Text(
               _label(t),
-              style: TextStyle(
-                color: _palette(t).fg,
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.4,
-              ),
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: _palette(t).fg,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.4,
+                  ),
             ),
           ),
       ],
@@ -405,28 +404,28 @@ class _SoldByChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(
+          Text(
             'Sold by ',
-            style: TextStyle(
-                color: AppColors.muted,
-                fontSize: 12,
-                fontWeight: FontWeight.w600),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.muted,
+                  fontWeight: FontWeight.w600,
+                ),
           ),
           Text(
             shop.name,
-            style: const TextStyle(
-                color: AppColors.brandStrong,
-                fontSize: 12,
-                fontWeight: FontWeight.w800),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.brandStrong,
+                  fontWeight: FontWeight.w800,
+                ),
           ),
           if (shop.isVerified) ...[
-            const SizedBox(width: 3),
+            const SizedBox(width: AppSizes.xs),
             const Icon(Icons.verified_rounded,
-                color: AppColors.info, size: 13),
+                color: AppColors.info, size: AppSizes.iconSm),
           ],
-          const SizedBox(width: 2),
+          const SizedBox(width: AppSizes.xs),
           const Icon(Icons.chevron_right_rounded,
-              color: AppColors.brandStrong, size: 14),
+              color: AppColors.brandStrong, size: AppSizes.iconSm),
         ],
       ),
     );
@@ -441,24 +440,26 @@ class _RatingChip extends StatelessWidget {
   Widget build(BuildContext context) {
     if (product.ratingAvg == null) {
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.sm, vertical: AppSizes.xs),
         decoration: BoxDecoration(
           color: AppColors.heroPanel,
           borderRadius: BorderRadius.circular(2),
         ),
-        child: const Text(
+        child: Text(
           'No reviews yet',
-          style: TextStyle(
-              color: AppColors.muted,
-              fontSize: 11,
-              fontWeight: FontWeight.w600),
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: AppColors.muted,
+                fontWeight: FontWeight.w600,
+              ),
         ),
       );
     }
     return Row(
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSizes.sm, vertical: AppSizes.xs),
           decoration: BoxDecoration(
             color: AppColors.success,
             borderRadius: BorderRadius.circular(2),
@@ -467,13 +468,12 @@ class _RatingChip extends StatelessWidget {
             children: [
               Text(
                 product.ratingAvg!.toStringAsFixed(1),
-                style: const TextStyle(
-                  color: AppColors.white,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 11,
-                ),
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: AppColors.white,
+                      fontWeight: FontWeight.w800,
+                    ),
               ),
-              const SizedBox(width: 2),
+              const SizedBox(width: AppSizes.xs),
               const Icon(Icons.star_rounded,
                   color: AppColors.white, size: 12),
             ],
@@ -482,11 +482,10 @@ class _RatingChip extends StatelessWidget {
         const SizedBox(width: AppSizes.sm),
         Text(
           '${product.ratingCount} ratings · ${product.totalSold} sold',
-          style: const TextStyle(
-            color: AppColors.muted,
-            fontWeight: FontWeight.w600,
-            fontSize: 11,
-          ),
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: AppColors.muted,
+                fontWeight: FontWeight.w600,
+              ),
         ),
       ],
     );
@@ -542,7 +541,7 @@ class _SpecTabsAndSheetState extends State<_SpecTabsAndSheet> {
             padding: const EdgeInsets.fromLTRB(
                 AppSizes.lg, AppSizes.md, AppSizes.lg, 0),
             child: SizedBox(
-              height: 32,
+              height: AppSizes.xxxl,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: tabs.length,
@@ -555,7 +554,7 @@ class _SpecTabsAndSheetState extends State<_SpecTabsAndSheet> {
                     onTap: () => setState(() => _selectedTab = t),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
+                          horizontal: AppSizes.md, vertical: AppSizes.sm),
                       decoration: BoxDecoration(
                         color: sel ? AppColors.brandSoft : AppColors.white,
                         border: Border.all(
@@ -569,13 +568,12 @@ class _SpecTabsAndSheetState extends State<_SpecTabsAndSheet> {
                       ),
                       child: Text(
                         t,
-                        style: TextStyle(
-                          color: sel
-                              ? AppColors.brandStrong
-                              : AppColors.black,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: sel
+                                  ? AppColors.brandStrong
+                                  : AppColors.black,
+                              fontWeight: FontWeight.w700,
+                            ),
                       ),
                     ),
                   );
@@ -604,15 +602,14 @@ class _SpecSheet extends StatelessWidget {
           for (final g in groups) ...[
             Padding(
               padding: const EdgeInsets.only(
-                  top: AppSizes.sm, bottom: 4),
+                  top: AppSizes.sm, bottom: AppSizes.xs),
               child: Text(
                 g.title,
-                style: const TextStyle(
-                  color: AppColors.muted,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.8,
-                ),
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: AppColors.muted,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.8,
+                    ),
               ),
             ),
             Container(
@@ -635,21 +632,19 @@ class _SpecSheet extends StatelessWidget {
                             width: 110,
                             child: Text(
                               g.rows[i].label,
-                              style: const TextStyle(
-                                color: AppColors.muted,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: AppColors.muted,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                             ),
                           ),
                           Expanded(
                             child: Text(
                               g.rows[i].value,
-                              style: const TextStyle(
-                                color: AppColors.black,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                              ),
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: AppColors.black,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                             ),
                           ),
                         ],
@@ -681,21 +676,21 @@ class _Description extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Description',
-            style: TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 15,
-                color: AppColors.black),
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 15,
+                  color: AppColors.black,
+                ),
           ),
           const SizedBox(height: AppSizes.sm),
           Text(
             text,
-            style: const TextStyle(
-              color: AppColors.black,
-              fontSize: 13,
-              height: 1.5,
-            ),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.black,
+                  height: 1.5,
+                ),
           ),
         ],
       ),
@@ -723,13 +718,7 @@ class _ShopCard extends StatelessWidget {
           decoration: ShapeDecoration(
             color: AppColors.white,
             shape: AppShapes.squircle(AppSizes.radiusMd),
-            shadows: const [
-              BoxShadow(
-                color: Color(0x10000000),
-                blurRadius: 6,
-                offset: Offset(0, 2),
-              ),
-            ],
+            shadows: AppShadows.floating,
           ),
           child: Row(
             children: [
@@ -743,11 +732,11 @@ class _ShopCard extends StatelessWidget {
                 alignment: Alignment.center,
                 child: Text(
                   shop.name.isEmpty ? '?' : shop.name[0].toUpperCase(),
-                  style: const TextStyle(
-                    color: AppColors.brand,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 18,
-                  ),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: AppColors.brand,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 18,
+                      ),
                 ),
               ),
               const SizedBox(width: AppSizes.md),
@@ -757,22 +746,20 @@ class _ShopCard extends StatelessWidget {
                   children: [
                     Text(
                       'Sold by ${shop.name}',
-                      style: const TextStyle(
-                        color: AppColors.black,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                      ),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: AppColors.black,
+                            fontWeight: FontWeight.w700,
+                          ),
                     ),
                     if (shop.rating != null)
                       Padding(
-                        padding: const EdgeInsets.only(top: 2),
+                        padding: const EdgeInsets.only(top: AppSizes.xs),
                         child: Text(
                           '${shop.rating!.toStringAsFixed(1)} ★ · ${shop.ratingCount} ratings',
-                          style: const TextStyle(
-                            color: AppColors.muted,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: AppColors.muted,
+                                fontWeight: FontWeight.w600,
+                              ),
                         ),
                       ),
                   ],
@@ -808,17 +795,19 @@ class _EmptySection extends StatelessWidget {
           const SizedBox(height: AppSizes.sm),
           Text(
             title,
-            style: const TextStyle(
-                color: AppColors.black,
-                fontWeight: FontWeight.w800,
-                fontSize: 14),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.black,
+                  fontWeight: FontWeight.w800,
+                ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSizes.xs),
           Text(
             subtitle,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-                color: AppColors.muted, fontSize: 12, height: 1.35),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.muted,
+                  height: 1.35,
+                ),
           ),
         ],
       ),
@@ -863,7 +852,7 @@ class _ActionBarState extends State<_ActionBar> {
     // Tiny delay so the spinner is perceptible. Cart writes locally
     // first, so without this the state flip is so fast it looks like
     // nothing happened.
-    await Future<void>.delayed(const Duration(milliseconds: 220));
+    await Future<void>.delayed(AppDurations.searchDebounce);
     if (!mounted) return;
     setState(() => _busy = false);
     context.read<TrackingService>().recordAddToCart(widget.productId);
@@ -912,10 +901,11 @@ class _ActionBarState extends State<_ActionBar> {
     final inCart = line != null && line.quantity > 0;
     final outOfStock = !widget.catalogProduct.inStock;
 
-    return Material(
-      color: AppColors.white,
-      elevation: 8,
-      shadowColor: Colors.black12,
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        boxShadow: AppShadows.floating,
+      ),
       child: SafeArea(
         top: false,
         child: Padding(
@@ -1058,15 +1048,14 @@ class _QuantityStepper extends StatelessWidget {
             onPressed: onDecrement,
           ),
           Container(
-            constraints: const BoxConstraints(minWidth: 32),
+            constraints: const BoxConstraints(minWidth: AppSizes.xxxl),
             alignment: Alignment.center,
             child: Text(
               '$quantity',
-              style: const TextStyle(
-                color: AppColors.brandStrong,
-                fontWeight: FontWeight.w800,
-                fontSize: 16,
-              ),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: AppColors.brandStrong,
+                    fontWeight: FontWeight.w800,
+                  ),
             ),
           ),
           _StepperButton(
@@ -1092,7 +1081,7 @@ class _StepperButton extends StatelessWidget {
       child: SizedBox(
         width: 44,
         height: 52,
-        child: Icon(icon, color: AppColors.brandStrong, size: 20),
+        child: Icon(icon, color: AppColors.brandStrong, size: AppSizes.iconMd),
       ),
     );
   }
@@ -1109,13 +1098,13 @@ class _OutOfStockButton extends StatelessWidget {
         shape: AppShapes.squircle(AppSizes.radiusFull),
       ),
       alignment: Alignment.center,
-      child: const Text(
+      child: Text(
         'Out of stock',
-        style: TextStyle(
-          color: AppColors.white,
-          fontWeight: FontWeight.w800,
-          fontSize: 15,
-        ),
+        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              color: AppColors.white,
+              fontWeight: FontWeight.w800,
+              fontSize: 15,
+            ),
       ),
     );
   }
@@ -1175,8 +1164,8 @@ class _PrimaryPillButton extends StatelessWidget {
           alignment: Alignment.center,
           child: loading
               ? SizedBox(
-                  width: 18,
-                  height: 18,
+                  width: AppSizes.iconMd,
+                  height: AppSizes.iconMd,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
                     valueColor: AlwaysStoppedAnimation(fg),
@@ -1185,15 +1174,15 @@ class _PrimaryPillButton extends StatelessWidget {
               : Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(icon, color: fg, size: 18),
-                    const SizedBox(width: 8),
+                    Icon(icon, color: fg, size: AppSizes.iconMd),
+                    const SizedBox(width: AppSizes.sm),
                     Text(
                       label,
-                      style: TextStyle(
-                        color: fg,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 15,
-                      ),
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            color: fg,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 15,
+                          ),
                     ),
                   ],
                 ),
@@ -1217,14 +1206,20 @@ class _ErrorState extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(Icons.cloud_off_rounded,
-                size: 56, color: AppColors.muted),
+                size: AppSizes.iconHuge, color: AppColors.muted),
             const SizedBox(height: AppSizes.md),
-            const Text(
+            Text(
               "Couldn't load this product",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+              style: Theme.of(context).textTheme.titleMedium,
             ),
-            const SizedBox(height: 6),
-            Text(message, style: const TextStyle(color: AppColors.muted)),
+            const SizedBox(height: AppSizes.sm),
+            Text(
+              message,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: AppColors.muted),
+            ),
             const SizedBox(height: AppSizes.lg),
             TextButton(onPressed: onRetry, child: const Text('Try again')),
           ],

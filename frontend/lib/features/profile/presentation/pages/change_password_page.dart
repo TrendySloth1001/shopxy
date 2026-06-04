@@ -118,8 +118,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
               ),
               child: _busy
                   ? const SizedBox(
-                      height: 18,
-                      width: 18,
+                      height: AppSizes.xl,
+                      width: AppSizes.xl,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
                         color: AppColors.white,

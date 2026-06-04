@@ -91,7 +91,7 @@ class _AreaRow extends StatelessWidget {
         children: [
           Expanded(
             child: Text(info.label,
-                style: const TextStyle(
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.black, fontWeight: FontWeight.w600)),
           ),
           SizedBox(
@@ -102,7 +102,7 @@ class _AreaRow extends StatelessWidget {
           SizedBox(
             width: 52,
             child: info.viewOnly
-                ? const Icon(Icons.remove, size: 16, color: AppColors.subtle)
+                ? const Icon(Icons.remove, size: AppSizes.iconSm, color: AppColors.subtle)
                 : Checkbox(value: manage, onChanged: (v) => onManage(v ?? false)),
           ),
         ],
@@ -227,7 +227,10 @@ class _PermissionEditorPageState extends State<PermissionEditorPage> {
           TextButton(
             onPressed: _save,
             child: Text(widget.submitLabel,
-                style: const TextStyle(fontWeight: FontWeight.w800)),
+                style: Theme.of(context)
+                    .textTheme
+                    .labelLarge
+                    ?.copyWith(fontWeight: FontWeight.w800)),
           ),
         ],
       ),
@@ -347,7 +350,11 @@ class _RoleEditorPageState extends State<RoleEditorPage> {
         actions: [
           TextButton(
             onPressed: _save,
-            child: const Text('Save', style: TextStyle(fontWeight: FontWeight.w800)),
+            child: Text('Save',
+                style: Theme.of(context)
+                    .textTheme
+                    .labelLarge
+                    ?.copyWith(fontWeight: FontWeight.w800)),
           ),
         ],
       ),
@@ -433,11 +440,14 @@ class _RoleChip extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (custom) ...[
-                const Icon(Icons.tune_rounded, size: 15, color: AppColors.brandStrong),
-                const SizedBox(width: 4),
+                const Icon(Icons.tune_rounded, size: AppSizes.iconSm, color: AppColors.brandStrong),
+                const SizedBox(width: AppSizes.xs),
               ],
               Text(label,
-                  style: TextStyle(color: fg, fontWeight: FontWeight.w700)),
+                  style: Theme.of(context)
+                      .textTheme
+                      .labelLarge
+                      ?.copyWith(color: fg, fontWeight: FontWeight.w700)),
             ],
           ),
         ),

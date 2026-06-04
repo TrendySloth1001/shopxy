@@ -489,7 +489,10 @@ class _TemplatedTab extends StatelessWidget {
               const SizedBox(height: AppSizes.sm),
               Text(
                 template.description,
-                style: const TextStyle(color: AppColors.muted, fontSize: 12),
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(color: AppColors.muted),
               ),
             ],
           ),
@@ -693,7 +696,7 @@ class _TemplateStrip extends StatelessWidget {
           final selected = t == template;
           return InkWell(
             onTap: () => onTemplate(t),
-            borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+            borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
             child: Container(
               width: 96,
               padding: const EdgeInsets.symmetric(
@@ -718,7 +721,7 @@ class _TemplateStrip extends StatelessWidget {
                 children: [
                   Icon(
                     Icons.dashboard_customize_outlined,
-                    size: 20,
+                    size: AppSizes.iconMd,
                     color: selected ? AppColors.brand : AppColors.muted,
                   ),
                   const SizedBox(height: AppSizes.xs),
@@ -726,11 +729,10 @@ class _TemplateStrip extends StatelessWidget {
                     t.label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 12,
-                      color: selected ? AppColors.brand : AppColors.black,
-                    ),
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: selected ? AppColors.brand : AppColors.black,
+                        ),
                   ),
                 ],
               ),
@@ -838,8 +840,8 @@ class _BrandImageRow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          width: 60,
-          height: 60,
+          width: AppSizes.massive,
+          height: AppSizes.massive,
           decoration: ShapeDecoration(
             color: AppColors.heroPanel,
             shape: AppShapes.squircle(AppSizes.radiusMd),
@@ -936,21 +938,19 @@ class _SectionCard extends StatelessWidget {
           children: [
             Text(
               title,
-              style: const TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 14,
-                color: AppColors.black,
-              ),
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.black,
+                  ),
             ),
             if (subtitle != null) ...[
               const SizedBox(height: 2),
               Text(
                 subtitle!,
-                style: const TextStyle(
-                  color: AppColors.muted,
-                  fontSize: 12,
-                  height: 1.3,
-                ),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.muted,
+                      height: 1.3,
+                    ),
               ),
             ],
             const SizedBox(height: AppSizes.md),
@@ -1024,21 +1024,20 @@ class _CountedFieldState extends State<_CountedField> {
           ),
           onChanged: (_) => widget.onChanged(),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: AppSizes.xs),
         Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             Text(
               '$length / ${widget.maxLength}',
-              style: TextStyle(
-                fontSize: 11,
-                color: over
-                    ? AppColors.error
-                    : near
-                        ? AppColors.warning
-                        : AppColors.muted,
-                fontWeight: over ? FontWeight.w700 : FontWeight.w500,
-              ),
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: over
+                        ? AppColors.error
+                        : near
+                            ? AppColors.warning
+                            : AppColors.muted,
+                    fontWeight: over ? FontWeight.w700 : FontWeight.w500,
+                  ),
             ),
           ],
         ),
@@ -1107,8 +1106,8 @@ class _HexFieldState extends State<_HexField> {
         ),
         const SizedBox(width: AppSizes.sm),
         Container(
-          width: 32,
-          height: 32,
+          width: AppSizes.iconXl,
+          height: AppSizes.iconXl,
           decoration: BoxDecoration(
             color: swatch,
             shape: BoxShape.circle,
@@ -1266,11 +1265,14 @@ class _DiscountedProductsSectionState
   @override
   Widget build(BuildContext context) {
     if (widget.slideId == null) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: AppSizes.md),
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
         child: Text(
           'Save the slide first, then come back to pin discounted products.',
-          style: TextStyle(color: AppColors.muted),
+          style: Theme.of(context)
+              .textTheme
+              .bodyMedium
+              ?.copyWith(color: AppColors.muted),
         ),
       );
     }
@@ -1286,14 +1288,23 @@ class _DiscountedProductsSectionState
         if (_error != null)
           Padding(
             padding: const EdgeInsets.only(bottom: AppSizes.sm),
-            child: Text(_error!, style: const TextStyle(color: AppColors.error)),
+            child: Text(
+              _error!,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: AppColors.error),
+            ),
           ),
         if (_items.isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: AppSizes.md),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
             child: Text(
               'No products yet. Tap "Add product" to pin one with a discount.',
-              style: TextStyle(color: AppColors.muted),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: AppColors.muted),
             ),
           )
         else
@@ -1401,7 +1412,7 @@ class _DiscountRowState extends State<_DiscountRow> {
       decoration: BoxDecoration(
         color: AppColors.white,
         border: Border.all(color: AppColors.hairline),
-        borderRadius: AppShapes.squircleRadius(12),
+        borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1416,13 +1427,19 @@ class _DiscountRowState extends State<_DiscountRow> {
                   item.name,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleSmall
+                      ?.copyWith(fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   'MRP ₹${item.sellingPrice.toStringAsFixed(2)}'
                   '  →  Sale ₹${item.salePrice.toStringAsFixed(2)}',
-                  style: const TextStyle(color: AppColors.muted, fontSize: 12),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: AppColors.muted),
                 ),
                 const SizedBox(height: AppSizes.xs),
                 Row(
@@ -1485,7 +1502,7 @@ class _DiscountRowState extends State<_DiscountRow> {
           ),
           IconButton(
             tooltip: 'Remove',
-            icon: const Icon(Icons.close, size: 20),
+            icon: const Icon(Icons.close, size: AppSizes.iconMd),
             onPressed: widget.onRemove,
           ),
         ],
@@ -1517,25 +1534,31 @@ class _Thumb extends StatelessWidget {
   Widget build(BuildContext context) {
     if (url.isEmpty) {
       return Container(
-        width: 48, height: 48,
+        width: AppSizes.productThumbSize, height: AppSizes.productThumbSize,
         decoration: BoxDecoration(
           color: AppColors.canvas,
-          borderRadius: AppShapes.squircleRadius(8),
+          borderRadius: AppShapes.squircleRadius(AppSizes.radiusSm),
           border: Border.all(color: AppColors.hairline),
         ),
-        child: const Icon(Icons.image_outlined, size: 20, color: AppColors.muted),
+        child: const Icon(
+          Icons.image_outlined,
+          size: AppSizes.iconMd,
+          color: AppColors.muted,
+        ),
       );
     }
     return ClipRRect(
-      borderRadius: AppShapes.squircleRadius(8),
+      borderRadius: AppShapes.squircleRadius(AppSizes.radiusSm),
       child: Image.network(
         resolveImageUrl(url),
-        width: 48, height: 48, fit: BoxFit.cover,
+        width: AppSizes.productThumbSize,
+        height: AppSizes.productThumbSize,
+        fit: BoxFit.cover,
         errorBuilder: (_, _, _) => Container(
-          width: 48, height: 48,
+          width: AppSizes.productThumbSize, height: AppSizes.productThumbSize,
           color: AppColors.canvas,
           child: const Icon(Icons.broken_image_outlined,
-              size: 18, color: AppColors.muted),
+              size: AppSizes.iconMd, color: AppColors.muted),
         ),
       ),
     );
@@ -1613,9 +1636,14 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
               child: _loading
                   ? const Center(child: CircularProgressIndicator())
                   : _results.isEmpty
-                      ? const Center(
-                          child: Text('No matches',
-                              style: TextStyle(color: AppColors.muted)),
+                      ? Center(
+                          child: Text(
+                            'No matches',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(color: AppColors.muted),
+                          ),
                         )
                       : ListView.builder(
                           itemCount: _results.length,
@@ -1631,7 +1659,7 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
                                   overflow: TextOverflow.ellipsis),
                               subtitle: Text(
                                 '${p.sku} · ₹${p.sellingPrice.toStringAsFixed(2)}',
-                                style: const TextStyle(fontSize: 12),
+                                style: Theme.of(context).textTheme.bodySmall,
                               ),
                               onTap: () => Navigator.of(context).pop(p),
                             );

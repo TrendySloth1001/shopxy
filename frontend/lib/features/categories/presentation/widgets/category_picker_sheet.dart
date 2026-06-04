@@ -134,7 +134,7 @@ class _CategoryPickerSheetState extends State<CategoryPickerSheet> {
                 const Divider(color: AppColors.hairline, height: 1),
                 TextButton.icon(
                   onPressed: () => _pick(null),
-                  icon: const Icon(Icons.close_rounded, size: 18),
+                  icon: const Icon(Icons.close_rounded, size: AppSizes.iconSm),
                   label: const Text(AppStrings.clearSelection),
                   style: TextButton.styleFrom(foregroundColor: AppColors.error),
                 ),
@@ -232,12 +232,12 @@ class _ParentRow extends StatelessWidget {
           onTap: onPickParent != null
               ? () => onPickParent!(parent.category)
               : onToggle,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
             child: Row(
               children: [
-                _CategoryThumb(category: parent.category, size: 44),
+                _CategoryThumb(category: parent.category, size: AppSizes.huge),
                 const SizedBox(width: AppSizes.md),
                 Expanded(
                   child: Column(
@@ -280,7 +280,12 @@ class _ParentRow extends StatelessWidget {
         ),
         if (expanded && parent.children.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.only(left: 56, bottom: AppSizes.sm),
+            padding: const EdgeInsets.only(
+              // Indent child chips to clear the parent thumbnail column
+              // (thumb width `huge` + row gap `md`).
+              left: AppSizes.huge + AppSizes.md,
+              bottom: AppSizes.sm,
+            ),
             child: Wrap(
               spacing: AppSizes.sm,
               runSpacing: AppSizes.sm,
@@ -315,20 +320,20 @@ class _ChildChip extends StatelessWidget {
     final theme = Theme.of(context);
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: AppShapes.squircleRadius(AppSizes.radiusXl),
       child: Container(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSizes.md,
           vertical: AppSizes.xs,
         ),
-        decoration: BoxDecoration(
+        decoration: ShapeDecoration(
           color: isSelected ? AppColors.black : AppColors.surfaceTint,
-          borderRadius: BorderRadius.circular(20),
+          shape: AppShapes.squircle(AppSizes.radiusXl),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _CategoryThumb(category: category, size: 22, rounded: true),
+            _CategoryThumb(category: category, size: AppSizes.xl, rounded: true),
             const SizedBox(width: AppSizes.xs),
             Text(
               category.name,
@@ -338,10 +343,10 @@ class _ChildChip extends StatelessWidget {
               ),
             ),
             if (isSelected) ...[
-              const SizedBox(width: 4),
+              const SizedBox(width: AppSizes.xs),
               const Icon(
                 Icons.check_rounded,
-                size: 14,
+                size: AppSizes.iconSm,
                 color: AppColors.white,
               ),
             ],
@@ -374,7 +379,7 @@ class _CategoryThumb extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surfaceTint,
         borderRadius:
-            BorderRadius.circular(rounded ? size / 2 : 8),
+            BorderRadius.circular(rounded ? size / 2 : AppSizes.radiusSm),
       ),
       alignment: Alignment.center,
       child: Icon(
@@ -385,7 +390,7 @@ class _CategoryThumb extends StatelessWidget {
     );
     if (url == null || url.isEmpty) return fallback;
     return ClipRRect(
-      borderRadius: BorderRadius.circular(rounded ? size / 2 : 8),
+      borderRadius: BorderRadius.circular(rounded ? size / 2 : AppSizes.radiusSm),
       child: Image.network(
         url,
         width: size,
@@ -415,11 +420,11 @@ class _GrabHandle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Container(
-        width: 36,
-        height: 4,
-        decoration: BoxDecoration(
+        width: AppSizes.xxxl,
+        height: AppSizes.xs,
+        decoration: ShapeDecoration(
           color: AppColors.hairline,
-          borderRadius: BorderRadius.circular(2),
+          shape: AppShapes.squircle(AppSizes.radiusSm),
         ),
       ),
     );

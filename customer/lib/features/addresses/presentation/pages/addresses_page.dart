@@ -137,44 +137,45 @@ class _AddressTile extends StatelessWidget {
             children: [
               Text(
                 address.label ?? address.fullName,
-                style: const TextStyle(
-                  color: AppColors.black,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 14,
-                ),
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      color: AppColors.black,
+                      fontWeight: FontWeight.w800,
+                    ),
               ),
               const SizedBox(width: AppSizes.sm),
               if (address.isDefault)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm, vertical: AppSizes.xs),
+                  decoration: ShapeDecoration(
                     color: AppColors.brandSoft,
-                    borderRadius: BorderRadius.circular(2),
+                    shape: AppShapes.squircle(AppSizes.radiusSm),
                   ),
-                  child: const Text(
+                  child: Text(
                     'DEFAULT',
-                    style: TextStyle(
-                      color: AppColors.brand,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.8,
-                    ),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: AppColors.brand,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.8,
+                        ),
                   ),
                 ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSizes.xs),
           Text(
             address.fullName,
-            style: const TextStyle(color: AppColors.black, fontSize: 13, fontWeight: FontWeight.w600),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.black,
+                  fontWeight: FontWeight.w600,
+                ),
           ),
           Text(
             address.oneLine,
-            style: const TextStyle(color: AppColors.muted, fontSize: 13),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.muted),
           ),
           Text(
             address.phone,
-            style: const TextStyle(color: AppColors.muted, fontSize: 12),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.muted),
           ),
           const SizedBox(height: AppSizes.sm),
           Row(
@@ -182,7 +183,7 @@ class _AddressTile extends StatelessWidget {
               if (!address.isDefault)
                 TextButton.icon(
                   onPressed: onDefault,
-                  icon: const Icon(Icons.check_circle_outline, size: 16),
+                  icon: const Icon(Icons.check_circle_outline, size: AppSizes.iconSm),
                   label: const Text('Set as default'),
                 ),
               const Spacer(),
@@ -207,19 +208,21 @@ class _Empty extends StatelessWidget {
     return ListView(
       children: [
         const SizedBox(height: 120),
-        const Center(child: Icon(Icons.location_off_outlined, size: 56, color: AppColors.muted)),
+        const Center(child: Icon(Icons.location_off_outlined, size: AppSizes.iconHuge, color: AppColors.muted)),
         const SizedBox(height: AppSizes.md),
-        const Center(
+        Center(
           child: Text(
             'No addresses saved yet',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
           ),
         ),
-        const SizedBox(height: 4),
-        const Center(
+        const SizedBox(height: AppSizes.xs),
+        Center(
           child: Text(
             'Add one to speed up checkout.',
-            style: TextStyle(color: AppColors.muted),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.muted),
           ),
         ),
         const SizedBox(height: AppSizes.lg),

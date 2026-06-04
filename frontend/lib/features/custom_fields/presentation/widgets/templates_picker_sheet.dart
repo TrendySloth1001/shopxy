@@ -89,8 +89,8 @@ class _TemplatesPickerSheetState extends State<TemplatesPickerSheet> {
               const SizedBox(height: AppSizes.md),
               Center(
                 child: Container(
-                  width: 36,
-                  height: 4,
+                  width: AppSizes.xxxl,
+                  height: AppSizes.xs,
                   decoration: BoxDecoration(
                     color: AppColors.hairline,
                     borderRadius: BorderRadius.circular(2),
@@ -145,8 +145,8 @@ class _TemplatesPickerSheetState extends State<TemplatesPickerSheet> {
                     return ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: Container(
-                        width: 40,
-                        height: 40,
+                        width: AppSizes.huge,
+                        height: AppSizes.huge,
                         decoration: ShapeDecoration(
                           color: AppColors.surfaceTint,
                           shape: AppShapes.squircle(AppSizes.radiusSm),
@@ -154,7 +154,7 @@ class _TemplatesPickerSheetState extends State<TemplatesPickerSheet> {
                         child: Icon(
                           resolveCustomFieldIcon(t.icon),
                           color: AppColors.black,
-                          size: 22,
+                          size: AppSizes.iconLg,
                         ),
                       ),
                       title: Text(
@@ -171,8 +171,8 @@ class _TemplatesPickerSheetState extends State<TemplatesPickerSheet> {
                       ),
                       trailing: isApplying
                           ? const SizedBox(
-                              width: 18,
-                              height: 18,
+                              width: AppSizes.iconMd,
+                              height: AppSizes.iconMd,
                               child:
                                   CircularProgressIndicator(strokeWidth: 2),
                             )

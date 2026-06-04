@@ -109,7 +109,7 @@ class _RangeBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+      borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
       child: Container(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSizes.md,
@@ -121,10 +121,10 @@ class _RangeBar extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const Icon(Icons.calendar_today_outlined, size: 18),
+            const Icon(Icons.calendar_today_outlined, size: AppSizes.iconMd),
             const SizedBox(width: AppSizes.sm),
             Expanded(child: Text(label)),
-            const Icon(Icons.tune, size: 18),
+            const Icon(Icons.tune, size: AppSizes.iconMd),
           ],
         ),
       ),
@@ -175,9 +175,12 @@ class _Kpi extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(color: AppColors.muted, fontSize: 12),
+            style: Theme.of(context)
+                .textTheme
+                .labelMedium
+                ?.copyWith(color: AppColors.muted),
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: AppSizes.xs),
           Text(
             value,
             style: Theme.of(context).textTheme.titleLarge,
@@ -199,7 +202,13 @@ class _Empty extends StatelessWidget {
         color: AppColors.heroPanel,
         shape: AppShapes.squircle(AppSizes.radiusMd),
       ),
-      child: Text(text, style: const TextStyle(color: AppColors.muted)),
+      child: Text(
+        text,
+        style: Theme.of(context)
+            .textTheme
+            .bodyMedium
+            ?.copyWith(color: AppColors.muted),
+      ),
     );
   }
 }

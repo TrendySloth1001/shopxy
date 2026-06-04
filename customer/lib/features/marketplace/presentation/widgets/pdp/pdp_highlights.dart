@@ -33,32 +33,33 @@ class _PdpHighlightsState extends State<PdpHighlights> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'About this item',
-            style: TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 15,
-                color: AppColors.black),
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 15,
+                  color: AppColors.black,
+                ),
           ),
           const SizedBox(height: AppSizes.sm),
           for (final t in visible)
             Padding(
-              padding: const EdgeInsets.only(bottom: 6),
+              padding: const EdgeInsets.only(bottom: AppSizes.sm),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('• ',
-                      style: TextStyle(
-                          color: AppColors.brand,
-                          fontWeight: FontWeight.w800)),
+                  Text('• ',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.brand,
+                            fontWeight: FontWeight.w800,
+                          )),
                   Expanded(
                     child: Text(
                       t,
-                      style: const TextStyle(
-                        color: AppColors.black,
-                        fontSize: 13,
-                        height: 1.45,
-                      ),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.black,
+                            height: 1.45,
+                          ),
                     ),
                   ),
                 ],
@@ -66,18 +67,17 @@ class _PdpHighlightsState extends State<PdpHighlights> {
             ),
           if (extraCount > 0 || _expanded)
             Padding(
-              padding: const EdgeInsets.only(top: 2),
+              padding: const EdgeInsets.only(top: AppSizes.xs),
               child: InkWell(
                 onTap: () => setState(() => _expanded = !_expanded),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
                   child: Text(
                     _expanded ? 'See less' : 'See more ($extraCount)',
-                    style: const TextStyle(
-                      color: AppColors.brandStrong,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 13,
-                    ),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.brandStrong,
+                          fontWeight: FontWeight.w800,
+                        ),
                   ),
                 ),
               ),

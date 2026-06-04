@@ -332,7 +332,7 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
                             shop.isPublished
                                 ? Icons.public
                                 : Icons.public_off_outlined,
-                            size: 14,
+                            size: AppSizes.iconSm,
                             color: shop.isPublished
                                 ? AppColors.brand
                                 : AppColors.muted,
@@ -547,9 +547,9 @@ class _BannerEditor extends StatelessWidget {
                 const _BannerPlaceholder(),
               if (isUploading)
                 Container(
-                  color: Colors.black.withValues(alpha: 0.3),
+                  color: AppColors.black.withValues(alpha: 0.3),
                   alignment: Alignment.center,
-                  child: const CircularProgressIndicator(color: Colors.white),
+                  child: const CircularProgressIndicator(color: AppColors.white),
                 ),
               Positioned(
                 right: AppSizes.md,
@@ -590,7 +590,7 @@ class _BannerPlaceholder extends StatelessWidget {
           children: [
             const Icon(
               Icons.image_outlined,
-              size: 32,
+              size: AppSizes.iconXl,
               color: AppColors.muted,
             ),
             const SizedBox(height: 4),
@@ -649,16 +649,16 @@ class _LogoEditor extends StatelessWidget {
                   ),
           ),
           if (isUploading)
-            const Positioned.fill(
+            Positioned.fill(
               child: ColoredBox(
-                color: Color(0x80000000),
-                child: Center(
+                color: AppColors.black.withValues(alpha: 0.5),
+                child: const Center(
                   child: SizedBox(
-                    width: 24,
-                    height: 24,
+                    width: AppSizes.iconLg,
+                    height: AppSizes.iconLg,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Colors.white,
+                      color: AppColors.white,
                     ),
                   ),
                 ),
@@ -679,8 +679,8 @@ class _LogoEditor extends StatelessWidget {
                   ),
                   child: const Icon(
                     Icons.close,
-                    size: 14,
-                    color: Colors.white,
+                    size: AppSizes.iconSm,
+                    color: AppColors.white,
                   ),
                 ),
               ),
@@ -704,7 +704,7 @@ class _ImageActionChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white,
+      color: AppColors.white,
       shape: AppShapes.squircle(AppSizes.radiusFull),
       child: InkWell(
         onTap: onTap,
@@ -717,15 +717,14 @@ class _ImageActionChip extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 14, color: AppColors.black),
-              const SizedBox(width: 4),
+              Icon(icon, size: AppSizes.iconSm, color: AppColors.black),
+              const SizedBox(width: AppSizes.xs),
               Text(
                 label,
-                style: const TextStyle(
-                  color: AppColors.black,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: AppColors.black,
+                      fontWeight: FontWeight.w600,
+                    ),
               ),
             ],
           ),

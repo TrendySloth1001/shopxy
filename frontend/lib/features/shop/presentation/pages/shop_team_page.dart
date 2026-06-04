@@ -303,7 +303,8 @@ class _MemberRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(name,
-                    style: const TextStyle(fontWeight: FontWeight.w800),
+                    style: theme.textTheme.bodyLarge
+                        ?.copyWith(fontWeight: FontWeight.w800),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 2),
@@ -367,7 +368,8 @@ class _InviteRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(invite.email,
-                      style: const TextStyle(fontWeight: FontWeight.w700),
+                      style: theme.textTheme.bodyLarge
+                          ?.copyWith(fontWeight: FontWeight.w700),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 2),
@@ -423,7 +425,8 @@ class _RoleRow extends StatelessWidget {
                   children: [
                     Flexible(
                       child: Text(role.name,
-                          style: const TextStyle(fontWeight: FontWeight.w800),
+                          style: theme.textTheme.bodyLarge
+                              ?.copyWith(fontWeight: FontWeight.w800),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis),
                     ),
@@ -514,19 +517,18 @@ class _HeaderAction extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(AppSizes.radiusFull),
+      borderRadius: AppShapes.squircleRadius(AppSizes.radiusFull),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm, vertical: 2),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16, color: AppColors.brandStrong),
-            const SizedBox(width: 4),
+            Icon(icon, size: AppSizes.iconSm, color: AppColors.brandStrong),
+            const SizedBox(width: AppSizes.xs),
             Text(label,
-                style: const TextStyle(
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
                     color: AppColors.brandStrong,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 12.5)),
+                    fontWeight: FontWeight.w800)),
           ],
         ),
       ),
@@ -563,8 +565,8 @@ class _MiniTag extends StatelessWidget {
             color: AppColors.heroPanel,
             shape: AppShapes.squircle(AppSizes.radiusFull)),
         child: Text(text,
-            style: const TextStyle(
-                color: AppColors.muted, fontWeight: FontWeight.w700, fontSize: 10.5)),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: AppColors.muted, fontWeight: FontWeight.w700)),
       );
 }
 
@@ -579,7 +581,7 @@ class _Avatar extends StatelessWidget {
             color: AppColors.brandSoft, shape: BoxShape.circle),
         alignment: Alignment.center,
         child: Text(name.isNotEmpty ? name[0].toUpperCase() : '?',
-            style: const TextStyle(
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 color: AppColors.brandStrong, fontWeight: FontWeight.w800)),
       );
 }
@@ -600,7 +602,10 @@ class _InfoBanner extends StatelessWidget {
               const SizedBox(width: AppSizes.sm),
               Expanded(
                 child: Text(text,
-                    style: const TextStyle(color: AppColors.info, fontSize: 12.5)),
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(color: AppColors.info)),
               ),
             ],
           ),

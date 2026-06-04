@@ -55,7 +55,7 @@ class _AppSearchBarState extends State<AppSearchBar> {
     final theme = Theme.of(context);
 
     return Container(
-      height: 48,
+      height: AppSizes.huge,
       decoration: ShapeDecoration(
         color: AppColors.white,
         shape: AppShapes.squircle(

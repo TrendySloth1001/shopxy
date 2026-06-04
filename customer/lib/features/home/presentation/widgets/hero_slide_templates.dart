@@ -78,7 +78,7 @@ class HeroSlideTemplateRenderer extends StatelessWidget {
 // ─── Shared visual helpers ──────────────────────────────────────────
 
 Color _autoFg(Color bg) =>
-    bg.computeLuminance() > 0.55 ? AppColors.black : Colors.white;
+    bg.computeLuminance() > 0.55 ? AppColors.black : AppColors.white;
 
 Color _shade(Color base, double amount) {
   final r = (base.r * 255 * (1 - amount)).round();
@@ -195,7 +195,7 @@ class _BrandMark extends StatelessWidget {
             height: size,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.white,
+              color: AppColors.white,
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.15),
@@ -502,7 +502,7 @@ class _DealBadge extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
-                color: Colors.white,
+                color: AppColors.white,
                 fontWeight: FontWeight.w900,
                 fontSize: 22,
                 letterSpacing: 0.5,
@@ -516,7 +516,7 @@ class _DealBadge extends StatelessWidget {
                 Text(
                   parts.number,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: AppColors.white,
                     fontWeight: FontWeight.w900,
                     fontSize: 36,
                     height: 1.0,
@@ -527,7 +527,7 @@ class _DealBadge extends StatelessWidget {
                 Text(
                   parts.suffix.toUpperCase(),
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: AppColors.white,
                     fontWeight: FontWeight.w900,
                     fontSize: 12,
                     letterSpacing: 1.5,
@@ -626,7 +626,7 @@ class _ClassicCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: AppColors.white,
                         fontWeight: FontWeight.w800,
                         fontSize: 10,
                         letterSpacing: 0.6,
@@ -678,7 +678,7 @@ class _ClassicCard extends StatelessWidget {
                 _ShimmerPill(
                   label: data._resolvedCta,
                   bg: AppColors.black,
-                  fg: Colors.white,
+                  fg: AppColors.white,
                 ),
               ],
                   ),
@@ -774,7 +774,7 @@ class _MinimalCard extends StatelessWidget {
                   _PillCta(
                     label: data._resolvedCta,
                     bg: data.accent,
-                    fg: Colors.white,
+                    fg: AppColors.white,
                   ),
                 ],
               ),
@@ -938,7 +938,7 @@ class _SplitCard extends StatelessWidget {
                       _ShimmerPill(
                         label: data._resolvedCta,
                         bg: data.accent,
-                        fg: Colors.white,
+                        fg: AppColors.white,
                       ),
                     ],
                   ),
@@ -1044,7 +1044,7 @@ class _OverlayCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppColors.white,
                       fontWeight: FontWeight.w800,
                       fontSize: 10,
                       letterSpacing: 1.6,
@@ -1072,7 +1072,7 @@ class _OverlayCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppColors.white,
                     fontWeight: FontWeight.w900,
                     fontSize: 22,
                     height: 1.05,
@@ -1101,7 +1101,7 @@ class _OverlayCard extends StatelessWidget {
                 const SizedBox(height: AppSizes.xs),
                 _ShimmerPill(
                   label: data._resolvedCta,
-                  bg: Colors.white,
+                  bg: AppColors.white,
                   fg: AppColors.black,
                 ),
               ],
@@ -1220,7 +1220,7 @@ class _DealCard extends StatelessWidget {
                       _PillCta(
                         label: data._resolvedCta,
                         bg: data.accent,
-                        fg: Colors.white,
+                        fg: AppColors.white,
                       ),
                     ],
                   ),
@@ -1353,7 +1353,7 @@ class _PosterCard extends StatelessWidget {
                   _PillCta(
                     label: data._resolvedCta,
                     bg: data.accent,
-                    fg: Colors.white,
+                    fg: AppColors.white,
                   ),
                 ],
               ),

@@ -163,7 +163,7 @@ class _Row extends StatelessWidget {
           child: Row(
             children: [
               ClipRRect(
-                borderRadius: BorderRadius.circular(AppSizes.radiusSm),
+                borderRadius: AppShapes.squircleRadius(AppSizes.radiusSm),
                 child: SizedBox(
                   width: 44,
                   height: 44,
@@ -200,7 +200,7 @@ class _Row extends StatelessWidget {
                           ),
                         ),
                         if (row.isVerified) ...[
-                          const SizedBox(width: 6),
+                          const SizedBox(width: AppSizes.sm),
                           const AppStatusBadge(
                             label: 'Verified',
                             tone: AppStatusTone.info,
@@ -249,7 +249,7 @@ class _EmptyBlock extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: const [
               Icon(Icons.storefront_outlined,
-                  size: 56, color: AppColors.subtle),
+                  size: AppSizes.iconHuge, color: AppColors.subtle),
               SizedBox(height: AppSizes.md),
               Text(
                 'No shops found.',

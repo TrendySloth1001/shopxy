@@ -20,6 +20,7 @@ class ReviewTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final initial = review.authorName.trim().isEmpty
         ? '?'
         : review.authorName.trim()[0].toUpperCase();
@@ -42,33 +43,28 @@ class ReviewTile extends StatelessWidget {
                     review.title!,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w800,
-                      fontSize: 13.5,
                     ),
                   ),
                 ),
             ],
           ),
           if (review.body != null && review.body!.isNotEmpty) ...[
-            const SizedBox(height: 6),
+            const SizedBox(height: AppSizes.sm),
             Text(
               review.body!,
               maxLines: dense ? 4 : null,
               overflow: dense ? TextOverflow.ellipsis : TextOverflow.visible,
-              style: const TextStyle(
-                fontSize: 13,
-                color: AppColors.black,
-                height: 1.35,
-              ),
+              style: theme.textTheme.bodyMedium?.copyWith(height: 1.35),
             ),
           ],
           const SizedBox(height: AppSizes.sm),
           Row(
             children: [
               Container(
-                width: 22,
-                height: 22,
+                width: AppSizes.xxl,
+                height: AppSizes.xxl,
                 decoration: const BoxDecoration(
                   color: AppColors.brandSoft,
                   shape: BoxShape.circle,
@@ -76,9 +72,8 @@ class ReviewTile extends StatelessWidget {
                 alignment: Alignment.center,
                 child: Text(
                   initial,
-                  style: const TextStyle(
+                  style: theme.textTheme.labelSmall?.copyWith(
                     color: AppColors.brandStrong,
-                    fontSize: 11,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -89,10 +84,8 @@ class ReviewTile extends StatelessWidget {
                   review.authorName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: theme.textTheme.labelMedium?.copyWith(
                     color: AppColors.muted,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
@@ -101,25 +94,27 @@ class ReviewTile extends StatelessWidget {
               // we show *was* posted by a buyer — surface that fact
               // explicitly the way Flipkart/Amazon do.
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSizes.xs,
+                  vertical: AppSizes.xs,
+                ),
                 decoration: ShapeDecoration(
                   color: AppColors.successSoft,
                   shape: AppShapes.squircle(AppSizes.radiusFull),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.verified_rounded,
-                      size: 11,
+                      size: AppSizes.iconSm,
                       color: AppColors.success,
                     ),
-                    SizedBox(width: 3),
+                    const SizedBox(width: AppSizes.xs),
                     Text(
                       'Verified buyer',
-                      style: TextStyle(
+                      style: theme.textTheme.labelSmall?.copyWith(
                         color: AppColors.success,
-                        fontSize: 10,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -129,9 +124,8 @@ class ReviewTile extends StatelessWidget {
               const Spacer(),
               Text(
                 _df.format(review.createdAt.toLocal()),
-                style: const TextStyle(
+                style: theme.textTheme.labelSmall?.copyWith(
                   color: AppColors.subtle,
-                  fontSize: 11,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -159,24 +153,30 @@ class _RatingChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.sm,
+        vertical: AppSizes.xs,
+      ),
+      decoration: ShapeDecoration(
         color: _color,
-        borderRadius: BorderRadius.circular(3),
+        shape: AppShapes.squircle(AppSizes.radiusSm),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             '$rating',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-            ),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: AppColors.white,
+                  fontWeight: FontWeight.w800,
+                ),
           ),
-          const SizedBox(width: 2),
-          const Icon(Icons.star_rounded, color: Colors.white, size: 11),
+          const SizedBox(width: AppSizes.xs),
+          const Icon(
+            Icons.star_rounded,
+            color: AppColors.white,
+            size: AppSizes.iconSm,
+          ),
         ],
       ),
     );

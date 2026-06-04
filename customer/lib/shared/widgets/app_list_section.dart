@@ -40,12 +40,11 @@ class AppListSection extends StatelessWidget {
             ),
             child: Text(
               title!.toUpperCase(),
-              style: const TextStyle(
-                color: AppColors.muted,
-                fontWeight: FontWeight.w800,
-                fontSize: 11,
-                letterSpacing: 0.6,
-              ),
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: AppColors.muted,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.6,
+                  ),
             ),
           ),
           const AppDivider.flush(),

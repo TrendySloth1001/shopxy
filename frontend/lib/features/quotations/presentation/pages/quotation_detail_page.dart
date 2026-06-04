@@ -203,13 +203,13 @@ class _QuotationDetailPageState extends State<QuotationDetailPage> {
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
               avatar: _downloading
                   ? const SizedBox(
-                      width: 14,
-                      height: 14,
+                      width: AppSizes.iconSm,
+                      height: AppSizes.iconSm,
                       child: CircularProgressIndicator(strokeWidth: 2))
                   : const Icon(Icons.share_rounded,
-                      size: 16, color: AppColors.brand),
-              label: const Text('Share',
-                  style: TextStyle(
+                      size: AppSizes.iconSm, color: AppColors.brand),
+              label: Text('Share',
+                  style: theme.textTheme.labelLarge?.copyWith(
                       color: AppColors.brand, fontWeight: FontWeight.w700)),
             ),
           ),
@@ -225,7 +225,7 @@ class _QuotationDetailPageState extends State<QuotationDetailPage> {
               Text(label,
                   style: theme.textTheme.titleMedium
                       ?.copyWith(color: fg, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 2),
+              const SizedBox(height: AppSizes.xs),
               Text(
                   _q.isRequested
                       ? 'From ${_q.partyName} · requested ${_dateFmt.format(_q.createdAt)}'
@@ -287,7 +287,8 @@ class _QuotationDetailPageState extends State<QuotationDetailPage> {
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.error,
                           side: const BorderSide(color: AppColors.error),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          padding:
+                              const EdgeInsets.symmetric(vertical: AppSizes.lg),
                         ),
                         child: const Text('Decline'),
                       ),
@@ -299,10 +300,12 @@ class _QuotationDetailPageState extends State<QuotationDetailPage> {
                         onPressed: _busy ? null : _priceAndSend,
                         style: FilledButton.styleFrom(
                           backgroundColor: AppColors.brand,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          padding:
+                              const EdgeInsets.symmetric(vertical: AppSizes.lg),
                         ),
-                        child: const Text('Price & send',
-                            style: TextStyle(fontWeight: FontWeight.w800)),
+                        child: Text('Price & send',
+                            style: theme.textTheme.labelLarge
+                                ?.copyWith(fontWeight: FontWeight.w800)),
                       ),
                     ),
                   ],
@@ -319,15 +322,16 @@ class _QuotationDetailPageState extends State<QuotationDetailPage> {
                     onPressed: _busy ? null : _cancel,
                     icon: _busy
                         ? const SizedBox(
-                            width: 16,
-                            height: 16,
+                            width: AppSizes.iconSm,
+                            height: AppSizes.iconSm,
                             child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Icon(Icons.close_rounded, size: 18),
+                        : const Icon(Icons.close_rounded, size: AppSizes.iconMd),
                     label: const Text('Cancel quotation'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.error,
                       side: const BorderSide(color: AppColors.error),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding:
+                          const EdgeInsets.symmetric(vertical: AppSizes.lg),
                     ),
                   ),
                 ),
@@ -340,7 +344,7 @@ class _QuotationDetailPageState extends State<QuotationDetailPage> {
   Widget _totalRow(String label, String value, ThemeData theme,
       {bool bold = false}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
+      padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -383,7 +387,7 @@ class _ItemRow extends StatelessWidget {
                         ?.copyWith(fontWeight: FontWeight.w700),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSizes.xs),
                 Text(
                   '$qtyStr × ${currency.format(line.unitPrice)}'
                   '${line.taxPercent > 0 ? ' · ${line.taxPercent.toStringAsFixed(0)}% GST' : ''}',
@@ -408,10 +412,10 @@ class _Label extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Text(
         label.toUpperCase(),
-        style: const TextStyle(
-            color: AppColors.muted,
-            fontWeight: FontWeight.w800,
-            fontSize: 11,
-            letterSpacing: 0.6),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: AppColors.muted,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.6,
+            ),
       );
 }

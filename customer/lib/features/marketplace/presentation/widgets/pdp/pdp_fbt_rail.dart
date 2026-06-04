@@ -53,14 +53,15 @@ class _PdpFbtRailState extends State<PdpFbtRail> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: AppSizes.lg),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
             child: Text(
               'Frequently bought together',
-              style: TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 15,
-                  color: AppColors.black),
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                    color: AppColors.black,
+                  ),
             ),
           ),
           const SizedBox(height: AppSizes.sm),
@@ -123,49 +124,48 @@ class _Card extends StatelessWidget {
                       card.name,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                          color: AppColors.black,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 12,
-                          height: 1.25),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.black,
+                            fontWeight: FontWeight.w700,
+                            height: 1.25,
+                          ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: AppSizes.xs),
                     Row(
                       children: [
                         Text(
                           '₹${card.sellingPrice.toStringAsFixed(0)}',
-                          style: const TextStyle(
-                              color: AppColors.black,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 13),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: AppColors.black,
+                                fontWeight: FontWeight.w800,
+                              ),
                         ),
                         if (card.isDiscounted) ...[
-                          const SizedBox(width: 4),
+                          const SizedBox(width: AppSizes.xs),
                           Text(
                             '₹${card.mrp.toStringAsFixed(0)}',
-                            style: const TextStyle(
-                              color: AppColors.muted,
-                              fontSize: 11,
-                              decoration: TextDecoration.lineThrough,
-                            ),
+                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                  color: AppColors.muted,
+                                  decoration: TextDecoration.lineThrough,
+                                ),
                           ),
                         ],
                       ],
                     ),
                     if (card.ratingAvg != null)
                       Padding(
-                        padding: const EdgeInsets.only(top: 2),
+                        padding: const EdgeInsets.only(top: AppSizes.xs),
                         child: Row(
                           children: [
                             const Icon(Icons.star_rounded,
                                 color: Color(0xFFE05A2A), size: 12),
-                            const SizedBox(width: 2),
+                            const SizedBox(width: AppSizes.xs),
                             Text(
                               '${card.ratingAvg!.toStringAsFixed(1)} (${card.ratingCount})',
-                              style: const TextStyle(
-                                  color: AppColors.muted,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600),
+                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                    color: AppColors.muted,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                             ),
                           ],
                         ),

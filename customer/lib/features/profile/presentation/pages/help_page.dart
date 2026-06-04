@@ -166,10 +166,10 @@ class _ContactCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: AppSizes.xs),
-            const Text(
+            Text(
               'Email us with your order number and we\'ll get back to '
               'you within one business day.',
-              style: TextStyle(color: AppColors.black, fontSize: 13),
+              style: theme.textTheme.bodySmall?.copyWith(color: AppColors.black),
             ),
             const SizedBox(height: AppSizes.md),
             Material(
@@ -182,21 +182,21 @@ class _ContactCard extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(
                       horizontal: AppSizes.md, vertical: AppSizes.sm),
                   child: Row(
-                    children: const [
-                      Icon(Icons.email_outlined,
-                          size: 16, color: AppColors.brandStrong),
-                      SizedBox(width: AppSizes.sm),
+                    children: [
+                      const Icon(Icons.email_outlined,
+                          size: AppSizes.iconSm, color: AppColors.brandStrong),
+                      const SizedBox(width: AppSizes.sm),
                       Expanded(
                         child: Text(
                           _supportEmail,
-                          style: TextStyle(
+                          style: theme.textTheme.bodyMedium?.copyWith(
                             color: AppColors.brandStrong,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
                       ),
-                      Icon(Icons.copy_rounded,
-                          size: 16, color: AppColors.brandStrong),
+                      const Icon(Icons.copy_rounded,
+                          size: AppSizes.iconSm, color: AppColors.brandStrong),
                     ],
                   ),
                 ),
@@ -217,12 +217,11 @@ class _SectionTitle extends StatelessWidget {
         padding: const EdgeInsets.only(bottom: AppSizes.sm),
         child: Text(
           label.toUpperCase(),
-          style: const TextStyle(
-            color: AppColors.muted,
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.8,
-          ),
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: AppColors.muted,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.8,
+              ),
         ),
       );
 }
@@ -255,21 +254,20 @@ class _FaqTile extends StatelessWidget {
             collapsedIconColor: AppColors.muted,
             title: Text(
               question,
-              style: const TextStyle(
-                color: AppColors.black,
-                fontWeight: FontWeight.w700,
-              ),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.black,
+                    fontWeight: FontWeight.w700,
+                  ),
             ),
             children: [
               Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
                   answer,
-                  style: const TextStyle(
-                    color: AppColors.black,
-                    fontSize: 13.5,
-                    height: 1.45,
-                  ),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.black,
+                        height: 1.45,
+                      ),
                 ),
               ),
             ],

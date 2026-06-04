@@ -65,11 +65,10 @@ void showAppSnackbar(
             Expanded(
               child: Text(
                 message,
-                style: TextStyle(
-                  color: AppColors.black,
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
-                ),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.black,
+                      fontWeight: FontWeight.w500,
+                    ),
               ),
             ),
             if (hasAction) ...[
@@ -87,12 +86,11 @@ void showAppSnackbar(
                   ),
                   child: Text(
                     actionLabel,
-                    style: TextStyle(
-                      color: fg,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 13,
-                      letterSpacing: 0.3,
-                    ),
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          color: fg,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.3,
+                        ),
                   ),
                 ),
               ),

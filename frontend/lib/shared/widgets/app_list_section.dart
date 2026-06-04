@@ -28,6 +28,7 @@ class AppListSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -40,10 +41,9 @@ class AppListSection extends StatelessWidget {
             ),
             child: Text(
               title!.toUpperCase(),
-              style: const TextStyle(
+              style: theme.textTheme.labelSmall?.copyWith(
                 color: AppColors.muted,
                 fontWeight: FontWeight.w800,
-                fontSize: 11,
                 letterSpacing: 0.6,
               ),
             ),

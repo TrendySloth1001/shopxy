@@ -112,7 +112,7 @@ class _Row extends StatelessWidget {
           padding: const EdgeInsets.all(AppSizes.md),
           child: Row(
             children: [
-              CatalogProductThumbnail(product: p, size: 64),
+              CatalogProductThumbnail(product: p, size: AppSizes.massive),
               const SizedBox(width: AppSizes.md),
               Expanded(
                 child: Column(
@@ -127,7 +127,7 @@ class _Row extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSizes.xs),
                     Text(
                       p.categoryName ?? p.unit,
                       style: theme.textTheme.bodySmall?.copyWith(
@@ -165,17 +165,21 @@ class _SkeletonRow extends StatelessWidget {
       ),
       child: Row(
         children: const [
-          AppShimmerBox(width: 64, height: 64, radius: 12),
+          AppShimmerBox(
+            width: AppSizes.massive,
+            height: AppSizes.massive,
+            radius: AppSizes.radiusMd,
+          ),
           SizedBox(width: AppSizes.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                AppShimmerLine(widthFactor: 0.8, height: 12),
-                SizedBox(height: 6),
-                AppShimmerLine(widthFactor: 0.4, height: 10),
-                SizedBox(height: 8),
-                AppShimmerLine(widthFactor: 0.3, height: 12),
+                AppShimmerLine(widthFactor: 0.8, height: AppSizes.md),
+                SizedBox(height: AppSizes.sm),
+                AppShimmerLine(widthFactor: 0.4, height: AppSizes.md),
+                SizedBox(height: AppSizes.sm),
+                AppShimmerLine(widthFactor: 0.3, height: AppSizes.md),
               ],
             ),
           ),
@@ -205,7 +209,7 @@ class _EmptyState extends StatelessWidget {
           ),
           child: const Icon(
             Icons.favorite_rounded,
-            size: 36,
+            size: AppSizes.iconXl,
             color: AppColors.accentRose,
           ),
         ),
@@ -258,7 +262,7 @@ class _ErrorBlock extends StatelessWidget {
           children: [
             const Icon(
               Icons.error_outline_rounded,
-              size: 40,
+              size: AppSizes.iconHuge,
               color: AppColors.error,
             ),
             const SizedBox(height: AppSizes.md),

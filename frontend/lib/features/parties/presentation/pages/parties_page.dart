@@ -293,7 +293,7 @@ class _PartyTile extends StatelessWidget {
                     const SizedBox(height: AppSizes.xs),
                     Wrap(
                       spacing: AppSizes.xs,
-                      runSpacing: 4,
+                      runSpacing: AppSizes.xs,
                       children: [
                         AppStatusBadge(
                           label: '${party.challanCount} challans',
@@ -359,9 +359,10 @@ class _PartyTile extends StatelessWidget {
                   Icons.verified_rounded,
                   color: AppColors.success,
                 ),
-                title: const Text(
+                title: Text(
                   'Already linked',
-                  style: TextStyle(color: AppColors.success),
+                  style: theme.textTheme.titleMedium
+                      ?.copyWith(color: AppColors.success),
                 ),
                 subtitle: Text(
                   invite!.toEmail,
@@ -377,9 +378,10 @@ class _PartyTile extends StatelessWidget {
                   color: AppColors.brandStrong,
                 ),
                 enabled: _canInvite,
-                title: const Text(
+                title: Text(
                   'Invite to Shopxy',
-                  style: TextStyle(color: AppColors.brandStrong),
+                  style: theme.textTheme.titleMedium
+                      ?.copyWith(color: AppColors.brandStrong),
                 ),
                 subtitle: _canInvite
                     ? Text(party.email!,
@@ -399,9 +401,10 @@ class _PartyTile extends StatelessWidget {
                   Icons.cancel_schedule_send_outlined,
                   color: AppColors.warning,
                 ),
-                title: const Text(
+                title: Text(
                   'Cancel invitation',
-                  style: TextStyle(color: AppColors.warning),
+                  style: theme.textTheme.titleMedium
+                      ?.copyWith(color: AppColors.warning),
                 ),
                 subtitle: Text('Sent to ${invite!.toEmail}',
                     style: theme.textTheme.bodySmall
@@ -416,9 +419,10 @@ class _PartyTile extends StatelessWidget {
                 Icons.delete_outline_rounded,
                 color: AppColors.error,
               ),
-              title: const Text(
+              title: Text(
                 AppStrings.delete,
-                style: TextStyle(color: AppColors.error),
+                style: theme.textTheme.titleMedium
+                    ?.copyWith(color: AppColors.error),
               ),
               onTap: () {
                 Navigator.pop(context);
@@ -473,7 +477,10 @@ class _InviteChip extends StatelessWidget {
         ),
     };
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.sm,
+        vertical: AppSizes.xs,
+      ),
       decoration: ShapeDecoration(
         color: bg,
         shape: AppShapes.squircle(AppSizes.radiusFull),
@@ -481,8 +488,8 @@ class _InviteChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: fg),
-          const SizedBox(width: 4),
+          Icon(icon, size: AppSizes.iconSm, color: fg),
+          const SizedBox(width: AppSizes.xs),
           Text(
             label,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(

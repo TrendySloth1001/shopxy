@@ -202,14 +202,14 @@ class _CouponRow extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSizes.xs),
                 Text(row.title,
                     style: theme.textTheme.bodyMedium),
                 if (row.isPublic || row.firstOrderOnly) ...[
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSizes.xs),
                   Wrap(
-                    spacing: 6,
-                    runSpacing: 4,
+                    spacing: AppSizes.sm,
+                    runSpacing: AppSizes.xs,
                     children: [
                       if (row.isPublic)
                         const AppStatusBadge(
@@ -228,7 +228,7 @@ class _CouponRow extends StatelessWidget {
                     ],
                   ),
                 ],
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSizes.xs),
                 Text(
                   'Valid ${dateFormat.format(row.validFrom)} – '
                   '${dateFormat.format(row.validUntil)} · '
@@ -244,7 +244,8 @@ class _CouponRow extends StatelessWidget {
                     alignment: Alignment.centerRight,
                     child: TextButton.icon(
                       onPressed: onDeactivate,
-                      icon: const Icon(Icons.power_settings_new, size: 16),
+                      icon: const Icon(Icons.power_settings_new,
+                          size: AppSizes.iconSm),
                       label: const Text('Deactivate'),
                       style: TextButton.styleFrom(
                         foregroundColor: AppColors.error,
@@ -273,7 +274,7 @@ class _EmptyBlock extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: const [
             Icon(Icons.local_offer_outlined,
-                size: 56, color: AppColors.subtle),
+                size: AppSizes.iconHuge, color: AppColors.subtle),
             SizedBox(height: AppSizes.md),
             Text(
               'No coupons yet. Tap "New coupon" to create your first one.',

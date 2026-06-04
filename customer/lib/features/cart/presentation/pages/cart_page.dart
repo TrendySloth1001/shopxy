@@ -133,16 +133,14 @@ class _Header extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Text(
+                    Text(
                       'My Cart',
-                      style: TextStyle(
-                        color: AppColors.black,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 22,
-                        letterSpacing: -0.4,
-                      ),
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.4,
+                          ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppSizes.sm),
                   ],
                 ),
                 const SizedBox(height: 2),
@@ -150,11 +148,8 @@ class _Header extends StatelessWidget {
                   itemCount == 0
                       ? 'Empty for now'
                       : '$itemCount ${itemCount == 1 ? 'item' : 'items'} in your bag',
-                  style: const TextStyle(
-                    color: AppColors.muted,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: Theme.of(context).textTheme.labelMedium
+                      ?.copyWith(color: AppColors.muted),
                 ),
               ],
             ),
@@ -235,33 +230,31 @@ class _SavingsBanner extends StatelessWidget {
           const Icon(
             Icons.savings_outlined,
             color: AppColors.success,
-            size: 20,
+            size: AppSizes.iconMd,
           ),
           const SizedBox(width: AppSizes.sm),
           Expanded(
             child: Wrap(
               children: [
-                const Text(
+                Text(
                   'You are saving ',
-                  style: TextStyle(
-                    color: AppColors.success,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                  ),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.success,
+                        fontWeight: FontWeight.w700,
+                      ),
                 ),
                 AppPriceText.precise(
                   amount,
                   color: AppColors.success,
                   fontWeight: FontWeight.w800,
-                  style: const TextStyle(fontSize: 13),
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
-                const Text(
+                Text(
                   ' on this order',
-                  style: TextStyle(
-                    color: AppColors.success,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                  ),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.success,
+                        fontWeight: FontWeight.w700,
+                      ),
                 ),
               ],
             ),
@@ -285,12 +278,11 @@ class _Section extends StatelessWidget {
     ),
     child: Text(
       label,
-      style: const TextStyle(
-        color: AppColors.muted,
-        fontWeight: FontWeight.w800,
-        fontSize: 11,
-        letterSpacing: 0.6,
-      ),
+      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: AppColors.muted,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.6,
+          ),
     ),
   );
 }
@@ -320,7 +312,7 @@ class _CartLineRow extends StatelessWidget {
               ),
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(AppSizes.radiusSm),
+              borderRadius: AppShapes.squircleRadius(AppSizes.radiusSm),
               child: Container(
                 width: 80,
                 height: 80,
@@ -329,7 +321,7 @@ class _CartLineRow extends StatelessWidget {
                     ? const Icon(
                         Icons.image_outlined,
                         color: AppColors.muted,
-                        size: 22,
+                        size: AppSizes.iconMd,
                       )
                     : NetworkImageBox(url: resolveImageUrl(product.imageUrl!)),
               ),
@@ -344,41 +336,40 @@ class _CartLineRow extends StatelessWidget {
                   product.name,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppColors.black,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                    height: 1.3,
-                  ),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.black,
+                        fontWeight: FontWeight.w700,
+                        height: 1.3,
+                      ),
                 ),
                 if (product.shopName != null) ...[
-                  const SizedBox(height: 6),
+                  const SizedBox(height: AppSizes.sm),
                   Align(
                     alignment: Alignment.centerLeft,
                     child: ShopChip(shopName: product.shopName, dense: true),
                   ),
                 ],
-                const SizedBox(height: 6),
+                const SizedBox(height: AppSizes.sm),
                 Wrap(
-                  spacing: 6,
+                  spacing: AppSizes.sm,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     AppPriceText.precise(
                       product.sellingPrice,
                       fontWeight: FontWeight.w800,
-                      style: const TextStyle(fontSize: 15),
+                      style: Theme.of(context).textTheme.titleSmall,
                     ),
                     if (hasDiscount)
                       AppPriceText.compact(
                         product.mrp,
                         color: AppColors.muted,
                         strikethrough: true,
-                        style: const TextStyle(fontSize: 12),
+                        style: Theme.of(context).textTheme.labelMedium,
                       ),
                     if (discountPct > 0)
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
+                          horizontal: AppSizes.sm,
                           vertical: 2,
                         ),
                         decoration: ShapeDecoration(
@@ -387,11 +378,11 @@ class _CartLineRow extends StatelessWidget {
                         ),
                         child: Text(
                           '$discountPct% off',
-                          style: const TextStyle(
-                            color: AppColors.success,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                          ),
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
+                                color: AppColors.success,
+                                fontWeight: FontWeight.w800,
+                              ),
                         ),
                       ),
                   ],
@@ -410,19 +401,19 @@ class _CartLineRow extends StatelessWidget {
                     InkWell(
                       onTap: () =>
                           context.read<CartProvider>().remove(product.id),
-                      borderRadius: BorderRadius.circular(AppSizes.radiusSm),
-                      child: const Padding(
-                        padding: EdgeInsets.symmetric(
+                      borderRadius: AppShapes.squircleRadius(AppSizes.radiusSm),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
                           horizontal: AppSizes.sm,
-                          vertical: 6,
+                          vertical: AppSizes.sm,
                         ),
                         child: Text(
                           'Remove',
-                          style: TextStyle(
-                            color: AppColors.error,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 12,
-                          ),
+                          style: Theme.of(context).textTheme.labelMedium
+                              ?.copyWith(
+                                color: AppColors.error,
+                                fontWeight: FontWeight.w700,
+                              ),
                         ),
                       ),
                     ),
@@ -505,33 +496,30 @@ class _BillRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final col = valueColor ?? AppColors.black;
+    final theme = Theme.of(context);
     Widget val;
     if (valueLabel != null) {
       val = Text(
         valueLabel!,
-        style: TextStyle(
-          color: col,
-          fontSize: bold ? 16 : 13,
-          fontWeight: FontWeight.w800,
-        ),
+        style: (bold ? theme.textTheme.titleMedium : theme.textTheme.bodySmall)
+            ?.copyWith(color: col, fontWeight: FontWeight.w800),
       );
     } else if (negative != null) {
       val = Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(
+          Text(
             '− ',
-            style: TextStyle(
+            style: theme.textTheme.bodySmall?.copyWith(
               color: AppColors.success,
               fontWeight: FontWeight.w800,
-              fontSize: 13,
             ),
           ),
           AppPriceText.precise(
             negative!,
             color: col,
             fontWeight: FontWeight.w800,
-            style: const TextStyle(fontSize: 13),
+            style: theme.textTheme.bodySmall,
           ),
         ],
       );
@@ -541,19 +529,19 @@ class _BillRow extends StatelessWidget {
         color: col,
         fontWeight: FontWeight.w800,
         strikethrough: valueStrike,
-        style: TextStyle(fontSize: bold ? 16 : 13),
+        style: bold ? theme.textTheme.titleMedium : theme.textTheme.bodySmall,
       );
     }
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
+      padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
       child: Row(
         children: [
           Expanded(
             child: Text(
               label,
-              style: TextStyle(
+              style: (bold ? theme.textTheme.bodyMedium : theme.textTheme.bodySmall)
+                  ?.copyWith(
                 color: bold ? AppColors.black : AppColors.muted,
-                fontSize: bold ? 14 : 13,
                 fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
               ),
             ),
@@ -579,8 +567,8 @@ class _ReassuranceCard extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 36,
-            height: 36,
+            width: AppSizes.xxxl,
+            height: AppSizes.xxxl,
             decoration: ShapeDecoration(
               color: AppColors.brandSoft,
               shape: AppShapes.squircle(AppSizes.radiusSm),
@@ -589,22 +577,24 @@ class _ReassuranceCard extends StatelessWidget {
             child: const Icon(
               Icons.verified_user_outlined,
               color: AppColors.brandStrong,
-              size: 20,
+              size: AppSizes.iconMd,
             ),
           ),
           const SizedBox(width: AppSizes.md),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Safe and secure',
-                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(fontWeight: FontWeight.w800),
                 ),
-                SizedBox(height: 2),
+                const SizedBox(height: 2),
                 Text(
                   'Cancel any time before the shop confirms.',
-                  style: TextStyle(color: AppColors.muted, fontSize: 12),
+                  style: Theme.of(context).textTheme.labelMedium
+                      ?.copyWith(color: AppColors.muted),
                 ),
               ],
             ),
@@ -628,8 +618,8 @@ class _EmptyCart extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 120,
-              height: 120,
+              width: AppSizes.productImageSize,
+              height: AppSizes.productImageSize,
               decoration: ShapeDecoration(
                 color: AppColors.heroPanel,
                 shape: AppShapes.squircle(AppSizes.radiusLg),
@@ -637,20 +627,22 @@ class _EmptyCart extends StatelessWidget {
               alignment: Alignment.center,
               child: const Icon(
                 Icons.shopping_cart_outlined,
-                size: 56,
+                size: AppSizes.iconHuge,
                 color: AppColors.muted,
               ),
             ),
             const SizedBox(height: AppSizes.lg),
-            const Text(
+            Text(
               'Your cart is empty',
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+              style: Theme.of(context).textTheme.titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w800),
             ),
-            const SizedBox(height: 4),
-            const Text(
+            const SizedBox(height: AppSizes.xs),
+            Text(
               'Browse the marketplace and add items to start checkout.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.muted, fontSize: 13),
+              style: Theme.of(context).textTheme.bodySmall
+                  ?.copyWith(color: AppColors.muted),
             ),
             const SizedBox(height: AppSizes.lg),
             AppButton.primary(
@@ -684,7 +676,7 @@ class _Footer extends StatelessWidget {
     return Material(
       color: AppColors.white,
       elevation: 12,
-      shadowColor: Colors.black.withValues(alpha: 0.15),
+      shadowColor: AppColors.black.withValues(alpha: 0.15),
       child: Container(
         padding: EdgeInsets.fromLTRB(
           AppSizes.md,
@@ -707,35 +699,35 @@ class _Footer extends StatelessWidget {
                   AppPriceText.precise(
                     total,
                     fontWeight: FontWeight.w800,
-                    style: const TextStyle(fontSize: 18),
+                    style: Theme.of(context).textTheme.titleMedium,
                   ),
                   if (savings > 0)
                     Wrap(
                       children: [
-                        const Text(
+                        Text(
                           'You save ',
-                          style: TextStyle(
-                            color: AppColors.success,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                          ),
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
+                                color: AppColors.success,
+                                fontWeight: FontWeight.w700,
+                              ),
                         ),
                         AppPriceText.precise(
                           savings,
                           color: AppColors.success,
                           fontWeight: FontWeight.w800,
-                          style: const TextStyle(fontSize: 11),
+                          style: Theme.of(context).textTheme.labelSmall,
                         ),
                       ],
                     )
                   else
-                    const Text(
+                    Text(
                       'Total payable',
-                      style: TextStyle(
-                        color: AppColors.muted,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: Theme.of(context).textTheme.labelSmall
+                          ?.copyWith(
+                            color: AppColors.muted,
+                            fontWeight: FontWeight.w600,
+                          ),
                     ),
                 ],
               ),

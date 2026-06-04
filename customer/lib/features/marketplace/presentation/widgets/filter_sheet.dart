@@ -21,9 +21,7 @@ Future<ListingFilters?> showFilterSheet({
     isScrollControlled: true,
     backgroundColor: AppColors.canvas,
     useSafeArea: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
+    shape: AppShapes.squircleTop(AppSizes.radiusXl),
     builder: (_) => _FilterSheet(initial: initial, facets: facets),
   );
 }
@@ -249,7 +247,7 @@ class _FilterSheetState extends State<_FilterSheet> {
                   child: OutlinedButton(
                     onPressed: () => Navigator.pop(context),
                     style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: const EdgeInsets.symmetric(vertical: AppSizes.lg),
                       shape: AppShapes.squircle(AppSizes.radiusMd),
                       side: const BorderSide(color: AppColors.hairline),
                       foregroundColor: AppColors.black,
@@ -267,7 +265,7 @@ class _FilterSheetState extends State<_FilterSheet> {
                     },
                     style: FilledButton.styleFrom(
                       backgroundColor: AppColors.black,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: const EdgeInsets.symmetric(vertical: AppSizes.lg),
                       shape: AppShapes.squircle(AppSizes.radiusMd),
                     ),
                     child: Text(
@@ -294,12 +292,11 @@ class _SectionTitle extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: AppSizes.sm),
       child: Text(
         label,
-        style: const TextStyle(
-          color: AppColors.muted,
-          fontWeight: FontWeight.w800,
-          fontSize: 12,
-          letterSpacing: 0.6,
-        ),
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: AppColors.muted,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.6,
+            ),
       ),
     );
   }
@@ -327,13 +324,14 @@ class _RatingChip extends StatelessWidget {
         children: [
           Text(label),
           if (count > 0) ...[
-            const SizedBox(width: 6),
+            const SizedBox(width: AppSizes.sm),
             Text(
               '($count)',
-              style: TextStyle(
-                color: selected ? Colors.white70 : AppColors.muted,
-                fontSize: 11,
-              ),
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: selected
+                        ? AppColors.white.withValues(alpha: 0.7)
+                        : AppColors.muted,
+                  ),
             ),
           ],
         ],
@@ -361,13 +359,14 @@ class _BrandChip extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(brand.name),
-          const SizedBox(width: 6),
+          const SizedBox(width: AppSizes.sm),
           Text(
             '(${brand.count})',
-            style: TextStyle(
-              color: selected ? Colors.white70 : AppColors.muted,
-              fontSize: 11,
-            ),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: selected
+                      ? AppColors.white.withValues(alpha: 0.7)
+                      : AppColors.muted,
+                ),
           ),
         ],
       ),
@@ -405,11 +404,10 @@ class _ChipShell extends StatelessWidget {
             vertical: AppSizes.sm,
           ),
           child: DefaultTextStyle.merge(
-            style: TextStyle(
-              color: selected ? Colors.white : AppColors.black,
-              fontWeight: FontWeight.w700,
-              fontSize: 13,
-            ),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: selected ? AppColors.white : AppColors.black,
+                  fontWeight: FontWeight.w700,
+                ),
             child: child,
           ),
         ),

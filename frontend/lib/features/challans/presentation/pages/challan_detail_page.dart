@@ -136,7 +136,7 @@ class _ChallanDetailPageState extends State<ChallanDetailPage> {
           GlassHero.line(
             kind: LineArt.deliveryNote,
             height: 180,
-            illustrationSize: 130,
+            illustrationSize: AppSizes.productImageSize,
             accent: c.isConverted
                 ? AppColors.brand
                 : (c.isCancelled ? AppColors.error : AppColors.brand),
@@ -277,7 +277,7 @@ class _InfoRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.only(top: 4),
+      padding: const EdgeInsets.only(top: AppSizes.xs),
       child: Row(
         children: [
           Text(

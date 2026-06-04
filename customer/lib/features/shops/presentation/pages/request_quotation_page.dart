@@ -6,6 +6,7 @@ import 'package:shopxy_customer/features/marketplace/domain/entities/marketplace
 import 'package:shopxy_customer/features/home/presentation/widgets/network_image_box.dart';
 import 'package:shopxy_customer/features/shops/domain/entities/linked_shop.dart';
 import 'package:shopxy_customer/features/shops/presentation/providers/shops_provider.dart';
+import 'package:shopxy_customer/shared/constants/app_durations.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/constants/app_strings.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
@@ -204,7 +205,7 @@ class _RequestQuotationPageState extends State<RequestQuotationPage> {
                 labelText: 'Note (optional)',
                 hintText: 'Anything the shop should know',
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+                  borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
                 ),
               ),
             ),
@@ -215,8 +216,8 @@ class _RequestQuotationPageState extends State<RequestQuotationPage> {
                 onPressed: () => Navigator.of(ctx).pop(noteCtrl.text.trim()),
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.brand,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  foregroundColor: AppColors.white,
+                  padding: const EdgeInsets.symmetric(vertical: AppSizes.lg),
                   shape: AppShapes.squircle(AppSizes.radiusMd),
                   textStyle: const TextStyle(fontWeight: FontWeight.w800),
                 ),
@@ -415,17 +416,18 @@ class _Chip extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: TextStyle(
-                    color: fg, fontWeight: FontWeight.w700, fontSize: 13),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: fg, fontWeight: FontWeight.w700),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: AppSizes.sm),
               Text(
                 '$count',
-                style: TextStyle(
-                  color: selected ? Colors.white70 : AppColors.muted,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 12,
-                ),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: selected
+                          ? AppColors.white.withValues(alpha: 0.7)
+                          : AppColors.muted,
+                      fontWeight: FontWeight.w700,
+                    ),
               ),
             ],
           ),
@@ -478,29 +480,27 @@ class _ProductRow extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: AppSizes.xs),
                 Row(
                   children: [
                     Text(
                       '${AppStrings.currencySymbol}${product.sellingPrice.toStringAsFixed(0)}',
-                      style: const TextStyle(
+                      style: theme.textTheme.bodySmall?.copyWith(
                         color: AppColors.black,
                         fontWeight: FontWeight.w800,
-                        fontSize: 13.5,
                       ),
                     ),
                     Text(
                       ' / ${product.unit}',
-                      style: const TextStyle(
-                          color: AppColors.muted, fontSize: 12),
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: AppColors.muted),
                     ),
                     if (product.isDiscounted) ...[
                       const SizedBox(width: AppSizes.sm),
                       Text(
                         '${AppStrings.currencySymbol}${product.mrp.toStringAsFixed(0)}',
-                        style: const TextStyle(
+                        style: theme.textTheme.bodySmall?.copyWith(
                           color: AppColors.subtle,
-                          fontSize: 12,
                           decoration: TextDecoration.lineThrough,
                         ),
                       ),
@@ -523,8 +523,9 @@ class _ProductRow extends StatelessWidget {
                   vertical: AppSizes.xs,
                 ),
               ),
-              child: const Text('Add',
-                  style: TextStyle(fontWeight: FontWeight.w700)),
+              child: Text('Add',
+                  style: theme.textTheme.bodyMedium
+                      ?.copyWith(fontWeight: FontWeight.w700)),
             )
           else
             _Stepper(qty: qty, onChanged: onChanged),
@@ -553,21 +554,19 @@ class _Stepper extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.remove_rounded),
             color: AppColors.brandStrong,
-            iconSize: 18,
+            iconSize: AppSizes.iconMd,
             visualDensity: VisualDensity.compact,
             onPressed: () => onChanged(qty - 1),
           ),
           Text(
             '$qty',
-            style: const TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 15,
-                color: AppColors.brandStrong),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w800, color: AppColors.brandStrong),
           ),
           IconButton(
             icon: const Icon(Icons.add_rounded),
             color: AppColors.brandStrong,
-            iconSize: 18,
+            iconSize: AppSizes.iconMd,
             visualDensity: VisualDensity.compact,
             onPressed: () => onChanged(qty + 1),
           ),
@@ -581,7 +580,7 @@ class _Stepper extends StatelessWidget {
 class _Thumb extends StatelessWidget {
   const _Thumb({required this.imageUrl});
   final String? imageUrl;
-  static const double size = 48;
+  static const double size = AppSizes.productThumbSize;
 
   @override
   Widget build(BuildContext context) {
@@ -596,7 +595,7 @@ class _Thumb extends StatelessWidget {
         ),
         alignment: Alignment.center,
         child: const Icon(Icons.inventory_2_outlined,
-            size: 22, color: AppColors.brand),
+            size: AppSizes.iconLg, color: AppColors.brand),
       );
     }
     return ClipPath(
@@ -627,16 +626,16 @@ class _SearchBar extends StatelessWidget {
         textInputAction: TextInputAction.search,
         decoration: InputDecoration(
           hintText: 'Search this shop’s catalogue',
-          prefixIcon: const Icon(Icons.search_rounded, size: 20),
+          prefixIcon: const Icon(Icons.search_rounded, size: AppSizes.iconMd),
           isDense: true,
           filled: true,
           fillColor: AppColors.white,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+            borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
             borderSide: const BorderSide(color: AppColors.hairline),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+            borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
             borderSide: const BorderSide(color: AppColors.hairline),
           ),
         ),
@@ -696,9 +695,9 @@ class _BottomBar extends StatelessWidget {
                 onPressed: hasItems ? onContinue : null,
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.brand,
-                  foregroundColor: Colors.white,
+                  foregroundColor: AppColors.white,
                   disabledBackgroundColor: AppColors.hairline,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  padding: const EdgeInsets.symmetric(vertical: AppSizes.lg),
                   shape: AppShapes.squircle(AppSizes.radiusMd),
                   textStyle: const TextStyle(fontWeight: FontWeight.w800),
                 ),
@@ -725,7 +724,7 @@ class _ErrorView extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(Icons.error_outline_rounded,
-                  color: AppColors.error, size: 36),
+                  color: AppColors.error, size: AppSizes.iconXl),
               const SizedBox(height: AppSizes.sm),
               Text(err, textAlign: TextAlign.center),
               const SizedBox(height: AppSizes.md),
@@ -806,12 +805,11 @@ class _ProductPreviewSheetState extends State<_ProductPreviewSheet> {
               children: [
                 if (p.brand != null && p.brand!.isNotEmpty)
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
+                    padding: const EdgeInsets.only(bottom: AppSizes.xs),
                     child: Text(
                       p.brand!.toUpperCase(),
-                      style: const TextStyle(
+                      style: theme.textTheme.labelSmall?.copyWith(
                         color: AppColors.muted,
-                        fontSize: 11,
                         fontWeight: FontWeight.w800,
                         letterSpacing: 0.6,
                       ),
@@ -828,37 +826,35 @@ class _ProductPreviewSheetState extends State<_ProductPreviewSheet> {
                   children: [
                     Text(
                       '${AppStrings.currencySymbol}${p.sellingPrice.toStringAsFixed(0)}',
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w800, fontSize: 20),
+                      style: theme.textTheme.titleLarge
+                          ?.copyWith(fontWeight: FontWeight.w800),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: AppSizes.sm),
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 2),
+                      padding: const EdgeInsets.only(bottom: AppSizes.xs),
                       child: Text('/ ${p.unit}',
-                          style: const TextStyle(
-                              color: AppColors.muted, fontSize: 13)),
+                          style: theme.textTheme.bodySmall
+                              ?.copyWith(color: AppColors.muted)),
                     ),
                     if (p.isDiscounted) ...[
                       const SizedBox(width: AppSizes.sm),
                       Padding(
-                        padding: const EdgeInsets.only(bottom: 2),
+                        padding: const EdgeInsets.only(bottom: AppSizes.xs),
                         child: Text(
                           '${AppStrings.currencySymbol}${p.mrp.toStringAsFixed(0)}',
-                          style: const TextStyle(
+                          style: theme.textTheme.bodySmall?.copyWith(
                             color: AppColors.subtle,
-                            fontSize: 13,
                             decoration: TextDecoration.lineThrough,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: AppSizes.sm),
                       Padding(
-                        padding: const EdgeInsets.only(bottom: 2),
+                        padding: const EdgeInsets.only(bottom: AppSizes.xs),
                         child: Text(
                           '${p.discountPct}% off',
-                          style: const TextStyle(
+                          style: theme.textTheme.bodySmall?.copyWith(
                               color: AppColors.brandStrong,
-                              fontSize: 13,
                               fontWeight: FontWeight.w800),
                         ),
                       ),
@@ -866,36 +862,37 @@ class _ProductPreviewSheetState extends State<_ProductPreviewSheet> {
                   ],
                 ),
                 if (_loading)
-                  const Padding(
-                    padding: EdgeInsets.only(top: AppSizes.md),
+                  Padding(
+                    padding: const EdgeInsets.only(top: AppSizes.md),
                     child: Row(children: [
-                      SizedBox(
-                          width: 14,
-                          height: 14,
+                      const SizedBox(
+                          width: AppSizes.iconSm,
+                          height: AppSizes.iconSm,
                           child: CircularProgressIndicator(strokeWidth: 2)),
-                      SizedBox(width: AppSizes.sm),
+                      const SizedBox(width: AppSizes.sm),
                       Text('Loading details…',
-                          style:
-                              TextStyle(color: AppColors.muted, fontSize: 12)),
+                          style: theme.textTheme.bodySmall
+                              ?.copyWith(color: AppColors.muted)),
                     ]),
                   ),
                 if (p.highlights.isNotEmpty) ...[
                   const SizedBox(height: AppSizes.md),
                   for (final h in p.highlights)
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
+                      padding: const EdgeInsets.only(bottom: AppSizes.xs),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Padding(
-                            padding: EdgeInsets.only(top: 5, right: 8),
+                            padding: EdgeInsets.only(
+                                top: AppSizes.xs, right: AppSizes.sm),
                             child: Icon(Icons.check_circle_rounded,
-                                size: 13, color: AppColors.brand),
+                                size: AppSizes.iconSm, color: AppColors.brand),
                           ),
                           Expanded(
                             child: Text(h,
-                                style:
-                                    const TextStyle(fontSize: 13, height: 1.35)),
+                                style: theme.textTheme.bodySmall
+                                    ?.copyWith(height: 1.35)),
                           ),
                         ],
                       ),
@@ -906,8 +903,8 @@ class _ProductPreviewSheetState extends State<_ProductPreviewSheet> {
                   const SizedBox(height: AppSizes.md),
                   Text(
                     p.description!.trim(),
-                    style: const TextStyle(
-                        color: AppColors.muted, fontSize: 13, height: 1.5),
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: AppColors.muted, height: 1.5),
                   ),
                 ],
               ],
@@ -922,8 +919,8 @@ class _ProductPreviewSheetState extends State<_ProductPreviewSheet> {
                       onPressed: () => _set(1),
                       style: FilledButton.styleFrom(
                         backgroundColor: AppColors.brand,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        foregroundColor: AppColors.white,
+                        padding: const EdgeInsets.symmetric(vertical: AppSizes.lg),
                         shape: AppShapes.squircle(AppSizes.radiusMd),
                         textStyle: const TextStyle(fontWeight: FontWeight.w800),
                       ),
@@ -936,7 +933,7 @@ class _ProductPreviewSheetState extends State<_ProductPreviewSheet> {
                       const SizedBox(width: AppSizes.md),
                       Text(
                         '$_qty in your request',
-                        style: const TextStyle(
+                        style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w700, color: AppColors.muted),
                       ),
                     ],
@@ -977,7 +974,7 @@ class _GalleryState extends State<_Gallery> {
         color: AppColors.heroPanel,
         alignment: Alignment.center,
         child: const Icon(Icons.inventory_2_outlined,
-            size: 48, color: AppColors.brand),
+            size: AppSizes.iconHuge, color: AppColors.brand),
       );
     }
     return Column(
@@ -1005,13 +1002,13 @@ class _GalleryState extends State<_Gallery> {
             children: [
               for (int i = 0; i < imgs.length; i++)
                 AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  width: i == _i ? 18 : 6,
-                  height: 6,
-                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  duration: AppDurations.medium,
+                  width: i == _i ? AppSizes.xl : AppSizes.sm,
+                  height: AppSizes.sm,
+                  margin: const EdgeInsets.symmetric(horizontal: AppSizes.xs),
                   decoration: BoxDecoration(
                     color: i == _i ? AppColors.brand : AppColors.hairline,
-                    borderRadius: BorderRadius.circular(3),
+                    borderRadius: AppShapes.squircleRadius(AppSizes.radiusFull),
                   ),
                 ),
             ],

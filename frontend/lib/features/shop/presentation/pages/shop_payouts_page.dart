@@ -7,6 +7,7 @@ import 'package:shopxy/features/shop/data/datasources/onboarding_draft_store.dar
 import 'package:shopxy/features/shop/presentation/providers/linked_account_provider.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/shared/theme/app_shapes.dart';
 
 /// Payouts & settlement onboarding. Wires the shop to a Razorpay Route linked
 /// account so the shop's slice of each marketplace order can settle to its bank.
@@ -390,7 +391,7 @@ class _ShopPayoutsPageState extends State<ShopPayoutsPage>
                   ? const SizedBox(
                       height: 18,
                       width: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.white))
                   : Text(isLast ? 'Set up payouts' : 'Continue'),
             ),
           ],
@@ -618,10 +619,13 @@ class _AddressStep extends StatelessWidget {
           formatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(6)],
           validator: (v) => RegExp(r'^\d{6}$').hasMatch((v ?? '').trim()) ? null : 'Enter a 6-digit PIN',
         ),
-        const Padding(
-          padding: EdgeInsets.only(top: AppSizes.xs),
+        Padding(
+          padding: const EdgeInsets.only(top: AppSizes.xs),
           child: Text('Country: India',
-              style: TextStyle(color: AppColors.muted, fontSize: 12.5)),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: AppColors.muted)),
         ),
       ],
     );
@@ -696,10 +700,10 @@ class _StepProgress extends StatelessWidget {
               for (var i = 0; i < total; i++) ...[
                 Expanded(
                   child: Container(
-                    height: 4,
+                    height: AppSizes.xs,
                     decoration: BoxDecoration(
                       color: i <= step ? AppColors.brand : AppColors.hairline,
-                      borderRadius: BorderRadius.circular(AppSizes.radiusFull),
+                      borderRadius: AppShapes.squircleRadius(AppSizes.radiusFull),
                     ),
                   ),
                 ),
@@ -904,7 +908,10 @@ class _ErrorLine extends StatelessWidget {
           Expanded(
             child: Text(
               message,
-              style: const TextStyle(color: AppColors.error, fontSize: 12.5),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: AppColors.error),
             ),
           ),
           TextButton(

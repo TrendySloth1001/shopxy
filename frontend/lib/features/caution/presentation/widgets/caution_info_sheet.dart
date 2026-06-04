@@ -47,11 +47,11 @@ class _CautionInfoBody extends StatelessWidget {
           const SizedBox(height: AppSizes.md),
           Center(
             child: Container(
-              width: 36,
-              height: 4,
+              width: AppSizes.xxxl,
+              height: AppSizes.xs,
               decoration: BoxDecoration(
                 color: AppColors.hairline,
-                borderRadius: BorderRadius.circular(2),
+                borderRadius: AppShapes.squircleRadius(AppSizes.radiusFull),
               ),
             ),
           ),
@@ -78,7 +78,6 @@ class _CautionInfoBody extends StatelessWidget {
                       'them and every movement on it.',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: AppColors.muted,
-                height: 1.4,
               ),
             ),
           ),
@@ -105,7 +104,7 @@ class _CautionInfoBody extends StatelessWidget {
           body: 'Confirms the deposit and adds it to the party\'s held '
               'balance. Shows up as a Deposit in their ledger.',
         ),
-        AppDivider.inset(leading: 48),
+        AppDivider.inset(leading: AppSizes.huge),
         _InfoRow(
           icon: Icons.close_rounded,
           color: AppColors.error,
@@ -113,7 +112,7 @@ class _CautionInfoBody extends StatelessWidget {
           body: 'Rejects the request. You can add an optional reason that the '
               'customer will see.',
         ),
-        AppDivider.inset(leading: 48),
+        AppDivider.inset(leading: AppSizes.huge),
         _InfoRow(
           icon: Icons.shopping_basket_outlined,
           color: AppColors.brandStrong,
@@ -130,21 +129,21 @@ class _CautionInfoBody extends StatelessWidget {
           title: 'Deposit',
           body: 'Money taken in — increases the balance you hold.',
         ),
-        AppDivider.inset(leading: 48),
+        AppDivider.inset(leading: AppSizes.huge),
         _InfoRow(
           icon: Icons.north_east_rounded,
           color: AppColors.error,
           title: 'Refund',
           body: 'Money returned to the party — reduces the held balance.',
         ),
-        AppDivider.inset(leading: 48),
+        AppDivider.inset(leading: AppSizes.huge),
         _InfoRow(
           icon: Icons.call_merge_rounded,
           color: AppColors.brand,
           title: 'Set-off',
           body: 'Part of the deposit applied against one of their invoices.',
         ),
-        AppDivider.inset(leading: 48),
+        AppDivider.inset(leading: AppSizes.huge),
         _InfoRow(
           icon: Icons.gavel_rounded,
           color: AppColors.error,
@@ -188,11 +187,11 @@ class _InfoRow extends StatelessWidget {
                   style: theme.textTheme.titleSmall
                       ?.copyWith(fontWeight: FontWeight.w700),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSizes.xs),
                 Text(
                   body,
                   style: theme.textTheme.bodyMedium
-                      ?.copyWith(color: AppColors.muted, height: 1.35),
+                      ?.copyWith(color: AppColors.muted),
                 ),
               ],
             ),

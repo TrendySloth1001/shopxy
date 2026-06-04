@@ -165,7 +165,7 @@ class _AdjustmentTile extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: AppSizes.xs),
                   Text(
                     '$count ${count == 1 ? 'item' : AppStrings.items} · $dateStr',
                     style: theme.textTheme.bodySmall?.copyWith(

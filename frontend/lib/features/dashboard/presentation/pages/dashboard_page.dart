@@ -262,8 +262,8 @@ class _ValueHeadline extends StatelessWidget {
           Row(
             children: [
               Container(
-                width: 6,
-                height: 6,
+                width: AppSizes.sm,
+                height: AppSizes.sm,
                 decoration: const BoxDecoration(
                   color: AppColors.brand,
                   shape: BoxShape.circle,
@@ -485,7 +485,7 @@ class _ThinStackedBar extends StatelessWidget {
   Widget build(BuildContext context) {
     if (total == 0) {
       return Container(
-        height: 6,
+        height: AppSizes.sm,
         decoration: ShapeDecoration(
           color: AppColors.hairline,
           shape: AppShapes.squircle(AppSizes.radiusFull),
@@ -497,7 +497,7 @@ class _ThinStackedBar extends StatelessWidget {
         shape: AppShapes.squircle(AppSizes.radiusFull),
       ),
       child: SizedBox(
-        height: 6,
+        height: AppSizes.sm,
         child: Row(
           children: [
             if (healthy > 0)
@@ -540,8 +540,8 @@ class _PulseLegend extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Container(
-              width: 8,
-              height: 8,
+              width: AppSizes.sm,
+              height: AppSizes.sm,
               decoration: BoxDecoration(color: color, shape: BoxShape.circle),
             ),
             const SizedBox(width: AppSizes.sm),
@@ -558,7 +558,7 @@ class _PulseLegend extends StatelessWidget {
         ),
         const SizedBox(height: 2),
         Padding(
-          padding: const EdgeInsets.only(left: 16),
+          padding: const EdgeInsets.only(left: AppSizes.lg),
           child: Text(
             label,
             style: theme.textTheme.bodySmall?.copyWith(
@@ -595,8 +595,8 @@ class _DraftsSection extends StatelessWidget {
             children: [
               Container(
                 margin: const EdgeInsets.only(top: 3),
-                width: 6,
-                height: 6,
+                width: AppSizes.sm,
+                height: AppSizes.sm,
                 decoration: const BoxDecoration(
                   color: AppColors.warning,
                   shape: BoxShape.circle,
@@ -664,7 +664,7 @@ class _DraftRow extends StatelessWidget {
               draft.isSale
                   ? Icons.arrow_upward_rounded
                   : Icons.arrow_downward_rounded,
-              size: 16,
+              size: AppSizes.iconSm,
               color: draft.isSale ? AppColors.success : AppColors.accentIndigo,
             ),
             const SizedBox(width: AppSizes.sm),
@@ -828,14 +828,14 @@ class _TransactionRow extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 34,
-            height: 34,
+            width: AppSizes.xxxl,
+            height: AppSizes.xxxl,
             decoration: ShapeDecoration(
               color: accentSoft,
               shape: AppShapes.squircle(AppSizes.radiusSm),
             ),
             alignment: Alignment.center,
-            child: Icon(icon, color: accent, size: 18),
+            child: Icon(icon, color: accent, size: AppSizes.iconMd),
           ),
           const SizedBox(width: AppSizes.md),
           Expanded(
@@ -874,7 +874,7 @@ class _TransactionRow extends StatelessWidget {
           if (actionable) ...[
             const SizedBox(width: AppSizes.xs),
             const Icon(Icons.chevron_right_rounded,
-                color: AppColors.muted, size: 18),
+                color: AppColors.muted, size: AppSizes.iconMd),
           ],
         ],
       ),
@@ -909,7 +909,7 @@ class _PendingInviteCallout extends StatelessWidget {
         AppSizes.sm,
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+        borderRadius: AppShapes.squircleRadius(AppSizes.radiusLg),
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const NotificationsPage()),
@@ -926,8 +926,8 @@ class _PendingInviteCallout extends StatelessWidget {
           child: Row(
             children: [
               Container(
-                width: 36,
-                height: 36,
+                width: AppSizes.xxxl,
+                height: AppSizes.xxxl,
                 decoration: const BoxDecoration(
                   color: AppColors.brand,
                   shape: BoxShape.circle,
@@ -936,7 +936,7 @@ class _PendingInviteCallout extends StatelessWidget {
                 child: const Icon(
                   Icons.mark_email_unread_rounded,
                   color: AppColors.white,
-                  size: 18,
+                  size: AppSizes.iconMd,
                 ),
               ),
               const SizedBox(width: AppSizes.md),

@@ -165,7 +165,7 @@ class _Summary extends StatelessWidget {
                         fontWeight: FontWeight.w800,
                       ),
                 ),
-                const SizedBox(width: 4),
+                const SizedBox(width: AppSizes.xs),
                 const Icon(Icons.star_rounded, color: AppColors.brandStrong),
               ],
             ),
@@ -201,7 +201,7 @@ class _ReviewTile extends StatelessWidget {
                 children: List.generate(5, (i) {
                   return Icon(
                     i < review.rating ? Icons.star_rounded : Icons.star_outline_rounded,
-                    size: 16,
+                    size: AppSizes.iconSm,
                     color: i < review.rating ? AppColors.brand : AppColors.disabled,
                   );
                 }),
@@ -222,14 +222,14 @@ class _ReviewTile extends StatelessWidget {
             ],
           ),
           if (review.title != null && review.title!.isNotEmpty) ...[
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSizes.xs),
             Text(
               review.title!,
               style: Theme.of(context).textTheme.titleSmall,
             ),
           ],
           if (review.body != null && review.body!.isNotEmpty) ...[
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSizes.xs),
             Text(
               review.body!,
               style: Theme.of(context).textTheme.bodyMedium,

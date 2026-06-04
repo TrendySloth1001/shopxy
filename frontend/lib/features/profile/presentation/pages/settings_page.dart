@@ -12,6 +12,7 @@ import 'package:shopxy/features/profile/presentation/pages/change_password_page.
 import 'package:shopxy/features/profile/presentation/pages/edit_profile_page.dart';
 import 'package:shopxy/features/shop/presentation/pages/shop_operations_page.dart';
 import 'package:shopxy/features/profile/presentation/pages/legal_page.dart';
+import 'package:shopxy/shared/constants/app_durations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
@@ -79,7 +80,7 @@ class _SettingsPageState extends State<SettingsPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(e.toString().replaceFirst('Exception: ', '')),
-          duration: const Duration(seconds: 6),
+          duration: AppDurations.snackbarLong,
         ),
       );
     }
@@ -293,8 +294,8 @@ class _SettingsPageState extends State<SettingsPage> {
                 'Download a JSON copy of every record tied to your account.',
             trailing: _exporting
                 ? const SizedBox(
-                    width: 18,
-                    height: 18,
+                    width: AppSizes.xl,
+                    height: AppSizes.xl,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(
@@ -446,8 +447,8 @@ class _DensityRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 32,
-            height: 32,
+            width: AppSizes.xxxl,
+            height: AppSizes.xxxl,
             decoration: ShapeDecoration(
               color: AppColors.heroPanel,
               shape: AppShapes.squircle(AppSizes.radiusSm),
@@ -455,7 +456,7 @@ class _DensityRow extends StatelessWidget {
             alignment: Alignment.center,
             child: const Icon(
               Icons.density_medium_rounded,
-              size: 18,
+              size: AppSizes.iconMd,
               color: AppColors.black,
             ),
           ),
@@ -484,12 +485,13 @@ class _DensityRow extends StatelessWidget {
                   segments: const [
                     ButtonSegment(
                       value: ListDensity.comfortable,
-                      icon: Icon(Icons.format_line_spacing_rounded, size: 16),
+                      icon: Icon(Icons.format_line_spacing_rounded,
+                          size: AppSizes.iconSm),
                       label: Text('Comfortable'),
                     ),
                     ButtonSegment(
                       value: ListDensity.compact,
-                      icon: Icon(Icons.density_small_rounded, size: 16),
+                      icon: Icon(Icons.density_small_rounded, size: AppSizes.iconSm),
                       label: Text('Compact'),
                     ),
                   ],
@@ -533,8 +535,8 @@ class _NavigationStyleRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 32,
-            height: 32,
+            width: AppSizes.xxxl,
+            height: AppSizes.xxxl,
             decoration: ShapeDecoration(
               color: AppColors.heroPanel,
               shape: AppShapes.squircle(AppSizes.radiusSm),
@@ -542,7 +544,7 @@ class _NavigationStyleRow extends StatelessWidget {
             alignment: Alignment.center,
             child: const Icon(
               Icons.dashboard_customize_outlined,
-              size: 18,
+              size: AppSizes.iconMd,
               color: AppColors.black,
             ),
           ),
@@ -571,12 +573,13 @@ class _NavigationStyleRow extends StatelessWidget {
                   segments: const [
                     ButtonSegment(
                       value: NavigationStyle.bottomBar,
-                      icon: Icon(Icons.dock_rounded, size: 16),
+                      icon: Icon(Icons.dock_rounded, size: AppSizes.iconSm),
                       label: Text('Bottom bar'),
                     ),
                     ButtonSegment(
                       value: NavigationStyle.sidebar,
-                      icon: Icon(Icons.view_sidebar_outlined, size: 16),
+                      icon: Icon(Icons.view_sidebar_outlined,
+                          size: AppSizes.iconSm),
                       label: Text('Sidebar'),
                     ),
                   ],
@@ -626,14 +629,14 @@ class _SettingRow extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 32,
-            height: 32,
+            width: AppSizes.xxxl,
+            height: AppSizes.xxxl,
             decoration: ShapeDecoration(
               color: AppColors.heroPanel,
               shape: AppShapes.squircle(AppSizes.radiusSm),
             ),
             alignment: Alignment.center,
-            child: Icon(icon, size: 18, color: AppColors.black),
+            child: Icon(icon, size: AppSizes.iconMd, color: AppColors.black),
           ),
           const SizedBox(width: AppSizes.md),
           Expanded(
@@ -706,7 +709,7 @@ class _SettingToggle extends StatelessWidget {
                 shape: AppShapes.squircle(AppSizes.radiusSm),
               ),
               alignment: Alignment.center,
-              child: Icon(icon, size: 18, color: AppColors.black),
+              child: Icon(icon, size: AppSizes.iconMd, color: AppColors.black),
             ),
             const SizedBox(width: AppSizes.md),
             Expanded(

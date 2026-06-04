@@ -7,6 +7,7 @@ import 'package:shopxy/features/payments/presentation/providers/payments_provide
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/shared/theme/app_shapes.dart';
 
 /// Bottom-sheet form for recording a payment.
 ///
@@ -59,11 +60,7 @@ class RecordPaymentSheet extends StatefulWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: AppColors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppSizes.bottomSheetRadius),
-        ),
-      ),
+      shape: AppShapes.squircleTop(AppSizes.bottomSheetRadius),
       builder: (_) => RecordPaymentSheet(
         type: type,
         partyId: partyId,
@@ -296,7 +293,7 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
                 const SizedBox(height: AppSizes.md),
                 InkWell(
                   onTap: _pickDate,
-                  borderRadius: BorderRadius.circular(AppSizes.radiusInput),
+                  borderRadius: AppShapes.squircleRadius(AppSizes.radiusInput),
                   child: InputDecorator(
                     decoration: const InputDecoration(
                       labelText: 'Date',
@@ -375,8 +372,8 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
                         onPressed: prov.isSubmitting ? null : _submit,
                         child: prov.isSubmitting
                             ? const SizedBox(
-                                width: 18,
-                                height: 18,
+                                width: AppSizes.iconMd,
+                                height: AppSizes.iconMd,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
                                 ),

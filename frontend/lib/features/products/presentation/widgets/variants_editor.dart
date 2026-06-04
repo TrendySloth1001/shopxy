@@ -115,17 +115,16 @@ class _VariantsEditorState extends State<VariantsEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Axes',
-          style: TextStyle(
-              fontWeight: FontWeight.w800,
-              fontSize: 13,
-              color: AppColors.muted),
+          style: theme.textTheme.labelMedium?.copyWith(
+              fontWeight: FontWeight.w800, color: AppColors.muted),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: AppSizes.sm),
         for (var i = 0; i < widget.axes.length; i++)
           _AxisCard(
             axis: widget.axes[i],
@@ -145,14 +144,12 @@ class _VariantsEditorState extends State<VariantsEditor> {
             ),
           ),
         const SizedBox(height: AppSizes.lg),
-        const Text(
+        Text(
           'Variants',
-          style: TextStyle(
-              fontWeight: FontWeight.w800,
-              fontSize: 13,
-              color: AppColors.muted),
+          style: theme.textTheme.labelMedium?.copyWith(
+              fontWeight: FontWeight.w800, color: AppColors.muted),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: AppSizes.sm),
         for (var i = 0; i < widget.variants.length; i++)
           _VariantCard(
             axes: widget.axes,
@@ -194,11 +191,13 @@ class _AxisCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        border: Border.all(color: AppColors.hairline),
-        borderRadius: BorderRadius.circular(8),
+      margin: const EdgeInsets.only(bottom: AppSizes.sm),
+      padding: const EdgeInsets.all(AppSizes.sm),
+      decoration: ShapeDecoration(
+        shape: AppShapes.squircle(
+          AppSizes.radiusSm,
+          side: const BorderSide(color: AppColors.hairline, width: 1),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -291,11 +290,13 @@ class _VariantCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        border: Border.all(color: AppColors.hairline),
-        borderRadius: BorderRadius.circular(8),
+      margin: const EdgeInsets.only(bottom: AppSizes.sm),
+      padding: const EdgeInsets.all(AppSizes.sm),
+      decoration: ShapeDecoration(
+        shape: AppShapes.squircle(
+          AppSizes.radiusSm,
+          side: const BorderSide(color: AppColors.hairline, width: 1),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -305,17 +306,15 @@ class _VariantCard extends StatelessWidget {
               if (variant.isDefault)
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
+                      horizontal: AppSizes.sm, vertical: 2),
+                  decoration: ShapeDecoration(
                     color: AppColors.heroPanel,
-                    borderRadius: BorderRadius.circular(4),
+                    shape: AppShapes.squircle(AppSizes.radiusSm),
                   ),
-                  child: const Text(
+                  child: Text(
                     'DEFAULT',
-                    style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 10,
-                        letterSpacing: 0.6),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        fontWeight: FontWeight.w800, letterSpacing: 0.6),
                   ),
                 ),
               const Spacer(),
@@ -414,16 +413,15 @@ class _VariantCard extends StatelessWidget {
             onPickCamera: () => _pickAndAdd(context, ImageSource.camera),
             onRemove: _removeImage,
           ),
-          const SizedBox(height: 4),
-          const Text(
+          const SizedBox(height: AppSizes.xs),
+          Text(
             'Add images for this exact variant — what colour it looks '
             'like, how it fits. Customers picking this option will see '
             'these instead of the product-level gallery.',
-            style: TextStyle(
-              color: AppColors.muted,
-              fontSize: 11,
-              height: 1.35,
-            ),
+            style: Theme.of(context)
+                .textTheme
+                .labelSmall
+                ?.copyWith(color: AppColors.muted),
           ),
         ],
       ),
@@ -460,7 +458,7 @@ class _VariantImagesRow extends StatelessWidget {
               child: Stack(
                 children: [
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(AppSizes.radiusSm),
+                    borderRadius: AppShapes.squircleRadius(AppSizes.radiusSm),
                     child: Image.network(
                       resolveImageUrl(urls[i]),
                       width: 72,
@@ -558,18 +556,17 @@ class _AddVariantImageTile extends StatelessWidget {
             side: const BorderSide(color: AppColors.hairline),
           ),
         ),
-        child: const Column(
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.add_a_photo_outlined, color: AppColors.muted),
-            SizedBox(height: 2),
+            const Icon(Icons.add_a_photo_outlined, color: AppColors.muted),
+            const SizedBox(height: 2),
             Text(
               'Add',
-              style: TextStyle(
-                color: AppColors.muted,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-              ),
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: AppColors.muted,
+                    fontWeight: FontWeight.w700,
+                  ),
             ),
           ],
         ),

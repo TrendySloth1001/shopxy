@@ -3,8 +3,10 @@ import 'package:provider/provider.dart';
 import 'package:shopxy_customer/features/auth/presentation/pages/login_page.dart';
 import 'package:shopxy_customer/features/home/presentation/widgets/network_image_box.dart';
 import 'package:shopxy_customer/features/onboarding/presentation/providers/onboarding_controller.dart';
+import 'package:shopxy_customer/shared/constants/app_durations.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
+import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_pill_button.dart';
 
 /// One onboarding slide's content.
@@ -79,7 +81,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
       _finish();
     } else {
       _controller.nextPage(
-        duration: const Duration(milliseconds: 340),
+        duration: AppDurations.long,
         curve: Curves.easeOutCubic,
       );
     }
@@ -114,15 +116,17 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   alignment: Alignment.centerRight,
                   child: AnimatedOpacity(
                     opacity: _isLast ? 0 : 1,
-                    duration: const Duration(milliseconds: 200),
+                    duration: AppDurations.short,
                     child: TextButton(
                       onPressed: _isLast ? null : _finish,
                       style: TextButton.styleFrom(
-                        foregroundColor: Colors.white,
+                        foregroundColor: AppColors.white,
                         padding: const EdgeInsets.symmetric(
                             horizontal: AppSizes.lg, vertical: AppSizes.sm),
-                        textStyle: const TextStyle(
-                            fontWeight: FontWeight.w700, fontSize: 14),
+                        textStyle: Theme.of(context)
+                            .textTheme
+                            .labelLarge
+                            ?.copyWith(fontWeight: FontWeight.w700),
                       ),
                       child: const Text('Skip'),
                     ),
@@ -146,20 +150,25 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text(
+                          Text(
                             'Already have an account?',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 13.5,
-                              fontWeight: FontWeight.w500,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(
+                                  color:
+                                      AppColors.white.withValues(alpha: 0.7),
+                                  fontWeight: FontWeight.w500,
+                                ),
                           ),
                           TextButton(
                             onPressed: _signIn,
                             style: TextButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              textStyle: const TextStyle(
-                                  fontWeight: FontWeight.w800, fontSize: 13.5),
+                              foregroundColor: AppColors.white,
+                              textStyle: Theme.of(context)
+                                  .textTheme
+                                  .labelMedium
+                                  ?.copyWith(fontWeight: FontWeight.w800),
                             ),
                             child: const Text('Sign in'),
                           ),
@@ -189,18 +198,18 @@ class _ImmersiveSlide extends StatelessWidget {
         NetworkImageBox(url: slide.imageUrl, fit: BoxFit.cover),
         // Scrim: a touch at the top (for the Skip button) and a heavy
         // bottom so the copy + controls stay legible on any photo.
-        const DecoratedBox(
+        DecoratedBox(
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                Color(0x66000000),
-                Color(0x00000000),
-                Color(0x00000000),
-                Color(0xE6000000),
+                AppColors.black.withValues(alpha: 0.4),
+                Colors.transparent,
+                Colors.transparent,
+                AppColors.black.withValues(alpha: 0.9),
               ],
-              stops: [0.0, 0.18, 0.42, 0.92],
+              stops: const [0.0, 0.18, 0.42, 0.92],
             ),
           ),
         ),
@@ -215,33 +224,30 @@ class _ImmersiveSlide extends StatelessWidget {
             children: [
               Text(
                 slide.eyebrow,
-                style: const TextStyle(
-                  color: AppColors.brandSoft,
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.3,
-                ),
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: AppColors.brandSoft,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.3,
+                    ),
               ),
               const SizedBox(height: AppSizes.md),
               Text(
                 slide.title,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 32,
-                  fontWeight: FontWeight.w800,
-                  height: 1.1,
-                  letterSpacing: -0.6,
-                ),
+                style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                      color: AppColors.white,
+                      fontWeight: FontWeight.w800,
+                      height: 1.1,
+                      letterSpacing: -0.6,
+                    ),
               ),
               const SizedBox(height: AppSizes.md),
               Text(
                 slide.body,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                  height: 1.45,
-                ),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.white.withValues(alpha: 0.7),
+                      fontWeight: FontWeight.w500,
+                      height: 1.45,
+                    ),
               ),
             ],
           ),
@@ -264,14 +270,16 @@ class _Dots extends StatelessWidget {
       children: List.generate(count, (i) {
         final active = i == index;
         return AnimatedContainer(
-          duration: const Duration(milliseconds: 260),
+          duration: AppDurations.medium,
           curve: Curves.easeOut,
-          margin: const EdgeInsets.symmetric(horizontal: 3),
-          width: active ? 24 : 7,
-          height: 7,
+          margin: const EdgeInsets.symmetric(horizontal: AppSizes.xs),
+          width: active ? AppSizes.xxl : AppSizes.sm,
+          height: AppSizes.sm,
           decoration: BoxDecoration(
-            color: active ? AppColors.brand : Colors.white38,
-            borderRadius: BorderRadius.circular(4),
+            color: active
+                ? AppColors.brand
+                : AppColors.white.withValues(alpha: 0.38),
+            borderRadius: AppShapes.squircleRadius(AppSizes.radiusSm),
           ),
         );
       }),

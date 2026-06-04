@@ -97,7 +97,7 @@ class _InvoiceTile extends StatelessWidget {
               child: Icon(
                 invoice.isSale ? Icons.south_west_rounded : Icons.north_east_rounded,
                 color: accent,
-                size: 18,
+                size: AppSizes.iconMd,
               ),
             ),
             const SizedBox(width: AppSizes.md),
@@ -149,7 +149,7 @@ class _EmptyInvoices extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(Icons.receipt_long_outlined,
-                color: AppColors.muted, size: 48),
+                color: AppColors.muted, size: AppSizes.iconHuge),
             const SizedBox(height: AppSizes.lg),
             Text(
               AppStrings.noInvoicesTitle,
@@ -181,7 +181,8 @@ class _Error extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 36),
+            const Icon(Icons.error_outline_rounded,
+                color: AppColors.error, size: AppSizes.iconXl),
             const SizedBox(height: AppSizes.sm),
             Text(err, textAlign: TextAlign.center),
             const SizedBox(height: AppSizes.md),
