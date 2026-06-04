@@ -415,7 +415,7 @@ class _OrderRow extends StatelessWidget {
                     style: theme.textTheme.titleSmall
                         ?.copyWith(fontWeight: FontWeight.w800),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSizes.xs),
                   AppStatusBadge(
                     label: order.status,
                     tone: _tone(order),

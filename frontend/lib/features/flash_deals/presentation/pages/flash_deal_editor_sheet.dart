@@ -455,8 +455,8 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: AppSizes.xxxl,
-            height: AppSizes.xs,
+            width: AppSizes.handleWidth,
+            height: AppSizes.handleHeight,
             decoration: BoxDecoration(
               color: AppColors.disabled,
               borderRadius: AppShapes.squircleRadius(AppSizes.radiusSm),

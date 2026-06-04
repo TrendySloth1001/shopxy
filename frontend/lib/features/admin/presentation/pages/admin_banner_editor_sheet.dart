@@ -443,11 +443,11 @@ class _DragHandle extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
       child: Container(
-        width: 40,
-        height: 4,
+        width: AppSizes.handleWidth,
+        height: AppSizes.handleHeight,
         decoration: BoxDecoration(
           color: AppColors.disabled,
-          borderRadius: BorderRadius.circular(2),
+          borderRadius: BorderRadius.circular(AppSizes.radiusXs),
         ),
       ),
     );
@@ -566,7 +566,7 @@ class _PreviewCard extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       color: accentColor,
-                      borderRadius: BorderRadius.circular(2),
+                      borderRadius: BorderRadius.circular(AppSizes.radiusXs),
                     ),
                     child: Text(
                       brandLabel!,

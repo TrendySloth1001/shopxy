@@ -337,7 +337,7 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
                                 ? AppColors.brand
                                 : AppColors.muted,
                           ),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: AppSizes.xs),
                           Text(
                             shop.isPublished
                                 ? 'Live on marketplace · /${shop.slug}'
@@ -593,7 +593,7 @@ class _BannerPlaceholder extends StatelessWidget {
               size: AppSizes.iconXl,
               color: AppColors.muted,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSizes.xs),
             Text(
               'Add a banner',
               style: Theme.of(context).textTheme.labelMedium?.copyWith(

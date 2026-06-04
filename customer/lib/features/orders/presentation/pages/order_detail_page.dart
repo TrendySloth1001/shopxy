@@ -1247,8 +1247,8 @@ class _ItemRow extends StatelessWidget {
             ClipRRect(
               borderRadius: AppShapes.squircleRadius(AppSizes.radiusSm),
               child: Container(
-                width: 56,
-                height: 56,
+                width: AppSizes.avatarMd,
+                height: AppSizes.avatarMd,
                 color: AppColors.heroPanel,
                 child: item.imageUrl == null
                     ? const Icon(

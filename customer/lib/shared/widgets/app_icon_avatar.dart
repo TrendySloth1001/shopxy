@@ -11,14 +11,14 @@ class AppIconAvatar extends StatelessWidget {
   const AppIconAvatar({
     super.key,
     required this.icon,
-    this.size = 40,
+    this.size = AppSizes.avatarSm,
     this.filled = true,
   });
 
   const AppIconAvatar.outlined({
     super.key,
     required this.icon,
-    this.size = 40,
+    this.size = AppSizes.avatarSm,
   }) : filled = false;
 
   final IconData icon;
@@ -51,7 +51,7 @@ class AppIconAvatar extends StatelessWidget {
 
 /// Circular monogram avatar — letter on hairline-bordered white circle.
 class AppMonogramAvatar extends StatelessWidget {
-  const AppMonogramAvatar({super.key, required this.label, this.size = 40});
+  const AppMonogramAvatar({super.key, required this.label, this.size = AppSizes.avatarSm});
 
   final String label;
   final double size;

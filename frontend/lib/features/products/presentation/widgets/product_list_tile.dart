@@ -90,7 +90,7 @@ class ProductListTile extends StatelessWidget {
     final compact = context.watch<NavigationPrefsProvider>().isCompact;
     // Card mode (comfortable) is the richer layout — bigger thumb, more
     // breathing room, name wraps to 2 lines, description visible.
-    final imageSide = compact ? 56.0 : 96.0;
+    final imageSide = compact ? AppSizes.avatarMd : 96.0;
     final vPad = compact ? AppSizes.sm : AppSizes.lg;
     final nameMaxLines = compact ? 1 : 2;
     final showDescription =

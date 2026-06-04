@@ -122,6 +122,19 @@ Prefer `AppShapes.squircle(AppSizes.radiusLg)` for container shapes (§4).
 **Component sizes:** `cardPadding 16` · `bottomSheetRadius 24` · `appBarHeight 56`
 · `fabSize 56` · `productThumbSize 48` · `productImageSize 120` · `qrCodeSize 200`.
 
+**Recurring off-scale component sizes** (fixed component dimensions, NOT padding —
+use these instead of leaving the raw number):
+`fabClearance 96` (scroll-list bottom inset clearing a FAB) ·
+`handleWidth 36` / `handleHeight 4` (bottom-sheet drag-handle pill) ·
+`avatarXs 36` / `avatarSm 40` / `avatarMd 56` (avatars / icon chips / thumbnails) ·
+`tapTargetMin 44` (minimum tap target) ·
+`heroHeightSm 160` / `heroHeightMd 180` (GlassHero panel heights) ·
+`heroIllustration 130` (GlassHero illustration size).
+
+**Micro radius:** `radiusXs 2` — drag-handle pills, chart bars, tiny badges. Use
+this (not a raw `2`) for sub-`radiusSm` rounding; pair with `AppShapes.squircle`
+or `BorderRadius.circular` only on these non-card primitives.
+
 ### Snapping rule for off-scale numbers
 Round to the **nearest** scale token (`6→sm`, `10→md`, `14→lg`, `18→xl`,
 `28→xxl/xxxl`). If a value is load-bearing and >8px off every token, that's a

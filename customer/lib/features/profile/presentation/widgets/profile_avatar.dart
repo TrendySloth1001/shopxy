@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shopxy_customer/core/network/image_url.dart';
+import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 
 /// Circular profile photo. Falls back to a colored circle with the
@@ -12,7 +13,7 @@ class ProfileAvatar extends StatelessWidget {
     super.key,
     required this.name,
     this.avatarUrl,
-    this.size = 56,
+    this.size = AppSizes.avatarMd,
     this.borderColor,
   });
 

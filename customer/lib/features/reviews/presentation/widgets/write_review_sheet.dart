@@ -309,7 +309,7 @@ class _DragHandle extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
       child: Container(
         width: 40,
-        height: AppSizes.xs,
+        height: AppSizes.handleHeight,
         decoration: ShapeDecoration(
           color: AppColors.disabled,
           shape: AppShapes.squircle(AppSizes.radiusSm),

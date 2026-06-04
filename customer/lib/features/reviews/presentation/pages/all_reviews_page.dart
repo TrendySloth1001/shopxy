@@ -185,7 +185,7 @@ class _AllReviewsPageState extends State<AllReviewsPage> {
     }
     return ListView.separated(
       controller: _scroll,
-      padding: const EdgeInsets.only(bottom: 96),
+      padding: const EdgeInsets.only(bottom: AppSizes.fabClearance),
       itemCount: list.length + ((_cursor != null || _loading) ? 1 : 0),
       separatorBuilder: (_, _) => const Divider(
         height: 1,

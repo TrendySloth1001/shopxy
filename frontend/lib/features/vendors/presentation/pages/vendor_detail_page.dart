@@ -193,7 +193,7 @@ class _Header extends StatelessWidget {
         children: [
           Row(
             children: [
-              AppMonogramAvatar(label: vendor.name, size: AppSizes.fabSize),
+              AppMonogramAvatar(label: vendor.name, size: AppSizes.avatarMd),
               const SizedBox(width: AppSizes.md),
               Expanded(
                 child: Column(

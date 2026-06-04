@@ -143,7 +143,7 @@ class _AdBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.7),
+        color: AppColors.white.withValues(alpha: 0.7),
         borderRadius: BorderRadius.circular(3),
       ),
       child: const Text(

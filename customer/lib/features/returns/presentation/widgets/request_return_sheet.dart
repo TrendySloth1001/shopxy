@@ -225,7 +225,7 @@ class _SheetState extends State<_Sheet> {
                     backgroundColor: AppColors.black,
                     padding: const EdgeInsets.symmetric(
                       horizontal: AppSizes.xl,
-                      vertical: 14,
+                      vertical: AppSizes.lg,
                     ),
                     shape: AppShapes.squircle(AppSizes.radiusMd),
                   ),

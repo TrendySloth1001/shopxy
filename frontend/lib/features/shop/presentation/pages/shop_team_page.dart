@@ -575,8 +575,8 @@ class _Avatar extends StatelessWidget {
   final String name;
   @override
   Widget build(BuildContext context) => Container(
-        width: 40,
-        height: 40,
+        width: AppSizes.avatarSm,
+        height: AppSizes.avatarSm,
         decoration: const BoxDecoration(
             color: AppColors.brandSoft, shape: BoxShape.circle),
         alignment: Alignment.center,

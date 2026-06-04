@@ -184,8 +184,8 @@ class _PrefTile extends StatelessWidget {
         onChanged: onChanged,
         contentPadding: EdgeInsets.zero,
         secondary: Container(
-          width: 36,
-          height: 36,
+          width: AppSizes.avatarXs,
+          height: AppSizes.avatarXs,
           decoration: BoxDecoration(
             color: tint,
             shape: BoxShape.circle,

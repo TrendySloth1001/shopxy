@@ -494,8 +494,8 @@ class _CircleBackButton extends StatelessWidget {
           customBorder: const CircleBorder(),
           onTap: () => Navigator.of(context).maybePop(),
           child: const SizedBox(
-            width: 40,
-            height: 40,
+            width: AppSizes.avatarSm,
+            height: AppSizes.avatarSm,
             child: Icon(
               Icons.arrow_back_rounded,
               color: AppColors.white,

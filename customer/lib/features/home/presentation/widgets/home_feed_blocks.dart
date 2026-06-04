@@ -276,7 +276,7 @@ class _MosaicCard extends StatelessWidget {
                       end: Alignment.bottomCenter,
                       colors: [
                         Colors.transparent,
-                        Colors.black.withValues(alpha: 0.55),
+                        AppColors.black.withValues(alpha: 0.55),
                       ],
                     ),
                   ),
@@ -575,8 +575,8 @@ class _ReelCard extends StatelessWidget {
                       vertical: 2,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.95),
-                      borderRadius: BorderRadius.circular(2),
+                      color: AppColors.white.withValues(alpha: 0.95),
+                      borderRadius: BorderRadius.circular(AppSizes.radiusXs),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -611,7 +611,7 @@ class _ReelCard extends StatelessWidget {
                         end: Alignment.bottomCenter,
                         colors: [
                           Colors.transparent,
-                          Colors.black.withValues(alpha: 0.75),
+                          AppColors.black.withValues(alpha: 0.75),
                         ],
                       ),
                     ),
@@ -1131,8 +1131,8 @@ class _PosterProductBlock extends StatelessWidget {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Colors.black.withValues(alpha: 0.05),
-                          Colors.black.withValues(alpha: 0.65),
+                          AppColors.black.withValues(alpha: 0.05),
+                          AppColors.black.withValues(alpha: 0.65),
                         ],
                       ),
                     ),
@@ -1289,8 +1289,8 @@ class _LeaderboardRow extends StatelessWidget {
           child: Row(
             children: [
               Container(
-                width: 36,
-                height: 36,
+                width: AppSizes.avatarXs,
+                height: AppSizes.avatarXs,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: rank == 1
@@ -1311,8 +1311,8 @@ class _LeaderboardRow extends StatelessWidget {
               ClipRRect(
                 borderRadius: BorderRadius.circular(AppSizes.radiusSm),
                 child: SizedBox(
-                  width: 56,
-                  height: 56,
+                  width: AppSizes.avatarMd,
+                  height: AppSizes.avatarMd,
                   child: NetworkImageBox(
                     url: resolveImageUrl(product.imageUrl),
                     placeholderColor: product.bgColor,
@@ -1668,8 +1668,8 @@ class _ShopShowcaseBlock extends StatelessWidget {
             Row(
               children: [
                 Container(
-                  width: 40,
-                  height: 40,
+                  width: AppSizes.avatarSm,
+                  height: AppSizes.avatarSm,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: AppColors.heroPanel,

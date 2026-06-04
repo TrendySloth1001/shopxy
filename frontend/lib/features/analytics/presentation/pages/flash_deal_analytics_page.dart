@@ -240,7 +240,7 @@ class _Bar extends StatelessWidget {
         height: height.clamp(2.0, AppSizes.qrCodeSize),
         decoration: BoxDecoration(
           color: color,
-          borderRadius: BorderRadius.circular(2),
+          borderRadius: BorderRadius.circular(AppSizes.radiusXs),
         ),
       ),
     );

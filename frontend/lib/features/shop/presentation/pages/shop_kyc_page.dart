@@ -103,8 +103,8 @@ class _KycRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 40,
-            height: 40,
+            width: AppSizes.avatarSm,
+            height: AppSizes.avatarSm,
             decoration: const BoxDecoration(
               color: AppColors.heroPanel,
               shape: BoxShape.circle,

@@ -100,7 +100,7 @@ class _VendorPickerSheetState extends State<_VendorPickerSheet> {
               height: AppSizes.xs,
               decoration: ShapeDecoration(
                 color: AppColors.hairline,
-                shape: AppShapes.squircle(2),
+                shape: AppShapes.squircle(AppSizes.radiusXs),
               ),
             ),
             Padding(

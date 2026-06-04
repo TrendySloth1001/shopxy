@@ -702,8 +702,8 @@ class _SettingToggle extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              width: 32,
-              height: 32,
+              width: AppSizes.xxxl,
+              height: AppSizes.xxxl,
               decoration: ShapeDecoration(
                 color: AppColors.heroPanel,
                 shape: AppShapes.squircle(AppSizes.radiusSm),
