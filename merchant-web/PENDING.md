@@ -44,9 +44,9 @@ this should be revisited.
   the detail page can't list them. Fix = backend includes variants in getById (or
   the web reads them elsewhere). We already guard against wiping: variants are only
   sent when axes are defined.
-- [ ] **Custom-field definitions UI.** The product editor reads shop-wide
-  definitions (`GET /custom-fields`) but there's no web screen to create/edit the
-  definitions themselves (the POST/PATCH endpoints exist).
+- [x] **Custom-field definitions UI.** Built at `/dashboard/custom-fields`
+  (sections + definitions CRUD, templates). See the Shop/Settings section below
+  for the remaining custom-field gaps (drag-reorder, icon picker).
 - [ ] **OCR / barcode-scan helpers** from the Flutter add/edit (camera scan to
   prefill SKU/barcode) are not ported — native-camera features.
 - [ ] **List filters aren't in the URL** (search/category/sort/page are local
@@ -90,12 +90,25 @@ this should be revisited.
   + `/legal/terms` and About rows linking to them (register/consent can reuse).
 - [ ] **Theme & language are placeholders.** Shown as "Coming soon" rows
   (parity with Flutter). Trigger: dark-mode / i18n support → make them live.
-- [ ] **Shop operations settings.** Flutter Settings has a "Shop operations"
-  entry (hours, vacation mode, payouts, KYC, team) behind the relevant
-  capabilities. Trigger: shop / payouts / team web features → add the section.
-- [ ] **Custom-field definitions settings.** Flutter Settings → Inventory opens
-  the custom-fields editor (the product editor already reads the definitions).
-  Trigger: build the definitions UI (see the Products gap above) → link it here.
+- [x] **Shop operations settings.** Built: `/dashboard/shop` (storefront, logo/
+  banner, hours, vacation mode, policies, publish), `/dashboard/team` (members,
+  invites, roles, full permission matrix), `/dashboard/payouts` (status). Linked
+  from Settings → Shop operations.
+- [x] **Custom-field definitions settings.** Built at `/dashboard/custom-fields`,
+  linked from Settings → Inventory.
+- [ ] **Payout KYC start wizard.** `/dashboard/payouts` is read-only status
+  (`GET /linked-account`). The secure onboarding (PAN/bank capture → Razorpay
+  Route, behind ROUTE_SPLIT_ENABLED, device-encrypted draft) stays in the mobile
+  app; the web intentionally does not capture KYC. Trigger: a decision to bring
+  KYC onboarding to web → build the wizard against `POST /linked-account`.
+- [ ] **Custom-fields drag-reorder + icon picker.** Sections/definitions render
+  in `sortOrder` but the web has no drag-reorder UI (`PATCH .../reorder` exists)
+  and omits the per-field icon (the Flutter icon-name picker). Trigger: polish
+  pass → add reorder handles + an icon picker.
+- [ ] **Team: own-rights ceiling not pre-checked.** The permission matrix lets a
+  non-owner pick any right; the backend rejects grants beyond the actor's own
+  rights (`CANNOT_GRANT_BEYOND_OWN_RIGHTS`) and we surface that error. Trigger:
+  nicer UX → disable un-grantable rows up front from the current user's perms.
 - [ ] **App version is hard-coded** to `1.0.0` in `app/dashboard/settings`.
   Trigger: a build-time version constant → read it from there.
 

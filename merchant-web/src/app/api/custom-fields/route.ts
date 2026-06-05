@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { authedFetch, extractError } from "@/server/auth/session";
+import { proxy } from "@/server/proxy";
 import { customFieldDefSchema } from "@/features/products/schema";
 
 // GET /api/custom-fields — shop-wide custom-field definitions.
@@ -20,4 +21,9 @@ export async function GET() {
     return NextResponse.json({ error: "Unexpected custom-field data." }, { status: 502 });
   }
   return NextResponse.json(parsed.data);
+}
+
+// POST /api/custom-fields — create a definition.
+export function POST(req: Request) {
+  return proxy("/custom-fields", req, { fallback: "Could not create the field." });
 }
