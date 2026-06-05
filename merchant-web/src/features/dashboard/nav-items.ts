@@ -26,6 +26,8 @@ import {
   BookMarked,
   Landmark,
   ShieldCheck,
+  UserCog,
+  HandCoins,
   type LucideIcon,
 } from "lucide-react";
 
@@ -75,6 +77,13 @@ export const NAV_GROUPS: NavGroup[] = [
       { key: "categories", label: "Categories", icon: FolderTree },
       { key: "vendors", label: "Vendors", icon: Truck },
       { key: "parties", label: "Parties", icon: Users },
+    ],
+  },
+  {
+    title: "Shop operations",
+    items: [
+      { key: "team", label: "Team", icon: UserCog },
+      { key: "caution-requests", label: "Caution requests", icon: HandCoins },
     ],
   },
   {
