@@ -1,0 +1,81 @@
+import {
+  Armchair,
+  Beef,
+  BookOpen,
+  Car,
+  Coffee,
+  ConciergeBell,
+  Croissant,
+  Cpu,
+  Dumbbell,
+  Flower2,
+  Footprints,
+  Gem,
+  Gift,
+  Hammer,
+  IceCreamCone,
+  Laptop,
+  type LucideIcon,
+  NotebookPen,
+  PaintRoller,
+  PawPrint,
+  Pill,
+  Refrigerator,
+  Shirt,
+  ShoppingCart,
+  Smartphone,
+  Sparkles,
+  SprayCan,
+  Sprout,
+  Store,
+  Tag,
+  ToyBrick,
+  Utensils,
+} from "lucide-react";
+
+/**
+ * Category icon catalogue, mirroring the Flutter `kCategoryIconOptions`. The
+ * backend stores an `iconName` string from this fixed set; the merchant browse
+ * grid resolves it to a lucide icon (Material → lucide nearest equivalent).
+ */
+export type CategoryIconOption = { name: string; label: string; icon: LucideIcon };
+
+export const CATEGORY_ICON_OPTIONS: ReadonlyArray<CategoryIconOption> = [
+  { name: "grocery", label: "Grocery", icon: ShoppingCart },
+  { name: "kirana", label: "Kirana", icon: Store },
+  { name: "beverages", label: "Beverages", icon: Coffee },
+  { name: "bakery", label: "Bakery", icon: Croissant },
+  { name: "dairy", label: "Dairy", icon: IceCreamCone },
+  { name: "fruits-veg", label: "Fruits & Veg", icon: Sprout },
+  { name: "meat", label: "Meat", icon: Beef },
+  { name: "pharmacy", label: "Pharmacy", icon: Pill },
+  { name: "electronics", label: "Electronics", icon: Cpu },
+  { name: "mobile", label: "Mobile", icon: Smartphone },
+  { name: "computer", label: "Computer", icon: Laptop },
+  { name: "appliance", label: "Appliance", icon: Refrigerator },
+  { name: "fashion", label: "Fashion", icon: Shirt },
+  { name: "footwear", label: "Footwear", icon: Footprints },
+  { name: "beauty", label: "Beauty", icon: Sparkles },
+  { name: "jewellery", label: "Jewellery", icon: Gem },
+  { name: "home", label: "Home", icon: Armchair },
+  { name: "kitchen", label: "Kitchen", icon: Utensils },
+  { name: "cleaning", label: "Cleaning", icon: SprayCan },
+  { name: "stationery", label: "Stationery", icon: NotebookPen },
+  { name: "books", label: "Books", icon: BookOpen },
+  { name: "toys", label: "Toys", icon: ToyBrick },
+  { name: "sports", label: "Sports", icon: Dumbbell },
+  { name: "auto", label: "Auto", icon: Car },
+  { name: "hardware", label: "Hardware", icon: Hammer },
+  { name: "paint", label: "Paint", icon: PaintRoller },
+  { name: "plant", label: "Plants", icon: Flower2 },
+  { name: "gift", label: "Gift", icon: Gift },
+  { name: "pet", label: "Pet", icon: PawPrint },
+  { name: "service", label: "Service", icon: ConciergeBell },
+];
+
+const ICON_BY_NAME = new Map(CATEGORY_ICON_OPTIONS.map((o) => [o.name, o.icon]));
+
+/** Resolve a stored icon name to a lucide icon; falls back to a neutral tag. */
+export function resolveCategoryIcon(name?: string | null): LucideIcon {
+  return (name && ICON_BY_NAME.get(name)) || Tag;
+}
