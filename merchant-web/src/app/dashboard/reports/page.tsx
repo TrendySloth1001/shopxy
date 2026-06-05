@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { LineChart } from "lucide-react";
 import { PageHeader } from "@/shared/ui/page-header";
+import { LineChart as TrendLineChart } from "@/shared/ui/charts";
 import { CardsSkeleton, ListRowsSkeleton } from "@/shared/ui/skeleton";
 import { formatINR } from "@/shared/money";
 import {
@@ -209,16 +210,47 @@ function LeaderRow({ name, sub, value, amount, max }: { name: string; sub?: stri
   );
 }
 
-function DailyBars({ points }: { points: { day: string; amount: number }[] }) {
-  if (points.length === 0) return null;
-  const max = Math.max(...points.map((p) => p.amount), 1);
+function labelDay(iso?: string): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+}
+
+/** Trailing simple moving average (smooths the daily noise). */
+function movingAverage(values: number[], window = 7): number[] {
+  return values.map((_, i) => {
+    const slice = values.slice(Math.max(0, i - window + 1), i + 1);
+    return slice.reduce((s, v) => s + v, 0) / slice.length;
+  });
+}
+
+/**
+ * Daily trend line with a 7-day moving-average overlay and a run-rate line.
+ * The projection is a naive "at this pace" estimate, not a forecast — labelled
+ * as such so it isn't read as a promise.
+ */
+function TrendChart({ points }: { points: { day: string; amount: number }[] }) {
+  if (points.length === 0) return <EmptyHint>No activity in this range.</EmptyHint>;
+  const values = points.map((p) => p.amount);
+  const total = values.reduce((s, v) => s + v, 0);
+  const perDay = points.length > 0 ? total / points.length : 0;
   return (
-    <div className="flex h-28 items-end gap-px">
-      {points.map((p, i) => {
-        const pct = Math.max(2, Math.round((p.amount / max) * 100));
-        return <span key={i} className="flex-1 rounded-t-xs bg-brand-soft" style={{ height: `${pct}%` }} title={`${p.day}: ${formatINR(p.amount)}`} />;
-      })}
-    </div>
+    <section>
+      <TrendLineChart
+        values={values}
+        overlay={points.length >= 4 ? movingAverage(values) : undefined}
+        heightClass="h-40"
+        ariaLabel="Daily trend"
+      />
+      <div className="mt-xs flex justify-between text-body-sm text-subtle">
+        <span>{labelDay(points[0].day)}</span>
+        <span>{labelDay(points[points.length - 1].day)}</span>
+      </div>
+      <p className="mt-sm text-body-sm text-muted">
+        ≈ {formatINR(perDay)}/day at this pace · ~{formatINR(perDay * 30)} over 30 days
+        {points.length >= 4 ? " · dashed line is the 7-day average" : ""}
+      </p>
+    </section>
   );
 }
 
@@ -249,7 +281,7 @@ function SalesView({ r }: { r: SalesReport }) {
         value={formatINR(r.summary.total)}
         hint={`${r.summary.invoiceCount} confirmed invoices · ${formatINR(r.summary.taxAmount)} GST · net ${formatINR(r.summary.netRevenue)} after refunds`}
       />
-      <DailyBars points={r.daily.map((d) => ({ day: d.day, amount: d.revenue }))} />
+      <TrendChart points={r.daily.map((d) => ({ day: d.day, amount: d.revenue }))} />
       <section>
         <SectionHeading>Top products</SectionHeading>
         {r.topProducts.length === 0 ? (
@@ -284,7 +316,7 @@ function PurchasesView({ r }: { r: PurchasesReport }) {
         value={formatINR(r.summary.total)}
         hint={`${r.summary.invoiceCount} confirmed bills · ${formatINR(r.summary.taxAmount)} GST`}
       />
-      <DailyBars points={r.daily.map((d) => ({ day: d.day, amount: d.spend }))} />
+      <TrendChart points={r.daily.map((d) => ({ day: d.day, amount: d.spend }))} />
       <section>
         <SectionHeading>Top purchased products</SectionHeading>
         {r.topProducts.length === 0 ? (
