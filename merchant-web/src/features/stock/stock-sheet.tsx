@@ -2,14 +2,17 @@
 
 import { useEffect, useState } from "react";
 import { Modal, ModalActions } from "@/shared/ui/modal";
-import { SelectField, TextAreaField, TextField } from "@/shared/ui/form";
+import { TextAreaField, TextField } from "@/shared/ui/form";
+import { ComboSelect } from "@/shared/ui/combo-select";
 import { listParties } from "@/features/parties/api";
 import type { Party } from "@/features/parties/schema";
+import { listVendors } from "@/features/vendors/api";
+import type { Vendor } from "@/features/vendors/schema";
 import { qty } from "@/features/products/format";
 import { unitLabel } from "@/features/products/units";
 import type { Product } from "@/features/products/schema";
-import { createStockTransaction, listSuppliers } from "./api";
-import type { StockType, SupplierVendor } from "./schema";
+import { createStockTransaction } from "./api";
+import type { StockType } from "./schema";
 
 /** number → editable string, blank when zero. */
 function priceStr(n: number): string {
@@ -43,7 +46,7 @@ export function StockSheet({
   const [partyId, setPartyId] = useState("");
   const [note, setNote] = useState("");
 
-  const [vendors, setVendors] = useState<SupplierVendor[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
   const [parties, setParties] = useState<Party[]>([]);
   const [loadingOpts, setLoadingOpts] = useState(true);
 
@@ -51,15 +54,16 @@ export function StockSheet({
   const [error, setError] = useState<string | null>(null);
 
   // Pre-load the counterparty options whenever the movement type changes.
+  // Suppliers come from the full vendor list (not just past purchases), so a
+  // freshly-added vendor is selectable straight away.
   useEffect(() => {
     let active = true;
     void (async () => {
       setLoadingOpts(true);
       try {
         if (type === "STOCK_IN") {
-          let res = await listSuppliers({ productId: product.id, limit: 30 });
-          if (active && res.vendors.length === 0) res = await listSuppliers({ limit: 30 });
-          if (active) setVendors(res.vendors);
+          const vs = await listVendors();
+          if (active) setVendors(vs);
         } else {
           const ps = await listParties();
           if (active) {
@@ -161,29 +165,30 @@ export function StockSheet({
       </div>
 
       {type === "STOCK_IN" ? (
-        <SelectField
+        <ComboSelect
           label="Supplier"
           value={vendorId}
           onChange={setVendorId}
-          helper={loadingOpts ? "Loading vendors…" : "Pick from your vendors — optional."}
-          options={[
-            { value: "", label: vendors.length ? "No supplier" : "No saved vendors" },
-            ...vendors.map((v) => ({
-              value: String(v.id),
-              label: v.phone ? `${v.name} · ${v.phone}` : v.name,
-            })),
-          ]}
+          placeholder={loadingOpts ? "Loading vendors…" : "Select a supplier (optional)"}
+          searchable={vendors.length > 6}
+          emptyText="No vendors yet — add one under Vendors."
+          helper="Pick from your vendors — optional."
+          options={vendors.map((v) => ({
+            value: String(v.id),
+            label: v.name,
+            hint: v.phone ?? undefined,
+          }))}
         />
       ) : (
-        <SelectField
+        <ComboSelect
           label="Customer"
           value={partyId}
           onChange={setPartyId}
-          helper={loadingOpts ? "Loading customers…" : "Pick the customer — defaults to Walk-in."}
-          options={[
-            { value: "", label: "No customer" },
-            ...parties.map((p) => ({ value: String(p.id), label: p.name })),
-          ]}
+          placeholder={loadingOpts ? "Loading customers…" : "Select a customer"}
+          searchable={parties.length > 6}
+          emptyText="No customers yet."
+          helper="Defaults to Walk-in Customer."
+          options={parties.map((p) => ({ value: String(p.id), label: p.name }))}
         />
       )}
 
