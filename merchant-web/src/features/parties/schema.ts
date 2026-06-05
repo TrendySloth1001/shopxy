@@ -2,7 +2,7 @@ import { z } from "zod";
 
 /**
  * Party ("customer") shapes, mirroring the backend `parties` module
- * (`/me/parties`). Like vendors but receivable-side, with a `cautionBalance`
+ * (`/parties`). Like vendors but receivable-side, with a `cautionBalance`
  * (security deposit held) and challans instead of stock-in.
  */
 

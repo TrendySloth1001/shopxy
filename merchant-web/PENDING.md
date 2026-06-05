@@ -171,13 +171,13 @@ this should be revisited.
   linked badge, txn/invoice counts) + `/dashboard/vendors/[id]` detail
   (header, contact rows, payable balance, net-purchased/stock-in/returns stats,
   ledger, recent bills, recent stock-in) + full-page `/new` + `[id]/edit`. BFF
-  `api/vendors` (+ `[id]`, `[id]/overview`, `[id]/ledger`) → `/me/vendors`.
+  `api/vendors` (+ `[id]`, `[id]/overview`, `[id]/ledger`) → `/vendors`.
 - [x] **Customers (parties).** `/dashboard/parties` (search, add/edit/delete,
   linked badge, **caution-balance chip**, challan/invoice counts) +
   `/dashboard/parties/[id]` detail (header, receivable balance, **caution
   deposit card**, net-billed/sales/returns stats, ledger, recent invoices,
   recent challans) + `/new` + `[id]/edit`. BFF `api/parties` (+ `[id]`,
-  `[id]/overview`, `[id]/ledger`) → `/me/parties`. System parties (`isSystem`,
+  `[id]/overview`, `[id]/ledger`) → `/parties`. System parties (`isSystem`,
   e.g. Walk-in) are not editable.
 - [x] **Shared contact editor + ledger.** `src/shared/ui/contact-editor.tsx`
   (name/contact/phone/email/GSTIN/PAN/address/city/PIN + GST-state select from
@@ -195,7 +195,7 @@ this should be revisited.
   the resulting receipt rows.
 - [ ] **Caution-deposit actions.** The party detail shows the caution **balance**
   read-only. The deposit / refund / set-off / forfeit / requests actions
-  (`/me/parties/:id/caution/*`) are not wired — they're a separate module.
+  (`/parties/:id/caution/*`) are not wired — they're a separate module.
   Trigger: bring the caution flow to web → add the action card + history page.
 - [ ] **Contact change-log.** Backend exposes `/:id/changes` (field-level audit)
   for both vendors and parties; not surfaced on web. Trigger: an "Activity /

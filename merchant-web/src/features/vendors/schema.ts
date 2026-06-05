@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /**
- * Vendor shapes, mirroring the backend `vendors` module (`/me/vendors`).
+ * Vendor shapes, mirroring the backend `vendors` module (`/vendors`).
  * Decimal money/qty are coerced to numbers; `_count` is surfaced as flat
  * transaction/invoice counts for the list rows.
  */
