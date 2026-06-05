@@ -11,12 +11,11 @@ this should be revisited.
 ## Deferred wiring (stubbed — connect when the trigger lands)
 
 - [ ] **Sidebar nav → real screens.** Built: `Products`, `Orders`, `Shop`,
-  `My Carousels`, `Flash deals`, `Brand spotlight`, `Promotions` (+ Profile /
-  Settings / Team / Payouts / Custom fields). The rest still land on the
-  `/dashboard/[...section]` placeholder. Trigger: building each remaining section
-  (invoices, quotations, challans, stock-adjustments, returns, reports,
-  analytics, vendors, parties, categories, coupons) — add
-  `app/dashboard/<section>/…`.
+  `My Carousels`, `Flash deals`, `Brand spotlight`, `Promotions`, `Coupons` (+
+  Profile / Settings / Team / Payouts / Custom fields). The rest still land on
+  the `/dashboard/[...section]` placeholder. Trigger: building each remaining
+  section (invoices, quotations, challans, stock-adjustments, returns, reports,
+  analytics, vendors, parties, categories) — add `app/dashboard/<section>/…`.
 - [ ] **Dashboard row tap-through.** In `src/features/dashboard/dashboard-home.tsx`
   `DraftRow` and `ActivityRow` are display-only. Trigger: invoice / challan
   detail screens exist → link a draft to its invoice detail, and an activity row
@@ -124,6 +123,31 @@ this should be revisited.
 - [ ] **Slide CTA shimmer / Ken-Burns animation.** The preview renders the
   templates faithfully but static (Flutter animates the CTA pill + image).
   Trigger: motion pass → add the keyframes.
+
+## Coupons — built & deferred / known gaps
+
+- [x] **Coupons.** `/dashboard/coupons` — full list (code · discount, lifecycle
+  badge Live/Inactive/Expired/Exhausted, public/first-order chips, validity +
+  redemption count, inline deactivate with confirm) mirroring the Flutter
+  `MerchantCouponsPage`. Full-page editor `/new` + `[id]/edit` with a sticky
+  live customer-card preview: code, title, description, PERCENT/FLAT discount
+  (+ max-discount cap for PERCENT), min order, validity window, per-user limit,
+  total cap, and Public / First-order-only / Active toggles. BFF `api/coupons`
+  (GET list / POST) + `[id]` (PATCH/DELETE) → `/me/coupons-admin`. Coupon money
+  is **rupees** (Decimal), not paise.
+- [ ] **No single-coupon GET on the admin surface.** The backend exposes only
+  `GET /me/coupons-admin` (list); there is no `GET /me/coupons-admin/:id`. The
+  edit page therefore resolves an existing coupon by reading the (shop-scoped,
+  small) list and finding by id — same source the Flutter editor sheet uses.
+  Trigger: a dedicated detail endpoint lands → switch `getCoupon` to it.
+- [ ] **Coupon redemption analytics.** The list shows `totalRedemptions` only.
+  There's no per-coupon breakdown (who redeemed, when, discount given) — the
+  backend `CouponRedemption` table exists but no merchant analytics endpoint.
+  Trigger: a coupon-analytics endpoint → add a detail page like flash deals.
+- [ ] **Date-only vs datetime.** The Flutter editor uses a date-only picker for
+  valid-from/until; the web uses the shared `DateTimeField` (datetime-local) for
+  consistency with the other marketing editors. Functionally equivalent — both
+  send UTC ISO. Trigger: only revisit if the date-only granularity is required.
 
 ## Layout / shell debt
 
