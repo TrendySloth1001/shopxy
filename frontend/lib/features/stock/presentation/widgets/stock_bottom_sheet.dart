@@ -6,6 +6,7 @@ import 'package:shopxy/features/parties/data/datasources/parties_remote_data_sou
 import 'package:shopxy/features/parties/domain/entities/party.dart';
 import 'package:shopxy/features/products/domain/entities/product.dart';
 import 'package:shopxy/features/stock/data/datasources/stock_remote_data_source.dart';
+import 'package:shopxy/features/vendors/data/datasources/vendors_remote_data_source.dart';
 import 'package:shopxy/features/stock/presentation/providers/stock_provider.dart';
 import 'package:shopxy/shared/constants/app_durations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
@@ -163,20 +164,34 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
   Future<void> _loadSupplierOptions({String? query}) async {
     if (_type != 'STOCK_IN') return;
     setState(() => _isLoadingSuppliers = true);
+    // Capture data sources before any await — `context` must not be used
+    // across an async gap (use_build_context_synchronously).
+    final ds = context.read<StockRemoteDataSource>();
+    final vendorsDs = context.read<VendorsRemoteDataSource>();
     try {
-      final ds = context.read<StockRemoteDataSource>();
       var result = await ds.getSuppliers(
         query: query,
         productId: widget.product.id,
         limit: 12,
       );
-      // If no product-specific vendors, fall back to all vendors
+      // If no product-specific vendors, fall back to all vendors that have
+      // purchase history for this shop.
       if (result.vendors.isEmpty && result.freeTextSuppliers.isEmpty) {
         result = await ds.getSuppliers(query: query, limit: 12);
       }
+      // Still nothing? `/stock/suppliers` only lists vendors with a prior
+      // stock-in, so a freshly-added vendor never appears. Fall back to the
+      // full vendor list so any saved vendor is selectable straight away.
+      var vendors = result.vendors;
+      if (vendors.isEmpty) {
+        final all = await vendorsDs.getVendors(search: query, limit: 50);
+        vendors = all
+            .map((v) => SupplierVendor(id: v.id, name: v.name, phone: v.phone))
+            .toList();
+      }
       if (!mounted) return;
       setState(() {
-        _vendors = result.vendors;
+        _vendors = vendors;
         _freeTextOptions = result.freeTextSuppliers;
         _isLoadingSuppliers = false;
       });
