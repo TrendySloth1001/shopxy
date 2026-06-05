@@ -12,18 +12,27 @@ import { NAV_GROUPS, hrefForNav, type NavItem } from "./nav-items";
 const STORAGE_KEY = "sx_sidebar_collapsed";
 
 /**
+ * Stable store callbacks for `useSyncExternalStore`. Hoisted to module scope so
+ * their identities never change between renders — passing fresh closures would
+ * make React re-subscribe after every commit (avoidable re-render churn).
+ */
+function subscribeCollapsed(cb: () => void): () => void {
+  window.addEventListener("storage", cb);
+  return () => window.removeEventListener("storage", cb);
+}
+const getCollapsedSnapshot = () => localStorage.getItem(STORAGE_KEY) === "1";
+const getCollapsedServerSnapshot = () => false;
+
+/**
  * Persisted collapse preference, read via useSyncExternalStore so the server
  * snapshot (expanded) and client value reconcile without a hydration mismatch
  * or a setState-in-effect. A synthetic "storage" event re-syncs the same tab.
  */
 function useCollapsed(): [boolean, () => void] {
   const collapsed = useSyncExternalStore(
-    (cb) => {
-      window.addEventListener("storage", cb);
-      return () => window.removeEventListener("storage", cb);
-    },
-    () => localStorage.getItem(STORAGE_KEY) === "1",
-    () => false,
+    subscribeCollapsed,
+    getCollapsedSnapshot,
+    getCollapsedServerSnapshot,
   );
   const toggle = () => {
     localStorage.setItem(STORAGE_KEY, collapsed ? "0" : "1");
