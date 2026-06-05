@@ -1,18 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import Image from "next/image";
 import { Plus, RefreshCw, Sparkles, Star, X } from "lucide-react";
-import { Modal, ModalActions } from "@/shared/ui/modal";
+import { PageHeader } from "@/shared/ui/page-header";
 import { Divider } from "@/shared/ui/divider";
-import { DateTimeField, HexColorField, TextAreaField, TextField } from "@/shared/ui/form";
-import { ImageUploadField } from "@/shared/ui/image-upload";
-import { CtaTargetField } from "@/shared/ui/cta-target-field";
-import { buildCtaTarget, type CtaKind } from "@/shared/cta-target";
 import { mediaSrc } from "@/features/products/components/product-thumb";
-import { formatDateRange, isoFromNow, nowIso } from "@/shared/datetime";
+import { formatDateRange } from "@/shared/datetime";
 import { autoFg } from "@/features/carousels/color";
-import { cancelSpotlight, listSpotlights, submitSpotlight } from "@/features/spotlight/api";
+import { cancelSpotlight, listSpotlights } from "@/features/spotlight/api";
 import {
   SPOTLIGHT_STATUS_LABELS,
   type Spotlight,
@@ -24,7 +21,6 @@ export default function SpotlightPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [nonce, setNonce] = useState(0);
-  const [submitting, setSubmitting] = useState(false);
 
   const reload = useCallback(() => setNonce((n) => n + 1), []);
 
@@ -59,35 +55,28 @@ export default function SpotlightPage() {
 
   return (
     <div className="w-full px-lg py-xxl md:px-xxl">
-      <div className="flex flex-wrap items-start justify-between gap-md">
-        <div>
-          <div className="flex items-center gap-sm">
-            <Star size={22} className="text-accent-amber" />
-            <h1 className="text-headline-md text-ink">Brand spotlight</h1>
-          </div>
-          <p className="mt-xs text-body-md text-muted">
-            Pitch your shop for a featured &ldquo;brand of the day&rdquo; slot on the customer home.
-          </p>
-        </div>
-        <div className="flex items-center gap-sm">
-          <button
-            type="button"
-            onClick={reload}
-            disabled={loading}
-            aria-label="Refresh"
-            className="inline-flex size-10 items-center justify-center rounded-button border border-hairline text-ink transition-colors hover:bg-surface-tint disabled:text-disabled"
-          >
-            <RefreshCw size={16} />
-          </button>
-          <button
-            type="button"
-            onClick={() => setSubmitting(true)}
-            className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-md text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
-          >
-            <Plus size={16} /> Request slot
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        icon={Star}
+        tone="amber"
+        title="Brand spotlight"
+        subtitle="Pitch your shop for a featured “brand of the day” slot on the customer home."
+      >
+        <button
+          type="button"
+          onClick={reload}
+          disabled={loading}
+          aria-label="Refresh"
+          className="inline-flex size-10 items-center justify-center rounded-button border border-hairline text-ink transition-colors hover:bg-surface-tint disabled:text-disabled"
+        >
+          <RefreshCw size={16} />
+        </button>
+        <Link
+          href="/dashboard/spotlight/new"
+          className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-md text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+        >
+          <Plus size={16} /> Request slot
+        </Link>
+      </PageHeader>
 
       {/* Explainer */}
       <div className="mt-xl flex items-start gap-md rounded-lg bg-hero-panel p-lg">
@@ -112,6 +101,12 @@ export default function SpotlightPage() {
             <Star size={22} />
           </span>
           <p className="text-body-md text-muted">No spotlight requests yet.</p>
+          <Link
+            href="/dashboard/spotlight/new"
+            className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
+          >
+            <Plus size={16} /> Request slot
+          </Link>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-lg lg:grid-cols-2">
@@ -120,16 +115,6 @@ export default function SpotlightPage() {
           ))}
         </div>
       )}
-
-      {submitting ? (
-        <SpotlightSubmit
-          onClose={() => setSubmitting(false)}
-          onSubmitted={() => {
-            setSubmitting(false);
-            reload();
-          }}
-        />
-      ) : null}
     </div>
   );
 }
@@ -150,7 +135,6 @@ function SpotlightCard({ spotlight, onCancel }: { spotlight: Spotlight; onCancel
   const fg = autoFg(spotlight.bgColor);
   return (
     <div className="overflow-hidden rounded-lg border border-hairline">
-      {/* Coloured header */}
       <div className="flex items-center gap-md p-lg" style={{ backgroundColor: spotlight.bgColor }}>
         <div className="relative size-16 shrink-0 overflow-hidden rounded-md border border-white/20 bg-white/30">
           {src ? (
@@ -172,7 +156,6 @@ function SpotlightCard({ spotlight, onCancel }: { spotlight: Spotlight; onCancel
         </span>
       </div>
 
-      {/* Footer */}
       <div className="p-lg">
         <p className="text-body-sm text-muted">{formatDateRange(spotlight.startAt, spotlight.endAt)}</p>
 
@@ -195,103 +178,5 @@ function SpotlightCard({ spotlight, onCancel }: { spotlight: Spotlight; onCancel
         ) : null}
       </div>
     </div>
-  );
-}
-
-// ── Submit ────────────────────────────────────────────────────────────
-
-function SpotlightSubmit({ onClose, onSubmitted }: { onClose: () => void; onSubmitted: () => void }) {
-  const [dealLabel, setDealLabel] = useState("");
-  const [subtitle, setSubtitle] = useState("");
-  const [heroImageUrl, setHeroImageUrl] = useState<string | null>(null);
-  const [bgColor, setBgColor] = useState("#EFE4D6");
-  const [accentColor, setAccentColor] = useState("#B23A2E");
-  const [ctaKind, setCtaKind] = useState<CtaKind>("none");
-  const [ctaValue, setCtaValue] = useState("");
-  const [ctaError, setCtaError] = useState<string | null>(null);
-  const [startAt, setStartAt] = useState<string | null>(nowIso());
-  const [endAt, setEndAt] = useState<string | null>(isoFromNow(24 * 60 * 60 * 1000));
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function save() {
-    setError(null);
-    setCtaError(null);
-    if (!dealLabel.trim()) return setError("A deal label is required.");
-    if (!heroImageUrl) return setError("A hero image is required.");
-    if (!startAt || !endAt || new Date(endAt) <= new Date(startAt)) {
-      return setError("End time must be after the start time.");
-    }
-    const cta = buildCtaTarget(ctaKind, ctaValue);
-    if (cta.error) {
-      setCtaError(cta.error);
-      return;
-    }
-    setBusy(true);
-    try {
-      await submitSpotlight({
-        dealLabel: dealLabel.trim(),
-        subtitle: subtitle.trim() || null,
-        heroImageUrl,
-        bgColor: bgColor.trim(),
-        accentColor: accentColor.trim() || null,
-        ctaTarget: cta.target,
-        startAt,
-        endAt,
-      });
-      onSubmitted();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Submit failed.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <Modal title="Request brand spotlight" onClose={onClose} wide>
-      <ImageUploadField
-        label="Hero image"
-        aspect="square"
-        url={heroImageUrl}
-        onChange={setHeroImageUrl}
-        helper="Shown on the customer home strip."
-      />
-
-      <TextField
-        label="Deal label"
-        value={dealLabel}
-        onChange={setDealLabel}
-        placeholder="Festive Kurta Sets — Up to 40% off"
-      />
-      <TextAreaField label="Subtitle" value={subtitle} onChange={setSubtitle} rows={2} />
-
-      <div className="grid grid-cols-1 gap-md sm:grid-cols-2">
-        <HexColorField label="Background colour" value={bgColor} onChange={setBgColor} />
-        <HexColorField label="Accent colour" value={accentColor} onChange={setAccentColor} />
-      </div>
-
-      <CtaTargetField
-        kind={ctaKind}
-        value={ctaValue}
-        onKindChange={(k) => {
-          setCtaKind(k);
-          setCtaError(null);
-        }}
-        onValueChange={(v) => {
-          setCtaValue(v);
-          setCtaError(null);
-        }}
-        error={ctaError}
-      />
-
-      <div className="grid grid-cols-1 gap-md sm:grid-cols-2">
-        <DateTimeField label="Starts" value={startAt} onChange={setStartAt} />
-        <DateTimeField label="Ends" value={endAt} onChange={setEndAt} />
-      </div>
-
-      {error ? <p className="text-body-sm text-error">{error}</p> : null}
-
-      <ModalActions busy={busy} confirmLabel="Submit for review" onCancel={onClose} onConfirm={save} />
-    </Modal>
   );
 }

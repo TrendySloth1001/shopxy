@@ -76,6 +76,15 @@ this should be revisited.
 
 ## Marketing — built & deferred / known gaps
 
+- [x] **Full-page editors everywhere.** All marketing create/edit flows are now
+  dedicated routes with a sticky two-column live preview (carousels `/new` +
+  slide `/slides/new|[slideId]`; flash deals `/new` + `[id]/edit` + `[id]/
+  analytics`; promotions `/new` + `[id]/edit`; spotlight `/new`) instead of
+  modals. Shared `PageHeader`/`BackLink` (`src/shared/ui/page-header.tsx`) give
+  every section a consistent toned masthead. Only destructive confirmations
+  (cancel/delete) remain compact dialogs by design.
+
+
 - [x] **My Carousels.** `/dashboard/carousels` (list grouped by placement +
   new-carousel modal) and `/dashboard/carousels/[id]` (carousel meta with
   auto-save + slides list + slide editor modal with a live 7-template

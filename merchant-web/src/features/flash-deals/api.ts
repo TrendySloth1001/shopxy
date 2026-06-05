@@ -43,6 +43,12 @@ export function listFlashDeals(): Promise<FlashSale[]> {
   );
 }
 
+export function getFlashDeal(id: number): Promise<FlashSale> {
+  return fetch(`/api/flash-deals/${id}`, { cache: "no-store" }).then((r) =>
+    jsonOrThrow(r, (raw) => flashSaleSchema.parse(raw), "Could not load the flash deal."),
+  );
+}
+
 export function createFlashDeal(input: FlashDealCreate): Promise<FlashSale> {
   return fetch("/api/flash-deals", {
     method: "POST",

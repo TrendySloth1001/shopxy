@@ -2,25 +2,16 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { ChevronRight, GalleryHorizontalEnd, Plus } from "lucide-react";
-import { Modal, ModalActions } from "@/shared/ui/modal";
-import { SelectField, TextField } from "@/shared/ui/form";
+import { PageHeader } from "@/shared/ui/page-header";
 import { formatDateRange } from "@/shared/datetime";
-import { createCarousel, listCarousels } from "@/features/carousels/api";
-import {
-  PLACEMENTS,
-  PLACEMENT_LABELS,
-  type Carousel,
-  type Placement,
-} from "@/features/carousels/schema";
+import { listCarousels } from "@/features/carousels/api";
+import { PLACEMENTS, PLACEMENT_LABELS, type Carousel } from "@/features/carousels/schema";
 
 export default function CarouselsPage() {
-  const router = useRouter();
   const [carousels, setCarousels] = useState<Carousel[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -49,24 +40,19 @@ export default function CarouselsPage() {
 
   return (
     <div className="w-full px-lg py-xxl md:px-xxl">
-      <div className="flex flex-wrap items-start justify-between gap-md">
-        <div>
-          <div className="flex items-center gap-sm">
-            <GalleryHorizontalEnd size={22} className="text-brand-strong" />
-            <h1 className="text-headline-md text-ink">My carousels</h1>
-          </div>
-          <p className="mt-xs text-body-md text-muted">
-            Banner carousels for your storefront — grouped by where they appear.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setCreating(true)}
+      <PageHeader
+        icon={GalleryHorizontalEnd}
+        tone="brand"
+        title="My carousels"
+        subtitle="Banner carousels for your storefront — grouped by where they appear."
+      >
+        <Link
+          href="/dashboard/carousels/new"
           className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-md text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
         >
           <Plus size={16} /> New carousel
-        </button>
-      </div>
+        </Link>
+      </PageHeader>
 
       {error ? (
         <p className="mt-md rounded-md bg-error-soft px-md py-sm text-body-sm text-error">{error}</p>
@@ -80,6 +66,12 @@ export default function CarouselsPage() {
             <GalleryHorizontalEnd size={22} />
           </span>
           <p className="text-body-md text-muted">No carousels yet — create one to start building slides.</p>
+          <Link
+            href="/dashboard/carousels/new"
+            className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
+          >
+            <Plus size={16} /> New carousel
+          </Link>
         </div>
       ) : (
         <div className="mt-xl flex flex-col gap-xxl">
@@ -97,13 +89,6 @@ export default function CarouselsPage() {
           ))}
         </div>
       )}
-
-      {creating ? (
-        <NewCarouselModal
-          onClose={() => setCreating(false)}
-          onCreated={(c) => router.push(`/dashboard/carousels/${c.id}`)}
-        />
-      ) : null}
     </div>
   );
 }
@@ -130,47 +115,5 @@ function CarouselRow({ carousel }: { carousel: Carousel }) {
       </span>
       <ChevronRight size={18} className="shrink-0 text-subtle" />
     </Link>
-  );
-}
-
-function NewCarouselModal({
-  onClose,
-  onCreated,
-}: {
-  onClose: () => void;
-  onCreated: (c: Carousel) => void;
-}) {
-  const [name, setName] = useState("");
-  const [placement, setPlacement] = useState<Placement>("HERO");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function create() {
-    setError(null);
-    if (!name.trim()) return setError("Give the carousel a name.");
-    setBusy(true);
-    try {
-      const created = await createCarousel({ name: name.trim(), placement });
-      onCreated(created);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not create the carousel.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <Modal title="New carousel" onClose={onClose}>
-      <TextField label="Name" value={name} onChange={setName} placeholder="Spring sale hero" />
-      <SelectField<Placement>
-        label="Placement"
-        value={placement}
-        onChange={setPlacement}
-        options={PLACEMENTS.map((p) => ({ value: p, label: PLACEMENT_LABELS[p] }))}
-        helper="Where this carousel appears on the storefront."
-      />
-      {error ? <p className="text-body-sm text-error">{error}</p> : null}
-      <ModalActions busy={busy} confirmLabel="Create" onCancel={onClose} onConfirm={create} />
-    </Modal>
   );
 }

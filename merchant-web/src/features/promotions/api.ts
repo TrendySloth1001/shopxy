@@ -29,6 +29,12 @@ export function listPromotions(): Promise<Promotion[]> {
   );
 }
 
+export function getPromotion(id: number): Promise<Promotion> {
+  return fetch(`/api/promotions/${id}`, { cache: "no-store" }).then((r) =>
+    jsonOrThrow(r, (raw) => promotionSchema.parse(raw), "Could not load the promotion."),
+  );
+}
+
 export function createPromotion(input: PromotionCreate): Promise<Promotion> {
   return fetch("/api/promotions", {
     method: "POST",
