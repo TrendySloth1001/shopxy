@@ -24,6 +24,7 @@ import {
   type Invoice,
 } from "@/features/invoices/schema";
 import { INVOICE_STATUS_CLASSES, INVOICE_STATUS_LABELS } from "@/features/invoices/format";
+import { MaybeLocked } from "@/features/auth/components/maybe-locked";
 import { ListRowsSkeleton } from "@/shared/ui/skeleton";
 
 const TYPE_TABS: { key: string; label: string }[] = [
@@ -100,12 +101,14 @@ export default function InvoicesPage() {
         >
           <RefreshCw size={16} />
         </button>
-        <Link
-          href="/dashboard/invoices/new"
-          className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-md text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
-        >
-          <Plus size={16} /> New invoice
-        </Link>
+        <MaybeLocked area="invoices" label="New invoice">
+          <Link
+            href="/dashboard/invoices/new"
+            className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-md text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+          >
+            <Plus size={16} /> New invoice
+          </Link>
+        </MaybeLocked>
       </PageHeader>
 
       {/* Search */}
@@ -156,12 +159,14 @@ export default function InvoicesPage() {
               <ReceiptText size={22} />
             </span>
             <p className="text-body-md text-muted">No invoices match these filters.</p>
-            <Link
-              href="/dashboard/invoices/new"
-              className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
-            >
-              <Plus size={16} /> New invoice
-            </Link>
+            <MaybeLocked area="invoices" label="New invoice">
+              <Link
+                href="/dashboard/invoices/new"
+                className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
+              >
+                <Plus size={16} /> New invoice
+              </Link>
+            </MaybeLocked>
           </div>
         ) : (
           rows.map((inv) => <InvoiceRow key={inv.id} invoice={inv} />)

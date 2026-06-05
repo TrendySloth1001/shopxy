@@ -20,6 +20,7 @@ import { Modal, ModalActions } from "@/shared/ui/modal";
 import { formatINR } from "@/shared/money";
 import { deleteParty, listParties } from "@/features/parties/api";
 import { partyChallanCount, partyInvoiceCount, type Party } from "@/features/parties/schema";
+import { MaybeLocked } from "@/features/auth/components/maybe-locked";
 import { ListRowsSkeleton } from "@/shared/ui/skeleton";
 
 export default function PartiesPage() {
@@ -90,12 +91,14 @@ export default function PartiesPage() {
         >
           <RefreshCw size={16} />
         </button>
-        <Link
-          href="/dashboard/parties/new"
-          className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-md text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
-        >
-          <Plus size={16} /> Add customer
-        </Link>
+        <MaybeLocked area="parties" label="Add customer">
+          <Link
+            href="/dashboard/parties/new"
+            className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-md text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+          >
+            <Plus size={16} /> Add customer
+          </Link>
+        </MaybeLocked>
       </PageHeader>
 
       {/* Search */}
@@ -125,12 +128,14 @@ export default function PartiesPage() {
               {search ? "No customers match your search." : "No customers yet — add your first one."}
             </p>
             {!search ? (
-              <Link
-                href="/dashboard/parties/new"
-                className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
-              >
-                <Plus size={16} /> Add customer
-              </Link>
+              <MaybeLocked area="parties" label="Add customer">
+                <Link
+                  href="/dashboard/parties/new"
+                  className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
+                >
+                  <Plus size={16} /> Add customer
+                </Link>
+              </MaybeLocked>
             ) : null}
           </div>
         ) : (

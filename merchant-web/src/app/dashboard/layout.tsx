@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { RequireAuth } from "@/features/auth/components/require-auth";
+import { SectionGuard } from "@/features/auth/components/section-guard";
 import { Sidebar } from "@/features/dashboard/sidebar";
 
 /**
@@ -12,7 +13,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     <RequireAuth>
       <div className="flex min-h-dvh">
         <Sidebar />
-        <main className="min-w-0 flex-1 overflow-x-hidden">{children}</main>
+        <main className="min-w-0 flex-1 overflow-x-hidden">
+          <SectionGuard>{children}</SectionGuard>
+        </main>
       </div>
     </RequireAuth>
   );

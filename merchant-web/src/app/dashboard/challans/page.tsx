@@ -12,6 +12,7 @@ import {
   challanItemCount,
   type Challan,
 } from "@/features/challans/schema";
+import { MaybeLocked } from "@/features/auth/components/maybe-locked";
 import { ListRowsSkeleton } from "@/shared/ui/skeleton";
 
 const TABS: { key: string; label: string }[] = [
@@ -72,12 +73,14 @@ export default function ChallansPage() {
         >
           <RefreshCw size={16} />
         </button>
-        <Link
-          href="/dashboard/challans/new"
-          className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-md text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
-        >
-          <Plus size={16} /> Create challan
-        </Link>
+        <MaybeLocked area="invoices" label="Create challan">
+          <Link
+            href="/dashboard/challans/new"
+            className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-md text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+          >
+            <Plus size={16} /> Create challan
+          </Link>
+        </MaybeLocked>
       </PageHeader>
 
       {/* Search */}
@@ -119,12 +122,14 @@ export default function ChallansPage() {
               <ClipboardList size={22} />
             </span>
             <p className="text-body-md text-muted">No challans found.</p>
-            <Link
-              href="/dashboard/challans/new"
-              className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
-            >
-              <Plus size={16} /> Create challan
-            </Link>
+            <MaybeLocked area="invoices" label="Create challan">
+              <Link
+                href="/dashboard/challans/new"
+                className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
+              >
+                <Plus size={16} /> Create challan
+              </Link>
+            </MaybeLocked>
           </div>
         ) : (
           rows.map((c) => <ChallanRow key={c.id} challan={c} />)

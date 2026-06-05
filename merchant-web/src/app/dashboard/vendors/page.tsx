@@ -18,6 +18,7 @@ import { Monogram } from "@/shared/ui/monogram";
 import { Modal, ModalActions } from "@/shared/ui/modal";
 import { deleteVendor, listVendors } from "@/features/vendors/api";
 import { vendorInvoiceCount, vendorTxnCount, type Vendor } from "@/features/vendors/schema";
+import { MaybeLocked } from "@/features/auth/components/maybe-locked";
 import { ListRowsSkeleton } from "@/shared/ui/skeleton";
 
 export default function VendorsPage() {
@@ -88,12 +89,14 @@ export default function VendorsPage() {
         >
           <RefreshCw size={16} />
         </button>
-        <Link
-          href="/dashboard/vendors/new"
-          className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-md text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
-        >
-          <Plus size={16} /> Add vendor
-        </Link>
+        <MaybeLocked area="vendors" label="Add vendor">
+          <Link
+            href="/dashboard/vendors/new"
+            className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-md text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+          >
+            <Plus size={16} /> Add vendor
+          </Link>
+        </MaybeLocked>
       </PageHeader>
 
       {/* Search */}
@@ -123,12 +126,14 @@ export default function VendorsPage() {
               {search ? "No vendors match your search." : "No vendors yet — add your first supplier."}
             </p>
             {!search ? (
-              <Link
-                href="/dashboard/vendors/new"
-                className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
-              >
-                <Plus size={16} /> Add vendor
-              </Link>
+              <MaybeLocked area="vendors" label="Add vendor">
+                <Link
+                  href="/dashboard/vendors/new"
+                  className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
+                >
+                  <Plus size={16} /> Add vendor
+                </Link>
+              </MaybeLocked>
             ) : null}
           </div>
         ) : (

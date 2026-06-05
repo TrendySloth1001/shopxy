@@ -7,6 +7,7 @@ import { PageHeader } from "@/shared/ui/page-header";
 import { formatDateRange } from "@/shared/datetime";
 import { listCarousels } from "@/features/carousels/api";
 import { PLACEMENTS, PLACEMENT_LABELS, type Carousel } from "@/features/carousels/schema";
+import { MaybeLocked } from "@/features/auth/components/maybe-locked";
 import { ListRowsSkeleton } from "@/shared/ui/skeleton";
 
 export default function CarouselsPage() {
@@ -47,12 +48,14 @@ export default function CarouselsPage() {
         title="My carousels"
         subtitle="Banner carousels for your storefront — grouped by where they appear."
       >
-        <Link
-          href="/dashboard/carousels/new"
-          className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-md text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
-        >
-          <Plus size={16} /> New carousel
-        </Link>
+        <MaybeLocked area="marketing" label="New carousel">
+          <Link
+            href="/dashboard/carousels/new"
+            className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-md text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+          >
+            <Plus size={16} /> New carousel
+          </Link>
+        </MaybeLocked>
       </PageHeader>
 
       {error ? (
@@ -67,12 +70,14 @@ export default function CarouselsPage() {
             <GalleryHorizontalEnd size={22} />
           </span>
           <p className="text-body-md text-muted">No carousels yet — create one to start building slides.</p>
-          <Link
-            href="/dashboard/carousels/new"
-            className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
-          >
-            <Plus size={16} /> New carousel
-          </Link>
+          <MaybeLocked area="marketing" label="New carousel">
+            <Link
+              href="/dashboard/carousels/new"
+              className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
+            >
+              <Plus size={16} /> New carousel
+            </Link>
+          </MaybeLocked>
         </div>
       ) : (
         <div className="mt-xl flex flex-col gap-xxl">
