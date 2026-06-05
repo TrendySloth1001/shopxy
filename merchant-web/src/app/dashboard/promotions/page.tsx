@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Eye, Megaphone, Plus, RefreshCw, StopCircle } from "lucide-react";
+import { Eye, Megaphone, Pause, Pencil, Play, Plus, RefreshCw, StopCircle } from "lucide-react";
 import {
   ProductPicker,
   type PickedProduct,
@@ -13,6 +13,7 @@ import {
   cancelPromotion,
   createPromotion,
   listPromotions,
+  updatePromotion,
 } from "@/features/promotions/api";
 import {
   rupees,
@@ -27,9 +28,10 @@ export default function PromotionsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [nonce, setNonce] = useState(0);
-  const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState<Promotion | "new" | null>(null);
   const [cancelTarget, setCancelTarget] = useState<Promotion | null>(null);
   const [cancelBusy, setCancelBusy] = useState(false);
+  const [busyId, setBusyId] = useState<number | null>(null);
 
   const reload = useCallback(() => setNonce((n) => n + 1), []);
 
@@ -67,6 +69,19 @@ export default function PromotionsPage() {
     }
   }
 
+  async function setActive(promo: Promotion, isActive: boolean) {
+    setBusyId(promo.id);
+    setError(null);
+    try {
+      await updatePromotion(promo.id, { isActive });
+      reload();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not update the promotion.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   return (
     <div className="w-full px-lg py-xxl md:px-xxl">
       <div className="flex flex-wrap items-start justify-between gap-md">
@@ -92,7 +107,7 @@ export default function PromotionsPage() {
           </button>
           <button
             type="button"
-            onClick={() => setCreating(true)}
+            onClick={() => setEditing("new")}
             className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-md text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
           >
             <Plus size={16} /> New promo
@@ -117,17 +132,25 @@ export default function PromotionsPage() {
         ) : (
           <div className="grid grid-cols-1 gap-lg lg:grid-cols-2">
             {promos.map((p) => (
-              <PromoCard key={p.id} promo={p} onCancel={() => setCancelTarget(p)} />
+              <PromoCard
+                key={p.id}
+                promo={p}
+                busy={busyId === p.id}
+                onEdit={() => setEditing(p)}
+                onToggleActive={(next) => setActive(p, next)}
+                onCancel={() => setCancelTarget(p)}
+              />
             ))}
           </div>
         )}
       </div>
 
-      {creating ? (
+      {editing ? (
         <PromotionEditor
-          onClose={() => setCreating(false)}
+          existing={editing === "new" ? null : editing}
+          onClose={() => setEditing(null)}
           onSaved={() => {
-            setCreating(false);
+            setEditing(null);
             reload();
           }}
         />
@@ -153,8 +176,24 @@ export default function PromotionsPage() {
   );
 }
 
-function PromoCard({ promo, onCancel }: { promo: Promotion; onCancel: () => void }) {
+function PromoCard({
+  promo,
+  busy,
+  onEdit,
+  onToggleActive,
+  onCancel,
+}: {
+  promo: Promotion;
+  busy: boolean;
+  onEdit: () => void;
+  onToggleActive: (next: boolean) => void;
+  onCancel: () => void;
+}) {
   const status = statusLabel(promo);
+  const cancelled = promo.pausedReason === "cancelled_by_merchant";
+  // Paused (not cancelled) campaigns can be resumed; the backend clears the
+  // auto-pause reason on re-activate. Cancelled ones are terminal.
+  const canResume = !promo.isActive && !cancelled;
   return (
     <div className="rounded-lg border border-hairline p-lg">
       <div className="flex items-start gap-md">
@@ -168,16 +207,49 @@ function PromoCard({ promo, onCancel }: { promo: Promotion; onCancel: () => void
         >
           {status}
         </span>
-        {promo.isActive ? (
-          <button
-            type="button"
-            onClick={onCancel}
-            aria-label="Cancel"
-            className="inline-flex size-8 shrink-0 items-center justify-center rounded-button text-muted transition-colors hover:bg-error-soft hover:text-error"
-          >
-            <StopCircle size={18} />
-          </button>
-        ) : null}
+        <div className="flex shrink-0 items-center">
+          {!cancelled ? (
+            <button
+              type="button"
+              onClick={onEdit}
+              aria-label="Edit"
+              className="inline-flex size-8 items-center justify-center rounded-button text-muted transition-colors hover:bg-surface-tint hover:text-ink"
+            >
+              <Pencil size={16} />
+            </button>
+          ) : null}
+          {promo.isActive ? (
+            <button
+              type="button"
+              onClick={() => onToggleActive(false)}
+              disabled={busy}
+              aria-label="Pause"
+              className="inline-flex size-8 items-center justify-center rounded-button text-muted transition-colors hover:bg-surface-tint hover:text-ink disabled:text-disabled"
+            >
+              <Pause size={16} />
+            </button>
+          ) : canResume ? (
+            <button
+              type="button"
+              onClick={() => onToggleActive(true)}
+              disabled={busy}
+              aria-label="Resume"
+              className="inline-flex size-8 items-center justify-center rounded-button text-success transition-colors hover:bg-success-soft disabled:text-disabled"
+            >
+              <Play size={16} />
+            </button>
+          ) : null}
+          {promo.isActive ? (
+            <button
+              type="button"
+              onClick={onCancel}
+              aria-label="Cancel"
+              className="inline-flex size-8 items-center justify-center rounded-button text-muted transition-colors hover:bg-error-soft hover:text-error"
+            >
+              <StopCircle size={18} />
+            </button>
+          ) : null}
+        </div>
       </div>
 
       <p className="mt-xs text-body-sm text-muted">{formatDateRange(promo.startAt, promo.endAt)}</p>
@@ -240,14 +312,25 @@ function SpendBar({
 
 // ── Editor ────────────────────────────────────────────────────────────
 
-function PromotionEditor({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+function PromotionEditor({
+  existing,
+  onClose,
+  onSaved,
+}: {
+  existing: Promotion | null;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const isEdit = existing != null;
   const [picked, setPicked] = useState<PickedProduct | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [budget, setBudget] = useState("1000");
-  const [dailyCap, setDailyCap] = useState("200");
-  const [cpm, setCpm] = useState("10");
-  const [startAt, setStartAt] = useState<string | null>(nowIso());
-  const [endAt, setEndAt] = useState<string | null>(isoFromNow(7 * 24 * 60 * 60 * 1000));
+  const [budget, setBudget] = useState(existing ? String(existing.budgetPaise / 100) : "1000");
+  const [dailyCap, setDailyCap] = useState(existing ? String(existing.dailyCapPaise / 100) : "200");
+  const [cpm, setCpm] = useState(existing ? String(existing.cpmPaise / 100) : "10");
+  const [startAt, setStartAt] = useState<string | null>(existing?.startAt ?? nowIso());
+  const [endAt, setEndAt] = useState<string | null>(
+    existing?.endAt ?? isoFromNow(7 * 24 * 60 * 60 * 1000),
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -260,7 +343,7 @@ function PromotionEditor({ onClose, onSaved }: { onClose: () => void; onSaved: (
 
   async function save() {
     setError(null);
-    if (!picked) return setError("Pick a product first.");
+    if (!isEdit && !picked) return setError("Pick a product first.");
     const cpmPaise = toPaise(cpm);
     if (budgetPaise == null || dailyPaise == null || cpmPaise == null) {
       return setError("Enter numeric budget, daily cap and CPM.");
@@ -271,25 +354,42 @@ function PromotionEditor({ onClose, onSaved }: { onClose: () => void; onSaved: (
     }
     setBusy(true);
     try {
-      await createPromotion({
-        productId: picked.id,
-        budgetPaise,
-        dailyCapPaise: dailyPaise,
-        cpmPaise,
-        startAt,
-        endAt,
-      });
+      if (isEdit) {
+        await updatePromotion(existing.id, {
+          budgetPaise,
+          dailyCapPaise: dailyPaise,
+          cpmPaise,
+          startAt,
+          endAt,
+        });
+      } else {
+        await createPromotion({
+          productId: picked!.id,
+          budgetPaise,
+          dailyCapPaise: dailyPaise,
+          cpmPaise,
+          startAt,
+          endAt,
+        });
+      }
       onSaved();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Create failed.");
+      setError(e instanceof Error ? e.message : "Save failed.");
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <Modal title="New promotion" onClose={onClose} wide>
-      {picked ? (
+    <Modal title={isEdit ? "Edit promotion" : "New promotion"} onClose={onClose} wide>
+      {isEdit ? (
+        <div className="rounded-md bg-hero-panel px-md py-sm">
+          <span className="text-body-md text-ink">
+            {existing.product?.name ?? `Product #${existing.productId}`}
+          </span>
+          <span className="ml-sm text-body-sm text-muted">Product is fixed for an existing promo.</span>
+        </div>
+      ) : picked ? (
         <div className="flex items-center gap-md rounded-md bg-hero-panel px-md py-sm">
           <span className="min-w-0 flex-1 truncate text-body-md text-ink">{picked.name}</span>
           <button
@@ -342,7 +442,12 @@ function PromotionEditor({ onClose, onSaved }: { onClose: () => void; onSaved: (
 
       {error ? <p className="text-body-sm text-error">{error}</p> : null}
 
-      <ModalActions busy={busy} confirmLabel="Create promotion" onCancel={onClose} onConfirm={save} />
+      <ModalActions
+        busy={busy}
+        confirmLabel={isEdit ? "Save changes" : "Create promotion"}
+        onCancel={onClose}
+        onConfirm={save}
+      />
 
       {pickerOpen ? (
         <ProductPicker

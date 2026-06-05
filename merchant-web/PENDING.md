@@ -97,9 +97,13 @@ this should be revisited.
   offer, reorder, remove, save. Wired to `GET`/`PUT /me/banners/:slideId/products`
   via `api/slides/[slideId]/products` (a slide is a Banner; ownership via
   `sponsorShopId`). Display-only offer — checkout still charges the normal price.
-- [ ] **Flash-deal & promotion analytics.** Flutter links a per-sale analytics
-  page (`/me/analytics`); web shows the live sold/spend bars only. Trigger:
-  build an analytics feature on web → link from the tile/card.
+- [x] **Flash-deal analytics.** Each tile has an analytics action opening a modal
+  (claimed, views, taps, tap→buy, hourly series) via `api/flash-deals/[id]/
+  analytics` → `/me/analytics/flash-deals/:id`.
+- [x] **Promotion edit + pause/resume.** Promo cards can edit budget/cap/CPM/
+  schedule and pause/resume (`PATCH /me/promotions/:id`); cancelled promos stay
+  terminal. (Promotion-level analytics / impression charts still TODO — only the
+  live spend bars are shown.)
 - [ ] **CTA-target preview links aren't resolved.** The slide/spotlight CTA
   stores `category:`/`product:`/`collection:`/`url:` but the web preview only
   renders the button label, not a click-through. Trigger: storefront routes on

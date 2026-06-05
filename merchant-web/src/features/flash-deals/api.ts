@@ -1,4 +1,10 @@
-import { flashSaleListSchema, flashSaleSchema, type FlashSale } from "./schema";
+import {
+  flashAnalyticsSchema,
+  flashSaleListSchema,
+  flashSaleSchema,
+  type FlashAnalytics,
+  type FlashSale,
+} from "./schema";
 
 async function jsonOrThrow<T>(res: Response, parse: (raw: unknown) => T, fallback: string): Promise<T> {
   if (!res.ok) {
@@ -58,4 +64,10 @@ export async function cancelFlashDeal(id: number): Promise<void> {
   if (!res.ok && res.status !== 204) {
     await jsonOrThrow(res, () => null, "Could not cancel the flash deal.");
   }
+}
+
+export function getFlashDealAnalytics(id: number): Promise<FlashAnalytics> {
+  return fetch(`/api/flash-deals/${id}/analytics`, { cache: "no-store" }).then((r) =>
+    jsonOrThrow(r, (raw) => flashAnalyticsSchema.parse(raw), "Could not load analytics."),
+  );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Plus, RefreshCw, StopCircle, Zap } from "lucide-react";
+import { BarChart3, Plus, RefreshCw, StopCircle, Zap } from "lucide-react";
 import { ProductThumb } from "@/features/products/components/product-thumb";
 import {
   ProductPicker,
@@ -9,10 +9,11 @@ import {
 } from "@/features/products/components/product-picker";
 import { Modal, ModalActions } from "@/shared/ui/modal";
 import { DateTimeField, TextField } from "@/shared/ui/form";
-import { formatDateRange, isoFromNow, nowIso } from "@/shared/datetime";
+import { formatDateRange, formatDateTime, isoFromNow, nowIso } from "@/shared/datetime";
 import {
   cancelFlashDeal,
   createFlashDeal,
+  getFlashDealAnalytics,
   updateFlashDeal,
   listFlashDeals,
 } from "@/features/flash-deals/api";
@@ -20,6 +21,7 @@ import { discountPct, flashBucket, money, soldPct } from "@/features/flash-deals
 import {
   FLASH_STATUSES,
   FLASH_STATUS_LABELS,
+  type FlashAnalytics,
   type FlashSale,
   type FlashStatus,
 } from "@/features/flash-deals/schema";
@@ -33,6 +35,7 @@ export default function FlashDealsPage() {
   const [editing, setEditing] = useState<FlashSale | "new" | null>(null);
   const [cancelTarget, setCancelTarget] = useState<FlashSale | null>(null);
   const [cancelBusy, setCancelBusy] = useState(false);
+  const [analyticsTarget, setAnalyticsTarget] = useState<FlashSale | null>(null);
 
   const reload = useCallback(() => setNonce((n) => n + 1), []);
 
@@ -147,6 +150,7 @@ export default function FlashDealsPage() {
               tab={tab}
               onEdit={() => setEditing(deal)}
               onCancel={() => setCancelTarget(deal)}
+              onAnalytics={() => setAnalyticsTarget(deal)}
             />
           ))
         )}
@@ -161,6 +165,10 @@ export default function FlashDealsPage() {
             reload();
           }}
         />
+      ) : null}
+
+      {analyticsTarget ? (
+        <FlashAnalyticsModal deal={analyticsTarget} onClose={() => setAnalyticsTarget(null)} />
       ) : null}
 
       {cancelTarget ? (
@@ -214,11 +222,13 @@ function DealRow({
   tab,
   onEdit,
   onCancel,
+  onAnalytics,
 }: {
   deal: FlashSale;
   tab: FlashStatus;
   onEdit: () => void;
   onCancel: () => void;
+  onAnalytics: () => void;
 }) {
   const pct = soldPct(deal);
   const off = deal.product ? discountPct(deal.product.mrp, deal.flashPrice) : 0;
@@ -239,6 +249,14 @@ function DealRow({
               {off > 0 ? <span className="text-body-sm font-semibold text-flash-deal">{off}% off</span> : null}
             </span>
           </span>
+        </button>
+        <button
+          type="button"
+          onClick={onAnalytics}
+          aria-label="Analytics"
+          className="inline-flex size-9 shrink-0 items-center justify-center rounded-button text-muted transition-colors hover:bg-surface-tint hover:text-ink"
+        >
+          <BarChart3 size={18} />
         </button>
         {tab !== "past" ? (
           <button
@@ -442,5 +460,103 @@ function FlashDealEditor({
         <ProductPicker onPick={onPickProduct} onClose={() => setPickerOpen(false)} />
       ) : null}
     </Modal>
+  );
+}
+
+// ── Analytics ─────────────────────────────────────────────────────────
+
+function FlashAnalyticsModal({ deal, onClose }: { deal: FlashSale; onClose: () => void }) {
+  const [data, setData] = useState<FlashAnalytics | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      setLoading(true);
+      try {
+        const a = await getFlashDealAnalytics(deal.id);
+        if (active) setData(a);
+      } catch (e) {
+        if (active) setError(e instanceof Error ? e.message : "Could not load analytics.");
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [deal.id]);
+
+  const totals = data
+    ? data.series.reduce(
+        (acc, r) => ({ sold: acc.sold + r.sold, taps: acc.taps + r.taps, views: acc.views + r.views }),
+        { sold: 0, taps: 0, views: 0 },
+      )
+    : { sold: 0, taps: 0, views: 0 };
+  const conversion = totals.taps > 0 ? Math.round((totals.sold / totals.taps) * 100) : 0;
+  const maxTaps = data ? Math.max(1, ...data.series.map((r) => r.taps)) : 1;
+
+  return (
+    <Modal title="Flash deal analytics" onClose={onClose} wide>
+      {loading ? (
+        <p className="py-xl text-center text-body-sm text-subtle">Loading…</p>
+      ) : error || !data ? (
+        <p className="py-xl text-center text-body-sm text-error">{error ?? "No analytics."}</p>
+      ) : (
+        <>
+          <div>
+            <p className="text-title-sm text-ink">{data.productName}</p>
+            <p className="mt-xs text-body-sm text-muted">
+              {formatDateTime(data.startAt)} → {formatDateTime(data.endAt)}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-md sm:grid-cols-4">
+            <Stat label="Claimed" value={`${data.soldCount}/${data.stockLimit}`} />
+            <Stat label="Views" value={totals.views.toLocaleString("en-IN")} />
+            <Stat label="Taps" value={totals.taps.toLocaleString("en-IN")} />
+            <Stat label="Tap → buy" value={`${conversion}%`} />
+          </div>
+
+          <div>
+            <p className="mb-sm text-label-md uppercase tracking-wide text-subtle">By hour</p>
+            {data.series.length === 0 ? (
+              <p className="rounded-md bg-surface-tint px-md py-md text-center text-body-sm text-muted">
+                No activity recorded yet.
+              </p>
+            ) : (
+              <div className="max-h-[40dvh] overflow-y-auto">
+                {data.series.map((r) => (
+                  <div key={r.hour} className="border-b border-hairline py-sm">
+                    <div className="flex items-center justify-between gap-md text-body-sm">
+                      <span className="text-muted">{formatDateTime(r.hour)}</span>
+                      <span className="text-ink">
+                        {r.sold} sold · {r.taps} taps · {r.views} views
+                      </span>
+                    </div>
+                    <div className="mt-xs h-1.5 w-full overflow-hidden rounded-full bg-surface-tint">
+                      <div
+                        className="h-full rounded-full bg-flash-deal"
+                        style={{ width: `${(r.taps / maxTaps) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </Modal>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md bg-surface-tint px-md py-sm">
+      <p className="text-label-md text-subtle">{label}</p>
+      <p className="mt-px text-title-sm text-ink">{value}</p>
+    </div>
   );
 }

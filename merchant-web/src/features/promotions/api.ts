@@ -37,6 +37,23 @@ export function createPromotion(input: PromotionCreate): Promise<Promotion> {
   }).then((r) => jsonOrThrow(r, (raw) => promotionSchema.parse(raw), "Could not create the promotion."));
 }
 
+export type PromotionUpdate = {
+  budgetPaise?: number;
+  dailyCapPaise?: number;
+  cpmPaise?: number;
+  startAt?: string;
+  endAt?: string;
+  isActive?: boolean;
+};
+
+export function updatePromotion(id: number, input: PromotionUpdate): Promise<Promotion> {
+  return fetch(`/api/promotions/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  }).then((r) => jsonOrThrow(r, (raw) => promotionSchema.parse(raw), "Could not update the promotion."));
+}
+
 export async function cancelPromotion(id: number): Promise<void> {
   const res = await fetch(`/api/promotions/${id}`, { method: "DELETE" });
   if (!res.ok && res.status !== 204) {
