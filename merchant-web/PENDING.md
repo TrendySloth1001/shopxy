@@ -10,11 +10,13 @@ this should be revisited.
 
 ## Deferred wiring (stubbed — connect when the trigger lands)
 
-- [ ] **Sidebar nav → real screens.** `Products` and `Orders` are built; the
-  rest still land on the `/dashboard/[...section]` placeholder. Trigger: building
-  each remaining section (invoices, quotations, challans, stock-adjustments,
-  returns, reports, analytics, vendors, parties, categories, coupons, promotions,
-  flash-deals, spotlight, carousels, shop) — add `app/dashboard/<section>/…`.
+- [ ] **Sidebar nav → real screens.** Built: `Products`, `Orders`, `Shop`,
+  `My Carousels`, `Flash deals`, `Brand spotlight`, `Promotions` (+ Profile /
+  Settings / Team / Payouts / Custom fields). The rest still land on the
+  `/dashboard/[...section]` placeholder. Trigger: building each remaining section
+  (invoices, quotations, challans, stock-adjustments, returns, reports,
+  analytics, vendors, parties, categories, coupons) — add
+  `app/dashboard/<section>/…`.
 - [ ] **Dashboard row tap-through.** In `src/features/dashboard/dashboard-home.tsx`
   `DraftRow` and `ActivityRow` are display-only. Trigger: invoice / challan
   detail screens exist → link a draft to its invoice detail, and an activity row
@@ -71,6 +73,39 @@ this should be revisited.
   view for roles without the permission; the backend `GET /orders` returns 403 and
   the web list currently shows it as a generic error. Trigger: team/roles UI →
   render a dedicated no-access view (same as the `dashboard:view` item above).
+
+## Marketing — built & deferred / known gaps
+
+- [x] **My Carousels.** `/dashboard/carousels` (list grouped by placement +
+  new-carousel modal) and `/dashboard/carousels/[id]` (carousel meta with
+  auto-save + slides list + slide editor modal with a live 7-template
+  `HeroSlidePreview`). BFF: `api/carousels` (+ `[id]`, `[id]/slides`,
+  `[id]/slides/[slideId]`) → `/me/carousels`.
+- [x] **Flash deals.** `/dashboard/flash-deals` — Live/Scheduled/Past tabs,
+  sold-bar tiles, editor modal with product picker + discount preview. BFF
+  `api/flash-deals` (+ `[id]`) → `/me/flash-deals`.
+- [x] **Brand spotlight.** `/dashboard/spotlight` — explainer + status cards
+  (rejection reason) + submit modal (hero upload, colours, CTA DSL, schedule).
+  BFF `api/spotlight` (GET list / POST `/request`) + `[id]` (cancel).
+- [x] **Promotions.** `/dashboard/promotions` — spend + daily-cap bar cards with
+  status/impressions + create modal (product picker, ₹ budget/daily/CPM →
+  paise, schedule). BFF `api/promotions` (+ `[id]`) → `/me/promotions`.
+- [ ] **Carousel slide drag-reorder.** Slides order by a numeric `sortOrder`
+  field the merchant types; no drag handles. Trigger: polish pass.
+- [ ] **Slide "discounted products" (banner-products).** The Flutter slide
+  editor can pin products to a slide with a discount; not ported (no merchant
+  banner-product endpoint surfaced in `carousels`). Trigger: confirm/expose the
+  backend endpoint, then add a product-pin section to the slide editor.
+- [ ] **Flash-deal & promotion analytics.** Flutter links a per-sale analytics
+  page (`/me/analytics`); web shows the live sold/spend bars only. Trigger:
+  build an analytics feature on web → link from the tile/card.
+- [ ] **CTA-target preview links aren't resolved.** The slide/spotlight CTA
+  stores `category:`/`product:`/`collection:`/`url:` but the web preview only
+  renders the button label, not a click-through. Trigger: storefront routes on
+  web → resolve the target.
+- [ ] **Slide CTA shimmer / Ken-Burns animation.** The preview renders the
+  templates faithfully but static (Flutter animates the CTA pill + image).
+  Trigger: motion pass → add the keyframes.
 
 ## Layout / shell debt
 
