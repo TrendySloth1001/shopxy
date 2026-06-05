@@ -196,10 +196,17 @@ this should be revisited.
   (`RecordPaymentSheet`, payments module). Not ported — web has no payments UI.
   Trigger: payments feature on web → add the FAB; the ledger already renders
   the resulting receipt rows.
-- [ ] **Caution-deposit actions.** The party detail shows the caution **balance**
-  read-only. The deposit / refund / set-off / forfeit / requests actions
-  (`/parties/:id/caution/*`) are not wired — they're a separate module.
-  Trigger: bring the caution flow to web → add the action card + history page.
+- [x] **Caution-deposit actions.** Party detail has an actionable caution card
+  (`features/caution/caution-card.tsx`): **Add / Refund / Set off / Forfeit**
+  via modals (refund/set-off/forfeit capped at the held balance; set-off picks a
+  confirmed sale invoice; forfeit carries a GST-treatment flag), plus
+  **History** (`/dashboard/parties/[id]/caution`) and **Requests**. A successful
+  action refreshes the party balance. Shop-wide **Caution requests** inbox at
+  `/dashboard/caution-requests` (approve → deposit, decline with reason). BFF
+  under `api/parties/[id]/caution*` + `api/caution-requests` → `/parties/:id/
+  caution*` and `/caution-requests`. (Set-off invoice list is drawn from the
+  overview's recent confirmed sale invoices; the backend enforces the
+  per-invoice outstanding cap and surfaces its error.)
 - [ ] **Contact change-log.** Backend exposes `/:id/changes` (field-level audit)
   for both vendors and parties; not surfaced on web. Trigger: an "Activity /
   history" tab on the detail page.

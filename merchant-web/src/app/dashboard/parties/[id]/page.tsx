@@ -13,7 +13,6 @@ import {
   MapPin,
   Pencil,
   Phone,
-  PiggyBank,
   ReceiptText,
   RotateCcw,
   ShoppingBag,
@@ -27,6 +26,7 @@ import { LedgerList } from "@/shared/ui/ledger-list";
 import { formatDateTime } from "@/shared/datetime";
 import { formatINR } from "@/shared/money";
 import type { Ledger } from "@/shared/ledger";
+import { CautionCard } from "@/features/caution/caution-card";
 import { getPartyLedger, getPartyOverview } from "@/features/parties/api";
 import {
   BALANCE_TONE_TEXT,
@@ -59,6 +59,8 @@ export default function PartyDetailPage() {
   const [ledger, setLedger] = useState<Ledger | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [nonce, setNonce] = useState(0);
+  const reload = () => setNonce((n) => n + 1);
 
   useEffect(() => {
     let active = true;
@@ -81,7 +83,7 @@ export default function PartyDetailPage() {
     return () => {
       active = false;
     };
-  }, [id]);
+  }, [id, nonce]);
 
   if (loading) {
     return <p className="w-full px-lg py-xxl text-body-sm text-subtle md:px-xxl">Loading…</p>;
@@ -99,6 +101,9 @@ export default function PartyDetailPage() {
 
   const p = overview.party;
   const balanceView = partyBalanceView(overview.balance);
+  const setoffInvoices = overview.recentInvoices
+    .filter((inv) => inv.status === "CONFIRMED" && inv.type === "SALE")
+    .map((inv) => ({ id: inv.id, invoiceNo: inv.invoiceNo, total: inv.total }));
 
   return (
     <div className="w-full px-lg py-xxl pb-massive md:px-xxl">
@@ -143,43 +148,39 @@ export default function PartyDetailPage() {
         {p.gstin ? <ContactRow icon={<Landmark size={15} />} text={`GSTIN ${p.gstin}`} /> : null}
       </div>
 
-      {/* Balance + caution */}
-      <div className="mt-xl grid grid-cols-1 gap-lg sm:grid-cols-2">
-        <div className="rounded-lg border border-hairline p-lg">
-          <div className="flex items-center gap-md">
-            <span className={`flex size-11 shrink-0 items-center justify-center rounded-lg ${BALANCE_PUCK[balanceView.tone]}`}>
-              {balanceView.tone === "owe" ? (
-                <TrendingUp size={22} />
-              ) : balanceView.tone === "advance" ? (
-                <TrendingDown size={22} />
-              ) : (
-                <CheckCircle2 size={22} />
-              )}
-            </span>
-            <div>
-              <p className="text-label-md uppercase tracking-wide text-subtle">Balance</p>
-              <p className={`text-headline-md font-bold ${BALANCE_TONE_TEXT[balanceView.tone]}`}>
-                {formatINR(Math.abs(overview.balance))}
-              </p>
-              <p className="text-body-sm text-muted">{balanceView.label}</p>
-            </div>
-          </div>
-        </div>
-        <div className="rounded-lg border border-hairline p-lg">
-          <div className="flex items-center gap-md">
-            <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-info-soft text-info">
-              <PiggyBank size={22} />
-            </span>
-            <div>
-              <p className="text-label-md uppercase tracking-wide text-subtle">Caution deposit</p>
-              <p className="text-headline-md font-bold text-info">{formatINR(overview.cautionBalance)}</p>
-              <p className="text-body-sm text-muted">
-                {overview.cautionBalance > 0 ? "Held against this customer" : "No deposit held"}
-              </p>
-            </div>
+      {/* Balance */}
+      <div className="mt-xl rounded-lg border border-hairline p-lg">
+        <div className="flex items-center gap-md">
+          <span className={`flex size-11 shrink-0 items-center justify-center rounded-lg ${BALANCE_PUCK[balanceView.tone]}`}>
+            {balanceView.tone === "owe" ? (
+              <TrendingUp size={22} />
+            ) : balanceView.tone === "advance" ? (
+              <TrendingDown size={22} />
+            ) : (
+              <CheckCircle2 size={22} />
+            )}
+          </span>
+          <div>
+            <p className="text-label-md uppercase tracking-wide text-subtle">Balance</p>
+            <p className={`text-headline-md font-bold ${BALANCE_TONE_TEXT[balanceView.tone]}`}>
+              {formatINR(Math.abs(overview.balance))}
+            </p>
+            <p className="text-body-sm text-muted">{balanceView.label}</p>
           </div>
         </div>
       </div>
+
+      {/* Caution deposit — actionable for non-system parties */}
+      {!p.isSystem ? (
+        <div className="mt-lg">
+          <CautionCard
+            partyId={id}
+            balance={overview.cautionBalance}
+            invoices={setoffInvoices}
+            onChanged={reload}
+          />
+        </div>
+      ) : null}
 
       {/* Stats */}
       <div className="mt-lg grid grid-cols-1 gap-lg sm:grid-cols-3">

@@ -967,7 +967,10 @@ class _CautionCard extends StatelessWidget {
                   child: OutlinedButton.icon(
                     onPressed: () => onAction('DEPOSIT'),
                     icon: const Icon(Icons.add_rounded, size: AppSizes.iconMd),
-                    label: const Text('Add'),
+                    label: const FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text('Add', maxLines: 1, softWrap: false),
+                    ),
                   ),
                 ),
                 const SizedBox(width: AppSizes.sm),
@@ -975,7 +978,10 @@ class _CautionCard extends StatelessWidget {
                   child: OutlinedButton.icon(
                     onPressed: hasBalance ? () => onAction('REFUND') : null,
                     icon: const Icon(Icons.undo_rounded, size: AppSizes.iconMd),
-                    label: const Text('Refund'),
+                    label: const FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text('Refund', maxLines: 1, softWrap: false),
+                    ),
                   ),
                 ),
                 const SizedBox(width: AppSizes.sm),
@@ -983,7 +989,10 @@ class _CautionCard extends StatelessWidget {
                   child: OutlinedButton.icon(
                     onPressed: hasBalance ? () => onAction('ADJUST') : null,
                     icon: const Icon(Icons.call_merge_rounded, size: AppSizes.iconMd),
-                    label: const Text('Set off'),
+                    label: const FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text('Set off', maxLines: 1, softWrap: false),
+                    ),
                   ),
                 ),
               ],
@@ -995,7 +1004,10 @@ class _CautionCard extends StatelessWidget {
                   child: OutlinedButton.icon(
                     onPressed: hasBalance ? () => onAction('FORFEIT') : null,
                     icon: const Icon(Icons.gavel_rounded, size: AppSizes.iconMd),
-                    label: const Text('Forfeit'),
+                    label: const FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text('Forfeit', maxLines: 1, softWrap: false),
+                    ),
                   ),
                 ),
                 const SizedBox(width: AppSizes.sm),
@@ -1003,7 +1015,10 @@ class _CautionCard extends StatelessWidget {
                   child: OutlinedButton.icon(
                     onPressed: onTapRequests,
                     icon: const Icon(Icons.inbox_rounded, size: AppSizes.iconMd),
-                    label: const Text('Requests'),
+                    label: const FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text('Requests', maxLines: 1, softWrap: false),
+                    ),
                   ),
                 ),
               ],
