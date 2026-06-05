@@ -1,0 +1,599 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import { Plus, Pencil, Trash2, Sparkles, Tag } from "lucide-react";
+import { Divider } from "@/shared/ui/divider";
+import {
+  applyTemplate,
+  createDefinition,
+  createSection,
+  deleteDefinition,
+  deleteSection,
+  getTree,
+  listTemplates,
+  updateDefinition,
+  updateSection,
+  type DefinitionInput,
+} from "@/features/custom-fields/api";
+import {
+  CUSTOM_FIELD_TYPES,
+  CUSTOM_FIELD_TYPE_LABELS,
+  type CustomFieldTree,
+  type CustomFieldType,
+  type Definition,
+  type Section,
+  type Template,
+} from "@/features/custom-fields/schema";
+
+type FieldEditor =
+  | { mode: "create"; sectionId: number | null }
+  | { mode: "edit"; field: Definition }
+  | null;
+type SectionEditor = { mode: "create" } | { mode: "edit"; section: Section } | null;
+
+export default function CustomFieldsPage() {
+  const [tree, setTree] = useState<CustomFieldTree | null>(null);
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [nonce, setNonce] = useState(0);
+  const [busy, setBusy] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  const [fieldEditor, setFieldEditor] = useState<FieldEditor>(null);
+  const [sectionEditor, setSectionEditor] = useState<SectionEditor>(null);
+
+  const reload = useCallback(() => setNonce((n) => n + 1), []);
+
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      setLoading(true);
+      try {
+        const [t, tpl] = await Promise.all([getTree(), listTemplates().catch(() => [])]);
+        if (!active) return;
+        setTree(t);
+        setTemplates(tpl);
+        setError(null);
+      } catch (e) {
+        if (active) setError(e instanceof Error ? e.message : "Could not load custom fields.");
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [nonce]);
+
+  const sections = tree?.sections ?? [];
+
+  async function onApplyTemplate(id: string) {
+    setBusy(true);
+    setActionError(null);
+    try {
+      await applyTemplate(id);
+      reload();
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "Could not apply the template.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onSaveField(input: DefinitionInput, editId?: number) {
+    setBusy(true);
+    setActionError(null);
+    try {
+      if (editId != null) await updateDefinition(editId, input);
+      else await createDefinition(input);
+      setFieldEditor(null);
+      reload();
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "Could not save the field.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onDeleteField(id: number) {
+    setBusy(true);
+    setActionError(null);
+    try {
+      await deleteDefinition(id);
+      reload();
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "Could not delete the field.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onSaveSection(name: string, editId?: number) {
+    setBusy(true);
+    setActionError(null);
+    try {
+      if (editId != null) await updateSection(editId, { name });
+      else await createSection({ name });
+      setSectionEditor(null);
+      reload();
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "Could not save the section.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onDeleteSection(id: number) {
+    setBusy(true);
+    setActionError(null);
+    try {
+      await deleteSection(id);
+      reload();
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "Could not delete the section.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const isEmpty =
+    !loading && sections.length === 0 && (tree?.ungrouped.length ?? 0) === 0;
+
+  return (
+    <div className="w-full px-lg py-xxl md:px-xxl">
+      <div className="flex flex-wrap items-start justify-between gap-md">
+        <div>
+          <h1 className="text-headline-md text-ink">Custom fields</h1>
+          <p className="mt-xs text-body-md text-muted">
+            Extra product attributes — grouped into sections, reused across your
+            catalogue.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-sm">
+          <button
+            type="button"
+            onClick={() => setSectionEditor({ mode: "create" })}
+            className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+          >
+            <Plus size={16} /> Section
+          </button>
+          <button
+            type="button"
+            onClick={() => setFieldEditor({ mode: "create", sectionId: null })}
+            className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-lg text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+          >
+            <Plus size={18} /> New field
+          </button>
+        </div>
+      </div>
+
+      {actionError ? (
+        <p className="mt-md rounded-md bg-error-soft px-md py-sm text-body-sm text-error">
+          {actionError}
+        </p>
+      ) : null}
+
+      {/* Templates */}
+      {templates.length > 0 ? (
+        <div className="mt-xl">
+          <p className="text-label-md uppercase tracking-wide text-subtle">
+            Start from a template
+          </p>
+          <div className="mt-sm flex flex-wrap gap-sm">
+            {templates.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                disabled={busy}
+                onClick={() => onApplyTemplate(t.id)}
+                title={t.description ?? undefined}
+                className="inline-flex items-center gap-sm rounded-full border border-hairline px-md py-xs text-body-sm text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:text-disabled"
+              >
+                <Sparkles size={14} className="text-brand" />
+                {t.label}
+                <span className="text-subtle">· {t.fieldCount}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      <Divider className="my-xl" />
+
+      {loading ? (
+        <p className="text-body-md text-subtle">Loading…</p>
+      ) : error ? (
+        <div className="flex flex-col items-start gap-md py-xxl">
+          <p className="text-body-md text-muted">{error}</p>
+          <button
+            type="button"
+            onClick={reload}
+            className="inline-flex h-10 items-center rounded-button border border-hairline px-lg text-label-md text-ink transition-colors hover:bg-surface-tint"
+          >
+            Try again
+          </button>
+        </div>
+      ) : isEmpty ? (
+        <div className="flex flex-col items-center gap-sm py-massive text-center">
+          <Tag size={28} className="text-subtle" />
+          <p className="text-title-md text-ink">No custom fields yet</p>
+          <p className="max-w-content text-body-md text-muted">
+            Apply a template above, or create your first field to capture details
+            like warranty, material or voltage.
+          </p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-xl">
+          {sections.map((s) => (
+            <FieldGroup
+              key={s.id}
+              title={s.name}
+              fields={s.fields}
+              onAddField={() => setFieldEditor({ mode: "create", sectionId: s.id })}
+              onEditField={(f) => setFieldEditor({ mode: "edit", field: f })}
+              onDeleteField={onDeleteField}
+              onEditSection={() => setSectionEditor({ mode: "edit", section: s })}
+              onDeleteSection={() => onDeleteSection(s.id)}
+              busy={busy}
+            />
+          ))}
+          {(tree?.ungrouped.length ?? 0) > 0 ? (
+            <FieldGroup
+              title="Ungrouped"
+              fields={tree?.ungrouped ?? []}
+              onAddField={() => setFieldEditor({ mode: "create", sectionId: null })}
+              onEditField={(f) => setFieldEditor({ mode: "edit", field: f })}
+              onDeleteField={onDeleteField}
+              busy={busy}
+            />
+          ) : null}
+        </div>
+      )}
+
+      {fieldEditor ? (
+        <FieldEditorPanel
+          editor={fieldEditor}
+          sections={sections}
+          busy={busy}
+          onCancel={() => setFieldEditor(null)}
+          onSave={onSaveField}
+        />
+      ) : null}
+
+      {sectionEditor ? (
+        <SectionEditorPanel
+          editor={sectionEditor}
+          busy={busy}
+          onCancel={() => setSectionEditor(null)}
+          onSave={onSaveSection}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function FieldGroup({
+  title,
+  fields,
+  onAddField,
+  onEditField,
+  onDeleteField,
+  onEditSection,
+  onDeleteSection,
+  busy,
+}: {
+  title: string;
+  fields: Definition[];
+  onAddField: () => void;
+  onEditField: (f: Definition) => void;
+  onDeleteField: (id: number) => void;
+  onEditSection?: () => void;
+  onDeleteSection?: () => void;
+  busy: boolean;
+}) {
+  return (
+    <section>
+      <div className="flex items-center justify-between gap-md">
+        <h2 className="text-title-md text-ink">{title}</h2>
+        <div className="flex items-center gap-xs">
+          <button
+            type="button"
+            onClick={onAddField}
+            className="inline-flex h-8 items-center gap-xs rounded-button px-sm text-label-md text-muted transition-colors hover:bg-surface-tint hover:text-ink"
+          >
+            <Plus size={14} /> Field
+          </button>
+          {onEditSection ? (
+            <button
+              type="button"
+              onClick={onEditSection}
+              aria-label="Rename section"
+              className="rounded-md p-xs text-muted transition-colors hover:bg-surface-tint hover:text-ink"
+            >
+              <Pencil size={14} />
+            </button>
+          ) : null}
+          {onDeleteSection ? (
+            <button
+              type="button"
+              onClick={onDeleteSection}
+              disabled={busy}
+              aria-label="Delete section"
+              className="rounded-md p-xs text-muted transition-colors hover:bg-error-soft hover:text-error disabled:text-disabled"
+            >
+              <Trash2 size={14} />
+            </button>
+          ) : null}
+        </div>
+      </div>
+      {fields.length === 0 ? (
+        <p className="mt-sm text-body-sm text-subtle">No fields in this section.</p>
+      ) : (
+        <ul className="mt-sm">
+          {fields.map((f) => (
+            <li
+              key={f.id}
+              className="flex items-center gap-md border-t border-hairline py-sm"
+            >
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-body-md text-ink">
+                  {f.name}
+                  {!f.isActive ? (
+                    <span className="ml-sm rounded-full bg-surface-tint px-sm py-px text-body-sm text-muted">
+                      Hidden
+                    </span>
+                  ) : null}
+                </p>
+                <p className="truncate text-body-sm text-muted">
+                  {CUSTOM_FIELD_TYPE_LABELS[f.type as CustomFieldType] ?? f.type}
+                  {f.unitSuffix ? ` · ${f.unitSuffix}` : ""}
+                  {f.options.length > 0 ? ` · ${f.options.length} options` : ""}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => onEditField(f)}
+                aria-label="Edit field"
+                className="rounded-md p-xs text-muted transition-colors hover:bg-surface-tint hover:text-ink"
+              >
+                <Pencil size={16} />
+              </button>
+              <button
+                type="button"
+                onClick={() => onDeleteField(f.id)}
+                disabled={busy}
+                aria-label="Delete field"
+                className="rounded-md p-xs text-muted transition-colors hover:bg-error-soft hover:text-error disabled:text-disabled"
+              >
+                <Trash2 size={16} />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function FieldEditorPanel({
+  editor,
+  sections,
+  busy,
+  onCancel,
+  onSave,
+}: {
+  editor: NonNullable<FieldEditor>;
+  sections: Section[];
+  busy: boolean;
+  onCancel: () => void;
+  onSave: (input: DefinitionInput, editId?: number) => void;
+}) {
+  const editing = editor.mode === "edit" ? editor.field : null;
+  const [name, setName] = useState(editing?.name ?? "");
+  const [type, setType] = useState<CustomFieldType>(
+    (editing?.type as CustomFieldType) ?? "TEXT",
+  );
+  const [unitSuffix, setUnitSuffix] = useState(editing?.unitSuffix ?? "");
+  const [optionsText, setOptionsText] = useState((editing?.options ?? []).join("\n"));
+  const [sectionId, setSectionId] = useState<string>(
+    editing?.sectionId != null
+      ? String(editing.sectionId)
+      : editor.mode === "create" && editor.sectionId != null
+        ? String(editor.sectionId)
+        : "",
+  );
+
+  function submit() {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    const input: DefinitionInput = {
+      name: trimmed,
+      type,
+      sectionId: sectionId ? Number(sectionId) : null,
+    };
+    if (type === "NUMBER" && unitSuffix.trim()) input.unitSuffix = unitSuffix.trim();
+    if (type === "DROPDOWN") {
+      input.options = optionsText
+        .split("\n")
+        .map((o) => o.trim())
+        .filter(Boolean);
+    }
+    onSave(input, editing?.id);
+  }
+
+  return (
+    <ModalShell title={editing ? "Edit field" : "New field"} onClose={onCancel}>
+      <label className="flex flex-col gap-xs">
+        <span className="text-label-md text-muted">Field name</span>
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          autoFocus
+          placeholder="e.g. Warranty period"
+          className="h-10 rounded-input border border-hairline bg-white px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+        />
+      </label>
+
+      <label className="flex flex-col gap-xs">
+        <span className="text-label-md text-muted">Type</span>
+        <select
+          value={type}
+          onChange={(e) => setType(e.target.value as CustomFieldType)}
+          className="h-10 rounded-input border border-hairline bg-white px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+        >
+          {CUSTOM_FIELD_TYPES.map((t) => (
+            <option key={t} value={t}>
+              {CUSTOM_FIELD_TYPE_LABELS[t]}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      {type === "NUMBER" ? (
+        <label className="flex flex-col gap-xs">
+          <span className="text-label-md text-muted">Unit suffix (optional)</span>
+          <input
+            value={unitSuffix}
+            onChange={(e) => setUnitSuffix(e.target.value)}
+            placeholder="e.g. months, kg, V"
+            className="h-10 rounded-input border border-hairline bg-white px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+          />
+        </label>
+      ) : null}
+
+      {type === "DROPDOWN" ? (
+        <label className="flex flex-col gap-xs">
+          <span className="text-label-md text-muted">Options (one per line)</span>
+          <textarea
+            value={optionsText}
+            onChange={(e) => setOptionsText(e.target.value)}
+            rows={4}
+            placeholder={"Small\nMedium\nLarge"}
+            className="rounded-input border border-hairline bg-white px-md py-sm text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+          />
+        </label>
+      ) : null}
+
+      <label className="flex flex-col gap-xs">
+        <span className="text-label-md text-muted">Section</span>
+        <select
+          value={sectionId}
+          onChange={(e) => setSectionId(e.target.value)}
+          className="h-10 rounded-input border border-hairline bg-white px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+        >
+          <option value="">Ungrouped</option>
+          {sections.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <ModalActions
+        busy={busy}
+        disabled={!name.trim()}
+        confirmLabel={editing ? "Save field" : "Create field"}
+        onCancel={onCancel}
+        onConfirm={submit}
+      />
+    </ModalShell>
+  );
+}
+
+function SectionEditorPanel({
+  editor,
+  busy,
+  onCancel,
+  onSave,
+}: {
+  editor: NonNullable<SectionEditor>;
+  busy: boolean;
+  onCancel: () => void;
+  onSave: (name: string, editId?: number) => void;
+}) {
+  const editing = editor.mode === "edit" ? editor.section : null;
+  const [name, setName] = useState(editing?.name ?? "");
+  return (
+    <ModalShell title={editing ? "Rename section" : "New section"} onClose={onCancel}>
+      <label className="flex flex-col gap-xs">
+        <span className="text-label-md text-muted">Section name</span>
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          autoFocus
+          placeholder="e.g. Dimensions"
+          className="h-10 rounded-input border border-hairline bg-white px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+        />
+      </label>
+      <ModalActions
+        busy={busy}
+        disabled={!name.trim()}
+        confirmLabel={editing ? "Save" : "Create section"}
+        onCancel={onCancel}
+        onConfirm={() => name.trim() && onSave(name.trim(), editing?.id)}
+      />
+    </ModalShell>
+  );
+}
+
+function ModalShell({
+  title,
+  onClose,
+  children,
+}: {
+  title: string;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-ink/30 p-lg sm:items-center"
+      onClick={onClose}
+    >
+      <div
+        className="flex w-full max-w-form flex-col gap-md rounded-dialog bg-white p-lg shadow-menu"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 className="text-title-md text-ink">{title}</h3>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function ModalActions({
+  busy,
+  disabled,
+  confirmLabel,
+  onCancel,
+  onConfirm,
+}: {
+  busy: boolean;
+  disabled?: boolean;
+  confirmLabel: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div className="mt-sm flex justify-end gap-md">
+      <button
+        type="button"
+        onClick={onCancel}
+        disabled={busy}
+        className="inline-flex h-10 items-center rounded-button px-md text-label-md text-muted transition-colors hover:text-ink disabled:text-disabled"
+      >
+        Cancel
+      </button>
+      <button
+        type="button"
+        onClick={onConfirm}
+        disabled={busy || disabled}
+        className="inline-flex h-10 items-center rounded-button bg-brand px-lg text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:bg-disabled"
+      >
+        {busy ? "Saving…" : confirmLabel}
+      </button>
+    </div>
+  );
+}

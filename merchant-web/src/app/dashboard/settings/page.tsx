@@ -10,7 +10,11 @@ import {
   Languages,
   LogOut,
   Palette,
+  SlidersHorizontal,
+  Store,
   UserPen,
+  Users,
+  Wallet,
 } from "lucide-react";
 import { useAuth } from "@/features/auth/auth-context";
 import { SecuritySection } from "@/features/auth/components/security-section";
@@ -55,6 +59,40 @@ export default function SettingsPage() {
           href="/dashboard/profile"
         />
         <SettingRow icon={AtSign} title="Email" subtitle={user?.email ?? "—"} />
+
+        <SectionGap />
+
+        {/* Shop operations */}
+        <Eyebrow>Shop operations</Eyebrow>
+        <SettingRow
+          icon={Store}
+          title="Shop"
+          subtitle="Storefront, hours, vacation mode and policies"
+          href="/dashboard/shop"
+        />
+        <SettingRow
+          icon={Users}
+          title="Team"
+          subtitle="Invite staff and set permissions"
+          href="/dashboard/team"
+        />
+        <SettingRow
+          icon={Wallet}
+          title="Payouts"
+          subtitle="Bank settlement & KYC status"
+          href="/dashboard/payouts"
+        />
+
+        <SectionGap />
+
+        {/* Inventory */}
+        <Eyebrow>Inventory</Eyebrow>
+        <SettingRow
+          icon={SlidersHorizontal}
+          title="Custom fields"
+          subtitle="Extra product attributes and sections"
+          href="/dashboard/custom-fields"
+        />
 
         <SectionGap />
 
