@@ -76,9 +76,28 @@ this should be revisited.
 
 - [x] **Sidebar is route-based.** The dashboard area is a nested-route shell
   (`app/dashboard/layout.tsx` + link-based sidebar); deep-links + back/forward work.
-- [ ] **Unify `/account` into the sidebar shell.** `/account` still uses the old
-  top `AppHeader` (`src/features/auth/components/app-header.tsx`), while the
-  dashboard area uses the sidebar layout. Move account under the dashboard shell.
+- [x] **Unify `/account` into the sidebar shell.** Account management now lives
+  at `/dashboard/profile` + `/dashboard/settings` inside the sidebar layout;
+  `/account` is a permanent redirect to `/dashboard/profile`. The old
+  `AppHeader` (`src/features/auth/components/app-header.tsx`) is now unused —
+  delete it once nothing else references it.
+
+## Profile & Settings — deferred / known gaps
+
+- [ ] **Legal pages (Privacy / Terms).** Flutter Settings → About links to a
+  `LegalPage` (privacy + terms copy). The web Settings About section currently
+  shows only the app version. Trigger: legal content lands → add `/legal/privacy`
+  + `/legal/terms` and About rows linking to them (register/consent can reuse).
+- [ ] **Theme & language are placeholders.** Shown as "Coming soon" rows
+  (parity with Flutter). Trigger: dark-mode / i18n support → make them live.
+- [ ] **Shop operations settings.** Flutter Settings has a "Shop operations"
+  entry (hours, vacation mode, payouts, KYC, team) behind the relevant
+  capabilities. Trigger: shop / payouts / team web features → add the section.
+- [ ] **Custom-field definitions settings.** Flutter Settings → Inventory opens
+  the custom-fields editor (the product editor already reads the definitions).
+  Trigger: build the definitions UI (see the Products gap above) → link it here.
+- [ ] **App version is hard-coded** to `1.0.0` in `app/dashboard/settings`.
+  Trigger: a build-time version constant → read it from there.
 
 ## Quality / infra debt (applies to both web apps)
 
