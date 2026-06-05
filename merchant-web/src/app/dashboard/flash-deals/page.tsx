@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { BarChart3, Plus, RefreshCw, StopCircle, Zap } from "lucide-react";
+import { Plus, RefreshCw, StopCircle, Zap } from "lucide-react";
 import { ProductThumb } from "@/features/products/components/product-thumb";
 import { PageHeader } from "@/shared/ui/page-header";
 import { Modal, ModalActions } from "@/shared/ui/modal";
@@ -179,10 +179,7 @@ function DealRow({ deal, tab, onCancel }: { deal: FlashSale; tab: FlashStatus; o
   return (
     <div className="flex flex-col gap-sm border-b border-hairline py-md">
       <div className="flex items-start gap-md">
-        <Link
-          href={`/dashboard/flash-deals/${deal.id}/edit`}
-          className="flex min-w-0 flex-1 items-start gap-md"
-        >
+        <Link href={`/dashboard/flash-deals/${deal.id}`} className="flex min-w-0 flex-1 items-start gap-md">
           <ProductThumb url={deal.product?.images[0]?.url} alt={deal.product?.name ?? "Product"} size={52} />
           <span className="min-w-0 flex-1">
             <span className="block truncate text-body-md text-ink">
@@ -196,13 +193,6 @@ function DealRow({ deal, tab, onCancel }: { deal: FlashSale; tab: FlashStatus; o
               {off > 0 ? <span className="text-body-sm font-semibold text-flash-deal">{off}% off</span> : null}
             </span>
           </span>
-        </Link>
-        <Link
-          href={`/dashboard/flash-deals/${deal.id}/analytics`}
-          aria-label="Analytics"
-          className="inline-flex size-9 shrink-0 items-center justify-center rounded-button text-muted transition-colors hover:bg-surface-tint hover:text-ink"
-        >
-          <BarChart3 size={18} />
         </Link>
         {tab !== "past" ? (
           <button

@@ -82,7 +82,9 @@ this should be revisited.
   analytics`; promotions `/new` + `[id]/edit`; spotlight `/new`) instead of
   modals. Shared `PageHeader`/`BackLink` (`src/shared/ui/page-header.tsx`) give
   every section a consistent toned masthead. Only destructive confirmations
-  (cancel/delete) remain compact dialogs by design.
+  (cancel/delete) remain compact dialogs by design. Flash deals open a read-only
+  detail page first (preview + inline analytics) with an Edit button — not
+  straight into the editor.
 
 
 - [x] **My Carousels.** `/dashboard/carousels` (list grouped by placement +
@@ -106,9 +108,11 @@ this should be revisited.
   offer, reorder, remove, save. Wired to `GET`/`PUT /me/banners/:slideId/products`
   via `api/slides/[slideId]/products` (a slide is a Banner; ownership via
   `sponsorShopId`). Display-only offer — checkout still charges the normal price.
-- [x] **Flash-deal analytics.** Each tile has an analytics action opening a modal
-  (claimed, views, taps, tap→buy, hourly series) via `api/flash-deals/[id]/
-  analytics` → `/me/analytics/flash-deals/:id`.
+- [x] **Flash-deal detail + inline analytics.** Tapping a flash deal opens a
+  read-only detail page (`/dashboard/flash-deals/[id]`) showing the customer-card
+  preview, key facts, and analytics inline (claimed, views, taps, tap→buy, hourly
+  series via `api/flash-deals/[id]/analytics` → `/me/analytics/flash-deals/:id`),
+  with an Edit button → `[id]/edit`. The standalone analytics page was removed.
 - [x] **Promotion edit + pause/resume.** Promo cards can edit budget/cap/CPM/
   schedule and pause/resume (`PATCH /me/promotions/:id`); cancelled promos stay
   terminal. (Promotion-level analytics / impression charts still TODO — only the
