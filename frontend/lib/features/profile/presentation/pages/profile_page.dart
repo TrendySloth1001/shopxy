@@ -52,6 +52,22 @@ class ProfilePage extends StatelessWidget {
         padding: const EdgeInsets.only(bottom: AppSizes.huge),
         children: [
           _ProfileHero(user: user),
+          if (user != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSizes.lg,
+                AppSizes.md,
+                AppSizes.lg,
+                0,
+              ),
+              child: _ProfileCompletion(
+                user: user,
+                onComplete: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const EditProfilePage()),
+                ),
+              ),
+            ),
           if (user != null && user.isShopOwner && _shopProfileIncomplete(user))
             Padding(
               padding: const EdgeInsets.fromLTRB(
@@ -425,6 +441,143 @@ class _ShopSetupCallout extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Profile completion meter — % filled + what's left
+// ─────────────────────────────────────────────────────────────────────
+
+class _ProfileCompletion extends StatelessWidget {
+  const _ProfileCompletion({required this.user, required this.onComplete});
+
+  final AuthUser user;
+  final VoidCallback onComplete;
+
+  /// Fields that make an invoice look professional + let a customer reach
+  /// the shop. Kept in lockstep with the web `profileCompletion` helper so
+  /// both apps show the same percentage.
+  static List<({String label, bool filled})> _fields(AuthUser u) {
+    bool ok(String? v) => v != null && v.trim().isNotEmpty;
+    return [
+      (label: 'Name', filled: ok(u.name)),
+      (label: 'Photo', filled: ok(u.avatarUrl)),
+      (label: 'Phone', filled: ok(u.phoneNumber)),
+      (label: 'Shop name', filled: ok(u.shopName)),
+      (label: 'Address', filled: ok(u.shopAddress)),
+      (label: 'City', filled: ok(u.shopCity)),
+      (label: 'State', filled: ok(u.shopState)),
+      (label: 'State code', filled: ok(u.shopStateCode)),
+      (label: 'PIN code', filled: ok(u.shopPinCode)),
+      (label: 'GSTIN', filled: ok(u.shopGstin)),
+      (label: 'PAN', filled: ok(u.shopPan)),
+      (label: 'UPI ID', filled: ok(u.upiVpa)),
+    ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final fields = _fields(user);
+    final total = fields.length;
+    final filled = fields.where((f) => f.filled).length;
+    final percent = ((filled / total) * 100).round();
+    final missing = fields.where((f) => !f.filled).map((f) => f.label).toList();
+
+    // Fully complete — nothing to nudge.
+    if (percent >= 100) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.all(AppSizes.lg),
+      decoration: ShapeDecoration(
+        color: AppColors.white,
+        shape: AppShapes.squircle(
+          AppSizes.radiusMd,
+          side: const BorderSide(color: AppColors.hairline),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Profile $percent% complete',
+                      style: theme.textTheme.titleSmall
+                          ?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '$filled of $total details added.',
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: AppColors.muted),
+                    ),
+                  ],
+                ),
+              ),
+              TextButton(
+                onPressed: onComplete,
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.brandStrong,
+                  visualDensity: VisualDensity.compact,
+                ),
+                child: const Text('Complete it'),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSizes.sm),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppSizes.radiusFull),
+            child: LinearProgressIndicator(
+              value: percent / 100,
+              minHeight: 8,
+              backgroundColor: AppColors.surfaceTint,
+              valueColor:
+                  const AlwaysStoppedAnimation<Color>(AppColors.brand),
+            ),
+          ),
+          if (missing.isNotEmpty) ...[
+            const SizedBox(height: AppSizes.md),
+            Text(
+              "WHAT'S LEFT",
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: AppColors.muted,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1,
+              ),
+            ),
+            const SizedBox(height: AppSizes.sm),
+            Wrap(
+              spacing: AppSizes.sm,
+              runSpacing: AppSizes.sm,
+              children: [
+                for (final m in missing)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSizes.sm,
+                      vertical: 2,
+                    ),
+                    decoration: ShapeDecoration(
+                      color: AppColors.surfaceTint,
+                      shape: AppShapes.squircle(AppSizes.radiusFull),
+                    ),
+                    child: Text(
+                      m,
+                      style: theme.textTheme.labelSmall
+                          ?.copyWith(color: AppColors.muted),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ],
       ),
     );
   }

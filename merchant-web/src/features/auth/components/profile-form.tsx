@@ -15,7 +15,7 @@ const REGISTRATION_TYPES = ["REGULAR", "COMPOSITION", "UNREGISTERED"] as const;
  * the whole editable set (the backend treats it as a partial update). Shop
  * fields populate the invoice header / GST footer / UPI QR.
  */
-export function ProfileForm() {
+export function ProfileForm({ onSaved }: { onSaved?: () => void } = {}) {
   const { user, updateProfile } = useAuth();
   const [values, setValues] = useState({
     name: user?.name ?? "",
@@ -65,6 +65,7 @@ export function ProfileForm() {
     try {
       await updateProfile(parsed.data);
       setSaved(true);
+      onSaved?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save your changes.");
     } finally {
