@@ -1,7 +1,20 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ArrowDown, ArrowUp, BarChart3 } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  BarChart3,
+  Eye,
+  Heart,
+  MousePointerClick,
+  Percent,
+  ScanEye,
+  ShoppingBag,
+  ShoppingCart,
+  Target,
+  type LucideIcon,
+} from "lucide-react";
 import { PageHeader } from "@/shared/ui/page-header";
 import { CardsSkeleton, ListRowsSkeleton } from "@/shared/ui/skeleton";
 import { dateInputToIso, inputDateDaysAgo, startOfMonthInput, todayInputDate } from "@/shared/datetime";
@@ -104,14 +117,14 @@ export default function AnalyticsPage() {
         <>
           {/* KPI strip */}
           <div className="mt-xl grid grid-cols-2 gap-x-lg gap-y-xl sm:grid-cols-4">
-            <Kpi label="Impressions" value={int(t.impressions)} />
-            <Kpi label="Taps" value={int(t.taps)} />
-            <Kpi label="Views" value={int(t.views)} />
-            <Kpi label="Add to cart" value={int(t.addToCart)} />
-            <Kpi label="Purchases" value={int(t.purchases)} />
-            <Kpi label="Wishlist" value={int(t.wishlistAdd)} />
-            <Kpi label="CTR" value={pct(t.ctr)} hint="Taps ÷ impressions" />
-            <Kpi label="CVR" value={pct(t.cvr)} hint="Purchases ÷ views" />
+            <Kpi icon={Eye} label="Impressions" value={int(t.impressions)} />
+            <Kpi icon={MousePointerClick} label="Taps" value={int(t.taps)} />
+            <Kpi icon={ScanEye} label="Views" value={int(t.views)} />
+            <Kpi icon={ShoppingCart} label="Add to cart" value={int(t.addToCart)} />
+            <Kpi icon={ShoppingBag} label="Purchases" value={int(t.purchases)} />
+            <Kpi icon={Heart} label="Wishlist" value={int(t.wishlistAdd)} />
+            <Kpi icon={Percent} label="CTR" value={pct(t.ctr)} hint="Taps ÷ impressions" />
+            <Kpi icon={Target} label="CVR" value={pct(t.cvr)} hint="Purchases ÷ views" />
           </div>
 
           {/* Per-product table */}
@@ -147,10 +160,23 @@ export default function AnalyticsPage() {
   );
 }
 
-function Kpi({ label, value, hint }: { label: string; value: string; hint?: string }) {
+function Kpi({
+  icon: Icon,
+  label,
+  value,
+  hint,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+  hint?: string;
+}) {
   return (
     <div>
-      <p className="text-label-md uppercase tracking-wide text-subtle">{label}</p>
+      <p className="flex items-center gap-xs text-label-md uppercase tracking-wide text-subtle">
+        <Icon size={13} className="shrink-0" />
+        {label}
+      </p>
       <p className="mt-xs text-headline-md font-bold tabular-nums text-ink">{value}</p>
       {hint ? <p className="text-body-sm text-subtle">{hint}</p> : null}
     </div>
