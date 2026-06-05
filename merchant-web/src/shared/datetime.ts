@@ -36,6 +36,37 @@ export function localInputToIso(value: string): string | null {
   return d.toISOString();
 }
 
+/** Today as a `YYYY-MM-DD` string (local) for `<input type="date">`. */
+export function todayInputDate(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+/** `YYYY-MM-DD` for `n` days before today (local). */
+export function inputDateDaysAgo(n: number): string {
+  const d = new Date(Date.now() - n * 24 * 60 * 60 * 1000);
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+/** `YYYY-MM-DD` for the first day of the current month (local). */
+export function startOfMonthInput(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-01`;
+}
+
+/** `YYYY-MM-DD` for the start of the current Indian financial year (1 April). */
+export function financialYearStartInput(): string {
+  const d = new Date();
+  const year = d.getMonth() >= 3 ? d.getFullYear() : d.getFullYear() - 1;
+  return `${year}-04-01`;
+}
+
+/** `YYYY-MM-DD` → UTC ISO at the start (00:00) or end (23:59:59.999) of that day. */
+export function dateInputToIso(value: string, endOfDay = false): string {
+  const d = new Date(`${value}T${endOfDay ? "23:59:59.999" : "00:00:00"}`);
+  return d.toISOString();
+}
+
 const dateTimeFmt = new Intl.DateTimeFormat("en-IN", {
   day: "numeric",
   month: "short",
