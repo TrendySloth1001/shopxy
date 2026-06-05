@@ -27,6 +27,7 @@ export const salesReportSchema = z
     topProducts: z
       .array(
         z.object({
+          productId: z.number().nullish(),
           productName: z.string().nullish(),
           productSku: z.string().nullish(),
           quantity: dailyNum,

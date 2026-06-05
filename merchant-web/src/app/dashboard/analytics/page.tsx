@@ -28,6 +28,7 @@ import { CardsSkeleton, ListRowsSkeleton } from "@/shared/ui/skeleton";
 import { formatINR } from "@/shared/money";
 import { dateInputToIso, inputDateDaysAgo, startOfMonthInput, todayInputDate } from "@/shared/datetime";
 import { getCustomerRetention, getProductAnalytics, getPurchaseHeatmap } from "@/features/analytics/api";
+import { StockForecast } from "@/features/analytics/stock-forecast";
 import type {
   AnalyticsRow,
   AnalyticsSortKey,
@@ -260,6 +261,11 @@ export default function AnalyticsPage() {
               <RetentionBlock r={retention} />
             </>
           ) : null}
+
+          {/* Stock forecast */}
+          <Divider className="my-xxl" />
+          <SectionHeading>Stock forecast</SectionHeading>
+          <StockForecast />
 
           {/* Per-product table */}
           <Divider className="my-xxl" />
