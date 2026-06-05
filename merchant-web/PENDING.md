@@ -38,6 +38,13 @@ this should be revisited.
 
 ## Products — deferred / known gaps
 
+- [x] **Stock in / Stock out.** Built — the product detail page has "Stock in"
+  (purchase) and "Stock out" (sale) actions (`src/features/stock/stock-sheet.tsx`)
+  that POST `/stock` and create a draft invoice. Supplier (`GET /stock/suppliers`)
+  and customer (`GET /parties`) lists are pre-loaded into dropdowns (select, not
+  search). Gated by `stock:manage` via `MaybeLocked`. Mirrors the Flutter
+  `StockBottomSheet`. Free-text supplier autocomplete (history) was NOT ported —
+  web uses the vendor dropdown only (the backend create only takes `vendorId`).
 - [ ] **Variants don't re-read on merchant detail/edit.** Backend
   `getProductById` (`backend/src/modules/products/products.service.ts`) uses
   `include: { category, images, stockTransactions }` and OMITS the `variants`
