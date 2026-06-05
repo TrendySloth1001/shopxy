@@ -24,8 +24,12 @@ async function jsonOrThrow<T>(res: Response, parse: (raw: unknown) => T, fallbac
 type Range = { from: string; to: string };
 const rangeQs = (r: Range) => new URLSearchParams({ from: r.from, to: r.to }).toString();
 
-export function getProductAnalytics(range: Range): Promise<ProductAnalytics> {
-  const qs = new URLSearchParams({ from: range.from, to: range.to, limit: "200" });
+export function getProductAnalytics(
+  range: Range,
+  opts?: { limit?: number; cursor?: string | null },
+): Promise<ProductAnalytics> {
+  const qs = new URLSearchParams({ from: range.from, to: range.to, limit: String(opts?.limit ?? 100) });
+  if (opts?.cursor) qs.set("cursor", opts.cursor);
   return fetch(`/api/analytics/products?${qs.toString()}`, { cache: "no-store" }).then((r) =>
     jsonOrThrow(r, (raw) => productAnalyticsSchema.parse(raw), "Could not load analytics."),
   );
