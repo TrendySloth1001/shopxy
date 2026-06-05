@@ -3,7 +3,7 @@
 import { use, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2, PackagePlus, PackageMinus } from "lucide-react";
 import { Divider } from "@/shared/ui/divider";
 import {
   deleteProduct,
@@ -17,6 +17,11 @@ import { ProductThumb, mediaSrc } from "@/features/products/components/product-t
 import { StockBadge } from "@/features/products/components/stock-badge";
 import { ContentBlocksView } from "@/features/products/components/content-blocks-view";
 import { DetailSkeleton } from "@/shared/ui/skeleton";
+import { useAuth } from "@/features/auth/auth-context";
+import { canManage } from "@/features/auth/capabilities";
+import { MaybeLocked } from "@/features/auth/components/maybe-locked";
+import { StockSheet } from "@/features/stock/stock-sheet";
+import type { StockType } from "@/features/stock/schema";
 
 export default function ProductDetailPage({
   params,
@@ -26,6 +31,8 @@ export default function ProductDetailPage({
   const { id } = use(params);
   const productId = Number(id);
   const router = useRouter();
+  const { user } = useAuth();
+  const canStock = canManage(user, "stock");
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -33,6 +40,8 @@ export default function ProductDetailPage({
   const [nonce, setNonce] = useState(0);
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [stockSheet, setStockSheet] = useState<StockType | null>(null);
+  const [draftId, setDraftId] = useState<number | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -163,6 +172,29 @@ export default function ProductDetailPage({
 
       {error ? <p className="mt-md text-body-sm text-error">{error}</p> : null}
 
+      {draftId ? (
+        <p className="mt-md rounded-md bg-brand-soft px-md py-sm text-body-sm text-brand-strong">
+          Draft invoice created.{" "}
+          <Link href={`/dashboard/invoices/${draftId}`} className="font-semibold underline">
+            Open it
+          </Link>{" "}
+          and confirm to post the stock.
+        </p>
+      ) : null}
+
+      {stockSheet && canStock ? (
+        <StockSheet
+          product={product}
+          initialType={stockSheet}
+          onClose={() => setStockSheet(null)}
+          onDone={(id) => {
+            setStockSheet(null);
+            setDraftId(id);
+            reload();
+          }}
+        />
+      ) : null}
+
       <Divider className="my-xxl" />
 
       {/* Gallery + key facts */}
@@ -180,6 +212,26 @@ export default function ProductDetailPage({
             ) : null}
           </div>
           <StockBadge product={product} />
+          <div className="flex flex-wrap items-center gap-sm">
+            <MaybeLocked area="stock" label="Stock in">
+              <button
+                type="button"
+                onClick={() => setStockSheet("STOCK_IN")}
+                className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-md text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+              >
+                <PackagePlus size={16} /> Stock in
+              </button>
+            </MaybeLocked>
+            <MaybeLocked area="stock" label="Stock out">
+              <button
+                type="button"
+                onClick={() => setStockSheet("STOCK_OUT")}
+                className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+              >
+                <PackageMinus size={16} /> Stock out
+              </button>
+            </MaybeLocked>
+          </div>
           <Divider />
           <Facts
             rows={[
