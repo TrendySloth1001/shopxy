@@ -27,6 +27,15 @@ forgotten.
   Test mentally at ~360px, ~768px, and ~1440px.
 - Content padding comes from spacing tokens (`px-lg`, `py-xxxl`); section
   rhythm uses `xxl`/`xxxl`.
+- **Buttons size to content — never inflate.** A button's width is its label +
+  horizontal padding at a fixed token height (`h-9` compact, `h-10` default,
+  `h-11` primary). **MUST NOT** put `w-full` on a button, and **MUST NOT** let a
+  button be the lone stretched child of a grid cell / `flex-1` slot (that's what
+  blows them up into giant bars). Group related actions in a left-aligned
+  `flex flex-wrap items-center gap-sm` row so each keeps its natural width and
+  wraps to the next line on narrow screens. Full-width is allowed ONLY for a
+  single primary submit inside a focused `max-w-form` form (sign in / register).
+  Toolbar/section actions are icon+label chips, not full-width blocks.
 
 ## Design system — tokens only
 

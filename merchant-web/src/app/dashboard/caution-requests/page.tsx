@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Check, Inbox, RefreshCw, ShoppingBasket, X } from "lucide-react";
+import { Check, Inbox, Info, RefreshCw, ShoppingBasket, X } from "lucide-react";
 import { PageHeader } from "@/shared/ui/page-header";
 import { Modal, ModalActions } from "@/shared/ui/modal";
 import { TextAreaField } from "@/shared/ui/form";
@@ -22,6 +22,7 @@ export default function CautionRequestsPage() {
   const [busyId, setBusyId] = useState<number | null>(null);
   const [rejectTarget, setRejectTarget] = useState<CautionRequest | null>(null);
   const [rejectNote, setRejectNote] = useState("");
+  const [infoOpen, setInfoOpen] = useState(false);
 
   const reload = useCallback(() => setNonce((n) => n + 1), []);
 
@@ -83,6 +84,14 @@ export default function CautionRequestsPage() {
       >
         <button
           type="button"
+          onClick={() => setInfoOpen(true)}
+          aria-label="About caution requests"
+          className="inline-flex size-10 items-center justify-center rounded-button border border-hairline text-ink transition-colors hover:bg-surface-tint"
+        >
+          <Info size={16} />
+        </button>
+        <button
+          type="button"
           onClick={reload}
           disabled={loading}
           aria-label="Refresh"
@@ -91,6 +100,19 @@ export default function CautionRequestsPage() {
           <RefreshCw size={16} />
         </button>
       </PageHeader>
+
+      {infoOpen ? (
+        <Modal title="Caution requests" onClose={() => setInfoOpen(false)}>
+          <p className="text-body-md text-muted">
+            Customers can ask to place a caution deposit with you. Review each request here.
+          </p>
+          <div className="flex flex-col gap-md">
+            <InfoRow tone="success" icon={<Check size={16} />} title="Approve" body="Confirms the deposit and adds it to the customer's held balance — it shows up as a Deposit in their history." />
+            <InfoRow tone="error" icon={<X size={16} />} title="Decline" body="Rejects the request. You can add an optional reason the customer will see." />
+            <InfoRow tone="indigo" icon={<ShoppingBasket size={16} />} title="Plans to buy" body="Items the customer intends to purchase against the deposit, if they attached a basket." />
+          </div>
+        </Modal>
+      ) : null}
 
       {error ? (
         <p className="mt-md rounded-md bg-error-soft px-md py-sm text-body-sm text-error">{error}</p>
@@ -204,6 +226,33 @@ function RequestRow({
         >
           <Check size={15} /> {busy ? "Approving…" : "Approve"}
         </button>
+      </div>
+    </div>
+  );
+}
+
+function InfoRow({
+  tone,
+  icon,
+  title,
+  body,
+}: {
+  tone: "success" | "error" | "indigo";
+  icon: React.ReactNode;
+  title: string;
+  body: string;
+}) {
+  const puck = {
+    success: "bg-success-soft text-success",
+    error: "bg-error-soft text-error",
+    indigo: "bg-accent-indigo-soft text-accent-indigo",
+  }[tone];
+  return (
+    <div className="flex items-start gap-md">
+      <span className={`flex size-8 shrink-0 items-center justify-center rounded-full ${puck}`}>{icon}</span>
+      <div className="min-w-0">
+        <p className="text-body-md text-ink">{title}</p>
+        <p className="text-body-sm text-muted">{body}</p>
       </div>
     </div>
   );

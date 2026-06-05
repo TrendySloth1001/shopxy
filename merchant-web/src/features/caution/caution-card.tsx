@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Gavel, History, Inbox, Merge, PiggyBank, Plus, Undo2 } from "lucide-react";
+import { Gavel, History, Inbox, Info, Merge, PiggyBank, Plus, Undo2 } from "lucide-react";
 import { Modal, ModalActions } from "@/shared/ui/modal";
 import { SelectField, TextAreaField, TextField } from "@/shared/ui/form";
 import { formatINR } from "@/shared/money";
@@ -56,6 +56,7 @@ export function CautionCard({
   onChanged: () => void;
 }) {
   const [action, setAction] = useState<Action | null>(null);
+  const [infoOpen, setInfoOpen] = useState(false);
   const hasBalance = balance > 0.005;
 
   return (
@@ -69,41 +70,55 @@ export function CautionCard({
           <p className="text-body-sm text-muted">{hasBalance ? "Held on file" : "None on file"}</p>
         </div>
         <p className="text-headline-md font-bold text-info">{formatINR(balance)}</p>
+        <button
+          type="button"
+          onClick={() => setInfoOpen(true)}
+          aria-label="About caution deposits"
+          className="inline-flex size-9 shrink-0 items-center justify-center rounded-button text-subtle transition-colors hover:bg-surface-tint hover:text-ink"
+        >
+          <Info size={16} />
+        </button>
       </div>
 
-      <div className="mt-md grid grid-cols-2 gap-sm sm:grid-cols-3">
-        <ActionButton icon={<Plus size={15} />} label="Add" onClick={() => setAction("deposit")} />
+      {/* Actions — content-sized chips, never stretched (see CLAUDE.md). */}
+      <div className="mt-md flex flex-wrap items-center gap-sm">
+        <ActionButton icon={<Plus size={15} />} label="Add" tone="success" onClick={() => setAction("deposit")} />
         <ActionButton
           icon={<Undo2 size={15} />}
           label="Refund"
+          tone="error"
           disabled={!hasBalance}
           onClick={() => setAction("refund")}
         />
         <ActionButton
           icon={<Merge size={15} />}
           label="Set off"
+          tone="indigo"
           disabled={!hasBalance}
           onClick={() => setAction("adjust")}
         />
         <ActionButton
           icon={<Gavel size={15} />}
           label="Forfeit"
+          tone="error"
           disabled={!hasBalance}
           onClick={() => setAction("forfeit")}
         />
         <Link
           href="/dashboard/caution-requests"
-          className="inline-flex h-10 items-center justify-center gap-xs rounded-button border border-hairline px-sm text-label-md text-ink transition-colors hover:bg-surface-tint"
+          className="inline-flex h-10 items-center gap-xs rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-accent-indigo-soft"
         >
-          <Inbox size={15} /> Requests
+          <Inbox size={15} className="text-accent-indigo" /> Requests
         </Link>
         <Link
           href={`/dashboard/parties/${partyId}/caution`}
-          className="inline-flex h-10 items-center justify-center gap-xs rounded-button border border-hairline px-sm text-label-md text-ink transition-colors hover:bg-surface-tint"
+          className="inline-flex h-10 items-center gap-xs rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
         >
-          <History size={15} /> History
+          <History size={15} className="text-muted" /> History
         </Link>
       </div>
+
+      {infoOpen ? <CautionInfoModal onClose={() => setInfoOpen(false)} /> : null}
 
       {action ? (
         <CautionActionModal
@@ -122,14 +137,31 @@ export function CautionCard({
   );
 }
 
+type Tone = "success" | "error" | "indigo" | "neutral";
+
+const TONE_ICON: Record<Tone, string> = {
+  success: "text-success",
+  error: "text-error",
+  indigo: "text-accent-indigo",
+  neutral: "text-muted",
+};
+const TONE_HOVER: Record<Tone, string> = {
+  success: "hover:bg-success-soft",
+  error: "hover:bg-error-soft",
+  indigo: "hover:bg-accent-indigo-soft",
+  neutral: "hover:bg-surface-tint",
+};
+
 function ActionButton({
   icon,
   label,
+  tone,
   onClick,
   disabled,
 }: {
   icon: React.ReactNode;
   label: string;
+  tone: Tone;
   onClick: () => void;
   disabled?: boolean;
 }) {
@@ -138,10 +170,56 @@ function ActionButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="inline-flex h-10 items-center justify-center gap-xs rounded-button border border-hairline px-sm text-label-md text-ink transition-colors hover:bg-surface-tint disabled:text-disabled disabled:hover:bg-transparent"
+      className={`inline-flex h-10 items-center gap-xs rounded-button border border-hairline px-md text-label-md text-ink transition-colors disabled:text-disabled disabled:hover:bg-transparent ${TONE_HOVER[tone]}`}
     >
-      {icon} {label}
+      <span className={disabled ? "text-disabled" : TONE_ICON[tone]}>{icon}</span>
+      {label}
     </button>
+  );
+}
+
+function CautionInfoModal({ onClose }: { onClose: () => void }) {
+  return (
+    <Modal title="Caution deposits" onClose={onClose}>
+      <p className="text-body-md text-muted">
+        A caution deposit is security money a customer places with you. The card shows the running balance you
+        hold for them and every movement on it.
+      </p>
+      <div className="flex flex-col gap-md">
+        <InfoRow icon={<Plus size={16} />} tone="success" title="Deposit" body="Money taken in — increases the balance you hold." />
+        <InfoRow icon={<Undo2 size={16} />} tone="error" title="Refund" body="Money returned to the customer — reduces the held balance." />
+        <InfoRow icon={<Merge size={16} />} tone="indigo" title="Set off" body="Part of the deposit applied against one of their invoices." />
+        <InfoRow icon={<Gavel size={16} />} tone="error" title="Forfeit" body="Amount you keep, e.g. on breach of terms. GST may apply on forfeiture." />
+      </div>
+    </Modal>
+  );
+}
+
+function InfoRow({
+  icon,
+  tone,
+  title,
+  body,
+}: {
+  icon: React.ReactNode;
+  tone: Tone;
+  title: string;
+  body: string;
+}) {
+  const puck: Record<Tone, string> = {
+    success: "bg-success-soft text-success",
+    error: "bg-error-soft text-error",
+    indigo: "bg-accent-indigo-soft text-accent-indigo",
+    neutral: "bg-surface-tint text-muted",
+  };
+  return (
+    <div className="flex items-start gap-md">
+      <span className={`flex size-8 shrink-0 items-center justify-center rounded-full ${puck[tone]}`}>{icon}</span>
+      <div className="min-w-0">
+        <p className="text-body-md text-ink">{title}</p>
+        <p className="text-body-sm text-muted">{body}</p>
+      </div>
+    </div>
   );
 }
 

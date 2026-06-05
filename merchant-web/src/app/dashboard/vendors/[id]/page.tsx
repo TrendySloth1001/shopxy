@@ -27,6 +27,7 @@ import { LedgerList } from "@/shared/ui/ledger-list";
 import { formatDateTime } from "@/shared/datetime";
 import { formatINR } from "@/shared/money";
 import type { Ledger } from "@/shared/ledger";
+import { InviteControl } from "@/features/invitations/invite-control";
 import { getVendorLedger, getVendorOverview } from "@/features/vendors/api";
 import { BALANCE_TONE_TEXT, netPurchased, totalReturns, vendorBalanceView } from "@/features/vendors/format";
 import type { VendorInvoiceRef, VendorOverview, VendorStockInRef } from "@/features/vendors/schema";
@@ -114,12 +115,21 @@ export default function VendorDetailPage() {
             {v.contactName ? <p className="mt-xs text-body-md text-muted">{v.contactName}</p> : null}
           </div>
         </div>
-        <Link
-          href={`/dashboard/vendors/${id}/edit`}
-          className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-md text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
-        >
-          <Pencil size={16} /> Edit
-        </Link>
+        <div className="flex shrink-0 items-center gap-sm">
+          <InviteControl
+            linkType="VENDOR"
+            entityId={id}
+            name={v.name}
+            email={v.email}
+            linked={!!v.linkedUser}
+          />
+          <Link
+            href={`/dashboard/vendors/${id}/edit`}
+            className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-md text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+          >
+            <Pencil size={16} /> Edit
+          </Link>
+        </div>
       </div>
 
       {/* Contact rows */}
