@@ -13,10 +13,10 @@ this should be revisited.
 - [ ] **Sidebar nav → real screens.** Built: `Products`, `Orders`, `Shop`,
   `My Carousels`, `Flash deals`, `Brand spotlight`, `Promotions`, `Coupons`,
   `Categories`, `Vendors`, `Customers` (parties), `Invoices`, `Quotations`,
-  `Challans` (+ Profile / Settings / Team / Payouts / Custom fields). The rest
-  still land on the `/dashboard/[...section]` placeholder. Trigger: building each
-  remaining section (stock-adjustments, returns, reports, analytics) — add
-  `app/dashboard/<section>/…`.
+  `Challans`, `Stock adjustments`, `Returns`, `Reports` (+ Profile / Settings /
+  Team / Payouts / Custom fields). Only `Analytics` (Operations) still lands on
+  the `/dashboard/[...section]` placeholder. Trigger: build the analytics section
+  — add `app/dashboard/analytics/…`.
 - [x] **Dashboard row tap-through.** `DraftRow` now links to its invoice detail
   (`/dashboard/invoices/:id`) and `ActivityRow` links to its source doc
   (`tx.sourceType` `INVOICE`→invoice, `CHALLAN`→challan, via `tx.sourceId`); rows
@@ -104,6 +104,30 @@ this should be revisited.
   three editors. `src/server/pdf.ts` (`streamPdf`) passes the backend-rendered PDF
   through the BFF as binary (the JSON `proxy()` can't); the invoice/quotation "PDF"
   buttons open it in a new tab (download / print / save).
+- [x] **Stock adjustments.** `/dashboard/stock-adjustments` (list with reason
+  badge + direction) + `/new` editor (reason chips DAMAGE/EXPIRED/SHRINKAGE/
+  RECOUNT/OPENING, direction toggle for RECOUNT/OPENING, product qty items, note)
+  + `/dashboard/stock-adjustments/[id]` detail (items with signed qty + a
+  **Reverse** action that undoes the ledger movement — backend supports it even
+  though Flutter doesn't expose it). BFF `api/stock-adjustments` (+ `[id]`,
+  `[id]/reverse`) → `/stock-adjustments`. Qty-only like Flutter (no unit-cost
+  field). The standalone **stock ledger feed** (`GET /stock`) isn't surfaced yet
+  — trigger: a "Stock ledger" view if the movement history is needed.
+- [x] **Returns.** `/dashboard/returns` (status tabs Open/Approved/Received/
+  Refunded/All) + `/dashboard/returns/[id]` detail (customer + order, items with
+  reason chips + per-item refund, event timeline, buyer/your notes, refund
+  confirmation) with the full workflow action bar: Approve / Reject (REQUESTED),
+  Mark picked-up (APPROVED), Mark received (APPROVED/PICKED_UP), **Refund**
+  (credits the wallet + restocks). Customer-initiated only (no merchant create).
+  BFF `api/returns` (+ `[id]`, `approve/reject/picked-up/received/refund`) →
+  `/orders/returns` (orders area). Product thumbnails omitted (text-first rows).
+- [x] **Reports.** `/dashboard/reports` — Sales / Purchases / GST / P&L tabs with
+  a date-range control (From/To + This-month / Last-30-days / This-FY presets).
+  Sales & Purchases: headline total, daily bar series, top products + top
+  customers/vendors leader bars. GST: output/input/net-payable + rate-wise
+  breakdown. P&L: net profit + margin and a revenue→COGS→gross→writeoffs→net
+  ledger. BFF `api/reports/{sales,purchases,gst,pnl}` → `/reports/*`. No
+  PDF/CSV export (the Flutter app has none either).
 - [ ] **Native-only invoice extras not ported.** The Flutter editor has a
   barcode/QR scan-to-add and per-row line discount; the detail has a "Share via
   WhatsApp" deep link and native file download/share. On web: no scanner, no
