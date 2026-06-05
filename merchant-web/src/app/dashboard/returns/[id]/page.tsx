@@ -38,6 +38,7 @@ import {
   type ReturnEvent,
   type ReturnItem,
 } from "@/features/returns/schema";
+import { DetailSkeleton } from "@/shared/ui/skeleton";
 
 const BACK = "/dashboard/returns";
 
@@ -92,7 +93,7 @@ export default function ReturnDetailPage() {
   }
 
   if (loading) {
-    return <p className="w-full px-lg py-xxl text-body-sm text-subtle md:px-xxl">Loading…</p>;
+    return <DetailSkeleton />;
   }
   if (error || !ret) {
     return (

@@ -15,6 +15,7 @@ import {
   type Adjustment,
   type AdjustmentItem,
 } from "@/features/stock-adjustments/schema";
+import { DetailSkeleton } from "@/shared/ui/skeleton";
 
 const BACK = "/dashboard/stock-adjustments";
 
@@ -69,7 +70,7 @@ export default function AdjustmentDetailPage() {
   }
 
   if (loading) {
-    return <p className="w-full px-lg py-xxl text-body-sm text-subtle md:px-xxl">Loading…</p>;
+    return <DetailSkeleton />;
   }
   if (error || !adjustment) {
     return (

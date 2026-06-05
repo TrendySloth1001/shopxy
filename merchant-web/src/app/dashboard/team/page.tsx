@@ -20,6 +20,7 @@ import {
 import type { Invite, Member, Role } from "@/features/team/schema";
 import { normalizeRights, summariseRights } from "@/features/team/permissions";
 import { PermissionMatrix } from "@/features/team/permission-matrix";
+import { ListRowsSkeleton } from "@/shared/ui/skeleton";
 
 export default function TeamPage() {
   const [members, setMembers] = useState<Member[]>([]);
@@ -101,7 +102,7 @@ export default function TeamPage() {
       ) : null}
 
       {loading ? (
-        <p className="mt-xl text-body-md text-subtle">Loading…</p>
+        <ListRowsSkeleton />
       ) : error ? (
         <div className="mt-xl flex flex-col items-start gap-md">
           <p className="text-body-md text-muted">{error}</p>

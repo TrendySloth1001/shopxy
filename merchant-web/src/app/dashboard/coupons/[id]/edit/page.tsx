@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { CouponEditor } from "@/features/coupons/coupon-editor";
 import { getCoupon } from "@/features/coupons/api";
 import type { Coupon } from "@/features/coupons/schema";
+import { FormSkeleton } from "@/shared/ui/skeleton";
 
 export default function EditCouponPage() {
   const params = useParams<{ id: string }>();
@@ -28,7 +29,7 @@ export default function EditCouponPage() {
   }, [id]);
 
   if (error) return <p className="w-full px-lg py-xxl text-body-sm text-error md:px-xxl">{error}</p>;
-  if (!coupon) return <p className="w-full px-lg py-xxl text-body-sm text-subtle md:px-xxl">Loading…</p>;
+  if (!coupon) return <FormSkeleton />;
 
   return <CouponEditor existing={coupon} />;
 }

@@ -12,6 +12,7 @@ import {
   challanItemCount,
   type Challan,
 } from "@/features/challans/schema";
+import { ListRowsSkeleton } from "@/shared/ui/skeleton";
 
 const TABS: { key: string; label: string }[] = [
   { key: "", label: "All" },
@@ -111,7 +112,7 @@ export default function ChallansPage() {
 
       <div className="mt-lg">
         {loading ? (
-          <p className="py-xxl text-center text-body-sm text-subtle">Loading…</p>
+          <ListRowsSkeleton />
         ) : rows.length === 0 ? (
           <div className="flex flex-col items-center gap-md py-xxxl text-center">
             <span className="flex size-12 items-center justify-center rounded-full bg-accent-amber-soft text-accent-amber">

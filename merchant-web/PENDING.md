@@ -10,13 +10,14 @@ this should be revisited.
 
 ## Deferred wiring (stubbed — connect when the trigger lands)
 
-- [ ] **Sidebar nav → real screens.** Built: `Products`, `Orders`, `Shop`,
-  `My Carousels`, `Flash deals`, `Brand spotlight`, `Promotions`, `Coupons`,
-  `Categories`, `Vendors`, `Customers` (parties), `Invoices`, `Quotations`,
-  `Challans`, `Stock adjustments`, `Returns`, `Reports` (+ Profile / Settings /
-  Team / Payouts / Custom fields). Only `Analytics` (Operations) still lands on
-  the `/dashboard/[...section]` placeholder. Trigger: build the analytics section
-  — add `app/dashboard/analytics/…`.
+- [x] **Sidebar nav → real screens.** Every merchant nav destination is built:
+  `Products`, `Orders`, `Shop`, `My Carousels`, `Flash deals`, `Brand spotlight`,
+  `Promotions`, `Coupons`, `Categories`, `Vendors`, `Customers` (parties),
+  `Invoices`, `Quotations`, `Challans`, `Stock adjustments`, `Returns`, `Reports`,
+  `Analytics` (+ Profile / Settings / Team / Payouts / Custom fields). The
+  `/dashboard/[...section]` placeholder now only catches unbuilt **Platform admin**
+  tools (banner manager, taxonomy, approvals, collections, bank offers, shop
+  verification).
 - [x] **Dashboard row tap-through.** `DraftRow` now links to its invoice detail
   (`/dashboard/invoices/:id`) and `ActivityRow` links to its source doc
   (`tx.sourceType` `INVOICE`→invoice, `CHALLAN`→challan, via `tx.sourceId`); rows
@@ -128,6 +129,19 @@ this should be revisited.
   breakdown. P&L: net profit + margin and a revenue→COGS→gross→writeoffs→net
   ledger. BFF `api/reports/{sales,purchases,gst,pnl}` → `/reports/*`. No
   PDF/CSV export (the Flutter app has none either).
+- [x] **Analytics.** `/dashboard/analytics` — product engagement funnel over a
+  date range (Last 7 / 30 days, This month presets): KPI strip (impressions,
+  taps, views, add-to-cart, purchases, wishlist, CTR, CVR) + a sortable
+  per-product table (click a column to sort). Distinct from Reports (which is
+  money: sales/purchases/GST/P&L). BFF `api/analytics/products` →
+  `/me/analytics/products`. No money here — all counts and ratios.
+- [x] **Shimmer loading everywhere.** Added `src/shared/ui/skeleton.tsx`
+  (`Skeleton`, `ListRowsSkeleton`, `CardsSkeleton`, `DetailSkeleton`,
+  `FormSkeleton` — `animate-pulse` over `bg-hairline` at token radii) and
+  replaced every plain "Loading…" across all dashboard list/detail/form/settings
+  pages with a layout-matched skeleton. Remaining plain text loaders are the
+  app-level auth gate (`RequireAuth`) and two inline sub-component loaders
+  (carousel slide editor, custom-fields editor) — not full pages.
 - [ ] **Native-only invoice extras not ported.** The Flutter editor has a
   barcode/QR scan-to-add and per-row line discount; the detail has a "Share via
   WhatsApp" deep link and native file download/share. On web: no scanner, no

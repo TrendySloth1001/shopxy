@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { FlashDealEditor } from "@/features/flash-deals/flash-deal-editor";
 import { getFlashDeal } from "@/features/flash-deals/api";
 import type { FlashSale } from "@/features/flash-deals/schema";
+import { FormSkeleton } from "@/shared/ui/skeleton";
 
 export default function EditFlashDealPage() {
   const params = useParams<{ id: string }>();
@@ -28,7 +29,7 @@ export default function EditFlashDealPage() {
   }, [id]);
 
   if (error) return <p className="w-full px-lg py-xxl text-body-sm text-error md:px-xxl">{error}</p>;
-  if (!deal) return <p className="w-full px-lg py-xxl text-body-sm text-subtle md:px-xxl">Loading…</p>;
+  if (!deal) return <FormSkeleton />;
 
   return <FlashDealEditor existing={deal} />;
 }

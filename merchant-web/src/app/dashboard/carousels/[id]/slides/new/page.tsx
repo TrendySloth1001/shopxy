@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { SlideEditor } from "@/features/carousels/slide-editor";
 import { carouselSchema, type Carousel } from "@/features/carousels/schema";
+import { FormSkeleton } from "@/shared/ui/skeleton";
 
 export default function NewSlidePage() {
   const params = useParams<{ id: string }>();
@@ -29,7 +30,7 @@ export default function NewSlidePage() {
   }, [carouselId]);
 
   if (error) return <p className="w-full px-lg py-xxl text-body-sm text-error md:px-xxl">{error}</p>;
-  if (!carousel) return <p className="w-full px-lg py-xxl text-body-sm text-subtle md:px-xxl">Loading…</p>;
+  if (!carousel) return <FormSkeleton />;
 
   return <SlideEditor carouselId={carouselId} carouselName={carousel.name} existing={null} />;
 }

@@ -8,6 +8,7 @@ import { ProfileForm } from "@/features/auth/components/profile-form";
 import { profileCompletion } from "@/features/auth/profile-completion";
 import { Divider } from "@/shared/ui/divider";
 import type { AuthUser } from "@/features/auth/types";
+import { CardsSkeleton } from "@/shared/ui/skeleton";
 
 const SHOP_ROLE_LABELS: Record<string, string> = {
   OWNER: "Owner",
@@ -30,7 +31,7 @@ export default function ProfilePage() {
   if (!user) {
     return (
       <div className="w-full px-lg py-xxl md:px-xxl">
-        <p className="text-body-md text-subtle">Loading…</p>
+        <CardsSkeleton count={3} />
       </div>
     );
   }

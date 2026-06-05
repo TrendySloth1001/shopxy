@@ -36,6 +36,7 @@ import {
 } from "@/features/orders/format";
 import { OrderStatusBadge } from "@/features/orders/components/order-status-badge";
 import { ProductThumb } from "@/features/products/components/product-thumb";
+import { ListRowsSkeleton } from "@/shared/ui/skeleton";
 
 const DECLINE_REASONS = [
   "Out of stock",
@@ -134,7 +135,7 @@ export default function OrderDetailPage({
     return (
       <div className="w-full px-lg py-xxl md:px-xxl">
         <BackLink />
-        <p className="mt-lg text-body-md text-subtle">Loading…</p>
+        <ListRowsSkeleton rows={5} />
       </div>
     );
   }

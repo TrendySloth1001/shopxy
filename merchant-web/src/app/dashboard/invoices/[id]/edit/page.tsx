@@ -6,6 +6,7 @@ import { BackLink } from "@/shared/ui/page-header";
 import { InvoiceEditor } from "@/features/invoices/invoice-editor";
 import { getInvoice } from "@/features/invoices/api";
 import type { Invoice } from "@/features/invoices/schema";
+import { FormSkeleton } from "@/shared/ui/skeleton";
 
 export default function EditInvoicePage() {
   const params = useParams<{ id: string }>();
@@ -37,7 +38,7 @@ export default function EditInvoicePage() {
     );
   }
   if (!invoice) {
-    return <p className="w-full px-lg py-xxl text-body-sm text-subtle md:px-xxl">Loading…</p>;
+    return <FormSkeleton />;
   }
   if (invoice.status !== "DRAFT") {
     return (

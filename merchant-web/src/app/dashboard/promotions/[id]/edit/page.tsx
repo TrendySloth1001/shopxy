@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { PromotionEditor } from "@/features/promotions/promotion-editor";
 import { getPromotion } from "@/features/promotions/api";
 import type { Promotion } from "@/features/promotions/schema";
+import { FormSkeleton } from "@/shared/ui/skeleton";
 
 export default function EditPromotionPage() {
   const params = useParams<{ id: string }>();
@@ -28,7 +29,7 @@ export default function EditPromotionPage() {
   }, [id]);
 
   if (error) return <p className="w-full px-lg py-xxl text-body-sm text-error md:px-xxl">{error}</p>;
-  if (!promo) return <p className="w-full px-lg py-xxl text-body-sm text-subtle md:px-xxl">Loading…</p>;
+  if (!promo) return <FormSkeleton />;
 
   return <PromotionEditor existing={promo} />;
 }

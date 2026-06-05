@@ -19,6 +19,7 @@ import {
 import { listProducts } from "@/features/products/api";
 import { money } from "@/features/products/format";
 import type { Product } from "@/features/products/schema";
+import { ListRowsSkeleton } from "@/shared/ui/skeleton";
 
 const BACK = "/dashboard/categories";
 const PAGE_SIZE = 20;
@@ -183,7 +184,7 @@ export default function CategoryProductsPage() {
 
       <div className="mt-lg">
         {loading ? (
-          <p className="py-xxl text-center text-body-sm text-subtle">Loading…</p>
+          <ListRowsSkeleton />
         ) : products.length === 0 ? (
           <div className="flex flex-col items-center gap-md py-xxxl text-center">
             <span className="flex size-12 items-center justify-center rounded-full bg-surface-tint text-subtle">
