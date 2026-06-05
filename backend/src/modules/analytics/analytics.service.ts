@@ -221,32 +221,10 @@ export class AnalyticsService {
       };
     });
 
-    const totals = products.reduce(
-      (acc, p) => {
-        acc.impressions += p.impressions;
-        acc.taps += p.taps;
-        acc.views += p.views;
-        acc.addToCart += p.addToCart;
-        acc.purchases += p.purchases;
-        acc.wishlistAdd += p.wishlistAdd;
-        return acc;
-      },
-      {
-        impressions: 0,
-        taps: 0,
-        views: 0,
-        addToCart: 0,
-        purchases: 0,
-        wishlistAdd: 0,
-        ctr: 0,
-        cvr: 0,
-      },
-    );
-    totals.ctr =
-      totals.impressions > 0 ? roundTo(totals.taps / totals.impressions, 4) : 0;
-    totals.cvr =
-      totals.views > 0 ? roundTo(totals.purchases / totals.views, 4) : 0;
-
+    // Totals are a shop-wide aggregate, NOT a reduce over the returned
+    // page — so the KPI strip stays correct no matter how the product
+    // list is paginated.
+    const totals = await this.getShopTotals(shopId, from, to);
     const daily = await this.getDailyEngagement(shopId, from, to);
 
     return {
@@ -256,6 +234,48 @@ export class AnalyticsService {
       products,
       daily,
       nextCursor,
+    };
+  }
+
+  /// Shop-wide event totals for the window — a single-row aggregate
+  /// across all active products, independent of the product pagination.
+  async getShopTotals(shopId: number, from: Date, to: Date) {
+    const [r] = await prisma.$queryRaw<
+      {
+        impressions: number;
+        taps: number;
+        views: number;
+        add_to_cart: number;
+        purchases: number;
+        wishlist_add: number;
+      }[]
+    >`
+      SELECT
+        COALESCE(SUM(CASE WHEN pe.event_type = 'IMPRESSION'   THEN 1 ELSE 0 END), 0)::float AS impressions,
+        COALESCE(SUM(CASE WHEN pe.event_type = 'TAP'          THEN 1 ELSE 0 END), 0)::float AS taps,
+        COALESCE(SUM(CASE WHEN pe.event_type = 'VIEW'         THEN 1 ELSE 0 END), 0)::float AS views,
+        COALESCE(SUM(CASE WHEN pe.event_type = 'ADD_TO_CART'  THEN 1 ELSE 0 END), 0)::float AS add_to_cart,
+        COALESCE(SUM(CASE WHEN pe.event_type = 'PURCHASE'     THEN 1 ELSE 0 END), 0)::float AS purchases,
+        COALESCE(SUM(CASE WHEN pe.event_type = 'WISHLIST_ADD' THEN 1 ELSE 0 END), 0)::float AS wishlist_add
+      FROM product_events pe
+      JOIN products p ON p.id = pe.product_id
+      WHERE p.shop_id = ${shopId}
+        AND p.is_active = true
+        AND pe.occurred_at >= ${from}
+        AND pe.occurred_at <  ${to}
+    `;
+    const impressions = Math.trunc(r?.impressions ?? 0);
+    const taps = Math.trunc(r?.taps ?? 0);
+    const views = Math.trunc(r?.views ?? 0);
+    return {
+      impressions,
+      taps,
+      views,
+      addToCart: Math.trunc(r?.add_to_cart ?? 0),
+      purchases: Math.trunc(r?.purchases ?? 0),
+      wishlistAdd: Math.trunc(r?.wishlist_add ?? 0),
+      ctr: impressions > 0 ? roundTo(taps / impressions, 4) : 0,
+      cvr: views > 0 ? roundTo(Math.trunc(r?.purchases ?? 0) / views, 4) : 0,
     };
   }
 
