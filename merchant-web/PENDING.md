@@ -10,10 +10,10 @@ this should be revisited.
 
 ## Deferred wiring (stubbed — connect when the trigger lands)
 
-- [ ] **Sidebar nav → real screens.** `Products` is built; the rest still land
-  on the `/dashboard/[...section]` placeholder. Trigger: building each remaining
-  section (orders, invoices, quotations, challans, stock-adjustments, returns,
-  reports, analytics, vendors, parties, categories, coupons, promotions,
+- [ ] **Sidebar nav → real screens.** `Products` and `Orders` are built; the
+  rest still land on the `/dashboard/[...section]` placeholder. Trigger: building
+  each remaining section (invoices, quotations, challans, stock-adjustments,
+  returns, reports, analytics, vendors, parties, categories, coupons, promotions,
   flash-deals, spotlight, carousels, shop) — add `app/dashboard/<section>/…`.
 - [ ] **Dashboard row tap-through.** In `src/features/dashboard/dashboard-home.tsx`
   `DraftRow` and `ActivityRow` are display-only. Trigger: invoice / challan
@@ -51,6 +51,26 @@ this should be revisited.
   prefill SKU/barcode) are not ported — native-camera features.
 - [ ] **List filters aren't in the URL** (search/category/sort/page are local
   state) so they don't deep-link or survive refresh. Move to query params.
+
+## Orders — deferred / known gaps
+
+- [ ] **Restock-from-order flow.** Flutter lets the merchant tap a short line on a
+  pending order to open a stock-in sheet, then confirm the draft inline so the
+  shortfall clears without leaving the order. On web the shortfall banner + per-
+  line stock chips are informational only. Trigger: stock-adjustments / stock-in
+  + invoices web features land → wire the restock action on the detail page.
+- [ ] **Shipping events are read-only.** The order detail renders the event
+  timeline (`GET /orders/:id` → `events`), but there's no UI to *post* a
+  milestone. Backend supports `POST /orders/:id/events`
+  (PACKED/SHIPPED/OUT_FOR_DELIVERY/DELIVERED/RETURNED + courier/awb/eta). Trigger:
+  fulfilment UX → add an "Update shipping" action.
+- [ ] **Open-invoice CTA targets a placeholder.** The confirmed-order CTA links to
+  `/dashboard/invoices/:id`, which currently lands on the `[...section]`
+  placeholder. Trigger: invoices detail screen exists → it resolves automatically.
+- [ ] **`orders:view` no-access state.** Flutter shows a dedicated "Orders hidden"
+  view for roles without the permission; the backend `GET /orders` returns 403 and
+  the web list currently shows it as a generic error. Trigger: team/roles UI →
+  render a dedicated no-access view (same as the `dashboard:view` item above).
 
 ## Layout / shell debt
 
