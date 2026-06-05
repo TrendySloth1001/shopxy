@@ -11,11 +11,12 @@ this should be revisited.
 ## Deferred wiring (stubbed — connect when the trigger lands)
 
 - [ ] **Sidebar nav → real screens.** Built: `Products`, `Orders`, `Shop`,
-  `My Carousels`, `Flash deals`, `Brand spotlight`, `Promotions`, `Coupons` (+
-  Profile / Settings / Team / Payouts / Custom fields). The rest still land on
-  the `/dashboard/[...section]` placeholder. Trigger: building each remaining
-  section (invoices, quotations, challans, stock-adjustments, returns, reports,
-  analytics, vendors, parties, categories) — add `app/dashboard/<section>/…`.
+  `My Carousels`, `Flash deals`, `Brand spotlight`, `Promotions`, `Coupons`,
+  `Categories`, `Vendors`, `Customers` (parties) (+ Profile / Settings / Team /
+  Payouts / Custom fields). The rest still land on the `/dashboard/[...section]`
+  placeholder. Trigger: building each remaining section (invoices, quotations,
+  challans, stock-adjustments, returns, reports, analytics) — add
+  `app/dashboard/<section>/…`.
 - [ ] **Dashboard row tap-through.** In `src/features/dashboard/dashboard-home.tsx`
   `DraftRow` and `ActivityRow` are display-only. Trigger: invoice / challan
   detail screens exist → link a draft to its invoice detail, and an activity row
@@ -148,6 +149,61 @@ this should be revisited.
   valid-from/until; the web uses the shared `DateTimeField` (datetime-local) for
   consistency with the other marketing editors. Functionally equivalent — both
   send UTC ISO. Trigger: only revisit if the date-only granularity is required.
+
+## Categories — built & deferred / known gaps
+
+- [x] **Categories (merchant browse).** `/dashboard/categories` — read-only
+  taxonomy grid (image/icon + name + product count) and
+  `/dashboard/categories/[id]` drill-down (category header + searchable,
+  paginated product list → product detail), mirroring the Flutter
+  `CategoriesPage` + `CategoryProductsPage`. BFF `api/categories/tree`
+  (→ `/categories/tree?active=true`) + `api/categories/[id]`. Icon catalogue
+  (`features/categories/icon-catalog.ts`) maps the 30 stored `iconName` strings
+  to lucide equivalents.
+- [ ] **Category taxonomy CRUD is admin-only.** Writes (`POST/PATCH/DELETE
+  /categories`) are platform-admin (`requirePlatformAdmin`); the merchant
+  section is intentionally read-only. Trigger: the `admin-taxonomy` nav screen
+  ("Category taxonomy") → build the CRUD editor there, not here.
+
+## Vendors & Customers (parties) — built & deferred / known gaps
+
+- [x] **Vendors.** `/dashboard/vendors` (search, add/edit/delete with confirm,
+  linked badge, txn/invoice counts) + `/dashboard/vendors/[id]` detail
+  (header, contact rows, payable balance, net-purchased/stock-in/returns stats,
+  ledger, recent bills, recent stock-in) + full-page `/new` + `[id]/edit`. BFF
+  `api/vendors` (+ `[id]`, `[id]/overview`, `[id]/ledger`) → `/me/vendors`.
+- [x] **Customers (parties).** `/dashboard/parties` (search, add/edit/delete,
+  linked badge, **caution-balance chip**, challan/invoice counts) +
+  `/dashboard/parties/[id]` detail (header, receivable balance, **caution
+  deposit card**, net-billed/sales/returns stats, ledger, recent invoices,
+  recent challans) + `/new` + `[id]/edit`. BFF `api/parties` (+ `[id]`,
+  `[id]/overview`, `[id]/ledger`) → `/me/parties`. System parties (`isSystem`,
+  e.g. Walk-in) are not editable.
+- [x] **Shared contact editor + ledger.** `src/shared/ui/contact-editor.tsx`
+  (name/contact/phone/email/GSTIN/PAN/address/city/PIN + GST-state select from
+  `src/shared/india.ts`) and `src/shared/ui/ledger-list.tsx` +
+  `src/shared/ledger.ts` are reused by both vendors and parties. The backend
+  stays the authority for GSTIN/PAN/PIN formats; its field errors surface as-is.
+- [ ] **Invite-to-Shopxy from vendor/party.** Flutter's row menu can send a
+  linking invitation (`SendInvitePage` → `linkType: VENDOR|PARTY`). Web shows
+  the resulting **Linked** badge (from `linkedUser`) but has no send/cancel
+  action. Trigger: notifications/invitations feature on web → add an "Invite"
+  action to the row menu + detail header.
+- [ ] **Record payment.** Flutter's detail page has a "Record payment" FAB
+  (`RecordPaymentSheet`, payments module). Not ported — web has no payments UI.
+  Trigger: payments feature on web → add the FAB; the ledger already renders
+  the resulting receipt rows.
+- [ ] **Caution-deposit actions.** The party detail shows the caution **balance**
+  read-only. The deposit / refund / set-off / forfeit / requests actions
+  (`/me/parties/:id/caution/*`) are not wired — they're a separate module.
+  Trigger: bring the caution flow to web → add the action card + history page.
+- [ ] **Contact change-log.** Backend exposes `/:id/changes` (field-level audit)
+  for both vendors and parties; not surfaced on web. Trigger: an "Activity /
+  history" tab on the detail page.
+- [ ] **Vendor/party doc links target placeholders.** Recent-bill rows link to
+  `/dashboard/invoices/:id` and recent-challan rows to `/dashboard/challans/:id`,
+  which currently land on the `[...section]` placeholder. Resolves automatically
+  once the invoices/challans detail screens exist.
 
 ## Layout / shell debt
 
