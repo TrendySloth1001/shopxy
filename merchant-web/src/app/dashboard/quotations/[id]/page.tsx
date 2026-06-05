@@ -161,7 +161,7 @@ export default function QuotationDetailPage() {
       ))}
 
       {/* Totals */}
-      <div className="mt-lg ml-auto max-w-content rounded-lg border border-hairline p-lg">
+      <div className="mt-xl ml-auto w-full max-w-form border-t border-hairline pt-md">
         <Row label="Subtotal" value={quote.subtotal} />
         <Row label="GST" value={quote.taxAmount} />
         <div className="mt-sm flex items-center justify-between border-t border-hairline pt-sm">

@@ -250,7 +250,7 @@ export default function InvoiceDetailPage() {
       ))}
 
       {/* Totals */}
-      <div className="mt-lg ml-auto max-w-content rounded-lg border border-hairline p-lg">
+      <div className="mt-xl ml-auto w-full max-w-form border-t border-hairline pt-md">
         <TotalRow label="Subtotal" value={invoice.subtotal} />
         {invoice.discount > 0 ? <TotalRow label="Discount" value={-invoice.discount} /> : null}
         {invoice.isInterstate ? (
@@ -397,7 +397,7 @@ function CounterpartyBlock({ invoice, sale }: { invoice: Invoice; sale: boolean 
     .join(", ");
 
   return (
-    <div className="mt-lg rounded-lg border border-hairline p-lg">
+    <div className="mt-xl">
       <p className="text-label-md uppercase tracking-wide text-subtle">{sale ? "Bill to" : "Supplier"}</p>
       <p className="mt-xs text-title-md text-ink">{name}</p>
       <div className="mt-sm flex flex-col gap-xs">
