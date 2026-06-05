@@ -92,10 +92,11 @@ this should be revisited.
   paise, schedule). BFF `api/promotions` (+ `[id]`) → `/me/promotions`.
 - [ ] **Carousel slide drag-reorder.** Slides order by a numeric `sortOrder`
   field the merchant types; no drag handles. Trigger: polish pass.
-- [ ] **Slide "discounted products" (banner-products).** The Flutter slide
-  editor can pin products to a slide with a discount; not ported (no merchant
-  banner-product endpoint surfaced in `carousels`). Trigger: confirm/expose the
-  backend endpoint, then add a product-pin section to the slide editor.
+- [x] **Slide "discounted products" (banner-products).** The slide editor (edit
+  mode) has a "Discounted products" section: pick products, set a PERCENT/AMOUNT
+  offer, reorder, remove, save. Wired to `GET`/`PUT /me/banners/:slideId/products`
+  via `api/slides/[slideId]/products` (a slide is a Banner; ownership via
+  `sponsorShopId`). Display-only offer — checkout still charges the normal price.
 - [ ] **Flash-deal & promotion analytics.** Flutter links a per-sale analytics
   page (`/me/analytics`); web shows the live sold/spend bars only. Trigger:
   build an analytics feature on web → link from the tile/card.

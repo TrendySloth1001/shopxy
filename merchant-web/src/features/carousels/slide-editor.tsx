@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowDown, ArrowUp, Check, Plus, Tag, Trash2, X } from "lucide-react";
 import {
   HexColorField,
   SelectField,
@@ -14,10 +14,25 @@ import {
 import { ImageUploadField } from "@/shared/ui/image-upload";
 import { CtaTargetField } from "@/shared/ui/cta-target-field";
 import { buildCtaTarget, parseCtaTarget, type CtaKind } from "@/shared/cta-target";
-import { createSlide, deleteSlide, updateSlide, type SlideWrite } from "./api";
+import { ProductThumb } from "@/features/products/components/product-thumb";
+import {
+  ProductPicker,
+  type PickedProduct,
+} from "@/features/products/components/product-picker";
+import { money } from "@/features/products/format";
+import {
+  createSlide,
+  deleteSlide,
+  listSlideProducts,
+  replaceSlideProducts,
+  updateSlide,
+  type SlideWrite,
+} from "./api";
 import { isHex } from "./color";
 import { HeroSlidePreview, type SlidePreviewData } from "./preview";
 import {
+  DISCOUNT_TYPES,
+  DISCOUNT_TYPE_LABELS,
   IMAGE_FITS,
   IMAGE_FIT_LABELS,
   TEMPLATES,
@@ -26,6 +41,7 @@ import {
   templateSupportsColors,
   templateSupportsSubtitle,
   templateSupportsText,
+  type DiscountType,
   type ImageFit,
   type Slide,
   type Template,
@@ -286,6 +302,25 @@ export function SlideEditor({
         </div>
       </div>
 
+      {/* Discounted products — needs a persisted slide id to attach to */}
+      <div className="mt-xl max-w-content">
+        <div className="flex items-center gap-sm">
+          <Tag size={18} className="text-brand-strong" />
+          <h2 className="text-title-md text-ink">Discounted products</h2>
+        </div>
+        <p className="mt-xs text-body-sm text-muted">
+          Pin products to this slide with an offer. Shown on the slide&rsquo;s tap-through with the
+          sale price — checkout still charges the product&rsquo;s normal price.
+        </p>
+        {isEdit ? (
+          <SlideProductsEditor slideId={existing.id} />
+        ) : (
+          <p className="mt-md rounded-md bg-surface-tint px-md py-md text-body-sm text-muted">
+            Save the slide first, then reopen it to attach products.
+          </p>
+        )}
+      </div>
+
       {/* Sticky action bar */}
       <div className="sticky bottom-0 mt-xxl -mx-lg flex items-center justify-between gap-md border-t border-hairline bg-canvas px-lg py-md md:-mx-xxl md:px-xxl">
         {isEdit ? (
@@ -316,6 +351,284 @@ export function SlideEditor({
             {busy ? "Saving…" : isEdit ? "Save slide" : "Create slide"}
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Discounted products section ─────────────────────────────────────────────
+
+type DraftProduct = {
+  productId: number;
+  name: string;
+  sku: string;
+  mrp: number;
+  sellingPrice: number;
+  imageUrl: string | null;
+  discountType: DiscountType;
+  /** Kept as a string for free editing; parsed on preview/save. */
+  discountValue: string;
+};
+
+/** Local sale-price preview (the backend clamps + recomputes on save). */
+function previewSalePrice(d: DraftProduct): number {
+  const v = Number(d.discountValue) || 0;
+  const sale = d.discountType === "PERCENT" ? d.sellingPrice * (1 - v / 100) : d.sellingPrice - v;
+  return Math.max(0, sale);
+}
+
+function SlideProductsEditor({ slideId }: { slideId: number }) {
+  const [items, setItems] = useState<DraftProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      setLoading(true);
+      try {
+        const rows = await listSlideProducts(slideId);
+        if (!active) return;
+        setItems(
+          rows.map((r) => ({
+            productId: r.productId,
+            name: r.product.name,
+            sku: r.product.sku ?? "",
+            mrp: r.product.mrp,
+            sellingPrice: r.product.sellingPrice,
+            imageUrl: r.product.images[0]?.url ?? null,
+            discountType: r.discountType,
+            discountValue: String(r.discountValue),
+          })),
+        );
+        setError(null);
+      } catch (e) {
+        if (active) setError(e instanceof Error ? e.message : "Could not load slide products.");
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [slideId]);
+
+  function patch(index: number, change: Partial<DraftProduct>) {
+    setItems((prev) => prev.map((it, i) => (i === index ? { ...it, ...change } : it)));
+    setSaved(false);
+  }
+
+  function move(index: number, dir: -1 | 1) {
+    setItems((prev) => {
+      const next = [...prev];
+      const target = index + dir;
+      if (target < 0 || target >= next.length) return prev;
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+    setSaved(false);
+  }
+
+  function remove(index: number) {
+    setItems((prev) => prev.filter((_, i) => i !== index));
+    setSaved(false);
+  }
+
+  function onPick(p: PickedProduct) {
+    setPickerOpen(false);
+    setItems((prev) => {
+      if (prev.some((it) => it.productId === p.id)) return prev;
+      return [
+        ...prev,
+        {
+          productId: p.id,
+          name: p.name,
+          sku: p.sku,
+          mrp: p.mrp,
+          sellingPrice: p.sellingPrice,
+          imageUrl: p.imageUrl,
+          discountType: "PERCENT",
+          discountValue: "10",
+        },
+      ];
+    });
+    setSaved(false);
+  }
+
+  async function save() {
+    setSaving(true);
+    setSaved(false);
+    setError(null);
+    try {
+      const rows = await replaceSlideProducts(
+        slideId,
+        items.map((it, idx) => ({
+          productId: it.productId,
+          discountType: it.discountType,
+          discountValue: Number(it.discountValue) || 0,
+          position: idx,
+        })),
+      );
+      // Re-sync from the server so clamped values + computed prices show.
+      setItems(
+        rows.map((r) => ({
+          productId: r.productId,
+          name: r.product.name,
+          sku: r.product.sku ?? "",
+          mrp: r.product.mrp,
+          sellingPrice: r.product.sellingPrice,
+          imageUrl: r.product.images[0]?.url ?? null,
+          discountType: r.discountType,
+          discountValue: String(r.discountValue),
+        })),
+      );
+      setSaved(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not save slide products.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="mt-md">
+      {error ? (
+        <p className="mb-md rounded-md bg-error-soft px-md py-sm text-body-sm text-error">{error}</p>
+      ) : null}
+
+      {loading ? (
+        <p className="py-lg text-body-sm text-subtle">Loading…</p>
+      ) : items.length === 0 ? (
+        <p className="rounded-md bg-surface-tint px-md py-lg text-center text-body-sm text-muted">
+          No products pinned yet.
+        </p>
+      ) : (
+        <div>
+          {items.map((it, i) => (
+            <ProductOfferRow
+              key={it.productId}
+              item={it}
+              isFirst={i === 0}
+              isLast={i === items.length - 1}
+              onChange={(c) => patch(i, c)}
+              onUp={() => move(i, -1)}
+              onDown={() => move(i, 1)}
+              onRemove={() => remove(i)}
+            />
+          ))}
+        </div>
+      )}
+
+      <div className="mt-md flex flex-wrap items-center gap-md">
+        <button
+          type="button"
+          onClick={() => setPickerOpen(true)}
+          className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
+        >
+          <Plus size={16} /> Add product
+        </button>
+        <button
+          type="button"
+          onClick={save}
+          disabled={saving}
+          className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-md text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:bg-disabled"
+        >
+          {saving ? "Saving…" : "Save products"}
+        </button>
+        {saved ? (
+          <span className="inline-flex items-center gap-xs text-body-sm text-success">
+            <Check size={16} /> Saved
+          </span>
+        ) : null}
+      </div>
+
+      {pickerOpen ? <ProductPicker onPick={onPick} onClose={() => setPickerOpen(false)} /> : null}
+    </div>
+  );
+}
+
+function ProductOfferRow({
+  item,
+  isFirst,
+  isLast,
+  onChange,
+  onUp,
+  onDown,
+  onRemove,
+}: {
+  item: DraftProduct;
+  isFirst: boolean;
+  isLast: boolean;
+  onChange: (change: Partial<DraftProduct>) => void;
+  onUp: () => void;
+  onDown: () => void;
+  onRemove: () => void;
+}) {
+  const sale = previewSalePrice(item);
+  return (
+    <div className="flex flex-wrap items-center gap-md border-b border-hairline py-md">
+      <ProductThumb url={item.imageUrl} alt={item.name} size={48} />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-body-md text-ink">{item.name}</p>
+        <p className="mt-px flex flex-wrap items-baseline gap-sm text-body-sm">
+          <span className="font-semibold text-brand-strong">{money(sale)}</span>
+          <span className="text-muted line-through">{money(item.sellingPrice)}</span>
+          {item.sku ? <span className="text-subtle">SKU {item.sku}</span> : null}
+        </p>
+      </div>
+
+      <div className="flex items-center gap-sm">
+        <select
+          aria-label="Offer type"
+          value={item.discountType}
+          onChange={(e) => onChange({ discountType: e.target.value as DiscountType })}
+          className="h-9 rounded-input border border-hairline bg-white px-sm text-body-sm text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+        >
+          {DISCOUNT_TYPES.map((t) => (
+            <option key={t} value={t}>
+              {DISCOUNT_TYPE_LABELS[t]}
+            </option>
+          ))}
+        </select>
+        <input
+          aria-label="Offer value"
+          inputMode="decimal"
+          value={item.discountValue}
+          onChange={(e) => onChange({ discountValue: e.target.value })}
+          className="h-9 w-20 rounded-input border border-hairline bg-white px-sm text-body-sm text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+        />
+      </div>
+
+      <div className="flex items-center">
+        <button
+          type="button"
+          onClick={onUp}
+          disabled={isFirst}
+          aria-label="Move up"
+          className="inline-flex size-8 items-center justify-center rounded-button text-muted transition-colors hover:bg-surface-tint disabled:text-disabled"
+        >
+          <ArrowUp size={16} />
+        </button>
+        <button
+          type="button"
+          onClick={onDown}
+          disabled={isLast}
+          aria-label="Move down"
+          className="inline-flex size-8 items-center justify-center rounded-button text-muted transition-colors hover:bg-surface-tint disabled:text-disabled"
+        >
+          <ArrowDown size={16} />
+        </button>
+        <button
+          type="button"
+          onClick={onRemove}
+          aria-label="Remove"
+          className="inline-flex size-8 items-center justify-center rounded-button text-muted transition-colors hover:bg-error-soft hover:text-error"
+        >
+          <X size={16} />
+        </button>
       </div>
     </div>
   );

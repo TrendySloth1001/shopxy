@@ -2,11 +2,14 @@ import {
   carouselListSchema,
   carouselSchema,
   slideListSchema,
+  slideProductListSchema,
   slideSchema,
   type Carousel,
+  type DiscountType,
   type ImageFit,
   type Placement,
   type Slide,
+  type SlideProduct,
   type Template,
 } from "./schema";
 
@@ -117,4 +120,30 @@ export async function deleteSlide(carouselId: number, slideId: number): Promise<
   if (!res.ok && res.status !== 204) {
     await jsonOrThrow(res, () => null, "Could not delete the slide.");
   }
+}
+
+// ── Slide products (pinned offers) ────────────────────────────────────────
+export type SlideProductInput = {
+  productId: number;
+  discountType: DiscountType;
+  discountValue: number;
+  position: number;
+};
+
+export function listSlideProducts(slideId: number): Promise<SlideProduct[]> {
+  return fetch(`/api/slides/${slideId}/products`, { cache: "no-store" }).then((r) =>
+    jsonOrThrow(r, (raw) => slideProductListSchema.parse(raw).data, "Could not load slide products."),
+  );
+}
+
+/** Replace-the-list write — sends the whole curated set in one PUT. */
+export function replaceSlideProducts(
+  slideId: number,
+  items: SlideProductInput[],
+): Promise<SlideProduct[]> {
+  return fetch(`/api/slides/${slideId}/products`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ items }),
+  }).then((r) => jsonOrThrow(r, (raw) => slideProductListSchema.parse(raw).data, "Could not save slide products."));
 }

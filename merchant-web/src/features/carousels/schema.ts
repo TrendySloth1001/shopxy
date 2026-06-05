@@ -124,3 +124,47 @@ export type Slide = z.infer<typeof slideSchema>;
 export const slideListSchema = z.object({
   data: z.array(slideSchema).nullish().transform((v) => v ?? []),
 });
+
+// ── Slide products (BannerProduct join) ──────────────────────────────────
+// A slide can pin a curated list of the shop's own products with a
+// display-only offer. The customer slide-detail renders the sale price;
+// the cart still charges the canonical selling price.
+export const DISCOUNT_TYPES = ["PERCENT", "AMOUNT"] as const;
+export type DiscountType = (typeof DISCOUNT_TYPES)[number];
+
+export const DISCOUNT_TYPE_LABELS: Record<DiscountType, string> = {
+  PERCENT: "% off",
+  AMOUNT: "₹ off",
+};
+
+export const slideProductSchema = z
+  .object({
+    id: z.number(),
+    productId: z.number(),
+    position: z.coerce.number().default(0),
+    discountType: z.enum(DISCOUNT_TYPES),
+    discountValue: z.coerce.number().default(0),
+    salePrice: z.coerce.number().default(0),
+    perUnitDiscount: z.coerce.number().default(0),
+    product: z
+      .object({
+        id: z.number(),
+        name: z.string(),
+        sku: z.string().nullish(),
+        mrp: z.coerce.number().default(0),
+        sellingPrice: z.coerce.number().default(0),
+        isActive: z.boolean().optional(),
+        isPublished: z.boolean().optional(),
+        images: z
+          .array(z.object({ url: z.string() }).passthrough())
+          .nullish()
+          .transform((v) => v ?? []),
+      })
+      .passthrough(),
+  })
+  .passthrough();
+export type SlideProduct = z.infer<typeof slideProductSchema>;
+
+export const slideProductListSchema = z.object({
+  data: z.array(slideProductSchema).nullish().transform((v) => v ?? []),
+});
