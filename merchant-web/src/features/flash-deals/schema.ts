@@ -49,3 +49,28 @@ export type FlashSale = z.infer<typeof flashSaleSchema>;
 export const flashSaleListSchema = z.object({
   data: z.array(flashSaleSchema).nullish().transform((v) => v ?? []),
 });
+
+// ── Analytics (GET /me/analytics/flash-deals/:id) ────────────────────────
+export const flashAnalyticsSchema = z
+  .object({
+    flashSaleId: z.number(),
+    productId: z.number(),
+    productName: z.string(),
+    startAt: z.string(),
+    endAt: z.string(),
+    stockLimit: z.coerce.number().default(0),
+    soldCount: z.coerce.number().default(0),
+    series: z
+      .array(
+        z.object({
+          hour: z.string(),
+          sold: z.coerce.number().default(0),
+          taps: z.coerce.number().default(0),
+          views: z.coerce.number().default(0),
+        }),
+      )
+      .nullish()
+      .transform((v) => v ?? []),
+  })
+  .passthrough();
+export type FlashAnalytics = z.infer<typeof flashAnalyticsSchema>;
