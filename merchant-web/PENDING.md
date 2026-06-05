@@ -129,12 +129,24 @@ this should be revisited.
   breakdown. P&L: net profit + margin and a revenue→COGS→gross→writeoffs→net
   ledger. BFF `api/reports/{sales,purchases,gst,pnl}` → `/reports/*`. No
   PDF/CSV export (the Flutter app has none either).
-- [x] **Analytics.** `/dashboard/analytics` — product engagement funnel over a
-  date range (Last 7 / 30 days, This month presets): KPI strip (impressions,
-  taps, views, add-to-cart, purchases, wishlist, CTR, CVR) + a sortable
-  per-product table (click a column to sort). Distinct from Reports (which is
-  money: sales/purchases/GST/P&L). BFF `api/analytics/products` →
-  `/me/analytics/products`. No money here — all counts and ratios.
+- [x] **Analytics.** `/dashboard/analytics` — a full engagement dashboard over a
+  date range: KPI strip (impressions/taps/views/ATC/purchases/wishlist/CTR/CVR),
+  a **conversion funnel** with step drop-off % + leak KPIs (cart abandonment,
+  browse→buy, wishlist→buy), an **engagement-over-time line** (metric toggle), a
+  rule-based **"what to act on"** insights panel, **hidden-gems / needs-attention**
+  opportunity lists, **leaderboard bars**, a **day×hour purchase heatmap**, a
+  **new-vs-returning customers / repeat-rate** block, a **stock-forecast** (days
+  of cover from 30-day velocity × on-hand stock), and the sortable per-product
+  table. Distinct from Reports (money). Charts are dependency-free
+  (`src/shared/ui/charts.tsx` `LineChart`, CSS bars, SVG). BFF
+  `api/analytics/{products,heatmap,customers}` → `/me/analytics/*`.
+  Backend (cross-app): added `daily[]` to `/me/analytics/products` and new
+  `/me/analytics/heatmap` + `/me/analytics/customers` endpoints.
+  Remaining backend-only ideas not built: hour/day heatmap already done;
+  seasonality-aware demand forecasting and deeper retention cohorts still open.
+- [x] **Reports trend + run-rate.** Sales/Purchases now render a trend line
+  (+ 7-day moving average) and a "≈ ₹X/day, ~₹Y/30 days at this pace" run-rate
+  line (a pace estimate, not a forecast). Shared `LineChart`.
 - [x] **Shimmer loading everywhere.** Added `src/shared/ui/skeleton.tsx`
   (`Skeleton`, `ListRowsSkeleton`, `CardsSkeleton`, `DetailSkeleton`,
   `FormSkeleton` — `animate-pulse` over `bg-hairline` at token radii) and
