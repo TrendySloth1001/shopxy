@@ -90,6 +90,12 @@ export function listSlides(carouselId: number): Promise<Slide[]> {
   );
 }
 
+export function getSlide(carouselId: number, slideId: number): Promise<Slide> {
+  return fetch(`/api/carousels/${carouselId}/slides/${slideId}`, { cache: "no-store" }).then((r) =>
+    jsonOrThrow(r, (raw) => slideSchema.parse(raw), "Could not load the slide."),
+  );
+}
+
 export function createSlide(carouselId: number, input: SlideWrite): Promise<Slide> {
   return fetch(`/api/carousels/${carouselId}/slides`, {
     method: "POST",
