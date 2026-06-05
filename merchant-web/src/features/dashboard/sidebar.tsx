@@ -129,13 +129,21 @@ export function Sidebar() {
 
       {/* Footer: identity + sign out */}
       <div className={`flex items-center gap-sm p-md ${collapsed ? "justify-center" : ""}`}>
-        <Avatar url={user?.avatarUrl} name={user?.name ?? ""} size={32} />
-        {!collapsed ? (
-          <div className="flex min-w-0 flex-1 flex-col">
-            <span className="truncate text-body-md text-ink">{user?.name}</span>
-            <span className="truncate text-body-sm text-subtle">{user?.email}</span>
-          </div>
-        ) : null}
+        <Link
+          href={hrefForNav("profile")}
+          title={collapsed ? user?.name ?? "Profile" : undefined}
+          className={`flex min-w-0 items-center gap-sm rounded-md transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft ${
+            collapsed ? "" : "flex-1 p-xs"
+          }`}
+        >
+          <Avatar url={user?.avatarUrl} name={user?.name ?? ""} size={32} />
+          {!collapsed ? (
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="truncate text-body-md text-ink">{user?.name}</span>
+              <span className="truncate text-body-sm text-subtle">{user?.email}</span>
+            </span>
+          ) : null}
+        </Link>
         {!collapsed ? (
           <button
             type="button"

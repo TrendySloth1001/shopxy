@@ -3,6 +3,7 @@ import {
   Package,
   Inbox,
   User,
+  Settings,
   Store,
   GalleryHorizontalEnd,
   Zap,
@@ -59,6 +60,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { key: "products", label: "Products", icon: Package },
       { key: "orders", label: "Orders", icon: Inbox },
       { key: "profile", label: "Profile", icon: User },
+      { key: "settings", label: "Settings", icon: Settings },
     ],
   },
   {
