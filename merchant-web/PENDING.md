@@ -187,11 +187,15 @@ this should be revisited.
   `src/shared/india.ts`) and `src/shared/ui/ledger-list.tsx` +
   `src/shared/ledger.ts` are reused by both vendors and parties. The backend
   stays the authority for GSTIN/PAN/PIN formats; its field errors surface as-is.
-- [ ] **Invite-to-Shopxy from vendor/party.** Flutter's row menu can send a
-  linking invitation (`SendInvitePage` → `linkType: VENDOR|PARTY`). Web shows
-  the resulting **Linked** badge (from `linkedUser`) but has no send/cancel
-  action. Trigger: notifications/invitations feature on web → add an "Invite"
-  action to the row menu + detail header.
+- [x] **Invite-to-Shopxy from vendor/party.** The detail header has an
+  `InviteControl` (`features/invitations/`): an **Invite** button (disabled
+  until the contact has an email) opens a modal (prefilled email + optional
+  message) → `POST /invitations` with `linkType` + `partyId`/`vendorId`. While
+  pending it shows an **Invited** chip with a cancel (✕ → `DELETE
+  /invitations/:id`); once accepted the **Linked** badge takes over. BFF
+  `api/invitations` (GET `/invitations/outgoing`, POST) + `[id]` (DELETE).
+  Minor gap: invite status chips aren't shown on the list rows yet (detail
+  header only) — add later if the list needs at-a-glance link status.
 - [ ] **Record payment.** Flutter's detail page has a "Record payment" FAB
   (`RecordPaymentSheet`, payments module). Not ported — web has no payments UI.
   Trigger: payments feature on web → add the FAB; the ledger already renders

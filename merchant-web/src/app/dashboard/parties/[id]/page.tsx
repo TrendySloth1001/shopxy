@@ -27,6 +27,7 @@ import { formatDateTime } from "@/shared/datetime";
 import { formatINR } from "@/shared/money";
 import type { Ledger } from "@/shared/ledger";
 import { CautionCard } from "@/features/caution/caution-card";
+import { InviteControl } from "@/features/invitations/invite-control";
 import { getPartyLedger, getPartyOverview } from "@/features/parties/api";
 import {
   BALANCE_TONE_TEXT,
@@ -126,12 +127,21 @@ export default function PartyDetailPage() {
           </div>
         </div>
         {!p.isSystem ? (
-          <Link
-            href={`/dashboard/parties/${id}/edit`}
-            className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-md text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
-          >
-            <Pencil size={16} /> Edit
-          </Link>
+          <div className="flex shrink-0 items-center gap-sm">
+            <InviteControl
+              linkType="PARTY"
+              entityId={id}
+              name={p.name}
+              email={p.email}
+              linked={!!p.linkedUser}
+            />
+            <Link
+              href={`/dashboard/parties/${id}/edit`}
+              className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-md text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+            >
+              <Pencil size={16} /> Edit
+            </Link>
+          </div>
         ) : null}
       </div>
 
