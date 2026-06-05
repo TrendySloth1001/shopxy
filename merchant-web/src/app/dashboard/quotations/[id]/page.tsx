@@ -23,6 +23,7 @@ import {
   type Quotation,
   type QuotationLine,
 } from "@/features/quotations/schema";
+import { DetailSkeleton } from "@/shared/ui/skeleton";
 
 const BACK = "/dashboard/quotations";
 
@@ -90,7 +91,7 @@ export default function QuotationDetailPage() {
   }
 
   if (loading) {
-    return <p className="w-full px-lg py-xxl text-body-sm text-subtle md:px-xxl">Loading…</p>;
+    return <DetailSkeleton />;
   }
   if (error || !quote) {
     return (

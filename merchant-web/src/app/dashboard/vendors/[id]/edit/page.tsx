@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { VendorEditor } from "@/features/vendors/vendor-editor";
 import { getVendor } from "@/features/vendors/api";
 import type { Vendor } from "@/features/vendors/schema";
+import { FormSkeleton } from "@/shared/ui/skeleton";
 
 export default function EditVendorPage() {
   const params = useParams<{ id: string }>();
@@ -28,7 +29,7 @@ export default function EditVendorPage() {
   }, [id]);
 
   if (error) return <p className="w-full px-lg py-xxl text-body-sm text-error md:px-xxl">{error}</p>;
-  if (!vendor) return <p className="w-full px-lg py-xxl text-body-sm text-subtle md:px-xxl">Loading…</p>;
+  if (!vendor) return <FormSkeleton />;
 
   return <VendorEditor existing={vendor} />;
 }

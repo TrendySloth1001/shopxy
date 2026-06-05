@@ -24,6 +24,7 @@ import {
   type Invoice,
 } from "@/features/invoices/schema";
 import { INVOICE_STATUS_CLASSES, INVOICE_STATUS_LABELS } from "@/features/invoices/format";
+import { ListRowsSkeleton } from "@/shared/ui/skeleton";
 
 const TYPE_TABS: { key: string; label: string }[] = [
   { key: "", label: "All" },
@@ -148,7 +149,7 @@ export default function InvoicesPage() {
 
       <div className="mt-lg">
         {loading ? (
-          <p className="py-xxl text-center text-body-sm text-subtle">Loading…</p>
+          <ListRowsSkeleton />
         ) : rows.length === 0 ? (
           <div className="flex flex-col items-center gap-md py-xxxl text-center">
             <span className="flex size-12 items-center justify-center rounded-full bg-brand-soft text-brand-strong">

@@ -4,6 +4,7 @@ import { use, useEffect, useState } from "react";
 import { getProduct } from "@/features/products/api";
 import type { Product } from "@/features/products/schema";
 import { ProductForm } from "@/features/products/components/product-form";
+import { FormSkeleton } from "@/shared/ui/skeleton";
 
 export default function EditProductPage({
   params,
@@ -33,7 +34,7 @@ export default function EditProductPage({
     return <div className="px-lg py-xxl md:px-xxl"><p className="text-body-md text-muted">{error}</p></div>;
   }
   if (!product) {
-    return <div className="px-lg py-xxl md:px-xxl"><p className="text-body-md text-subtle">Loading…</p></div>;
+    return <FormSkeleton />;
   }
   return <ProductForm product={product} />;
 }

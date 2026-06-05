@@ -24,6 +24,7 @@ import {
   type Section,
   type Template,
 } from "@/features/custom-fields/schema";
+import { CardsSkeleton } from "@/shared/ui/skeleton";
 
 type FieldEditor =
   | { mode: "create"; sectionId: number | null }
@@ -202,7 +203,7 @@ export default function CustomFieldsPage() {
       <Divider className="my-xl" />
 
       {loading ? (
-        <p className="text-body-md text-subtle">Loading…</p>
+        <CardsSkeleton count={3} />
       ) : error ? (
         <div className="flex flex-col items-start gap-md py-xxl">
           <p className="text-body-md text-muted">{error}</p>

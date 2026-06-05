@@ -13,6 +13,7 @@ import {
   rejectCautionRequest,
 } from "@/features/caution/api";
 import { requestPartyName, type CautionRequest } from "@/features/caution/schema";
+import { ListRowsSkeleton } from "@/shared/ui/skeleton";
 
 export default function CautionRequestsPage() {
   const [rows, setRows] = useState<CautionRequest[]>([]);
@@ -120,7 +121,7 @@ export default function CautionRequestsPage() {
 
       <div className="mt-xl">
         {loading ? (
-          <p className="py-xxl text-center text-body-sm text-subtle">Loading…</p>
+          <ListRowsSkeleton />
         ) : rows.length === 0 ? (
           <div className="flex flex-col items-center gap-md py-xxxl text-center">
             <span className="flex size-12 items-center justify-center rounded-full bg-accent-indigo-soft text-accent-indigo">

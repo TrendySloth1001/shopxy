@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Divider } from "@/shared/ui/divider";
 import { getPayoutStatus } from "@/features/shop/api";
 import type { PayoutAccount } from "@/features/shop/schema";
+import { CardsSkeleton } from "@/shared/ui/skeleton";
 
 const STATUS_TONE: Record<string, string> = {
   ACTIVE: "bg-success-soft text-success",
@@ -78,7 +79,7 @@ export default function PayoutsPage() {
       <Divider className="my-xl" />
 
       {loading ? (
-        <p className="text-body-md text-subtle">Loading…</p>
+        <CardsSkeleton count={3} />
       ) : error ? (
         <div className="flex flex-col items-start gap-md">
           <p className="text-body-md text-muted">{error}</p>

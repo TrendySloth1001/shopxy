@@ -13,6 +13,7 @@ import { discountPct, flashBucket, money } from "@/features/flash-deals/format";
 import { FlashCardPreview } from "@/features/flash-deals/flash-deal-editor";
 import { FlashAnalyticsPanel } from "@/features/flash-deals/analytics-panel";
 import { FLASH_STATUS_LABELS, type FlashSale } from "@/features/flash-deals/schema";
+import { DetailSkeleton } from "@/shared/ui/skeleton";
 
 const BACK = "/dashboard/flash-deals";
 
@@ -64,7 +65,7 @@ export default function FlashDealDetailPage() {
   }
 
   if (loading) {
-    return <p className="w-full px-lg py-xxl text-body-sm text-subtle md:px-xxl">Loading…</p>;
+    return <DetailSkeleton />;
   }
   if (error || !deal) {
     return (

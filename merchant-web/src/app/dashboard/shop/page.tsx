@@ -14,6 +14,7 @@ import {
   type ShopUpdate,
 } from "@/features/shop/api";
 import { DAYS, DAY_LABELS, type Day, type Shop } from "@/features/shop/schema";
+import { CardsSkeleton } from "@/shared/ui/skeleton";
 
 type DayHours = { open: boolean; from: string; to: string };
 
@@ -147,7 +148,7 @@ export default function ShopPage() {
   if (loading) {
     return (
       <div className="w-full px-lg py-xxl md:px-xxl">
-        <p className="text-body-md text-subtle">Loading…</p>
+        <CardsSkeleton count={3} />
       </div>
     );
   }

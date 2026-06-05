@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { PartyEditor } from "@/features/parties/party-editor";
 import { getParty } from "@/features/parties/api";
 import type { Party } from "@/features/parties/schema";
+import { FormSkeleton } from "@/shared/ui/skeleton";
 
 export default function EditPartyPage() {
   const params = useParams<{ id: string }>();
@@ -28,7 +29,7 @@ export default function EditPartyPage() {
   }, [id]);
 
   if (error) return <p className="w-full px-lg py-xxl text-body-sm text-error md:px-xxl">{error}</p>;
-  if (!party) return <p className="w-full px-lg py-xxl text-body-sm text-subtle md:px-xxl">Loading…</p>;
+  if (!party) return <FormSkeleton />;
 
   return <PartyEditor existing={party} />;
 }

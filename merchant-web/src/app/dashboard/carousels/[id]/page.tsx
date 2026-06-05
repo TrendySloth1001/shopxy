@@ -23,6 +23,7 @@ import {
   type Placement,
   type Slide,
 } from "@/features/carousels/schema";
+import { DetailSkeleton } from "@/shared/ui/skeleton";
 
 export default function CarouselEditorPage() {
   const params = useParams<{ id: string }>();
@@ -91,7 +92,7 @@ export default function CarouselEditorPage() {
   }
 
   if (loading) {
-    return <p className="w-full px-lg py-xxl text-body-sm text-subtle md:px-xxl">Loading…</p>;
+    return <DetailSkeleton />;
   }
   if (error && !carousel) {
     return (

@@ -16,6 +16,7 @@ import { unitLabel } from "@/features/products/units";
 import { ProductThumb, mediaSrc } from "@/features/products/components/product-thumb";
 import { StockBadge } from "@/features/products/components/stock-badge";
 import { ContentBlocksView } from "@/features/products/components/content-blocks-view";
+import { DetailSkeleton } from "@/shared/ui/skeleton";
 
 export default function ProductDetailPage({
   params,
@@ -81,7 +82,7 @@ export default function ProductDetailPage({
   }
 
   if (loading) {
-    return <div className="px-lg py-xxl md:px-xxl"><p className="text-body-md text-subtle">Loading…</p></div>;
+    return <DetailSkeleton />;
   }
   if (error && !product) {
     return (

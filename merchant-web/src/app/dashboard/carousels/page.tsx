@@ -7,6 +7,7 @@ import { PageHeader } from "@/shared/ui/page-header";
 import { formatDateRange } from "@/shared/datetime";
 import { listCarousels } from "@/features/carousels/api";
 import { PLACEMENTS, PLACEMENT_LABELS, type Carousel } from "@/features/carousels/schema";
+import { ListRowsSkeleton } from "@/shared/ui/skeleton";
 
 export default function CarouselsPage() {
   const [carousels, setCarousels] = useState<Carousel[]>([]);
@@ -59,7 +60,7 @@ export default function CarouselsPage() {
       ) : null}
 
       {loading ? (
-        <p className="py-xxl text-center text-body-sm text-subtle">Loading…</p>
+        <ListRowsSkeleton />
       ) : carousels.length === 0 ? (
         <div className="flex flex-col items-center gap-md py-xxxl text-center">
           <span className="flex size-12 items-center justify-center rounded-full bg-brand-soft text-brand-strong">

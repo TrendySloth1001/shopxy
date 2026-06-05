@@ -43,6 +43,7 @@ import {
   INVOICE_STATUS_LABELS,
   gstTypeLabel,
 } from "@/features/invoices/format";
+import { DetailSkeleton } from "@/shared/ui/skeleton";
 
 const BACK = "/dashboard/invoices";
 
@@ -127,7 +128,7 @@ export default function InvoiceDetailPage() {
   }
 
   if (loading) {
-    return <p className="w-full px-lg py-xxl text-body-sm text-subtle md:px-xxl">Loading…</p>;
+    return <DetailSkeleton />;
   }
   if (error || !invoice) {
     return (

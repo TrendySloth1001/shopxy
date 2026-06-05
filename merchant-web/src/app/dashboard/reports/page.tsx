@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { LineChart } from "lucide-react";
 import { PageHeader } from "@/shared/ui/page-header";
+import { CardsSkeleton, ListRowsSkeleton } from "@/shared/ui/skeleton";
 import { formatINR } from "@/shared/money";
 import {
   dateInputToIso,
@@ -117,7 +118,10 @@ export default function ReportsPage() {
 
       <div className="mt-xl">
         {loading ? (
-          <p className="py-xxl text-center text-body-sm text-subtle">Loading…</p>
+          <div className="space-y-xxl">
+            <CardsSkeleton count={3} />
+            <ListRowsSkeleton rows={6} leading={false} />
+          </div>
         ) : !report ? null : report.kind === "sales" ? (
           <SalesView r={report.data} />
         ) : report.kind === "purchases" ? (

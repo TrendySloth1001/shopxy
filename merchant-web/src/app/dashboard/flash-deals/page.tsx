@@ -15,6 +15,7 @@ import {
   type FlashSale,
   type FlashStatus,
 } from "@/features/flash-deals/schema";
+import { ListRowsSkeleton } from "@/shared/ui/skeleton";
 
 export default function FlashDealsPage() {
   const [deals, setDeals] = useState<FlashSale[]>([]);
@@ -118,7 +119,7 @@ export default function FlashDealsPage() {
 
       <div className="mt-lg">
         {loading ? (
-          <p className="py-xxl text-center text-body-sm text-subtle">Loading…</p>
+          <ListRowsSkeleton />
         ) : rows.length === 0 ? (
           <EmptyState tab={tab} />
         ) : (

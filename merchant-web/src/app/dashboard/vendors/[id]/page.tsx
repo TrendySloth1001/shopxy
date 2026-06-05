@@ -33,6 +33,7 @@ import { InviteControl } from "@/features/invitations/invite-control";
 import { getVendorLedger, getVendorOverview } from "@/features/vendors/api";
 import { BALANCE_TONE_TEXT, netPurchased, totalReturns, vendorBalanceView } from "@/features/vendors/format";
 import type { VendorInvoiceRef, VendorOverview, VendorStockInRef } from "@/features/vendors/schema";
+import { DetailSkeleton } from "@/shared/ui/skeleton";
 
 const BACK = "/dashboard/vendors";
 
@@ -84,7 +85,7 @@ export default function VendorDetailPage() {
   }, [id, nonce]);
 
   if (loading) {
-    return <p className="w-full px-lg py-xxl text-body-sm text-subtle md:px-xxl">Loading…</p>;
+    return <DetailSkeleton />;
   }
   if (error || !overview) {
     return (

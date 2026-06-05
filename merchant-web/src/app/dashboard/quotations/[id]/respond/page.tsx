@@ -6,6 +6,7 @@ import { BackLink } from "@/shared/ui/page-header";
 import { QuotationEditor } from "@/features/quotations/quotation-editor";
 import { getQuotation } from "@/features/quotations/api";
 import type { Quotation } from "@/features/quotations/schema";
+import { FormSkeleton } from "@/shared/ui/skeleton";
 
 export default function RespondQuotationPage() {
   const params = useParams<{ id: string }>();
@@ -37,7 +38,7 @@ export default function RespondQuotationPage() {
     );
   }
   if (!quote) {
-    return <p className="w-full px-lg py-xxl text-body-sm text-subtle md:px-xxl">Loading…</p>;
+    return <FormSkeleton />;
   }
   if (quote.status !== "REQUESTED") {
     return (
