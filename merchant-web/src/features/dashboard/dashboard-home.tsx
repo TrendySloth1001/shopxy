@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, Timer } from "lucide-react";
 import { useAuth } from "@/features/auth/auth-context";
 import { Divider } from "@/shared/ui/divider";
@@ -238,21 +239,26 @@ function DraftRow({ draft }: { draft: DashboardDraft }) {
     : (draft.vendorName ?? "Unknown vendor");
   const items = draft._count?.items ?? 0;
   return (
-    <li className="flex items-center gap-md border-t border-hairline py-md">
-      {isSale ? (
-        <ArrowUpRight size={16} className="shrink-0 text-success" />
-      ) : (
-        <ArrowDownLeft size={16} className="shrink-0 text-accent-indigo" />
-      )}
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-body-md text-ink">{counterparty}</p>
-        <p className="text-body-sm text-muted">
-          {draft.invoiceNo} · {items} {items === 1 ? "item" : "items"}
-        </p>
-      </div>
-      <span className="shrink-0 text-body-md tabular-nums text-ink">
-        {inr2.format(draft.total)}
-      </span>
+    <li>
+      <Link
+        href={`/dashboard/invoices/${draft.id}`}
+        className="flex items-center gap-md border-t border-hairline py-md transition-colors hover:bg-surface-tint"
+      >
+        {isSale ? (
+          <ArrowUpRight size={16} className="shrink-0 text-success" />
+        ) : (
+          <ArrowDownLeft size={16} className="shrink-0 text-accent-indigo" />
+        )}
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-body-md text-ink">{counterparty}</p>
+          <p className="text-body-sm text-muted">
+            {draft.invoiceNo} · {items} {items === 1 ? "item" : "items"}
+          </p>
+        </div>
+        <span className="shrink-0 text-body-md tabular-nums text-ink">
+          {inr2.format(draft.total)}
+        </span>
+      </Link>
     </li>
   );
 }
@@ -302,8 +308,16 @@ function ActivityRow({ tx }: { tx: DashboardTransaction }) {
     minute: "2-digit",
   });
 
-  return (
-    <li className="flex items-center gap-md border-t border-hairline py-md">
+  // Link the row to its source document when one exists.
+  const sourceHref =
+    tx.sourceId != null && tx.sourceType === "INVOICE"
+      ? `/dashboard/invoices/${tx.sourceId}`
+      : tx.sourceId != null && tx.sourceType === "CHALLAN"
+        ? `/dashboard/challans/${tx.sourceId}`
+        : null;
+
+  const inner = (
+    <>
       <span
         className={`flex size-9 shrink-0 items-center justify-center rounded-md ${accentSoft}`}
       >
@@ -319,6 +333,21 @@ function ActivityRow({ tx }: { tx: DashboardTransaction }) {
         {sign}
         {qty}
       </span>
+    </>
+  );
+
+  return (
+    <li>
+      {sourceHref ? (
+        <Link
+          href={sourceHref}
+          className="flex items-center gap-md border-t border-hairline py-md transition-colors hover:bg-surface-tint"
+        >
+          {inner}
+        </Link>
+      ) : (
+        <div className="flex items-center gap-md border-t border-hairline py-md">{inner}</div>
+      )}
     </li>
   );
 }

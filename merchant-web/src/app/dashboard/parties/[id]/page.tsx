@@ -18,6 +18,7 @@ import {
   ShoppingBag,
   TrendingDown,
   TrendingUp,
+  Wallet,
 } from "lucide-react";
 import { BackLink } from "@/shared/ui/page-header";
 import { Monogram } from "@/shared/ui/monogram";
@@ -27,6 +28,7 @@ import { formatDateTime } from "@/shared/datetime";
 import { formatINR } from "@/shared/money";
 import type { Ledger } from "@/shared/ledger";
 import { CautionCard } from "@/features/caution/caution-card";
+import { RecordPaymentModal } from "@/features/payments/record-payment-modal";
 import { InviteControl } from "@/features/invitations/invite-control";
 import { getPartyLedger, getPartyOverview } from "@/features/parties/api";
 import {
@@ -61,6 +63,7 @@ export default function PartyDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [nonce, setNonce] = useState(0);
+  const [payOpen, setPayOpen] = useState(false);
   const reload = () => setNonce((n) => n + 1);
 
   useEffect(() => {
@@ -135,6 +138,13 @@ export default function PartyDetailPage() {
               email={p.email}
               linked={!!p.linkedUser}
             />
+            <button
+              type="button"
+              onClick={() => setPayOpen(true)}
+              className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
+            >
+              <Wallet size={16} /> Record payment
+            </button>
             <Link
               href={`/dashboard/parties/${id}/edit`}
               className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-md text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
@@ -252,6 +262,18 @@ export default function PartyDetailPage() {
           <Divider className="my-xl" />
           <p className="py-xl text-center text-body-sm text-subtle">No activity yet.</p>
         </>
+      ) : null}
+
+      {payOpen ? (
+        <RecordPaymentModal
+          kind="RECEIPT"
+          partyId={id}
+          onClose={() => setPayOpen(false)}
+          onDone={() => {
+            setPayOpen(false);
+            reload();
+          }}
+        />
       ) : null}
     </div>
   );
