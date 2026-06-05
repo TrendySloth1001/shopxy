@@ -12,15 +12,15 @@ this should be revisited.
 
 - [ ] **Sidebar nav → real screens.** Built: `Products`, `Orders`, `Shop`,
   `My Carousels`, `Flash deals`, `Brand spotlight`, `Promotions`, `Coupons`,
-  `Categories`, `Vendors`, `Customers` (parties) (+ Profile / Settings / Team /
-  Payouts / Custom fields). The rest still land on the `/dashboard/[...section]`
-  placeholder. Trigger: building each remaining section (invoices, quotations,
-  challans, stock-adjustments, returns, reports, analytics) — add
+  `Categories`, `Vendors`, `Customers` (parties), `Invoices`, `Quotations`,
+  `Challans` (+ Profile / Settings / Team / Payouts / Custom fields). The rest
+  still land on the `/dashboard/[...section]` placeholder. Trigger: building each
+  remaining section (stock-adjustments, returns, reports, analytics) — add
   `app/dashboard/<section>/…`.
-- [ ] **Dashboard row tap-through.** In `src/features/dashboard/dashboard-home.tsx`
-  `DraftRow` and `ActivityRow` are display-only. Trigger: invoice / challan
-  detail screens exist → link a draft to its invoice detail, and an activity row
-  to its source doc (`tx.sourceType` `INVOICE`/`CHALLAN` + `tx.sourceId`).
+- [x] **Dashboard row tap-through.** `DraftRow` now links to its invoice detail
+  (`/dashboard/invoices/:id`) and `ActivityRow` links to its source doc
+  (`tx.sourceType` `INVOICE`→invoice, `CHALLAN`→challan, via `tx.sourceId`); rows
+  without a linkable source stay plain. In `src/features/dashboard/dashboard-home.tsx`.
 - [ ] **Dashboard pending-invite callout.** Flutter shows a brand callout at the
   top of the dashboard for pending incoming invitations (party/vendor/team).
   Trigger: notifications/invitations feature on web → add the callout linking to
@@ -66,13 +66,57 @@ this should be revisited.
   milestone. Backend supports `POST /orders/:id/events`
   (PACKED/SHIPPED/OUT_FOR_DELIVERY/DELIVERED/RETURNED + courier/awb/eta). Trigger:
   fulfilment UX → add an "Update shipping" action.
-- [ ] **Open-invoice CTA targets a placeholder.** The confirmed-order CTA links to
-  `/dashboard/invoices/:id`, which currently lands on the `[...section]`
-  placeholder. Trigger: invoices detail screen exists → it resolves automatically.
+- [x] **Open-invoice CTA targets a placeholder.** Resolved — the invoices detail
+  screen (`/dashboard/invoices/:id`) now exists, so the confirmed-order CTA opens it.
 - [ ] **`orders:view` no-access state.** Flutter shows a dedicated "Orders hidden"
   view for roles without the permission; the backend `GET /orders` returns 403 and
   the web list currently shows it as a generic error. Trigger: team/roles UI →
   render a dedicated no-access view (same as the `dashboard:view` item above).
+
+## Operations — Invoices / Quotations / Challans (built & deferred)
+
+- [x] **Invoices.** `/dashboard/invoices` (search, Sales/Purchases tabs, status +
+  document-type filters, per-row PDF) + `/dashboard/invoices/[id]` detail
+  (counterparty block, items, GST totals split IGST vs CGST+SGST, round-off,
+  received/outstanding + payments when CONFIRMED; actions: Edit draft, PDF,
+  Mark-as-paid, Convert estimate→invoice, Confirm/Cancel draft, Delete) +
+  full-page editor `/new` & `[id]/edit` (SALE/PURCHASE, saved party/vendor picker
+  or walk-in fields with place-of-supply, product line items with qty/rate/GST,
+  header discount, document type, live totals, Save-draft / Save-&-confirm). BFF
+  `api/invoices` (+ `[id]`, `[id]/status`, `[id]/convert`, `[id]/pdf`) → `/invoices`.
+  Invoice money is **rupees** (Decimal). The editor totals are a live preview; the
+  backend recomputes the authoritative GST split on save.
+- [x] **Quotations.** `/dashboard/quotations` (status tabs) +
+  `/dashboard/quotations/[id]` detail (status meta, items, totals, note, invoice
+  link once accepted; actions: PDF, Cancel a PENDING quote, Decline / Price-&-send
+  a customer's REQUESTED quote) + `/new` (build a bucket → pick a linked customer →
+  send) and `[id]/respond` (price a requested quote). BFF `api/quotations` (+ `[id]`,
+  `[id]/respond`, `[id]/cancel`, `[id]/decline-request`, `[id]/pdf`) → `/quotations`.
+  "Accept" is customer-driven (spawns a confirmed invoice server-side); the merchant
+  side only shows the resulting invoice link.
+- [x] **Challans.** `/dashboard/challans` (search + status filter) +
+  `/dashboard/challans/[id]` detail (party/meta, qty-only items; actions: Cancel a
+  PENDING challan, Convert-to-invoice → draft sale invoice) + `/new` (saved customer
+  or manual party, qty-only product lines). BFF `api/challans` (+ `[id]`,
+  `[id]/cancel`, `[id]/convert`) → `/challans`.
+- [x] **Shared pickers + PDF proxy.** `src/shared/ui/picker-modal.tsx` is a generic
+  debounced search picker reused for product / party / vendor selection across all
+  three editors. `src/server/pdf.ts` (`streamPdf`) passes the backend-rendered PDF
+  through the BFF as binary (the JSON `proxy()` can't); the invoice/quotation "PDF"
+  buttons open it in a new tab (download / print / save).
+- [ ] **Native-only invoice extras not ported.** The Flutter editor has a
+  barcode/QR scan-to-add and per-row line discount; the detail has a "Share via
+  WhatsApp" deep link and native file download/share. On web: no scanner, no
+  per-line discount field (header discount only — matches the Flutter row, which
+  also edits qty/rate/GST only), and PDF opens in a browser tab instead of native
+  share. Trigger: revisit if these are needed.
+- [ ] **Challan convert uses defaults.** `Convert to invoice` posts an empty body,
+  so the new draft uses the challan's party + each product's selling price. The
+  Flutter convert dialog can override customerName/GSTIN/discount/note. Trigger:
+  add an optional override dialog before convert.
+- [ ] **Estimate/Proforma editor entry.** The SALE editor can create ESTIMATE /
+  PROFORMA documents and the detail page converts them, but there's no dedicated
+  "Quotations vs Estimates" cross-link. Functionally complete; cosmetic only.
 
 ## Marketing — built & deferred / known gaps
 
@@ -196,10 +240,14 @@ this should be revisited.
   `api/invitations` (GET `/invitations/outgoing`, POST) + `[id]` (DELETE).
   Minor gap: invite status chips aren't shown on the list rows yet (detail
   header only) — add later if the list needs at-a-glance link status.
-- [ ] **Record payment.** Flutter's detail page has a "Record payment" FAB
-  (`RecordPaymentSheet`, payments module). Not ported — web has no payments UI.
-  Trigger: payments feature on web → add the FAB; the ledger already renders
-  the resulting receipt rows.
+- [x] **Record payment.** Built (`src/features/payments/`): the party detail header
+  has a **Record payment** button (RECEIPT → party) and the vendor detail header a
+  **Record payment** button (PAYMENT → vendor), both opening `RecordPaymentModal`
+  (amount, mode, reference, date, note) → `POST /payments`; the balance/ledger
+  refresh on success. The invoice detail also has **Mark as paid** (allocates the
+  receipt/payment to that invoice, capped at the outstanding). BFF `api/payments`
+  (GET list / POST) + `[id]` (DELETE soft-void). Not yet surfaced: a void-payment
+  button on the payment rows, and an on-account payments list on the contact page.
 - [x] **Caution-deposit actions.** Party detail has an actionable caution card
   (`features/caution/caution-card.tsx`): **Add / Refund / Set off / Forfeit**
   via modals (refund/set-off/forfeit capped at the held balance; set-off picks a
@@ -214,10 +262,8 @@ this should be revisited.
 - [ ] **Contact change-log.** Backend exposes `/:id/changes` (field-level audit)
   for both vendors and parties; not surfaced on web. Trigger: an "Activity /
   history" tab on the detail page.
-- [ ] **Vendor/party doc links target placeholders.** Recent-bill rows link to
-  `/dashboard/invoices/:id` and recent-challan rows to `/dashboard/challans/:id`,
-  which currently land on the `[...section]` placeholder. Resolves automatically
-  once the invoices/challans detail screens exist.
+- [x] **Vendor/party doc links target placeholders.** Resolved — the invoices and
+  challans detail screens now exist, so recent-bill / recent-challan rows open them.
 
 ## Layout / shell debt
 
