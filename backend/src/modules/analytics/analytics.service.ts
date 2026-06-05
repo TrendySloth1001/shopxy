@@ -35,6 +35,17 @@ export interface ProductAnalyticsRow {
   cvr: number; // purchases / views
 }
 
+/// One day's shop-wide engagement counts, for the trend line. Bucketed
+/// on the UTC calendar day of the event.
+export interface DailyEngagement {
+  day: string;
+  impressions: number;
+  taps: number;
+  views: number;
+  addToCart: number;
+  purchases: number;
+}
+
 export interface ProductAnalyticsResponse {
   from: string;
   to: string;
@@ -49,9 +60,48 @@ export interface ProductAnalyticsResponse {
     cvr: number;
   };
   products: ProductAnalyticsRow[];
+  /// Shop-wide daily series across the whole window (independent of the
+  /// product pagination) so the client can plot engagement over time.
+  daily: DailyEngagement[];
   /// Opaque pagination cursor — caller passes back via ?cursor=… to
   /// fetch the next page. Null when there are no more rows.
   nextCursor: string | null;
+}
+
+interface DailyRow {
+  day: Date;
+  impressions: number;
+  taps: number;
+  views: number;
+  add_to_cart: number;
+  purchases: number;
+}
+
+interface HeatCellRow {
+  dow: number;
+  hour: number;
+  purchases: number;
+  views: number;
+}
+
+export interface RetentionResponse {
+  from: string;
+  to: string;
+  totalCustomers: number;
+  newCustomers: number;
+  returningCustomers: number;
+  /// returning ÷ total (0..1)
+  repeatRate: number;
+  /// customers with 2+ orders within the window
+  repeatInPeriod: number;
+  top: { name: string; orders: number; revenue: number }[];
+}
+
+interface RetentionRow {
+  name: string | null;
+  orders_in_range: number;
+  revenue_in_range: number;
+  returning: boolean;
 }
 
 export type AnalyticsRangeTooLarge = {
@@ -197,12 +247,130 @@ export class AnalyticsService {
     totals.cvr =
       totals.views > 0 ? roundTo(totals.purchases / totals.views, 4) : 0;
 
+    const daily = await this.getDailyEngagement(shopId, from, to);
+
     return {
       from: from.toISOString(),
       to: to.toISOString(),
       totals,
       products,
+      daily,
       nextCursor,
+    };
+  }
+
+  /// Shop-wide engagement bucketed by UTC day across the window. One
+  /// extra aggregate alongside the per-product page; cheap with the
+  /// (shop, occurred_at) index path through the product join.
+  async getDailyEngagement(shopId: number, from: Date, to: Date): Promise<DailyEngagement[]> {
+    const rows = await prisma.$queryRaw<DailyRow[]>`
+      SELECT
+        date_trunc('day', pe.occurred_at) AS day,
+        COALESCE(SUM(CASE WHEN pe.event_type = 'IMPRESSION'   THEN 1 ELSE 0 END), 0)::float AS impressions,
+        COALESCE(SUM(CASE WHEN pe.event_type = 'TAP'          THEN 1 ELSE 0 END), 0)::float AS taps,
+        COALESCE(SUM(CASE WHEN pe.event_type = 'VIEW'         THEN 1 ELSE 0 END), 0)::float AS views,
+        COALESCE(SUM(CASE WHEN pe.event_type = 'ADD_TO_CART'  THEN 1 ELSE 0 END), 0)::float AS add_to_cart,
+        COALESCE(SUM(CASE WHEN pe.event_type = 'PURCHASE'     THEN 1 ELSE 0 END), 0)::float AS purchases
+      FROM product_events pe
+      JOIN products p ON p.id = pe.product_id
+      WHERE p.shop_id = ${shopId}
+        AND pe.occurred_at >= ${from}
+        AND pe.occurred_at <  ${to}
+      GROUP BY day
+      ORDER BY day ASC
+    `;
+    return rows.map((r) => ({
+      day: r.day.toISOString(),
+      impressions: Math.trunc(r.impressions),
+      taps: Math.trunc(r.taps),
+      views: Math.trunc(r.views),
+      addToCart: Math.trunc(r.add_to_cart),
+      purchases: Math.trunc(r.purchases),
+    }));
+  }
+
+  /// Purchases (and views) bucketed by IST day-of-week × hour for a
+  /// "when do customers buy" heatmap. Returns only non-empty cells; the
+  /// client fills the 7×24 grid.
+  async getPurchaseHeatmap(shopId: number, from: Date, to: Date) {
+    const rows = await prisma.$queryRaw<HeatCellRow[]>`
+      SELECT
+        EXTRACT(DOW  FROM pe.occurred_at AT TIME ZONE 'Asia/Kolkata')::int AS dow,
+        EXTRACT(HOUR FROM pe.occurred_at AT TIME ZONE 'Asia/Kolkata')::int AS hour,
+        COALESCE(SUM(CASE WHEN pe.event_type = 'PURCHASE' THEN 1 ELSE 0 END), 0)::float AS purchases,
+        COALESCE(SUM(CASE WHEN pe.event_type = 'VIEW'     THEN 1 ELSE 0 END), 0)::float AS views
+      FROM product_events pe
+      JOIN products p ON p.id = pe.product_id
+      WHERE p.shop_id = ${shopId}
+        AND pe.occurred_at >= ${from}
+        AND pe.occurred_at <  ${to}
+        AND pe.event_type IN ('PURCHASE', 'VIEW')
+      GROUP BY dow, hour
+    `;
+    return {
+      from: from.toISOString(),
+      to: to.toISOString(),
+      cells: rows.map((r) => ({
+        dow: r.dow,
+        hour: r.hour,
+        purchases: Math.trunc(r.purchases),
+        views: Math.trunc(r.views),
+      })),
+    };
+  }
+
+  /// New-vs-returning customer split from confirmed SALE invoices.
+  /// "Returning" = the customer had a confirmed sale before the window
+  /// opened; "new" = their first purchase falls inside the window.
+  /// Customers are keyed by party id, falling back to a name key for
+  /// walk-ins. Revenue/orders are within the window.
+  async getCustomerRetention(shopId: number, from: Date, to: Date): Promise<RetentionResponse> {
+    const rows = await prisma.$queryRaw<RetentionRow[]>`
+      WITH range_customers AS (
+        SELECT
+          COALESCE(party_id::text, 'name:' || COALESCE(customer_name, '')) AS cust,
+          MAX(customer_name) AS name,
+          COUNT(*)::int      AS orders_in_range,
+          COALESCE(SUM(total), 0)::float AS revenue_in_range
+        FROM invoices
+        WHERE shop_id = ${shopId} AND type = 'SALE' AND status = 'CONFIRMED'
+          AND invoice_date >= ${from} AND invoice_date < ${to}
+        GROUP BY cust
+      ),
+      prior AS (
+        SELECT DISTINCT COALESCE(party_id::text, 'name:' || COALESCE(customer_name, '')) AS cust
+        FROM invoices
+        WHERE shop_id = ${shopId} AND type = 'SALE' AND status = 'CONFIRMED'
+          AND invoice_date < ${from}
+      )
+      SELECT rc.name AS name, rc.orders_in_range, rc.revenue_in_range,
+             (p.cust IS NOT NULL) AS returning
+      FROM range_customers rc
+      LEFT JOIN prior p ON p.cust = rc.cust
+    `;
+
+    const total = rows.length;
+    const returningCustomers = rows.filter((r) => r.returning).length;
+    const repeatInPeriod = rows.filter((r) => r.orders_in_range >= 2).length;
+    const top = rows
+      .slice()
+      .sort((a, b) => b.orders_in_range - a.orders_in_range || b.revenue_in_range - a.revenue_in_range)
+      .slice(0, 10)
+      .map((r) => ({
+        name: r.name ?? 'Walk-in',
+        orders: r.orders_in_range,
+        revenue: roundTo(r.revenue_in_range, 2),
+      }));
+
+    return {
+      from: from.toISOString(),
+      to: to.toISOString(),
+      totalCustomers: total,
+      newCustomers: total - returningCustomers,
+      returningCustomers,
+      repeatRate: total > 0 ? roundTo(returningCustomers / total, 4) : 0,
+      repeatInPeriod,
+      top,
     };
   }
 
