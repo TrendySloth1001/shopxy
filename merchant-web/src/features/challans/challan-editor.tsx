@@ -85,7 +85,7 @@ export function ChallanEditor() {
       <div className="mt-xl">
         <p className="text-label-md uppercase tracking-wide text-subtle">Party</p>
         {party ? (
-          <div className="mt-sm flex items-center gap-md rounded-lg border border-hairline p-md">
+          <div className="mt-sm flex items-center gap-md border-b border-hairline pb-md">
             <Monogram name={party.name} size={40} />
             <div className="min-w-0 flex-1">
               <p className="truncate text-body-md text-ink">{party.name}</p>
@@ -131,7 +131,7 @@ export function ChallanEditor() {
         </div>
 
         {lines.length === 0 ? (
-          <div className="mt-md flex flex-col items-center gap-sm rounded-lg border border-dashed border-hairline py-xl text-center">
+          <div className="mt-md flex flex-col items-center gap-sm py-xl text-center">
             <Package size={22} className="text-subtle" />
             <p className="text-body-sm text-subtle">No items yet — add a product.</p>
           </div>

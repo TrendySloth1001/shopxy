@@ -126,7 +126,7 @@ export default function ChallanDetailPage() {
       ) : null}
 
       {/* Party / meta */}
-      <div className="mt-lg rounded-lg border border-hairline p-lg">
+      <div className="mt-xl">
         <p className="text-label-md uppercase tracking-wide text-subtle">Delivered to</p>
         <p className="mt-xs text-title-md text-ink">{challan.partyName ?? "—"}</p>
         {challan.partyPhone ? (

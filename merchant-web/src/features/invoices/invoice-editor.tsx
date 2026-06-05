@@ -257,7 +257,7 @@ export function InvoiceEditor({ existing }: { existing?: Invoice }) {
         </div>
 
         {lines.length === 0 ? (
-          <div className="mt-md flex flex-col items-center gap-sm rounded-lg border border-dashed border-hairline py-xl text-center">
+          <div className="mt-md flex flex-col items-center gap-sm py-xl text-center">
             <Package size={22} className="text-subtle" />
             <p className="text-body-sm text-subtle">No items yet — add a product.</p>
           </div>
@@ -293,7 +293,7 @@ export function InvoiceEditor({ existing }: { existing?: Invoice }) {
             <TextAreaField label="Note (optional)" value={note} onChange={setNote} rows={2} />
           </div>
 
-          <div className="rounded-lg border border-hairline p-lg">
+          <div className="border-t border-hairline pt-md lg:border-t-0 lg:pt-0">
             <TotalRow label="Subtotal" value={totals.subtotal} />
             {totals.discount > 0 ? <TotalRow label="Discount" value={-totals.discount} /> : null}
             {interstate ? (
@@ -418,7 +418,7 @@ function SelectedContact({
   onClear: () => void;
 }) {
   return (
-    <div className="mt-sm flex items-center gap-md rounded-lg border border-hairline p-md">
+    <div className="mt-sm flex items-center gap-md border-b border-hairline pb-md">
       <Monogram name={contact.name} size={40} />
       <div className="min-w-0 flex-1">
         <p className="truncate text-body-md text-ink">{contact.name}</p>

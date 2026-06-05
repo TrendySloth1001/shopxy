@@ -142,7 +142,7 @@ export function QuotationEditor({ existing }: { existing?: Quotation }) {
       <div className="mt-xl">
         <p className="text-label-md uppercase tracking-wide text-subtle">Customer</p>
         {party ? (
-          <div className="mt-sm flex items-center gap-md rounded-lg border border-hairline p-md">
+          <div className="mt-sm flex items-center gap-md border-b border-hairline pb-md">
             <Monogram name={party.name} size={40} />
             <div className="min-w-0 flex-1">
               <p className="truncate text-body-md text-ink">{party.name}</p>
@@ -184,7 +184,7 @@ export function QuotationEditor({ existing }: { existing?: Quotation }) {
         </div>
 
         {lines.length === 0 ? (
-          <div className="mt-md flex flex-col items-center gap-sm rounded-lg border border-dashed border-hairline py-xl text-center">
+          <div className="mt-md flex flex-col items-center gap-sm py-xl text-center">
             <Package size={22} className="text-subtle" />
             <p className="text-body-sm text-subtle">Search and add the products to quote.</p>
           </div>
@@ -207,7 +207,7 @@ export function QuotationEditor({ existing }: { existing?: Quotation }) {
       {lines.length > 0 ? (
         <div className="mt-xl grid grid-cols-1 gap-xl lg:grid-cols-2">
           <TextAreaField label="Note (optional)" value={note} onChange={setNote} rows={3} />
-          <div className="rounded-lg border border-hairline p-lg">
+          <div className="border-t border-hairline pt-md lg:border-t-0 lg:pt-0">
             <Row label="Subtotal" value={totals.subtotal} />
             <Row label="GST" value={totals.tax} />
             <div className="mt-sm flex items-center justify-between border-t border-hairline pt-sm">
