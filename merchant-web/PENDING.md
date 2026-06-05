@@ -29,10 +29,10 @@ this should be revisited.
 - [ ] **Payout-setup nudge.** Flutter nudges Razorpay-Route payout onboarding
   once per session (behind ROUTE_SPLIT_ENABLED). Trigger: payouts / linked-account
   feature on web → add the nudge to the dashboard.
-- [ ] **`dashboard:view` no-access state.** `src/app/api/dashboard/stats/route.ts`
-  returns 403 for roles without the permission; the screen currently shows it as
-  a generic error. Trigger: team/roles UI → render a dedicated "Dashboard hidden"
-  view with a reload button.
+- [x] **`dashboard:view` no-access state.** Resolved — `SectionGuard`
+  (`src/features/auth/components/section-guard.tsx`) maps the route to its
+  permission area and renders `NoAccessView` when the member can't view it.
+  Sidebar items lock too, and write routes (`/new`, `/edit`) require `:manage`.
 - [ ] **Notification bell.** Flutter's dashboard app bar has a notification bell.
   Trigger: notifications feature on web → add it to the merchant shell header.
 
@@ -69,10 +69,13 @@ this should be revisited.
   fulfilment UX → add an "Update shipping" action.
 - [x] **Open-invoice CTA targets a placeholder.** Resolved — the invoices detail
   screen (`/dashboard/invoices/:id`) now exists, so the confirmed-order CTA opens it.
-- [ ] **`orders:view` no-access state.** Flutter shows a dedicated "Orders hidden"
-  view for roles without the permission; the backend `GET /orders` returns 403 and
-  the web list currently shows it as a generic error. Trigger: team/roles UI →
-  render a dedicated no-access view (same as the `dashboard:view` item above).
+- [x] **`orders:view` no-access state.** Resolved by the same `SectionGuard` —
+  the orders area now renders `NoAccessView` for members without `orders:view`.
+- [ ] **Row-level write actions not yet `MaybeLocked`.** Section + create-button
+  (`/new`) gating is done via `SectionGuard` / `MaybeLocked`; per-row Edit/Delete
+  and other in-list write controls still rely on the backend 403 rather than a
+  client-side lock. Trigger: extend `MaybeLocked` to row actions for parity with
+  the Flutter app.
 
 ## Operations — Invoices / Quotations / Challans (built & deferred)
 

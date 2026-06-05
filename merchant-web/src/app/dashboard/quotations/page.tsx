@@ -13,6 +13,7 @@ import {
   quotationPartyName,
   type Quotation,
 } from "@/features/quotations/schema";
+import { MaybeLocked } from "@/features/auth/components/maybe-locked";
 import { ListRowsSkeleton } from "@/shared/ui/skeleton";
 
 const TABS: { key: string; label: string }[] = [
@@ -66,12 +67,14 @@ export default function QuotationsPage() {
         >
           <RefreshCw size={16} />
         </button>
-        <Link
-          href="/dashboard/quotations/new"
-          className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-md text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
-        >
-          <Plus size={16} /> New quotation
-        </Link>
+        <MaybeLocked area="invoices" label="New quotation">
+          <Link
+            href="/dashboard/quotations/new"
+            className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-md text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+          >
+            <Plus size={16} /> New quotation
+          </Link>
+        </MaybeLocked>
       </PageHeader>
 
       <div className="mt-xl flex flex-wrap items-center gap-sm">
@@ -102,12 +105,14 @@ export default function QuotationsPage() {
               <FileText size={22} />
             </span>
             <p className="text-body-md text-muted">No quotations yet.</p>
-            <Link
-              href="/dashboard/quotations/new"
-              className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
-            >
-              <Plus size={16} /> New quotation
-            </Link>
+            <MaybeLocked area="invoices" label="New quotation">
+              <Link
+                href="/dashboard/quotations/new"
+                className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
+              >
+                <Plus size={16} /> New quotation
+              </Link>
+            </MaybeLocked>
           </div>
         ) : (
           rows.map((q) => <QuotationRow key={q.id} quotation={q} />)

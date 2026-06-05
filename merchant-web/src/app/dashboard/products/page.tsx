@@ -13,6 +13,7 @@ import type { Category, Product, ProductList } from "@/features/products/schema"
 import { money } from "@/features/products/format";
 import { ProductThumb } from "@/features/products/components/product-thumb";
 import { StockBadge } from "@/features/products/components/stock-badge";
+import { MaybeLocked } from "@/features/auth/components/maybe-locked";
 
 const PAGE_SIZE = 20;
 
@@ -131,12 +132,14 @@ export default function ProductsListPage() {
             {total} {total === 1 ? "product" : "products"} in your catalogue.
           </p>
         </div>
-        <Link
-          href="/dashboard/products/new"
-          className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-lg text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
-        >
-          <Plus size={18} /> New product
-        </Link>
+        <MaybeLocked area="products" label="New product">
+          <Link
+            href="/dashboard/products/new"
+            className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-lg text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+          >
+            <Plus size={18} /> New product
+          </Link>
+        </MaybeLocked>
       </div>
 
       {/* Toolbar */}

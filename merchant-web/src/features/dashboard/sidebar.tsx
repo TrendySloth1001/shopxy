@@ -3,9 +3,10 @@
 import { useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { PanelLeft, PanelLeftClose, LogOut } from "lucide-react";
+import { PanelLeft, PanelLeftClose, LogOut, Lock } from "lucide-react";
 import { useAuth } from "@/features/auth/auth-context";
 import { Avatar } from "@/features/auth/components/avatar";
+import { areaForPath, canView } from "@/features/auth/capabilities";
 import { Divider } from "@/shared/ui/divider";
 import { NAV_GROUPS, hrefForNav, type NavItem } from "./nav-items";
 
@@ -59,6 +60,12 @@ export function Sidebar() {
   function isActive(href: string): boolean {
     if (href === "/dashboard") return pathname === "/dashboard";
     return pathname === href || pathname.startsWith(`${href}/`);
+  }
+
+  /** A nav item is locked when its area exists and the user can't view it. */
+  function isLocked(key: string): boolean {
+    const area = areaForPath(hrefForNav(key));
+    return area ? !canView(user, area) : false;
   }
 
   return (
@@ -126,6 +133,7 @@ export function Sidebar() {
                     item={item}
                     active={isActive(hrefForNav(item.key))}
                     collapsed={collapsed}
+                    locked={isLocked(item.key)}
                   />
                 </li>
               ))}
@@ -173,12 +181,42 @@ function NavLink({
   item,
   active,
   collapsed,
+  locked,
 }: {
   item: NavItem;
   active: boolean;
   collapsed: boolean;
+  locked: boolean;
 }) {
   const Icon = item.icon;
+
+  // Locked: render a non-interactive row with a lock affordance instead of a
+  // link, so the section stays visible but clearly out of reach (mirrors the
+  // Flutter "lock instead of disappear" pattern).
+  if (locked) {
+    return (
+      <div
+        aria-disabled="true"
+        title={
+          collapsed
+            ? `${item.label} — no access`
+            : "You don’t have access. Ask the shop owner."
+        }
+        className={`flex w-full cursor-not-allowed items-center gap-md rounded-md px-sm py-sm text-left text-body-md text-disabled ${
+          collapsed ? "justify-center" : ""
+        }`}
+      >
+        <Icon size={18} className="shrink-0" />
+        {!collapsed ? (
+          <>
+            <span className="flex-1 truncate">{item.label}</span>
+            <Lock size={14} className="shrink-0" />
+          </>
+        ) : null}
+      </div>
+    );
+  }
+
   return (
     <Link
       href={hrefForNav(item.key)}

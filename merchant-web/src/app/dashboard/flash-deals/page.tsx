@@ -15,6 +15,7 @@ import {
   type FlashSale,
   type FlashStatus,
 } from "@/features/flash-deals/schema";
+import { MaybeLocked } from "@/features/auth/components/maybe-locked";
 import { ListRowsSkeleton } from "@/shared/ui/skeleton";
 
 export default function FlashDealsPage() {
@@ -87,12 +88,14 @@ export default function FlashDealsPage() {
         >
           <RefreshCw size={16} />
         </button>
-        <Link
-          href="/dashboard/flash-deals/new"
-          className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-md text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
-        >
-          <Plus size={16} /> New flash deal
-        </Link>
+        <MaybeLocked area="marketing" label="New flash deal">
+          <Link
+            href="/dashboard/flash-deals/new"
+            className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-md text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+          >
+            <Plus size={16} /> New flash deal
+          </Link>
+        </MaybeLocked>
       </PageHeader>
 
       {/* Tabs */}
@@ -163,12 +166,14 @@ function EmptyState({ tab }: { tab: FlashStatus }) {
       </span>
       <p className="text-body-md text-muted">{copy}</p>
       {tab === "active" ? (
-        <Link
-          href="/dashboard/flash-deals/new"
-          className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
-        >
-          <Plus size={16} /> New flash deal
-        </Link>
+        <MaybeLocked area="marketing" label="New flash deal">
+          <Link
+            href="/dashboard/flash-deals/new"
+            className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
+          >
+            <Plus size={16} /> New flash deal
+          </Link>
+        </MaybeLocked>
       ) : null}
     </div>
   );
