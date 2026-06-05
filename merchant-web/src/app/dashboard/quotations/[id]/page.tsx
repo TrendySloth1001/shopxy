@@ -130,9 +130,9 @@ export default function QuotationDetailPage() {
           {quote.invoice ? (
             <Link
               href={`/dashboard/invoices/${quote.invoice.id}`}
-              className="mt-xs inline-flex items-center gap-xs text-body-sm font-semibold text-success transition-colors hover:underline"
+              className="mt-sm inline-flex items-center gap-xs rounded-full bg-success-soft px-md py-xs text-body-sm font-semibold text-success transition-colors hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-success-soft"
             >
-              <ReceiptText size={14} /> Invoice {quote.invoice.invoiceNo} created
+              <ReceiptText size={14} /> Invoice {quote.invoice.invoiceNo}
             </Link>
           ) : null}
           {quote.status === "DECLINED" && quote.declineNote ? (
