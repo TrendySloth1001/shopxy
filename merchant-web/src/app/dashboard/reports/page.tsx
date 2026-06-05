@@ -237,10 +237,11 @@ function TrendChart({ points }: { points: { day: string; amount: number }[] }) {
   return (
     <section>
       <TrendLineChart
-        values={values}
+        points={points.map((p) => ({ label: labelDay(p.day), value: p.amount }))}
         overlay={points.length >= 4 ? movingAverage(values) : undefined}
-        heightClass="h-40"
+        heightClass="h-40 sm:h-52"
         ariaLabel="Daily trend"
+        formatValue={formatINR}
       />
       <div className="mt-xs flex justify-between text-body-sm text-subtle">
         <span>{labelDay(points[0].day)}</span>
