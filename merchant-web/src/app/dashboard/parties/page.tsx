@@ -2,7 +2,18 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { BadgeCheck, PiggyBank, Pencil, Plus, RefreshCw, Search, Trash2, Users } from "lucide-react";
+import {
+  BadgeCheck,
+  ClipboardList,
+  Pencil,
+  PiggyBank,
+  Plus,
+  ReceiptText,
+  RefreshCw,
+  Search,
+  Trash2,
+  Users,
+} from "lucide-react";
 import { PageHeader } from "@/shared/ui/page-header";
 import { Monogram } from "@/shared/ui/monogram";
 import { Modal, ModalActions } from "@/shared/ui/modal";
@@ -175,9 +186,13 @@ function PartyRow({ party, onDelete }: { party: Party; onDelete: () => void }) {
             {party.phone ?? "No phone"}
             {party.gstin ? ` · GSTIN ${party.gstin}` : ""}
           </p>
-          <p className="mt-px text-body-sm text-subtle">
-            {challans} {challans === 1 ? "challan" : "challans"} · {invoices}{" "}
-            {invoices === 1 ? "invoice" : "invoices"}
+          <p className="mt-px flex items-center gap-md text-body-sm text-subtle">
+            <span className="inline-flex items-center gap-xs">
+              <ClipboardList size={13} /> {challans} {challans === 1 ? "challan" : "challans"}
+            </span>
+            <span className="inline-flex items-center gap-xs">
+              <ReceiptText size={13} /> {invoices} {invoices === 1 ? "invoice" : "invoices"}
+            </span>
           </p>
         </div>
       </Link>

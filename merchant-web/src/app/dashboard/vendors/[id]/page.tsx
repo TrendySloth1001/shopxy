@@ -5,12 +5,20 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
   BadgeCheck,
+  BookText,
+  CheckCircle2,
+  Landmark,
   Mail,
   MapPin,
+  PackagePlus,
   Pencil,
   Phone,
   ReceiptText,
+  RotateCcw,
   ScrollText,
+  ShoppingBag,
+  TrendingDown,
+  TrendingUp,
 } from "lucide-react";
 import { BackLink } from "@/shared/ui/page-header";
 import { Monogram } from "@/shared/ui/monogram";
@@ -29,6 +37,12 @@ const DOC_STATUS_CLASSES: Record<string, string> = {
   CONFIRMED: "bg-success-soft text-success",
   CANCELLED: "bg-error-soft text-error",
   DRAFT: "bg-accent-amber-soft text-accent-amber",
+};
+
+const BALANCE_PUCK: Record<"owe" | "settled" | "advance", string> = {
+  owe: "bg-error-soft text-error",
+  settled: "bg-surface-tint text-muted",
+  advance: "bg-success-soft text-success",
 };
 
 export default function VendorDetailPage() {
@@ -118,30 +132,58 @@ export default function VendorDetailPage() {
             text={[v.address, v.city, v.state, v.pinCode].filter(Boolean).join(", ")}
           />
         ) : null}
-        {v.gstin ? <ContactRow icon={<BadgeCheck size={15} />} text={`GSTIN ${v.gstin}`} /> : null}
+        {v.gstin ? <ContactRow icon={<Landmark size={15} />} text={`GSTIN ${v.gstin}`} /> : null}
       </div>
 
       {/* Balance */}
       <div className="mt-xl rounded-lg border border-hairline p-lg">
-        <p className="text-label-md uppercase tracking-wide text-subtle">Balance</p>
-        <p className={`mt-xs text-headline-md font-bold ${BALANCE_TONE_TEXT[balanceView.tone]}`}>
-          {formatINR(Math.abs(overview.balance))}
-        </p>
-        <p className="text-body-sm text-muted">{balanceView.label}</p>
+        <div className="flex items-center gap-md">
+          <span className={`flex size-11 shrink-0 items-center justify-center rounded-lg ${BALANCE_PUCK[balanceView.tone]}`}>
+            {balanceView.tone === "owe" ? (
+              <TrendingUp size={22} />
+            ) : balanceView.tone === "advance" ? (
+              <TrendingDown size={22} />
+            ) : (
+              <CheckCircle2 size={22} />
+            )}
+          </span>
+          <div>
+            <p className="text-label-md uppercase tracking-wide text-subtle">Balance</p>
+            <p className={`text-headline-md font-bold ${BALANCE_TONE_TEXT[balanceView.tone]}`}>
+              {formatINR(Math.abs(overview.balance))}
+            </p>
+            <p className="text-body-sm text-muted">{balanceView.label}</p>
+          </div>
+        </div>
       </div>
 
       {/* Stats */}
       <div className="mt-lg grid grid-cols-1 gap-lg sm:grid-cols-3">
-        <StatBlock label="Net purchased" value={formatINR(netPurchased(overview))} hint={`${overview.counts.invoices} bills`} />
-        <StatBlock label="Stock-ins" value={String(overview.counts.stockIns)} hint="ledger rows" />
-        <StatBlock label="Returns" value={formatINR(totalReturns(overview))} hint="purchase returns" />
+        <StatBlock
+          icon={<ShoppingBag size={16} />}
+          label="Net purchased"
+          value={formatINR(netPurchased(overview))}
+          hint={`${overview.counts.invoices} bills`}
+        />
+        <StatBlock
+          icon={<PackagePlus size={16} />}
+          label="Stock-ins"
+          value={String(overview.counts.stockIns)}
+          hint="ledger rows"
+        />
+        <StatBlock
+          icon={<RotateCcw size={16} />}
+          label="Returns"
+          value={formatINR(totalReturns(overview))}
+          hint="purchase returns"
+        />
       </div>
 
       {/* Ledger */}
       {ledger && ledger.entries.length > 0 ? (
         <>
           <Divider className="my-xl" />
-          <h2 className="mb-sm text-title-md text-ink">Ledger</h2>
+          <SectionHeading icon={<BookText size={18} />} title="Ledger" />
           <LedgerList entries={ledger.entries} />
         </>
       ) : null}
@@ -150,7 +192,7 @@ export default function VendorDetailPage() {
       {overview.recentInvoices.length > 0 ? (
         <>
           <Divider className="my-xl" />
-          <h2 className="mb-sm text-title-md text-ink">Recent bills</h2>
+          <SectionHeading icon={<ReceiptText size={18} />} title="Recent bills" />
           {overview.recentInvoices.map((inv) => (
             <InvoiceRow key={inv.id} invoice={inv} />
           ))}
@@ -161,7 +203,7 @@ export default function VendorDetailPage() {
       {overview.recentStockIns.length > 0 ? (
         <>
           <Divider className="my-xl" />
-          <h2 className="mb-sm text-title-md text-ink">Recent stock-in</h2>
+          <SectionHeading icon={<ScrollText size={18} />} title="Recent stock-in" />
           {overview.recentStockIns.map((s) => (
             <StockInRow key={s.id} stockIn={s} />
           ))}
@@ -189,10 +231,32 @@ function ContactRow({ icon, text }: { icon: React.ReactNode; text: string }) {
   );
 }
 
-function StatBlock({ label, value, hint }: { label: string; value: string; hint: string }) {
+function SectionHeading({ icon, title }: { icon: React.ReactNode; title: string }) {
+  return (
+    <h2 className="mb-sm flex items-center gap-sm text-title-md text-ink">
+      <span className="text-subtle">{icon}</span>
+      {title}
+    </h2>
+  );
+}
+
+function StatBlock({
+  icon,
+  label,
+  value,
+  hint,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  hint: string;
+}) {
   return (
     <div className="rounded-lg border border-hairline p-lg">
-      <p className="text-label-md text-subtle">{label}</p>
+      <p className="flex items-center gap-xs text-label-md text-subtle">
+        <span className="text-subtle">{icon}</span>
+        {label}
+      </p>
       <p className="mt-xs text-title-lg font-bold text-ink">{value}</p>
       <p className="text-body-sm text-subtle">{hint}</p>
     </div>
