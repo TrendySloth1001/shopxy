@@ -67,6 +67,28 @@ export class AnalyticsController {
     res.json(data);
   }
 
+  async heatmap(req: Request, res: Response): Promise<void> {
+    const shopId = req.shopId!;
+    const parsed = rangeSchema.parse(req.query);
+    const { from, to } = resolveRange(parsed);
+    if (to.getTime() - from.getTime() > MAX_RANGE_DAYS * 86_400_000) {
+      res.status(400).json({ error: `Date range > ${MAX_RANGE_DAYS} days` });
+      return;
+    }
+    res.json(await analyticsService.getPurchaseHeatmap(shopId, from, to));
+  }
+
+  async customers(req: Request, res: Response): Promise<void> {
+    const shopId = req.shopId!;
+    const parsed = rangeSchema.parse(req.query);
+    const { from, to } = resolveRange(parsed);
+    if (to.getTime() - from.getTime() > MAX_RANGE_DAYS * 86_400_000) {
+      res.status(400).json({ error: `Date range > ${MAX_RANGE_DAYS} days` });
+      return;
+    }
+    res.json(await analyticsService.getCustomerRetention(shopId, from, to));
+  }
+
   async flashDeal(req: Request, res: Response): Promise<void> {
     const shopId = req.shopId!;
     const id = parseId(req.params.id);
