@@ -153,10 +153,13 @@ this should be revisited.
 ## Categories — built & deferred / known gaps
 
 - [x] **Categories (merchant browse).** `/dashboard/categories` — read-only
-  taxonomy grid (image/icon + name + product count) and
-  `/dashboard/categories/[id]` drill-down (category header + searchable,
-  paginated product list → product detail), mirroring the Flutter
-  `CategoriesPage` + `CategoryProductsPage`. BFF `api/categories/tree`
+  taxonomy grid (image/icon + name + product + subcategory counts) and
+  `/dashboard/categories/[id]` drill-down with an **ancestor breadcrumb**, a
+  **Subcategories** grid (each child links to its own category page), and a
+  **Products** section (searchable, paginated → product detail). Mirrors the
+  Flutter `CategoriesPage` + `CategoryProductsPage`, with nested-taxonomy
+  navigation added. Children + breadcrumb are resolved from the tree
+  (`findCategoryPath`); shared `CategoryCard`. BFF `api/categories/tree`
   (→ `/categories/tree?active=true`) + `api/categories/[id]`. Icon catalogue
   (`features/categories/icon-catalog.ts`) maps the 30 stored `iconName` strings
   to lucide equivalents.

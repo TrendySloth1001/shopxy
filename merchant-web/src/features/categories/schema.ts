@@ -46,3 +46,17 @@ export const categoryDetailSchema = categoryBaseSchema;
 export function categoryProductCount(c: CategoryBase): number {
   return c._count?.products ?? c.productCount ?? 0;
 }
+
+/**
+ * Depth-first search for a node by id, returning the path from the root down to
+ * (and including) the matched node — or null if not present. Used to render the
+ * breadcrumb and resolve a category's children on its detail page.
+ */
+export function findCategoryPath(nodes: CategoryNode[], id: number): CategoryNode[] | null {
+  for (const node of nodes) {
+    if (node.id === id) return [node];
+    const childPath = findCategoryPath(node.children ?? [], id);
+    if (childPath) return [node, ...childPath];
+  }
+  return null;
+}

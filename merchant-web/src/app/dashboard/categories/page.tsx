@@ -1,14 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
 import { FolderTree, RefreshCw } from "lucide-react";
 import { PageHeader } from "@/shared/ui/page-header";
-import { mediaSrc } from "@/features/products/components/product-thumb";
 import { getCategoryTree } from "@/features/categories/api";
-import { CategoryIcon } from "@/features/categories/category-icon";
-import { categoryProductCount, type CategoryNode } from "@/features/categories/schema";
+import { CategoryCard } from "@/features/categories/category-card";
+import type { CategoryNode } from "@/features/categories/schema";
 
 export default function CategoriesPage() {
   const [nodes, setNodes] = useState<CategoryNode[]>([]);
@@ -85,38 +82,5 @@ export default function CategoriesPage() {
         )}
       </div>
     </div>
-  );
-}
-
-function CategoryCard({ node }: { node: CategoryNode }) {
-  const src = mediaSrc(node.imageUrl);
-  const count = categoryProductCount(node);
-  const childCount = node.children?.length ?? 0;
-  return (
-    <Link href={`/dashboard/categories/${node.id}`} className="group flex flex-col gap-sm">
-      <div className="relative aspect-square w-full overflow-hidden rounded-lg border border-hairline bg-surface-tint">
-        {src ? (
-          <Image
-            src={src}
-            alt={node.name}
-            fill
-            unoptimized
-            sizes="(max-width: 640px) 50vw, (max-width: 1280px) 25vw, 16vw"
-            className="object-cover transition-transform group-hover:scale-105"
-          />
-        ) : (
-          <span className="flex size-full items-center justify-center bg-accent-teal-soft text-accent-teal">
-            <CategoryIcon name={node.iconName} size={32} />
-          </span>
-        )}
-      </div>
-      <div>
-        <p className="truncate text-body-md text-ink group-hover:text-brand-strong">{node.name}</p>
-        <p className="text-body-sm text-subtle">
-          {count} {count === 1 ? "product" : "products"}
-          {childCount > 0 ? ` · ${childCount} sub` : ""}
-        </p>
-      </div>
-    </Link>
   );
 }

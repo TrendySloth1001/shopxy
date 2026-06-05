@@ -2,7 +2,17 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { BadgeCheck, Pencil, Plus, RefreshCw, Search, Trash2, Truck } from "lucide-react";
+import {
+  BadgeCheck,
+  Package,
+  Pencil,
+  Plus,
+  ReceiptText,
+  RefreshCw,
+  Search,
+  Trash2,
+  Truck,
+} from "lucide-react";
 import { PageHeader } from "@/shared/ui/page-header";
 import { Monogram } from "@/shared/ui/monogram";
 import { Modal, ModalActions } from "@/shared/ui/modal";
@@ -171,8 +181,13 @@ function VendorRow({ vendor, onDelete }: { vendor: Vendor; onDelete: () => void 
             {vendor.phone ?? "No phone"}
             {vendor.gstin ? ` · GSTIN ${vendor.gstin}` : ""}
           </p>
-          <p className="mt-px text-body-sm text-subtle">
-            {txns} {txns === 1 ? "txn" : "txns"} · {invoices} {invoices === 1 ? "invoice" : "invoices"}
+          <p className="mt-px flex items-center gap-md text-body-sm text-subtle">
+            <span className="inline-flex items-center gap-xs">
+              <Package size={13} /> {txns} {txns === 1 ? "txn" : "txns"}
+            </span>
+            <span className="inline-flex items-center gap-xs">
+              <ReceiptText size={13} /> {invoices} {invoices === 1 ? "invoice" : "invoices"}
+            </span>
           </p>
         </div>
       </Link>

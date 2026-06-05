@@ -3,12 +3,19 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Search } from "lucide-react";
+import { ChevronRight, FolderTree, Package, Search } from "lucide-react";
 import { BackLink } from "@/shared/ui/page-header";
+import { Divider } from "@/shared/ui/divider";
 import { ProductThumb } from "@/features/products/components/product-thumb";
-import { getCategory } from "@/features/categories/api";
+import { getCategory, getCategoryTree } from "@/features/categories/api";
+import { CategoryCard } from "@/features/categories/category-card";
 import { CategoryIcon } from "@/features/categories/category-icon";
-import { categoryProductCount, type CategoryBase } from "@/features/categories/schema";
+import {
+  categoryProductCount,
+  findCategoryPath,
+  type CategoryBase,
+  type CategoryNode,
+} from "@/features/categories/schema";
 import { listProducts } from "@/features/products/api";
 import { money } from "@/features/products/format";
 import type { Product } from "@/features/products/schema";
@@ -20,7 +27,9 @@ export default function CategoryProductsPage() {
   const params = useParams<{ id: string }>();
   const id = Number(params.id);
 
-  const [category, setCategory] = useState<CategoryBase | null>(null);
+  const [node, setNode] = useState<CategoryNode | null>(null);
+  const [ancestors, setAncestors] = useState<CategoryNode[]>([]);
+  const [fallback, setFallback] = useState<CategoryBase | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -29,15 +38,26 @@ export default function CategoryProductsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Load the category header once.
+  // Resolve this category within the tree → its children + breadcrumb path.
+  // Falls back to the flat detail endpoint if it isn't in the active tree.
   useEffect(() => {
     let active = true;
     void (async () => {
       try {
-        const c = await getCategory(id);
-        if (active) setCategory(c);
+        const tree = await getCategoryTree();
+        if (!active) return;
+        const path = findCategoryPath(tree, id);
+        if (path) {
+          setNode(path[path.length - 1]);
+          setAncestors(path.slice(0, -1));
+          setFallback(null);
+        } else {
+          const c = await getCategory(id).catch(() => null);
+          if (active) setFallback(c);
+        }
       } catch {
-        /* header is best-effort; the product list carries its own error */
+        const c = await getCategory(id).catch(() => null);
+        if (active) setFallback(c);
       }
     })();
     return () => {
@@ -81,33 +101,73 @@ export default function CategoryProductsPage() {
     };
   }, [id, page, search]);
 
+  const header = node ?? fallback;
+  const children = node?.children ?? [];
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const headerCount = useMemo(
-    () => (category ? categoryProductCount(category) : total),
-    [category, total],
+    () => (header ? categoryProductCount(header) : total),
+    [header, total],
   );
 
   return (
     <div className="w-full px-lg py-xxl md:px-xxl">
       <BackLink href={BACK} label="Categories" />
 
+      {/* Breadcrumb of ancestor categories */}
+      {ancestors.length > 0 ? (
+        <nav className="mt-sm flex flex-wrap items-center gap-xs text-body-sm text-muted">
+          {ancestors.map((a) => (
+            <span key={a.id} className="flex items-center gap-xs">
+              <Link href={`/dashboard/categories/${a.id}`} className="transition-colors hover:text-ink">
+                {a.name}
+              </Link>
+              <ChevronRight size={13} className="text-subtle" />
+            </span>
+          ))}
+          <span className="text-ink">{header?.name ?? "Category"}</span>
+        </nav>
+      ) : null}
+
+      {/* Header */}
       <div className="mt-md flex items-start gap-md">
         <span className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-accent-teal-soft text-accent-teal">
-          <CategoryIcon name={category?.iconName} size={24} />
+          <CategoryIcon name={header?.iconName} size={24} />
         </span>
         <div className="min-w-0">
-          <h1 className="text-headline-md text-ink">{category?.name ?? "Category"}</h1>
-          {category?.description ? (
-            <p className="mt-xs max-w-content text-body-md text-muted">{category.description}</p>
+          <h1 className="text-headline-md text-ink">{header?.name ?? "Category"}</h1>
+          {header?.description ? (
+            <p className="mt-xs max-w-content text-body-md text-muted">{header.description}</p>
           ) : null}
           <p className="mt-xs text-body-sm text-subtle">
             {headerCount} {headerCount === 1 ? "product" : "products"}
+            {children.length > 0
+              ? ` · ${children.length} ${children.length === 1 ? "subcategory" : "subcategories"}`
+              : ""}
           </p>
         </div>
       </div>
 
-      {/* Search */}
-      <div className="mt-xl flex items-center gap-sm rounded-input border border-hairline bg-white px-md focus-within:border-brand focus-within:ring-2 focus-within:ring-brand-soft">
+      {/* Subcategories */}
+      {children.length > 0 ? (
+        <>
+          <h2 className="mt-xl mb-md flex items-center gap-sm text-title-md text-ink">
+            <FolderTree size={18} className="text-subtle" /> Subcategories
+          </h2>
+          <div className="grid grid-cols-2 gap-lg sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+            {children.map((c) => (
+              <CategoryCard key={c.id} node={c} />
+            ))}
+          </div>
+          <Divider className="my-xl" />
+        </>
+      ) : null}
+
+      {/* Products */}
+      <h2 className="mt-xl mb-md flex items-center gap-sm text-title-md text-ink">
+        <Package size={18} className="text-subtle" /> Products
+      </h2>
+
+      <div className="flex items-center gap-sm rounded-input border border-hairline bg-white px-md focus-within:border-brand focus-within:ring-2 focus-within:ring-brand-soft">
         <Search size={16} className="shrink-0 text-subtle" />
         <input
           value={searchInput}
@@ -127,10 +187,14 @@ export default function CategoryProductsPage() {
         ) : products.length === 0 ? (
           <div className="flex flex-col items-center gap-md py-xxxl text-center">
             <span className="flex size-12 items-center justify-center rounded-full bg-surface-tint text-subtle">
-              <CategoryIcon name={category?.iconName} size={22} />
+              <Package size={22} />
             </span>
             <p className="text-body-md text-muted">
-              {search ? `No products match “${search}”.` : "No products in this category yet."}
+              {search
+                ? `No products match “${search}”.`
+                : children.length > 0
+                  ? "No products filed directly here — check the subcategories above."
+                  : "No products in this category yet."}
             </p>
           </div>
         ) : (
