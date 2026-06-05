@@ -34,6 +34,8 @@ type RowProps = {
   /** Replaces the default chevron (only shown for link/button rows). */
   trailing?: React.ReactNode;
   tone?: "default" | "error";
+  /** Bordered tile (for responsive grids) instead of a flat list row. */
+  tile?: boolean;
 };
 
 /** A flat settings row: icon puck + title/subtitle + trailing affordance. */
@@ -45,6 +47,7 @@ export function SettingRow({
   onClick,
   trailing,
   tone = "default",
+  tile = false,
 }: RowProps) {
   const interactive = href != null || onClick != null;
   const titleColor = tone === "error" ? "text-error" : "text-ink";
@@ -71,14 +74,18 @@ export function SettingRow({
     </>
   );
 
-  const base =
-    "flex w-full items-center gap-md rounded-md px-sm py-sm text-left transition-colors";
+  const base = tile
+    ? "flex h-full w-full items-center gap-md rounded-lg border border-hairline p-md text-left transition-colors"
+    : "flex w-full items-center gap-md rounded-md px-sm py-sm text-left transition-colors";
+  const hover = tile
+    ? "hover:border-brand-soft hover:bg-surface-tint"
+    : "hover:bg-surface-tint";
 
   if (href) {
     return (
       <Link
         href={href}
-        className={`${base} hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft`}
+        className={`${base} ${hover} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft`}
       >
         {inner}
       </Link>
@@ -89,7 +96,7 @@ export function SettingRow({
       <button
         type="button"
         onClick={onClick}
-        className={`${base} hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft`}
+        className={`${base} ${hover} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft`}
       >
         {inner}
       </button>
