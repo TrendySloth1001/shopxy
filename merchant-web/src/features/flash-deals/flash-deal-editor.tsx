@@ -197,7 +197,7 @@ export function FlashDealEditor({ existing }: { existing: FlashSale | null }) {
   );
 }
 
-function FlashCardPreview({
+export function FlashCardPreview({
   product,
   flashPrice,
   off,
