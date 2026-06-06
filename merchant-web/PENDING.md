@@ -22,10 +22,9 @@ this should be revisited.
   (`/dashboard/invoices/:id`) and `ActivityRow` links to its source doc
   (`tx.sourceType` `INVOICE`→invoice, `CHALLAN`→challan, via `tx.sourceId`); rows
   without a linkable source stay plain. In `src/features/dashboard/dashboard-home.tsx`.
-- [ ] **Dashboard pending-invite callout.** Flutter shows a brand callout at the
-  top of the dashboard for pending incoming invitations (party/vendor/team).
-  Trigger: notifications/invitations feature on web → add the callout linking to
-  the notifications screen.
+- [x] **Dashboard pending-invite callout.** Built — `PendingInviteCallout` in
+  `dashboard-home.tsx` fetches incoming invitations and, when any are PENDING,
+  shows a brand callout linking to the notifications Invites tab.
 - [ ] **Payout-setup nudge.** Flutter nudges Razorpay-Route payout onboarding
   once per session (behind ROUTE_SPLIT_ENABLED). Trigger: payouts / linked-account
   feature on web → add the nudge to the dashboard.

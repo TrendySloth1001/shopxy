@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, Timer } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, Mail, Timer } from "lucide-react";
 import { useAuth } from "@/features/auth/auth-context";
 import { Divider } from "@/shared/ui/divider";
+import { listIncomingInvitations } from "@/features/invitations/api";
 import {
   fetchDashboardStats,
   type DashboardDraft,
@@ -91,6 +92,8 @@ export function DashboardHome() {
         </p>
       </div>
 
+      <PendingInviteCallout />
+
       {loading && !data ? (
         <DashboardSkeleton />
       ) : error && !data ? (
@@ -99,6 +102,44 @@ export function DashboardHome() {
         <DashboardBody stats={data} />
       ) : null}
     </div>
+  );
+}
+
+/**
+ * Brand callout at the top of the dashboard for pending incoming invitations
+ * (another shop inviting this user as a customer/vendor/team member). Mirrors
+ * the Flutter dashboard callout; links to the notifications Invites tab.
+ */
+function PendingInviteCallout() {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      try {
+        const rows = await listIncomingInvitations();
+        if (active) setCount(rows.filter((i) => i.status === "PENDING").length);
+      } catch {
+        /* no callout on failure */
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (count === 0) return null;
+  return (
+    <Link
+      href="/dashboard/notifications"
+      className="mt-lg flex items-center gap-md rounded-lg bg-brand-soft px-md py-sm text-brand-strong transition-colors hover:bg-brand-soft/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+    >
+      <Mail size={18} className="shrink-0" />
+      <span className="min-w-0 flex-1 text-body-md">
+        You have {count} pending invitation{count === 1 ? "" : "s"} — review and accept.
+      </span>
+      <span className="shrink-0 text-label-md underline-offset-2">View</span>
+    </Link>
   );
 }
 
