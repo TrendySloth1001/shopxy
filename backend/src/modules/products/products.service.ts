@@ -518,6 +518,26 @@ export class ProductsService {
       include: {
         category: true,
         images: { orderBy: { sortOrder: 'asc' } },
+        // Variants were omitted here, so GET /products/:id returned
+        // variants: [] and the merchant edit form's Variants section
+        // started empty on reload. Mirror the list projection's variants.
+        variants: {
+          orderBy: { sortOrder: 'asc' },
+          select: {
+            id: true,
+            sku: true,
+            barcode: true,
+            attributes: true,
+            mrp: true,
+            sellingPrice: true,
+            purchasePrice: true,
+            stockQuantity: true,
+            imageUrls: true,
+            isDefault: true,
+            isActive: true,
+            sortOrder: true,
+          },
+        },
         stockTransactions: {
           orderBy: { createdAt: 'desc' },
           take: 30,
