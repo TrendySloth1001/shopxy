@@ -24,6 +24,14 @@ merchantCouponsRouter.get(
   '/',
   asyncHandler((req, res) => couponsController.listMerchant(req, res)),
 );
+merchantCouponsRouter.get(
+  '/:id/redemptions',
+  asyncHandler((req, res) => couponsController.redemptionsMerchant(req, res)),
+);
+merchantCouponsRouter.get(
+  '/:id',
+  asyncHandler((req, res) => couponsController.getMerchant(req, res)),
+);
 merchantCouponsRouter.post(
   '/',
   asyncHandler((req, res) => couponsController.createMerchant(req, res)),

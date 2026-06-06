@@ -2,11 +2,13 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus, Power, RefreshCw, Ticket } from "lucide-react";
+import { BarChart3, Plus, Power, RefreshCw, Ticket } from "lucide-react";
 import { PageHeader } from "@/shared/ui/page-header";
 import { Modal, ModalActions } from "@/shared/ui/modal";
-import { formatDateTime } from "@/shared/datetime";
-import { deactivateCoupon, listCoupons } from "@/features/coupons/api";
+import { formatDateTime, formatRelativeTime } from "@/shared/datetime";
+import { formatINR2 } from "@/shared/money";
+import { deactivateCoupon, listCoupons, listCouponRedemptions } from "@/features/coupons/api";
+import type { CouponRedemption } from "@/features/coupons/schema";
 import {
   COUPON_STATE_CLASSES,
   COUPON_STATE_LABELS,
@@ -24,6 +26,7 @@ export default function CouponsPage() {
   const [nonce, setNonce] = useState(0);
   const [deactivateTarget, setDeactivateTarget] = useState<Coupon | null>(null);
   const [deactivateBusy, setDeactivateBusy] = useState(false);
+  const [redeemTarget, setRedeemTarget] = useState<Coupon | null>(null);
 
   const reload = useCallback(() => setNonce((n) => n + 1), []);
 
@@ -112,7 +115,12 @@ export default function CouponsPage() {
           </div>
         ) : (
           rows.map((c) => (
-            <CouponRow key={c.id} coupon={c} onDeactivate={() => setDeactivateTarget(c)} />
+            <CouponRow
+              key={c.id}
+              coupon={c}
+              onDeactivate={() => setDeactivateTarget(c)}
+              onViewRedemptions={() => setRedeemTarget(c)}
+            />
           ))
         )}
       </div>
@@ -131,11 +139,79 @@ export default function CouponsPage() {
           />
         </Modal>
       ) : null}
+
+      {redeemTarget ? (
+        <RedemptionsModal coupon={redeemTarget} onClose={() => setRedeemTarget(null)} />
+      ) : null}
     </div>
   );
 }
 
-function CouponRow({ coupon, onDeactivate }: { coupon: Coupon; onDeactivate: () => void }) {
+function RedemptionsModal({ coupon, onClose }: { coupon: Coupon; onClose: () => void }) {
+  const [rows, setRows] = useState<CouponRedemption[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      try {
+        const data = await listCouponRedemptions(coupon.id);
+        if (active) setRows(data);
+      } catch (e) {
+        if (active) setError(e instanceof Error ? e.message : "Could not load redemptions.");
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [coupon.id]);
+
+  const total = rows?.reduce((s, r) => s + r.discountAmount, 0) ?? 0;
+
+  return (
+    <Modal title={`${coupon.code} — redemptions`} onClose={onClose} wide>
+      <p className="text-body-md text-muted">
+        {coupon.totalRedemptions} redeemed
+        {rows && rows.length > 0 ? ` · ${formatINR2(total)} discount given (last ${rows.length})` : ""}
+      </p>
+      {error ? (
+        <p className="rounded-md bg-error-soft px-md py-sm text-body-sm text-error">{error}</p>
+      ) : rows === null ? (
+        <p className="py-lg text-center text-body-sm text-subtle">Loading…</p>
+      ) : rows.length === 0 ? (
+        <p className="py-lg text-center text-body-sm text-subtle">No redemptions yet.</p>
+      ) : (
+        <ul className="border-t border-hairline">
+          {rows.map((r) => (
+            <li key={r.id} className="flex items-center justify-between gap-md border-b border-hairline py-sm">
+              <span className="min-w-0">
+                <span className="block truncate text-body-md text-ink">{r.user?.name ?? "Customer"}</span>
+                <span className="block truncate text-body-sm text-subtle">
+                  {r.user?.email ?? ""}
+                  {r.orderId != null ? ` · order #${r.orderId}` : ""}
+                </span>
+              </span>
+              <span className="shrink-0 text-right">
+                <span className="block text-body-md tabular-nums text-ink">{formatINR2(r.discountAmount)}</span>
+                <span className="block text-body-sm text-subtle">{formatRelativeTime(r.redeemedAt)}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Modal>
+  );
+}
+
+function CouponRow({
+  coupon,
+  onDeactivate,
+  onViewRedemptions,
+}: {
+  coupon: Coupon;
+  onDeactivate: () => void;
+  onViewRedemptions: () => void;
+}) {
   const state = couponState(coupon);
   return (
     <div className="flex items-start gap-md border-b border-hairline py-md">
@@ -171,6 +247,17 @@ function CouponRow({ coupon, onDeactivate }: { coupon: Coupon; onDeactivate: () 
           {coupon.totalCap > 0 ? `/${coupon.totalCap}` : ""} redeemed
         </p>
       </Link>
+      {coupon.totalRedemptions > 0 ? (
+        <button
+          type="button"
+          onClick={onViewRedemptions}
+          aria-label="View redemptions"
+          title="View redemptions"
+          className="inline-flex size-9 shrink-0 items-center justify-center rounded-button text-muted transition-colors hover:bg-surface-tint hover:text-ink"
+        >
+          <BarChart3 size={18} />
+        </button>
+      ) : null}
       {coupon.isActive ? (
         <button
           type="button"

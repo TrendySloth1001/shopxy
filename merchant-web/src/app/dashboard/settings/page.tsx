@@ -175,7 +175,7 @@ export default function SettingsPage() {
 
             {active === "about" ? (
               <TileGrid>
-                <SettingRow tile icon={Info} title="App version" subtitle="1.0.0" />
+                <SettingRow tile icon={Info} title="App version" subtitle={process.env.NEXT_PUBLIC_APP_VERSION ?? "—"} />
               </TileGrid>
             ) : null}
           </div>
