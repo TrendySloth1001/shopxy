@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Plus, Search } from "lucide-react";
 import { Divider } from "@/shared/ui/divider";
 import {
@@ -26,13 +27,35 @@ const SORTS: Array<{ label: string; sortBy: string; sortOrder: string }> = [
 ];
 
 export default function ProductsListPage() {
-  const [searchInput, setSearchInput] = useState("");
-  const [search, setSearch] = useState("");
-  const [categoryId, setCategoryId] = useState<string>("");
-  const [lowStock, setLowStock] = useState(false);
-  const [outOfStock, setOutOfStock] = useState(false);
-  const [sortIdx, setSortIdx] = useState(0);
-  const [page, setPage] = useState(1);
+  // useSearchParams needs a Suspense boundary during prerender.
+  return (
+    <Suspense fallback={null}>
+      <ProductsListInner />
+    </Suspense>
+  );
+}
+
+function clampSortIdx(raw: string | null): number {
+  const n = Number(raw);
+  return Number.isInteger(n) && n >= 0 && n < SORTS.length ? n : 0;
+}
+
+function ProductsListInner() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Initialise filter state from the URL so the view deep-links and survives refresh.
+  const [searchInput, setSearchInput] = useState(() => searchParams.get("q") ?? "");
+  const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
+  const [categoryId, setCategoryId] = useState<string>(() => searchParams.get("category") ?? "");
+  const [lowStock, setLowStock] = useState(() => searchParams.get("low") === "1");
+  const [outOfStock, setOutOfStock] = useState(() => searchParams.get("out") === "1");
+  const [sortIdx, setSortIdx] = useState(() => clampSortIdx(searchParams.get("sort")));
+  const [page, setPage] = useState(() => {
+    const p = Number(searchParams.get("page"));
+    return Number.isInteger(p) && p > 0 ? p : 1;
+  });
 
   const [data, setData] = useState<ProductList | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,6 +71,20 @@ export default function ProductsListPage() {
     }, 300);
     return () => clearTimeout(t);
   }, [searchInput]);
+
+  // Mirror the active filters into the URL (replace, no history spam).
+  useEffect(() => {
+    const qs = new URLSearchParams();
+    if (search) qs.set("q", search);
+    if (categoryId) qs.set("category", categoryId);
+    if (lowStock) qs.set("low", "1");
+    if (outOfStock) qs.set("out", "1");
+    if (sortIdx > 0) qs.set("sort", String(sortIdx));
+    if (page > 1) qs.set("page", String(page));
+    const next = qs.toString();
+    const current = searchParams.toString();
+    if (next !== current) router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false });
+  }, [search, categoryId, lowStock, outOfStock, sortIdx, page, pathname, router, searchParams]);
 
   // Load categories once.
   useEffect(() => {
