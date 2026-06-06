@@ -313,9 +313,9 @@ this should be revisited.
   caution*` and `/caution-requests`. (Set-off invoice list is drawn from the
   overview's recent confirmed sale invoices; the backend enforces the
   per-invoice outstanding cap and surfaces its error.)
-- [ ] **Contact change-log.** Backend exposes `/:id/changes` (field-level audit)
-  for both vendors and parties; not surfaced on web. Trigger: an "Activity /
-  history" tab on the detail page.
+- [x] **Contact change-log.** Built — an "Activity & history" panel on the party
+  and vendor detail pages lazy-loads the field-level audit (`/:id/changes`) via a
+  shared `ContactChangesSection`.
 - [x] **Vendor/party doc links target placeholders.** Resolved — the invoices and
   challans detail screens now exist, so recent-bill / recent-challan rows open them.
 
