@@ -140,12 +140,20 @@ export function RegisterForm() {
         <ConsentRow
           checked={acceptedTerms}
           onChange={setAcceptedTerms}
-          label="I accept the Terms of Service"
+          label={
+            <>
+              I accept the <LegalLink href="/legal/terms">Terms of Service</LegalLink>
+            </>
+          }
         />
         <ConsentRow
           checked={acceptedPrivacy}
           onChange={setAcceptedPrivacy}
-          label="I accept the Privacy Policy"
+          label={
+            <>
+              I accept the <LegalLink href="/legal/privacy">Privacy Policy</LegalLink>
+            </>
+          }
         />
         {consentError ? (
           <p className="text-body-sm text-error">{consentError}</p>
@@ -164,7 +172,7 @@ function ConsentRow({
 }: {
   checked: boolean;
   onChange: (next: boolean) => void;
-  label: string;
+  label: React.ReactNode;
 }) {
   return (
     <label className="flex cursor-pointer items-center gap-sm text-body-md text-muted">
@@ -176,5 +184,19 @@ function ConsentRow({
       />
       {label}
     </label>
+  );
+}
+
+function LegalLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-brand-strong underline-offset-2 hover:underline focus-visible:underline focus-visible:outline-none"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {children}
+    </a>
   );
 }

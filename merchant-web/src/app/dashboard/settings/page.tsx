@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   AtSign,
   Bell,
+  FileText,
   IndianRupee,
   Info,
   Languages,
@@ -176,6 +177,8 @@ export default function SettingsPage() {
             {active === "about" ? (
               <TileGrid>
                 <SettingRow tile icon={Info} title="App version" subtitle={process.env.NEXT_PUBLIC_APP_VERSION ?? "—"} />
+                <SettingRow tile icon={ShieldAlert} title="Privacy Policy" subtitle="How we handle your data" href="/legal/privacy" />
+                <SettingRow tile icon={FileText} title="Terms of Service" subtitle="The rules for using ShopXY" href="/legal/terms" />
               </TileGrid>
             ) : null}
           </div>
