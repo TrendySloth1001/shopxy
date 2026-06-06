@@ -11,15 +11,23 @@ import {
   MessageCircle,
   Phone,
   ReceiptText,
+  Truck,
   TriangleAlert,
   X,
 } from "lucide-react";
 import { Divider } from "@/shared/ui/divider";
+import { Modal, ModalActions } from "@/shared/ui/modal";
+import { DateTimeField, SelectField, TextField } from "@/shared/ui/form";
+import { useCanManage } from "@/features/auth/use-can";
 import {
+  addShippingEvent,
   confirmOrder,
   getOrder,
   OrderConfirmError,
   rejectOrder,
+  SHIPPING_MILESTONES,
+  SHIPPING_MILESTONE_LABELS,
+  type ShippingMilestone,
 } from "@/features/orders/api";
 import type { OrderDetail, OrderItem } from "@/features/orders/schema";
 import {
@@ -63,6 +71,8 @@ export default function OrderDetailPage({
   const [success, setSuccess] = useState<string | null>(null);
   const [shortfallProductId, setShortfallProductId] = useState<number | null>(null);
   const [mode, setMode] = useState<"none" | "confirm" | "decline">("none");
+  const [shippingOpen, setShippingOpen] = useState(false);
+  const canManageOrders = useCanManage("orders");
 
   useEffect(() => {
     let active = true;
@@ -126,6 +136,28 @@ export default function OrderDetailPage({
       reload();
     } catch (e) {
       setActionError(e instanceof Error ? e.message : "Could not decline the order.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onShipping(input: {
+    type: ShippingMilestone;
+    courier?: string;
+    awb?: string;
+    eta?: string;
+    note?: string;
+  }) {
+    if (!order) return;
+    setBusy(true);
+    setActionError(null);
+    try {
+      await addShippingEvent(order.id, input);
+      setSuccess(`Marked ${SHIPPING_MILESTONE_LABELS[input.type].toLowerCase()}.`);
+      setShippingOpen(false);
+      reload();
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "Could not update shipping.");
     } finally {
       setBusy(false);
     }
@@ -278,27 +310,44 @@ export default function OrderDetailPage({
         ) : null}
       </div>
 
-      {/* Shipping timeline */}
-      {order.events.length > 0 ? (
+      {/* Shipping timeline — milestones apply once an order is confirmed. */}
+      {!pending || order.events.length > 0 ? (
         <>
           <Divider className="my-xl" />
-          <h2 className="text-title-md text-ink">Shipping updates</h2>
-          <ul className="mt-sm flex flex-col gap-sm">
-            {order.events.map((ev) => (
-              <li key={ev.id} className="flex items-baseline gap-md">
-                <span className="text-body-md text-ink">
-                  {ev.type.replace(/_/g, " ").toLowerCase()}
-                </span>
-                <span className="text-body-sm text-muted">
-                  {formatDateTime(ev.occurredAt)}
-                  {ev.courier ? ` · ${ev.courier}` : ""}
-                  {ev.awb ? ` · ${ev.awb}` : ""}
-                </span>
-              </li>
-            ))}
-          </ul>
+          <div className="flex flex-wrap items-center justify-between gap-sm">
+            <h2 className="text-title-md text-ink">Shipping updates</h2>
+            {!pending && canManageOrders ? (
+              <button
+                type="button"
+                onClick={() => setShippingOpen(true)}
+                className="inline-flex h-9 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+              >
+                <Truck size={16} /> Update shipping
+              </button>
+            ) : null}
+          </div>
+          {order.events.length > 0 ? (
+            <ul className="mt-sm flex flex-col gap-sm">
+              {order.events.map((ev) => (
+                <li key={ev.id} className="flex items-baseline gap-md">
+                  <span className="text-body-md text-ink">
+                    {ev.type.replace(/_/g, " ").toLowerCase()}
+                  </span>
+                  <span className="text-body-sm text-muted">
+                    {formatDateTime(ev.occurredAt)}
+                    {ev.courier ? ` · ${ev.courier}` : ""}
+                    {ev.awb ? ` · ${ev.awb}` : ""}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-sm text-body-sm text-subtle">No shipping updates yet.</p>
+          )}
         </>
       ) : null}
+
+      {shippingOpen ? <ShippingModal busy={busy} onClose={() => setShippingOpen(false)} onSubmit={onShipping} /> : null}
 
       {/* Linked invoice CTA */}
       {order.invoice ? (
@@ -332,6 +381,64 @@ export default function OrderDetailPage({
         />
       ) : null}
     </div>
+  );
+}
+
+function ShippingModal({
+  busy,
+  onClose,
+  onSubmit,
+}: {
+  busy: boolean;
+  onClose: () => void;
+  onSubmit: (input: {
+    type: ShippingMilestone;
+    courier?: string;
+    awb?: string;
+    eta?: string;
+    note?: string;
+  }) => void;
+}) {
+  const [type, setType] = useState<ShippingMilestone>("PACKED");
+  const [courier, setCourier] = useState("");
+  const [awb, setAwb] = useState("");
+  const [eta, setEta] = useState<string | null>(null);
+  const [note, setNote] = useState("");
+
+  // Courier/AWB are meaningful once shipped/out-for-delivery.
+  const showLogistics = type === "SHIPPED" || type === "OUT_FOR_DELIVERY";
+
+  return (
+    <Modal title="Update shipping" onClose={onClose}>
+      <SelectField
+        label="Milestone"
+        value={type}
+        onChange={(v) => setType(v as ShippingMilestone)}
+        options={SHIPPING_MILESTONES.map((m) => ({ value: m, label: SHIPPING_MILESTONE_LABELS[m] }))}
+      />
+      {showLogistics ? (
+        <>
+          <TextField label="Courier (optional)" value={courier} onChange={setCourier} placeholder="e.g. Delhivery" />
+          <TextField label="AWB / tracking (optional)" value={awb} onChange={setAwb} placeholder="Tracking number" />
+          <DateTimeField label="ETA (optional)" value={eta} onChange={setEta} />
+        </>
+      ) : null}
+      <TextField label="Note (optional)" value={note} onChange={setNote} />
+      <ModalActions
+        busy={busy}
+        confirmLabel="Save update"
+        onCancel={onClose}
+        onConfirm={() =>
+          onSubmit({
+            type,
+            courier: showLogistics && courier.trim() ? courier.trim() : undefined,
+            awb: showLogistics && awb.trim() ? awb.trim() : undefined,
+            eta: showLogistics && eta ? eta : undefined,
+            note: note.trim() || undefined,
+          })
+        }
+      />
+    </Modal>
   );
 }
 
@@ -568,8 +675,16 @@ function ItemRow({ item, highlight }: { item: OrderItem; highlight: boolean }) {
         <p className="text-body-sm text-muted">
           {item.productSku} · {money(item.unitPrice)} / {item.unit}
         </p>
-        <div className="mt-xs">
+        <div className="mt-xs flex flex-wrap items-center gap-sm">
           <StockChip item={item} />
+          {item.product?.isActive !== false && !itemStockOk(item) ? (
+            <Link
+              href={`/dashboard/products/${item.productId}`}
+              className="inline-flex items-center gap-xs text-label-md text-brand-strong underline-offset-2 hover:underline focus-visible:underline focus-visible:outline-none"
+            >
+              <Truck size={14} /> Restock
+            </Link>
+          ) : null}
         </div>
       </div>
       <div className="flex shrink-0 flex-col items-end">
