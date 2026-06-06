@@ -350,7 +350,7 @@ this should be revisited.
   in `sortOrder` but the web has no drag-reorder UI (`PATCH .../reorder` exists)
   and omits the per-field icon (the Flutter icon-name picker). Trigger: polish
   pass → add reorder handles + an icon picker.
-- [ ] **Team: own-rights ceiling not pre-checked.** The permission matrix lets a
+- [x] **Team: own-rights ceiling pre-checked.** The permission matrix lets a
   non-owner pick any right; the backend rejects grants beyond the actor's own
   rights (`CANNOT_GRANT_BEYOND_OWN_RIGHTS`) and we surface that error. Trigger:
   nicer UX → disable un-grantable rows up front from the current user's perms.
