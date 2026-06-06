@@ -21,6 +21,7 @@ import { formatINR } from "@/shared/money";
 import { deleteParty, listParties } from "@/features/parties/api";
 import { partyChallanCount, partyInvoiceCount, type Party } from "@/features/parties/schema";
 import { MaybeLocked } from "@/features/auth/components/maybe-locked";
+import { useCanManage } from "@/features/auth/use-can";
 import { ListRowsSkeleton } from "@/shared/ui/skeleton";
 
 export default function PartiesPage() {
@@ -32,6 +33,7 @@ export default function PartiesPage() {
   const [search, setSearch] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<Party | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
+  const canEdit = useCanManage("parties");
 
   const reload = useCallback(() => setNonce((n) => n + 1), []);
 
@@ -139,7 +141,9 @@ export default function PartiesPage() {
             ) : null}
           </div>
         ) : (
-          parties.map((p) => <PartyRow key={p.id} party={p} onDelete={() => setDeleteTarget(p)} />)
+          parties.map((p) => (
+            <PartyRow key={p.id} party={p} canEdit={canEdit} onDelete={() => setDeleteTarget(p)} />
+          ))
         )}
       </div>
 
@@ -162,7 +166,15 @@ export default function PartiesPage() {
   );
 }
 
-function PartyRow({ party, onDelete }: { party: Party; onDelete: () => void }) {
+function PartyRow({
+  party,
+  canEdit,
+  onDelete,
+}: {
+  party: Party;
+  canEdit: boolean;
+  onDelete: () => void;
+}) {
   const challans = partyChallanCount(party);
   const invoices = partyInvoiceCount(party);
   return (
@@ -213,8 +225,10 @@ function PartyRow({ party, onDelete }: { party: Party; onDelete: () => void }) {
         <button
           type="button"
           onClick={onDelete}
+          disabled={!canEdit}
           aria-label="Delete"
-          className="inline-flex size-9 items-center justify-center rounded-button text-muted transition-colors hover:bg-error-soft hover:text-error"
+          title={canEdit ? undefined : "You don't have access. Ask the shop owner."}
+          className="inline-flex size-9 items-center justify-center rounded-button text-muted transition-colors hover:bg-error-soft hover:text-error disabled:text-disabled disabled:hover:bg-transparent"
         >
           <Trash2 size={16} />
         </button>

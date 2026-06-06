@@ -20,6 +20,7 @@ import {
 import type { Invite, Member, Role } from "@/features/team/schema";
 import { normalizeRights, summariseRights } from "@/features/team/permissions";
 import { PermissionMatrix } from "@/features/team/permission-matrix";
+import { useCanManage } from "@/features/auth/use-can";
 import { ListRowsSkeleton } from "@/shared/ui/skeleton";
 
 export default function TeamPage() {
@@ -35,6 +36,8 @@ export default function TeamPage() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [editMember, setEditMember] = useState<Member | null>(null);
   const [roleEditor, setRoleEditor] = useState<Role | "new" | null>(null);
+  const canEdit = useCanManage("team");
+  const lockTitle = "You don't have access. Ask the shop owner.";
 
   const reload = useCallback(() => setNonce((n) => n + 1), []);
 
@@ -148,17 +151,20 @@ export default function TeamPage() {
                     <button
                       type="button"
                       onClick={() => setEditMember(m)}
+                      disabled={!canEdit}
                       aria-label="Edit permissions"
-                      className="rounded-md p-xs text-muted transition-colors hover:bg-surface-tint hover:text-ink"
+                      title={canEdit ? undefined : lockTitle}
+                      className="rounded-md p-xs text-muted transition-colors hover:bg-surface-tint hover:text-ink disabled:text-disabled disabled:hover:bg-transparent"
                     >
                       <Pencil size={16} />
                     </button>
                     <button
                       type="button"
-                      disabled={busy}
+                      disabled={busy || !canEdit}
                       onClick={() => run(() => removeMember(m.user.id))}
                       aria-label="Remove member"
-                      className="rounded-md p-xs text-muted transition-colors hover:bg-error-soft hover:text-error disabled:text-disabled"
+                      title={canEdit ? undefined : lockTitle}
+                      className="rounded-md p-xs text-muted transition-colors hover:bg-error-soft hover:text-error disabled:text-disabled disabled:hover:bg-transparent"
                     >
                       <Trash2 size={16} />
                     </button>
@@ -192,9 +198,10 @@ export default function TeamPage() {
                     </div>
                     <button
                       type="button"
-                      disabled={busy}
+                      disabled={busy || !canEdit}
                       onClick={() => run(() => cancelInvite(inv.id))}
-                      className="inline-flex h-9 items-center rounded-button px-md text-label-md text-muted transition-colors hover:text-error disabled:text-disabled"
+                      title={canEdit ? undefined : lockTitle}
+                      className="inline-flex h-9 items-center rounded-button px-md text-label-md text-muted transition-colors hover:text-error disabled:text-disabled disabled:hover:text-muted"
                     >
                       Cancel
                     </button>
@@ -246,17 +253,20 @@ export default function TeamPage() {
                 <button
                   type="button"
                   onClick={() => setRoleEditor(role)}
+                  disabled={!canEdit}
                   aria-label="Edit role"
-                  className="rounded-md p-xs text-muted transition-colors hover:bg-surface-tint hover:text-ink"
+                  title={canEdit ? undefined : lockTitle}
+                  className="rounded-md p-xs text-muted transition-colors hover:bg-surface-tint hover:text-ink disabled:text-disabled disabled:hover:bg-transparent"
                 >
                   <Pencil size={16} />
                 </button>
                 <button
                   type="button"
-                  disabled={busy}
+                  disabled={busy || !canEdit}
                   onClick={() => run(() => deleteRole(role.id))}
                   aria-label="Delete role"
-                  className="rounded-md p-xs text-muted transition-colors hover:bg-error-soft hover:text-error disabled:text-disabled"
+                  title={canEdit ? undefined : lockTitle}
+                  className="rounded-md p-xs text-muted transition-colors hover:bg-error-soft hover:text-error disabled:text-disabled disabled:hover:bg-transparent"
                 >
                   <Trash2 size={16} />
                 </button>

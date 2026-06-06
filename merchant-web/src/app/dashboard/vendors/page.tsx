@@ -19,6 +19,7 @@ import { Modal, ModalActions } from "@/shared/ui/modal";
 import { deleteVendor, listVendors } from "@/features/vendors/api";
 import { vendorInvoiceCount, vendorTxnCount, type Vendor } from "@/features/vendors/schema";
 import { MaybeLocked } from "@/features/auth/components/maybe-locked";
+import { useCanManage } from "@/features/auth/use-can";
 import { ListRowsSkeleton } from "@/shared/ui/skeleton";
 
 export default function VendorsPage() {
@@ -30,6 +31,7 @@ export default function VendorsPage() {
   const [search, setSearch] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<Vendor | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
+  const canEdit = useCanManage("vendors");
 
   const reload = useCallback(() => setNonce((n) => n + 1), []);
 
@@ -138,7 +140,7 @@ export default function VendorsPage() {
           </div>
         ) : (
           vendors.map((v) => (
-            <VendorRow key={v.id} vendor={v} onDelete={() => setDeleteTarget(v)} />
+            <VendorRow key={v.id} vendor={v} canEdit={canEdit} onDelete={() => setDeleteTarget(v)} />
           ))
         )}
       </div>
@@ -162,7 +164,15 @@ export default function VendorsPage() {
   );
 }
 
-function VendorRow({ vendor, onDelete }: { vendor: Vendor; onDelete: () => void }) {
+function VendorRow({
+  vendor,
+  canEdit,
+  onDelete,
+}: {
+  vendor: Vendor;
+  canEdit: boolean;
+  onDelete: () => void;
+}) {
   const txns = vendorTxnCount(vendor);
   const invoices = vendorInvoiceCount(vendor);
   return (
@@ -208,8 +218,10 @@ function VendorRow({ vendor, onDelete }: { vendor: Vendor; onDelete: () => void 
         <button
           type="button"
           onClick={onDelete}
+          disabled={!canEdit}
           aria-label="Delete"
-          className="inline-flex size-9 items-center justify-center rounded-button text-muted transition-colors hover:bg-error-soft hover:text-error"
+          title={canEdit ? undefined : "You don't have access. Ask the shop owner."}
+          className="inline-flex size-9 items-center justify-center rounded-button text-muted transition-colors hover:bg-error-soft hover:text-error disabled:text-disabled disabled:hover:bg-transparent"
         >
           <Trash2 size={16} />
         </button>
