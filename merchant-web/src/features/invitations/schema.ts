@@ -24,6 +24,17 @@ export const invitationSchema = z
     vendorId: z.number().nullish(),
     status: z.string(),
     displayName: z.string().nullish(),
+    message: z.string().nullish(),
+    teamRoleName: z.string().nullish(),
+    fromShopName: z.string().nullish(),
+    fromUser: z
+      .object({
+        id: z.number(),
+        name: z.string(),
+        email: z.string(),
+        avatarUrl: z.string().nullish(),
+      })
+      .nullish(),
     expiresAt: z.string().nullish(),
     createdAt: z.string().optional(),
   })

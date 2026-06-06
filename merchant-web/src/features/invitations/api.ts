@@ -22,6 +22,23 @@ export function listOutgoingInvitations(): Promise<Invitation[]> {
   );
 }
 
+/** Invitations addressed to the signed-in user (another shop invited them). */
+export function listIncomingInvitations(): Promise<Invitation[]> {
+  return fetch("/api/invitations/incoming", { cache: "no-store" }).then((r) =>
+    jsonOrThrow(r, (raw) => invitationListSchema.parse(raw).data, "Could not load invitations."),
+  );
+}
+
+export async function acceptInvitation(id: number): Promise<void> {
+  const res = await fetch(`/api/invitations/${id}/accept`, { method: "POST" });
+  if (!res.ok) await jsonOrThrow(res, () => null, "Could not accept the invitation.");
+}
+
+export async function declineInvitation(id: number): Promise<void> {
+  const res = await fetch(`/api/invitations/${id}/decline`, { method: "POST" });
+  if (!res.ok) await jsonOrThrow(res, () => null, "Could not decline the invitation.");
+}
+
 export type SendInviteInput = {
   toEmail: string;
   linkType: LinkType;
