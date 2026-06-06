@@ -337,7 +337,14 @@ this should be revisited.
   and `/legal/terms` (shared `LegalDoc`), linked from Settings → About and the
   register-form consent checkboxes.
 - [ ] **Theme & language are placeholders.** Shown as "Coming soon" rows
-  (parity with Flutter). Trigger: dark-mode / i18n support → make them live.
+  (parity with Flutter). Both need groundwork before they're real, so they
+  stay placeholders deliberately:
+  • **Dark theme** is blocked on a token refactor — `--color-white` doubles as
+    a surface (`bg-white` on inputs/cards) AND on-brand text (`text-white` on
+    buttons), so it can't be flipped for dark without a new `surface`/`on-brand`
+    token and migrating every `bg-white`/`text-white` usage. Do that refactor
+    first, then `[data-theme=dark]` overrides + a persisted toggle are trivial.
+  • **Language** needs an i18n framework + extracted strings (none today).
 - [x] **Shop operations settings.** Built: `/dashboard/shop` (storefront, logo/
   banner, hours, vacation mode, policies, publish), `/dashboard/team` (members,
   invites, roles, full permission matrix), `/dashboard/payouts` (status). Linked
