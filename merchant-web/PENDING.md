@@ -58,8 +58,9 @@ this should be revisited.
   for the remaining custom-field gaps (drag-reorder, icon picker).
 - [ ] **OCR / barcode-scan helpers** from the Flutter add/edit (camera scan to
   prefill SKU/barcode) are not ported — native-camera features.
-- [ ] **List filters aren't in the URL** (search/category/sort/page are local
-  state) so they don't deep-link or survive refresh. Move to query params.
+- [x] **List filters are in the URL.** Products search/category/sort/low/out/page
+  now read from and mirror to query params (Suspense-wrapped `useSearchParams` +
+  `router.replace`), so the view deep-links and survives refresh.
 
 ## Orders — deferred / known gaps
 
