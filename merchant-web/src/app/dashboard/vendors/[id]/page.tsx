@@ -25,6 +25,7 @@ import { BackLink } from "@/shared/ui/page-header";
 import { Monogram } from "@/shared/ui/monogram";
 import { Divider } from "@/shared/ui/divider";
 import { LedgerList } from "@/shared/ui/ledger-list";
+import { ContactChangesSection } from "@/shared/ui/contact-changes-section";
 import { RecordPaymentModal } from "@/features/payments/record-payment-modal";
 import { formatDateTime } from "@/shared/datetime";
 import { formatINR } from "@/shared/money";
@@ -241,6 +242,9 @@ export default function VendorDetailPage() {
           <p className="py-xl text-center text-body-sm text-subtle">No activity yet.</p>
         </>
       ) : null}
+
+      <Divider className="my-xl" />
+      <ContactChangesSection kind="vendors" id={id} />
 
       {payOpen ? (
         <RecordPaymentModal

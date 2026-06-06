@@ -24,6 +24,7 @@ import { BackLink } from "@/shared/ui/page-header";
 import { Monogram } from "@/shared/ui/monogram";
 import { Divider } from "@/shared/ui/divider";
 import { LedgerList } from "@/shared/ui/ledger-list";
+import { ContactChangesSection } from "@/shared/ui/contact-changes-section";
 import { formatDateTime } from "@/shared/datetime";
 import { formatINR } from "@/shared/money";
 import type { Ledger } from "@/shared/ledger";
@@ -264,6 +265,9 @@ export default function PartyDetailPage() {
           <p className="py-xl text-center text-body-sm text-subtle">No activity yet.</p>
         </>
       ) : null}
+
+      <Divider className="my-xl" />
+      <ContactChangesSection kind="parties" id={id} />
 
       {payOpen ? (
         <RecordPaymentModal
