@@ -16,11 +16,21 @@ import {
 export function PermissionMatrix({
   value,
   onChange,
+  ceiling,
 }: {
   value: Set<string>;
   onChange: (next: Set<string>) => void;
+  /**
+   * The rights the current actor is allowed to grant (their own, normalised).
+   * Rights outside it are disabled up front — the backend rejects
+   * `CANNOT_GRANT_BEYOND_OWN_RIGHTS` anyway. `null`/undefined = owner (no limit).
+   */
+  ceiling?: Set<string> | null;
 }) {
+  const canGrant = (right: string) => !ceiling || ceiling.has(right);
+
   function toggle(right: string, area: string, kind: "view" | "manage") {
+    if (!canGrant(right)) return;
     const next = new Set(value);
     const v = viewRight(area as never);
     const m = manageRight(area as never);
@@ -55,13 +65,21 @@ export function PermissionMatrix({
           <div key={area} className="flex items-center gap-md border-b border-hairline py-sm">
             <span className="flex-1 text-body-md text-ink">{AREA_LABELS[area]}</span>
             <span className="flex w-14 justify-center">
-              <Check checked={value.has(v)} onChange={() => toggle(v, area, "view")} />
+              <Check
+                checked={value.has(v)}
+                disabled={!canGrant(v)}
+                onChange={() => toggle(v, area, "view")}
+              />
             </span>
             <span className="flex w-14 justify-center">
               {viewOnly ? (
                 <span className="text-body-sm text-subtle">—</span>
               ) : (
-                <Check checked={value.has(m)} onChange={() => toggle(m, area, "manage")} />
+                <Check
+                  checked={value.has(m)}
+                  disabled={!canGrant(m)}
+                  onChange={() => toggle(m, area, "manage")}
+                />
               )}
             </span>
           </div>
@@ -74,16 +92,20 @@ export function PermissionMatrix({
 function Check({
   checked,
   onChange,
+  disabled,
 }: {
   checked: boolean;
   onChange: () => void;
+  disabled?: boolean;
 }) {
   return (
     <input
       type="checkbox"
       checked={checked}
+      disabled={disabled}
       onChange={onChange}
-      className="size-4 cursor-pointer accent-brand"
+      title={disabled ? "You can't grant access you don't have yourself." : undefined}
+      className="size-4 cursor-pointer accent-brand disabled:cursor-not-allowed disabled:opacity-40"
     />
   );
 }

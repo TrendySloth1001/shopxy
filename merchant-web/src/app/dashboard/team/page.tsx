@@ -20,7 +20,7 @@ import {
 import type { Invite, Member, Role } from "@/features/team/schema";
 import { normalizeRights, summariseRights } from "@/features/team/permissions";
 import { PermissionMatrix } from "@/features/team/permission-matrix";
-import { useCanManage } from "@/features/auth/use-can";
+import { useCanManage, useGrantCeiling } from "@/features/auth/use-can";
 import { ListRowsSkeleton } from "@/shared/ui/skeleton";
 
 export default function TeamPage() {
@@ -342,6 +342,7 @@ function InviteModal({
   const [roleName, setRoleName] = useState("");
   const [message, setMessage] = useState("");
   const [perms, setPerms] = useState<Set<string>>(new Set());
+  const ceiling = useGrantCeiling();
 
   function applyRole(name: string) {
     setRoleName(name);
@@ -382,7 +383,7 @@ function InviteModal({
       </label>
       <div className="flex flex-col gap-xs">
         <span className="text-label-md text-muted">Access</span>
-        <PermissionMatrix value={perms} onChange={setPerms} />
+        <PermissionMatrix value={perms} onChange={setPerms} ceiling={ceiling} />
       </div>
       <label className="flex flex-col gap-xs">
         <span className="text-label-md text-muted">Message (optional)</span>
@@ -425,6 +426,7 @@ function MemberModal({
 }) {
   const [roleName, setRoleName] = useState(member.roleName ?? "Staff");
   const [perms, setPerms] = useState<Set<string>>(new Set(member.permissions));
+  const ceiling = useGrantCeiling();
   return (
     <Modal title={`Edit ${member.user.name}`} onClose={onClose} wide>
       <label className="flex flex-col gap-xs">
@@ -437,7 +439,7 @@ function MemberModal({
       </label>
       <div className="flex flex-col gap-xs">
         <span className="text-label-md text-muted">Access</span>
-        <PermissionMatrix value={perms} onChange={setPerms} />
+        <PermissionMatrix value={perms} onChange={setPerms} ceiling={ceiling} />
       </div>
       <ModalActions
         busy={busy}
@@ -463,6 +465,7 @@ function RoleModal({
 }) {
   const [name, setName] = useState(role?.name ?? "");
   const [perms, setPerms] = useState<Set<string>>(new Set(role?.permissions ?? []));
+  const ceiling = useGrantCeiling();
   return (
     <Modal title={role ? `Edit ${role.name}` : "New role"} onClose={onClose} wide>
       <label className="flex flex-col gap-xs">
@@ -477,7 +480,7 @@ function RoleModal({
       </label>
       <div className="flex flex-col gap-xs">
         <span className="text-label-md text-muted">Access</span>
-        <PermissionMatrix value={perms} onChange={setPerms} />
+        <PermissionMatrix value={perms} onChange={setPerms} ceiling={ceiling} />
       </div>
       <ModalActions
         busy={busy}
