@@ -32,6 +32,9 @@ export default function ChallanDetailPage() {
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [convertOpen, setConvertOpen] = useState(false);
+  const [convertDiscount, setConvertDiscount] = useState("");
+  const [convertNote, setConvertNote] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -70,8 +73,12 @@ export default function ChallanDetailPage() {
   async function onConvert() {
     setBusy(true);
     setActionError(null);
+    const discountNum = Number(convertDiscount);
     try {
-      const created = await convertChallan(id);
+      const created = await convertChallan(id, {
+        discount: convertDiscount.trim() !== "" && Number.isFinite(discountNum) ? discountNum : undefined,
+        note: convertNote.trim() || undefined,
+      });
       router.push(`/dashboard/invoices/${created.id}`);
       router.refresh();
     } catch (e) {
@@ -166,13 +173,50 @@ export default function ChallanDetailPage() {
           </button>
           <button
             type="button"
-            onClick={onConvert}
+            onClick={() => {
+              setActionError(null);
+              setConvertOpen(true);
+            }}
             disabled={busy}
             className="inline-flex h-11 items-center gap-sm rounded-button bg-brand px-lg text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:bg-disabled"
           >
-            <FileUp size={16} /> {busy ? "Working…" : "Convert to invoice"}
+            <FileUp size={16} /> Convert to invoice
           </button>
         </div>
+      ) : null}
+
+      {convertOpen ? (
+        <Modal title="Convert to invoice" onClose={() => setConvertOpen(false)}>
+          <p className="text-body-md text-muted">
+            Creates a draft SALE invoice from this challan&rsquo;s items and party. You can edit
+            everything before confirming.
+          </p>
+          <label className="flex flex-col gap-xs">
+            <span className="text-label-md text-muted">Header discount (₹, optional)</span>
+            <input
+              value={convertDiscount}
+              onChange={(e) => setConvertDiscount(e.target.value)}
+              inputMode="decimal"
+              placeholder="0.00"
+              className="h-10 rounded-input border border-hairline bg-white px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+            />
+          </label>
+          <label className="flex flex-col gap-xs">
+            <span className="text-label-md text-muted">Note (optional)</span>
+            <textarea
+              value={convertNote}
+              onChange={(e) => setConvertNote(e.target.value)}
+              rows={2}
+              className="rounded-input border border-hairline bg-white px-md py-sm text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+            />
+          </label>
+          <ModalActions
+            busy={busy}
+            confirmLabel="Create draft invoice"
+            onCancel={() => setConvertOpen(false)}
+            onConfirm={onConvert}
+          />
+        </Modal>
       ) : null}
 
       {confirmCancel ? (
