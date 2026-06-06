@@ -12,9 +12,13 @@ this should be revisited.
 
 - [ ] **Home / dashboard not built yet.** Only auth + `/account` exist. The
   customer home (shops, invitations, per-shop invoice ledgers) is unbuilt.
-- [ ] **Notifications / invitations.** The customer app surfaces pending
-  invitations and a notification bell. Trigger: notifications feature on web →
-  add the bell + a pending-invite surface.
+- [x] **Notifications.** Built — a header bell with a live unread badge
+  (`NotificationsProvider` polls `/notifications/unread-count` every 60s + on
+  focus, only while signed in) and a `/dashboard/notifications` inbox page
+  (per-kind icons, relative time, mark-read on tap, mark-all-read, paginated).
+  Mirrors merchant-web. NOTE: a dedicated pending-invitations accept/decline
+  surface is still not built on customer-web (invite notifications link to
+  `/dashboard` for now) — see invitations follow-up.
 
 ## Layout / shell debt
 

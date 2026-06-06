@@ -2,12 +2,15 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { Bell } from "lucide-react";
 import { useAuth } from "../auth-context";
+import { useNotifications } from "@/features/notifications/notifications-context";
 import { Avatar } from "./avatar";
 
 /** Top bar for signed-in pages. Hairline underline, no elevation. */
 export function AppHeader() {
   const { user, logout } = useAuth();
+  const { unread } = useNotifications();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -29,6 +32,18 @@ export function AppHeader() {
           <HeaderLink href="/account" active={pathname === "/account"}>
             Account
           </HeaderLink>
+          <Link
+            href="/dashboard/notifications"
+            aria-label={unread > 0 ? `Notifications (${unread} unread)` : "Notifications"}
+            className="relative rounded-full p-xs text-muted transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+          >
+            <Bell size={20} />
+            {unread > 0 ? (
+              <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-error px-xs text-label-md leading-none text-white ring-2 ring-canvas">
+                {unread > 99 ? "99+" : unread}
+              </span>
+            ) : null}
+          </Link>
           <Link
             href="/account"
             aria-label="Account"

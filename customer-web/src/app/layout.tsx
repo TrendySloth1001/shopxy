@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { AuthProvider } from "@/features/auth/auth-context";
+import { NotificationsProvider } from "@/features/notifications/notifications-context";
 import "./globals.css";
 
 // Inter — same typeface as the Flutter customer app. Exposed as the
@@ -24,7 +25,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} h-full`}>
       <body className="min-h-full bg-canvas text-ink antialiased">
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <NotificationsProvider>{children}</NotificationsProvider>
+        </AuthProvider>
       </body>
     </html>
   );
