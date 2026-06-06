@@ -17,6 +17,7 @@ import {
 } from "@/features/coupons/format";
 import type { Coupon } from "@/features/coupons/schema";
 import { MaybeLocked } from "@/features/auth/components/maybe-locked";
+import { useCanManage } from "@/features/auth/use-can";
 import { ListRowsSkeleton } from "@/shared/ui/skeleton";
 
 export default function CouponsPage() {
@@ -27,6 +28,7 @@ export default function CouponsPage() {
   const [deactivateTarget, setDeactivateTarget] = useState<Coupon | null>(null);
   const [deactivateBusy, setDeactivateBusy] = useState(false);
   const [redeemTarget, setRedeemTarget] = useState<Coupon | null>(null);
+  const canEdit = useCanManage("marketing");
 
   const reload = useCallback(() => setNonce((n) => n + 1), []);
 
@@ -118,6 +120,7 @@ export default function CouponsPage() {
             <CouponRow
               key={c.id}
               coupon={c}
+              canEdit={canEdit}
               onDeactivate={() => setDeactivateTarget(c)}
               onViewRedemptions={() => setRedeemTarget(c)}
             />
@@ -205,10 +208,12 @@ function RedemptionsModal({ coupon, onClose }: { coupon: Coupon; onClose: () => 
 
 function CouponRow({
   coupon,
+  canEdit,
   onDeactivate,
   onViewRedemptions,
 }: {
   coupon: Coupon;
+  canEdit: boolean;
   onDeactivate: () => void;
   onViewRedemptions: () => void;
 }) {
@@ -262,8 +267,10 @@ function CouponRow({
         <button
           type="button"
           onClick={onDeactivate}
+          disabled={!canEdit}
           aria-label="Deactivate"
-          className="inline-flex size-9 shrink-0 items-center justify-center rounded-button text-muted transition-colors hover:bg-error-soft hover:text-error"
+          title={canEdit ? "Deactivate" : "You don't have access. Ask the shop owner."}
+          className="inline-flex size-9 shrink-0 items-center justify-center rounded-button text-muted transition-colors hover:bg-error-soft hover:text-error disabled:text-disabled disabled:hover:bg-transparent"
         >
           <Power size={18} />
         </button>

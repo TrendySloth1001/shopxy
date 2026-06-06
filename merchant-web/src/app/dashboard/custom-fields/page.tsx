@@ -25,6 +25,7 @@ import {
   type Template,
 } from "@/features/custom-fields/schema";
 import { CardsSkeleton } from "@/shared/ui/skeleton";
+import { useCanManage } from "@/features/auth/use-can";
 
 type FieldEditor =
   | { mode: "create"; sectionId: number | null }
@@ -43,6 +44,7 @@ export default function CustomFieldsPage() {
 
   const [fieldEditor, setFieldEditor] = useState<FieldEditor>(null);
   const [sectionEditor, setSectionEditor] = useState<SectionEditor>(null);
+  const canEdit = useCanManage("products");
 
   const reload = useCallback(() => setNonce((n) => n + 1), []);
 
@@ -236,6 +238,7 @@ export default function CustomFieldsPage() {
               onDeleteField={onDeleteField}
               onEditSection={() => setSectionEditor({ mode: "edit", section: s })}
               onDeleteSection={() => onDeleteSection(s.id)}
+              canEdit={canEdit}
               busy={busy}
             />
           ))}
@@ -246,6 +249,7 @@ export default function CustomFieldsPage() {
               onAddField={() => setFieldEditor({ mode: "create", sectionId: null })}
               onEditField={(f) => setFieldEditor({ mode: "edit", field: f })}
               onDeleteField={onDeleteField}
+              canEdit={canEdit}
               busy={busy}
             />
           ) : null}
@@ -282,6 +286,7 @@ function FieldGroup({
   onDeleteField,
   onEditSection,
   onDeleteSection,
+  canEdit,
   busy,
 }: {
   title: string;
@@ -291,8 +296,10 @@ function FieldGroup({
   onDeleteField: (id: number) => void;
   onEditSection?: () => void;
   onDeleteSection?: () => void;
+  canEdit: boolean;
   busy: boolean;
 }) {
+  const lockTitle = "You don't have access. Ask the shop owner.";
   return (
     <section>
       <div className="flex items-center justify-between gap-md">
@@ -301,7 +308,9 @@ function FieldGroup({
           <button
             type="button"
             onClick={onAddField}
-            className="inline-flex h-8 items-center gap-xs rounded-button px-sm text-label-md text-muted transition-colors hover:bg-surface-tint hover:text-ink"
+            disabled={!canEdit}
+            title={canEdit ? undefined : lockTitle}
+            className="inline-flex h-8 items-center gap-xs rounded-button px-sm text-label-md text-muted transition-colors hover:bg-surface-tint hover:text-ink disabled:text-disabled disabled:hover:bg-transparent"
           >
             <Plus size={14} /> Field
           </button>
@@ -309,8 +318,10 @@ function FieldGroup({
             <button
               type="button"
               onClick={onEditSection}
+              disabled={!canEdit}
               aria-label="Rename section"
-              className="rounded-md p-xs text-muted transition-colors hover:bg-surface-tint hover:text-ink"
+              title={canEdit ? undefined : lockTitle}
+              className="rounded-md p-xs text-muted transition-colors hover:bg-surface-tint hover:text-ink disabled:text-disabled disabled:hover:bg-transparent"
             >
               <Pencil size={14} />
             </button>
@@ -319,9 +330,10 @@ function FieldGroup({
             <button
               type="button"
               onClick={onDeleteSection}
-              disabled={busy}
+              disabled={busy || !canEdit}
               aria-label="Delete section"
-              className="rounded-md p-xs text-muted transition-colors hover:bg-error-soft hover:text-error disabled:text-disabled"
+              title={canEdit ? undefined : lockTitle}
+              className="rounded-md p-xs text-muted transition-colors hover:bg-error-soft hover:text-error disabled:text-disabled disabled:hover:bg-transparent"
             >
               <Trash2 size={14} />
             </button>
@@ -355,17 +367,20 @@ function FieldGroup({
               <button
                 type="button"
                 onClick={() => onEditField(f)}
+                disabled={!canEdit}
                 aria-label="Edit field"
-                className="rounded-md p-xs text-muted transition-colors hover:bg-surface-tint hover:text-ink"
+                title={canEdit ? undefined : lockTitle}
+                className="rounded-md p-xs text-muted transition-colors hover:bg-surface-tint hover:text-ink disabled:text-disabled disabled:hover:bg-transparent"
               >
                 <Pencil size={16} />
               </button>
               <button
                 type="button"
                 onClick={() => onDeleteField(f.id)}
-                disabled={busy}
+                disabled={busy || !canEdit}
                 aria-label="Delete field"
-                className="rounded-md p-xs text-muted transition-colors hover:bg-error-soft hover:text-error disabled:text-disabled"
+                title={canEdit ? undefined : lockTitle}
+                className="rounded-md p-xs text-muted transition-colors hover:bg-error-soft hover:text-error disabled:text-disabled disabled:hover:bg-transparent"
               >
                 <Trash2 size={16} />
               </button>

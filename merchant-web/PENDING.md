@@ -78,7 +78,7 @@ this should be revisited.
   screen (`/dashboard/invoices/:id`) now exists, so the confirmed-order CTA opens it.
 - [x] **`orders:view` no-access state.** Resolved by the same `SectionGuard` —
   the orders area now renders `NoAccessView` for members without `orders:view`.
-- [ ] **Row-level write actions not yet `MaybeLocked`.** Section + create-button
+- [x] **Row-level write actions are now gated.** Section + create-button
   (`/new`) gating is done via `SectionGuard` / `MaybeLocked`; per-row Edit/Delete
   and other in-list write controls still rely on the backend 403 rather than a
   client-side lock. Trigger: extend `MaybeLocked` to row actions for parity with

@@ -15,6 +15,7 @@ import { money } from "@/features/products/format";
 import { ProductThumb } from "@/features/products/components/product-thumb";
 import { StockBadge } from "@/features/products/components/stock-badge";
 import { MaybeLocked } from "@/features/auth/components/maybe-locked";
+import { useCanManage } from "@/features/auth/use-can";
 
 const PAGE_SIZE = 20;
 
@@ -44,6 +45,7 @@ function ProductsListInner() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const canEdit = useCanManage("products");
 
   // Initialise filter state from the URL so the view deep-links and survives refresh.
   const [searchInput, setSearchInput] = useState(() => searchParams.get("q") ?? "");
@@ -266,6 +268,7 @@ function ProductsListInner() {
               key={p.id}
               product={p}
               categoryName={categoryName(p)}
+              canEdit={canEdit}
               onTogglePublish={() => togglePublish(p)}
             />
           ))}
@@ -344,10 +347,12 @@ function PagerButton({
 function ProductRow({
   product,
   categoryName,
+  canEdit,
   onTogglePublish,
 }: {
   product: Product;
   categoryName: string;
+  canEdit: boolean;
   onTogglePublish: () => void;
 }) {
   const showStrike = product.mrp > product.sellingPrice;
@@ -381,9 +386,16 @@ function ProductRow({
       <button
         type="button"
         onClick={onTogglePublish}
+        disabled={!canEdit}
         aria-pressed={product.isPublished}
-        title={product.isPublished ? "Published — click to unpublish" : "Unpublished — click to publish"}
-        className={`shrink-0 rounded-full px-sm py-px text-body-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft ${
+        title={
+          canEdit
+            ? product.isPublished
+              ? "Published — click to unpublish"
+              : "Unpublished — click to publish"
+            : "You don't have access. Ask the shop owner."
+        }
+        className={`shrink-0 rounded-full px-sm py-px text-body-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:text-disabled disabled:hover:bg-transparent ${
           product.isPublished
             ? "bg-brand-soft text-brand-strong"
             : "bg-surface-tint text-muted hover:text-ink"
