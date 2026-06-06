@@ -1,4 +1,11 @@
-import { couponListSchema, type Coupon, type DiscountType } from "./schema";
+import {
+  couponListSchema,
+  couponRedemptionListSchema,
+  couponSchema,
+  type Coupon,
+  type CouponRedemption,
+  type DiscountType,
+} from "./schema";
 
 async function jsonOrThrow<T>(res: Response, parse: (raw: unknown) => T, fallback: string): Promise<T> {
   if (!res.ok) {
@@ -42,16 +49,17 @@ export function listCoupons(): Promise<Coupon[]> {
   );
 }
 
-/**
- * The backend exposes no single-coupon GET on the admin surface, so the editor
- * resolves an existing coupon by reading the (shop-scoped, small) list — the
- * same source the Flutter app passes into its editor sheet.
- */
-export async function getCoupon(id: number): Promise<Coupon> {
-  const rows = await listCoupons();
-  const found = rows.find((c) => c.id === id);
-  if (!found) throw new Error("Coupon not found.");
-  return found;
+export function getCoupon(id: number): Promise<Coupon> {
+  return fetch(`/api/coupons/${id}`, { cache: "no-store" }).then((r) =>
+    jsonOrThrow(r, (raw) => couponSchema.parse(raw), "Could not load the coupon."),
+  );
+}
+
+/** Recent redemptions for a coupon (admin analytics). */
+export function listCouponRedemptions(id: number): Promise<CouponRedemption[]> {
+  return fetch(`/api/coupons/${id}/redemptions`, { cache: "no-store" }).then((r) =>
+    jsonOrThrow(r, (raw) => couponRedemptionListSchema.parse(raw).data, "Could not load redemptions."),
+  );
 }
 
 export function createCoupon(input: CouponWrite): Promise<{ id: number }> {

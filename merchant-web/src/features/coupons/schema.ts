@@ -48,3 +48,22 @@ export const couponListSchema = z.object({
     .nullish()
     .transform((v) => v ?? []),
 });
+
+/** A single redemption row from `/me/coupons-admin/:id/redemptions`. */
+export const couponRedemptionSchema = z.object({
+  id: z.number(),
+  discountAmount: z.coerce.number().default(0),
+  redeemedAt: z.string(),
+  orderId: z.number().nullish(),
+  user: z
+    .object({ id: z.number(), name: z.string(), email: z.string() })
+    .nullish(),
+});
+export type CouponRedemption = z.infer<typeof couponRedemptionSchema>;
+
+export const couponRedemptionListSchema = z.object({
+  data: z
+    .array(couponRedemptionSchema)
+    .nullish()
+    .transform((v) => v ?? []),
+});

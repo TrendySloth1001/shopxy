@@ -79,6 +79,44 @@ export class CouponsController {
     res.json({ data });
   }
 
+  async getMerchant(req: Request, res: Response): Promise<void> {
+    const shopId = req.user?.shopId;
+    if (!shopId) {
+      res.status(403).json({ error: 'This account has no shop linked.' });
+      return;
+    }
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id < 1) {
+      res.status(400).json({ error: 'Invalid id' });
+      return;
+    }
+    const coupon = await couponsService.getForShop(shopId, id);
+    if (!coupon) {
+      res.status(404).json({ error: 'Coupon not found' });
+      return;
+    }
+    res.json(coupon);
+  }
+
+  async redemptionsMerchant(req: Request, res: Response): Promise<void> {
+    const shopId = req.user?.shopId;
+    if (!shopId) {
+      res.status(403).json({ error: 'This account has no shop linked.' });
+      return;
+    }
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id < 1) {
+      res.status(400).json({ error: 'Invalid id' });
+      return;
+    }
+    const rows = await couponsService.redemptionsForShop(shopId, id);
+    if (rows === null) {
+      res.status(404).json({ error: 'Coupon not found' });
+      return;
+    }
+    res.json({ data: rows });
+  }
+
   async createMerchant(req: Request, res: Response): Promise<void> {
     const shopId = req.user?.shopId;
     if (!shopId) {

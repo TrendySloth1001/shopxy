@@ -502,6 +502,68 @@ export class CouponsService {
     }));
   }
 
+  /** Single shop-scoped coupon (admin surface), or null if not this shop's. */
+  async getForShop(shopId: number, id: number) {
+    const r = await prisma.coupon.findFirst({
+      where: { id, shopId },
+      select: {
+        id: true,
+        code: true,
+        title: true,
+        description: true,
+        discountType: true,
+        discountValue: true,
+        maxDiscount: true,
+        minOrderAmount: true,
+        validFrom: true,
+        validUntil: true,
+        perUserLimit: true,
+        totalCap: true,
+        totalRedemptions: true,
+        isPublic: true,
+        firstOrderOnly: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+    if (!r) return null;
+    return {
+      ...r,
+      discountValue: Number(r.discountValue),
+      maxDiscount: r.maxDiscount != null ? Number(r.maxDiscount) : null,
+      minOrderAmount: Number(r.minOrderAmount),
+    };
+  }
+
+  /** Recent redemptions for a shop's coupon. Null if the coupon isn't theirs. */
+  async redemptionsForShop(shopId: number, couponId: number, limit = 50) {
+    const owns = await prisma.coupon.findFirst({
+      where: { id: couponId, shopId },
+      select: { id: true },
+    });
+    if (!owns) return null;
+    const rows = await prisma.couponRedemption.findMany({
+      where: { couponId },
+      orderBy: { redeemedAt: 'desc' },
+      take: Math.min(Math.max(limit, 1), 200),
+      select: {
+        id: true,
+        discountAmount: true,
+        redeemedAt: true,
+        customerOrderId: true,
+        user: { select: { id: true, name: true, email: true } },
+      },
+    });
+    return rows.map((r) => ({
+      id: r.id,
+      discountAmount: Number(r.discountAmount),
+      redeemedAt: r.redeemedAt,
+      orderId: r.customerOrderId,
+      user: r.user,
+    }));
+  }
+
   async createForShop(
     shopId: number,
     input: CouponWriteInput,
