@@ -330,10 +330,9 @@ this should be revisited.
 
 ## Profile & Settings — deferred / known gaps
 
-- [ ] **Legal pages (Privacy / Terms).** Flutter Settings → About links to a
-  `LegalPage` (privacy + terms copy). The web Settings About section currently
-  shows only the app version. Trigger: legal content lands → add `/legal/privacy`
-  + `/legal/terms` and About rows linking to them (register/consent can reuse).
+- [x] **Legal pages (Privacy / Terms).** Built public pages at `/legal/privacy`
+  and `/legal/terms` (shared `LegalDoc`), linked from Settings → About and the
+  register-form consent checkboxes.
 - [ ] **Theme & language are placeholders.** Shown as "Coming soon" rows
   (parity with Flutter). Trigger: dark-mode / i18n support → make them live.
 - [x] **Shop operations settings.** Built: `/dashboard/shop` (storefront, logo/
