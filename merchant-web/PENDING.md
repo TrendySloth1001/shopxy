@@ -25,9 +25,9 @@ this should be revisited.
 - [x] **Dashboard pending-invite callout.** Built — `PendingInviteCallout` in
   `dashboard-home.tsx` fetches incoming invitations and, when any are PENDING,
   shows a brand callout linking to the notifications Invites tab.
-- [ ] **Payout-setup nudge.** Flutter nudges Razorpay-Route payout onboarding
-  once per session (behind ROUTE_SPLIT_ENABLED). Trigger: payouts / linked-account
-  feature on web → add the nudge to the dashboard.
+- [x] **Payout-setup nudge.** Built — dismissible dashboard nudge (`PayoutNudge`)
+  shown once per session when the settlement account is not ACTIVE, linking to
+  `/dashboard/payouts`.
 - [x] **`dashboard:view` no-access state.** Resolved — `SectionGuard`
   (`src/features/auth/components/section-guard.tsx`) maps the route to its
   permission area and renders `NoAccessView` when the member can't view it.
