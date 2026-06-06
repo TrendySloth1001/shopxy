@@ -99,6 +99,38 @@ export async function confirmOrder(
   });
 }
 
+export const SHIPPING_MILESTONES = [
+  "PACKED",
+  "SHIPPED",
+  "OUT_FOR_DELIVERY",
+  "DELIVERED",
+  "RETURNED",
+] as const;
+export type ShippingMilestone = (typeof SHIPPING_MILESTONES)[number];
+
+export const SHIPPING_MILESTONE_LABELS: Record<ShippingMilestone, string> = {
+  PACKED: "Packed",
+  SHIPPED: "Shipped",
+  OUT_FOR_DELIVERY: "Out for delivery",
+  DELIVERED: "Delivered",
+  RETURNED: "Returned",
+};
+
+/** Push a shipping milestone (PACKED…RETURNED) with optional courier/awb/eta. */
+export async function addShippingEvent(
+  id: number,
+  input: { type: ShippingMilestone; courier?: string; awb?: string; eta?: string; note?: string },
+): Promise<void> {
+  const res = await fetch(`/api/orders/${id}/events`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok && res.status !== 204) {
+    await jsonOrThrow(res, "Could not update shipping.");
+  }
+}
+
 export async function rejectOrder(id: number, note?: string): Promise<void> {
   const res = await fetch(`/api/orders/${id}/reject`, {
     method: "POST",

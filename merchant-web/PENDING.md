@@ -63,12 +63,12 @@ this should be revisited.
 
 ## Orders — deferred / known gaps
 
-- [ ] **Restock-from-order flow.** Flutter lets the merchant tap a short line on a
+- [x] **Restock-from-order flow.** Flutter lets the merchant tap a short line on a
   pending order to open a stock-in sheet, then confirm the draft inline so the
   shortfall clears without leaving the order. On web the shortfall banner + per-
   line stock chips are informational only. Trigger: stock-adjustments / stock-in
   + invoices web features land → wire the restock action on the detail page.
-- [ ] **Shipping events are read-only.** The order detail renders the event
+- [x] **Shipping events: Update-shipping UI added.** The order detail renders the event
   timeline (`GET /orders/:id` → `events`), but there's no UI to *post* a
   milestone. Backend supports `POST /orders/:id/events`
   (PACKED/SHIPPED/OUT_FOR_DELIVERY/DELIVERED/RETURNED + courier/awb/eta). Trigger:
