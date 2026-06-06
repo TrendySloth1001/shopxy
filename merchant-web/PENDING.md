@@ -370,12 +370,16 @@ this should be revisited.
 
 ## Quality / infra debt (applies to both web apps)
 
-- [ ] **No automated tests yet.** Add a vitest suite: auth schemas, `extractError`,
-  the BFF route handlers, and the dashboard stats schema.
-- [ ] **Enforcement tooling not wired.** Strict `tsconfig` flags
-  (`noUncheckedIndexedAccess`, etc.), lint rules banning raw hex / arbitrary
-  Tailwind values / inline numeric styles, CI (typecheck + lint + test + build),
-  commitlint + husky. The conventions in CLAUDE.md are followed but not gated.
+- [x] **Vitest suite (merchant-web).** Added — vitest (node env) + `npm test`,
+  covering capabilities, team permissions, money/relative-time, and the auth
+  schema. (customer-web still has none — out of scope for now.)
+- [x] **CI gate (merchant-web).** Added a `merchant-web` job to
+  `.github/workflows/ci.yml` running `lint → typecheck → test → build` on push/PR
+  (with a build-time `API_BASE_URL` placeholder), plus a `typecheck` npm script.
+- [ ] **Strict tsconfig + style lint rules (remaining).** `noUncheckedIndexedAccess`
+  surfaces ~33 existing errors → needs a remediation pass before enabling. Lint
+  rules banning raw hex / arbitrary Tailwind values and commitlint + husky are
+  still not wired. The conventions in CLAUDE.md are followed but not all gated.
 
 ## Cross-app
 
