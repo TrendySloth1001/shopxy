@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowUp, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { Divider } from "@/shared/ui/divider";
 import { Modal, ModalActions } from "@/shared/ui/modal";
 import { DateTimeField, SelectField, TextField, ToggleField } from "@/shared/ui/form";
@@ -12,6 +12,7 @@ import {
   deleteCarousel,
   listSlides,
   updateCarousel,
+  updateSlide,
   type CarouselUpdate,
 } from "@/features/carousels/api";
 import {
@@ -77,6 +78,35 @@ export default function CarouselEditorPage() {
       setError(e instanceof Error ? e.message : "Could not save the carousel.");
     } finally {
       setSavingMeta(false);
+    }
+  }
+
+  const [reordering, setReordering] = useState(false);
+
+  /** Move a slide up/down: renumber sortOrder by position and persist the
+   *  ones that changed (handles legacy all-zero sortOrders cleanly). */
+  async function moveSlide(index: number, dir: -1 | 1) {
+    const j = index + dir;
+    if (reordering || j < 0 || j >= slides.length) return;
+    const reordered = [...slides];
+    const [moved] = reordered.splice(index, 1);
+    reordered.splice(j, 0, moved);
+    const renumbered = reordered.map((s, i) => ({ ...s, sortOrder: i }));
+    const changed = renumbered.filter((s) => {
+      const prev = slides.find((o) => o.id === s.id);
+      return prev && prev.sortOrder !== s.sortOrder;
+    });
+    const prevSlides = slides;
+    setReordering(true);
+    setSlides(renumbered); // optimistic
+    setError(null);
+    try {
+      await Promise.all(changed.map((s) => updateSlide(carouselId, s.id, { sortOrder: s.sortOrder })));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not reorder slides.");
+      setSlides(prevSlides); // revert
+    } finally {
+      setReordering(false);
     }
   }
 
@@ -150,8 +180,17 @@ export default function CarouselEditorPage() {
             No slides yet — tap &ldquo;Add slide&rdquo; to design your first one.
           </p>
         ) : (
-          slides.map((s) => (
-            <SlideRow key={s.id} slide={s} carouselId={carouselId} />
+          slides.map((s, i) => (
+            <SlideRow
+              key={s.id}
+              slide={s}
+              carouselId={carouselId}
+              canUp={i > 0}
+              canDown={i < slides.length - 1}
+              busy={reordering}
+              onUp={() => moveSlide(i, -1)}
+              onDown={() => moveSlide(i, 1)}
+            />
           ))
         )}
       </div>
@@ -243,21 +282,59 @@ function MetaCard({
   );
 }
 
-function SlideRow({ slide, carouselId }: { slide: Slide; carouselId: number }) {
+function SlideRow({
+  slide,
+  carouselId,
+  canUp,
+  canDown,
+  busy,
+  onUp,
+  onDown,
+}: {
+  slide: Slide;
+  carouselId: number;
+  canUp: boolean;
+  canDown: boolean;
+  busy: boolean;
+  onUp: () => void;
+  onDown: () => void;
+}) {
   return (
-    <Link
-      href={`/dashboard/carousels/${carouselId}/slides/${slide.id}`}
-      className="flex w-full items-center gap-md border-b border-hairline py-sm text-left transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
-    >
-      <ProductThumb url={slide.imageUrl} alt={slide.title} size={56} />
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-body-md text-ink">{slide.title}</span>
-        <span className="mt-px flex items-center gap-sm text-body-sm text-muted">
-          {TEMPLATE_LABELS[slide.template]}
-          {!slide.isActive ? <span className="text-subtle">· Off</span> : null}
+    <div className="flex items-center gap-sm border-b border-hairline">
+      <div className="flex flex-col">
+        <button
+          type="button"
+          onClick={onUp}
+          disabled={!canUp || busy}
+          aria-label="Move up"
+          className="text-muted transition-colors hover:text-ink disabled:opacity-30"
+        >
+          <ArrowUp size={16} />
+        </button>
+        <button
+          type="button"
+          onClick={onDown}
+          disabled={!canDown || busy}
+          aria-label="Move down"
+          className="text-muted transition-colors hover:text-ink disabled:opacity-30"
+        >
+          <ArrowDown size={16} />
+        </button>
+      </div>
+      <Link
+        href={`/dashboard/carousels/${carouselId}/slides/${slide.id}`}
+        className="flex min-w-0 flex-1 items-center gap-md py-sm text-left transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+      >
+        <ProductThumb url={slide.imageUrl} alt={slide.title} size={56} />
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-body-md text-ink">{slide.title}</span>
+          <span className="mt-px flex items-center gap-sm text-body-sm text-muted">
+            {TEMPLATE_LABELS[slide.template]}
+            {!slide.isActive ? <span className="text-subtle">· Off</span> : null}
+          </span>
         </span>
-      </span>
-      <ChevronRight size={18} className="shrink-0 text-subtle" />
-    </Link>
+        <ChevronRight size={18} className="shrink-0 text-subtle" />
+      </Link>
+    </div>
   );
 }

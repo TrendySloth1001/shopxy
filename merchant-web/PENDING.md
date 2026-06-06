@@ -205,8 +205,10 @@ this should be revisited.
 - [x] **Promotions.** `/dashboard/promotions` — spend + daily-cap bar cards with
   status/impressions + create modal (product picker, ₹ budget/daily/CPM →
   paise, schedule). BFF `api/promotions` (+ `[id]`) → `/me/promotions`.
-- [ ] **Carousel slide drag-reorder.** Slides order by a numeric `sortOrder`
-  field the merchant types; no drag handles. Trigger: polish pass.
+- [x] **Carousel slide reorder.** The carousel detail slide list has up/down
+  reorder buttons that renumber `sortOrder` by position and persist the changed
+  slides (handles legacy all-zero sortOrders). (Full drag-and-drop deferred —
+  up/down is robust and accessible.)
 - [x] **Slide "discounted products" (banner-products).** The slide editor (edit
   mode) has a "Discounted products" section: pick products, set a PERCENT/AMOUNT
   offer, reorder, remove, save. Wired to `GET`/`PUT /me/banners/:slideId/products`
