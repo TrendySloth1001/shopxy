@@ -48,15 +48,11 @@ this should be revisited.
   search). Gated by `stock:manage` via `MaybeLocked`. Mirrors the Flutter
   `StockBottomSheet`. Free-text supplier autocomplete (history) was NOT ported —
   web uses the vendor dropdown only (the backend create only takes `vendorId`).
-- [ ] **Variants don't re-read on merchant detail/edit.** Backend
-  `getProductById` (`backend/src/modules/products/products.service.ts`) uses
-  `include: { category, images, stockTransactions }` and OMITS the `variants`
-  relation, so `GET /products/:id` returns `variants: []`. Variants ARE persisted
-  on create/update (create response includes them; the customer marketplace shows
-  them) — but the merchant edit form's Variants section starts empty on reload and
-  the detail page can't list them. Fix = backend includes variants in getById (or
-  the web reads them elsewhere). We already guard against wiping: variants are only
-  sent when axes are defined.
+- [x] **Variants don't re-read on merchant detail/edit.** Fixed —
+  `getProductById` (`backend/src/modules/products/products.service.ts`) now
+  includes the `variants` relation (mirrors the list projection), so
+  `GET /products/:id` returns them and the edit form's Variants section
+  re-hydrates on reload.
 - [x] **Custom-field definitions UI.** Built at `/dashboard/custom-fields`
   (sections + definitions CRUD, templates). See the Shop/Settings section below
   for the remaining custom-field gaps (drag-reorder, icon picker).
@@ -243,19 +239,13 @@ this should be revisited.
   total cap, and Public / First-order-only / Active toggles. BFF `api/coupons`
   (GET list / POST) + `[id]` (PATCH/DELETE) → `/me/coupons-admin`. Coupon money
   is **rupees** (Decimal), not paise.
-- [ ] **No single-coupon GET on the admin surface.** The backend exposes only
-  `GET /me/coupons-admin` (list); there is no `GET /me/coupons-admin/:id`. The
-  edit page therefore resolves an existing coupon by reading the (shop-scoped,
-  small) list and finding by id — same source the Flutter editor sheet uses.
-  Trigger: a dedicated detail endpoint lands → switch `getCoupon` to it.
-- [ ] **Coupon redemption analytics.** The list shows `totalRedemptions` only.
-  There's no per-coupon breakdown (who redeemed, when, discount given) — the
-  backend `CouponRedemption` table exists but no merchant analytics endpoint.
-  Trigger: a coupon-analytics endpoint → add a detail page like flash deals.
-- [ ] **Date-only vs datetime.** The Flutter editor uses a date-only picker for
-  valid-from/until; the web uses the shared `DateTimeField` (datetime-local) for
-  consistency with the other marketing editors. Functionally equivalent — both
-  send UTC ISO. Trigger: only revisit if the date-only granularity is required.
+- [x] **No single-coupon GET on the admin surface.** Added
+  `GET /me/coupons-admin/:id`; `getCoupon` now uses it instead of scanning the list.
+- [x] **Coupon redemption analytics.** Added `GET /me/coupons-admin/:id/redemptions`
+  (who redeemed, when, discount given) + a per-coupon redemptions modal opened from
+  the coupons list.
+- [x] **Date-only vs datetime.** Web already uses the shared `DateTimeField`
+  (datetime-local); no change needed (the note was about the Flutter date-only picker).
 
 ## Categories — built & deferred / known gaps
 
@@ -365,7 +355,8 @@ this should be revisited.
   non-owner pick any right; the backend rejects grants beyond the actor's own
   rights (`CANNOT_GRANT_BEYOND_OWN_RIGHTS`) and we surface that error. Trigger:
   nicer UX → disable un-grantable rows up front from the current user's perms.
-- [ ] **App version is hard-coded** to `1.0.0` in `app/dashboard/settings`.
+- [x] **App version** now reads `NEXT_PUBLIC_APP_VERSION` (from package.json via
+  next.config) in `app/dashboard/settings` instead of a hard-coded `1.0.0`.
   Trigger: a build-time version constant → read it from there.
 
 ## Quality / infra debt (applies to both web apps)
