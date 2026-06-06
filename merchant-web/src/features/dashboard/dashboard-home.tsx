@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, Mail, Timer } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, Mail, Timer, Wallet, X } from "lucide-react";
 import { useAuth } from "@/features/auth/auth-context";
 import { Divider } from "@/shared/ui/divider";
 import { listIncomingInvitations } from "@/features/invitations/api";
+import { getPayoutStatus } from "@/features/shop/api";
 import {
   fetchDashboardStats,
   type DashboardDraft,
@@ -93,6 +94,7 @@ export function DashboardHome() {
       </div>
 
       <PendingInviteCallout />
+      <PayoutNudge />
 
       {loading && !data ? (
         <DashboardSkeleton />
@@ -140,6 +142,52 @@ function PendingInviteCallout() {
       </span>
       <span className="shrink-0 text-label-md underline-offset-2">View</span>
     </Link>
+  );
+}
+
+const PAYOUT_NUDGE_KEY = "sx_payout_nudge_dismissed";
+
+/**
+ * Once-per-session nudge to finish payout (Razorpay Route) onboarding when the
+ * settlement account isn't ACTIVE yet. Dismissible; mirrors the Flutter nudge.
+ */
+function PayoutNudge() {
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    if (typeof sessionStorage !== "undefined" && sessionStorage.getItem(PAYOUT_NUDGE_KEY) === "1") {
+      return;
+    }
+    void (async () => {
+      try {
+        const acct = await getPayoutStatus();
+        if (active && (acct?.status ?? "").toUpperCase() !== "ACTIVE") setShow(true);
+      } catch {
+        /* no nudge on failure */
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  function dismiss() {
+    setShow(false);
+    if (typeof sessionStorage !== "undefined") sessionStorage.setItem(PAYOUT_NUDGE_KEY, "1");
+  }
+
+  if (!show) return null;
+  return (
+    <div className="mt-md flex items-center gap-md rounded-lg bg-accent-amber-soft px-md py-sm text-accent-amber">
+      <Wallet size={18} className="shrink-0" />
+      <Link href="/dashboard/payouts" className="min-w-0 flex-1 text-body-md underline-offset-2 hover:underline">
+        Finish setting up payouts to receive settlements for online orders.
+      </Link>
+      <button type="button" onClick={dismiss} aria-label="Dismiss" className="shrink-0 rounded-md p-xs hover:opacity-70">
+        <X size={16} />
+      </button>
+    </div>
   );
 }
 
