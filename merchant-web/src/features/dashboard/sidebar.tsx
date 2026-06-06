@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { PanelLeft, PanelLeftClose, LogOut, Lock } from "lucide-react";
 import { useAuth } from "@/features/auth/auth-context";
 import { Avatar } from "@/features/auth/components/avatar";
+import { useNotifications } from "@/features/notifications/notifications-context";
 import { areaForPath, canView } from "@/features/auth/capabilities";
 import { Divider } from "@/shared/ui/divider";
 import { NAV_GROUPS, hrefForNav, type NavItem } from "./nav-items";
@@ -47,6 +48,7 @@ export function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
   const [collapsed, toggle] = useCollapsed();
+  const { unread } = useNotifications();
 
   async function onSignOut() {
     await logout();
@@ -134,6 +136,7 @@ export function Sidebar() {
                     active={isActive(hrefForNav(item.key))}
                     collapsed={collapsed}
                     locked={isLocked(item.key)}
+                    badge={item.key === "notifications" ? unread : 0}
                   />
                 </li>
               ))}
@@ -182,13 +185,16 @@ function NavLink({
   active,
   collapsed,
   locked,
+  badge = 0,
 }: {
   item: NavItem;
   active: boolean;
   collapsed: boolean;
   locked: boolean;
+  badge?: number;
 }) {
   const Icon = item.icon;
+  const badgeText = badge > 99 ? "99+" : String(badge);
 
   // Locked: render a non-interactive row with a lock affordance instead of a
   // link, so the section stays visible but clearly out of reach (mirrors the
@@ -222,12 +228,22 @@ function NavLink({
       href={hrefForNav(item.key)}
       title={collapsed ? item.label : undefined}
       aria-current={active ? "page" : undefined}
-      className={`flex w-full items-center gap-md rounded-md px-sm py-sm text-left text-body-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft ${
+      className={`relative flex w-full items-center gap-md rounded-md px-sm py-sm text-left text-body-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft ${
         collapsed ? "justify-center" : ""
       } ${active ? "bg-ink text-white" : "text-ink hover:bg-surface-tint"}`}
     >
-      <Icon size={18} className="shrink-0" />
-      {!collapsed ? <span className="truncate">{item.label}</span> : null}
+      <span className="relative shrink-0">
+        <Icon size={18} />
+        {collapsed && badge > 0 ? (
+          <span className="absolute -right-1 -top-1 size-2 rounded-full bg-error ring-2 ring-canvas" />
+        ) : null}
+      </span>
+      {!collapsed ? <span className="flex-1 truncate">{item.label}</span> : null}
+      {!collapsed && badge > 0 ? (
+        <span className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-error px-xs text-label-md text-white">
+          {badgeText}
+        </span>
+      ) : null}
     </Link>
   );
 }
