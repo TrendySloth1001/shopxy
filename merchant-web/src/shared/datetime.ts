@@ -88,6 +88,23 @@ export function formatDateRange(startIso?: string | null, endIso?: string | null
   return `${formatDateTime(startIso)}  →  ${formatDateTime(endIso)}`;
 }
 
+/** "just now" / "5m ago" / "2h ago" / "3d ago", falling back to the date. */
+export function formatRelativeTime(iso?: string | null): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  const diffMs = Date.now() - d.getTime();
+  if (diffMs < 0) return "just now";
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  return formatDateTime(iso);
+}
+
 /** Relative "live window" state for a [start, end] pair against now. */
 export type WindowState = "scheduled" | "live" | "ended";
 

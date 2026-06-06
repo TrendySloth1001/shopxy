@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { RequireAuth } from "@/features/auth/components/require-auth";
 import { SectionGuard } from "@/features/auth/components/section-guard";
+import { NotificationsProvider } from "@/features/notifications/notifications-context";
 import { Sidebar } from "@/features/dashboard/sidebar";
 
 /**
@@ -11,12 +12,14 @@ import { Sidebar } from "@/features/dashboard/sidebar";
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <RequireAuth>
-      <div className="flex min-h-dvh">
-        <Sidebar />
-        <main className="min-w-0 flex-1 overflow-x-hidden">
-          <SectionGuard>{children}</SectionGuard>
-        </main>
-      </div>
+      <NotificationsProvider>
+        <div className="flex min-h-dvh">
+          <Sidebar />
+          <main className="min-w-0 flex-1 overflow-x-hidden">
+            <SectionGuard>{children}</SectionGuard>
+          </main>
+        </div>
+      </NotificationsProvider>
     </RequireAuth>
   );
 }

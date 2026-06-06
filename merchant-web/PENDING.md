@@ -33,8 +33,11 @@ this should be revisited.
   (`src/features/auth/components/section-guard.tsx`) maps the route to its
   permission area and renders `NoAccessView` when the member can't view it.
   Sidebar items lock too, and write routes (`/new`, `/edit`) require `:manage`.
-- [ ] **Notification bell.** Flutter's dashboard app bar has a notification bell.
-  Trigger: notifications feature on web → add it to the merchant shell header.
+- [x] **Notification bell.** Built — a **Notifications** sidebar item (Bell) with a
+  live unread badge (`NotificationsProvider` polls `/notifications/unread-count`
+  every 60s + on focus) and a full `/dashboard/notifications` page (per-kind icons,
+  relative time, mark-read on tap + deep-link by kind, mark-all-read, paginated).
+  The merchant shell has no top bar, so the bell lives in the sidebar nav.
 
 ## Products — deferred / known gaps
 
