@@ -169,13 +169,14 @@ this should be revisited.
   per-line discount field (header discount only — matches the Flutter row, which
   also edits qty/rate/GST only), and PDF opens in a browser tab instead of native
   share. Trigger: revisit if these are needed.
-- [ ] **Challan convert uses defaults.** `Convert to invoice` posts an empty body,
-  so the new draft uses the challan's party + each product's selling price. The
-  Flutter convert dialog can override customerName/GSTIN/discount/note. Trigger:
-  add an optional override dialog before convert.
-- [ ] **Estimate/Proforma editor entry.** The SALE editor can create ESTIMATE /
-  PROFORMA documents and the detail page converts them, but there's no dedicated
-  "Quotations vs Estimates" cross-link. Functionally complete; cosmetic only.
+- [x] **Challan convert override.** `Convert to invoice` now opens a modal where
+  the merchant can set an optional header discount + note (forwarded to the
+  convert endpoint) before creating the draft.
+- [x] **Estimate/Proforma editor entry.** The invoices list has "Estimate" and
+  "Proforma" entry buttons → `/dashboard/invoices/new?doc=ESTIMATE|PROFORMA`,
+  which pre-selects the document type in the editor (`initialDocumentType`).
+- [~] **Native-only invoice extras** (barcode scan-to-add, per-line discount,
+  native WhatsApp/file share) stay deferred — native-only, like the OCR helpers.
 
 ## Marketing — built & deferred / known gaps
 

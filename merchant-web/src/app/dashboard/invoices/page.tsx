@@ -101,6 +101,22 @@ export default function InvoicesPage() {
         >
           <RefreshCw size={16} />
         </button>
+        <MaybeLocked area="invoices" label="Estimate">
+          <Link
+            href="/dashboard/invoices/new?doc=ESTIMATE"
+            className="inline-flex h-10 items-center rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+          >
+            Estimate
+          </Link>
+        </MaybeLocked>
+        <MaybeLocked area="invoices" label="Proforma">
+          <Link
+            href="/dashboard/invoices/new?doc=PROFORMA"
+            className="inline-flex h-10 items-center rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+          >
+            Proforma
+          </Link>
+        </MaybeLocked>
         <MaybeLocked area="invoices" label="New invoice">
           <Link
             href="/dashboard/invoices/new"

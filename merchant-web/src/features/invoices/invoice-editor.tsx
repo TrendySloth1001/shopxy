@@ -28,14 +28,23 @@ type Contact = { id: number; name: string; phone?: string | null; gstin?: string
 
 const STATE_OPTIONS = [{ value: "", label: "Select state (place of supply)" }, ...INDIAN_STATES.map((s) => ({ value: s.code, label: s.name }))];
 
-export function InvoiceEditor({ existing }: { existing?: Invoice }) {
+export function InvoiceEditor({
+  existing,
+  initialDocumentType,
+}: {
+  existing?: Invoice;
+  /** Pre-select a SALE document type for a fresh editor (e.g. Estimate/Proforma). */
+  initialDocumentType?: string;
+}) {
   const router = useRouter();
   const { user } = useAuth();
   const shopStateCode = user?.shopStateCode ?? null;
   const isEdit = existing != null;
 
   const [type, setType] = useState<"SALE" | "PURCHASE">((existing?.type as "SALE" | "PURCHASE") ?? "SALE");
-  const [documentType, setDocumentType] = useState<string>(existing?.documentType ?? "TAX_INVOICE");
+  const [documentType, setDocumentType] = useState<string>(
+    existing?.documentType ?? initialDocumentType ?? "TAX_INVOICE",
+  );
 
   const [party, setParty] = useState<Contact | null>(
     existing?.partyId
