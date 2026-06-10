@@ -337,7 +337,7 @@ export class InvoicesService {
     const productIds = [...new Set(data.items.map((i) => i.productId))];
     const products = await prisma.product.findMany({
       where: { id: { in: productIds }, shopId: data.shopId },
-      select: { id: true, name: true, sku: true, hsnCode: true, unit: true, stockQuantity: true, taxPercent: true },
+      select: { id: true, name: true, sku: true, hsnCode: true, unit: true, stockQuantity: true, taxPercent: true, cessRate: true },
     });
     const productMap = new Map(products.map((p) => [p.id, p]));
     for (const item of data.items) {
@@ -430,8 +430,12 @@ export class InvoicesService {
       // "every customer invoice carries ₹0 GST" bug. An explicit 0 from the
       // merchant create form still wins (exempt/nil-rated lines).
       const productTaxPct = Number(product.taxPercent) || 0;
+      const productCessRate = Number(product.cessRate) || 0;
       const taxPct = chargesOutputGst ? (item.taxPercent ?? productTaxPct) : 0;
-      const cessRate = chargesOutputGst ? (item.cessRate ?? 0) : 0;
+      // Same fallback for compensation cess: omitting cessRate means "use
+      // the product's statutory rate", not "cess-free" — an explicit 0
+      // still wins (exempt categories).
+      const cessRate = chargesOutputGst ? (item.cessRate ?? productCessRate) : 0;
 
       let igstAmount = 0;
       let cgstAmount = 0;
@@ -736,6 +740,17 @@ export class InvoicesService {
       // the source of truth for those rows.
       const ledgerOwnedByChallan = invoice.challan !== null;
 
+      // Only goods documents move inventory. An ESTIMATE/PROFORMA is an
+      // offer (confirming one used to decrement stock and then the
+      // converted TAX_INVOICE decremented it AGAIN), and CREDIT/DEBIT
+      // notes are value adjustments under Sec 34 — the physical goods
+      // movement of a return is owned by the returns/stock-adjustment
+      // flows, and posting a STOCK_OUT for a sale credit note was plainly
+      // inverted anyway.
+      const movesStock =
+        invoice.documentType === 'TAX_INVOICE' ||
+        invoice.documentType === 'BILL_OF_SUPPLY';
+
       // Refuse to cancel a challan-sourced invoice — the inventory effect
       // sits on the challan, so cancelling the invoice in isolation leaves
       // a "cancelled" invoice attached to a "converted" challan with goods
@@ -801,7 +816,7 @@ export class InvoicesService {
       }
 
       // ── DRAFT → CONFIRMED: post stock movements ────────────────────
-      if (invoice.status === 'DRAFT' && status === 'CONFIRMED' && !ledgerOwnedByChallan) {
+      if (invoice.status === 'DRAFT' && status === 'CONFIRMED' && !ledgerOwnedByChallan && movesStock) {
         const direction = invoice.type === 'SALE' ? 'OUT' : 'IN';
         const reasonCode = invoice.type === 'SALE' ? 'SALE' : 'PURCHASE';
         // Prefer the just-refreshed values over the stale draft
@@ -852,6 +867,9 @@ export class InvoicesService {
       }
 
       // ── CONFIRMED → CANCELLED: reverse ledger rows ─────────────────
+      // (movesStock isn't re-checked here: a document that never posted
+      // has no entries to reverse, and historical confirmed estimates
+      // that DID post under the old behavior should still reverse.)
       if (invoice.status === 'CONFIRMED' && status === 'CANCELLED' && !ledgerOwnedByChallan) {
         const entries = await tx.stockTransaction.findMany({
           where: { sourceType: 'INVOICE', sourceId: invoice.id, reversesId: null, shopId },

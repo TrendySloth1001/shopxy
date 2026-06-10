@@ -260,11 +260,32 @@ class ShopOrderDetail extends ShopOrderSummary {
     this.invoice,
     this.linkedPartyId,
     this.events = const [],
+    this.canCancel = false,
+    this.canReturn = false,
+    this.cancellationPolicy,
+    this.deliveredAt,
   });
 
   final List<CustomerOrderItem> items;
   final String? decisionNote;
   final OrderInvoiceRef? invoice;
+  /// Server-computed: true while this slice can still be cancelled
+  /// (PENDING always; CONFIRMED until the shop's cancellation-policy
+  /// cut-off milestone). The UI must obey this flag instead of deriving
+  /// its own rule from [status]. Defaults to false so older cached
+  /// payloads without the field simply hide the action.
+  final bool canCancel;
+  /// Server-computed: true only when the slice is CONFIRMED, a
+  /// DELIVERED event exists, the shop has returns enabled and the
+  /// return window is still open. Same default-false contract as
+  /// [canCancel].
+  final bool canReturn;
+  /// One of UNTIL_CONFIRMED / UNTIL_PACKED / UNTIL_SHIPPED /
+  /// UNTIL_DELIVERED — the shop's cancellation cut-off. Null on older
+  /// payloads.
+  final String? cancellationPolicy;
+  /// When the DELIVERED shipping event was recorded; null until then.
+  final DateTime? deliveredAt;
   /// Server-side Party id (the customer's identity at this seller's
   /// shop) — populated when the customer is linked. Used by the
   /// invoice-viewer tap to construct `/me/parties/:id/invoices/:n`.
@@ -320,6 +341,12 @@ class ShopOrderDetail extends ShopOrderSummary {
       events: ((j['events'] as List?) ?? const [])
           .map((e) => OrderEvent.fromJson(e as Map<String, dynamic>))
           .toList(),
+      canCancel: (j['canCancel'] as bool?) ?? false,
+      canReturn: (j['canReturn'] as bool?) ?? false,
+      cancellationPolicy: j['cancellationPolicy'] as String?,
+      deliveredAt: j['deliveredAt'] == null
+          ? null
+          : DateTime.parse(j['deliveredAt'] as String),
     );
   }
 
@@ -340,6 +367,13 @@ class ShopOrderDetail extends ShopOrderSummary {
       invoice: invoice,
       linkedPartyId: linkedPartyId,
       events: events,
+      // A locally-patched status is always a cancel — the server flags
+      // are stale the moment the slice changes, so drop the actions
+      // until the next refetch.
+      canCancel: status == null && canCancel,
+      canReturn: status == null && canReturn,
+      cancellationPolicy: cancellationPolicy,
+      deliveredAt: deliveredAt,
     );
   }
 }

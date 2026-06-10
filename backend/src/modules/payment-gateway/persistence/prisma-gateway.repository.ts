@@ -88,6 +88,13 @@ class PrismaGatewayPaymentRepository implements GatewayPaymentRepository {
     return row ? toRecord(row) : null;
   }
 
+  async detachIdempotencyKey(id: number): Promise<void> {
+    await prisma.gatewayPayment.update({
+      where: { id },
+      data: { idempotencyKey: null },
+    });
+  }
+
   async findByProviderOrderRef(
     provider: string,
     providerOrderRef: string,

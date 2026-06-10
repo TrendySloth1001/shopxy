@@ -4,7 +4,16 @@ import { round2 } from '../../shared/numbering/decimal.js';
 import { invoicesService } from '../invoices/invoices.service.js';
 import { paymentGatewayService } from '../payment-gateway/index.js';
 import { ensureOrderInvoiceReceipts } from '../payment-gateway/order-receipts.js';
-import { releaseTransfersForPurchaseRequest } from '../payment-gateway/settlement/transfer-actions.js';
+import {
+  releaseTransfersForPurchaseRequest,
+  reverseTransferForReturn,
+} from '../payment-gateway/settlement/transfer-actions.js';
+import { paymentsService } from '../payments/payments.service.js';
+
+/// Sentinel for "reverse the whole transfer" — reverseTransferForReturn
+/// caps the request at the transfer's remaining un-reversed amount, so an
+/// oversized value simply means a full clawback.
+const REVERSE_ALL = Number.MAX_SAFE_INTEGER / 100;
 
 /// Local helper — invoices.service doesn't expose a payment summariser
 /// (its own status flow is independent of paid-vs-total accounting), so
@@ -117,6 +126,7 @@ const detailSelect = {
       returnWindowDays: true,
       refundMode: true,
       returnPolicyNote: true,
+      cancellationPolicy: true,
     },
   },
   _count: { select: { items: true } },
@@ -841,11 +851,44 @@ export class PurchaseRequestsService {
     if (!order) return null;
     return {
       ...order,
-      shopOrders: order.shopOrders.map((child) => ({
-        ...child,
-        shop: shopAsDto(child.shop),
-        invoice: child.invoice ? attachInvoicePaymentSummary(child.invoice) : null,
-      })),
+      shopOrders: order.shopOrders.map((child) => {
+        // Server-computed action flags so every client renders the same
+        // Cancel-vs-Return decision the backend will enforce: cancel
+        // until the seller's policy cut-off, return only after a
+        // DELIVERED event (within the shop's window). Clients must not
+        // re-derive these.
+        const eventTypes = child.events.map((e) => e.type);
+        const delivered = [...child.events]
+          .reverse()
+          .find((e) => e.type === 'DELIVERED');
+        const policy = child.shop?.cancellationPolicy ?? 'UNTIL_SHIPPED';
+        const canCancel =
+          child.status === 'PENDING' ||
+          (child.status === 'CONFIRMED' &&
+            this.isCancellableByPolicy(policy, eventTypes));
+        const windowDays = child.shop?.returnWindowDays ?? 0;
+        const withinWindow =
+          delivered != null &&
+          (windowDays <= 0 ||
+            (Date.now() - delivered.occurredAt.getTime()) / 86_400_000 <=
+              windowDays);
+        const canReturn =
+          child.status === 'CONFIRMED' &&
+          delivered != null &&
+          (child.shop?.returnsEnabled ?? false) &&
+          withinWindow;
+        return {
+          ...child,
+          shop: shopAsDto(child.shop),
+          invoice: child.invoice
+            ? attachInvoicePaymentSummary(child.invoice)
+            : null,
+          canCancel,
+          canReturn,
+          cancellationPolicy: policy,
+          deliveredAt: delivered?.occurredAt ?? null,
+        };
+      }),
     };
   }
 
@@ -853,18 +896,68 @@ export class PurchaseRequestsService {
   /// is *not* cancelled — other shops in the same checkout proceed
   /// independently. Returns reason codes so the FE can render targeted
   /// copy.
+  ///
+  /// Eligibility is the SELLER's call (Shop.cancellationPolicy):
+  ///   - a PENDING child is always cancellable (the merchant hasn't
+  ///     acted yet — no invoice, no stock movement);
+  ///   - a CONFIRMED child is cancellable until the policy's cut-off
+  ///     milestone (PACKED / SHIPPED / DELIVERED event), after which the
+  ///     customer's only path is the post-delivery returns flow.
+  /// A confirmed cancel reverses the whole paper trail: the invoice is
+  /// cancelled (which reverses its stock ledger rows), its receipts are
+  /// voided, and the paid amount (wallet + captured gateway share — the
+  /// gateway slice used to be silently kept) is credited back to the
+  /// customer's wallet.
   async cancelChildForCustomer(opts: {
     userId: number;
     parentId: number;
     childId: number;
   }): Promise<
     | { ok: true }
-    | { error: 'NOT_FOUND' | 'NOT_OWNED' | 'NOT_PENDING' }
+    | { error: 'NOT_FOUND' | 'NOT_OWNED' | 'NOT_PENDING' | 'NOT_CANCELLABLE' }
   > {
-    // We need to release reserved inventory + refund wallet money + back
-    // out the coupon usage, all atomically with the status flip. Do
-    // everything inside one transaction so a partial failure can't
-    // leave a CANCELLED row with the customer still debited.
+    // Policy snapshot first — the claim below re-checks status
+    // atomically, so a stale read here can't over-allow.
+    const snap = await prisma.purchaseRequest.findFirst({
+      where: {
+        id: opts.childId,
+        customerOrderId: opts.parentId,
+        customerUserId: opts.userId,
+      },
+      select: {
+        id: true,
+        status: true,
+        shopId: true,
+        invoiceId: true,
+        shop: { select: { cancellationPolicy: true } },
+        events: { select: { type: true } },
+      },
+    });
+    if (!snap) {
+      const existing = await prisma.purchaseRequest.findUnique({
+        where: { id: opts.childId },
+        select: { customerUserId: true, customerOrderId: true },
+      });
+      if (!existing) return { error: 'NOT_FOUND' };
+      if (existing.customerUserId !== opts.userId) return { error: 'NOT_OWNED' };
+      return { error: 'NOT_FOUND' };
+    }
+    if (snap.status === 'CONFIRMED') {
+      if (!this.isCancellableByPolicy(
+        snap.shop?.cancellationPolicy ?? 'UNTIL_SHIPPED',
+        snap.events.map((e) => e.type),
+      )) {
+        return { error: 'NOT_CANCELLABLE' };
+      }
+      return this.cancelConfirmedChild(opts, snap.shopId, snap.invoiceId);
+    }
+    if (snap.status !== 'PENDING') return { error: 'NOT_PENDING' };
+
+    // ── PENDING path: nothing issued yet, single atomic transaction ──
+    // Release reserved inventory + refund paid money + back out the
+    // coupon usage, all atomically with the status flip, so a partial
+    // failure can't leave a CANCELLED row with the customer still
+    // debited.
     const result = await prisma.$transaction(async (tx) => {
       const claim = await tx.purchaseRequest.updateMany({
         where: {
@@ -891,11 +984,16 @@ export class PurchaseRequestsService {
         },
       });
 
-      // Refund the cancelled slice's share of the parent's wallet
-      // payment. If this is the only/last shop in the order, the full
-      // walletPaid comes back. Otherwise the slice gets a proportional
-      // share keyed on the original split (estimatedTotal share of
-      // parent.estimatedTotal at the time of order create).
+      // Refund the cancelled slice's share of everything the customer
+      // has actually PAID so far: the parent's wallet payment plus, when
+      // the order was captured online, its gateway payment. The gateway
+      // slice used to be silently dropped here — a customer who paid
+      // ₹1,000 via Razorpay and cancelled got only the wallet share
+      // back. Refund lands in the wallet (instant, reusable money — the
+      // same vehicle the returns flow uses). If this is the only/last
+      // shop in the order, the full paid amount comes back; otherwise
+      // the slice gets a proportional share keyed on the original split
+      // (estimatedTotal share of parent.estimatedTotal at order create).
       const parent = await tx.customerOrder.findUnique({
         where: { id: opts.parentId },
         select: {
@@ -903,15 +1001,16 @@ export class PurchaseRequestsService {
           walletPaid: true,
           estimatedTotal: true,
           couponDiscount: true,
+          paymentStatus: true,
         },
       });
       if (parent) {
         const childTotal = Number(child.estimatedTotal);
         const parentTotal = Number(parent.estimatedTotal);
-        const walletPaid = Number(parent.walletPaid);
-        if (walletPaid > 0 && parentTotal > 0) {
+        const paidTotal = this.totalPaidOnOrder(parent);
+        if (paidTotal > 0 && parentTotal > 0) {
           const share = Math.min(childTotal / parentTotal, 1);
-          const refund = Math.round(walletPaid * share * 100) / 100;
+          const refund = round2(paidTotal * share);
           if (refund > 0) {
             // Namespaced idempotency key so a cancel + return on the
             // same childId can't collide.
@@ -970,7 +1069,16 @@ export class PurchaseRequestsService {
       return { ok: true as const };
     });
 
-    if ('ok' in result) return { ok: true };
+    if ('ok' in result) {
+      // Best-effort Route clawback: if the captured order already split
+      // a HELD transfer to this child's seller, pull it back (no-op when
+      // splits are disabled / nothing was transferred).
+      await reverseTransferForReturn({
+        purchaseRequestId: opts.childId,
+        reverseAmount: REVERSE_ALL,
+      }).catch(() => undefined);
+      return { ok: true };
+    }
 
     const existing = await prisma.purchaseRequest.findUnique({
       where: { id: opts.childId },
@@ -980,6 +1088,204 @@ export class PurchaseRequestsService {
     if (existing.customerUserId !== opts.userId) return { error: 'NOT_OWNED' };
     if (existing.customerOrderId !== opts.parentId) return { error: 'NOT_FOUND' };
     return { error: 'NOT_PENDING' };
+  }
+
+  /// Order milestones that close the customer-cancel window for each
+  /// policy. UNTIL_CONFIRMED has no entry — confirmation itself is the
+  /// cut-off, handled before this map is consulted.
+  private static readonly CANCEL_BLOCKERS: Record<string, string[]> = {
+    UNTIL_PACKED: ['PACKED', 'SHIPPED', 'OUT_FOR_DELIVERY', 'DELIVERED'],
+    UNTIL_SHIPPED: ['SHIPPED', 'OUT_FOR_DELIVERY', 'DELIVERED'],
+    UNTIL_DELIVERED: ['DELIVERED'],
+  };
+
+  /// Can a CONFIRMED child still be cancelled under `policy`, given the
+  /// shipping milestones already posted?
+  isCancellableByPolicy(policy: string, eventTypes: string[]): boolean {
+    if (policy === 'UNTIL_CONFIRMED') return false;
+    const blockers =
+      PurchaseRequestsService.CANCEL_BLOCKERS[policy] ??
+      PurchaseRequestsService.CANCEL_BLOCKERS.UNTIL_SHIPPED;
+    return !eventTypes.some((t) => blockers.includes(t));
+  }
+
+  /// Everything the customer has actually paid on the parent order so
+  /// far: wallet debit (synchronous at checkout) + the captured gateway
+  /// remainder. COD / not-yet-captured orders have only the wallet part.
+  private totalPaidOnOrder(parent: {
+    walletPaid: unknown;
+    estimatedTotal: unknown;
+    couponDiscount: unknown;
+    paymentStatus: string;
+  }): number {
+    const walletPaid = Number(parent.walletPaid);
+    const gatewayPaid =
+      parent.paymentStatus === 'PAID'
+        ? Math.max(
+            0,
+            round2(
+              Number(parent.estimatedTotal) -
+                Number(parent.couponDiscount) -
+                walletPaid,
+            ),
+          )
+        : 0;
+    return round2(walletPaid + gatewayPaid);
+  }
+
+  /// Cancel a CONFIRMED child (policy already verified by the caller).
+  ///
+  /// Sequencing: the status claim and the invoice cancellation cannot
+  /// share one transaction (invoicesService.updateStatus opens its own —
+  /// the same nesting constraint confirmRequest works around), so this
+  /// runs claim → invoice-cancel → refund-tx with explicit compensation:
+  /// if the invoice can't be cancelled the claim is reverted and the
+  /// child stays CONFIRMED.
+  private async cancelConfirmedChild(
+    opts: { userId: number; parentId: number; childId: number },
+    shopId: number,
+    invoiceId: number | null,
+  ): Promise<{ ok: true } | { error: 'NOT_PENDING' | 'NOT_CANCELLABLE' }> {
+    const claim = await prisma.purchaseRequest.updateMany({
+      where: {
+        id: opts.childId,
+        customerOrderId: opts.parentId,
+        customerUserId: opts.userId,
+        status: 'CONFIRMED',
+      },
+      data: { status: 'CANCELLED', decidedAt: new Date() },
+    });
+    // Raced away (another cancel, or the merchant moved it) — re-read
+    // would just repeat the public diagnostics; NOT_PENDING is accurate.
+    if (claim.count !== 1) return { error: 'NOT_PENDING' };
+
+    const revert = () =>
+      prisma.purchaseRequest.updateMany({
+        where: { id: opts.childId, status: 'CANCELLED' },
+        data: { status: 'CONFIRMED' },
+      });
+
+    // 1) Cancel the invoice — reverses its stock ledger rows. Failure
+    //    reverts the claim so we never strand a CANCELLED child with a
+    //    live CONFIRMED invoice still counting in stock + reports.
+    if (invoiceId != null) {
+      let cancelled;
+      try {
+        cancelled = await invoicesService.updateStatus(
+          shopId,
+          invoiceId,
+          'CANCELLED',
+          opts.userId,
+        );
+      } catch (err) {
+        await revert();
+        throw err;
+      }
+      if ('error' in cancelled) {
+        await revert();
+        return { error: 'NOT_CANCELLABLE' };
+      }
+      // Void the wallet/gateway receipts that were reconciled onto the
+      // invoice: the money they represent is being handed back to the
+      // customer below, and a live credit on a cancelled invoice would
+      // read as a phantom negative balance on the party ledger.
+      const receipts = await prisma.payment.findMany({
+        where: { invoiceId, shopId, voidedAt: null },
+        select: { id: true },
+      });
+      for (const r of receipts) {
+        await paymentsService.voidPayment(
+          shopId,
+          r.id,
+          opts.userId,
+          'Order cancelled by customer — refunded to wallet',
+        );
+      }
+    }
+
+    // 2) Refund + releases, atomically.
+    await prisma.$transaction(async (tx) => {
+      const child = await tx.purchaseRequest.findUniqueOrThrow({
+        where: { id: opts.childId },
+        select: {
+          id: true,
+          estimatedTotal: true,
+          customerUserId: true,
+          items: { select: { productId: true, quantity: true } },
+        },
+      });
+      const parent = await tx.customerOrder.findUnique({
+        where: { id: opts.parentId },
+        select: {
+          id: true,
+          walletPaid: true,
+          estimatedTotal: true,
+          couponDiscount: true,
+          paymentStatus: true,
+        },
+      });
+      if (parent) {
+        const parentTotal = Number(parent.estimatedTotal);
+        const paidTotal = this.totalPaidOnOrder(parent);
+        if (paidTotal > 0 && parentTotal > 0) {
+          const share = Math.min(Number(child.estimatedTotal) / parentTotal, 1);
+          const refund = round2(paidTotal * share);
+          if (refund > 0) {
+            await walletService.credit({
+              userId: child.customerUserId,
+              amount: refund,
+              source: 'CANCEL',
+              sourceId: child.id,
+              description: `Cancel refund for order #${parent.id} (slice #${child.id})`,
+              idempotencyKey: `wallet:cancel-${child.id}`,
+              tx,
+            });
+          }
+        }
+      }
+
+      for (const item of child.items) {
+        await flashSalesService
+          .release(item.productId, Math.ceil(Number(item.quantity)))
+          .catch(() => undefined);
+      }
+
+      const liveSiblings = await tx.purchaseRequest.count({
+        where: {
+          customerOrderId: opts.parentId,
+          status: { notIn: ['CANCELLED', 'REJECTED'] },
+        },
+      });
+      if (liveSiblings === 0) {
+        const redemption = await tx.couponRedemption.findUnique({
+          where: { customerOrderId: opts.parentId },
+          select: { id: true, couponId: true },
+        });
+        if (redemption) {
+          await tx.coupon.update({
+            where: { id: redemption.couponId },
+            data: { totalRedemptions: { decrement: 1 } },
+          });
+          await tx.couponRedemption.delete({ where: { id: redemption.id } });
+        }
+      }
+
+      await tx.purchaseRequestEvent.create({
+        data: {
+          requestId: opts.childId,
+          type: 'CANCELLED',
+          actorId: opts.userId,
+        },
+      });
+    });
+
+    // 3) Best-effort Route clawback of this child's HELD transfer.
+    await reverseTransferForReturn({
+      purchaseRequestId: opts.childId,
+      reverseAmount: REVERSE_ALL,
+    }).catch(() => undefined);
+
+    return { ok: true };
   }
 
   /// Merchant-side: list the inbox with the same listSelect projection.
@@ -1307,20 +1613,26 @@ export class PurchaseRequestsService {
         },
       });
 
-      // Wallet refund proportional to this child's share, mirroring the
-      // cancel path.
+      // Refund proportional to this child's share, mirroring the cancel
+      // path — wallet debit plus, when the order was captured online,
+      // the gateway slice (previously silently kept on rejection).
       if (child.customerOrderId !== null) {
         const parent = await tx.customerOrder.findUnique({
           where: { id: child.customerOrderId },
-          select: { walletPaid: true, estimatedTotal: true },
+          select: {
+            walletPaid: true,
+            estimatedTotal: true,
+            couponDiscount: true,
+            paymentStatus: true,
+          },
         });
         if (parent) {
           const parentTotal = Number(parent.estimatedTotal);
           const childTotal = Number(child.estimatedTotal);
-          const walletPaid = Number(parent.walletPaid);
-          if (walletPaid > 0 && parentTotal > 0) {
+          const paidTotal = this.totalPaidOnOrder(parent);
+          if (paidTotal > 0 && parentTotal > 0) {
             const share = Math.min(childTotal / parentTotal, 1);
-            const refund = Math.round(walletPaid * share * 100) / 100;
+            const refund = round2(paidTotal * share);
             if (refund > 0) {
               await walletService.credit({
                 userId: child.customerUserId,
@@ -1378,7 +1690,14 @@ export class PurchaseRequestsService {
       return { ok: true as const };
     });
 
-    if ('ok' in result) return { ok: true };
+    if ('ok' in result) {
+      // Best-effort Route clawback, mirroring the customer-cancel path.
+      await reverseTransferForReturn({
+        purchaseRequestId: opts.requestId,
+        reverseAmount: REVERSE_ALL,
+      }).catch(() => undefined);
+      return { ok: true };
+    }
 
     const probe = await prisma.purchaseRequest.findFirst({
       where: { id: opts.requestId, shopId: opts.shopId },

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy_customer/features/payments/razorpay_checkout.dart';
+import 'package:shopxy_customer/features/shops/data/datasources/me_remote_data_source.dart'
+    show CautionPayException;
 import 'package:shopxy_customer/features/shops/domain/entities/linked_shop.dart';
 import 'package:shopxy_customer/features/shops/presentation/providers/shops_provider.dart';
 import 'package:shopxy_customer/features/shops/presentation/widgets/caution_info_sheet.dart';
@@ -189,7 +192,8 @@ class _ShopCautionPageState extends State<ShopCautionPage> {
                               _RequestRow(
                                   req: r,
                                   shop: widget.shop,
-                                  dateFmt: _dateFmt),
+                                  dateFmt: _dateFmt,
+                                  onChanged: _refresh),
                           ],
                         ),
                         const AppDivider.flush(),
@@ -457,15 +461,31 @@ class _LedgerRow extends StatelessWidget {
   }
 }
 
-class _RequestRow extends StatelessWidget {
+class _RequestRow extends StatefulWidget {
   const _RequestRow(
-      {required this.req, required this.shop, required this.dateFmt});
+      {required this.req,
+      required this.shop,
+      required this.dateFmt,
+      required this.onChanged});
   final ShopCautionRequest req;
   final LinkedShop shop;
   final DateFormat dateFmt;
 
+  /// Called when the request's server-side state may have moved (a payment
+  /// went through, or a pay attempt found it no longer pending) so the page
+  /// can reload the ledger + requests strip.
+  final Future<void> Function() onChanged;
+
+  @override
+  State<_RequestRow> createState() => _RequestRowState();
+}
+
+class _RequestRowState extends State<_RequestRow> {
+  bool _paying = false;
+
   @override
   Widget build(BuildContext context) {
+    final req = widget.req;
     final theme = Theme.of(context);
     final (label, color, soft) = switch (req.status) {
       'PENDING' => ('Pending', AppColors.warning, AppColors.warningSoft),
@@ -474,8 +494,13 @@ class _RequestRow extends StatelessWidget {
       _ => ('Cancelled', AppColors.muted, AppColors.hairline),
     };
     final subtitle = <String>[
-      dateFmt.format(req.createdAt.toLocal()),
-      if (req.mode != null) req.mode!,
+      widget.dateFmt.format(req.createdAt.toLocal()),
+      // GATEWAY-approved means the money came in through Razorpay — say so
+      // instead of echoing the raw mode the customer picked at request time.
+      if (req.isPaidOnline)
+        'Paid online'
+      else if (req.mode != null)
+        req.mode!,
       if (req.hasBasket) '${req.basketCount} item(s)',
       if (req.isRejected && req.reviewNote != null) req.reviewNote!,
     ].join(' · ');
@@ -483,57 +508,138 @@ class _RequestRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(
           horizontal: AppSizes.lg, vertical: AppSizes.md),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      '${AppStrings.currencySymbol}${req.amount.toStringAsFixed(req.amount == req.amount.roundToDouble() ? 0 : 2)}',
-                      style: theme.textTheme.bodyLarge
-                          ?.copyWith(fontWeight: FontWeight.w800),
+                    Row(
+                      children: [
+                        Text(
+                          '${AppStrings.currencySymbol}${req.amount.toStringAsFixed(req.amount == req.amount.roundToDouble() ? 0 : 2)}',
+                          style: theme.textTheme.bodyLarge
+                              ?.copyWith(fontWeight: FontWeight.w800),
+                        ),
+                        const SizedBox(width: AppSizes.sm),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: AppSizes.sm, vertical: AppSizes.xs),
+                          decoration: ShapeDecoration(
+                              color: soft,
+                              shape: AppShapes.squircle(AppSizes.radiusFull)),
+                          child: Text(label,
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                  color: color, fontWeight: FontWeight.w800)),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: AppSizes.sm),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: AppSizes.sm, vertical: AppSizes.xs),
-                      decoration: ShapeDecoration(
-                          color: soft,
-                          shape: AppShapes.squircle(AppSizes.radiusFull)),
-                      child: Text(label,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                              color: color, fontWeight: FontWeight.w800)),
-                    ),
+                    const SizedBox(height: AppSizes.xs),
+                    Text(subtitle,
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(color: AppColors.muted)),
                   ],
                 ),
-                const SizedBox(height: AppSizes.xs),
-                Text(subtitle,
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: AppColors.muted)),
-              ],
-            ),
+              ),
+              if (req.isPending)
+                TextButton(
+                  onPressed: _paying ? null : () => _cancel(context),
+                  style: TextButton.styleFrom(foregroundColor: AppColors.error),
+                  child: Text('Cancel',
+                      style: theme.textTheme.bodyMedium
+                          ?.copyWith(fontWeight: FontWeight.w700)),
+                ),
+            ],
           ),
-          if (req.isPending)
-            TextButton(
-              onPressed: () => _cancel(context),
-              style: TextButton.styleFrom(foregroundColor: AppColors.error),
-              child: Text('Cancel',
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(fontWeight: FontWeight.w700)),
+          if (req.isPending) ...[
+            const SizedBox(height: AppSizes.sm),
+            FilledButton.icon(
+              onPressed: _paying ? null : _payOnline,
+              icon: _paying
+                  ? const SizedBox(
+                      width: AppSizes.iconSm,
+                      height: AppSizes.iconSm,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: AppColors.white),
+                    )
+                  : const Icon(Icons.bolt_rounded, size: AppSizes.iconMd),
+              label: Text(_paying ? 'Processing…' : 'Pay online'),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.brand,
+                foregroundColor: AppColors.white,
+                padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
+                shape: AppShapes.squircle(AppSizes.radiusMd),
+                textStyle: const TextStyle(fontWeight: FontWeight.w800),
+              ),
             ),
+          ],
         ],
       ),
     );
+  }
+
+  /// Initiate the gateway payment for this request, open the Razorpay sheet,
+  /// then client-confirm via payment/sync (the webhook stays authoritative —
+  /// a sync failure never flips a client success into an error).
+  Future<void> _payOnline() async {
+    final prov = context.read<ShopsProvider>();
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _paying = true);
+    try {
+      final checkout = await prov.payCautionRequest(widget.shop, widget.req.id);
+      final result = await RazorpayCheckout().open(
+        clientParams: checkout.clientParams,
+        description:
+            'Caution deposit — ${widget.shop.shopName ?? widget.shop.name}',
+      );
+      if (result.isSuccess) {
+        var settled = false;
+        try {
+          final sync = await prov.syncCautionRequestPayment(
+              widget.shop, widget.req.id);
+          settled = sync.settled;
+        } catch (_) {/* non-fatal — the webhook will settle it */}
+        messenger.showSnackBar(SnackBar(
+          content: Text(settled
+              ? 'Deposit confirmed'
+              : 'Payment received — confirming…'),
+        ));
+        await widget.onChanged();
+      } else if (result.outcome == RazorpayOutcome.dismissed) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Payment cancelled')),
+        );
+      } else {
+        messenger.showSnackBar(
+          SnackBar(content: Text(result.message ?? 'Payment failed')),
+        );
+      }
+    } on CautionPayException catch (e) {
+      // NOT_PENDING = the shop approved/cancelled it while this page was
+      // open — refresh so the row reflects reality instead of a dead CTA.
+      messenger.showSnackBar(SnackBar(
+        content: Text(e.isNotPending
+            ? 'This request is no longer pending — refreshing'
+            : e.message),
+      ));
+      if (e.isNotPending) await widget.onChanged();
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+      );
+    } finally {
+      if (mounted) setState(() => _paying = false);
+    }
   }
 
   Future<void> _cancel(BuildContext context) async {
     final prov = context.read<ShopsProvider>();
     final messenger = ScaffoldMessenger.of(context);
     try {
-      await prov.cancelCautionRequest(shop, req.id);
+      await prov.cancelCautionRequest(widget.shop, widget.req.id);
       messenger.showSnackBar(
         const SnackBar(content: Text(AppStrings.cautionRequestCancelled)),
       );

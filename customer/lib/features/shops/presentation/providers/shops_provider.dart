@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shopxy_customer/features/orders/data/datasources/orders_remote_data_source.dart'
+    show GatewayCheckout;
 import 'package:shopxy_customer/features/shops/data/datasources/me_remote_data_source.dart';
 import 'package:shopxy_customer/features/shops/domain/entities/linked_shop.dart';
 
@@ -196,6 +198,20 @@ class ShopsProvider extends ChangeNotifier {
     await _ds.cancelCautionRequest(s, requestId);
     await loadCautionRequests(s);
   }
+
+  /// Start an online gateway payment for a still-pending caution request.
+  /// Returns the checkout session the page opens the Razorpay sheet with.
+  /// Throws [CautionPayException] (e.g. NOT_PENDING if the shop settled it
+  /// meanwhile) — the page decides whether to refresh.
+  Future<GatewayCheckout> payCautionRequest(LinkedShop s, int requestId) =>
+      _ds.payCautionRequest(s, requestId);
+
+  /// Confirm with the server after the Razorpay sheet succeeds — the request
+  /// flips to APPROVED when [settled] comes back true. The page refreshes the
+  /// ledger + strip afterwards, so no cache update here.
+  Future<({ShopCautionRequest request, bool settled})>
+      syncCautionRequestPayment(LinkedShop s, int requestId) =>
+          _ds.syncCautionRequestPayment(s, requestId);
 
   /// Per-shop cache of quotations the shop sent this customer.
   final Map<String, List<ShopQuotation>> _quotationCache = {};

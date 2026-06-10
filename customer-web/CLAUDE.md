@@ -13,11 +13,13 @@ simplify something, **add a row to `PENDING.md`** so it isn't forgotten.
 
 ## Layout & responsiveness — read before building any screen
 
-- **MUST use the full width of the page.** App screens (home, orders, ledgers,
-  settings) span the available width with padding — do **not** wrap content in
-  a narrow centered rail (`mx-auto max-w-*`). The only exception is focused
-  single-column **forms** (sign in / register), which stay centered in
-  `max-w-form`.
+- **Centered marketplace shell — NOT full width.** The customer storefront
+  follows the Amazon/Flipkart convention: content is capped and centered at
+  `max-w-shell` (1280px) with `mx-auto`, never edge-to-edge full bleed on wide
+  screens. Sticky bars may paint their background full-viewport, but their inner
+  content stays inside the same centered shell so it aligns with the feed.
+  Focused single-column **forms** (sign in / register) stay narrower in
+  `max-w-form`. (This differs from `merchant-web`, which is full-width.)
 - **MUST be responsive.** Every component and screen has to work from a phone
   width up to a wide desktop. Use fluid layouts (`flex`, `grid`) with the
   responsive prefixes (`sm: md: lg: xl:`); never hardcode a fixed page width or
@@ -25,6 +27,15 @@ simplify something, **add a row to `PENDING.md`** so it isn't forgotten.
   Test mentally at ~360px, ~768px, and ~1440px.
 - Content padding comes from spacing tokens (`px-lg`, `py-xxxl`); section
   rhythm uses `xxl`/`xxxl`.
+- **Buttons size to content — never inflate.** A button's width is its label +
+  horizontal padding at a fixed token height (`h-9` compact, `h-10` default,
+  `h-11` primary). **MUST NOT** put `w-full` on a button, and **MUST NOT** let a
+  button be the lone stretched child of a grid cell / `flex-1` slot (that's what
+  blows them up into giant bars). Group related actions in a left-aligned
+  `flex flex-wrap items-center gap-sm` row so each keeps its natural width and
+  wraps to the next line on narrow screens. Full-width is allowed ONLY for a
+  single primary submit inside a focused `max-w-form` form (sign in / register).
+  Toolbar/section actions are icon+label chips, not full-width blocks.
 
 ## Design system — tokens only
 
@@ -53,5 +64,5 @@ simplify something, **add a row to `PENDING.md`** so it isn't forgotten.
 ## Definition of done
 
 - `npx eslint src` and `npm run build` both pass clean (no `any`, no disables).
-- New screens are full-width and responsive; UI uses tokens only.
+- New screens sit in the centered `max-w-shell` and are responsive; tokens only.
 - Inputs validated; nothing secret reaches the client.

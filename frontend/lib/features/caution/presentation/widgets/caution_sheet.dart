@@ -268,6 +268,7 @@ class _CautionForfeitSheetState extends State<CautionForfeitSheet> {
   final _formKey = GlobalKey<FormState>();
   final _amountCtrl = TextEditingController();
   final _noteCtrl = TextEditingController();
+  final _taxRateCtrl = TextEditingController(text: '18');
   String _gstTreatment = 'NONE';
 
   @override
@@ -281,6 +282,7 @@ class _CautionForfeitSheetState extends State<CautionForfeitSheet> {
   void dispose() {
     _amountCtrl.dispose();
     _noteCtrl.dispose();
+    _taxRateCtrl.dispose();
     super.dispose();
   }
 
@@ -288,6 +290,9 @@ class _CautionForfeitSheetState extends State<CautionForfeitSheet> {
     if (!_formKey.currentState!.validate()) return;
     final amount = double.tryParse(_amountCtrl.text.trim());
     if (amount == null || amount <= 0) return;
+    final taxRate = _gstTreatment == 'SUPPLY'
+        ? double.tryParse(_taxRateCtrl.text.trim())
+        : null;
 
     final provider = context.read<CautionProvider>();
     try {
@@ -295,6 +300,7 @@ class _CautionForfeitSheetState extends State<CautionForfeitSheet> {
         partyId: widget.partyId,
         amount: amount,
         gstTreatment: _gstTreatment,
+        taxRate: taxRate,
         note: _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim(),
       );
       if (mounted) Navigator.of(context).pop(balance);
@@ -388,6 +394,28 @@ class _CautionForfeitSheetState extends State<CautionForfeitSheet> {
                     ],
                   ),
                 ),
+                if (_gstTreatment == 'SUPPLY') ...[
+                  const SizedBox(height: AppSizes.sm),
+                  TextFormField(
+                    controller: _taxRateCtrl,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    decoration: const InputDecoration(
+                      labelText: 'Goods GST rate (%)',
+                      helperText:
+                          'Forfeit is GST-inclusive — tax is carved out at this rate',
+                      helperMaxLines: 2,
+                    ),
+                    validator: (v) {
+                      if (_gstTreatment != 'SUPPLY') return null;
+                      final parsed = double.tryParse((v ?? '').trim());
+                      if (parsed == null || parsed < 0 || parsed > 100) {
+                        return 'Enter the GST rate (0–100)';
+                      }
+                      return null;
+                    },
+                  ),
+                ],
                 const SizedBox(height: AppSizes.xs),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,

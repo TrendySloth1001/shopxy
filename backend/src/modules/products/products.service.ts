@@ -62,6 +62,7 @@ const productSelect = {
   sellingPrice: true,
   purchasePrice: true,
   taxPercent: true,
+  cessRate: true,
   stockQuantity: true,
   lowStockThreshold: true,
   unit: true,
@@ -123,6 +124,7 @@ export class ProductsService {
       sellingPrice: number;
       purchasePrice: number;
       taxPercent?: number;
+      cessRate?: number;
       stockQuantity?: number;
       lowStockThreshold?: number;
       unit?: string;
@@ -561,6 +563,7 @@ export class ProductsService {
       sellingPrice?: number;
       purchasePrice?: number;
       taxPercent?: number;
+      cessRate?: number;
       lowStockThreshold?: number;
       unit?: string;
       categoryId?: number | null;

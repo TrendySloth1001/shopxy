@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
 import { HttpError } from '../../shared/http/errorHandler.js';
+import { round2 } from '../../shared/numbering/decimal.js';
 
 export type WalletSource =
   | 'REFUND'
@@ -185,9 +186,12 @@ export class WalletService {
   }
 
   /// Current balance + the most recent N entries — single round-trip
-  /// for the wallet page header.
+  /// for the wallet page header. Also re-sums the ledger as a drift
+  /// guard: the denormalised `users.wallet_balance` is money, and a
+  /// silent divergence from SUM(wallet_entries.amount) means a credit
+  /// or debit escaped its transaction — that must be loud, not trusted.
   async snapshot(userId: number, recentLimit = 30) {
-    const [user, entries] = await Promise.all([
+    const [user, entries, ledgerSum] = await Promise.all([
       prisma.user.findUniqueOrThrow({
         where: { id: userId },
         select: { walletBalance: true },
@@ -206,9 +210,22 @@ export class WalletService {
           createdAt: true,
         },
       }),
+      prisma.walletEntry.aggregate({
+        where: { userId },
+        _sum: { amount: true },
+      }),
     ]);
+    const ledgerBalance = round2(Number(ledgerSum._sum.amount ?? 0));
+    const denorm = round2(Number(user.walletBalance));
+    if (denorm !== ledgerBalance) {
+      console.error(
+        `[wallet] balance drift for user ${userId}: denorm ${denorm.toFixed(2)} vs ledger ${ledgerBalance.toFixed(2)} — run walletService.reconcile(${userId}, { heal: true })`,
+      );
+    }
     return {
       balance: Number(user.walletBalance),
+      /// SUM of every ledger entry — equals `balance` unless drifted.
+      ledgerBalance,
       entries: entries.map((e) => ({
         id: e.id,
         amount: Number(e.amount),
@@ -219,6 +236,38 @@ export class WalletService {
         createdAt: e.createdAt,
       })),
     };
+  }
+
+  /// Compare the denormalised balance against the ledger SUM. With
+  /// `heal: true`, resets the denorm to the ledger figure (the entries
+  /// are append-only and idempotency-keyed, so the SUM is the truth).
+  /// Serializable so a concurrent credit can't interleave between the
+  /// re-sum and the heal write.
+  async reconcile(userId: number, opts?: { heal?: boolean }) {
+    return prisma.$transaction(
+      async (tx) => {
+        const [user, sum] = await Promise.all([
+          tx.user.findUniqueOrThrow({
+            where: { id: userId },
+            select: { walletBalance: true },
+          }),
+          tx.walletEntry.aggregate({ where: { userId }, _sum: { amount: true } }),
+        ]);
+        const ledger = round2(Number(sum._sum.amount ?? 0));
+        const denorm = round2(Number(user.walletBalance));
+        const drift = round2(denorm - ledger);
+        let healed = false;
+        if (drift !== 0 && opts?.heal) {
+          await tx.user.update({
+            where: { id: userId },
+            data: { walletBalance: new Prisma.Decimal(ledger) },
+          });
+          healed = true;
+        }
+        return { userId, denorm, ledger, drift, healed };
+      },
+      { isolationLevel: 'Serializable' },
+    );
   }
 }
 

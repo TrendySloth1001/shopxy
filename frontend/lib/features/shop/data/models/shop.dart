@@ -1,3 +1,15 @@
+/// How refunds are issued when a return is approved.
+const kRefundModes = ['WALLET', 'ORIGINAL', 'REPLACEMENT'];
+
+/// Latest order stage at which a customer may still cancel; after that
+/// they must use a post-delivery return.
+const kCancellationPolicies = [
+  'UNTIL_CONFIRMED',
+  'UNTIL_PACKED',
+  'UNTIL_SHIPPED',
+  'UNTIL_DELIVERED',
+];
+
 class Shop {
   const Shop({
     required this.id,
@@ -17,6 +29,11 @@ class Shop {
     this.refundPolicy,
     this.vacationMode = false,
     this.vacationMessage,
+    this.returnsEnabled = false,
+    this.returnWindowDays = 0,
+    this.refundMode = 'ORIGINAL',
+    this.returnPolicyNote,
+    this.cancellationPolicy = 'UNTIL_SHIPPED',
     this.operatingHours,
   });
 
@@ -41,6 +58,17 @@ class Shop {
   final bool vacationMode;
   /// Customer-visible message rendered alongside the vacation banner.
   final String? vacationMessage;
+  /// Whether customers may request post-delivery returns at all.
+  final bool returnsEnabled;
+  /// Days after delivery a return can be requested. 0 = no limit.
+  final int returnWindowDays;
+  /// One of [kRefundModes].
+  final String refundMode;
+  /// Optional customer-visible note shown with the return policy.
+  final String? returnPolicyNote;
+  /// One of [kCancellationPolicies] — the latest order stage at which
+  /// a customer may still cancel.
+  final String cancellationPolicy;
   /// Day → [open, close] in HH:MM. Missing days = closed. Null when
   /// the merchant hasn't set any hours.
   final Map<String, List<String>>? operatingHours;
@@ -63,8 +91,22 @@ class Shop {
         refundPolicy: json['refundPolicy'] as String?,
         vacationMode: (json['vacationMode'] as bool?) ?? false,
         vacationMessage: json['vacationMessage'] as String?,
+        returnsEnabled: (json['returnsEnabled'] as bool?) ?? false,
+        returnWindowDays: (json['returnWindowDays'] as num?)?.toInt() ?? 0,
+        refundMode: _enumOr(json['refundMode'], kRefundModes, 'ORIGINAL'),
+        returnPolicyNote: json['returnPolicyNote'] as String?,
+        cancellationPolicy: _enumOr(
+          json['cancellationPolicy'],
+          kCancellationPolicies,
+          'UNTIL_SHIPPED',
+        ),
         operatingHours: _parseHours(json['operatingHours']),
       );
+
+  /// Tolerant enum parse — unknown server values fall back so a newer
+  /// backend can't crash an older app build.
+  static String _enumOr(dynamic raw, List<String> allowed, String fallback) =>
+      raw is String && allowed.contains(raw) ? raw : fallback;
 
   static Map<String, List<String>>? _parseHours(dynamic raw) {
     if (raw is! Map) return null;

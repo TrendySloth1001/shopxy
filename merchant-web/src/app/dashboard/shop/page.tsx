@@ -13,7 +13,19 @@ import {
   uploadShopImage,
   type ShopUpdate,
 } from "@/features/shop/api";
-import { DAYS, DAY_LABELS, type Day, type Shop } from "@/features/shop/schema";
+import {
+  CANCELLATION_POLICIES,
+  CANCELLATION_POLICY_LABELS,
+  DAYS,
+  DAY_LABELS,
+  REFUND_MODES,
+  REFUND_MODE_LABELS,
+  returnWindowDaysSchema,
+  type CancellationPolicy,
+  type Day,
+  type RefundMode,
+  type Shop,
+} from "@/features/shop/schema";
 import { CardsSkeleton } from "@/shared/ui/skeleton";
 
 type DayHours = { open: boolean; from: string; to: string };
@@ -47,6 +59,11 @@ export default function ShopPage() {
     returnPolicy: string;
     shippingPolicy: string;
     refundPolicy: string;
+    returnsEnabled: boolean;
+    returnWindowDays: string;
+    refundMode: RefundMode;
+    returnPolicyNote: string;
+    cancellationPolicy: CancellationPolicy;
     hours: Record<Day, DayHours>;
   } | null>(null);
 
@@ -77,6 +94,11 @@ export default function ShopPage() {
           returnPolicy: s.returnPolicy ?? "",
           shippingPolicy: s.shippingPolicy ?? "",
           refundPolicy: s.refundPolicy ?? "",
+          returnsEnabled: s.returnsEnabled,
+          returnWindowDays: String(s.returnWindowDays),
+          refundMode: s.refundMode,
+          returnPolicyNote: s.returnPolicyNote ?? "",
+          cancellationPolicy: s.cancellationPolicy,
           hours: initHours(s),
         });
         setError(null);
@@ -112,6 +134,15 @@ export default function ShopPage() {
 
   async function onSave() {
     if (!form) return;
+    const windowDays = returnWindowDaysSchema.safeParse(form.returnWindowDays.trim() || undefined);
+    if (!windowDays.success) {
+      setActionError("Return window must be a whole number of days between 0 and 365.");
+      return;
+    }
+    if (form.returnPolicyNote.length > 2048) {
+      setActionError("Return policy note must be 2048 characters or fewer.");
+      return;
+    }
     setSaving(true);
     setSaved(false);
     setActionError(null);
@@ -132,6 +163,11 @@ export default function ShopPage() {
       refundPolicy: form.refundPolicy.trim() || null,
       vacationMode: form.vacationMode,
       vacationMessage: form.vacationMessage.trim() || null,
+      returnsEnabled: form.returnsEnabled,
+      returnWindowDays: windowDays.data,
+      refundMode: form.refundMode,
+      returnPolicyNote: form.returnPolicyNote.trim() || null,
+      cancellationPolicy: form.cancellationPolicy,
       operatingHours,
     };
     try {
@@ -306,6 +342,69 @@ export default function ShopPage() {
         />
       </div>
 
+      {/* Returns & cancellation */}
+      <SectionTitle
+        title="Returns & cancellation"
+        desc="Whether you accept returns, how refunds are issued, and how late customers can cancel."
+      />
+      <div className="max-w-content flex flex-col gap-lg">
+        <ToggleRow
+          label="Accept returns"
+          desc="When off, customers can't request post-delivery returns."
+          checked={form.returnsEnabled}
+          onChange={() => patch({ returnsEnabled: !form.returnsEnabled })}
+        />
+        {form.returnsEnabled ? (
+          <>
+            <div className="grid grid-cols-1 gap-lg sm:grid-cols-2">
+              <label className="flex flex-col gap-xs">
+                <span className="text-label-md text-muted">Return window (days)</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={365}
+                  step={1}
+                  inputMode="numeric"
+                  value={form.returnWindowDays}
+                  onChange={(e) => patch({ returnWindowDays: e.target.value })}
+                  className="h-10 rounded-input border border-hairline bg-white px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+                />
+                <span className="text-body-sm text-subtle">0 means no time limit.</span>
+              </label>
+              <SelectField
+                label="Refund method"
+                value={form.refundMode}
+                options={REFUND_MODES.map((m) => ({ value: m, label: REFUND_MODE_LABELS[m] }))}
+                onChange={(v) => patch({ refundMode: v })}
+              />
+            </div>
+            <label className="flex flex-col gap-xs">
+              <span className="text-label-md text-muted">Return policy note</span>
+              <textarea
+                value={form.returnPolicyNote}
+                onChange={(e) => patch({ returnPolicyNote: e.target.value })}
+                rows={3}
+                maxLength={2048}
+                placeholder="Anything customers should know — condition requirements, who pays return shipping…"
+                className="rounded-input border border-hairline bg-white px-md py-sm text-body-md text-ink outline-none placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+              />
+            </label>
+          </>
+        ) : null}
+        <div className="grid grid-cols-1 gap-lg sm:grid-cols-2">
+          <SelectField
+            label="Customers can cancel"
+            value={form.cancellationPolicy}
+            options={CANCELLATION_POLICIES.map((p) => ({
+              value: p,
+              label: CANCELLATION_POLICY_LABELS[p],
+            }))}
+            onChange={(v) => patch({ cancellationPolicy: v })}
+            hint="After this stage, customers must use a post-delivery return instead."
+          />
+        </div>
+      </div>
+
       {/* More */}
       <SectionTitle title="More" desc="Team access and payouts." />
       <div className="max-w-content">
@@ -382,6 +481,38 @@ function TextArea({
         rows={3}
         className="rounded-input border border-hairline bg-white px-md py-sm text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
       />
+    </label>
+  );
+}
+
+function SelectField<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+  hint,
+}: {
+  label: string;
+  value: T;
+  options: { value: T; label: string }[];
+  onChange: (v: T) => void;
+  hint?: string;
+}) {
+  return (
+    <label className="flex flex-col gap-xs">
+      <span className="text-label-md text-muted">{label}</span>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value as T)}
+        className="h-10 cursor-pointer rounded-input border border-hairline bg-white px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+      >
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+      {hint ? <span className="text-body-sm text-subtle">{hint}</span> : null}
     </label>
   );
 }

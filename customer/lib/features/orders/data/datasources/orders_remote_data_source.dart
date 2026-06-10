@@ -11,7 +11,7 @@ import 'package:shopxy_customer/features/orders/domain/entities/customer_order.d
 /// render targeted copy instead of "Could not cancel".
 class CancelOrderException implements Exception {
   CancelOrderException(this.code, this.message);
-  /// One of: NOT_FOUND, NOT_OWNED, NOT_PENDING, UNKNOWN.
+  /// One of: NOT_FOUND, NOT_OWNED, NOT_PENDING, NOT_CANCELLABLE, UNKNOWN.
   final String code;
   final String message;
 

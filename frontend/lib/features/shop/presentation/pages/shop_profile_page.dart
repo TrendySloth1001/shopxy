@@ -31,6 +31,11 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
   late final TextEditingController _returnPolicy;
   late final TextEditingController _shippingPolicy;
   late final TextEditingController _refundPolicy;
+  late final TextEditingController _returnWindowDays;
+  late final TextEditingController _returnPolicyNote;
+  bool _returnsEnabled = false;
+  String _refundMode = 'ORIGINAL';
+  String _cancellationPolicy = 'UNTIL_SHIPPED';
   String? _logoUrl;
   String? _bannerUrl;
   bool _uploadingLogo = false;
@@ -47,6 +52,8 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
     _returnPolicy = TextEditingController();
     _shippingPolicy = TextEditingController();
     _refundPolicy = TextEditingController();
+    _returnWindowDays = TextEditingController();
+    _returnPolicyNote = TextEditingController();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       context.read<ShopProvider>().load();
@@ -63,6 +70,11 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
     _returnPolicy.text = shop.returnPolicy ?? '';
     _shippingPolicy.text = shop.shippingPolicy ?? '';
     _refundPolicy.text = shop.refundPolicy ?? '';
+    _returnsEnabled = shop.returnsEnabled;
+    _returnWindowDays.text = shop.returnWindowDays.toString();
+    _refundMode = shop.refundMode;
+    _returnPolicyNote.text = shop.returnPolicyNote ?? '';
+    _cancellationPolicy = shop.cancellationPolicy;
     _logoUrl = shop.logoUrl;
     _bannerUrl = shop.bannerUrl;
   }
@@ -76,6 +88,8 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
     _returnPolicy.dispose();
     _shippingPolicy.dispose();
     _refundPolicy.dispose();
+    _returnWindowDays.dispose();
+    _returnPolicyNote.dispose();
     super.dispose();
   }
 
@@ -143,6 +157,13 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
         _diffText(_returnPolicy, shop.returnPolicy) != null ||
         _diffText(_shippingPolicy, shop.shippingPolicy) != null ||
         _diffText(_refundPolicy, shop.refundPolicy) != null ||
+        _returnsEnabled != shop.returnsEnabled ||
+        (int.tryParse(_returnWindowDays.text.trim()) ??
+                shop.returnWindowDays) !=
+            shop.returnWindowDays ||
+        _refundMode != shop.refundMode ||
+        _diffText(_returnPolicyNote, shop.returnPolicyNote) != null ||
+        _cancellationPolicy != shop.cancellationPolicy ||
         _logoUrl != shop.logoUrl ||
         _bannerUrl != shop.bannerUrl;
   }
@@ -158,6 +179,8 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
     // explicit-null sentinel for clears).
     Object? maybe(String? diff) => diff ?? const Object();
 
+    final newWindowDays = int.tryParse(_returnWindowDays.text.trim());
+
     final ok = await provider.save(
       name: newName == current.name ? null : newName,
       tagline: maybe(_diffText(_tagline, current.tagline)),
@@ -170,6 +193,20 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
       shippingPolicy:
           maybe(_diffText(_shippingPolicy, current.shippingPolicy)),
       refundPolicy: maybe(_diffText(_refundPolicy, current.refundPolicy)),
+      returnsEnabled: _returnsEnabled == current.returnsEnabled
+          ? const Object()
+          : _returnsEnabled,
+      returnWindowDays:
+          newWindowDays == null || newWindowDays == current.returnWindowDays
+              ? const Object()
+              : newWindowDays,
+      refundMode:
+          _refundMode == current.refundMode ? const Object() : _refundMode,
+      returnPolicyNote:
+          maybe(_diffText(_returnPolicyNote, current.returnPolicyNote)),
+      cancellationPolicy: _cancellationPolicy == current.cancellationPolicy
+          ? const Object()
+          : _cancellationPolicy,
     );
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -473,6 +510,116 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
                   maxLines: 6,
                   maxLength: 4096,
                   onChanged: (_) => setState(() {}),
+                ),
+                const SizedBox(height: AppSizes.xl),
+                _SectionHeader(
+                  title: 'Returns & cancellation',
+                  subtitle:
+                      'Whether customers can return orders, how refunds '
+                      'are issued, and how late an order can be '
+                      'cancelled.',
+                ),
+                const SizedBox(height: AppSizes.sm),
+                SwitchListTile.adaptive(
+                  value: _returnsEnabled,
+                  onChanged: (v) => setState(() => _returnsEnabled = v),
+                  title: const Text('Accept returns'),
+                  subtitle: const Text(
+                    "When off, customers can't request post-delivery "
+                    'returns.',
+                  ),
+                  contentPadding: EdgeInsets.zero,
+                ),
+                if (_returnsEnabled) ...[
+                  const SizedBox(height: AppSizes.md),
+                  TextFormField(
+                    controller: _returnWindowDays,
+                    decoration: const InputDecoration(
+                      labelText: 'Return window (days)',
+                      helperText: '0 means no time limit.',
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: (v) {
+                      if (!_returnsEnabled) return null;
+                      final n = int.tryParse(v?.trim() ?? '');
+                      if (n == null || n < 0 || n > 365) {
+                        return 'Enter a whole number between 0 and 365';
+                      }
+                      return null;
+                    },
+                    onChanged: (_) => setState(() {}),
+                  ),
+                  const SizedBox(height: AppSizes.md),
+                  DropdownButtonFormField<String>(
+                    initialValue: _refundMode,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Refund method',
+                    ),
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'WALLET',
+                        child: Text('Store wallet credit'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'ORIGINAL',
+                        child: Text('Original payment method'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'REPLACEMENT',
+                        child: Text('Replacement only'),
+                      ),
+                    ],
+                    onChanged: (v) => setState(
+                      () => _refundMode = v ?? _refundMode,
+                    ),
+                  ),
+                  const SizedBox(height: AppSizes.md),
+                  TextFormField(
+                    controller: _returnPolicyNote,
+                    decoration: const InputDecoration(
+                      labelText: 'Return policy note (optional)',
+                      hintText:
+                          'e.g. Items must be unused and in original '
+                          'packaging. Buyer pays return shipping.',
+                    ),
+                    minLines: 2,
+                    maxLines: 6,
+                    maxLength: 2048,
+                    onChanged: (_) => setState(() {}),
+                  ),
+                ],
+                const SizedBox(height: AppSizes.md),
+                DropdownButtonFormField<String>(
+                  initialValue: _cancellationPolicy,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Customers can cancel',
+                    helperText:
+                        'After this stage they must use a post-delivery '
+                        'return instead.',
+                  ),
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'UNTIL_CONFIRMED',
+                      child: Text('Until I confirm the order'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'UNTIL_PACKED',
+                      child: Text('Until packed'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'UNTIL_SHIPPED',
+                      child: Text('Until shipped (recommended)'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'UNTIL_DELIVERED',
+                      child: Text('Until delivered'),
+                    ),
+                  ],
+                  onChanged: (v) => setState(
+                    () => _cancellationPolicy = v ?? _cancellationPolicy,
+                  ),
                 ),
               ],
             ),

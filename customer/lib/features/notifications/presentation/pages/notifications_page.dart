@@ -4,6 +4,10 @@ import 'package:provider/provider.dart';
 import 'package:shopxy_customer/features/notifications/domain/entities/notification.dart';
 import 'package:shopxy_customer/features/notifications/presentation/pages/invitations_page.dart';
 import 'package:shopxy_customer/features/notifications/presentation/providers/notifications_provider.dart';
+import 'package:shopxy_customer/features/shops/domain/entities/linked_shop.dart';
+import 'package:shopxy_customer/features/shops/presentation/pages/shop_quotation_detail_page.dart';
+import 'package:shopxy_customer/features/shops/presentation/pages/shop_quotations_page.dart';
+import 'package:shopxy_customer/features/shops/presentation/providers/shops_provider.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
@@ -123,6 +127,7 @@ enum _NotificationBucket {
   static bool _isUpdate(String k) =>
       k.startsWith('ORDER_') ||
       k.startsWith('PURCHASE_REQUEST_') ||
+      k.startsWith('QUOTATION_') ||
       k == 'BACK_IN_STOCK' ||
       k == 'REVIEW_REQUEST';
 
@@ -290,6 +295,8 @@ class _NotificationTile extends StatelessWidget {
           Navigator.of(context).push(
             MaterialPageRoute(builder: (_) => const InvitationsPage()),
           );
+        } else if (item.kind.startsWith('QUOTATION_')) {
+          _openQuotation(context);
         }
       },
       child: Container(
@@ -362,6 +369,60 @@ class _NotificationTile extends StatelessWidget {
     );
   }
 
+  /// Routes a QUOTATION_* notification to the shop it belongs to.
+  ///
+  /// The notification `data` carries `partyId` + `quotationId`; the shop
+  /// itself is resolved from the user's `/me/links` (ShopsProvider). We land
+  /// on the shop's quotations list immediately for fast feedback, then — once
+  /// the quotation list is loaded — push the exact quotation's detail on top
+  /// so "back" naturally returns to the list.
+  Future<void> _openQuotation(BuildContext context) async {
+    final shopsProvider = context.read<ShopsProvider>();
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final partyId = _asInt(item.data['partyId']);
+    final quotationId = _asInt(item.data['quotationId']);
+
+    if (shopsProvider.shops.isEmpty) {
+      await shopsProvider.loadShops();
+    }
+    LinkedShop? match;
+    for (final s in shopsProvider.shops) {
+      if (s.role == ShopRole.party && s.id == partyId) {
+        match = s;
+        break;
+      }
+    }
+    final shop = match;
+    if (shop == null) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Could not find the shop for this quotation'),
+        ),
+      );
+      return;
+    }
+    navigator.push(
+      MaterialPageRoute(builder: (_) => ShopQuotationsPage(shop: shop)),
+    );
+    if (quotationId == null) return;
+    await shopsProvider.loadQuotations(shop);
+    final quotes = shopsProvider.quotationsFor(shop) ?? const <ShopQuotation>[];
+    for (final q in quotes) {
+      if (q.id == quotationId) {
+        navigator.push(
+          MaterialPageRoute(
+            builder: (_) => ShopQuotationDetailPage(shop: shop, quotation: q),
+          ),
+        );
+        return;
+      }
+    }
+  }
+
+  static int? _asInt(dynamic v) =>
+      v is int ? v : (v == null ? null : int.tryParse('$v'));
+
   static String _formatTime(DateTime t) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -410,6 +471,13 @@ class _NotificationTile extends StatelessWidget {
         icon: Icons.payments_outlined,
         tint: AppColors.successSoft,
         accent: AppColors.success,
+      );
+    }
+    if (kind.startsWith('QUOTATION_')) {
+      return const _IconSpec(
+        icon: Icons.request_quote_outlined,
+        tint: AppColors.brandSoft,
+        accent: AppColors.brandStrong,
       );
     }
     if (kind == 'BACK_IN_STOCK') {

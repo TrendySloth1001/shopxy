@@ -136,8 +136,17 @@ export class RazorpayProvider
   constructor(opts: RazorpayCallConfig = {}) {
     this.keyId = requireEnv('RAZORPAY_KEY_ID');
     this.keySecret = requireEnv('RAZORPAY_KEY_SECRET');
-    // Soft: empty webhook secret => verifyWebhookSignature always fails closed.
+    // Dev: empty webhook secret => verifyWebhookSignature always fails closed
+    // (webhooks are ignored, payments reconcile via polling). Prod: that same
+    // silent failure would drop EVERY capture webhook with no error anywhere,
+    // so refuse to boot instead — a half-configured gateway is a money bug,
+    // not a degraded mode.
     this.webhookSecret = envOr('RAZORPAY_WEBHOOK_SECRET', '');
+    if (!this.webhookSecret && process.env.NODE_ENV === 'production') {
+      throw new Error(
+        'RAZORPAY_WEBHOOK_SECRET is required in production when Razorpay keys are configured',
+      );
+    }
     this.cfg = {
       // Clamp to ≥1 so a degenerate config can't make the loop a no-op that
       // throws an undefined `lastErr`.

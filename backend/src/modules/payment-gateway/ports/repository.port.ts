@@ -54,6 +54,12 @@ export interface GatewayPaymentRepository {
     id: number,
     refs: { providerOrderRef?: string; providerPaymentRef?: string },
   ): Promise<void>;
+  /**
+   * Release an intent's idempotency key (sets it NULL) so a fresh intent can
+   * be minted under the same (customer, key). Used when a still-open intent
+   * outlives the idempotency window — the stale row is retired, not reused.
+   */
+  detachIdempotencyKey(id: number): Promise<void>;
   updateStatus(
     id: number,
     status: GatewayPaymentStatus,

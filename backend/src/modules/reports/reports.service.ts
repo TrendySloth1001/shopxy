@@ -1,5 +1,4 @@
 import prisma from '../../infra/db/prisma.js';
-import type { Prisma } from '@prisma/client';
 
 // Bucket "day" by IST ('Asia/Kolkata') so a sale at 11:30pm local doesn't
 // land on the next UTC day.
@@ -8,6 +7,14 @@ import type { Prisma } from '@prisma/client';
 // reports used to aggregate across ALL shops (no shop_id filter), which
 // leaked other tenants' revenue, GST and customer PII into one merchant's
 // dashboard. The shopId is threaded from resolveShop via the controller.
+//
+// DOCUMENT SEMANTICS: every aggregate excludes ESTIMATE / PROFORMA rows
+// (offers, not transactions — a confirmed estimate must not count as
+// revenue, and its converted TAX_INVOICE would double-count it), and
+// counts CREDIT_NOTE rows with a NEGATIVE sign (Sec 34: a credit note
+// reduces turnover and output tax; the party ledger already credits it —
+// adding it to revenue as a positive was a live miscalculation).
+// DEBIT_NOTE stays positive (a supplementary invoice increases both).
 
 /// All numeric aggregates come back from Postgres as strings (because
 /// numeric / decimal types can't safely round-trip through JS doubles).
@@ -16,6 +23,8 @@ function n(v: string | number | null | undefined): number {
   if (v === null || v === undefined) return 0;
   return typeof v === 'string' ? Number(v) : v;
 }
+
+const r2 = (v: number) => Math.round(v * 100) / 100;
 
 export interface DateRange {
   /// Lower bound (inclusive). UTC.
@@ -31,22 +40,32 @@ export class ReportsService {
   // products, each one round-trip. No N+1.
   // ─────────────────────────────────────────────────────────────────
   async sales(shopId: number, range: DateRange) {
-    const where: Prisma.InvoiceWhereInput = {
-      shopId,
-      type: 'SALE',
-      status: 'CONFIRMED',
-      invoiceDate: { gte: range.from, lt: range.to },
-    };
-
-    const [summary, daily, topProducts, topCustomers, refundRow] = await Promise.all([
-      // Aggregate totals. `subtotal` is now gross-of-discount and
-      // `taxableValue` is the net taxable (after every discount) — the
-      // latter is the real turnover figure.
-      prisma.invoice.aggregate({
-        where,
-        _sum: { subtotal: true, taxableValue: true, taxAmount: true, total: true },
-        _count: { _all: true },
-      }),
+    const [summaryRow, daily, topProducts, topCustomers, refundRow] = await Promise.all([
+      // Aggregate totals. `subtotal` is gross-of-discount and
+      // `taxable_value` is the net taxable (after every discount) — the
+      // latter is the real turnover figure. Credit notes subtract.
+      prisma.$queryRaw<
+        {
+          invoices: bigint;
+          credit_notes: bigint;
+          subtotal: string;
+          taxable_value: string;
+          tax_amount: string;
+          total: string;
+        }[]
+      >`
+        SELECT
+          COUNT(*) FILTER (WHERE document_type <> 'CREDIT_NOTE')::bigint AS invoices,
+          COUNT(*) FILTER (WHERE document_type = 'CREDIT_NOTE')::bigint  AS credit_notes,
+          COALESCE(SUM((CASE WHEN document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * subtotal), 0)::text       AS subtotal,
+          COALESCE(SUM((CASE WHEN document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * taxable_value), 0)::text  AS taxable_value,
+          COALESCE(SUM((CASE WHEN document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * tax_amount), 0)::text     AS tax_amount,
+          COALESCE(SUM((CASE WHEN document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * total), 0)::text          AS total
+        FROM invoices
+        WHERE shop_id = ${shopId} AND type = 'SALE' AND status = 'CONFIRMED'
+          AND document_type NOT IN ('ESTIMATE', 'PROFORMA')
+          AND invoice_date >= ${range.from} AND invoice_date < ${range.to}
+      `,
       // Daily series — single GROUP BY ... ORDER BY day
       prisma.$queryRaw<
         { day: Date; invoices: bigint; revenue: string; tax: string }[]
@@ -54,10 +73,11 @@ export class ReportsService {
         SELECT
           date_trunc('day', invoice_date AT TIME ZONE 'Asia/Kolkata') AS day,
           COUNT(*)::bigint                AS invoices,
-          COALESCE(SUM(total), 0)::text   AS revenue,
-          COALESCE(SUM(tax_amount), 0)::text AS tax
+          COALESCE(SUM((CASE WHEN document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * total), 0)::text      AS revenue,
+          COALESCE(SUM((CASE WHEN document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * tax_amount), 0)::text AS tax
         FROM invoices
         WHERE shop_id = ${shopId} AND type = 'SALE' AND status = 'CONFIRMED'
+          AND document_type NOT IN ('ESTIMATE', 'PROFORMA')
           AND invoice_date >= ${range.from} AND invoice_date < ${range.to}
         GROUP BY day
         ORDER BY day ASC
@@ -77,11 +97,12 @@ export class ReportsService {
           ii.product_id,
           ii.product_name,
           ii.product_sku,
-          COALESCE(SUM(ii.quantity), 0)::text AS qty,
-          COALESCE(SUM(ii.total), 0)::text    AS revenue
+          COALESCE(SUM((CASE WHEN i.document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * ii.quantity), 0)::text AS qty,
+          COALESCE(SUM((CASE WHEN i.document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * ii.total), 0)::text    AS revenue
         FROM invoice_items ii
         JOIN invoices i ON i.id = ii.invoice_id
         WHERE i.shop_id = ${shopId} AND i.type = 'SALE' AND i.status = 'CONFIRMED'
+          AND i.document_type NOT IN ('ESTIMATE', 'PROFORMA')
           AND i.invoice_date >= ${range.from} AND i.invoice_date < ${range.to}
         GROUP BY ii.product_id, ii.product_name, ii.product_sku
         ORDER BY revenue DESC
@@ -98,10 +119,11 @@ export class ReportsService {
         SELECT
           party_id,
           COALESCE(customer_name, vendor_name, '(unnamed)') AS customer_name,
-          COALESCE(SUM(total), 0)::text AS revenue,
+          COALESCE(SUM((CASE WHEN document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * total), 0)::text AS revenue,
           COUNT(*)::bigint              AS invoices
         FROM invoices
         WHERE shop_id = ${shopId} AND type = 'SALE' AND status = 'CONFIRMED'
+          AND document_type NOT IN ('ESTIMATE', 'PROFORMA')
           AND invoice_date >= ${range.from} AND invoice_date < ${range.to}
         GROUP BY party_id, customer_name, vendor_name
         ORDER BY revenue DESC
@@ -109,9 +131,9 @@ export class ReportsService {
       `,
       // Returns/refunds netted against the period the original sale was
       // booked in (by the source invoice's date), so a returned sale no
-      // longer inflates the headline revenue (C2). NOTE: the GST credit
-      // note (Sec 34 output-tax reversal) and COGS restock are tracked as
-      // follow-ups — this nets the cash/revenue figure only.
+      // longer inflates the headline revenue (C2). The GST leg of the
+      // reversal is netted in gstSummary() from the refunded lines'
+      // stored tax columns.
       prisma.$queryRaw<{ refunds: string; count: bigint }[]>`
         SELECT
           COALESCE(SUM(rr.refund_amount), 0)::text AS refunds,
@@ -124,24 +146,28 @@ export class ReportsService {
       `,
     ]);
 
-    const grossRevenue = n(summary._sum.total?.toString());
+    const summary = summaryRow[0];
+    const grossRevenue = n(summary?.total ?? 0);
     const refunds = n(refundRow[0]?.refunds ?? 0);
 
     return {
       range,
       summary: {
-        invoiceCount: summary._count._all,
+        invoiceCount: Number(summary?.invoices ?? 0),
+        /// Confirmed sale credit notes in range (already netted out of
+        /// every money figure above).
+        creditNoteCount: Number(summary?.credit_notes ?? 0),
         /// Gross of all discounts — sum of (qty × unitPrice).
-        subtotal: n(summary._sum.subtotal?.toString()),
+        subtotal: n(summary?.subtotal ?? 0),
         /// Net taxable turnover after every discount (the real "sales" base).
-        taxableValue: n(summary._sum.taxableValue?.toString()),
-        taxAmount: n(summary._sum.taxAmount?.toString()),
-        /// Gross collected (taxable + tax + round-off).
+        taxableValue: n(summary?.taxable_value ?? 0),
+        taxAmount: n(summary?.tax_amount ?? 0),
+        /// Gross collected (taxable + tax + round-off), net of credit notes.
         total: grossRevenue,
         /// Refunds for sales booked in this period (gross, incl. tax).
         refunds,
         /// Headline revenue after returns.
-        netRevenue: Math.round((grossRevenue - refunds) * 100) / 100,
+        netRevenue: r2(grossRevenue - refunds),
         refundCount: Number(refundRow[0]?.count ?? 0),
       },
       daily: daily.map((d) => ({
@@ -167,32 +193,42 @@ export class ReportsService {
   }
 
   // ─────────────────────────────────────────────────────────────────
-  // Purchase report — same shape as sales but vendor-side.
+  // Purchase report — same shape as sales but vendor-side. A purchase
+  // CREDIT_NOTE (vendor reduced our bill) subtracts from spend/tax.
   // ─────────────────────────────────────────────────────────────────
   async purchases(shopId: number, range: DateRange) {
-    const where: Prisma.InvoiceWhereInput = {
-      shopId,
-      type: 'PURCHASE',
-      status: 'CONFIRMED',
-      invoiceDate: { gte: range.from, lt: range.to },
-    };
-
-    const [summary, daily, topProducts, topVendors] = await Promise.all([
-      prisma.invoice.aggregate({
-        where,
-        _sum: { subtotal: true, taxableValue: true, taxAmount: true, total: true },
-        _count: { _all: true },
-      }),
+    const [summaryRow, daily, topProducts, topVendors] = await Promise.all([
+      prisma.$queryRaw<
+        {
+          invoices: bigint;
+          subtotal: string;
+          taxable_value: string;
+          tax_amount: string;
+          total: string;
+        }[]
+      >`
+        SELECT
+          COUNT(*) FILTER (WHERE document_type <> 'CREDIT_NOTE')::bigint AS invoices,
+          COALESCE(SUM((CASE WHEN document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * subtotal), 0)::text       AS subtotal,
+          COALESCE(SUM((CASE WHEN document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * taxable_value), 0)::text  AS taxable_value,
+          COALESCE(SUM((CASE WHEN document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * tax_amount), 0)::text     AS tax_amount,
+          COALESCE(SUM((CASE WHEN document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * total), 0)::text          AS total
+        FROM invoices
+        WHERE shop_id = ${shopId} AND type = 'PURCHASE' AND status = 'CONFIRMED'
+          AND document_type NOT IN ('ESTIMATE', 'PROFORMA')
+          AND invoice_date >= ${range.from} AND invoice_date < ${range.to}
+      `,
       prisma.$queryRaw<
         { day: Date; invoices: bigint; spend: string; tax: string }[]
       >`
         SELECT
           date_trunc('day', invoice_date AT TIME ZONE 'Asia/Kolkata') AS day,
           COUNT(*)::bigint                AS invoices,
-          COALESCE(SUM(total), 0)::text   AS spend,
-          COALESCE(SUM(tax_amount), 0)::text AS tax
+          COALESCE(SUM((CASE WHEN document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * total), 0)::text      AS spend,
+          COALESCE(SUM((CASE WHEN document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * tax_amount), 0)::text AS tax
         FROM invoices
         WHERE shop_id = ${shopId} AND type = 'PURCHASE' AND status = 'CONFIRMED'
+          AND document_type NOT IN ('ESTIMATE', 'PROFORMA')
           AND invoice_date >= ${range.from} AND invoice_date < ${range.to}
         GROUP BY day
         ORDER BY day ASC
@@ -210,11 +246,12 @@ export class ReportsService {
           ii.product_id,
           ii.product_name,
           ii.product_sku,
-          COALESCE(SUM(ii.quantity), 0)::text AS qty,
-          COALESCE(SUM(ii.total), 0)::text    AS spend
+          COALESCE(SUM((CASE WHEN i.document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * ii.quantity), 0)::text AS qty,
+          COALESCE(SUM((CASE WHEN i.document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * ii.total), 0)::text    AS spend
         FROM invoice_items ii
         JOIN invoices i ON i.id = ii.invoice_id
         WHERE i.shop_id = ${shopId} AND i.type = 'PURCHASE' AND i.status = 'CONFIRMED'
+          AND i.document_type NOT IN ('ESTIMATE', 'PROFORMA')
           AND i.invoice_date >= ${range.from} AND i.invoice_date < ${range.to}
         GROUP BY ii.product_id, ii.product_name, ii.product_sku
         ORDER BY spend DESC
@@ -231,10 +268,11 @@ export class ReportsService {
         SELECT
           vendor_id,
           COALESCE(vendor_name, '(unnamed)') AS vendor_name,
-          COALESCE(SUM(total), 0)::text AS spend,
+          COALESCE(SUM((CASE WHEN document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * total), 0)::text AS spend,
           COUNT(*)::bigint              AS invoices
         FROM invoices
         WHERE shop_id = ${shopId} AND type = 'PURCHASE' AND status = 'CONFIRMED'
+          AND document_type NOT IN ('ESTIMATE', 'PROFORMA')
           AND invoice_date >= ${range.from} AND invoice_date < ${range.to}
         GROUP BY vendor_id, vendor_name
         ORDER BY spend DESC
@@ -242,14 +280,15 @@ export class ReportsService {
       `,
     ]);
 
+    const summary = summaryRow[0];
     return {
       range,
       summary: {
-        invoiceCount: summary._count._all,
-        subtotal: n(summary._sum.subtotal?.toString()),
-        taxableValue: n(summary._sum.taxableValue?.toString()),
-        taxAmount: n(summary._sum.taxAmount?.toString()),
-        total: n(summary._sum.total?.toString()),
+        invoiceCount: Number(summary?.invoices ?? 0),
+        subtotal: n(summary?.subtotal ?? 0),
+        taxableValue: n(summary?.taxable_value ?? 0),
+        taxAmount: n(summary?.tax_amount ?? 0),
+        total: n(summary?.total ?? 0),
       },
       daily: daily.map((d) => ({
         day: d.day.toISOString(),
@@ -281,6 +320,12 @@ export class ReportsService {
   // and the discount apportionment, so recomputing would disagree.
   // Cess is reported separately because it is not creditable against
   // CGST/SGST/IGST — only against cess.
+  //
+  // Returns: a REFUNDED return reverses the output tax on the refunded
+  // quantity (CGST Sec 34 — the credit-note adjustment). The reversal is
+  // computed from the source invoice line's stored tax, pro-rated by the
+  // returned quantity, and netted out of both the headline figures and
+  // the matching by-rate bucket.
   // ─────────────────────────────────────────────────────────────────
   async gstSummary(shopId: number, range: DateRange) {
     const byRate = (type: 'SALE' | 'PURCHASE') => prisma.$queryRaw<
@@ -288,18 +333,19 @@ export class ReportsService {
     >`
         SELECT
           ii.tax_percent::text                                       AS tax_rate,
-          COALESCE(SUM(ii.taxable_value), 0)::text                   AS taxable,
-          COALESCE(SUM(ii.igst_amount + ii.cgst_amount + ii.sgst_amount), 0)::text AS tax,
-          COALESCE(SUM(ii.cess_amount), 0)::text                     AS cess
+          COALESCE(SUM((CASE WHEN i.document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * ii.taxable_value), 0)::text AS taxable,
+          COALESCE(SUM((CASE WHEN i.document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * (ii.igst_amount + ii.cgst_amount + ii.sgst_amount)), 0)::text AS tax,
+          COALESCE(SUM((CASE WHEN i.document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * ii.cess_amount), 0)::text   AS cess
         FROM invoice_items ii
         JOIN invoices i ON i.id = ii.invoice_id
         WHERE i.shop_id = ${shopId} AND i.type = ${type} AND i.status = 'CONFIRMED'
+          AND i.document_type NOT IN ('ESTIMATE', 'PROFORMA')
           AND i.invoice_date >= ${range.from} AND i.invoice_date < ${range.to}
         GROUP BY ii.tax_percent
         ORDER BY ii.tax_percent ASC
       `;
 
-    const [output, input, totalsRow] = await Promise.all([
+    const [output, input, totalsRow, returnsByRate, forfeitRow] = await Promise.all([
       byRate('SALE'),
       byRate('PURCHASE'),
       prisma.$queryRaw<
@@ -311,21 +357,64 @@ export class ReportsService {
         }[]
       >`
         SELECT
-          COALESCE(SUM(CASE WHEN type='SALE'     THEN igst_amount + cgst_amount + sgst_amount ELSE 0 END), 0)::text AS output_gst,
-          COALESCE(SUM(CASE WHEN type='PURCHASE' THEN igst_amount + cgst_amount + sgst_amount ELSE 0 END), 0)::text AS input_gst,
-          COALESCE(SUM(CASE WHEN type='SALE'     THEN cess_amount ELSE 0 END), 0)::text AS output_cess,
-          COALESCE(SUM(CASE WHEN type='PURCHASE' THEN cess_amount ELSE 0 END), 0)::text AS input_cess
+          COALESCE(SUM(CASE WHEN type='SALE'     THEN (CASE WHEN document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * (igst_amount + cgst_amount + sgst_amount) ELSE 0 END), 0)::text AS output_gst,
+          COALESCE(SUM(CASE WHEN type='PURCHASE' THEN (CASE WHEN document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * (igst_amount + cgst_amount + sgst_amount) ELSE 0 END), 0)::text AS input_gst,
+          COALESCE(SUM(CASE WHEN type='SALE'     THEN (CASE WHEN document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * cess_amount ELSE 0 END), 0)::text AS output_cess,
+          COALESCE(SUM(CASE WHEN type='PURCHASE' THEN (CASE WHEN document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * cess_amount ELSE 0 END), 0)::text AS input_cess
         FROM invoices
         WHERE shop_id = ${shopId} AND status = 'CONFIRMED'
+          AND document_type NOT IN ('ESTIMATE', 'PROFORMA')
           AND invoice_date >= ${range.from} AND invoice_date < ${range.to}
+      `,
+      // Output-tax reversal for refunded returns, pro-rated from the
+      // source invoice line by returned quantity and grouped by rate so
+      // the headline and by-rate figures stay consistent.
+      prisma.$queryRaw<
+        { tax_rate: string; taxable: string; tax: string; cess: string }[]
+      >`
+        SELECT
+          ii.tax_percent::text AS tax_rate,
+          COALESCE(SUM(ii.taxable_value * rri.quantity / NULLIF(ii.quantity, 0)), 0)::text AS taxable,
+          COALESCE(SUM((ii.igst_amount + ii.cgst_amount + ii.sgst_amount) * rri.quantity / NULLIF(ii.quantity, 0)), 0)::text AS tax,
+          COALESCE(SUM(ii.cess_amount * rri.quantity / NULLIF(ii.quantity, 0)), 0)::text AS cess
+        FROM return_request_items rri
+        JOIN return_requests rr ON rr.id = rri.return_id
+        JOIN purchase_requests pr ON pr.id = rr.request_id
+        JOIN purchase_request_items pri ON pri.id = rri.purchase_request_item_id
+        JOIN invoices i ON i.id = pr.invoice_id
+        JOIN invoice_items ii ON ii.invoice_id = i.id AND ii.product_id = pri.product_id
+        WHERE rr.shop_id = ${shopId} AND rr.status = 'REFUNDED'
+          AND i.invoice_date >= ${range.from} AND i.invoice_date < ${range.to}
+        GROUP BY ii.tax_percent
+      `,
+      // SUPPLY forfeits of caution deposits accrue output GST on the
+      // inclusive split persisted at forfeit time (Circular 178/2022
+      // ¶11.3). They sit outside the invoice tables, so they're summed
+      // here and added to the headline output figures.
+      prisma.$queryRaw<{ taxable: string; tax: string }[]>`
+        SELECT
+          COALESCE(SUM(taxable_value), 0)::text AS taxable,
+          COALESCE(SUM(tax_amount), 0)::text    AS tax
+        FROM caution_txns
+        WHERE shop_id = ${shopId} AND type = 'FORFEIT' AND gst_treatment = 'SUPPLY'
+          AND created_at >= ${range.from} AND created_at < ${range.to}
       `,
     ]);
 
-    const outputGst = n(totalsRow[0]?.output_gst ?? 0);
+    const returnedGst = returnsByRate.reduce((s, r) => s + n(r.tax), 0);
+    const returnedCess = returnsByRate.reduce((s, r) => s + n(r.cess), 0);
+    const returnedByRate = new Map(
+      returnsByRate.map((r) => [n(r.tax_rate), r]),
+    );
+    const forfeitTaxable = n(forfeitRow[0]?.taxable ?? 0);
+    const forfeitGst = n(forfeitRow[0]?.tax ?? 0);
+
+    const outputGst = r2(
+      n(totalsRow[0]?.output_gst ?? 0) - returnedGst + forfeitGst,
+    );
     const inputGst = n(totalsRow[0]?.input_gst ?? 0);
-    const outputCess = n(totalsRow[0]?.output_cess ?? 0);
+    const outputCess = r2(n(totalsRow[0]?.output_cess ?? 0) - returnedCess);
     const inputCess = n(totalsRow[0]?.input_cess ?? 0);
-    const r2 = (v: number) => Math.round(v * 100) / 100;
 
     return {
       range,
@@ -338,12 +427,28 @@ export class ReportsService {
       outputCess,
       inputCess,
       netCessPayable: r2(outputCess - inputCess),
-      outputByRate: output.map((r) => ({
-        rate: n(r.tax_rate),
-        taxable: n(r.taxable),
-        tax: n(r.tax),
-        cess: n(r.cess),
-      })),
+      /// Output tax reversed on refunded returns in this period (already
+      /// netted out of outputTax / outputCess / the by-rate buckets).
+      returns: {
+        gst: r2(returnedGst),
+        cess: r2(returnedCess),
+      },
+      /// Output tax accrued on SUPPLY forfeits of caution deposits in this
+      /// period (already added to outputTax; not part of any by-rate bucket
+      /// because forfeits aren't invoice lines).
+      forfeits: {
+        taxable: r2(forfeitTaxable),
+        gst: r2(forfeitGst),
+      },
+      outputByRate: output.map((r) => {
+        const ret = returnedByRate.get(n(r.tax_rate));
+        return {
+          rate: n(r.tax_rate),
+          taxable: r2(n(r.taxable) - n(ret?.taxable ?? 0)),
+          tax: r2(n(r.tax) - n(ret?.tax ?? 0)),
+          cess: r2(n(r.cess) - n(ret?.cess ?? 0)),
+        };
+      }),
       inputByRate: input.map((r) => ({
         rate: n(r.tax_rate),
         taxable: n(r.taxable),
@@ -360,11 +465,12 @@ export class ReportsService {
   // to gross subtotal + distributed line discounts.
   // ─────────────────────────────────────────────────────────────────
   async pnl(shopId: number, range: DateRange) {
-    const [revenueRow, cogsRow, expenseRow, refundRow] = await Promise.all([
+    const [revenueRow, cogsRow, expenseRow, refundRow, returnedCogsRow, forfeitIncomeRow] = await Promise.all([
       prisma.$queryRaw<{ revenue: string }[]>`
-        SELECT COALESCE(SUM(taxable_value), 0)::text AS revenue
+        SELECT COALESCE(SUM((CASE WHEN document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * taxable_value), 0)::text AS revenue
         FROM invoices
         WHERE shop_id = ${shopId} AND type = 'SALE' AND status = 'CONFIRMED'
+          AND document_type NOT IN ('ESTIMATE', 'PROFORMA')
           AND invoice_date >= ${range.from} AND invoice_date < ${range.to}
       `,
       // COGS: consumptions are recorded against the SALE ledger row at
@@ -381,6 +487,10 @@ export class ReportsService {
       `,
       // Adjustment write-offs (damage, expiry, shrinkage) are an
       // operating expense in this lightweight P&L. Scoped to this shop.
+      // Bucketed by created_at deliberately: a stock adjustment has no
+      // user-settable business date (it can't be backdated), so its
+      // created_at IS the event date — the same basis invoice_date gives
+      // revenue/COGS for invoices.
       prisma.$queryRaw<{ writeoffs: string }[]>`
         SELECT COALESCE(SUM(sai.quantity * sai.unit_cost), 0)::text AS writeoffs
         FROM stock_adjustment_items sai
@@ -388,27 +498,60 @@ export class ReportsService {
         WHERE sa.shop_id = ${shopId} AND sa.direction = 'OUT'
           AND sa.created_at >= ${range.from} AND sa.created_at < ${range.to}
       `,
-      // Returns reduce net revenue. Approximated by the gross refund's
-      // ex-tax portion is non-trivial without a credit note, so we net the
-      // gross refund and flag it — credit-note-driven exactness is a
-      // follow-up.
+      // Returns reduce revenue by the refunded lines' EX-TAX value (the
+      // taxable slice of the original invoice line, pro-rated by returned
+      // quantity). Subtracting the gross refund here over-stated the hit:
+      // revenue is ex-tax, and the GST slice of the refund is reversed in
+      // gstSummary, not in the P&L.
       prisma.$queryRaw<{ refunds: string }[]>`
-        SELECT COALESCE(SUM(rr.refund_amount), 0)::text AS refunds
-        FROM return_requests rr
+        SELECT COALESCE(SUM(ii.taxable_value * rri.quantity / NULLIF(ii.quantity, 0)), 0)::text AS refunds
+        FROM return_request_items rri
+        JOIN return_requests rr ON rr.id = rri.return_id
         JOIN purchase_requests pr ON pr.id = rr.request_id
+        JOIN purchase_request_items pri ON pri.id = rri.purchase_request_item_id
         JOIN invoices i ON i.id = pr.invoice_id
+        JOIN invoice_items ii ON ii.invoice_id = i.id AND ii.product_id = pri.product_id
         WHERE rr.shop_id = ${shopId} AND rr.status = 'REFUNDED'
           AND i.invoice_date >= ${range.from} AND i.invoice_date < ${range.to}
+      `,
+      // Returned goods come back into stock via the RETURN_IN restock at
+      // the cost they were consumed at — that value offsets the period's
+      // COGS (the goods were not, in the end, sold).
+      prisma.$queryRaw<{ returned_cogs: string }[]>`
+        SELECT COALESCE(SUM(st.total_value), 0)::text AS returned_cogs
+        FROM stock_transactions st
+        JOIN return_requests rr ON st.source_type = 'RETURN' AND st.source_id = rr.id
+        JOIN purchase_requests pr ON pr.id = rr.request_id
+        JOIN invoices i ON i.id = pr.invoice_id
+        WHERE st.shop_id = ${shopId} AND st.direction = 'IN' AND st.reason_code = 'RETURN_IN'
+          AND i.invoice_date >= ${range.from} AND i.invoice_date < ${range.to}
+      `,
+      // Forfeited caution deposits are taxable business income (IT Act
+      // Sec 28/41) — the liability drop needs a matching income leg or
+      // the money vanishes from the P&L. SUPPLY forfeits book the EX-GST
+      // taxable slice (the output-tax slice is owed to the government,
+      // not income); NONE forfeits (pure penalty, no GST) book the full
+      // amount.
+      prisma.$queryRaw<{ income: string }[]>`
+        SELECT COALESCE(SUM(
+          CASE WHEN gst_treatment = 'SUPPLY' THEN COALESCE(taxable_value, amount)
+               ELSE amount END
+        ), 0)::text AS income
+        FROM caution_txns
+        WHERE shop_id = ${shopId} AND type = 'FORFEIT'
+          AND created_at >= ${range.from} AND created_at < ${range.to}
       `,
     ]);
 
     const grossRevenue = n(revenueRow[0]?.revenue ?? 0);
     const refunds = n(refundRow[0]?.refunds ?? 0);
-    const revenue = Math.round((grossRevenue - refunds) * 100) / 100;
-    const cogs = n(cogsRow[0]?.cogs ?? 0);
+    const revenue = r2(grossRevenue - refunds);
+    const returnedCogs = n(returnedCogsRow[0]?.returned_cogs ?? 0);
+    const cogs = r2(n(cogsRow[0]?.cogs ?? 0) - returnedCogs);
     const writeoffs = n(expenseRow[0]?.writeoffs ?? 0);
-    const grossProfit = revenue - cogs;
-    const netProfit = grossProfit - writeoffs;
+    const otherIncome = n(forfeitIncomeRow[0]?.income ?? 0);
+    const grossProfit = r2(revenue - cogs);
+    const netProfit = r2(grossProfit - writeoffs + otherIncome);
     const grossMargin = revenue > 0 ? grossProfit / revenue : 0;
 
     return {
@@ -416,7 +559,10 @@ export class ReportsService {
       revenue,
       refunds,
       cogs,
+      returnedCogs,
       writeoffs,
+      /// Forfeited caution deposits booked as income (ex-GST for SUPPLY).
+      otherIncome,
       grossProfit,
       netProfit,
       grossMargin,

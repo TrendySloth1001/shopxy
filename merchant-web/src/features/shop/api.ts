@@ -1,7 +1,9 @@
 import {
   payoutAccountSchema,
   shopSchema,
+  type CancellationPolicy,
   type PayoutAccount,
+  type RefundMode,
   type Shop,
 } from "./schema";
 
@@ -31,6 +33,11 @@ export type ShopUpdate = {
   refundPolicy?: string | null;
   vacationMode?: boolean;
   vacationMessage?: string | null;
+  returnsEnabled?: boolean;
+  returnWindowDays?: number;
+  refundMode?: RefundMode;
+  returnPolicyNote?: string | null;
+  cancellationPolicy?: CancellationPolicy;
   operatingHours?: Record<string, [string, string]> | null;
 };
 

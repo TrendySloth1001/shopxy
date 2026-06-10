@@ -132,16 +132,21 @@ class CautionRemoteDataSource {
   }
 
   /// Forfeit (keep) part of the deposit on the party's default. Returns the
-  /// new held balance. [gstTreatment] is 'NONE' or 'SUPPLY'.
+  /// new held balance. [gstTreatment] is 'NONE' or 'SUPPLY'. [taxRate] is the
+  /// goods GST rate — required by the backend when treatment is 'SUPPLY' (the
+  /// forfeited amount is GST-inclusive; the server carves the output tax out
+  /// at this rate).
   Future<double> forfeit({
     required int partyId,
     required double amount,
     required String gstTreatment,
+    double? taxRate,
     String? note,
   }) async {
     final body = <String, dynamic>{
       'amount': amount,
       'gstTreatment': gstTreatment,
+      'taxRate': ?taxRate,
       if (note != null && note.isNotEmpty) 'note': note,
     };
     final res = await _client.post('/parties/$partyId/caution/forfeit', body: body);

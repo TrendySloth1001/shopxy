@@ -3,6 +3,7 @@ import prisma from '../../infra/db/prisma.js';
 import { nextCautionRef } from '../../shared/numbering/sequences.js';
 import { toNumber } from '../../shared/numbering/decimal.js';
 import { HttpError } from '../../shared/http/errorHandler.js';
+import { paymentGatewayService } from '../payment-gateway/index.js';
 
 export type CautionRequestStatus =
   | 'PENDING'
@@ -314,6 +315,87 @@ export class CautionRequestsService {
 
       return toDTO(updated);
     });
+  }
+
+  /// Customer starts an ONLINE payment for their own PENDING request —
+  /// returns the gateway checkout session (provider, providerOrderRef,
+  /// clientParams) the app opens the Razorpay sheet with. The CAUTION
+  /// settlement handler mints the DEPOSIT on webhook capture; nothing is
+  /// approved on the client callback. Ownership is proven by the /me guard.
+  async initiateOnlinePayment(opts: {
+    shopId: number;
+    partyId: number;
+    requestId: number;
+    userId: number;
+  }) {
+    const req = await prisma.cautionRequest.findFirst({
+      where: { id: opts.requestId, shopId: opts.shopId, partyId: opts.partyId },
+      select: { id: true, amount: true, status: true },
+    });
+    if (!req) {
+      throw new HttpError(404, 'CAUTION_REQUEST_NOT_FOUND', 'Request not found');
+    }
+    if (req.status !== 'PENDING') {
+      throw new HttpError(
+        409,
+        'CAUTION_REQUEST_NOT_PENDING',
+        'Request is no longer pending',
+      );
+    }
+
+    const payment = await paymentGatewayService.initiatePayment({
+      provider: 'RAZORPAY',
+      target: { type: 'CAUTION', id: req.id },
+      amount: toNumber(req.amount),
+      currency: 'INR',
+      shopId: opts.shopId,
+      customerUserId: opts.userId,
+      idempotencyKey: `caution:${req.id}`,
+    });
+
+    // Stamp the gateway seam (display/reconciliation only — settlement
+    // re-stamps authoritatively on capture). Guarded on PENDING so a
+    // racing webhook's APPROVED stamp is never overwritten.
+    await prisma.cautionRequest.updateMany({
+      where: { id: req.id, status: 'PENDING' },
+      data: {
+        channel: 'GATEWAY',
+        provider: 'RAZORPAY',
+        providerRef: payment.providerOrderRef ?? null,
+      },
+    });
+
+    return payment;
+  }
+
+  /// Client-confirm after the checkout sheet returns success: re-checks the
+  /// live provider order and settles if paid (webhook backstop — localhost
+  /// dev and webhook lag), then returns the fresh request so the app can
+  /// render APPROVED immediately. Idempotent.
+  async syncOnlinePayment(opts: {
+    shopId: number;
+    partyId: number;
+    requestId: number;
+    userId: number;
+  }) {
+    const req = await prisma.cautionRequest.findFirst({
+      where: { id: opts.requestId, shopId: opts.shopId, partyId: opts.partyId },
+      select: { id: true },
+    });
+    if (!req) {
+      throw new HttpError(404, 'CAUTION_REQUEST_NOT_FOUND', 'Request not found');
+    }
+
+    const sync = await paymentGatewayService.syncIntentStatus({
+      customerUserId: opts.userId,
+      idempotencyKey: `caution:${req.id}`,
+    });
+
+    const fresh = await prisma.cautionRequest.findUniqueOrThrow({
+      where: { id: req.id },
+      select: requestSelect,
+    });
+    return { request: toDTO(fresh), settled: sync.settled };
   }
 
   /// Customer cancels their own PENDING request. Ownership (the caller is the

@@ -99,11 +99,12 @@ const detailSelect = {
 
 export class ReturnsService {
   /// Submit a new return request against a per-shop child slice. The
-  /// caller must own the order (customerUserId match) and the parent
-  /// must have been delivered (we don't gate on a specific
-  /// PurchaseRequest event here — merchants might use the legacy
-  /// CONFIRMED state without a DELIVERED row; the orders module is
-  /// where the eligibility window is enforced).
+  /// caller must own the order (customerUserId match), the request must
+  /// be CONFIRMED, and a DELIVERED event must exist — a return is a
+  /// post-receipt flow (goods came back), so before delivery the right
+  /// action is a CANCEL, gated by the shop's cancellationPolicy. The
+  /// merchant marks DELIVERED from the order detail (web + app), which
+  /// is also what starts the return window.
   ///
   /// Returns reason codes the controller maps to status codes.
   async submit(opts: ReturnRequestInput): Promise<
@@ -154,19 +155,19 @@ export class ReturnsService {
     });
     if (!child) return { error: 'NOT_FOUND' };
     if (child.status !== 'CONFIRMED') return { error: 'NOT_DELIVERED' };
+    // Hard delivery gate: no DELIVERED event → the goods haven't reached
+    // the customer, so there is nothing to "return" yet. (Pre-delivery
+    // the customer cancels instead — see cancelChildForCustomer.)
+    const deliveredAt = child.events[0]?.occurredAt ?? null;
+    if (!deliveredAt) return { error: 'NOT_DELIVERED' };
     if (!child.shop.returnsEnabled) return { error: 'RETURNS_DISABLED' };
 
-    // Eligibility window: if the merchant has a window > 0, the
-    // delivery (or confirmation, when no DELIVERED event was ever
-    // emitted) must be within that many days. Window=0 means no limit.
+    // Eligibility window: if the merchant has a window > 0, the delivery
+    // must be within that many days. Window=0 means no limit.
     const windowDays = child.shop.returnWindowDays;
     if (windowDays > 0) {
-      const start = child.events[0]?.occurredAt ?? child.decidedAt;
-      if (start) {
-        const ageMs = Date.now() - start.getTime();
-        const ageDays = ageMs / 86_400_000;
-        if (ageDays > windowDays) return { error: 'WINDOW_EXPIRED' };
-      }
+      const ageDays = (Date.now() - deliveredAt.getTime()) / 86_400_000;
+      if (ageDays > windowDays) return { error: 'WINDOW_EXPIRED' };
     }
 
     // Proportional refund — if the parent order used a coupon or paid
@@ -443,7 +444,12 @@ export class ReturnsService {
     let reverseChildId: number | null = null;
     let reverseAmount = 0;
     // Captured inside the tx for the post-commit inventory restock (RET-1).
-    let restockLines: Array<{ productId: number; quantity: number; sourceLineId: number }> = [];
+    let restockLines: Array<{
+      productId: number;
+      quantity: number;
+      sourceLineId: number;
+      unitPrice: number;
+    }> = [];
     let restockReturnId: number | null = null;
     const result = await prisma.$transaction(async (tx) => {
       // Claim the row from a refund-eligible state.
@@ -485,8 +491,12 @@ export class ReturnsService {
           // Reach into the parent order so we know how much of the
           // original payment came from wallet credit. We must credit
           // wallet money BACK to the wallet regardless of refund method.
+          // invoiceId locates the original sale's STOCK_OUT rows so the
+          // restock below re-enters the goods at the cost they were
+          // consumed at.
           request: {
             select: {
+              invoiceId: true,
               customerOrder: {
                 select: {
                   estimatedTotal: true,
@@ -560,6 +570,30 @@ export class ReturnsService {
       reverseChildId = row.requestId;
       reverseAmount = refundAmount;
       // Collect the returned quantities for the post-commit restock.
+      // The ledger REQUIRES a unit price on every stock-IN (it funds a
+      // cost layer) — the original restock call omitted it, so every
+      // RETURN_IN post failed with 'Unit price required for stock-in'
+      // and the error object was silently dropped: returns never
+      // actually restocked. Re-enter the goods at the cost the sale
+      // consumed them at (the original STOCK_OUT's FIFO-weighted
+      // unitCost), so inventory value and future COGS are unchanged by
+      // the round-trip.
+      const sourceInvoiceId = row.request?.invoiceId ?? null;
+      const costByProduct = new Map<number, number>();
+      if (sourceInvoiceId != null) {
+        const outRows = await tx.stockTransaction.findMany({
+          where: {
+            shopId: opts.shopId,
+            sourceType: 'INVOICE',
+            sourceId: sourceInvoiceId,
+            direction: 'OUT',
+          },
+          select: { productId: true, unitCost: true },
+        });
+        for (const r of outRows) {
+          costByProduct.set(r.productId, Number(r.unitCost ?? 0));
+        }
+      }
       restockReturnId = row.id;
       restockLines = row.items
         .filter((it) => it.purchaseRequestItem?.productId != null && Number(it.quantity) > 0)
@@ -567,6 +601,7 @@ export class ReturnsService {
           productId: it.purchaseRequestItem!.productId,
           quantity: Number(it.quantity),
           sourceLineId: it.id,
+          unitPrice: costByProduct.get(it.purchaseRequestItem!.productId) ?? 0,
         }));
       return {
         ok: true as const,
@@ -600,7 +635,23 @@ export class ReturnsService {
     // to be re-added via a manual stock adjustment.
     if ('ok' in result && result.ok && restockReturnId != null && restockLines.length > 0) {
       try {
-        await ledgerService.post({
+        // Lines whose sale OUT row carried no cost (legacy rows, or the
+        // product was sold before costing landed) fall back to the
+        // product's current purchase price so the IN still posts.
+        const missingCost = restockLines.filter((l) => l.unitPrice <= 0);
+        if (missingCost.length > 0) {
+          const fallback = await prisma.product.findMany({
+            where: { id: { in: missingCost.map((l) => l.productId) } },
+            select: { id: true, purchasePrice: true },
+          });
+          const priceById = new Map(
+            fallback.map((p) => [p.id, Number(p.purchasePrice)]),
+          );
+          for (const l of missingCost) {
+            l.unitPrice = priceById.get(l.productId) ?? 0;
+          }
+        }
+        const posted = await ledgerService.post({
           shopId: opts.shopId,
           direction: 'IN',
           reasonCode: 'RETURN_IN',
@@ -611,8 +662,20 @@ export class ReturnsService {
           note: `Restock from return #${restockReturnId}`,
           lines: restockLines,
         });
-      } catch {
+        // post() reports domain failures as a return value, not a throw —
+        // surface it so a dead restock is visible in the logs instead of
+        // silently understating stock forever.
+        if ('error' in posted) {
+          console.error(
+            `[returns] RETURN_IN restock failed for return #${restockReturnId}: ${posted.error}`,
+          );
+        }
+      } catch (err) {
         /* manual stock adjustment can re-add; refund stands. */
+        console.error(
+          `[returns] RETURN_IN restock threw for return #${restockReturnId}:`,
+          err,
+        );
       }
     }
     return result;

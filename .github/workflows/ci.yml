@@ -30,6 +30,22 @@ jobs:
           npm run typecheck
           npm test
           npm run build
+  customer-web:
+    runs-on: ubuntu-latest
+    env:
+      # Build-time placeholder; the BFF only talks to the real backend at runtime.
+      API_BASE_URL: http://localhost:4000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: 'npm', cache-dependency-path: customer-web/package-lock.json }
+      - working-directory: customer-web
+        run: |
+          npm ci
+          npm run lint
+          npm run typecheck
+          npm test
+          npm run build
   frontend:
     runs-on: ubuntu-latest
     steps:

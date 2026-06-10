@@ -270,6 +270,7 @@ class ShopCautionRequest {
     this.modeReference,
     this.note,
     required this.status,
+    this.channel,
     this.reviewNote,
     required this.createdAt,
     this.basketValue,
@@ -282,6 +283,10 @@ class ShopCautionRequest {
   final String? modeReference;
   final String? note;
   final String status; // PENDING | APPROVED | REJECTED | CANCELLED
+
+  /// How the deposit was (or will be) collected: MANUAL (merchant records
+  /// cash/UPI by hand) or GATEWAY (paid online via Razorpay).
+  final String? channel;
   final String? reviewNote;
   final DateTime createdAt;
 
@@ -292,6 +297,9 @@ class ShopCautionRequest {
   bool get hasBasket => basketCount > 0;
   bool get isPending => status == 'PENDING';
   bool get isApproved => status == 'APPROVED';
+
+  /// Approved AND collected through the online gateway (vs recorded by hand).
+  bool get isPaidOnline => isApproved && channel == 'GATEWAY';
   bool get isRejected => status == 'REJECTED';
   bool get isCancelled => status == 'CANCELLED';
 
@@ -304,6 +312,7 @@ class ShopCautionRequest {
       modeReference: j['modeReference'] as String?,
       note: j['note'] as String?,
       status: j['status'] as String,
+      channel: j['channel'] as String?,
       reviewNote: j['reviewNote'] as String?,
       createdAt: DateTime.parse(j['createdAt'] as String),
       basketValue: j['basketValue'] == null ? null : _asDouble(j['basketValue']),

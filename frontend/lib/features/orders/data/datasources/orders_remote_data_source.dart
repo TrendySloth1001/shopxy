@@ -92,6 +92,35 @@ class OrdersRemoteDataSource {
     );
   }
 
+  /// Record a shipping milestone (PACKED / SHIPPED / OUT_FOR_DELIVERY /
+  /// DELIVERED / RETURNED) against a confirmed order. Same route +
+  /// payload merchant-web uses: POST /orders/:id/events.
+  Future<void> addShippingEvent(
+    int id, {
+    required String type,
+    String? courier,
+    String? awb,
+    DateTime? eta,
+    String? note,
+  }) async {
+    final res = await _client.post('/orders/$id/events', body: {
+      'type': type,
+      if (courier != null && courier.isNotEmpty) 'courier': courier,
+      if (awb != null && awb.isNotEmpty) 'awb': awb,
+      // Backend validates with z.string().datetime() — send UTC ISO.
+      if (eta != null) 'eta': eta.toUtc().toIso8601String(),
+      if (note != null && note.isNotEmpty) 'note': note,
+    });
+    if (res.statusCode == 201) return;
+    Map<String, dynamic> body = const {};
+    try {
+      body = jsonDecode(res.body) as Map<String, dynamic>;
+    } catch (_) {/* keep empty */}
+    throw Exception(
+      body['error']?.toString() ?? 'Could not update shipping',
+    );
+  }
+
   Future<void> reject(int id, {String? note}) async {
     final res = await _client.post('/orders/$id/reject', body: {
       if (note != null && note.isNotEmpty) 'note': note,

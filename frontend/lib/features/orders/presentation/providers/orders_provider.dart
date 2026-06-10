@@ -105,4 +105,24 @@ class OrdersProvider extends ChangeNotifier {
     await _ds.reject(id, note: note);
     await Future.wait([load(), refreshPendingCount()]);
   }
+
+  /// Post a shipping milestone for a confirmed order. The caller
+  /// re-pulls the detail afterwards so the events timeline refreshes.
+  Future<void> addShippingEvent(
+    int id, {
+    required String type,
+    String? courier,
+    String? awb,
+    DateTime? eta,
+    String? note,
+  }) {
+    return _ds.addShippingEvent(
+      id,
+      type: type,
+      courier: courier,
+      awb: awb,
+      eta: eta,
+      note: note,
+    );
+  }
 }

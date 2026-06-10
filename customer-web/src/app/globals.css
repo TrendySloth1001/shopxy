@@ -57,6 +57,13 @@
   --color-accent-rose: #b83a6f;
   --color-accent-rose-soft: #fadfeb;
 
+  /* ── Home-feed promo accents (flash deals + spotlight highlight) ──────── */
+  --color-flash-from: #ffe3d2;
+  --color-flash-to: #ffd2d2;
+  --color-flash-accent: #e05a2a;
+  --color-timer-text: #ffd580;
+  --color-spotlight: #f4f757;
+
   /* ── Named spacing (numeric p-4 etc. still works: same 4px rhythm) ────── */
   --spacing-xs: 4px;
   --spacing-sm: 8px;
@@ -68,9 +75,12 @@
   --spacing-huge: 48px;
   --spacing-massive: 64px;
 
-  /* ── Content rails (max-w-content / max-w-form) ──────────────────────── */
+  /* ── Content rails (max-w-content / max-w-form / max-w-shell) ────────── */
   --container-content: 720px;
   --container-form: 520px;
+  /* Marketplace shell — the customer storefront is centered at this max width
+     on wide screens (Amazon/Flipkart-style), never edge-to-edge full bleed. */
+  --container-shell: 1280px;
 
   /* ── Radii ───────────────────────────────────────────────────────────── */
   --radius-xs: 2px;

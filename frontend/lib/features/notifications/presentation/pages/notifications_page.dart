@@ -5,6 +5,10 @@ import 'package:shopxy/features/notifications/domain/entities/invitation.dart';
 import 'package:shopxy/features/notifications/domain/entities/notification.dart';
 import 'package:shopxy/features/notifications/presentation/pages/send_invite_page.dart';
 import 'package:shopxy/features/notifications/presentation/providers/notifications_provider.dart';
+import 'package:shopxy/features/quotations/domain/entities/quotation.dart';
+import 'package:shopxy/features/quotations/presentation/pages/quotation_detail_page.dart';
+import 'package:shopxy/features/quotations/presentation/pages/quotations_page.dart';
+import 'package:shopxy/features/quotations/presentation/providers/quotations_provider.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
@@ -135,6 +139,11 @@ class _NotificationTile extends StatelessWidget {
     return InkWell(
       onTap: () {
         if (notification.isUnread) p.markRead(notification.id);
+        // Quotation notifications deep-link into the quotations feature;
+        // other kinds remain informational (mark-read only) for now.
+        if (notification.kind.startsWith('QUOTATION_')) {
+          _openQuotation(context);
+        }
       },
       child: Container(
         color: notification.isUnread ? AppColors.brandSoft.withValues(alpha: 0.35) : null,
@@ -204,6 +213,33 @@ class _NotificationTile extends StatelessWidget {
     );
   }
 
+  /// Routes a QUOTATION_* notification to the quotation it references.
+  ///
+  /// There is no fetch-by-id endpoint, so we land on the quotations list
+  /// immediately (fast feedback), reload the list, and — if the referenced
+  /// quotation is found — push its detail page on top so "back" naturally
+  /// returns to the list. Missing/unresolvable ids stop at the list.
+  Future<void> _openQuotation(BuildContext context) async {
+    final navigator = Navigator.of(context);
+    final quotationsProvider = context.read<QuotationsProvider>();
+    final raw = notification.data['quotationId'];
+    final quotationId = raw is int ? raw : (raw == null ? null : int.tryParse('$raw'));
+
+    navigator.push(
+      MaterialPageRoute(builder: (_) => const QuotationsPage()),
+    );
+    if (quotationId == null) return;
+    await quotationsProvider.load();
+    for (final Quotation q in quotationsProvider.items) {
+      if (q.id == quotationId) {
+        navigator.push(
+          MaterialPageRoute(builder: (_) => QuotationDetailPage(quotation: q)),
+        );
+        return;
+      }
+    }
+  }
+
   (Color fg, Color bg, IconData icon) _accentFor(String kind) {
     switch (kind) {
       case 'INVITE_RECEIVED':
@@ -216,6 +252,12 @@ class _NotificationTile extends StatelessWidget {
         return (AppColors.muted, AppColors.heroPanel, Icons.cancel_schedule_send_outlined);
       case 'CAUTION_REQUEST_RECEIVED':
         return (AppColors.brandStrong, AppColors.brandSoft, Icons.savings_outlined);
+      case 'QUOTATION_REQUESTED':
+        return (AppColors.brandStrong, AppColors.brandSoft, Icons.request_quote_outlined);
+      case 'QUOTATION_ACCEPTED':
+        return (AppColors.success, AppColors.successSoft, Icons.request_quote_outlined);
+      case 'QUOTATION_DECLINED':
+        return (AppColors.warning, AppColors.warningSoft, Icons.request_quote_outlined);
       default:
         return (AppColors.accentIndigo, AppColors.accentIndigoSoft, Icons.notifications_none_rounded);
     }
