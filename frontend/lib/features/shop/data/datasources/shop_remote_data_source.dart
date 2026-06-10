@@ -32,6 +32,11 @@ class ShopRemoteDataSource {
     Object? refundPolicy = _absent,
     Object? vacationMode = _absent,
     Object? vacationMessage = _absent,
+    Object? returnsEnabled = _absent,
+    Object? returnWindowDays = _absent,
+    Object? refundMode = _absent,
+    Object? returnPolicyNote = _absent,
+    Object? cancellationPolicy = _absent,
     Object? operatingHours = _absent,
   }) async {
     final body = <String, dynamic>{};
@@ -59,6 +64,21 @@ class ShopRemoteDataSource {
     }
     if (!identical(vacationMessage, _absent)) {
       body['vacationMessage'] = vacationMessage;
+    }
+    if (!identical(returnsEnabled, _absent)) {
+      body['returnsEnabled'] = returnsEnabled;
+    }
+    if (!identical(returnWindowDays, _absent)) {
+      body['returnWindowDays'] = returnWindowDays;
+    }
+    if (!identical(refundMode, _absent)) {
+      body['refundMode'] = refundMode;
+    }
+    if (!identical(returnPolicyNote, _absent)) {
+      body['returnPolicyNote'] = returnPolicyNote;
+    }
+    if (!identical(cancellationPolicy, _absent)) {
+      body['cancellationPolicy'] = cancellationPolicy;
     }
     if (!identical(operatingHours, _absent)) {
       body['operatingHours'] = operatingHours;

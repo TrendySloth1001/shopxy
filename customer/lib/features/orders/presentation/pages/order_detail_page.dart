@@ -272,7 +272,26 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
       await _load();
     } on CancelOrderException catch (e) {
       if (!mounted) return;
-      showAppSnackbar(context, message: e.message, tone: AppSnackbarTone.error);
+      if (e.code == 'NOT_CANCELLABLE') {
+        // The slice crossed the shop's cancellation cut-off between our
+        // last fetch and the tap — not an error on the customer's part.
+        // Surface the server's explanation gently and refetch so the
+        // now-stale Cancel button disappears.
+        showAppSnackbar(
+          context,
+          message: e.message.isNotEmpty
+              ? e.message
+              : "This order has passed the shop's cancellation window.",
+          tone: AppSnackbarTone.info,
+        );
+        await _load();
+      } else {
+        showAppSnackbar(
+          context,
+          message: e.message,
+          tone: AppSnackbarTone.error,
+        );
+      }
     } catch (e) {
       if (!mounted) return;
       showAppSnackbar(
@@ -1012,7 +1031,12 @@ class _ShopOrderCard extends StatelessWidget {
               ),
             ),
           ),
-        if (child.isPending)
+        // "Cancel items" — gated purely on the server-computed flag
+        // (PENDING always; CONFIRMED until the shop's cancellation-
+        // policy cut-off). No client-side status derivation: when the
+        // flag is false and the slice is mid-fulfilment, no action
+        // renders at all.
+        if (child.canCancel)
           Align(
             alignment: Alignment.centerRight,
             child: Padding(
@@ -1032,12 +1056,10 @@ class _ShopOrderCard extends StatelessWidget {
               ),
             ),
           ),
-        // "Request return" — surfaces once the slice has been confirmed
-        // (an invoice exists) AND the merchant's return policy allows it.
-        // Eligibility window is enforced server-side.
-        if (child.status == 'CONFIRMED' &&
-            child.items.isNotEmpty &&
-            (child.shop?.returnsEnabled ?? true))
+        // "Request return" — gated purely on the server-computed flag:
+        // CONFIRMED + a DELIVERED event + returns enabled + within the
+        // shop's return window. The server is the source of truth.
+        if (child.canReturn && child.items.isNotEmpty)
           Align(
             alignment: Alignment.centerRight,
             child: Padding(

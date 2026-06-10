@@ -129,6 +129,9 @@ const createProductSchema = z.object({
   sellingPrice: z.number().positive(),
   purchasePrice: z.number().nonnegative(),
   taxPercent: z.number().min(0).max(100).optional(),
+  // Compensation cess is ad valorem up to 290% (tobacco) — wider bound
+  // than GST on purpose.
+  cessRate: z.number().min(0).max(300).optional(),
   stockQuantity: z.number().nonnegative().optional(),
   lowStockThreshold: z.number().nonnegative().optional(),
   unit: z.enum(UNITS).optional(),
@@ -171,6 +174,7 @@ const updateProductSchema = z
     sellingPrice: z.number().positive().optional(),
     purchasePrice: z.number().nonnegative().optional(),
     taxPercent: z.number().min(0).max(100).optional(),
+    cessRate: z.number().min(0).max(300).optional(),
     lowStockThreshold: z.number().nonnegative().optional(),
     unit: z.enum(UNITS).optional(),
     categoryId: z.number().int().positive().nullable().optional(),

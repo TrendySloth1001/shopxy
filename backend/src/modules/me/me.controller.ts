@@ -201,6 +201,45 @@ export class MeController {
     res.json(result);
   }
 
+  /// POST …/caution-requests/:reqId/pay — start an online gateway payment for
+  /// the caller's own PENDING caution request. Returns the checkout session
+  /// the app opens the Razorpay sheet with; the CAUTION settlement handler
+  /// mints the DEPOSIT on webhook capture.
+  async payCautionRequest(req: Request, res: Response): Promise<void> {
+    const partyId = parseId(req.params.partyId);
+    const requestId = parseId(req.params.reqId);
+    if (!partyId || !requestId) { res.status(400).json({ error: 'Invalid id' }); return; }
+    const party = await meService.assertOwnsParty(req.user!.sub, partyId);
+    if (!party) { res.status(403).json({ error: 'Not linked to this party' }); return; }
+
+    const payment = await cautionRequestsService.initiateOnlinePayment({
+      shopId: party.shop.id,
+      partyId,
+      requestId,
+      userId: req.user!.sub,
+    });
+    res.status(201).json(payment);
+  }
+
+  /// POST …/caution-requests/:reqId/payment/sync — webhook backstop after the
+  /// checkout sheet returns. Settles if the live provider order is paid and
+  /// returns the fresh request. Idempotent.
+  async syncCautionRequestPayment(req: Request, res: Response): Promise<void> {
+    const partyId = parseId(req.params.partyId);
+    const requestId = parseId(req.params.reqId);
+    if (!partyId || !requestId) { res.status(400).json({ error: 'Invalid id' }); return; }
+    const party = await meService.assertOwnsParty(req.user!.sub, partyId);
+    if (!party) { res.status(403).json({ error: 'Not linked to this party' }); return; }
+
+    const result = await cautionRequestsService.syncOnlinePayment({
+      shopId: party.shop.id,
+      partyId,
+      requestId,
+      userId: req.user!.sub,
+    });
+    res.json(result);
+  }
+
   /// Quotations the merchant sent to a party the caller is linked to. Listing
   /// + detail are reads; accept/decline are writes (gated by assertOwnsParty).
   async quotations(req: Request, res: Response): Promise<void> {

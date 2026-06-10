@@ -43,6 +43,16 @@ const updateShopSchema = z
       )
       .nullable()
       .optional(),
+    // Operational return/cancel rules — these drive backend gating
+    // (returns.submit and cancelChildForCustomer), unlike the marketing
+    // policy texts above.
+    returnsEnabled: z.boolean().optional(),
+    returnWindowDays: z.number().int().min(0).max(365).optional(),
+    refundMode: z.enum(['WALLET', 'ORIGINAL', 'REPLACEMENT']).optional(),
+    returnPolicyNote: z.string().trim().max(2048).nullable().optional(),
+    cancellationPolicy: z
+      .enum(['UNTIL_CONFIRMED', 'UNTIL_PACKED', 'UNTIL_SHIPPED', 'UNTIL_DELIVERED'])
+      .optional(),
   })
   .refine((d) => Object.keys(d).length > 0, {
     message: 'At least one field is required',

@@ -291,6 +291,11 @@ model Product {
   sellingPrice  Decimal @map("selling_price") @db.Decimal(12, 2)
   purchasePrice Decimal @map("purchase_price") @db.Decimal(12, 2)
   taxPercent    Decimal @default(0) @map("tax_percent") @db.Decimal(5, 2)
+  /// GST compensation cess rate (ad valorem %). Tobacco/pan masala run to
+  /// 290%, hence Decimal(5,2) like taxPercent. The invoice engine falls
+  /// back to this when a line omits cessRate, the same way it falls back
+  /// to taxPercent — so cess-bearing goods are never silently billed at 0.
+  cessRate      Decimal @default(0) @map("cess_rate") @db.Decimal(5, 2)
 
   stockQuantity     Decimal @default(0) @map("stock_quantity") @db.Decimal(12, 3)
   lowStockThreshold Decimal @default(10) @map("low_stock_threshold") @db.Decimal(12, 3)
@@ -1493,6 +1498,15 @@ model CautionTxn {
   /// ¶7.1.5) | 'SUPPLY' = forfeiture of a cancelled supply, GST at the goods
   /// rate (¶11.3). Null for every other type.
   gstTreatment  String?         @map("gst_treatment")
+  /// SUPPLY forfeits only: the goods' GST rate, and the inclusive split of
+  /// `amount` into taxable consideration + output tax owed (¶11.3 treats
+  /// the retained advance as GST-INCLUSIVE consideration: taxable =
+  /// amount / (1 + rate/100)). Null for NONE forfeits and other types —
+  /// without this split the output GST on every forfeited supply was
+  /// silently uncollected and invisible to the GST summary.
+  taxRate       Decimal?        @map("tax_rate") @db.Decimal(5, 2)
+  taxableValue  Decimal?        @map("taxable_value") @db.Decimal(12, 2)
+  taxAmount     Decimal?        @map("tax_amount") @db.Decimal(12, 2)
   /// Set when type='ADJUSTMENT' — the invoice the deposit was applied to.
   invoiceId     Int?            @map("invoice_id")
   invoice       Invoice?        @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
@@ -1900,6 +1914,16 @@ model Shop {
   /// return". Lets merchants spell out exceptions ("sealed packaging
   /// only", "no returns on innerwear") without needing schema changes.
   returnPolicyNote String? @map("return_policy_note")
+  /// ── Cancellation policy ──────────────────────────────────────────
+  /// The latest order stage at which the CUSTOMER may still cancel a
+  /// per-shop slice. Stages come from PurchaseRequestEvent milestones:
+  ///   UNTIL_CONFIRMED — only while the request is still PENDING
+  ///   UNTIL_PACKED    — until the merchant posts a PACKED event
+  ///   UNTIL_SHIPPED   — until SHIPPED/OUT_FOR_DELIVERY (marketplace default)
+  ///   UNTIL_DELIVERED — any time before the DELIVERED event
+  /// After the cut-off the customer's path is the returns flow (which
+  /// itself requires a DELIVERED event), so cancel/return never overlap.
+  cancellationPolicy String @default("UNTIL_SHIPPED") @map("cancellation_policy")
 
   /// Phase E — opt-in flag for the multi-variant editor. When false the
   /// merchant product form hides the "Add variants" section entirely

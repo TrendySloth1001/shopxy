@@ -208,6 +208,8 @@ export class CautionService {
     input: {
       amount: number;
       gstTreatment: CautionForfeitGst;
+      /// Goods GST rate (%) — REQUIRED when gstTreatment is 'SUPPLY'.
+      taxRate?: number | null;
       note?: string | null;
       createdById?: number | null;
     },
@@ -218,12 +220,35 @@ export class CautionService {
     });
     if (!party) return null;
 
+    // SUPPLY forfeit (Circular 178/2022 ¶11.3): the retained advance is
+    // GST-INCLUSIVE consideration for the cancelled supply, so the output
+    // tax is carved out of the amount, not added on top:
+    //   taxable = amount / (1 + rate/100); tax = amount − taxable.
+    // A SUPPLY forfeit without a rate is rejected — storing the flag with
+    // no split is how the GST on every forfeited supply used to vanish.
+    const amount = round2(input.amount);
+    let taxRate: number | null = null;
+    let taxableValue: number | null = null;
+    let taxAmount: number | null = null;
+    if (input.gstTreatment === 'SUPPLY') {
+      if (input.taxRate == null || input.taxRate < 0) {
+        throw new HttpError(
+          400,
+          'CAUTION_FORFEIT_RATE_REQUIRED',
+          'A SUPPLY forfeit needs the goods GST rate to split out the output tax',
+        );
+      }
+      taxRate = input.taxRate;
+      taxableValue = round2(amount / (1 + taxRate / 100));
+      taxAmount = round2(amount - taxableValue);
+    }
+
     // Serializable for the same reason as record()/adjust(): the cap check
     // and the txn that spends the balance must be one atomic step.
     return prisma.$transaction(
       async (tx) => {
         const before = await this.balanceInTx(tx, shopId, partyId);
-        if (round2(input.amount - before) > 0) {
+        if (round2(amount - before) > 0) {
           throw new HttpError(
             400,
             'CAUTION_FORFEIT_EXCEEDS_BALANCE',
@@ -236,13 +261,17 @@ export class CautionService {
             shopId,
             partyId,
             type: 'FORFEIT',
-            amount: new Prisma.Decimal(input.amount),
+            amount: new Prisma.Decimal(amount),
             gstTreatment: input.gstTreatment,
+            taxRate: taxRate === null ? null : new Prisma.Decimal(taxRate),
+            taxableValue:
+              taxableValue === null ? null : new Prisma.Decimal(taxableValue),
+            taxAmount: taxAmount === null ? null : new Prisma.Decimal(taxAmount),
             note: input.note ?? null,
             createdById: input.createdById ?? null,
           },
         });
-        return { txn, balance: before - input.amount };
+        return { txn, balance: before - amount };
       },
       { isolationLevel: 'Serializable' },
     );

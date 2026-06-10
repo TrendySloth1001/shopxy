@@ -27,11 +27,19 @@ const adjustSchema = z.object({
   note: z.string().max(500).nullable().optional(),
 });
 
-const forfeitSchema = z.object({
-  amount: z.number().positive(),
-  gstTreatment: z.enum(['NONE', 'SUPPLY']),
-  note: z.string().max(500).nullable().optional(),
-});
+const forfeitSchema = z
+  .object({
+    amount: z.number().positive(),
+    gstTreatment: z.enum(['NONE', 'SUPPLY']),
+    // Goods GST rate — drives the inclusive output-tax split on a SUPPLY
+    // forfeit (Circular 178/2022 ¶11.3).
+    taxRate: z.number().min(0).max(100).nullish(),
+    note: z.string().max(500).nullable().optional(),
+  })
+  .refine((d) => d.gstTreatment !== 'SUPPLY' || d.taxRate != null, {
+    message: 'taxRate is required when gstTreatment is SUPPLY',
+    path: ['taxRate'],
+  });
 
 const rejectSchema = z.object({
   reviewNote: z.string().max(500).nullable().optional(),

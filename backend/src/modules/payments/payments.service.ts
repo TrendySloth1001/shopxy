@@ -153,9 +153,24 @@ export class PaymentsService {
               total: true,
               type: true,
               status: true,
+              documentType: true,
             },
           });
           if (!invoice) throw new Error('Invoice not found');
+          // Only billable documents carry an outstanding. An ESTIMATE /
+          // PROFORMA is an offer (its total is not a receivable), and a
+          // CREDIT_NOTE is money owed in the OTHER direction — allocating
+          // a receipt against any of them fabricates settlement of a
+          // liability that doesn't exist.
+          if (
+            invoice.documentType === 'ESTIMATE' ||
+            invoice.documentType === 'PROFORMA' ||
+            invoice.documentType === 'CREDIT_NOTE'
+          ) {
+            throw new Error(
+              `Cannot record a payment against a ${invoice.documentType.toLowerCase().replace('_', ' ')}`,
+            );
+          }
           // Only a live (CONFIRMED) invoice carries a real liability. A
           // DRAFT isn't yet a payable, and a CANCELLED invoice's `total`
           // is stale — allocating to either mints a phantom credit that

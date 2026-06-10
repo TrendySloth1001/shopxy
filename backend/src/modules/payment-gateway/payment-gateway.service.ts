@@ -94,6 +94,25 @@ export class PaymentGatewayService {
         input.customerUserId,
         input.idempotencyKey,
       );
+      // Idempotency window: a key only means "the same request retried" for
+      // so long. A still-open intent from last week is an abandoned checkout,
+      // not a retry — resuming it would reopen a stale provider order at
+      // whatever the price was then. Stale open intents are retired (FAILED
+      // + key released) and a fresh one is minted — but ONLY after the live
+      // provider check below proves the old order wasn't actually paid;
+      // expiring a paid-but-unsynced intent would re-charge the customer.
+      // Settled intents are NOT expired: "already paid" stays true forever.
+      const IDEMPOTENCY_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+      const isStale = (r: { createdAt: Date }) =>
+        Date.now() - r.createdAt.getTime() > IDEMPOTENCY_WINDOW_MS;
+      // Free the key from a row we've decided not to reuse, so the fresh
+      // insert below can't trip the (customerUserId, idempotencyKey) unique.
+      const retireExisting = async (r: { id: number; status: string }) => {
+        if (r.status === 'CREATED' || r.status === 'PENDING') {
+          await this.repo.updateStatus(r.id, 'FAILED');
+        }
+        await this.repo.detachIdempotencyKey(r.id);
+      };
       if (existing) {
         // (a) Already settled locally → never reopen checkout on a paid order.
         if (existing.status === 'CAPTURED' || existing.status === 'REFUNDED') {
@@ -144,35 +163,48 @@ export class PaymentGatewayService {
             throw alreadyPaidError();
           }
 
-          tracker.track({
-            step: 'INTENT_REUSED',
-            provider: existing.provider,
-            intentId: existing.id,
-            providerOrderRef: existing.providerOrderRef,
-          });
-          return {
-            intentId: existing.id,
-            provider: existing.provider,
-            providerOrderRef: existing.providerOrderRef,
-            amount: existing.amount,
-            currency: existing.currency,
-            clientParams: provider.buildClientParams({
+          if (!isStale(existing)) {
+            tracker.track({
+              step: 'INTENT_REUSED',
+              provider: existing.provider,
+              intentId: existing.id,
               providerOrderRef: existing.providerOrderRef,
-              amountMinor: toMinorUnits(existing.amount),
+            });
+            return {
+              intentId: existing.id,
+              provider: existing.provider,
+              providerOrderRef: existing.providerOrderRef,
+              amount: existing.amount,
               currency: existing.currency,
-            }),
-            reused: true,
-          };
+              clientParams: provider.buildClientParams({
+                providerOrderRef: existing.providerOrderRef,
+                amountMinor: toMinorUnits(existing.amount),
+                currency: existing.currency,
+              }),
+              reused: true,
+            };
+          }
+          // Stale and provably unpaid → retire and mint fresh below.
+          await retireExisting(existing);
+          tracker.track({
+            step: 'INTENT_RETRIED',
+            provider: existing.provider,
+            intentId: existing.id,
+            meta: { priorStatus: existing.status, reason: 'IDEMPOTENCY_WINDOW_EXPIRED' },
+          });
+        } else {
+          // (c) FAILED, or open but the provider order never attached →
+          // retire (frees the unique key — a FAILED row that kept its key
+          // used to make the fresh insert below violate the constraint)
+          // and mint a FRESH intent + provider order for a clean retry.
+          await retireExisting(existing);
+          tracker.track({
+            step: 'INTENT_RETRIED',
+            provider: existing.provider,
+            intentId: existing.id,
+            meta: { priorStatus: existing.status },
+          });
         }
-
-        // (c) FAILED (or open but order never attached) → fall through and mint
-        // a FRESH intent + provider order so the retry gets a clean order_id.
-        tracker.track({
-          step: 'INTENT_RETRIED',
-          provider: existing.provider,
-          intentId: existing.id,
-          meta: { priorStatus: existing.status },
-        });
       }
     }
 
@@ -552,7 +584,21 @@ export class PaymentGatewayService {
       return; // already settled — idempotent
     }
 
-    // Defend against tampering / wrong-intent: amount must match.
+    // Defend against tampering / wrong-intent: a capture must state the
+    // amount, and it must match. A PAID event with no amount would
+    // otherwise skip the comparison entirely — "payment captured, amount
+    // unspecified" is not a thing a trusted capture says.
+    if (event.type === 'PAID' && event.amountMinor == null) {
+      tracker.track({
+        step: 'AMOUNT_MISMATCH',
+        provider: intent.provider,
+        intentId: intent.id,
+        meta: { expected: toMinorUnits(intent.amount), got: null },
+      });
+      throw Object.assign(new Error('PAID webhook must include the captured amount'), {
+        status: 400,
+      });
+    }
     if (event.amountMinor != null && event.amountMinor !== toMinorUnits(intent.amount)) {
       tracker.track({
         step: 'AMOUNT_MISMATCH',

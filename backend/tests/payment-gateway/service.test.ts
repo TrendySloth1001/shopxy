@@ -64,8 +64,10 @@ function makeRecord(over: Partial<GatewayPaymentRecord> = {}): GatewayPaymentRec
     providerOrderRef: null,
     providerPaymentRef: null,
     idempotencyKey: null,
-    createdAt: new Date(0),
-    updatedAt: new Date(0),
+    // Fresh by default: replay/resume tests exercise the within-window
+    // contract. Staleness tests pass an explicit old createdAt.
+    createdAt: new Date(),
+    updatedAt: new Date(),
     ...over,
   };
 }
@@ -155,6 +157,11 @@ class FakeRepo implements GatewayPaymentRepository {
     this.statusUpdates.push({ id, status, hadTx: tx != null });
     const row = this.rows.find((r) => r.id === id);
     if (row) row.status = status;
+  }
+
+  async detachIdempotencyKey(id: number) {
+    const row = this.rows.find((r) => r.id === id);
+    if (row) row.idempotencyKey = null;
   }
 }
 

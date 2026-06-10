@@ -164,6 +164,59 @@ class MerchantOrderItem {
   }
 }
 
+/// A shipping milestone recorded against a confirmed order
+/// (PACKED / SHIPPED / OUT_FOR_DELIVERY / DELIVERED / RETURNED).
+/// Mirrors the `events` rows the backend inlines on the detail response.
+class MerchantOrderEvent {
+  const MerchantOrderEvent({
+    required this.id,
+    required this.type,
+    required this.occurredAt,
+    this.courier,
+    this.awb,
+    this.eta,
+    this.note,
+  });
+
+  final int id;
+  final String type;
+  final DateTime occurredAt;
+  final String? courier;
+  final String? awb;
+  final DateTime? eta;
+  final String? note;
+
+  /// Friendly label matching merchant-web's SHIPPING_MILESTONE_LABELS.
+  String get label {
+    switch (type) {
+      case 'PACKED':
+        return 'Packed';
+      case 'SHIPPED':
+        return 'Shipped';
+      case 'OUT_FOR_DELIVERY':
+        return 'Out for delivery';
+      case 'DELIVERED':
+        return 'Delivered';
+      case 'RETURNED':
+        return 'Returned';
+      default:
+        return type;
+    }
+  }
+
+  factory MerchantOrderEvent.fromJson(Map<String, dynamic> j) {
+    return MerchantOrderEvent(
+      id: j['id'] as int,
+      type: j['type'] as String,
+      occurredAt: DateTime.parse(j['occurredAt'] as String),
+      courier: j['courier'] as String?,
+      awb: j['awb'] as String?,
+      eta: j['eta'] == null ? null : DateTime.tryParse(j['eta'] as String),
+      note: j['note'] as String?,
+    );
+  }
+}
+
 class MerchantOrderDetail extends MerchantOrder {
   MerchantOrderDetail({
     required super.id,
@@ -188,6 +241,7 @@ class MerchantOrderDetail extends MerchantOrder {
     this.invoicePaidAmount = 0,
     this.invoiceBalanceDue = 0,
     required this.items,
+    this.events = const [],
   });
 
   final String? customerAddress;
@@ -202,6 +256,9 @@ class MerchantOrderDetail extends MerchantOrder {
   final double invoicePaidAmount;
   final double invoiceBalanceDue;
   final List<MerchantOrderItem> items;
+  /// Shipping milestone timeline (occurredAt asc, as the backend orders
+  /// it). Empty until the merchant posts the first event.
+  final List<MerchantOrderEvent> events;
 
   /// True when the linked invoice is fully settled.
   bool get isPaid => invoicePaymentStatus == 'PAID';
@@ -252,6 +309,9 @@ class MerchantOrderDetail extends MerchantOrder {
       invoiceBalanceDue: _asDouble(invoice?['balanceDue']),
       items: ((j['items'] as List?) ?? const [])
           .map((e) => MerchantOrderItem.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      events: ((j['events'] as List?) ?? const [])
+          .map((e) => MerchantOrderEvent.fromJson(e as Map<String, dynamic>))
           .toList(),
     );
   }

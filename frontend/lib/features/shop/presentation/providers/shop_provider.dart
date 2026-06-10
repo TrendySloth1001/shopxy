@@ -57,6 +57,11 @@ class ShopProvider extends ChangeNotifier {
     Object? refundPolicy = _absent,
     Object? vacationMode = _absent,
     Object? vacationMessage = _absent,
+    Object? returnsEnabled = _absent,
+    Object? returnWindowDays = _absent,
+    Object? refundMode = _absent,
+    Object? returnPolicyNote = _absent,
+    Object? cancellationPolicy = _absent,
     Object? operatingHours = _absent,
   }) async {
     _isSaving = true;
@@ -75,6 +80,11 @@ class ShopProvider extends ChangeNotifier {
         refundPolicy: refundPolicy,
         vacationMode: vacationMode,
         vacationMessage: vacationMessage,
+        returnsEnabled: returnsEnabled,
+        returnWindowDays: returnWindowDays,
+        refundMode: refundMode,
+        returnPolicyNote: returnPolicyNote,
+        cancellationPolicy: cancellationPolicy,
         operatingHours: operatingHours,
       );
       return true;

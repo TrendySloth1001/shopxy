@@ -112,6 +112,36 @@ function priceItems(items: QuotationItemInput[]) {
   };
 }
 
+/// Fill missing GST / cess rates from the product master before pricing.
+/// A quote line that omits taxPercent/cessRate must inherit the product's
+/// statutory rate — priceItems would otherwise snapshot 0, and accept()
+/// then passes that stored 0 to the invoice engine as an EXPLICIT rate,
+/// overriding the engine's own product fallback (the C1 "₹0 GST" bug
+/// resurfacing via the quotation path). An explicit rate — including a
+/// deliberate 0 for exempt/nil-rated lines — always wins.
+async function hydrateRates(
+  shopId: number,
+  items: QuotationItemInput[],
+): Promise<QuotationItemInput[]> {
+  if (!items.some((it) => it.taxPercent == null || it.cessRate == null)) {
+    return items;
+  }
+  const ids = [...new Set(items.map((i) => i.productId))];
+  const products = await prisma.product.findMany({
+    where: { id: { in: ids }, shopId },
+    select: { id: true, taxPercent: true, cessRate: true },
+  });
+  const byId = new Map(products.map((p) => [p.id, p]));
+  return items.map((it) => {
+    const p = byId.get(it.productId);
+    return {
+      ...it,
+      taxPercent: it.taxPercent ?? (p ? toNumber(p.taxPercent) : 0),
+      cessRate: it.cessRate ?? (p ? toNumber(p.cessRate) : 0),
+    };
+  });
+}
+
 /// Merchant-built quotations sent to a linked customer for acceptance. The
 /// accept path is the single point that turns a quotation into a real invoice
 /// (via invoicesService.createInvoice with confirm) — mirrors the caution
@@ -138,7 +168,7 @@ export class QuotationsService {
       return { error: 'PARTY_NOT_LINKED' as const };
     }
 
-    const priced = priceItems(input.items);
+    const priced = priceItems(await hydrateRates(shopId, input.items));
 
     const created = await prisma.$transaction(async (tx) => {
       // Allocate inside the txn so a rollback doesn't burn the QUO counter.
@@ -457,7 +487,7 @@ export class QuotationsService {
     });
     if (!shop) return { error: 'PARTY_NOT_FOUND' as const };
 
-    const priced = priceItems(input.items);
+    const priced = priceItems(await hydrateRates(shopId, input.items));
 
     const created = await prisma.$transaction(async (tx) => {
       // Allocate inside the txn so a rollback doesn't burn the QUO counter.
@@ -515,7 +545,7 @@ export class QuotationsService {
       throw new HttpError(404, 'QUOTATION_NOT_FOUND', 'Quotation not found');
     }
 
-    const priced = priceItems(input.items);
+    const priced = priceItems(await hydrateRates(shopId, input.items));
     // Claim REQUESTED → PENDING so two merchants can't both send it.
     const claimed = await prisma.quotation.updateMany({
       where: { id, shopId, status: 'REQUESTED' },

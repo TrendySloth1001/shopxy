@@ -78,6 +78,23 @@ export const color = {
     rose: "#B83A6F",
     roseSoft: "#FADFEB",
   },
+  /**
+   * Home-feed promo accents — ported from the Flutter customer home widgets
+   * (`home_flash_deals.dart`, `home_brand_spotlight.dart`). These are louder
+   * than the calm house palette on purpose: flash-deal urgency (peach→salmon
+   * gradient + orange) and the spotlight/collection highlight yellow.
+   */
+  promo: {
+    /** Flash-deal section gradient — peach (top) → salmon (bottom). */
+    flashFrom: "#FFE3D2",
+    flashTo: "#FFD2D2",
+    /** Flash-deal accent — discount badge, price, sold-progress fill. */
+    flashAccent: "#E05A2A",
+    /** Countdown-timer golden text on the black timer chip. */
+    timerText: "#FFD580",
+    /** Bright highlight yellow — brand-spotlight deal label, collection banner. */
+    spotlight: "#F4F757",
+  },
 } as const;
 
 /** Spacing scale (px). 4px base rhythm — matches Tailwind's numeric scale. */
@@ -159,6 +176,9 @@ export const breakpoint = {
   contentMaxWidth: 720,
   /** Max width for forms (sign-in, address, checkout). */
   formMaxWidth: 520,
+  /** Marketplace shell — customer storefront is centered at this width on wide
+   *  screens (Amazon/Flipkart-style), not full-bleed. */
+  shellMaxWidth: 1280,
 } as const;
 
 /** Motion durations (ms). Respect `prefers-reduced-motion` before applying. */

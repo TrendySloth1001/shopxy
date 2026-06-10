@@ -45,6 +45,14 @@ router.post(
   '/parties/:partyId/caution-requests/:reqId/cancel',
   asyncHandler((req, res) => meController.cancelCautionRequest(req, res)),
 );
+router.post(
+  '/parties/:partyId/caution-requests/:reqId/pay',
+  asyncHandler((req, res) => meController.payCautionRequest(req, res)),
+);
+router.post(
+  '/parties/:partyId/caution-requests/:reqId/payment/sync',
+  asyncHandler((req, res) => meController.syncCautionRequestPayment(req, res)),
+);
 router.get(
   '/parties/:partyId/quotations',
   asyncHandler((req, res) => meController.quotations(req, res)),

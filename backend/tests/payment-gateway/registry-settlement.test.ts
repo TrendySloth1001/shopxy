@@ -149,9 +149,10 @@ describe('settlement — WALLET handler', () => {
 });
 
 describe('settlement — unwired targets', () => {
-  // ORDER is now wired (checkout online payment → CustomerOrder.paymentStatus);
-  // it is covered by order-settlement.test.ts. INVOICE/CAUTION remain stubs.
-  it.each<SettlementTargetType>(['INVOICE', 'CAUTION'])(
+  // ORDER is wired (checkout online payment → CustomerOrder.paymentStatus,
+  // covered by order-settlement.test.ts) and CAUTION is wired (online caution
+  // deposit → CautionTxn DEPOSIT on capture). Only INVOICE remains a stub.
+  it.each<SettlementTargetType>(['INVOICE'])(
     'throws 501 for %s (not wired yet)',
     async (type) => {
       let caught: unknown;
@@ -163,4 +164,12 @@ describe('settlement — unwired targets', () => {
       expect((caught as { status?: number }).status).toBe(501);
     },
   );
+
+  it('CAUTION is wired (no 501 stub)', () => {
+    // Exercising onPaid needs a DB; this suite is DB-free. Asserting the
+    // handler is no longer the notWired stub is enough here — behavior is
+    // integration-tested via the webhook path.
+    expect(typeof settlementFor('CAUTION').onPaid).toBe('function');
+    expect(settlementFor('CAUTION')).not.toBe(settlementFor('INVOICE'));
+  });
 });

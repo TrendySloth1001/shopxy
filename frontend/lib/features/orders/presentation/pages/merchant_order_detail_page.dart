@@ -199,6 +199,49 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
     }
   }
 
+  /// Shipping milestone flow — bottom sheet with a milestone selector
+  /// (PACKED → RETURNED), courier/AWB/ETA fields for the in-transit
+  /// milestones, and an optional note. Mirrors merchant-web's
+  /// ShippingModal; marking DELIVERED is what opens the customer's
+  /// return window, so app-only merchants need this too.
+  Future<void> _updateShipping() async {
+    final result = await showModalBottomSheet<_ShippingUpdateResult>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.white,
+      shape: AppShapes.squircleTop(AppSizes.bottomSheetRadius),
+      builder: (ctx) => const _ShippingUpdateSheet(),
+    );
+    if (result == null || !mounted) return;
+
+    final ordersProvider = context.read<OrdersProvider>();
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _busy = true);
+    try {
+      await ordersProvider.addShippingEvent(
+        widget.orderId,
+        type: result.type,
+        courier: result.courier,
+        awb: result.awb,
+        eta: result.eta,
+        note: result.note,
+      );
+      if (!mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Shipping update posted')),
+      );
+      setState(() => _busy = false);
+      // Re-pull so the events timeline reflects the new milestone.
+      await _load();
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+      );
+      setState(() => _busy = false);
+    }
+  }
+
   /// Loads the full product for a line and opens the stock-in sheet so
   /// the merchant can resolve a shortfall without leaving the order.
   /// When the sheet returns a new draft invoice id we add it to the
@@ -384,6 +427,9 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
                     onCall: _callCustomer,
                     onWhatsapp: _whatsappCustomer,
                     onEmail: _emailCustomer,
+                    canWriteOrders: canWriteOrders,
+                    shippingBusy: _busy,
+                    onUpdateShipping: _updateShipping,
                   ),
                 ),
       bottomNavigationBar: order == null || !order.isPending
@@ -500,6 +546,9 @@ class _Body extends StatelessWidget {
     required this.onCall,
     required this.onWhatsapp,
     required this.onEmail,
+    required this.canWriteOrders,
+    required this.shippingBusy,
+    required this.onUpdateShipping,
   });
   final MerchantOrderDetail order;
   final DateFormat dateFmt;
@@ -517,6 +566,9 @@ class _Body extends StatelessWidget {
   final VoidCallback onCall;
   final VoidCallback onWhatsapp;
   final VoidCallback onEmail;
+  final bool canWriteOrders;
+  final bool shippingBusy;
+  final VoidCallback onUpdateShipping;
 
   @override
   Widget build(BuildContext context) {
@@ -657,6 +709,22 @@ class _Body extends StatelessWidget {
                 minimumSize: const Size.fromHeight(AppSizes.huge),
               ),
             ),
+          ),
+        ],
+
+        // Shipping milestones — apply once an order is confirmed.
+        // Mirrors merchant-web: section shows when the order is past
+        // pending or already has events on record.
+        if (order.isConfirmed || order.events.isNotEmpty) ...[
+          const SizedBox(height: AppSizes.lg),
+          const AppDivider(),
+          const SizedBox(height: AppSizes.md),
+          _ShippingSection(
+            order: order,
+            dateFmt: dateFmt,
+            canWriteOrders: canWriteOrders,
+            busy: shippingBusy,
+            onUpdateShipping: onUpdateShipping,
           ),
         ],
         const SizedBox(height: AppSizes.huge),
@@ -1812,6 +1880,363 @@ class _DeclineOrderSheetState extends State<_DeclineOrderSheet> {
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Shipping updates ────────────────────────────────────────────────────────
+
+/// What the shipping sheet hands back to the page. Courier / AWB / ETA
+/// are only populated for the in-transit milestones, matching
+/// merchant-web's ShippingModal.
+typedef _ShippingUpdateResult = ({
+  String type,
+  String? courier,
+  String? awb,
+  DateTime? eta,
+  String? note,
+});
+
+/// Chronological list of recorded milestones + the "Update shipping"
+/// entry point (confirmed orders only — the backend rejects events on
+/// anything else).
+class _ShippingSection extends StatelessWidget {
+  const _ShippingSection({
+    required this.order,
+    required this.dateFmt,
+    required this.canWriteOrders,
+    required this.busy,
+    required this.onUpdateShipping,
+  });
+  final MerchantOrderDetail order;
+  final DateFormat dateFmt;
+  final bool canWriteOrders;
+  final bool busy;
+  final VoidCallback onUpdateShipping;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'SHIPPING UPDATES',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: AppColors.muted,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1,
+                  ),
+                ),
+              ),
+              if (order.isConfirmed)
+                MaybeLocked(
+                  allowed: canWriteOrders,
+                  what: 'manage orders',
+                  child: OutlinedButton.icon(
+                    onPressed: busy ? null : onUpdateShipping,
+                    icon: const Icon(Icons.local_shipping_outlined,
+                        size: AppSizes.iconSm),
+                    label: const Text('Update shipping'),
+                    style: OutlinedButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      side: const BorderSide(color: AppColors.hairline),
+                      foregroundColor: AppColors.black,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: AppSizes.sm),
+          if (order.events.isEmpty)
+            Text(
+              'No shipping updates yet.',
+              style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
+            )
+          else
+            for (final ev in order.events) _ShippingEventRow(event: ev, dateFmt: dateFmt),
+        ],
+      ),
+    );
+  }
+}
+
+class _ShippingEventRow extends StatelessWidget {
+  const _ShippingEventRow({required this.event, required this.dateFmt});
+  final MerchantOrderEvent event;
+  final DateFormat dateFmt;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final meta = [
+      dateFmt.format(event.occurredAt.toLocal()),
+      if (event.courier != null && event.courier!.isNotEmpty) event.courier!,
+      if (event.awb != null && event.awb!.isNotEmpty) event.awb!,
+    ].join(' · ');
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 5),
+            child: Container(
+              width: AppSizes.sm,
+              height: AppSizes.sm,
+              decoration: const BoxDecoration(
+                color: AppColors.brand,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSizes.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  event.label,
+                  style: theme.textTheme.bodyMedium
+                      ?.copyWith(fontWeight: FontWeight.w700),
+                ),
+                Text(
+                  meta,
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: AppColors.muted),
+                ),
+                if (event.note != null && event.note!.isNotEmpty)
+                  Text(
+                    event.note!,
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: AppColors.muted),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Bottom sheet for posting a shipping milestone. Courier / AWB / ETA
+/// only show for SHIPPED and OUT_FOR_DELIVERY — same gating as
+/// merchant-web's ShippingModal.
+class _ShippingUpdateSheet extends StatefulWidget {
+  const _ShippingUpdateSheet();
+
+  @override
+  State<_ShippingUpdateSheet> createState() => _ShippingUpdateSheetState();
+}
+
+class _ShippingUpdateSheetState extends State<_ShippingUpdateSheet> {
+  static const _milestones = <(String, String)>[
+    ('PACKED', 'Packed'),
+    ('SHIPPED', 'Shipped'),
+    ('OUT_FOR_DELIVERY', 'Out for delivery'),
+    ('DELIVERED', 'Delivered'),
+    ('RETURNED', 'Returned'),
+  ];
+  static final _etaFmt = DateFormat('d MMM · h:mm a');
+
+  String _type = 'PACKED';
+  final _courierCtrl = TextEditingController();
+  final _awbCtrl = TextEditingController();
+  final _noteCtrl = TextEditingController();
+  DateTime? _eta;
+
+  /// Courier / AWB / ETA matter for in-transit milestones only.
+  bool get _showLogistics => _type == 'SHIPPED' || _type == 'OUT_FOR_DELIVERY';
+
+  @override
+  void dispose() {
+    _courierCtrl.dispose();
+    _awbCtrl.dispose();
+    _noteCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickEta() async {
+    final now = DateTime.now();
+    final date = await showDatePicker(
+      context: context,
+      initialDate: _eta ?? now,
+      firstDate: now.subtract(const Duration(days: 1)),
+      lastDate: now.add(const Duration(days: 60)),
+    );
+    if (date == null || !mounted) return;
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(_eta ?? now),
+    );
+    if (!mounted) return;
+    setState(() {
+      _eta = DateTime(
+        date.year,
+        date.month,
+        date.day,
+        time?.hour ?? 18,
+        time?.minute ?? 0,
+      );
+    });
+  }
+
+  void _submit() {
+    String? clean(TextEditingController c) {
+      final t = c.text.trim();
+      return t.isEmpty ? null : t;
+    }
+
+    Navigator.pop(context, (
+      type: _type,
+      courier: _showLogistics ? clean(_courierCtrl) : null,
+      awb: _showLogistics ? clean(_awbCtrl) : null,
+      eta: _showLogistics ? _eta : null,
+      note: clean(_noteCtrl),
+    ));
+  }
+
+  InputDecoration _fieldDecoration(String hint) {
+    return InputDecoration(
+      hintText: hint,
+      border: OutlineInputBorder(
+        borderRadius: AppShapes.squircleRadius(AppSizes.radiusSm),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: AppSizes.lg,
+          right: AppSizes.lg,
+          top: AppSizes.sm,
+          bottom: AppSizes.lg + MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const _SheetHandle(),
+              Text(
+                'Update shipping',
+                style: theme.textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: AppSizes.xs),
+              Text(
+                'The customer sees these updates on their order. '
+                'Marking Delivered starts their return window.',
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(color: AppColors.muted, height: 1.4),
+              ),
+              const SizedBox(height: AppSizes.md),
+              Wrap(
+                spacing: AppSizes.sm,
+                runSpacing: AppSizes.sm,
+                children: [
+                  for (final (value, label) in _milestones)
+                    _ReasonChip(
+                      label: label,
+                      selected: _type == value,
+                      onTap: () => setState(() => _type = value),
+                    ),
+                ],
+              ),
+              if (_showLogistics) ...[
+                const SizedBox(height: AppSizes.md),
+                TextField(
+                  controller: _courierCtrl,
+                  textCapitalization: TextCapitalization.words,
+                  decoration:
+                      _fieldDecoration('Courier (optional), e.g. Delhivery'),
+                ),
+                const SizedBox(height: AppSizes.md),
+                TextField(
+                  controller: _awbCtrl,
+                  decoration:
+                      _fieldDecoration('AWB / tracking number (optional)'),
+                ),
+                const SizedBox(height: AppSizes.md),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _pickEta,
+                        icon: const Icon(Icons.schedule_rounded,
+                            size: AppSizes.iconSm),
+                        label: Text(
+                          _eta == null
+                              ? 'ETA (optional)'
+                              : _etaFmt.format(_eta!),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size.fromHeight(AppSizes.huge),
+                          side: const BorderSide(color: AppColors.hairline),
+                          foregroundColor: AppColors.black,
+                          alignment: Alignment.centerLeft,
+                        ),
+                      ),
+                    ),
+                    if (_eta != null)
+                      IconButton(
+                        tooltip: 'Clear ETA',
+                        onPressed: () => setState(() => _eta = null),
+                        icon: const Icon(Icons.close_rounded,
+                            size: AppSizes.iconSm),
+                      ),
+                  ],
+                ),
+              ],
+              const SizedBox(height: AppSizes.md),
+              TextField(
+                controller: _noteCtrl,
+                maxLines: 2,
+                decoration: _fieldDecoration('Note (optional)'),
+              ),
+              const SizedBox(height: AppSizes.lg),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(AppSizes.huge),
+                        side: const BorderSide(color: AppColors.hairline),
+                      ),
+                      child: const Text('Cancel'),
+                    ),
+                  ),
+                  const SizedBox(width: AppSizes.md),
+                  Expanded(
+                    flex: 2,
+                    child: FilledButton.icon(
+                      onPressed: _submit,
+                      icon: const Icon(Icons.local_shipping_outlined,
+                          size: AppSizes.iconSm),
+                      label: const Text('Save update'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.brand,
+                        minimumSize: const Size.fromHeight(AppSizes.huge),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

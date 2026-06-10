@@ -25,6 +25,15 @@ const merchantShopSelect = {
   ...publicShopSelect,
   isPublished: true,
   updatedAt: true,
+  // Operational return/cancel rules — merchant settings screens edit
+  // these; the public select intentionally omits them (customers see
+  // them reflected as canCancel/canReturn flags on their orders, plus
+  // the marketing policy texts above).
+  returnsEnabled: true,
+  returnWindowDays: true,
+  refundMode: true,
+  returnPolicyNote: true,
+  cancellationPolicy: true,
 } as const;
 
 /// Lower-cases, collapses non-alphanumerics to single dashes, trims
@@ -82,6 +91,13 @@ export class ShopService {
       vacationMode?: boolean;
       vacationMessage?: string | null;
       operatingHours?: Record<string, [string, string]> | null;
+      /// Operational return/cancel rules (distinct from the marketing
+      /// policy TEXTS above): these drive actual backend gating.
+      returnsEnabled?: boolean;
+      returnWindowDays?: number;
+      refundMode?: string;
+      returnPolicyNote?: string | null;
+      cancellationPolicy?: string;
     },
   ) {
     const existing = await prisma.shop.findUnique({
@@ -132,6 +148,19 @@ export class ShopService {
         operatingHours: data.operatingHours === undefined
             ? undefined
             : (data.operatingHours as object | null) ?? undefined,
+        returnsEnabled: data.returnsEnabled === undefined
+            ? undefined
+            : data.returnsEnabled,
+        returnWindowDays: data.returnWindowDays === undefined
+            ? undefined
+            : data.returnWindowDays,
+        refundMode: data.refundMode === undefined ? undefined : data.refundMode,
+        returnPolicyNote: data.returnPolicyNote === undefined
+            ? undefined
+            : data.returnPolicyNote,
+        cancellationPolicy: data.cancellationPolicy === undefined
+            ? undefined
+            : data.cancellationPolicy,
       },
       select: merchantShopSelect,
     });

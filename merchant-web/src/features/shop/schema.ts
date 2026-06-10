@@ -14,6 +14,31 @@ export const DAY_LABELS: Record<Day, string> = {
   sun: "Sunday",
 };
 
+export const REFUND_MODES = ["WALLET", "ORIGINAL", "REPLACEMENT"] as const;
+export type RefundMode = (typeof REFUND_MODES)[number];
+export const REFUND_MODE_LABELS: Record<RefundMode, string> = {
+  WALLET: "Store wallet credit",
+  ORIGINAL: "Original payment method",
+  REPLACEMENT: "Replacement only",
+};
+
+export const CANCELLATION_POLICIES = [
+  "UNTIL_CONFIRMED",
+  "UNTIL_PACKED",
+  "UNTIL_SHIPPED",
+  "UNTIL_DELIVERED",
+] as const;
+export type CancellationPolicy = (typeof CANCELLATION_POLICIES)[number];
+export const CANCELLATION_POLICY_LABELS: Record<CancellationPolicy, string> = {
+  UNTIL_CONFIRMED: "Until I confirm the order",
+  UNTIL_PACKED: "Until packed",
+  UNTIL_SHIPPED: "Until shipped (recommended)",
+  UNTIL_DELIVERED: "Until delivered",
+};
+
+/** Return window in days; 0 means no limit. */
+export const returnWindowDaysSchema = z.coerce.number().int().min(0).max(365);
+
 const hours = z.record(
   z.string(),
   z.tuple([z.string(), z.string()]),
@@ -38,6 +63,11 @@ export const shopSchema = z
     refundPolicy: z.string().nullish(),
     vacationMode: z.boolean().default(false),
     vacationMessage: z.string().nullish(),
+    returnsEnabled: z.boolean().default(false),
+    returnWindowDays: returnWindowDaysSchema.default(0),
+    refundMode: z.enum(REFUND_MODES).default("ORIGINAL"),
+    returnPolicyNote: z.string().max(2048).nullish(),
+    cancellationPolicy: z.enum(CANCELLATION_POLICIES).default("UNTIL_SHIPPED"),
     operatingHours: hours.nullish(),
     createdAt: z.string().nullish(),
     updatedAt: z.string().nullish(),

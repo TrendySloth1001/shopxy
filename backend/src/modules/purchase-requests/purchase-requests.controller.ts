@@ -107,7 +107,9 @@ function readIdempotencyKey(req: Request): string | undefined {
 
 /// Map the customer-facing error codes to user-friendly response bodies.
 /// Kept controller-side so the service stays domain-clean.
-function cancelErrorMessage(code: 'NOT_FOUND' | 'NOT_OWNED' | 'NOT_PENDING'): {
+function cancelErrorMessage(
+  code: 'NOT_FOUND' | 'NOT_OWNED' | 'NOT_PENDING' | 'NOT_CANCELLABLE',
+): {
   status: number;
   body: { error: string; code: string };
 } {
@@ -121,6 +123,15 @@ function cancelErrorMessage(code: 'NOT_FOUND' | 'NOT_OWNED' | 'NOT_PENDING'): {
         status: 409,
         body: {
           error: 'This order can no longer be cancelled — the shop has already acted on it.',
+          code,
+        },
+      };
+    case 'NOT_CANCELLABLE':
+      return {
+        status: 409,
+        body: {
+          error:
+            'This order has passed the shop\'s cancellation window. Once it arrives you can request a return instead.',
           code,
         },
       };

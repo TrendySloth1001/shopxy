@@ -250,6 +250,7 @@ function CautionActionModal({
   const [modeReference, setModeReference] = useState("");
   const [note, setNote] = useState("");
   const [gstTreatment, setGstTreatment] = useState<GstTreatment>("NONE");
+  const [taxRate, setTaxRate] = useState("18");
   const [invoiceId, setInvoiceId] = useState<string>(invoices[0] ? String(invoices[0].id) : "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -263,12 +264,19 @@ function CautionActionModal({
       : overBalance
         ? `Cannot exceed the held balance (${formatINR(balance)}).`
         : null;
+  const supplyForfeit = action === "forfeit" && gstTreatment === "SUPPLY";
+  const rate = Number(taxRate);
+  const taxRateError =
+    supplyForfeit && (taxRate === "" || !Number.isFinite(rate) || rate < 0 || rate > 100)
+      ? "Enter the goods GST rate (0–100)."
+      : null;
 
   async function submit() {
     setError(null);
     if (!Number.isFinite(amt) || amt <= 0) return setError("Enter an amount above 0.");
     if (overBalance) return setError(`Cannot exceed the held balance (${formatINR(balance)}).`);
     if (action === "adjust" && !invoiceId) return setError("Pick an invoice to set off against.");
+    if (taxRateError) return setError(taxRateError);
 
     setBusy(true);
     try {
@@ -279,7 +287,12 @@ function CautionActionModal({
       } else if (action === "adjust") {
         await adjustCaution(partyId, { invoiceId: Number(invoiceId), amount: amt, note: note || null });
       } else {
-        await forfeitCaution(partyId, { amount: amt, gstTreatment, note: note || null });
+        await forfeitCaution(partyId, {
+          amount: amt,
+          gstTreatment,
+          taxRate: gstTreatment === "SUPPLY" ? rate : null,
+          note: note || null,
+        });
       }
       onDone();
     } catch (e) {
@@ -347,13 +360,25 @@ function CautionActionModal({
         ) : null}
 
         {action === "forfeit" ? (
-          <SelectField<GstTreatment>
-            label="GST treatment"
-            value={gstTreatment}
-            onChange={setGstTreatment}
-            options={GST_TREATMENTS.map((g) => ({ value: g, label: GST_LABELS[g] }))}
-            helper="Forfeiture can attract GST as a deemed supply."
-          />
+          <>
+            <SelectField<GstTreatment>
+              label="GST treatment"
+              value={gstTreatment}
+              onChange={setGstTreatment}
+              options={GST_TREATMENTS.map((g) => ({ value: g, label: GST_LABELS[g] }))}
+              helper="Forfeiture can attract GST as a deemed supply."
+            />
+            {supplyForfeit ? (
+              <TextField
+                label="Goods GST rate (%)"
+                value={taxRate}
+                onChange={setTaxRate}
+                inputMode="decimal"
+                error={taxRateError}
+                helper="The forfeited amount is treated as GST-inclusive; the output tax is carved out at this rate."
+              />
+            ) : null}
+          </>
         ) : null}
 
         <TextAreaField label="Note (optional)" value={note} onChange={setNote} rows={2} />

@@ -78,7 +78,13 @@ export function adjustCaution(
 
 export function forfeitCaution(
   partyId: number,
-  input: { amount: number; gstTreatment: GstTreatment; note?: string | null },
+  input: {
+    amount: number;
+    gstTreatment: GstTreatment;
+    /** Goods GST rate — required by the backend when gstTreatment is SUPPLY. */
+    taxRate?: number | null;
+    note?: string | null;
+  },
 ): Promise<number> {
   return post(
     `/api/parties/${partyId}/caution/forfeit`,

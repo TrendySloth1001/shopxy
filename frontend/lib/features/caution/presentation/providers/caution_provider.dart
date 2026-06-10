@@ -50,12 +50,14 @@ class CautionProvider extends ChangeNotifier {
     required int partyId,
     required double amount,
     required String gstTreatment,
+    double? taxRate,
     String? note,
   }) async {
     return _run(() => _ds.forfeit(
           partyId: partyId,
           amount: amount,
           gstTreatment: gstTreatment,
+          taxRate: taxRate,
           note: note,
         ));
   }
