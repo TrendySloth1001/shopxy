@@ -6,9 +6,9 @@ import { isAssured, type ProductCard } from "../types";
 import { recordTap } from "../tracking";
 import { ImageBox } from "./image-box";
 
-/** Destination for a product tap. The PDP page is future work (see PENDING). */
+/** Destination for a product tap — the canonical PDP route. */
 export function productHref(id: number): string {
-  return `/product/${id}`;
+  return `/p/${id}`;
 }
 
 /**

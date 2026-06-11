@@ -5,9 +5,9 @@ import { autoFg, shade, withAlpha } from "../format";
 import { ImageBox } from "./image-box";
 import { searchHref } from "./product-carousel";
 
-/** Tap destination for a banner slide. Banner-detail/collection pages are future work. */
+/** Tap destination for a banner slide. */
 export function slideHref(slide: HeroSlide): string {
-  if (slide.bannerId) return `/banner/${slide.bannerId}`;
+  if (slide.bannerId) return `/banners/${slide.bannerId}`;
   const target = slide.ctaTarget ?? "";
   if (target.startsWith("collection:")) return searchHref(target.slice("collection:".length));
   return searchHref(slide.title || slide.brand || "");
