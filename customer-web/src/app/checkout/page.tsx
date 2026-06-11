@@ -13,6 +13,8 @@ import {
   HeadphonesIcon,
   ChevronRight,
   Plus,
+  Package,
+  CreditCard,
 } from "lucide-react";
 import { useCart } from "@/features/cart/cart-context";
 import { useAuth } from "@/features/auth/auth-context";
@@ -318,7 +320,7 @@ function CheckoutInner() {
           <div className="flex flex-1 flex-col gap-xl">
             {/* ── Deliver to ──────────────────────────────────── */}
             <section>
-              <SectionLabel label="DELIVER TO" />
+              <SectionLabel label="DELIVER TO" icon={<MapPin size={14} />} />
               {addressesLoading ? (
                 <LoadingCard />
               ) : addressesError && addresses.length === 0 ? (
@@ -414,12 +416,13 @@ function CheckoutInner() {
             <section>
               <SectionLabel
                 label={`ORDER ITEMS · ${lines.length} ${lines.length === 1 ? "item" : "items"}`}
+                icon={<Package size={14} />}
               />
 
               {shopGroupArray.length > 1 && (
-                <div className="mb-sm flex items-start gap-sm rounded-md bg-info-soft px-md py-sm">
-                  <Store className="mt-xs h-4 w-4 shrink-0 text-info" />
-                  <p className="text-label-md font-bold text-info">
+                <div className="mb-sm flex items-start gap-sm rounded-md border border-brand/20 bg-brand-soft px-md py-sm">
+                  <Store className="mt-xs h-4 w-4 shrink-0 text-brand-strong" />
+                  <p className="text-label-md font-bold text-brand-strong">
                     Your cart has items from {shopGroupArray.length} shops — we&apos;ll create{" "}
                     {shopGroupArray.length} separate orders, one per shop.
                   </p>
@@ -501,7 +504,7 @@ function CheckoutInner() {
 
             {/* ── Offers ───────────────────────────────────────── */}
             <section>
-              <SectionLabel label="OFFERS" />
+              <SectionLabel label="OFFERS" icon={<Tag size={14} />} />
               <CouponCard
                 appliedCoupon={appliedCoupon}
                 autoApplied={autoApplied}
@@ -552,7 +555,7 @@ function CheckoutInner() {
 
             {/* ── Payment method ────────────────────────────────── */}
             <section>
-              <SectionLabel label="PAYMENT METHOD" />
+              <SectionLabel label="PAYMENT METHOD" icon={<CreditCard size={14} />} />
               <div className="flex flex-col gap-sm">
                 <PayOption
                   title="Cash on Delivery"
@@ -617,9 +620,12 @@ function CheckoutInner() {
 
           {/* Right — sticky order summary */}
           <div className="lg:sticky lg:top-xl lg:w-72">
-            <div className="rounded-md bg-white p-md shadow-floating">
-              {/* Compact bill breakdown */}
-              <div className="mb-md flex flex-col gap-xs">
+            <div className="rounded-lg border border-hairline bg-white p-md shadow-floating">
+              <p className="mb-sm text-label-md font-extrabold uppercase tracking-wide text-muted">
+                Price details
+              </p>
+              {/* Bill rows with divider rhythm */}
+              <div className="flex flex-col gap-xs">
                 <StickyBillRow label="Items total" value={formatINR(subtotal)} />
                 {productSavings > 0 && (
                   <StickyBillRow
@@ -644,9 +650,12 @@ function CheckoutInner() {
                 )}
                 <StickyBillRow label="Delivery" value="FREE" valueClass="text-success" />
               </div>
-              <div className="mb-sm border-t border-hairline" />
-              <p className="text-label-md text-muted">Total payable</p>
-              <p className="text-title-lg font-extrabold text-ink">{formatINR(grandTotal)}</p>
+              <div className="my-md border-t border-hairline" />
+              {/* Bold total */}
+              <div className="flex items-center justify-between">
+                <span className="text-body-md font-extrabold text-ink">Total payable</span>
+                <span className="text-title-md font-extrabold text-ink">{formatINR(grandTotal)}</span>
+              </div>
               {totalSavings > 0 && (
                 <p className="mt-xs text-body-sm text-success">
                   You save {formatINR(totalSavings)}
@@ -662,7 +671,7 @@ function CheckoutInner() {
               <button
                 onClick={() => void handlePlaceOrder()}
                 disabled={placing || !selectedAddress || lines.length === 0}
-                className="mt-md inline-flex h-11 w-full items-center justify-center rounded-button bg-brand px-lg text-label-md font-bold text-white hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:cursor-not-allowed disabled:opacity-50"
+                className="mt-md inline-flex h-11 w-full items-center justify-center rounded-button bg-brand px-lg text-label-md font-bold text-white transition-colors duration-200 hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {placing ? "Placing order…" : "Place order"}
               </button>
@@ -686,25 +695,38 @@ function CheckoutInner() {
               </h2>
             </div>
             <div>
-              {addresses.map((a) => (
-                <button
-                  key={a.id}
-                  onClick={() => {
-                    setSelectedAddressId(a.id);
-                    setShowAddressSheet(false);
-                    setShowAddForm(false);
-                  }}
-                  className="flex w-full items-start gap-md border-b border-hairline px-lg py-md text-left hover:bg-canvas focus-visible:outline-none"
-                >
-                  <span className="mt-1 text-brand">
-                    {a.id === selectedAddressId ? "●" : "○"}
-                  </span>
-                  <div>
-                    <p className="text-body-md font-extrabold text-ink">{a.fullName}</p>
-                    <p className="text-body-sm text-muted">{addressOneLine(a)}</p>
-                  </div>
-                </button>
-              ))}
+              {addresses.map((a) => {
+                const isSel = a.id === selectedAddressId;
+                return (
+                  <button
+                    key={a.id}
+                    role="radio"
+                    aria-checked={isSel}
+                    onClick={() => {
+                      setSelectedAddressId(a.id);
+                      setShowAddressSheet(false);
+                      setShowAddForm(false);
+                    }}
+                    className={[
+                      "flex w-full items-start gap-md border-b border-hairline px-lg py-md text-left transition-colors duration-200 focus-visible:outline-none",
+                      isSel ? "bg-brand-soft" : "hover:bg-canvas",
+                    ].join(" ")}
+                  >
+                    <span
+                      className={[
+                        "mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-200",
+                        isSel ? "border-brand bg-brand" : "border-muted bg-white",
+                      ].join(" ")}
+                    >
+                      {isSel ? <span className="h-2 w-2 rounded-full bg-white" /> : null}
+                    </span>
+                    <div>
+                      <p className="text-body-md font-extrabold text-ink">{a.fullName}</p>
+                      <p className="text-body-sm text-muted">{addressOneLine(a)}</p>
+                    </div>
+                  </button>
+                );
+              })}
 
               {/* Add new address */}
               {!showAddForm && (
@@ -773,11 +795,18 @@ export default function CheckoutPage() {
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
-function SectionLabel({ label }: { label: string }) {
+function SectionLabel({
+  label,
+  icon,
+}: {
+  label: string;
+  icon?: React.ReactNode;
+}) {
   return (
-    <p className="mb-sm text-label-md font-extrabold uppercase tracking-wide text-muted">
-      {label}
-    </p>
+    <div className="mb-sm flex items-center gap-xs">
+      {icon ? <span className="flex shrink-0 items-center text-muted">{icon}</span> : null}
+      <p className="text-label-md font-extrabold uppercase tracking-wide text-muted">{label}</p>
+    </div>
   );
 }
 
@@ -816,16 +845,24 @@ function PayOption({
 }) {
   return (
     <button
+      role="radio"
+      aria-checked={selected}
       onClick={onSelect}
       className={[
-        "flex w-full items-center gap-md rounded-md p-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+        "flex w-full items-center gap-md rounded-md p-md text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
         selected
-          ? "border border-brand bg-white"
-          : "border border-hairline bg-white hover:bg-canvas",
+          ? "border-2 border-brand bg-brand-soft"
+          : "border border-hairline bg-white hover:border-brand/30 hover:bg-canvas",
       ].join(" ")}
     >
-      <span className={selected ? "text-brand" : "text-muted"}>
-        {selected ? "●" : "○"}
+      {/* Custom radio circle */}
+      <span
+        className={[
+          "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-200",
+          selected ? "border-brand bg-brand" : "border-muted bg-white",
+        ].join(" ")}
+      >
+        {selected ? <span className="h-2 w-2 rounded-full bg-white" /> : null}
       </span>
       <div>
         <p className="text-body-md font-extrabold text-ink">{title}</p>

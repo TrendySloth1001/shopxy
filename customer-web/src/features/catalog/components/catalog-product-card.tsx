@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { Star } from "lucide-react";
 import type { CatalogProduct } from "../types";
 import { ImageBox } from "@/features/home/components/image-box";
 import { mediaSrc } from "@/shared/media";
@@ -10,6 +9,9 @@ import { formatINR } from "@/shared/format";
 /**
  * Compact product card used on shop-profile and category-browse pages.
  * Fills its parent grid cell. Tap links to /p/[id].
+ *
+ * Visual spec: white card, hairline border, rounded-lg, hover lift 2px + shadow-floating,
+ * discount badge top-left brand green, rating chip success-green pill, bold price + line-through MRP.
  */
 export function CatalogProductCard({ product }: { product: CatalogProduct }) {
   const p = product;
@@ -19,24 +21,22 @@ export function CatalogProductCard({ product }: { product: CatalogProduct }) {
     ? Math.round(Math.min(99, Math.max(0, (1 - p.sellingPrice / p.mrp) * 100)))
     : 0;
 
-  // When imageUrl is truthy but 404s, ImageBox already swaps to its onError
-  // placeholder — this component just needs to cover the no-image case below.
-
   return (
     <Link
       href={`/p/${p.id}`}
-      className="group flex flex-col overflow-hidden rounded-md border border-hairline bg-white transition-shadow hover:shadow-floating focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+      className="group rounded-lg border border-hairline bg-white overflow-hidden transition-all duration-200 hover:shadow-floating hover:-translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft flex flex-col"
     >
-      {/* Image — mediaSrc routes relative paths via /api/media proxy.
-          No image URL → neutral canvas placeholder; ImageBox handles 404s internally. */}
-      <span className="relative block aspect-square w-full overflow-hidden rounded-t-md bg-hero-panel">
+      {/* Image */}
+      <span className="relative block aspect-square w-full overflow-hidden bg-canvas">
         {imageUrl ? (
-          <ImageBox url={imageUrl} alt={p.name} />
+          <span className="block size-full transition-transform duration-300 group-hover:scale-[1.04]">
+            <ImageBox url={imageUrl} alt={p.name} fit="cover" />
+          </span>
         ) : (
           <ProductImageFallback name={p.name} />
         )}
         {discountPct > 0 ? (
-          <span className="absolute left-[6px] top-[6px] rounded-xs bg-gradient-to-br from-brand to-brand-strong px-[6px] py-[2px] text-[10px] font-extrabold tracking-[0.4px] text-white shadow-floating">
+          <span className="absolute left-[6px] top-[6px] bg-brand text-white text-[11px] font-extrabold rounded-sm px-sm py-[2px]">
             {discountPct}% OFF
           </span>
         ) : null}
@@ -49,6 +49,20 @@ export function CatalogProductCard({ product }: { product: CatalogProduct }) {
         </span>
 
         <span className="mt-auto flex flex-col gap-[2px]">
+          {p.ratingAvg != null && p.ratingCount > 0 ? (
+            <span className="mb-[2px] inline-flex items-center gap-[3px]">
+              <span className="inline-flex items-center gap-[3px] rounded-sm bg-success px-[6px] py-[2px] text-[11px] font-bold text-white">
+                {p.ratingAvg.toFixed(1)}
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" aria-hidden className="shrink-0">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                </svg>
+              </span>
+              <span className="text-[10px] text-muted">
+                ({p.ratingCount > 999 ? `${(p.ratingCount / 1000).toFixed(1)}k` : p.ratingCount})
+              </span>
+            </span>
+          ) : null}
+
           <span className="flex items-baseline gap-[4px]">
             <span className="text-[15px] font-extrabold leading-none text-ink">
               {formatINR(p.sellingPrice)}
@@ -58,16 +72,12 @@ export function CatalogProductCard({ product }: { product: CatalogProduct }) {
                 {formatINR(p.mrp)}
               </span>
             ) : null}
-          </span>
-
-          {p.ratingAvg != null && p.ratingCount > 0 ? (
-            <span className="flex items-center gap-[3px]">
-              <Star size={11} className="fill-success text-success" aria-hidden />
-              <span className="text-[11px] font-semibold text-muted">
-                {p.ratingAvg.toFixed(1)} ({p.ratingCount})
+            {discountPct > 0 ? (
+              <span className="text-[11px] font-bold text-brand">
+                {discountPct}% off
               </span>
-            </span>
-          ) : null}
+            ) : null}
+          </span>
         </span>
       </span>
     </Link>
@@ -76,12 +86,12 @@ export function CatalogProductCard({ product }: { product: CatalogProduct }) {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Neutral canvas placeholder for products with no image — first letter of name. */
+/** Brand-soft tinted placeholder for products with no image — first letter of name. */
 function ProductImageFallback({ name }: { name: string }) {
   const initial = name.trim()[0]?.toUpperCase() ?? "?";
   return (
-    <span className="flex size-full items-center justify-center bg-hero-panel">
-      <span className="text-[28px] font-extrabold text-disabled">{initial}</span>
+    <span className="flex size-full items-center justify-center bg-brand-soft">
+      <span className="text-[40px] font-extrabold text-brand opacity-30 select-none">{initial}</span>
     </span>
   );
 }

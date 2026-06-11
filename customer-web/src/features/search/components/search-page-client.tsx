@@ -530,7 +530,7 @@ function IdleView({
                 key={h}
                 type="button"
                 onClick={() => onApplyTerm(h)}
-                className="inline-flex items-center gap-[6px] rounded-full border border-hairline bg-white px-md py-[6px] text-[12px] font-bold text-ink transition-colors hover:border-brand hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+                className="inline-flex items-center gap-[6px] rounded-full border border-hairline bg-white px-md py-[6px] text-[12px] font-bold text-ink transition-all duration-200 hover:border-brand hover:bg-brand-soft hover:text-brand hover:shadow-floating focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
               >
                 <span className="flex size-5 items-center justify-center rounded-full bg-brand-soft">
                   <Flame size={10} className="text-brand" aria-hidden />
@@ -554,27 +554,21 @@ function IdleView({
               Clear
             </button>
           </div>
-          <ul className="divide-y divide-hairline">
+          <div className="flex flex-wrap gap-sm">
             {recent.map((term) => (
-              <li key={term}>
-                <button
-                  type="button"
-                  onClick={() => onApplyTerm(term)}
-                  className="flex w-full items-center gap-md py-md text-left transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
-                >
-                  <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-surface-tint">
-                    <Search size={13} className="text-muted" aria-hidden />
-                  </span>
-                  <span className="min-w-0 flex-1 truncate text-[13.5px] font-semibold text-ink">
-                    {term}
-                  </span>
-                  <span className="text-muted" aria-hidden>
-                    ↗
-                  </span>
-                </button>
-              </li>
+              <button
+                key={term}
+                type="button"
+                onClick={() => onApplyTerm(term)}
+                className="inline-flex items-center gap-[6px] rounded-full border border-hairline bg-white px-md py-[6px] text-[12px] font-semibold text-muted transition-all duration-200 hover:border-brand hover:bg-surface-tint hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+              >
+                <span className="flex size-4 shrink-0 items-center justify-center">
+                  <Search size={10} className="text-muted" aria-hidden />
+                </span>
+                {term}
+              </button>
             ))}
-          </ul>
+          </div>
         </section>
       ) : null}
     </div>
@@ -604,16 +598,13 @@ function ResultsView({
           {semantic ? (
             <Sparkles size={13} className="text-brand" aria-hidden />
           ) : (
-            <Search size={13} className="text-muted" aria-hidden />
+            <Search size={13} className="text-subtle" aria-hidden />
           )}
-          <span
-            className={[
-              "text-[11px] font-bold",
-              semantic ? "text-brand" : "text-muted",
-            ].join(" ")}
-          >
+          <span className="text-[11px] font-semibold text-muted">
             {results.length} result{results.length !== 1 ? "s" : ""}
-            {semantic ? " · AI-ranked" : ""}
+            {semantic ? (
+              <span className="font-bold text-brand"> · AI-ranked</span>
+            ) : null}
           </span>
         </div>
         {facets || filterCount > 0 ? (

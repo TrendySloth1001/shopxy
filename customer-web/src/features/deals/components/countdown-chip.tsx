@@ -30,7 +30,7 @@ export function CountdownChip({ endAtMs }: { endAtMs: number }) {
   if (remaining <= 0 && endAtMs > 0) return null;
 
   return (
-    <span className="rounded-xs bg-ink px-sm py-[3px] font-mono text-[12px] font-bold tabular-nums text-timer-text">
+    <span className="bg-ink text-white rounded-sm px-sm py-[2px] text-[11px] font-bold tabular-nums font-mono">
       {format(remaining)}
     </span>
   );

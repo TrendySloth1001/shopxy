@@ -25,7 +25,7 @@ export function SortBar({
             className={[
               "inline-flex shrink-0 items-center rounded-full border px-md py-xs text-label-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft",
               active
-                ? "border-brand bg-brand-soft text-brand"
+                ? "border-ink bg-ink text-white"
                 : "border-hairline bg-white text-muted hover:border-brand hover:text-brand",
             ].join(" ")}
           >

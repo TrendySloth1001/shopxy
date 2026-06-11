@@ -44,7 +44,12 @@ export function TopBar({ collapsed }: { collapsed: boolean }) {
         {collapsed ? (
           <Link
             href="/search"
-            className="flex h-9 min-w-0 flex-1 items-center gap-sm rounded-sm border border-hairline bg-white px-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+            className={[
+              "flex h-9 min-w-0 flex-1 items-center gap-sm rounded-sm border border-hairline bg-white px-md",
+              "transition-all duration-200 hover:border-ink/20",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft",
+              "motion-safe:transition-all",
+            ].join(" ")}
           >
             <Search size={18} className="shrink-0 text-muted" aria-hidden />
             <span className="line-clamp-1 text-[13px] text-muted">{SEARCH_HINTS[hint]}</span>
@@ -53,10 +58,16 @@ export function TopBar({ collapsed }: { collapsed: boolean }) {
           <span className="flex-1" />
         )}
 
+        {/* Cart chip */}
         <Link
           href="/cart"
           aria-label={cartCount > 0 ? `Cart (${cartCount} items)` : "Cart"}
-          className="relative flex size-9 shrink-0 items-center justify-center rounded-sm border border-hairline bg-white text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+          className={[
+            "relative flex size-9 shrink-0 items-center justify-center rounded-sm border border-hairline bg-white text-ink",
+            "transition-all duration-200 hover:border-ink/20 hover:bg-surface-tint hover:shadow-floating",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft",
+            "motion-safe:transition-all",
+          ].join(" ")}
         >
           <ShoppingCart size={20} aria-hidden />
           {cartCount > 0 ? (
@@ -66,10 +77,16 @@ export function TopBar({ collapsed }: { collapsed: boolean }) {
           ) : null}
         </Link>
 
+        {/* Bell chip */}
         <Link
           href="/notifications"
           aria-label={unread > 0 ? `Notifications (${unread} unread)` : "Notifications"}
-          className="relative flex size-9 shrink-0 items-center justify-center rounded-sm border border-hairline bg-white text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+          className={[
+            "relative flex size-9 shrink-0 items-center justify-center rounded-sm border border-hairline bg-white text-ink",
+            "transition-all duration-200 hover:border-ink/20 hover:bg-surface-tint hover:shadow-floating",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft",
+            "motion-safe:transition-all",
+          ].join(" ")}
         >
           <Bell size={20} aria-hidden />
           {unread > 0 ? (
@@ -79,18 +96,19 @@ export function TopBar({ collapsed }: { collapsed: boolean }) {
           ) : null}
         </Link>
 
+        {/* Avatar / Sign-in chip */}
         {status === "authed" ? (
           <Link
             href="/account"
             aria-label="Account"
-            className="shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+            className="shrink-0 rounded-full transition-opacity duration-200 hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft motion-safe:transition-opacity"
           >
             <Avatar url={user?.avatarUrl} name={user?.name ?? ""} size={34} />
           </Link>
         ) : (
           <Link
             href="/login"
-            className="shrink-0 rounded-full bg-brand px-md py-[6px] text-[12px] font-bold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+            className="shrink-0 rounded-full bg-brand px-md py-[6px] text-[12px] font-bold text-white transition-colors duration-200 hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft motion-safe:transition-colors"
           >
             Sign in
           </Link>
@@ -98,7 +116,7 @@ export function TopBar({ collapsed }: { collapsed: boolean }) {
       </div>
 
       <div
-        className="overflow-hidden transition-all duration-200"
+        className="overflow-hidden transition-all duration-200 motion-safe:transition-all"
         style={{ maxHeight: collapsed ? 0 : 40, opacity: collapsed ? 0 : 1 }}
         aria-hidden={collapsed}
       >

@@ -185,32 +185,39 @@ function ShopHeader({ shop, total }: { shop: ShopProfile; total: number }) {
         </div>
       ) : null}
 
-      {/* Logo + info row */}
-      <div className="px-lg pb-md pt-lg">
-        <div className="flex items-start gap-md">
-          {/* Shop logo */}
-          <div className="size-14 shrink-0 overflow-hidden rounded-md border border-hairline bg-white shadow-floating">
+      {/* Logo + info row — logo overlaps banner when banner exists */}
+      <div className={["px-lg pb-md", bannerUrl ? "-mt-7" : "pt-lg"].join(" ")}>
+        <div className="flex items-end gap-md">
+          {/* Shop logo — ring-white + shadow for overlap effect when banner present */}
+          <div
+            className={[
+              "size-14 shrink-0 overflow-hidden rounded-lg bg-white",
+              bannerUrl
+                ? "border-2 border-white shadow-menu"
+                : "border border-hairline shadow-floating",
+            ].join(" ")}
+          >
             {logoUrl ? (
               <ImageBox url={logoUrl} alt={shop.name} />
             ) : (
               <div className="flex size-full items-center justify-center bg-brand-soft">
-                <span className="text-title-lg text-brand">{initials}</span>
+                <span className="text-title-lg font-extrabold text-brand">{initials}</span>
               </div>
             )}
           </div>
 
           {/* Name + stats */}
-          <div className="min-w-0 flex-1">
-            <h1 className="text-title-lg text-ink">{shop.name}</h1>
+          <div className="min-w-0 flex-1 pb-xs">
+            <h1 className="text-title-lg font-extrabold text-ink">{shop.name}</h1>
             {shop.tagline ? (
               <p className="mt-xs text-body-sm text-muted">{shop.tagline}</p>
             ) : null}
-            <div className="mt-sm flex flex-wrap items-center gap-md">
+            <div className="mt-sm flex flex-wrap items-center gap-sm">
               {shop.rating != null ? (
-                <span className="flex items-center gap-xs text-body-sm font-semibold text-ink">
-                  <Star size={13} className="fill-success text-success" aria-hidden />
+                <span className="inline-flex items-center gap-[3px] rounded-sm bg-success px-[6px] py-[2px] text-[11px] font-bold text-white">
                   {shop.rating.toFixed(1)}
-                  <span className="font-normal text-muted">({shop.ratingCount})</span>
+                  <Star size={9} className="fill-white text-white" aria-hidden />
+                  <span className="font-normal text-white/80">({shop.ratingCount})</span>
                 </span>
               ) : null}
               <span className="flex items-center gap-xs text-body-sm text-muted">

@@ -11,13 +11,15 @@ function FlashTile({ deal }: { deal: FlashDeal }) {
   return (
     <Link
       href={`/p/${deal.productId}`}
-      className="flex flex-col overflow-hidden rounded-md bg-white shadow-floating transition-shadow hover:shadow-menu focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-flash-accent"
+      className="group rounded-lg border border-hairline bg-white overflow-hidden transition-all duration-200 hover:shadow-floating hover:-translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-flash-accent flex flex-col"
     >
       {/* Image */}
-      <span className="relative block aspect-square w-full overflow-hidden">
-        <ImageBox url={deal.imageUrl} alt={deal.name} placeholderColor="#FFE3D2" />
+      <span className="relative block aspect-square w-full overflow-hidden bg-canvas">
+        <span className="block size-full transition-transform duration-300 group-hover:scale-[1.04]">
+          <ImageBox url={deal.imageUrl} alt={deal.name} placeholderColor="#FFE3D2" />
+        </span>
         {deal.discountPct > 0 ? (
-          <span className="absolute left-[6px] top-[6px] rounded-xs bg-flash-accent px-[6px] py-[2px] text-[10px] font-extrabold text-white">
+          <span className="absolute left-[6px] top-[6px] bg-flash-accent text-white text-[11px] font-extrabold rounded-sm px-sm py-[2px]">
             -{deal.discountPct}%
           </span>
         ) : null}
@@ -29,9 +31,9 @@ function FlashTile({ deal }: { deal: FlashDeal }) {
           {deal.name}
         </span>
         <span className="mt-xs flex items-baseline gap-[4px]">
-          <span className="text-[14px] font-extrabold text-flash-accent">{deal.price}</span>
+          <span className="text-[15px] font-extrabold leading-none text-flash-accent">{deal.price}</span>
           {deal.originalPrice ? (
-            <span className="text-[10px] text-muted line-through">{deal.originalPrice}</span>
+            <span className="text-[11px] text-muted line-through">{deal.originalPrice}</span>
           ) : null}
         </span>
 
@@ -52,15 +54,13 @@ function FlashTile({ deal }: { deal: FlashDeal }) {
 
 /**
  * Full-page flash-deals grid — 2 columns on mobile, 3 on sm, 4 on lg.
- * Mirrors the Flutter `_FlashGrid` but without the `NeverScrollableScrollPhysics`
- * constraint (layout engine handles it naturally here).
  */
 export function FlashDealsGrid({ deals }: { deals: FlashDeal[] }) {
   if (deals.length === 0) return null;
   const soonestMs = Math.min(...deals.map((d) => Date.parse(d.endAt)));
 
   return (
-    <section className="rounded-md bg-gradient-to-b from-flash-from to-flash-to p-lg">
+    <section className="rounded-lg bg-gradient-to-b from-flash-from to-flash-to p-lg">
       {/* Header */}
       <div className="mb-md flex items-center gap-sm">
         <Zap size={20} className="fill-flash-accent text-flash-accent" aria-hidden />

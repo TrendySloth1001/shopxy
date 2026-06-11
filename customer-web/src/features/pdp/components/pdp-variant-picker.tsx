@@ -63,14 +63,27 @@ export function PdpVariantPicker({ product, onSelect }: Props) {
           <div className="flex flex-wrap gap-sm">
             {axis.values.map((value) => {
               const isSelected = selected[axis.name] === value;
+              // Check if this value leads to any variant with stock
+              const hasStock = variants.some((v) => {
+                const match = { ...selected, [axis.name]: value };
+                return (
+                  Object.entries(match).every(([k, val]) => (v.attributes[k] ?? "") === val) &&
+                  v.stockQuantity > 0
+                );
+              });
+              const isDisabled = !hasStock;
               return (
                 <button
                   key={value}
-                  onClick={() => pick(axis.name, value)}
-                  className={`rounded-button border px-md py-xs text-label-md font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
-                    isSelected
-                      ? "border-brand bg-brand text-white"
-                      : "border-hairline bg-white text-ink hover:border-brand"
+                  onClick={() => !isDisabled && pick(axis.name, value)}
+                  disabled={isDisabled}
+                  title={isDisabled ? "Out of stock" : undefined}
+                  className={`relative rounded-button border px-md py-xs text-label-md font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                    isDisabled
+                      ? "cursor-not-allowed border-hairline bg-canvas text-disabled line-through"
+                      : isSelected
+                        ? "border-brand bg-brand text-white shadow-sm"
+                        : "border-hairline bg-white text-ink hover:border-brand/30"
                   }`}
                 >
                   {value}

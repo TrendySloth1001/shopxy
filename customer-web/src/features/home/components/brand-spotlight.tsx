@@ -13,17 +13,17 @@ function spotlightHref(s: BrandSpotlight): string {
 /**
  * Brand-in-spotlight card — port of `HomeBrandSpotlight`. Full-bleed brand
  * image on a coloured panel with a brand label, AD badge, highlight deal label
- * and subtitle. The feed supplies one spotlight per block.
+ * and subtitle. Image gently scales on hover inside the rounded-lg container.
  */
 export function BrandSpotlightCard({ spotlight }: { spotlight: BrandSpotlight }) {
   const s = spotlight;
   return (
     <section>
       <div className="flex items-center justify-between px-lg">
-        <h2 className="text-[17px] font-extrabold text-ink">Brands in Spotlight</h2>
+        <h2 className="text-title-md font-extrabold text-ink">Brands in Spotlight</h2>
         <Link
           href="/spotlights"
-          className="flex items-center gap-[2px] text-[12px] font-bold text-brand focus-visible:outline-none focus-visible:underline"
+          className="flex items-center gap-[2px] text-[12px] font-bold text-brand transition-colors duration-200 hover:text-brand-strong focus-visible:outline-none focus-visible:underline"
         >
           View all <ChevronRight size={16} aria-hidden />
         </Link>
@@ -31,10 +31,13 @@ export function BrandSpotlightCard({ spotlight }: { spotlight: BrandSpotlight })
       <div className="mt-md px-lg">
         <Link
           href={spotlightHref(s)}
-          className="relative block h-[220px] w-full overflow-hidden rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+          className="group relative block h-[220px] w-full overflow-hidden rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
           style={{ backgroundColor: s.bgColor }}
         >
-          <ImageBox url={s.imageUrl} alt={s.brand} placeholderColor={s.bgColor} />
+          {/* Image scales gently on hover inside the rounded-lg container */}
+          <span className="block size-full transition-transform duration-300 group-hover:scale-[1.03]">
+            <ImageBox url={s.imageUrl} alt={s.brand} placeholderColor={s.bgColor} />
+          </span>
           <div
             className="absolute inset-0"
             style={{

@@ -2,7 +2,7 @@
 
 import { use, useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
-import { ArrowLeft, MapPin, Store, Download, Info, RotateCcw, X, Package } from "lucide-react";
+import { ArrowLeft, MapPin, Store, Download, Info, RotateCcw, X, Package, FileText } from "lucide-react";
 import { AppHeader } from "@/features/auth/components/app-header";
 import { RequireAuth } from "@/features/auth/components/require-auth";
 import { OrderTimeline } from "@/features/orders/components/order-timeline";
@@ -519,6 +519,68 @@ function BillRow({
   );
 }
 
+// ─── Slim shipping progress bar ──────────────────────────────────────────────
+
+type ShippingStep = "PACKED" | "SHIPPED" | "OUT_FOR_DELIVERY" | "DELIVERED";
+
+const SHIPPING_STEPS: { key: ShippingStep; label: string }[] = [
+  { key: "PACKED", label: "Packed" },
+  { key: "SHIPPED", label: "Shipped" },
+  { key: "OUT_FOR_DELIVERY", label: "Out for delivery" },
+  { key: "DELIVERED", label: "Delivered" },
+];
+
+function ShippingProgressRow({ events }: { events: { type: string }[] }) {
+  const reached = new Set(events.map((e) => e.type));
+  const currentIdx = (() => {
+    let last = -1;
+    SHIPPING_STEPS.forEach((s, i) => { if (reached.has(s.key)) last = i; });
+    return last;
+  })();
+
+  if (currentIdx < 0) return null;
+
+  return (
+    <div className="px-lg pb-md pt-sm">
+      <div className="relative flex items-start justify-between">
+        {/* Track line behind dots */}
+        <div className="absolute top-[9px] left-0 right-0 h-[2px] bg-hairline" />
+        <div
+          className="absolute top-[9px] left-0 h-[2px] bg-brand transition-all duration-500"
+          style={{ width: `${(currentIdx / (SHIPPING_STEPS.length - 1)) * 100}%` }}
+        />
+        {SHIPPING_STEPS.map((step, i) => {
+          const done = i <= currentIdx;
+          const isCurrent = i === currentIdx;
+          return (
+            <div key={step.key} className="relative flex flex-col items-center gap-xs" style={{ flex: 1 }}>
+              <span
+                className={[
+                  "relative z-10 flex h-[20px] w-[20px] shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300",
+                  done
+                    ? "border-brand bg-brand"
+                    : "border-hairline bg-white",
+                  isCurrent ? "ring-2 ring-brand/20" : "",
+                ].join(" ")}
+              >
+                {done ? <span className="h-[6px] w-[6px] rounded-full bg-white" /> : null}
+              </span>
+              <span
+                className={[
+                  "text-center text-[10px] leading-[1.2]",
+                  done ? "font-extrabold text-brand-strong" : "text-muted",
+                ].join(" ")}
+              >
+                {step.label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── Shop order section ────────────────────────────────────────────────────────
 
 function ShopSection({
@@ -594,15 +656,15 @@ function ShopSection({
         const imgSrc = mediaSrc(item.product?.images?.[0]?.url);
         return (
           <div key={item.id}>
-            <div className="flex items-start gap-md px-lg py-md">
+            <div className="flex items-start gap-md px-lg py-md transition-colors duration-200 hover:bg-surface-tint/40">
               {/* Product image */}
-              <div className="h-12 w-12 flex-shrink-0 rounded-md bg-hero-panel overflow-hidden flex items-center justify-center">
+              <div className="h-12 w-12 flex-shrink-0 rounded-lg bg-brand-soft overflow-hidden flex items-center justify-center">
                 {imgSrc ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={imgSrc}
                     alt={item.productName}
-                    className="h-full w-full object-cover"
+                    className="h-full w-full object-contain"
                     onError={(e) => {
                       (e.currentTarget as HTMLImageElement).style.display = "none";
                       const parent = e.currentTarget.parentElement;
@@ -617,13 +679,13 @@ function ShopSection({
                   className="fallback-icon h-full w-full items-center justify-center"
                   style={{ display: imgSrc ? "none" : "flex" }}
                 >
-                  <Package size={18} className="text-muted" />
+                  <Package size={18} className="text-brand/40" />
                 </span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-body-sm font-extrabold text-ink line-clamp-2">{item.productName}</p>
                 <div className="mt-xs flex flex-wrap gap-sm items-center">
-                  <span className="rounded-full bg-hero-panel px-sm py-[2px] text-[11px] font-bold text-ink">
+                  <span className="rounded-full bg-brand-soft px-sm py-[2px] text-[11px] font-bold text-brand-strong">
                     Qty {formatQty(item.quantity)}
                   </span>
                   <span className="text-[11px] text-muted">{item.unit}</span>
@@ -641,6 +703,14 @@ function ShopSection({
         );
       })}
 
+      {/* Slim shipping progress (dots + labels) — shown when events exist for active orders */}
+      {showTimeline && child.events.length > 0 && (
+        <>
+          <div className="h-px bg-hairline mx-lg" />
+          <ShippingProgressRow events={child.events} />
+        </>
+      )}
+
       {/* Tracking timeline */}
       {showTimeline && (
         <>
@@ -649,22 +719,25 @@ function ShopSection({
         </>
       )}
 
-      {/* Invoice footer */}
+      {/* Invoice footer — icon chips */}
       {invVis && pdfUrl && (
         <>
           <div className="h-px bg-hairline mx-lg" />
-          <div className="flex items-center gap-sm px-lg py-sm pb-md">
+          <div className="flex flex-wrap items-center gap-sm px-lg py-sm pb-md">
             <span className={`flex-1 text-body-sm font-bold ${invVis.colorClass}`}>
               {invVis.label}
             </span>
+            {/* PDF download icon chip */}
             <a
               href={pdfUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className={`flex h-8 w-8 items-center justify-center rounded-full hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${invVis.colorClass}`}
-              title="Download invoice"
+              title="Download invoice PDF"
+              className="inline-flex h-8 items-center gap-xs rounded-full border border-hairline bg-white px-sm py-xs text-label-md font-bold text-ink transition-colors duration-200 hover:bg-brand-soft hover:border-brand hover:text-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             >
-              <Download size={16} />
+              <FileText size={13} aria-hidden />
+              Invoice
+              <Download size={11} aria-hidden />
             </a>
           </div>
         </>
