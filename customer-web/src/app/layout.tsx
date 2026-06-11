@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import { AuthProvider } from "@/features/auth/auth-context";
 import { NotificationsProvider } from "@/features/notifications/notifications-context";
 import { CartProvider } from "@/features/cart/cart-context";
+import { SiteFooter } from "@/shared/ui/site-footer";
 import "./globals.css";
 
 // Inter — same typeface as the Flutter customer app. Exposed as the
@@ -28,7 +29,10 @@ export default function RootLayout({
       <body className="min-h-full bg-canvas text-ink antialiased">
         <AuthProvider>
           <NotificationsProvider>
-            <CartProvider>{children}</CartProvider>
+            <CartProvider>
+              {children}
+              <SiteFooter />
+            </CartProvider>
           </NotificationsProvider>
         </AuthProvider>
       </body>

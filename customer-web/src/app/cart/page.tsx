@@ -111,7 +111,7 @@ export default function CartPage() {
               )}
 
               {/* Item list */}
-              <div className="divide-y divide-hairline rounded-md bg-white">
+              <div className="divide-y divide-hairline rounded-lg border border-hairline bg-white">
                 {lines.map((line) => {
                   const { product } = line;
                   const hasDiscount = product.mrp > product.sellingPrice;
@@ -122,23 +122,25 @@ export default function CartPage() {
                   const isCapped = cappedIds.has(product.id);
 
                   return (
-                    <div key={line.id} className="flex gap-md p-md">
-                      {/* Image */}
+                    <div key={line.id} className="flex gap-md p-md transition-colors duration-200 hover:bg-surface-tint/40">
+                      {/* Image — 96px rounded-lg */}
                       <Link href={`/p/${product.id}`} className="shrink-0">
-                        <div className="h-20 w-20 overflow-hidden rounded-sm bg-canvas">
+                        <div className="h-24 w-24 overflow-hidden rounded-lg bg-brand-soft">
                           {product.images[0] ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
                               src={mediaSrc(product.images[0].url) ?? ""}
                               alt={product.name}
-                              className="h-full w-full object-cover"
+                              className="h-full w-full object-contain transition-transform duration-200 hover:scale-105"
                               onError={(e) => {
                                 (e.currentTarget as HTMLImageElement).style.display = "none";
                               }}
                             />
                           ) : (
                             <div className="flex h-full w-full items-center justify-center">
-                              <ShoppingCart className="h-6 w-6 text-muted" />
+                              <span className="text-2xl font-black text-brand/20">
+                                {(product.name[0] ?? "?").toUpperCase()}
+                              </span>
                             </div>
                           )}
                         </div>
@@ -146,13 +148,13 @@ export default function CartPage() {
 
                       {/* Details */}
                       <div className="flex flex-1 flex-col gap-xs">
-                        <Link href={`/p/${product.id}`}>
-                          <p className="line-clamp-2 text-body-sm font-bold text-ink leading-snug">
+                        <Link href={`/p/${product.id}`} className="hover:underline">
+                          <p className="line-clamp-2 text-body-sm font-bold leading-snug text-ink">
                             {product.name}
                           </p>
                         </Link>
                         {product.shop?.name && (
-                          <span className="inline-flex w-fit rounded-full bg-brand-soft px-sm py-xs text-label-md text-brand">
+                          <span className="inline-flex w-fit rounded-full bg-brand-soft px-sm py-xs text-label-md text-brand-strong">
                             {product.shop.name}
                           </span>
                         )}
@@ -180,7 +182,7 @@ export default function CartPage() {
                           </p>
                         )}
 
-                        {/* Stepper + remove */}
+                        {/* Pill stepper + remove */}
                         <div className="flex items-center justify-between">
                           <QuantityStepper
                             qty={line.quantity}
@@ -194,7 +196,7 @@ export default function CartPage() {
                           />
                           <button
                             onClick={() => void handleRemove(product.id)}
-                            className="flex items-center gap-xs text-body-sm font-bold text-error hover:text-error focus-visible:outline-none"
+                            className="flex items-center gap-xs text-label-md font-bold text-error transition-colors duration-200 hover:text-error/80 focus-visible:outline-none"
                           >
                             <Trash2 className="h-4 w-4" />
                             Remove
@@ -209,14 +211,14 @@ export default function CartPage() {
               {/* Bill summary */}
               <BillCard subtotal={subtotal} mrpTotal={mrpTotal} savings={savings} />
 
-              {/* Reassurance */}
-              <div className="flex items-center gap-md rounded-md bg-white px-md py-sm">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-brand-soft">
+              {/* Safe and secure strip */}
+              <div className="flex items-center gap-md rounded-lg bg-brand-soft px-md py-sm">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white shadow-sm">
                   <ShieldCheck className="h-5 w-5 text-brand" />
                 </div>
                 <div>
-                  <p className="text-body-sm font-extrabold text-ink">Safe and secure</p>
-                  <p className="text-label-md text-muted">
+                  <p className="text-body-sm font-extrabold text-brand-strong">Safe and secure</p>
+                  <p className="text-label-md text-brand/70">
                     Cancel any time before the shop confirms.
                   </p>
                 </div>
@@ -225,21 +227,47 @@ export default function CartPage() {
 
             {/* Right column — checkout CTA (sticky on desktop) */}
             <div className="lg:sticky lg:top-xl lg:w-72">
-              <div className="rounded-md bg-white p-md shadow-floating">
-                <div className="mb-md">
-                  <p className="text-label-md text-muted">Cart total</p>
-                  <p className="text-title-lg font-extrabold text-ink">
-                    {formatINR(subtotal)}
-                  </p>
+              <div className="rounded-lg border border-hairline bg-white p-md shadow-floating">
+                <p className="mb-sm text-label-md font-extrabold uppercase tracking-wide text-muted">
+                  Order summary
+                </p>
+                {/* Mini bill rows */}
+                <div className="flex flex-col gap-xs pb-md">
                   {savings > 0 && (
-                    <p className="text-body-sm text-success">
+                    <div className="flex items-center justify-between">
+                      <span className="text-body-sm text-muted">Items (MRP)</span>
+                      <span className="text-body-sm text-muted line-through">{formatINR(mrpTotal)}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between">
+                    <span className="text-body-sm text-muted">Items total</span>
+                    <span className="text-body-sm font-bold text-ink">{formatINR(subtotal)}</span>
+                  </div>
+                  {savings > 0 && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-body-sm text-muted">Discount</span>
+                      <span className="text-body-sm font-bold text-success">− {formatINR(savings)}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between">
+                    <span className="text-body-sm text-muted">Delivery</span>
+                    <span className="text-body-sm font-bold text-success">FREE</span>
+                  </div>
+                </div>
+                <div className="mb-md border-t border-hairline pt-md">
+                  <div className="flex items-center justify-between">
+                    <span className="text-body-md font-extrabold text-ink">Total</span>
+                    <span className="text-title-md font-extrabold text-ink">{formatINR(subtotal)}</span>
+                  </div>
+                  {savings > 0 && (
+                    <p className="mt-xs text-body-sm text-success">
                       You save {formatINR(savings)}
                     </p>
                   )}
                 </div>
                 <button
                   onClick={goToCheckout}
-                  className="inline-flex h-11 w-full items-center justify-center rounded-button bg-brand px-lg text-label-md font-bold text-white hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                  className="inline-flex h-11 w-full items-center justify-center rounded-button bg-brand px-lg text-label-md font-bold text-white transition-colors duration-200 hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 >
                   Proceed to checkout
                 </button>
@@ -270,6 +298,7 @@ export default function CartPage() {
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
+/** Single-pill stepper: [− qty +] inside one hairline-bordered rounded-full */
 function QuantityStepper({
   qty,
   maxQty,
@@ -282,21 +311,21 @@ function QuantityStepper({
   onIncrement: () => void;
 }) {
   return (
-    <div className="flex items-center rounded-sm border border-hairline bg-white">
+    <div className="inline-flex h-8 items-center overflow-hidden rounded-full border border-hairline bg-white">
       <button
         onClick={onDecrement}
-        className="flex h-8 w-8 items-center justify-center text-ink hover:bg-canvas focus-visible:outline-none disabled:opacity-40"
+        className="flex h-full w-8 items-center justify-center text-ink transition-colors duration-200 hover:bg-canvas focus-visible:outline-none disabled:opacity-40"
         aria-label="Decrease quantity"
       >
         <Minus className="h-3 w-3" />
       </button>
-      <span className="min-w-8 px-sm text-center text-body-sm font-bold text-ink">
+      <span className="min-w-[28px] border-x border-hairline px-sm text-center text-body-sm font-extrabold text-ink">
         {qty}
       </span>
       <button
         onClick={onIncrement}
         disabled={maxQty > 0 && qty >= maxQty}
-        className="flex h-8 w-8 items-center justify-center text-ink hover:bg-canvas focus-visible:outline-none disabled:opacity-40"
+        className="flex h-full w-8 items-center justify-center text-ink transition-colors duration-200 hover:bg-canvas focus-visible:outline-none disabled:opacity-40"
         aria-label="Increase quantity"
       >
         <Plus className="h-3 w-3" />
@@ -386,8 +415,10 @@ function BillRow({
 function EmptyCart() {
   return (
     <div className="flex flex-col items-center py-xxxl text-center">
-      <div className="mb-lg flex h-24 w-24 items-center justify-center rounded-xl bg-canvas">
-        <ShoppingCart className="h-12 w-12 text-muted" />
+      {/* Brand-soft tinted illustration block */}
+      <div className="mb-xl flex h-32 w-32 flex-col items-center justify-center rounded-2xl bg-brand-soft">
+        <ShoppingCart className="h-12 w-12 text-brand/50" />
+        <span className="mt-sm text-label-md font-extrabold text-brand/50">Empty bag</span>
       </div>
       <h2 className="text-title-md font-extrabold text-ink">Your cart is empty</h2>
       <p className="mt-xs max-w-snug text-body-sm text-muted">
@@ -395,7 +426,7 @@ function EmptyCart() {
       </p>
       <Link
         href="/"
-        className="mt-lg inline-flex h-10 items-center rounded-button bg-brand px-lg text-label-md font-bold text-white hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        className="mt-lg inline-flex h-10 items-center rounded-button bg-brand px-lg text-label-md font-bold text-white transition-colors duration-200 hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
       >
         Continue shopping
       </Link>

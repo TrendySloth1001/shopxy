@@ -165,6 +165,12 @@
   --breakpoint-tablet: 840px;
   --breakpoint-desktop: 1200px;
 
+  /* ── Overlay / scrim ─────────────────────────────────────────────────── */
+  /* Semi-transparent ink veil for modals, drawers, and bottom sheets.
+     Usage: bg-scrim (Tailwind) or var(--color-scrim) in inline styles.
+     Other agents: apply this to dialog/sheet backdrops instead of raw rgba. */
+  --color-scrim: rgba(20, 24, 29, 0.40);
+
   /* ── Motion (consumed via var() in components / transitions) ─────────── */
   --duration-micro: 100ms;
   --duration-short: 180ms;
@@ -195,4 +201,35 @@ body {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/*
+ * ── Skeleton shimmer ────────────────────────────────────────────────────────
+ *
+ * Usage: add `shimmer` class to any skeleton placeholder element.
+ *   <div class="shimmer h-4 w-32 rounded-sm bg-canvas" />
+ *
+ * The sweep animates canvas→white→canvas left-to-right at 1.6 s cadence.
+ * Under prefers-reduced-motion the animation is killed by the rule above,
+ * leaving a static bg-surface-tint placeholder — still visually distinct.
+ *
+ * Other agents: adopt this class on skeleton blocks. Do NOT define a new
+ * keyframe — reuse this one. Pair with a bg- token (bg-canvas or bg-white)
+ * so the gradient blends correctly against its parent surface.
+ */
+@keyframes shimmer-sweep {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+.shimmer {
+  background-image: linear-gradient(
+    90deg,
+    var(--color-canvas)   0%,
+    var(--color-white)   40%,
+    var(--color-canvas)  60%,
+    var(--color-canvas) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer-sweep 1.6s ease-in-out infinite;
 }

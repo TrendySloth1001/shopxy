@@ -29,7 +29,7 @@ export function OrderCard({ order }: { order: CustomerOrder }) {
   return (
     <Link
       href={`/orders/${order.id}`}
-      className="block rounded-lg border border-hairline bg-white p-md hover:bg-surface-tint/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand transition-colors"
+      className="block rounded-lg border border-hairline bg-white p-md transition-all duration-200 hover:bg-surface-tint/40 hover:shadow-floating focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
     >
       {/* Header row */}
       <div className="flex items-start justify-between gap-sm">

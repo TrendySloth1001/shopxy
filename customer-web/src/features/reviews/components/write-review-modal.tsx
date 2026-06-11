@@ -105,23 +105,26 @@ export function WriteReviewModal({
             <p className="mb-sm text-body-md font-bold text-ink">Your rating</p>
             <div className="flex items-center gap-xs">
               {[1, 2, 3, 4, 5].map((s) => {
-                const filled = (hoverRating || rating) >= s;
+                const active = (hoverRating || rating) >= s;
+                const isHovered = hoverRating > 0 && hoverRating >= s;
                 return (
                   <button
                     key={s}
                     type="button"
-                    aria-label={`Rate ${s} stars`}
+                    aria-label={`Rate ${s} star${s > 1 ? "s" : ""}`}
                     onClick={() => setRating(s)}
                     onMouseEnter={() => setHoverRating(s)}
                     onMouseLeave={() => setHoverRating(0)}
-                    className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                    className="rounded-sm transition-transform duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand active:scale-90 hover:scale-110"
                   >
                     <Star
                       size={32}
                       aria-hidden
                       className={
-                        filled
-                          ? "fill-[#E05A2A] text-[#E05A2A]"
+                        active
+                          ? isHovered
+                            ? "fill-[#E05A2A] text-[#E05A2A] drop-shadow-sm"
+                            : "fill-[#E05A2A] text-[#E05A2A]"
                           : "fill-disabled text-disabled"
                       }
                     />
@@ -129,6 +132,15 @@ export function WriteReviewModal({
                 );
               })}
             </div>
+            {(hoverRating || rating) > 0 ? (
+              <p className="mt-xs text-body-sm text-muted">
+                {
+                  ["", "Poor", "Fair", "Good", "Great", "Excellent"][
+                    hoverRating || rating
+                  ]
+                }
+              </p>
+            ) : null}
           </div>
 
           {/* Title */}

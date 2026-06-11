@@ -22,11 +22,10 @@ export function SearchResultRow({
     <Link
       href={`/p/${hit.id}`}
       onClick={onTap}
-      className="flex items-center gap-md py-md transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+      className="flex items-center gap-md rounded-lg px-sm py-sm transition-all duration-200 hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
     >
-      {/* Thumbnail — mediaSrc routes relative keys through /api/media proxy;
-          onError shows a neutral placeholder box (no broken-image glyph). */}
-      <span className="relative size-16 shrink-0 overflow-hidden rounded-sm border border-hairline bg-hero-panel">
+      {/* Thumbnail 64×64, rounded-lg */}
+      <span className="relative size-16 shrink-0 overflow-hidden rounded-lg border border-hairline bg-hero-panel">
         {thumbSrc && !imgErrored ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -38,14 +37,12 @@ export function SearchResultRow({
             onError={() => setImgErrored(true)}
           />
         ) : (
-          // Neutral placeholder — no broken-image glyph
           <span className="block size-full bg-hero-panel" aria-hidden />
         )}
       </span>
 
-      {/* Text + price — flex row keeps price anchored right without floating
-          at wide widths; the text column is min-w-0 so it truncates. */}
-      <span className="flex min-w-0 flex-1 items-center gap-sm">
+      {/* Text block + price — price stays baseline-aligned with text block */}
+      <span className="flex min-w-0 flex-1 items-start gap-sm">
         {/* Name / shop / rating */}
         <span className="min-w-0 flex-1">
           <span className="block line-clamp-2 text-[13.5px] font-semibold leading-tight text-ink">
@@ -57,17 +54,19 @@ export function SearchResultRow({
             </span>
           ) : null}
           {hit.ratingAvg != null && hit.ratingCount > 0 ? (
-            <span className="mt-[2px] flex items-center gap-[2px]">
-              <Star size={10} className="fill-success text-success" aria-hidden />
-              <span className="text-[10px] font-semibold text-muted">
-                {hit.ratingAvg.toFixed(1)} ({hit.ratingCount})
+            <span className="mt-[3px] inline-flex items-center gap-[3px]">
+              <span className="inline-flex items-center gap-[2px] rounded-sm bg-success px-[5px] py-[2px] text-[10px] font-bold text-white">
+                {hit.ratingAvg.toFixed(1)}
+                <Star size={8} className="fill-white text-white" aria-hidden />
+              </span>
+              <span className="text-[10px] text-muted">
+                ({hit.ratingCount > 999 ? `${(hit.ratingCount / 1000).toFixed(1)}k` : hit.ratingCount})
               </span>
             </span>
           ) : null}
         </span>
 
-        {/* Price — backend search hits expose only sellingPrice (no mrp field);
-            MRP strikethrough will be added here when the backend exposes it. */}
+        {/* Price — flush right, aligned with first text line */}
         <span className="shrink-0 text-right">
           <span className="block text-[15px] font-extrabold leading-none text-ink">
             {formatINR(hit.sellingPrice)}

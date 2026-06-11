@@ -28,18 +28,27 @@ export function useRotatingHint(): number {
  * SHOPXY" eyebrow over a rotating hint, and mic / scanner trailing actions.
  * Collapses to zero height as the header shrinks (the compact search then lives
  * in the top bar).
+ *
+ * The collapse transition is smooth via CSS — DO NOT change the collapsed prop
+ * thresholds or the rAF logic in home-feed.tsx (not owned here).
  */
 export function SearchBar({ collapsed }: { collapsed: boolean }) {
   const hint = useRotatingHint();
   return (
     <div
-      className="overflow-hidden px-lg transition-all duration-200"
+      className="overflow-hidden px-lg transition-all duration-200 motion-safe:transition-all"
       style={{ maxHeight: collapsed ? 0 : 80, opacity: collapsed ? 0 : 1, paddingBottom: collapsed ? 0 : 8 }}
       aria-hidden={collapsed}
     >
       <Link
         href="/search"
-        className="flex h-14 items-center gap-[10px] rounded-lg border border-hairline bg-white px-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+        className={[
+          "flex h-14 items-center gap-[10px] rounded-lg border border-hairline bg-white px-sm",
+          "transition-all duration-200",
+          "hover:border-ink/20 hover:shadow-floating",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft",
+          "motion-safe:transition-all",
+        ].join(" ")}
       >
         <span className="flex size-9 shrink-0 items-center justify-center rounded-sm bg-brand">
           <Search size={18} className="text-white" aria-hidden />
@@ -51,10 +60,10 @@ export function SearchBar({ collapsed }: { collapsed: boolean }) {
           <span className="mt-[2px] line-clamp-1 text-[13px] font-semibold text-ink">{SEARCH_HINTS[hint]}</span>
         </span>
         <span className="mx-[2px] h-6 w-px bg-hairline" aria-hidden />
-        <span className="flex size-9 items-center justify-center rounded-full">
+        <span className="flex size-9 items-center justify-center rounded-full transition-colors duration-200 hover:bg-surface-tint motion-safe:transition-colors">
           <Mic size={18} className="text-brand" aria-hidden />
         </span>
-        <span className="flex size-9 items-center justify-center rounded-full bg-brand-soft">
+        <span className="flex size-9 items-center justify-center rounded-full bg-brand-soft transition-colors duration-200 hover:bg-brand/10 motion-safe:transition-colors">
           <QrCode size={18} className="text-brand" aria-hidden />
         </span>
       </Link>

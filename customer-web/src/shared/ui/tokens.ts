@@ -67,6 +67,13 @@ export const color = {
     info: "#1D4ED8",
     infoSoft: "#E3EAFE",
   },
+  /**
+   * Overlay scrim — semi-transparent ink veil for modals, drawers, bottom
+   * sheets. Mirrors `--color-scrim` in globals.css.
+   * CSS: `bg-scrim` (Tailwind) or `var(--color-scrim)` inline.
+   */
+  scrim: "rgba(20, 24, 29, 0.40)",
+
   /** Editorial accents — used sparingly to tag distinct entity classes. */
   accent: {
     teal: "#0E7C8A",

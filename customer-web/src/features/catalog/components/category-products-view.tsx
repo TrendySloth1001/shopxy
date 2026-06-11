@@ -148,10 +148,10 @@ export function CategoryProductsView({ slug }: { slug: string }) {
               <Link
                 key={child.id}
                 href={`/c/${child.slug}`}
-                className="inline-flex shrink-0 items-center gap-xs rounded-full border border-hairline bg-white px-md py-xs text-label-md text-muted hover:border-brand hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+                className="group inline-flex shrink-0 items-center gap-xs rounded-full border border-hairline bg-white px-md py-xs text-label-md text-muted transition-all duration-200 hover:border-brand hover:bg-brand-soft hover:text-brand hover:shadow-floating focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
               >
                 {child.imageUrl ? (
-                  <span className="size-5 overflow-hidden rounded-full">
+                  <span className="size-5 shrink-0 overflow-hidden rounded-full border border-hairline bg-hero-panel">
                     <ImageBox url={resolveImageUrl(child.imageUrl)} alt="" fit="cover" />
                   </span>
                 ) : null}
@@ -202,30 +202,54 @@ export function CategoryProductsView({ slug }: { slug: string }) {
 
 // ── Category header ──────────────────────────────────────────────────────────
 
+// Rotating tints — matches home puck palette
+const HEADER_TINTS = [
+  "#E3E8F4", "#F3E4D6", "#F9E1EA", "#E6F2EC",
+  "#EFE9DD", "#E0E1E6", "#E7DFD4", "#E4DECF",
+  "#E6F2DA", "#DEEAF1",
+];
+
+function catTint(name: string): string {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) & 0xffff;
+  return HEADER_TINTS[h % HEADER_TINTS.length] ?? HEADER_TINTS[0]!;
+}
+
 function CategoryHeader({ category, total }: { category: CategoryDetail; total: number }) {
   const imageUrl = resolveImageUrl(category.imageUrl);
   const initials = category.name.trim()[0]?.toUpperCase() ?? "C";
+  const tint = catTint(category.name);
 
   return (
-    <div className="mb-sm px-lg pb-md pt-lg">
-      <div className="flex items-center gap-md">
-        {imageUrl ? (
-          <div className="size-12 shrink-0 overflow-hidden rounded-button border border-hairline bg-hero-panel">
-            <ImageBox url={imageUrl} alt={category.name} fit="cover" />
+    <div className="mb-sm">
+      {/* Tinted hero band */}
+      <div
+        className="w-full px-lg py-xl"
+        style={{ backgroundColor: tint }}
+      >
+        <div className="flex items-center gap-md">
+          {/* White circular chip for icon/image */}
+          <div className="size-14 shrink-0 overflow-hidden rounded-full border-2 border-white bg-white shadow-floating">
+            {imageUrl ? (
+              <ImageBox url={imageUrl} alt={category.name} fit="cover" />
+            ) : (
+              <div
+                className="flex size-full items-center justify-center"
+                style={{ backgroundColor: tint }}
+              >
+                <span className="text-title-lg font-extrabold text-brand">{initials}</span>
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="flex size-12 shrink-0 items-center justify-center rounded-button border border-hairline bg-brand-soft">
-            <span className="text-title-md text-brand">{initials}</span>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-title-lg font-extrabold text-ink">{category.name}</h1>
+            {total > 0 ? (
+              <p className="text-body-sm text-muted">{total} products</p>
+            ) : null}
           </div>
-        )}
-        <div className="min-w-0 flex-1">
-          <h1 className="text-title-lg text-ink">{category.name}</h1>
-          {total > 0 ? (
-            <p className="text-body-sm text-muted">{total} products</p>
-          ) : null}
         </div>
       </div>
-      <div className="mt-md border-t border-hairline" />
+      <div className="border-t border-hairline" />
     </div>
   );
 }

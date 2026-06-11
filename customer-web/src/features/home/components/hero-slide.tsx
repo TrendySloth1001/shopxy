@@ -60,7 +60,7 @@ export function HeroSlideCard({ slide }: { slide: HeroSlide }) {
   return (
     <Link
       href={href}
-      className="block aspect-[16/10] w-full overflow-hidden rounded-lg shadow-floating transition-shadow hover:shadow-menu focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+      className="group block aspect-[16/10] w-full overflow-hidden rounded-lg shadow-floating transition-all duration-200 hover:shadow-menu focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
       style={{ backgroundColor: slide.bgColor }}
     >
       {inner}
@@ -151,7 +151,9 @@ function Minimal({ slide, fg }: { slide: HeroSlide; fg: string }) {
 function ImageOnly({ slide }: { slide: HeroSlide }) {
   return (
     <div className="relative size-full">
-      <ImageBox url={slide.imageUrl} alt={slide.title} fit={slide.imageFit} placeholderColor={slide.bgColor} />
+      <span className="block size-full transition-transform duration-300 group-hover:scale-[1.03]">
+        <ImageBox url={slide.imageUrl} alt={slide.title} fit={slide.imageFit} placeholderColor={slide.bgColor} />
+      </span>
       <div
         className="absolute inset-0"
         style={{ background: "radial-gradient(circle at center, transparent 55%, rgba(0,0,0,0.18) 100%)" }}
@@ -166,7 +168,9 @@ function ImageOnly({ slide }: { slide: HeroSlide }) {
 function Overlay({ slide }: { slide: HeroSlide }) {
   return (
     <div className="relative size-full">
-      <ImageBox url={slide.imageUrl} alt={slide.title} fit={slide.imageFit} placeholderColor={slide.bgColor} />
+      <span className="block size-full transition-transform duration-300 group-hover:scale-[1.03]">
+        <ImageBox url={slide.imageUrl} alt={slide.title} fit={slide.imageFit} placeholderColor={slide.bgColor} />
+      </span>
       <div
         className="absolute inset-0"
         style={{

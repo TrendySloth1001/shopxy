@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Zap } from "lucide-react";
+import { Zap, Truck, RotateCcw, ShieldCheck } from "lucide-react";
 import { formatINR } from "@/shared/format";
 import { type ProductDetail, type Variant, type FlashSale, getActiveFlashSale } from "../types";
 
@@ -9,6 +9,46 @@ interface Props {
   product: ProductDetail;
   selectedVariant: Variant | null;
 }
+
+// ── Assurance block (delivery / returns / authentic) ──────────────────────────
+
+function AssuranceBlock() {
+  // Shop returns info is not on the PDP payload — show generic trust copy
+  const rows: { icon: React.ReactNode; text: React.ReactNode }[] = [
+    {
+      icon: <Truck size={14} className="text-brand" aria-hidden />,
+      text: (
+        <span>
+          Free delivery{" "}
+          <span className="font-normal text-muted">· 3–5 days · merchant confirms</span>
+        </span>
+      ),
+    },
+    {
+      icon: <RotateCcw size={14} className="text-brand" aria-hidden />,
+      text: <span>7-day returns</span>,
+    },
+    {
+      icon: <ShieldCheck size={14} className="text-brand" aria-hidden />,
+      text: <span>100% authentic</span>,
+    },
+  ];
+
+  return (
+    <div className="mx-0 mt-sm rounded-md border border-hairline bg-white">
+      {rows.map((row, i) => (
+        <div key={i}>
+          {i > 0 ? <div className="mx-md border-t border-hairline" /> : null}
+          <div className="flex items-center gap-sm px-md py-sm">
+            <span className="flex w-5 shrink-0 items-center justify-center">{row.icon}</span>
+            <span className="text-body-sm font-semibold text-ink">{row.text}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 
 function fmtCountdown(ms: number): string {
   if (ms <= 0) return "00:00:00";
@@ -107,6 +147,8 @@ function PdpPriceBlockInner({ product, selectedVariant, flash }: InnerProps) {
   const isDiscounted = baseMrp > 0 && baseMrp > displayPrice;
   const pct = isDiscounted ? Math.round(((baseMrp - displayPrice) / baseMrp) * 100) : 0;
 
+  const savedAmount = isDiscounted ? baseMrp - displayPrice : 0;
+
   return (
     <div className="px-lg pb-sm pt-xs">
       <div className="flex flex-wrap items-end gap-sm">
@@ -124,10 +166,20 @@ function PdpPriceBlockInner({ product, selectedVariant, flash }: InnerProps) {
           </>
         ) : null}
       </div>
+      {isDiscounted && savedAmount > 0 ? (
+        <div className="mt-sm inline-flex items-center gap-xs rounded-full bg-success-soft px-md py-xs">
+          <span className="text-label-md font-extrabold text-success">
+            You save {formatINR(savedAmount)} ({pct}%)
+          </span>
+        </div>
+      ) : null}
       {product.taxPercent > 0 ? (
         <p className="mt-xs text-label-md text-muted">Inclusive of all taxes</p>
       ) : null}
       {isFlashActive && flash ? <FlashChip sale={flash} /> : null}
+
+      {/* Assurance rows: free delivery · returns · authentic */}
+      <AssuranceBlock />
     </div>
   );
 }

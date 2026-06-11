@@ -11,16 +11,28 @@ import {
 import type { ShopOrderPreview } from "../types";
 import { isChildConfirmed, isChildRejected, isChildCancelled, isChildPending } from "../types";
 
-// ─── Shop-order (per-vendor slice) chip ──────────────────────────────────────
+// ─── ChipStatus — single helper for all order-status chips ───────────────────
+//
+// Maps a shop-order status string to consistent pill styling.
+// PENDING    → amber/warning-soft
+// CONFIRMED  → success-soft
+// CANCELLED  → muted/surface-tint
+// REJECTED   → error-soft
+//
+// Usage:
+//   <ChipStatus status="CONFIRMED" />
+//   <ChipStatus status="PENDING" showIcon />
 
-type SliceStatus = "PENDING" | "CONFIRMED" | "REJECTED" | "CANCELLED" | string;
+type StatusKind = "PENDING" | "CONFIRMED" | "CANCELLED" | "REJECTED" | string;
 
-function sliceVisual(status: SliceStatus): {
+interface StatusVisual {
   label: string;
   colorClass: string;
   bgClass: string;
   Icon: React.FC<{ className?: string; size?: number }>;
-} {
+}
+
+export function statusVisual(status: StatusKind): StatusVisual {
   switch (status) {
     case "CONFIRMED":
       return {
@@ -53,28 +65,39 @@ function sliceVisual(status: SliceStatus): {
   }
 }
 
-export function ShopOrderStatusChip({ status }: { status: string }) {
-  const { label, colorClass, bgClass } = sliceVisual(status);
+/** Unified status chip — color-coded per status kind. */
+export function ChipStatus({
+  status,
+  showIcon = false,
+}: {
+  status: string;
+  showIcon?: boolean;
+}) {
+  const { label, colorClass, bgClass, Icon } = statusVisual(status);
   return (
     <span
       className={`inline-flex items-center gap-xs rounded-full px-sm py-[3px] text-[10px] font-extrabold tracking-[0.4px] ${colorClass} ${bgClass}`}
     >
+      {showIcon ? <Icon size={10} aria-hidden /> : null}
       {label}
     </span>
   );
 }
 
+// ─── Shop-order (per-vendor slice) chip — now delegates to ChipStatus ─────────
+
+export function ShopOrderStatusChip({ status }: { status: string }) {
+  return <ChipStatus status={status} />;
+}
+
 // ─── Aggregate parent order chip ─────────────────────────────────────────────
 
-function aggregateVisual(order: { shopOrders: ShopOrderPreview[] }): {
+function aggregateLabel(order: { shopOrders: ShopOrderPreview[] }): {
   label: string;
-  colorClass: string;
-  bgClass: string;
-  Icon: React.FC<{ className?: string; size?: number }>;
+  statusKey: string;
 } {
   const children = order.shopOrders;
-  if (children.length === 0)
-    return { label: "PENDING", colorClass: "text-warning", bgClass: "bg-warning-soft", Icon: Clock };
+  if (children.length === 0) return { label: "PENDING", statusKey: "PENDING" };
 
   const confirmed = children.filter(isChildConfirmed).length;
   const pending = children.filter(isChildPending).length;
@@ -82,30 +105,23 @@ function aggregateVisual(order: { shopOrders: ShopOrderPreview[] }): {
   const cancelled = children.filter(isChildCancelled).length;
   const total = children.length;
 
-  if (confirmed === total)
-    return { label: "CONFIRMED", colorClass: "text-success", bgClass: "bg-success-soft", Icon: CheckCircle };
-  if (cancelled === total)
-    return { label: "CANCELLED", colorClass: "text-muted", bgClass: "bg-surface-tint", Icon: Ban };
-  if (rejected === total)
-    return { label: "DECLINED", colorClass: "text-error", bgClass: "bg-error-soft", Icon: XCircle };
-  if (pending === total)
-    return { label: "PENDING", colorClass: "text-warning", bgClass: "bg-warning-soft", Icon: Clock };
+  if (confirmed === total) return { label: "CONFIRMED", statusKey: "CONFIRMED" };
+  if (cancelled === total) return { label: "CANCELLED", statusKey: "CANCELLED" };
+  if (rejected === total) return { label: "DECLINED", statusKey: "REJECTED" };
+  if (pending === total) return { label: "PENDING", statusKey: "PENDING" };
 
-  return {
-    label: `${confirmed}/${total} CONFIRMED`,
-    colorClass: "text-warning",
-    bgClass: "bg-warning-soft",
-    Icon: Hourglass,
-  };
+  // Mixed: use the warning-soft pending palette, custom label
+  return { label: `${confirmed}/${total} CONFIRMED`, statusKey: "PENDING" };
 }
 
 export function AggregateStatusChip({ order }: { order: { shopOrders: ShopOrderPreview[] } }) {
-  const { label, colorClass, bgClass, Icon } = aggregateVisual(order);
+  const { label, statusKey } = aggregateLabel(order);
+  const { colorClass, bgClass, Icon } = statusVisual(statusKey);
   return (
     <span
       className={`inline-flex items-center gap-xs rounded-full px-sm py-[3px] text-[10px] font-extrabold tracking-[0.4px] ${colorClass} ${bgClass}`}
     >
-      <Icon size={10} />
+      <Icon size={10} aria-hidden />
       {label}
     </span>
   );
@@ -129,35 +145,43 @@ export function aggregateStatusHeadline(order: { shopOrders: ShopOrderPreview[] 
   const cancelled = children.filter(isChildCancelled).length;
   const total = children.length;
 
-  if (confirmed === total)
+  if (confirmed === total) {
+    const v = statusVisual("CONFIRMED");
     return {
       headline: total === 1 ? "Confirmed" : "All sellers confirmed",
-      colorClass: "text-success",
-      Icon: CheckCircle,
+      colorClass: v.colorClass,
+      Icon: v.Icon,
     };
-  if (cancelled === total)
+  }
+  if (cancelled === total) {
+    const v = statusVisual("CANCELLED");
     return {
       headline: "Cancelled",
       subtext: "No charges apply",
-      colorClass: "text-muted",
-      Icon: Ban,
+      colorClass: v.colorClass,
+      Icon: v.Icon,
     };
-  if (rejected === total)
+  }
+  if (rejected === total) {
+    const v = statusVisual("REJECTED");
     return {
       headline: total === 1 ? "Declined" : "All sellers declined",
-      colorClass: "text-error",
-      Icon: XCircle,
+      colorClass: v.colorClass,
+      Icon: v.Icon,
     };
-  if (pending === total)
+  }
+  if (pending === total) {
+    const v = statusVisual("PENDING");
     return {
       headline: total === 1 ? "Waiting on seller" : `Waiting on ${total} sellers`,
-      colorClass: "text-warning",
-      Icon: Clock,
+      colorClass: v.colorClass,
+      Icon: v.Icon,
     };
+  }
 
   return {
     headline: `${confirmed} of ${total} confirmed`,
-    colorClass: "text-warning",
+    colorClass: statusVisual("PENDING").colorClass,
     Icon: Hourglass,
   };
 }

@@ -32,7 +32,17 @@ export function CollectionBanner({ title, tiles }: { title: string; tiles: Colle
           {shown.map((t) => (
             <Link key={t.collectionId} href={collectionHref(t)} className="group flex flex-col gap-xs">
               <span className="relative block aspect-square w-full overflow-hidden rounded-md">
-                <ImageBox url={t.imageUrl} alt={t.label} placeholderColor="#FFFFFF" />
+                <span className="block size-full transition-transform duration-300 group-hover:scale-[1.06]">
+                  {t.imageUrl ? (
+                    <ImageBox url={t.imageUrl} alt={t.label} placeholderColor="#FFFFFF" />
+                  ) : (
+                    <span className="flex size-full items-center justify-center bg-brand-soft">
+                      <span className="text-[20px] font-extrabold leading-none text-brand">
+                        {(t.label[0] ?? "?").toUpperCase()}
+                      </span>
+                    </span>
+                  )}
+                </span>
               </span>
               <span className="line-clamp-1 text-[11px] font-semibold text-ink">{t.label}</span>
             </Link>

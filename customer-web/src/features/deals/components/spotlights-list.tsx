@@ -12,8 +12,10 @@ function SpotlightCard({ spotlight }: { spotlight: BrandSpotlight }) {
       className="group relative block w-full overflow-hidden rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
       style={{ backgroundColor: s.bgColor, aspectRatio: "21/6", maxHeight: "240px" }}
     >
-      {/* Background image */}
-      <ImageBox url={s.imageUrl} alt={s.brand} placeholderColor={s.bgColor} />
+      {/* Background image — scale on hover */}
+      <span className="block size-full transition-transform duration-300 group-hover:scale-[1.03]">
+        <ImageBox url={s.imageUrl} alt={s.brand} placeholderColor={s.bgColor} />
+      </span>
 
       {/* Gradient overlay */}
       <div
@@ -27,7 +29,7 @@ function SpotlightCard({ spotlight }: { spotlight: BrandSpotlight }) {
       {/* Copy */}
       <div className="absolute inset-x-md bottom-md">
         {s.dealLabel ? (
-          <span className="mb-sm inline-block rounded-xs bg-spotlight px-sm py-[4px] text-[12px] font-extrabold text-ink">
+          <span className="mb-sm inline-block bg-ink text-white rounded-sm px-sm py-[2px] text-[11px] font-extrabold">
             {s.dealLabel}
           </span>
         ) : null}

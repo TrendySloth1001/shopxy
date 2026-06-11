@@ -102,17 +102,19 @@ function CategoryTile({ node, index }: { node: CategoryNode; index: number }) {
     >
       {/* Thumbnail — capped at 160px to reduce dead air */}
       <div
-        className="w-full overflow-hidden rounded-button border border-hairline transition-shadow group-hover:shadow-floating group-focus-visible:ring-2 group-focus-visible:ring-brand-soft"
+        className="w-full overflow-hidden rounded-lg border border-hairline transition-all duration-200 group-hover:shadow-floating group-hover:-translate-y-[2px] group-focus-visible:ring-2 group-focus-visible:ring-brand-soft"
         style={{ height: "clamp(80px, 14vw, 160px)" }}
       >
         {imageUrl ? (
-          <ImageBox url={imageUrl} alt={node.name} fit="cover" />
+          <span className="block size-full transition-transform duration-300 group-hover:scale-[1.04]">
+            <ImageBox url={imageUrl} alt={node.name} fit="cover" />
+          </span>
         ) : (
           <div
             className="flex size-full items-center justify-center"
             style={{ backgroundColor: tint }}
           >
-            <span className="text-title-md text-brand">{initials}</span>
+            <span className="text-title-lg font-extrabold text-brand opacity-60 select-none">{initials}</span>
           </div>
         )}
       </div>

@@ -97,13 +97,15 @@ function SpotlightCard({ spotlight }: { spotlight: Spotlight }) {
 
   const inner = (
     <div
-      className="relative w-full overflow-hidden rounded-lg"
+      className="group relative w-full overflow-hidden rounded-lg"
       style={{ backgroundColor: bgColor }}
     >
-      {/* ~21:6 banner — caps at 240px on desktop */}
+      {/* ~21:6 banner — caps at 240px on desktop; image scales on hover */}
       <div className="w-full" style={{ aspectRatio: "21/6", maxHeight: "240px" }}>
         {imageUrl ? (
-          <ImageBox url={imageUrl} alt={brandName} fit="cover" />
+          <span className="block size-full transition-transform duration-300 group-hover:scale-[1.03]">
+            <ImageBox url={imageUrl} alt={brandName} fit="cover" />
+          </span>
         ) : (
           <div className="size-full" style={{ backgroundColor: bgColor }} />
         )}
@@ -121,7 +123,7 @@ function SpotlightCard({ spotlight }: { spotlight: Spotlight }) {
       {/* Content overlay */}
       <div className="absolute inset-x-md bottom-md">
         {s.dealLabel ? (
-          <span className="mb-sm inline-block rounded-xs bg-spotlight px-[12px] py-[6px] text-[13px] font-extrabold text-ink">
+          <span className="mb-sm inline-block bg-ink text-white rounded-sm px-sm py-[2px] text-[11px] font-extrabold">
             {s.dealLabel}
           </span>
         ) : null}

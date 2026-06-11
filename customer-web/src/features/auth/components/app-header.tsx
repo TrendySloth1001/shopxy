@@ -46,6 +46,22 @@ function useMerchantLinksExist(): boolean {
   return hasLinks;
 }
 
+// ── Scroll shadow hook ────────────────────────────────────────────────────────
+
+/** Returns true once the page has scrolled past the threshold (default 4px). */
+function useScrolled(threshold = 4): boolean {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    function check() {
+      setScrolled(window.scrollY > threshold);
+    }
+    check();
+    window.addEventListener("scroll", check, { passive: true });
+    return () => window.removeEventListener("scroll", check);
+  }, [threshold]);
+  return scrolled;
+}
+
 // ── Search form (submits to /search?q=) ──────────────────────────────────────
 
 function SearchInput() {
@@ -77,7 +93,14 @@ function SearchInput() {
         value={q}
         onChange={(e) => setQ(e.target.value)}
         placeholder="Search ShopXY…"
-        className="h-9 w-40 rounded-input border border-hairline bg-canvas pl-[36px] pr-md text-body-md text-ink placeholder:text-subtle focus:w-56 focus:outline-none focus:ring-2 focus:ring-brand-soft lg:w-56 lg:focus:w-72 transition-all"
+        className={[
+          "h-9 w-40 rounded-input border border-hairline bg-canvas",
+          "pl-[36px] pr-md text-body-md text-ink placeholder:text-subtle",
+          "focus:w-56 focus:border-brand/30 lg:w-56 lg:focus:w-72",
+          "transition-all duration-200",
+          "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft",
+          "motion-safe:transition-all",
+        ].join(" ")}
       />
     </form>
   );
@@ -90,7 +113,7 @@ function CartBadge({ count }: { count: number }) {
     <Link
       href="/cart"
       aria-label={count > 0 ? `Cart (${count} item${count === 1 ? "" : "s"})` : "Cart"}
-      className="relative flex size-9 shrink-0 items-center justify-center rounded-sm text-muted transition-colors hover:bg-surface-tint hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+      className="relative flex size-9 shrink-0 items-center justify-center rounded-sm text-muted transition-all duration-200 hover:bg-surface-tint hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft motion-safe:transition-all"
     >
       <ShoppingCart size={20} aria-hidden />
       {count > 0 ? (
@@ -147,7 +170,7 @@ function AccountMenu({
         aria-expanded={open}
         aria-haspopup="menu"
         onClick={() => setOpen((v) => !v)}
-        className="shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+        className="shrink-0 rounded-full transition-opacity duration-200 hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft motion-safe:transition-opacity"
       >
         <Avatar url={user.avatarUrl} name={user.name} size={30} />
       </button>
@@ -174,7 +197,7 @@ function AccountMenu({
               setOpen(false);
               onSignOut();
             }}
-            className="flex w-full items-center gap-sm px-md py-sm text-label-md text-error transition-colors hover:bg-error-soft focus-visible:outline-none focus-visible:ring-inset focus-visible:ring-2 focus-visible:ring-brand-soft"
+            className="flex w-full items-center gap-sm px-md py-sm text-label-md text-error transition-colors duration-200 hover:bg-error-soft focus-visible:outline-none focus-visible:ring-inset focus-visible:ring-2 focus-visible:ring-brand-soft motion-safe:transition-colors"
           >
             <LogOut size={15} aria-hidden />
             Sign out
@@ -201,7 +224,7 @@ function MenuLink({
       role="menuitem"
       href={href}
       onClick={onClick}
-      className="flex items-center gap-sm px-md py-sm text-label-md text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-inset focus-visible:ring-2 focus-visible:ring-brand-soft"
+      className="flex items-center gap-sm px-md py-sm text-label-md text-ink transition-colors duration-200 hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-inset focus-visible:ring-2 focus-visible:ring-brand-soft motion-safe:transition-colors"
     >
       <span className="shrink-0 text-muted">{icon}</span>
       {children}
@@ -212,19 +235,19 @@ function MenuLink({
 // ── Main header ───────────────────────────────────────────────────────────────
 
 /**
- * App-wide top bar. Extends the original signed-in-only header with:
+ * App-wide top bar. Sticky with a scroll-triggered shadow transition.
+ *
+ * Features:
  *   - Brand logo (links to home feed)
- *   - Search input → /search?q=
+ *   - Search input → /search?q= (submits on Enter, focus ring, expanding)
  *   - Cart badge from useCart()
- *   - Orders link
- *   - Wishlist link
+ *   - Orders / Wishlist links (text hidden on <md, icon in AccountMenu)
  *   - Merchants link (shown only when the user has linked shops)
  *   - Notification bell with unread badge
  *   - Account dropdown (profile, orders, wishlist, sign-out)
  *   - Guest: Sign in / Register links instead of the account menu
- *
- * Mobile-responsive: search collapses to icon, labels hide, links collapse
- * into the account menu on narrow viewports.
+ *   - Active-route: text-ink + underline-offset accent via usePathname
+ *   - Scrolled: border fades, shadow-floating fades in (smooth transition)
  */
 export function AppHeader() {
   const { user, status, logout } = useAuth();
@@ -233,6 +256,7 @@ export function AppHeader() {
   const hasLinks = useMerchantLinksExist();
   const router = useRouter();
   const pathname = usePathname();
+  const scrolled = useScrolled();
 
   async function onSignOut() {
     await logout();
@@ -242,7 +266,15 @@ export function AppHeader() {
   const isAuthed = status === "authed";
 
   return (
-    <header className="sticky top-0 z-40 border-b border-hairline bg-canvas/95 backdrop-blur-sm">
+    <header
+      className={[
+        "sticky top-0 z-40 bg-canvas/95 backdrop-blur-sm",
+        "transition-[border-color,box-shadow] duration-200 motion-safe:transition-[border-color,box-shadow]",
+        scrolled
+          ? "border-b border-transparent shadow-floating"
+          : "border-b border-hairline shadow-none",
+      ].join(" ")}
+    >
       <div className="mx-auto flex h-14 max-w-shell items-center gap-md px-lg">
         {/* Brand */}
         <Link href="/" aria-label="ShopXY home" className="flex shrink-0 items-center gap-sm">
@@ -262,18 +294,21 @@ export function AppHeader() {
         {/* Spacer */}
         <span className="flex-1" />
 
-        {/* Nav links — desktop */}
+        {/* Nav links — desktop (text), collapsed to icons only on <md) */}
         {isAuthed ? (
           <nav className="hidden items-center gap-xs md:flex">
             <NavLink href="/orders" active={pathname.startsWith("/orders")}>
-              Orders
+              <span className="hidden md:inline">Orders</span>
+              <Package size={16} className="md:hidden" aria-hidden />
             </NavLink>
             <NavLink href="/wishlist" active={pathname === "/wishlist"}>
-              Wishlist
+              <span className="hidden md:inline">Wishlist</span>
+              <Heart size={16} className="md:hidden" aria-hidden />
             </NavLink>
             {hasLinks ? (
               <NavLink href="/merchants" active={pathname.startsWith("/merchants")}>
-                Merchants
+                <span className="hidden md:inline">Merchants</span>
+                <Store size={16} className="md:hidden" aria-hidden />
               </NavLink>
             ) : null}
           </nav>
@@ -292,7 +327,7 @@ export function AppHeader() {
                 aria-label={
                   unread > 0 ? `Notifications (${unread} unread)` : "Notifications"
                 }
-                className="relative flex size-9 shrink-0 items-center justify-center rounded-sm text-muted transition-colors hover:bg-surface-tint hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+                className="relative flex size-9 shrink-0 items-center justify-center rounded-sm text-muted transition-all duration-200 hover:bg-surface-tint hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft motion-safe:transition-all"
               >
                 <Bell size={20} aria-hidden />
                 {unread > 0 ? (
@@ -313,13 +348,13 @@ export function AppHeader() {
             <div className="flex items-center gap-sm">
               <Link
                 href="/login"
-                className="hidden text-label-md text-muted transition-colors hover:text-ink focus-visible:outline-none sm:block"
+                className="hidden text-label-md text-muted transition-colors duration-200 hover:text-ink focus-visible:outline-none motion-safe:transition-colors sm:block"
               >
                 Sign in
               </Link>
               <Link
                 href="/register"
-                className="inline-flex h-8 items-center rounded-button bg-brand px-md text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+                className="inline-flex h-8 items-center rounded-button bg-brand px-md text-label-md text-white transition-colors duration-200 hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft motion-safe:transition-colors"
               >
                 Register
               </Link>
@@ -344,9 +379,14 @@ function NavLink({
     <Link
       href={href}
       aria-current={active ? "page" : undefined}
-      className={`rounded-sm px-sm py-xs text-label-md transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft ${
-        active ? "text-ink" : "text-muted"
-      }`}
+      className={[
+        "rounded-sm px-sm py-xs text-label-md transition-colors duration-200",
+        "hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft",
+        "motion-safe:transition-colors",
+        active
+          ? "text-ink underline decoration-brand underline-offset-4"
+          : "text-muted",
+      ].join(" ")}
     >
       {children}
     </Link>
