@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shopxy/features/vendors/data/datasources/vendors_remote_data_source.dart';
 import 'package:shopxy/features/vendors/data/models/vendor_dto.dart';
 import 'package:shopxy/features/vendors/domain/entities/vendor.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 class VendorsProvider extends ChangeNotifier {
   VendorsProvider(this._ds);
@@ -34,7 +35,7 @@ class VendorsProvider extends ChangeNotifier {
     try {
       _vendors = await _ds.getVendors(search: _search.isNotEmpty ? _search : null);
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
     } finally {
       _isLoading = false;
       notifyListeners();

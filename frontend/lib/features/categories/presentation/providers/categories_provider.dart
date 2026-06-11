@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shopxy/features/categories/data/datasources/categories_remote_data_source.dart';
 import 'package:shopxy/features/categories/domain/entities/category.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 /// Read-only merchant-side provider. The taxonomy is canonical — it's
 /// seeded by the backend from a checked-in manifest, not user-editable.
@@ -28,7 +29,7 @@ class CategoriesProvider extends ChangeNotifier {
     try {
       _categories = await _dataSource.getCategories();
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -45,7 +46,7 @@ class CategoriesProvider extends ChangeNotifier {
     try {
       _tree = await _dataSource.getTree(activeOnly: true);
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
     } finally {
       _isLoading = false;
       notifyListeners();

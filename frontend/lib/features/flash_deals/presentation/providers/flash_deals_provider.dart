@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:shopxy/features/flash_deals/data/datasources/flash_deals_remote_data_source.dart';
 import 'package:shopxy/features/flash_deals/data/models/flash_deal.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 class FlashDealsProvider extends ChangeNotifier {
   FlashDealsProvider(this._ds);
@@ -37,7 +38,7 @@ class FlashDealsProvider extends ChangeNotifier {
         ..clear()
         ..addAll(list);
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -63,7 +64,7 @@ class FlashDealsProvider extends ChangeNotifier {
       notifyListeners();
       return created;
     } catch (e) {
-      _error = e is FlashDealApiException ? e.friendlyMessage : e.toString();
+      _error = e is FlashDealApiException ? e.friendlyMessage : friendlyError(e);
       notifyListeners();
       return null;
     }
@@ -77,7 +78,7 @@ class FlashDealsProvider extends ChangeNotifier {
       notifyListeners();
       return updated;
     } catch (e) {
-      _error = e is FlashDealApiException ? e.friendlyMessage : e.toString();
+      _error = e is FlashDealApiException ? e.friendlyMessage : friendlyError(e);
       notifyListeners();
       return null;
     }
@@ -87,7 +88,7 @@ class FlashDealsProvider extends ChangeNotifier {
     try {
       await _ds.cancel(id);
     } catch (e) {
-      _error = e is FlashDealApiException ? e.friendlyMessage : e.toString();
+      _error = e is FlashDealApiException ? e.friendlyMessage : friendlyError(e);
       notifyListeners();
       return false;
     }
@@ -99,7 +100,7 @@ class FlashDealsProvider extends ChangeNotifier {
     try {
       await load();
     } catch (e) {
-      _error = e is FlashDealApiException ? e.friendlyMessage : e.toString();
+      _error = e is FlashDealApiException ? e.friendlyMessage : friendlyError(e);
       notifyListeners();
     }
     return true;

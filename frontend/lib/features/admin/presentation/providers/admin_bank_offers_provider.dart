@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:shopxy/features/admin/data/datasources/admin_bank_offers_remote_data_source.dart';
 import 'package:shopxy/features/admin/data/models/platform_bank_offer.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 class AdminBankOffersProvider extends ChangeNotifier {
   AdminBankOffersProvider(this._ds);
@@ -21,7 +22,7 @@ class AdminBankOffersProvider extends ChangeNotifier {
     try {
       _offers = await _ds.list();
     } catch (e) {
-      _error = e.toString().replaceFirst('Exception: ', '');
+      _error = friendlyError(e);
     } finally {
       _isLoading = false;
       notifyListeners();

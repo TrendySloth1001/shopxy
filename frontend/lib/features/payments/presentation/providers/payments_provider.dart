@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:shopxy/features/payments/data/datasources/payments_remote_data_source.dart';
 import 'package:shopxy/features/payments/domain/entities/payment.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 class PaymentsProvider extends ChangeNotifier {
   PaymentsProvider(this._ds);
@@ -43,7 +44,7 @@ class PaymentsProvider extends ChangeNotifier {
       return payment;
     } catch (e) {
       _isSubmitting = false;
-      _error = e.toString();
+      _error = friendlyError(e);
       notifyListeners();
       rethrow;
     }

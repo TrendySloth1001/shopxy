@@ -7,6 +7,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 /// Admin-only listing of marketplace shops with a verified toggle.
 /// Gated by the `isPlatformAdmin` drawer entry. No bulk actions yet —
@@ -52,7 +53,7 @@ class _AdminShopsPageState extends State<AdminShopsPage> {
       setState(() => _rows = rows);
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = e.toString().replaceFirst('Exception: ', ''));
+      setState(() => _error = friendlyError(e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -72,7 +73,7 @@ class _AdminShopsPageState extends State<AdminShopsPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(content: Text(friendlyError(e))),
       );
     }
   }

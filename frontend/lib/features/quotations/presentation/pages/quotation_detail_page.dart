@@ -13,6 +13,7 @@ import 'package:shopxy/features/quotations/presentation/widgets/quote_line_thumb
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 /// Merchant-side quotation detail: who it went to, status, line items, totals,
 /// the invoice it spawned (if accepted), and a Cancel action while pending.
@@ -25,7 +26,7 @@ class QuotationDetailPage extends StatefulWidget {
 }
 
 class _QuotationDetailPageState extends State<QuotationDetailPage> {
-  final _currency = NumberFormat.currency(symbol: '₹', decimalDigits: 0);
+  final _currency = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 2);
   final _dateFmt = DateFormat('d MMM y');
   late Quotation _q = widget.quotation;
   bool _busy = false;
@@ -50,7 +51,7 @@ class _QuotationDetailPageState extends State<QuotationDetailPage> {
       );
     } catch (e) {
       messenger.showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(content: Text(friendlyError(e))),
       );
     } finally {
       if (mounted) setState(() => _downloading = false);
@@ -89,7 +90,7 @@ class _QuotationDetailPageState extends State<QuotationDetailPage> {
       if (!mounted) return;
       setState(() => _busy = false);
       messenger.showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(content: Text(friendlyError(e))),
       );
     }
   }
@@ -162,7 +163,7 @@ class _QuotationDetailPageState extends State<QuotationDetailPage> {
       if (!mounted) return;
       setState(() => _busy = false);
       messenger.showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(content: Text(friendlyError(e))),
       );
     }
   }

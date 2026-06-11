@@ -10,6 +10,7 @@ import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 /// Create-or-edit sheet for a custom-field [CustomFieldSection].
 /// Mirrors [CustomFieldEditorSheet]'s ergonomics: name + icon picker,
@@ -78,7 +79,7 @@ class _CustomSectionEditorSheetState extends State<CustomSectionEditorSheet> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
+        SnackBar(content: Text(friendlyError(e))),
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);

@@ -9,6 +9,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 /// Owner-facing page. Two modes via a segmented switch:
 ///   * **Existing contact** — search-pick a party / vendor; the FK
@@ -113,7 +114,7 @@ class _SendInvitePageState extends State<SendInvitePage> {
       );
       Navigator.pop(context);
     } catch (e) {
-      setState(() => _error = e.toString().replaceFirst('Exception: ', ''));
+      if (mounted) setState(() => _error = friendlyError(e));
     } finally {
       if (mounted) setState(() => _sending = false);
     }
@@ -422,7 +423,7 @@ class _ContactPickerState extends State<_ContactPicker> {
               if (snap.hasError) {
                 return Center(
                   child: Text(
-                    snap.error.toString(),
+                    friendlyError(snap.error!),
                     style: theme.textTheme.bodySmall
                         ?.copyWith(color: AppColors.error),
                   ),

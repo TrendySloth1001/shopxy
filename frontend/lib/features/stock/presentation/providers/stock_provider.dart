@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shopxy/features/stock/data/datasources/stock_remote_data_source.dart';
 import 'package:shopxy/features/stock/data/models/stock_transaction_dto.dart';
 import 'package:shopxy/features/stock/domain/entities/stock_transaction.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 class StockProvider extends ChangeNotifier {
   StockProvider(this._dataSource);
@@ -23,7 +24,7 @@ class StockProvider extends ChangeNotifier {
     try {
       _transactions = await _dataSource.getTransactions(productId: productId);
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
     } finally {
       _isLoading = false;
       notifyListeners();

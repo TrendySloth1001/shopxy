@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:shopxy/features/admin/data/datasources/admin_banners_remote_data_source.dart';
 import 'package:shopxy/features/admin/data/models/banner.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 class AdminBannersProvider extends ChangeNotifier {
   AdminBannersProvider(this._ds);
@@ -51,7 +52,7 @@ class AdminBannersProvider extends ChangeNotifier {
         pages++;
       } while (cursor != null && pages < 50);
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -65,7 +66,7 @@ class AdminBannersProvider extends ChangeNotifier {
       notifyListeners();
       return created;
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
       notifyListeners();
       return null;
     }
@@ -79,7 +80,7 @@ class AdminBannersProvider extends ChangeNotifier {
       notifyListeners();
       return updated;
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
       notifyListeners();
       return null;
     }
@@ -92,7 +93,7 @@ class AdminBannersProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
       notifyListeners();
       return false;
     }

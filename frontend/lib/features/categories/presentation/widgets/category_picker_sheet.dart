@@ -7,6 +7,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 /// Two-level tree picker over the canonical taxonomy. Replaces the
 /// flat searchable list — categories are fixed and curated now, so the
@@ -72,7 +73,7 @@ class _CategoryPickerSheetState extends State<CategoryPickerSheet> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString();
+        _error = friendlyError(e);
         _isLoading = false;
       });
     }

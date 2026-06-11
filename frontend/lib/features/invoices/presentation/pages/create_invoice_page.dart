@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
@@ -22,6 +23,8 @@ import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
 import 'package:shopxy/shared/widgets/app_section_header.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/glass_widgets.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/shared/constants/app_durations.dart';
 
 class CreateInvoicePage extends StatefulWidget {
   /// [existing] turns this page into an edit form. Pre-fills every
@@ -68,6 +71,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
   List<Product> _productResults = [];
   bool _isSearchingProducts = false;
   final _productSearch = TextEditingController();
+  Timer? _searchDebounce;
 
   void _markDirty() {
     // Trigger a rebuild so PopScope.canPop sees the flipped flag —
@@ -177,6 +181,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
     _customerGstin.dispose();
     _discount.dispose();
     _note.dispose();
+    _searchDebounce?.cancel();
     _productSearch.dispose();
     super.dispose();
   }
@@ -236,6 +241,16 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
     final pos = _placeOfSupplyStateCode;
     if (shop == null || pos == null) return false;
     return shop != pos;
+  }
+
+  void _onProductSearchChanged(String value) {
+    // Debounce — same pattern as OrdersInboxPage, so typing "sol" hits
+    // the backend once instead of once per keystroke.
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(AppDurations.searchDebounce, () {
+      if (!mounted) return;
+      _searchProducts(value);
+    });
   }
 
   Future<void> _searchProducts(String query) async {
@@ -387,7 +402,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
           } catch (e) {
             if (!mounted) return;
             messenger.showSnackBar(
-              SnackBar(content: Text(_friendly(e))),
+              SnackBar(content: Text(friendlyError(e))),
             );
           }
         } else if (mounted) {
@@ -449,14 +464,12 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
       );
     } catch (e) {
       if (mounted) {
-        messenger.showSnackBar(SnackBar(content: Text(_friendly(e))));
+        messenger.showSnackBar(SnackBar(content: Text(friendlyError(e))));
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
   }
-
-  String _friendly(Object e) => e.toString().replaceFirst('Exception: ', '');
 
   Future<bool> _confirmDiscard() async {
     final discard = await showDialog<bool>(
@@ -542,7 +555,11 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
           ),
         ),
       ),
-      body: Form(
+      // Freeze inputs while saving — edits made mid-flight would be
+      // silently dropped from the payload that's already on the wire.
+      body: AbsorbPointer(
+        absorbing: _isSaving,
+        child: Form(
         key: _formKey,
         child: Column(
           children: [
@@ -706,7 +723,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                             )
                           : const Icon(Icons.search_rounded),
                     ),
-                    onChanged: _searchProducts,
+                    onChanged: _onProductSearchChanged,
                   ),
                 ),
                 const SizedBox(width: AppSizes.sm),
@@ -762,8 +779,14 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                 _items.length,
                 (i) => _ItemRow(
                   item: _items[i],
-                  onRemove: () => setState(() => _items.removeAt(i)),
-                  onChanged: () => setState(() {}),
+                  onRemove: () {
+                    _markDirty();
+                    setState(() => _items.removeAt(i));
+                  },
+                  onChanged: () {
+                    _markDirty();
+                    setState(() {});
+                  },
                 ),
               ),
 
@@ -862,6 +885,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
               ),
             ),
           ],
+        ),
         ),
       ),
       ),

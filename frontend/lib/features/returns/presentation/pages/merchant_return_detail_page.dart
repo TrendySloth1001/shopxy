@@ -9,6 +9,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 /// Workflow-heavy detail page. Header shows the customer + refund
 /// total; each item gets a small thumbnail + reason chip; the bottom
@@ -56,7 +57,7 @@ class _MerchantReturnDetailPageState extends State<MerchantReturnDetailPage> {
       if (mounted) {
         setState(() {
         _loading = false;
-        _error = e.toString().replaceFirst('Exception: ', '');
+        _error = friendlyError(e);
       });
       }
     }
@@ -79,7 +80,7 @@ class _MerchantReturnDetailPageState extends State<MerchantReturnDetailPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(
-          e.toString().replaceFirst('Exception: ', ''),
+          friendlyError(e),
         )),
       );
     } finally {

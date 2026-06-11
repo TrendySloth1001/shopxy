@@ -400,7 +400,7 @@ class _OrderRow extends StatelessWidget {
                     ],
                     const SizedBox(height: 2),
                     Text(
-                      '${_date.format(order.createdAt)} · ${order.itemCount} ${order.itemCount == 1 ? 'item' : 'items'}',
+                      '${_date.format(order.createdAt.toLocal())} · ${order.itemCount} ${order.itemCount == 1 ? 'item' : 'items'}',
                       style: theme.textTheme.bodySmall
                           ?.copyWith(color: AppColors.muted),
                     ),

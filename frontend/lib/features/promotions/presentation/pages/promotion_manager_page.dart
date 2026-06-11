@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -9,6 +10,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
+import 'package:shopxy/shared/constants/app_durations.dart';
 
 /// Lists every promotion the merchant has set up and provides an entry
 /// to the create sheet. Each tile shows a budget progress bar, a daily
@@ -240,7 +242,7 @@ class _PromoCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSizes.xs),
           Text(
-            '${df.format(promotion.startAt)}  →  ${df.format(promotion.endAt)}',
+            '${df.format(promotion.startAt.toLocal())}  →  ${df.format(promotion.endAt.toLocal())}',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: AppColors.muted,
             ),
@@ -388,6 +390,7 @@ class _CreatePromotionSheetState extends State<_CreatePromotionSheet> {
   final _searchController = TextEditingController();
   List<Product> _searchResults = [];
   bool _searching = false;
+  Timer? _searchDebounce;
   final _budgetRupees = TextEditingController(text: '1000');
   final _dailyCapRupees = TextEditingController(text: '200');
   final _cpmRupees = TextEditingController(text: '10');
@@ -397,11 +400,22 @@ class _CreatePromotionSheetState extends State<_CreatePromotionSheet> {
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _searchController.dispose();
     _budgetRupees.dispose();
     _dailyCapRupees.dispose();
     _cpmRupees.dispose();
     super.dispose();
+  }
+
+  void _onProductSearchChanged(String value) {
+    // Debounce — same pattern as OrdersInboxPage, so typing "sol" hits
+    // the backend once instead of once per keystroke.
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(AppDurations.searchDebounce, () {
+      if (!mounted) return;
+      _searchProducts(value);
+    });
   }
 
   Future<void> _searchProducts(String q) async {
@@ -584,7 +598,7 @@ class _CreatePromotionSheetState extends State<_CreatePromotionSheet> {
                     labelText: 'Search product',
                     prefixIcon: Icon(Icons.search),
                   ),
-                  onChanged: _searchProducts,
+                  onChanged: _onProductSearchChanged,
                 ),
                 if (_searching)
                   const LinearProgressIndicator(minHeight: AppSizes.xs),

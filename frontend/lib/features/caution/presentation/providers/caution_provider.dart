@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:shopxy/features/caution/data/datasources/caution_remote_data_source.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 /// Tracks the submit state for caution deposit/refund/adjust actions so the
 /// shared sheet can disable its button and surface errors. History loading is
@@ -73,7 +74,7 @@ class CautionProvider extends ChangeNotifier {
       return balance;
     } catch (e) {
       _isSubmitting = false;
-      _error = e.toString();
+      _error = friendlyError(e);
       notifyListeners();
       rethrow;
     }

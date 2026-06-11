@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:shopxy/features/analytics/data/datasources/analytics_remote_data_source.dart';
 import 'package:shopxy/features/analytics/data/models/analytics.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 enum AnalyticsSortKey {
   product,
@@ -103,7 +104,7 @@ class AnalyticsProvider extends ChangeNotifier {
     try {
       _data = await _ds.getProducts(from: _from, to: _to);
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -116,7 +117,7 @@ class AnalyticsProvider extends ChangeNotifier {
       notifyListeners();
       return result;
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
       notifyListeners();
       return null;
     }

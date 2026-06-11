@@ -9,6 +9,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 /// Merchant-facing list of coupons attached to the caller's shop.
 /// Tapping a row opens the editor sheet; the FAB opens the same sheet
@@ -52,7 +53,7 @@ class _MerchantCouponsPageState extends State<MerchantCouponsPage> {
       if (mounted) {
         setState(() {
         _loading = false;
-        _error = e.toString().replaceFirst('Exception: ', '');
+        _error = friendlyError(e);
       });
       }
     }
@@ -100,7 +101,7 @@ class _MerchantCouponsPageState extends State<MerchantCouponsPage> {
       _load();
     } catch (e) {
       messenger.showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(content: Text(friendlyError(e))),
       );
     }
   }

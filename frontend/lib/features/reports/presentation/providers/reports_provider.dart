@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:shopxy/features/reports/data/datasources/reports_remote_data_source.dart';
 import 'package:shopxy/features/reports/domain/entities/sales_report.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 enum ReportKind { sales, purchases, gst, pnl }
 
@@ -80,7 +81,7 @@ class ReportsProvider extends ChangeNotifier {
           break;
       }
     } catch (e) {
-      _error = e.toString().replaceFirst('Exception: ', '');
+      _error = friendlyError(e);
     } finally {
       _loading = false;
       notifyListeners();

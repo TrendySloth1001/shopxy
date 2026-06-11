@@ -20,6 +20,7 @@ import 'package:shopxy/shared/widgets/app_section_header.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/contact_changes_section.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 class PartyDetailPage extends StatefulWidget {
   const PartyDetailPage({super.key, required this.partyId});
@@ -36,7 +37,7 @@ class _PartyDetailPageState extends State<PartyDetailPage> {
   String? _error;
 
   static final _currency =
-      NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
+      NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 2);
   static final _dateFmt = DateFormat('d MMM y');
 
   @override
@@ -65,7 +66,7 @@ class _PartyDetailPageState extends State<PartyDetailPage> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _error = e.toString();
+          _error = friendlyError(e);
         });
       }
     }
@@ -790,7 +791,7 @@ class _InvoiceRow extends StatelessWidget {
                           ?.copyWith(fontWeight: FontWeight.w600),
                     ),
                     Text(
-                      '${dateFmt.format(invoice.invoiceDate)} · ${invoice.itemCount} items',
+                      '${dateFmt.format(invoice.invoiceDate)} · ${invoice.itemCount} item${invoice.itemCount == 1 ? '' : 's'}',
                       style: theme.textTheme.bodySmall
                           ?.copyWith(color: AppColors.muted),
                     ),
@@ -1137,7 +1138,7 @@ class _ChallanRow extends StatelessWidget {
                           ?.copyWith(fontWeight: FontWeight.w600),
                     ),
                     Text(
-                      '${dateFmt.format(challan.createdAt)} · ${challan.itemCount} items',
+                      '${dateFmt.format(challan.createdAt)} · ${challan.itemCount} item${challan.itemCount == 1 ? '' : 's'}',
                       style: theme.textTheme.bodySmall
                           ?.copyWith(color: AppColors.muted),
                     ),

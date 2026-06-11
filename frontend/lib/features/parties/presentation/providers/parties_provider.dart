@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shopxy/features/parties/data/datasources/parties_remote_data_source.dart';
 import 'package:shopxy/features/parties/data/models/party_dto.dart';
 import 'package:shopxy/features/parties/domain/entities/party.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 class PartiesProvider extends ChangeNotifier {
   PartiesProvider(this._ds);
@@ -35,7 +36,7 @@ class PartiesProvider extends ChangeNotifier {
     try {
       _parties = await _ds.getParties(search: _search.isNotEmpty ? _search : null);
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
     } finally {
       _isLoading = false;
       notifyListeners();

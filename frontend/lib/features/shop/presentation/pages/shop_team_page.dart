@@ -11,6 +11,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_dialog.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 /// Team & roles — editorial layout (flat rows + hairline dividers, no
 /// boxed cards). Owners (or anyone with team:manage) invite staff,
@@ -62,7 +63,7 @@ class _ShopTeamPageState extends State<ShopTeamPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString().replaceFirst('Exception: ', '');
+        _error = friendlyError(e);
         _loading = false;
       });
     }
@@ -80,7 +81,7 @@ class _ShopTeamPageState extends State<ShopTeamPage> {
       await _load();
       return r;
     } catch (e) {
-      _snack(e.toString().replaceFirst('Exception: ', ''));
+      _snack(friendlyError(e));
       return null;
     }
   }

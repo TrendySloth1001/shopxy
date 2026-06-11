@@ -24,6 +24,7 @@ import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 class PartiesPage extends StatefulWidget {
   const PartiesPage({super.key});
@@ -159,13 +160,24 @@ class _PartiesPageState extends State<PartiesPage> {
     if (mounted) provider.loadParties(refresh: true);
   }
 
-  void _showPartySheet(BuildContext context, {Party? party}) {
-    showModalBottomSheet(
+  Future<void> _showPartySheet(BuildContext context, {Party? party}) async {
+    final isEditing = party != null;
+    // The sheet pops with the saved Party on success (the provider has
+    // already patched its list) — close the loop with a success cue.
+    final saved = await showModalBottomSheet<Party>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: AppColors.white,
       builder: (_) => PartyFormSheet(party: party),
+    );
+    if (saved == null || !context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          isEditing ? '${saved.name} updated' : '${saved.name} added',
+        ),
+      ),
     );
   }
 
@@ -201,7 +213,7 @@ class _PartiesPageState extends State<PartiesPage> {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(e.toString())));
+            .showSnackBar(SnackBar(content: Text(friendlyError(e))));
       }
     }
   }
@@ -225,7 +237,7 @@ class _PartiesPageState extends State<PartiesPage> {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(e.toString())));
+            .showSnackBar(SnackBar(content: Text(friendlyError(e))));
       }
     }
   }
@@ -369,19 +381,19 @@ class _PartyTile extends StatelessWidget {
                       runSpacing: AppSizes.xs,
                       children: [
                         AppStatusBadge(
-                          label: '${party.challanCount} challans',
+                          label: '${party.challanCount} challan${party.challanCount == 1 ? '' : 's'}',
                           icon: Icons.description_outlined,
                           dense: true,
                         ),
                         AppStatusBadge(
-                          label: '${party.invoiceCount} invoices',
+                          label: '${party.invoiceCount} invoice${party.invoiceCount == 1 ? '' : 's'}',
                           icon: Icons.receipt_outlined,
                           dense: true,
                         ),
                         if (party.cautionBalance > 0)
                           AppStatusBadge(
                             label:
-                                'Caution ${AppStrings.currencySymbol}${party.cautionBalance.toStringAsFixed(0)}',
+                                'Caution ${AppStrings.currencySymbol}${party.cautionBalance.toStringAsFixed(2)}',
                             icon: Icons.savings_outlined,
                             tone: AppStatusTone.info,
                             weight: AppStatusWeight.soft,
@@ -676,7 +688,7 @@ class _PartyFormSheetState extends State<PartyFormSheet> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(e.toString())));
+            .showSnackBar(SnackBar(content: Text(friendlyError(e))));
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);

@@ -235,7 +235,7 @@ class _Body extends StatelessWidget {
               ),
               const SizedBox(height: AppSizes.xs),
               Text(
-                '${df.format(data.startAt)}  →  ${df.format(data.endAt)}',
+                '${df.format(data.startAt.toLocal())}  →  ${df.format(data.endAt.toLocal())}',
                 style: Theme.of(context)
                     .textTheme
                     .bodyMedium

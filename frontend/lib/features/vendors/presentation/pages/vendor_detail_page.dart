@@ -16,6 +16,7 @@ import 'package:shopxy/shared/widgets/app_section_header.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/widgets/contact_changes_section.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 class VendorDetailPage extends StatefulWidget {
   const VendorDetailPage({super.key, required this.vendorId});
@@ -32,7 +33,7 @@ class _VendorDetailPageState extends State<VendorDetailPage> {
   String? _error;
 
   static final _currency =
-      NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
+      NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 2);
   static final _dateFmt = DateFormat('d MMM y');
   static final _qtyFmt = NumberFormat.decimalPattern('en_IN');
 
@@ -62,7 +63,7 @@ class _VendorDetailPageState extends State<VendorDetailPage> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _error = e.toString();
+          _error = friendlyError(e);
         });
       }
     }
@@ -382,7 +383,7 @@ class _InvoiceRow extends StatelessWidget {
                           ?.copyWith(fontWeight: FontWeight.w600),
                     ),
                     Text(
-                      '${dateFmt.format(invoice.invoiceDate)} · ${invoice.itemCount} items',
+                      '${dateFmt.format(invoice.invoiceDate)} · ${invoice.itemCount} item${invoice.itemCount == 1 ? '' : 's'}',
                       style: theme.textTheme.bodySmall
                           ?.copyWith(color: AppColors.muted),
                     ),

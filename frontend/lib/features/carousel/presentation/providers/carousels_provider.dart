@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shopxy/features/carousel/data/datasources/carousels_remote_data_source.dart';
 import 'package:shopxy/features/carousel/data/models/banner_product.dart';
 import 'package:shopxy/features/carousel/data/models/carousel.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 /// State for the merchant's carousels list + the currently-open
 /// carousel's slides. The page-level state (which carousel is open,
@@ -67,7 +68,7 @@ class CarouselsProvider extends ChangeNotifier {
         ..clear()
         ..addAll(rows);
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
     } finally {
       _loadingCarousels = false;
       notifyListeners();
@@ -81,7 +82,7 @@ class CarouselsProvider extends ChangeNotifier {
       notifyListeners();
       return created;
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
       notifyListeners();
       return null;
     }
@@ -95,7 +96,7 @@ class CarouselsProvider extends ChangeNotifier {
       notifyListeners();
       return updated;
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
       notifyListeners();
       return null;
     }
@@ -109,7 +110,7 @@ class CarouselsProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
       notifyListeners();
       return false;
     }
@@ -125,7 +126,7 @@ class CarouselsProvider extends ChangeNotifier {
       final rows = await _ds.listSlides(carouselId);
       _slidesByCarousel[carouselId] = rows;
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
     } finally {
       _loadingSlides.remove(carouselId);
       notifyListeners();
@@ -143,7 +144,7 @@ class CarouselsProvider extends ChangeNotifier {
       notifyListeners();
       return created;
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
       notifyListeners();
       return null;
     }
@@ -170,7 +171,7 @@ class CarouselsProvider extends ChangeNotifier {
       notifyListeners();
       return updated;
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
       notifyListeners();
       return null;
     }
@@ -187,7 +188,7 @@ class CarouselsProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
       notifyListeners();
       return false;
     }
@@ -211,7 +212,7 @@ class CarouselsProvider extends ChangeNotifier {
     try {
       return await _ds.replaceSlideProducts(slideId, items);
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
       notifyListeners();
       return null;
     }

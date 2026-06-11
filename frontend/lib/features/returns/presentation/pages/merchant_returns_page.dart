@@ -9,6 +9,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 /// Merchant returns inbox. Tabs filter by status; each row is tappable
 /// → `MerchantReturnDetailPage`. The inbox doesn't paginate beyond the
@@ -59,7 +60,7 @@ class _MerchantReturnsPageState extends State<MerchantReturnsPage> {
       if (mounted) {
         setState(() {
         _loading = false;
-        _error = e.toString().replaceFirst('Exception: ', '');
+        _error = friendlyError(e);
       });
       }
     }
@@ -135,7 +136,7 @@ class _ReturnRow extends StatelessWidget {
   final VoidCallback onTap;
 
   static final _currency =
-      NumberFormat.currency(symbol: '₹', decimalDigits: 0);
+      NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 2);
   static final _date = DateFormat('d MMM · h:mm a');
 
   @override

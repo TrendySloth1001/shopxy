@@ -8,6 +8,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 /// Bottom-sheet form for recording a payment.
 ///
@@ -154,7 +155,7 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
         if (mounted) {
           setState(() => _loadingInvoices = false);
           ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text(e.toString())));
+              .showSnackBar(SnackBar(content: Text(friendlyError(e))));
         }
       }
     }
@@ -194,7 +195,7 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(e.toString())));
+            .showSnackBar(SnackBar(content: Text(friendlyError(e))));
       }
     }
   }

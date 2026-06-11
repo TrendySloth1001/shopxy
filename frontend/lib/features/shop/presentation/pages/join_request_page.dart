@@ -8,6 +8,7 @@ import 'package:shopxy/features/shop/data/team_service.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 /// Shown right after login/registration when the account has been
 /// invited onto a shop's team but isn't a member yet. Lays out the
@@ -59,7 +60,7 @@ class _JoinRequestPageState extends State<JoinRequestPage> {
       // populated and the auth gate routes into the app.
       await widget.onResolved();
     } catch (e) {
-      _snack(e.toString().replaceFirst('Exception: ', ''));
+      _snack(friendlyError(e));
       if (mounted) setState(() => _busy = false);
     }
   }

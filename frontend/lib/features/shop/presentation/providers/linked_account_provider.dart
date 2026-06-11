@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:shopxy/features/shop/data/datasources/linked_account_remote_data_source.dart';
 import 'package:shopxy/features/shop/data/datasources/onboarding_draft_store.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 /// App-wide state for the shop's Razorpay Route payout (linked) account.
 ///
@@ -67,7 +68,7 @@ class LinkedAccountProvider extends ChangeNotifier {
       _loaded = true;
       _error = null;
     } catch (e) {
-      _error = e.toString().replaceFirst('Exception: ', '');
+      _error = friendlyError(e);
     }
     // Read the resumable draft alongside status (best-effort). An activated
     // account makes the draft moot, so drop it if one exists server-side.

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shopxy/features/products/data/datasources/products_remote_data_source.dart';
 import 'package:shopxy/features/products/data/models/product_dto.dart';
 import 'package:shopxy/features/products/domain/entities/product.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 class ProductsProvider extends ChangeNotifier {
   ProductsProvider(this._dataSource);
@@ -114,7 +115,7 @@ class ProductsProvider extends ChangeNotifier {
       }
       _total = result.total;
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
     } finally {
       _isLoading = false;
       _isLoadingMore = false;

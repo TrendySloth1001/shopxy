@@ -24,6 +24,7 @@ import 'package:shopxy/shared/constants/app_units.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_section_header.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 class AddEditProductPage extends StatefulWidget {
   const AddEditProductPage({super.key, this.product, this.draft});
@@ -410,7 +411,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(e.toString())));
+        ).showSnackBar(SnackBar(content: Text(friendlyError(e))));
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -549,7 +550,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(e.toString())));
+            .showSnackBar(SnackBar(content: Text(friendlyError(e))));
       }
       return null;
     } finally {
@@ -686,7 +687,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(e.toString())));
+            .showSnackBar(SnackBar(content: Text(friendlyError(e))));
       }
       return false;
     } finally {
@@ -828,9 +829,14 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
               ),
               TextFormField(
                 controller: _name,
+                // Mirrors the backend zod limit (products.controller.ts
+                // caps name at 200 chars) so the user hits the wall here
+                // instead of on save.
+                maxLength: 200,
                 decoration: const InputDecoration(
                   labelText: AppStrings.productName,
                   hintText: 'e.g. Boult Astra TWS Earbuds',
+                  counterText: '',
                 ),
                 validator: _requiredValidator,
                 textCapitalization: TextCapitalization.words,
@@ -871,7 +877,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                         prefixText: '${AppStrings.currencySymbol} ',
                         helperText: 'What the customer pays',
                       ),
-                      keyboardType: TextInputType.number,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       validator: _priceValidator,
                     ),
                   ),
@@ -884,7 +890,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                         prefixText: '${AppStrings.currencySymbol} ',
                         helperText: 'Strike-through price',
                       ),
-                      keyboardType: TextInputType.number,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       validator: _priceValidator,
                     ),
                   ),
@@ -901,7 +907,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                         prefixText: '${AppStrings.currencySymbol} ',
                         helperText: 'What you pay',
                       ),
-                      keyboardType: TextInputType.number,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       validator: _priceValidator,
                     ),
                   ),
@@ -914,7 +920,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                         suffixText: '%',
                         helperText: 'Optional',
                       ),
-                      keyboardType: TextInputType.number,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     ),
                   ),
                 ],
@@ -944,7 +950,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                         decoration: const InputDecoration(
                           labelText: 'Opening stock',
                         ),
-                        keyboardType: TextInputType.number,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       ),
                     ),
                     const SizedBox(width: AppSizes.md),
@@ -1549,7 +1555,7 @@ class _CodesInventoryEditor extends StatelessWidget {
         TextFormField(
           controller: lowStockThreshold,
           onChanged: (_) => onChanged(),
-          keyboardType: TextInputType.number,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration: const InputDecoration(
             labelText: AppStrings.lowStockThreshold,
             helperText: 'We\'ll flag the product once stock drops to this',

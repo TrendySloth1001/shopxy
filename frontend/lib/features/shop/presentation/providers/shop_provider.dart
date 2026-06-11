@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:shopxy/features/shop/data/datasources/shop_remote_data_source.dart';
 import 'package:shopxy/features/shop/data/models/shop.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 class ShopProvider extends ChangeNotifier {
   ShopProvider(this._ds);
@@ -35,7 +36,7 @@ class ShopProvider extends ChangeNotifier {
     try {
       _shop = await _ds.getMyShop();
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -89,7 +90,7 @@ class ShopProvider extends ChangeNotifier {
       );
       return true;
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
       return false;
     } finally {
       _isSaving = false;
@@ -105,7 +106,7 @@ class ShopProvider extends ChangeNotifier {
       _shop = await _ds.setPublished(isPublished);
       return true;
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
       return false;
     } finally {
       _isSaving = false;
@@ -120,7 +121,7 @@ class ShopProvider extends ChangeNotifier {
     try {
       return await _ds.uploadImage(file);
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
       notifyListeners();
       return null;
     }

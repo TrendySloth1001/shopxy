@@ -9,6 +9,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_list_section.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 /// Full caution ledger for a party: held balance + every deposit, refund and
 /// set-off, most recent first.
@@ -28,7 +29,7 @@ class CautionHistoryPage extends StatefulWidget {
 
 class _CautionHistoryPageState extends State<CautionHistoryPage> {
   static final _currency =
-      NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
+      NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 2);
   static final _dateFmt = DateFormat('d MMM y');
 
   CautionHistory? _history;
@@ -56,7 +57,7 @@ class _CautionHistoryPageState extends State<CautionHistoryPage> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _error = e.toString();
+          _error = friendlyError(e);
         });
       }
     }

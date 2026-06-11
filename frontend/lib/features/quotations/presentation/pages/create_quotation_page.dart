@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -13,6 +14,8 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/shared/constants/app_durations.dart';
 
 /// Internal mutable bucket line.
 class _Line {
@@ -64,8 +67,9 @@ class CreateQuotationPage extends StatefulWidget {
 }
 
 class _CreateQuotationPageState extends State<CreateQuotationPage> {
-  final _currency = NumberFormat.currency(symbol: '₹', decimalDigits: 0);
+  final _currency = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 2);
   final _searchCtrl = TextEditingController();
+  Timer? _searchDebounce;
   final _noteCtrl = TextEditingController();
 
   Party? _party;
@@ -97,6 +101,7 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _searchCtrl.dispose();
     _noteCtrl.dispose();
     for (final l in _lines) {
@@ -108,6 +113,16 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
   double get _subtotal => _lines.fold(0, (s, l) => s + l.taxable);
   double get _tax => _lines.fold(0, (s, l) => s + l.taxable * l.taxPercent / 100);
   double get _total => _subtotal + _tax;
+
+  void _onProductSearchChanged(String value) {
+    // Debounce — same pattern as OrdersInboxPage, so typing "sol" hits
+    // the backend once instead of once per keystroke.
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(AppDurations.searchDebounce, () {
+      if (!mounted) return;
+      _search(value);
+    });
+  }
 
   Future<void> _search(String q) async {
     final seq = ++_searchSeq;
@@ -191,7 +206,7 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
       navigator.pop(true);
     } catch (e) {
       messenger.showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(content: Text(friendlyError(e))),
       );
     }
   }
@@ -263,7 +278,7 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
           const SizedBox(height: AppSizes.xs),
           TextField(
             controller: _searchCtrl,
-            onChanged: _search,
+            onChanged: _onProductSearchChanged,
             decoration: InputDecoration(
               hintText: 'Search your catalogue',
               prefixIcon: const Icon(Icons.search_rounded),
