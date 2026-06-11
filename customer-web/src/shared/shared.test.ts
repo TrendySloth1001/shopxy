@@ -51,3 +51,51 @@ describe("authUserSchema", () => {
     ).toThrow();
   });
 });
+
+// ── zNum (Prisma Decimal coercion) ───────────────────────────────────────────
+
+import { zNum } from "./zod";
+import { cartResponseSchema } from "@/features/cart/types";
+
+describe("zNum", () => {
+  it("passes plain numbers through", () => {
+    expect(zNum.parse(499)).toBe(499);
+  });
+  it("coerces Prisma Decimal strings", () => {
+    expect(zNum.parse("499.00")).toBe(499);
+    expect(zNum.parse("0.5")).toBe(0.5);
+  });
+  it("keeps null/undefined semantics under .nullish()", () => {
+    expect(zNum.nullish().parse(null)).toBeNull();
+    expect(zNum.nullish().parse(undefined)).toBeUndefined();
+  });
+  it("rejects non-numeric strings", () => {
+    expect(() => zNum.parse("abc")).toThrow();
+  });
+  it("parses a cart line whose money fields arrive as Decimal strings", () => {
+    const parsed = cartResponseSchema.parse({
+      data: [
+        {
+          id: 1,
+          productId: 2,
+          quantity: "2.00",
+          updatedAt: "2026-06-11T00:00:00Z",
+          product: {
+            id: 2,
+            name: "Test",
+            mrp: "999.00",
+            sellingPrice: "499.00",
+            taxPercent: "18.00",
+            stockQuantity: "10.00",
+            isActive: true,
+            isPublished: true,
+            images: [],
+            shop: { id: 1, name: "S", slug: "s" },
+          },
+        },
+      ],
+    });
+    expect(parsed.data[0].product.sellingPrice).toBe(499);
+    expect(parsed.data[0].quantity).toBe(2);
+  });
+});

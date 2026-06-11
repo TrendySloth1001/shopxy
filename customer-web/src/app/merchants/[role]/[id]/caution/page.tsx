@@ -32,6 +32,7 @@ import { formatINR } from "@/shared/format";
 import { formatDate } from "@/shared/datetime";
 import { openRazorpayCheckout } from "@/shared/razorpay";
 import type { PaySession } from "@/shared/razorpay";
+import { BackButton } from "@/shared/ui/back-button";
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
@@ -491,6 +492,9 @@ function CautionPageContent() {
   return (
     <div className="mx-auto max-w-shell px-0 sm:px-lg py-xxxl">
       <div className="mx-auto max-w-content">
+        <div className="px-lg pt-xs pb-xs">
+          <BackButton fallback="/merchants" />
+        </div>
         {/* Balance header */}
         <div className="px-lg py-lg space-y-md">
           <div className="flex items-center gap-sm">

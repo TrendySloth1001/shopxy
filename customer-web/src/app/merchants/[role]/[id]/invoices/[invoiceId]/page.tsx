@@ -13,6 +13,7 @@ import {
 } from "@/features/merchant-ledger/components/shared";
 import type { InvoiceDetail, MerchantRole } from "@/features/merchant-ledger/types";
 import { formatINR } from "@/shared/format";
+import { BackButton } from "@/shared/ui/back-button";
 import { formatDate } from "@/shared/datetime";
 
 function fmtQty(qty: number, unit: string) {
@@ -265,6 +266,7 @@ function InvoiceDetailPageContent() {
   return (
     <div className="mx-auto max-w-shell px-0 sm:px-lg py-xxxl">
       <div className="mx-auto max-w-content px-lg sm:px-0">
+        <BackButton fallback={`/merchants/${role}/${id}/invoices`} className="mb-sm" />
         {loading && !invoice && <InvoiceDetailSkeleton />}
 
         {!loading && error && (

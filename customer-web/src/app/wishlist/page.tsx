@@ -10,6 +10,7 @@ import { formatINR } from "@/shared/format";
 import { resolveImageUrl } from "@/features/home/format";
 import { fetchWishlist, removeFromWishlist } from "@/features/account-extras/api";
 import type { WishlistItem } from "@/features/account-extras/types";
+import { BackButton } from "@/shared/ui/back-button";
 
 export default function WishlistPage() {
   return (
@@ -53,6 +54,7 @@ function WishlistBody() {
 
   return (
     <main className="mx-auto max-w-shell px-lg py-xxxl">
+      <BackButton fallback="/" className="mb-sm" />
       <div>
         <p className="text-label-md uppercase tracking-wide text-brand">Account</p>
         <h1 className="mt-xs text-headline-md text-ink">Saved</h1>

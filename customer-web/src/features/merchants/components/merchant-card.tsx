@@ -134,13 +134,18 @@ export function MerchantCard({ item, role }: MerchantCardProps) {
       : []),
   ];
 
+  // NOTE: the card must NOT itself be a <Link> — the quick-links strip renders
+  // links inside it, and <a> nested in <a> is invalid HTML (hydration error).
+  // The banner + title area carries the catalog link instead.
   return (
-    <Link
-      href={`${base}/catalog`}
-      className="block overflow-hidden rounded-lg border border-hairline bg-white hover:shadow-floating focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand transition-shadow"
-    >
-      {/* Banner */}
-      <CardBanner bannerUrl={bannerUrl} />
+    <div className="overflow-hidden rounded-lg border border-hairline bg-white hover:shadow-floating focus-within:ring-2 focus-within:ring-brand transition-shadow">
+      <Link
+        href={`${base}/catalog`}
+        className="block focus-visible:outline-none"
+      >
+        {/* Banner */}
+        <CardBanner bannerUrl={bannerUrl} />
+      </Link>
 
       {/* Card body */}
       <div className="px-md pb-md">
@@ -148,9 +153,14 @@ export function MerchantCard({ item, role }: MerchantCardProps) {
         <div className="-mt-7 flex items-start gap-md">
           <ShopLogo logoUrl={logoUrl} initial={initial} />
           <div className="min-w-0 flex-1 pt-md">
-            <p className="text-title-sm font-extrabold leading-tight text-ink line-clamp-1">
-              {shopName}
-            </p>
+            <Link
+              href={`${base}/catalog`}
+              className="focus-visible:outline-none"
+            >
+              <p className="text-title-sm font-extrabold leading-tight text-ink line-clamp-1">
+                {shopName}
+              </p>
+            </Link>
             <div className="mt-[2px] flex flex-wrap items-center gap-xs">
               {/* Role pill */}
               <span
@@ -180,7 +190,7 @@ export function MerchantCard({ item, role }: MerchantCardProps) {
           <QuickLinks links={quickLinks} />
         </div>
       </div>
-    </Link>
+    </div>
   );
 }
 

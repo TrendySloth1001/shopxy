@@ -14,6 +14,7 @@ import {
 } from "@/features/addresses/api";
 import type { UserAddress, AddressFormValues } from "@/features/addresses/types";
 import { addressOneLine } from "@/features/addresses/types";
+import { BackButton } from "@/shared/ui/back-button";
 
 // ── Modal state shape ─────────────────────────────────────────────────────────
 
@@ -117,6 +118,7 @@ function AddressesInner() {
     <>
       <AppHeader />
       <main className="mx-auto max-w-content px-lg py-xxxl">
+        <BackButton fallback="/account" className="mb-sm" />
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -166,7 +168,7 @@ function AddressesInner() {
             if (e.target === e.currentTarget) setModal({ mode: "none" });
           }}
         >
-          <div className="w-full max-w-lg rounded-t-dialog sm:rounded-dialog bg-white max-h-[90vh] overflow-auto">
+          <div className="w-full max-w-panel rounded-t-dialog sm:rounded-dialog bg-white max-h-[90vh] overflow-auto">
             <div className="sticky top-0 border-b border-hairline bg-white px-lg py-md">
               <h2 className="text-title-md font-extrabold text-ink">
                 {modal.mode === "add" ? "Add new address" : "Edit address"}
@@ -187,7 +189,7 @@ function AddressesInner() {
       {/* Delete confirm modal */}
       {modal.mode === "delete" && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 px-lg">
-          <div className="w-full max-w-sm rounded-dialog bg-white p-xl">
+          <div className="w-full max-w-narrow rounded-dialog bg-white p-xl">
             <h2 className="text-title-md font-extrabold text-ink">Delete address?</h2>
             <p className="mt-sm text-body-sm text-muted">
               <span className="font-bold text-ink">{modal.address.fullName}</span>
@@ -329,7 +331,7 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
         <MapPin className="h-10 w-10 text-muted" />
       </div>
       <h2 className="text-title-md font-extrabold text-ink">No addresses saved</h2>
-      <p className="mt-xs max-w-xs text-body-sm text-muted">
+      <p className="mt-xs max-w-snug text-body-sm text-muted">
         Add a delivery address so you can check out quickly next time.
       </p>
       <button

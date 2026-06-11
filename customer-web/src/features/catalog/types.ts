@@ -9,6 +9,7 @@
  */
 
 import { z } from "zod";
+import { zNum } from "@/shared/zod";
 
 // ── Product card (list-select shape from /marketplace/shops/:slug/products) ──
 
@@ -17,8 +18,8 @@ export const CatalogProductSchema = z.object({
   name: z.string(),
   sku: z.string().optional(),
   unit: z.string().optional().nullable(),
-  mrp: z.union([z.number(), z.string()]).transform((v) => Number(v)),
-  sellingPrice: z.union([z.number(), z.string()]).transform((v) => Number(v)),
+  mrp: z.union([zNum, z.string()]).transform((v) => Number(v)),
+  sellingPrice: z.union([zNum, z.string()]).transform((v) => Number(v)),
   ratingAvg: z
     .union([z.number(), z.string()])
     .nullable()
@@ -159,7 +160,7 @@ export interface Pagination {
 export const PaginationSchema = z.object({
   page: z.number(),
   limit: z.number(),
-  total: z.number(),
+  total: zNum,
   pages: z.number(),
 });
 

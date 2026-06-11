@@ -9,6 +9,7 @@ import { fetchReturns } from "@/features/returns/api";
 import { returnStatusVisual, type ReturnRequest } from "@/features/returns/types";
 import { formatINR } from "@/shared/format";
 import { formatDateTime } from "@/shared/datetime";
+import { BackButton } from "@/shared/ui/back-button";
 
 const PAGE_LIMIT = 20;
 
@@ -160,6 +161,7 @@ export default function ReturnsPage() {
       <AppHeader />
       <main className="min-h-screen bg-canvas">
         <div className="mx-auto max-w-shell px-lg pt-xl pb-sm">
+          <BackButton fallback="/" className="mb-sm" />
           <h1 className="text-headline-sm font-extrabold text-ink">Returns</h1>
           <p className="mt-xs text-body-md text-muted">Your return requests and refund status.</p>
         </div>

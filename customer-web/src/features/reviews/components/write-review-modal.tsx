@@ -81,7 +81,7 @@ export function WriteReviewModal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full max-w-lg overflow-hidden rounded-t-dialog bg-white sm:rounded-dialog">
+      <div className="w-full max-w-panel overflow-hidden rounded-t-dialog bg-white sm:rounded-dialog">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-hairline px-lg py-md">
           <h2 className="text-title-lg font-extrabold text-ink">

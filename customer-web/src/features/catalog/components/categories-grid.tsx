@@ -7,6 +7,7 @@ import { fetchCategoryTree } from "@/features/catalog/api";
 import type { CategoryNode } from "@/features/catalog/types";
 import { ImageBox } from "@/features/home/components/image-box";
 import { resolveImageUrl } from "@/features/home/format";
+import { BackButton } from "@/shared/ui/back-button";
 
 /**
  * All-categories grid page — port of the Flutter CategoriesPage.
@@ -40,6 +41,7 @@ export function CategoriesGrid() {
 
   return (
     <div className="mx-auto max-w-shell px-lg py-lg">
+      <BackButton fallback="/" className="mb-sm" />
       <h1 className="mb-lg text-headline-sm text-ink">All Categories</h1>
 
       {/* Skeleton */}
@@ -69,8 +71,8 @@ export function CategoriesGrid() {
         </div>
       ) : (
         <div className="grid grid-cols-3 gap-md sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
-          {tree.map((node) => (
-            <CategoryTile key={node.id} node={node} />
+          {tree.map((node, i) => (
+            <CategoryTile key={node.id} node={node} index={i} />
           ))}
         </div>
       )}
@@ -78,24 +80,38 @@ export function CategoriesGrid() {
   );
 }
 
+// Rotating soft tints for the letter-monogram fallback — mirrors the home puck tints.
+const TILE_TINTS = [
+  "#E3E8F4", "#F3E4D6", "#F9E1EA", "#E6F2EC",
+  "#EFE9DD", "#E0E1E6", "#E7DFD4", "#E4DECF",
+  "#E6F2DA", "#DEEAF1",
+];
+
 // ── Category tile ─────────────────────────────────────────────────────────────
 
-function CategoryTile({ node }: { node: CategoryNode }) {
+function CategoryTile({ node, index }: { node: CategoryNode; index: number }) {
   const imageUrl = resolveImageUrl(node.imageUrl);
   const initials = node.name.trim()[0]?.toUpperCase() ?? "?";
   const subCount = node.children.length;
+  const tint = TILE_TINTS[index % TILE_TINTS.length];
 
   return (
     <Link
       href={`/c/${node.slug}`}
       className="group flex flex-col items-start gap-sm focus-visible:outline-none"
     >
-      {/* Thumbnail */}
-      <div className="aspect-square w-full overflow-hidden rounded-button border border-hairline bg-hero-panel transition-shadow group-hover:shadow-floating group-focus-visible:ring-2 group-focus-visible:ring-brand-soft">
+      {/* Thumbnail — capped at 160px to reduce dead air */}
+      <div
+        className="w-full overflow-hidden rounded-button border border-hairline transition-shadow group-hover:shadow-floating group-focus-visible:ring-2 group-focus-visible:ring-brand-soft"
+        style={{ height: "clamp(80px, 14vw, 160px)" }}
+      >
         {imageUrl ? (
           <ImageBox url={imageUrl} alt={node.name} fit="cover" />
         ) : (
-          <div className="flex size-full items-center justify-center bg-brand-soft">
+          <div
+            className="flex size-full items-center justify-center"
+            style={{ backgroundColor: tint }}
+          >
             <span className="text-title-md text-brand">{initials}</span>
           </div>
         )}
@@ -121,7 +137,10 @@ function CategoryTile({ node }: { node: CategoryNode }) {
 function CategoryTileSkeleton() {
   return (
     <div className="flex flex-col gap-sm">
-      <div className="aspect-square w-full animate-pulse rounded-button bg-hero-panel" />
+      <div
+        className="w-full animate-pulse rounded-button bg-hero-panel"
+        style={{ height: "clamp(80px, 14vw, 160px)" }}
+      />
       <div className="h-3 w-[90%] animate-pulse rounded-xs bg-hero-panel" />
       <div className="h-3 w-[60%] animate-pulse rounded-xs bg-hero-panel" />
       <div className="h-[11px] w-[45%] animate-pulse rounded-xs bg-hero-panel" />

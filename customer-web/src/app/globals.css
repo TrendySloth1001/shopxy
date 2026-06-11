@@ -78,6 +78,13 @@
   /* ── Content rails (max-w-content / max-w-form / max-w-shell) ────────── */
   --container-content: 720px;
   --container-form: 520px;
+  /* Small text-measure / panel rails. NOTE: do NOT name these xs/sm/md/lg —
+     Tailwind v4 resolves `max-w-<key>` from the SPACING namespace first, so
+     `max-w-xs` becomes var(--spacing-xs) = 4px and paragraphs collapse to one
+     word per line. Distinct names keep them on the container scale. */
+  --container-snug: 320px;
+  --container-narrow: 384px;
+  --container-panel: 512px;
   /* Marketplace shell — the customer storefront is centered at this max width
      on wide screens (Amazon/Flipkart-style), never edge-to-edge full bleed. */
   --container-shell: 1280px;

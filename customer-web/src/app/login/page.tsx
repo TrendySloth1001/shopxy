@@ -23,7 +23,7 @@ export default async function LoginPage({
   return (
     <AuthShell
       title="Welcome back"
-      subtitle="Sign in to see your shops, invitations and invoice ledgers."
+      subtitle="Sign in to shop, track orders and manage your account."
       footerPrompt="New to ShopXY?"
       footerHref="/register"
       footerCta="Create an account"

@@ -96,7 +96,7 @@ export function RequestReturnDialog({ parentOrderId, shopOrder, onClose, onSubmi
       className="fixed inset-0 z-50 flex items-end justify-center bg-ink/20 sm:items-center"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="w-full max-w-lg rounded-t-bottom-sheet bg-canvas sm:rounded-dialog sm:my-lg max-h-[92vh] flex flex-col shadow-menu">
+      <div className="w-full max-w-panel rounded-t-bottom-sheet bg-canvas sm:rounded-dialog sm:my-lg max-h-[92vh] flex flex-col shadow-menu">
         {/* Header */}
         <div className="flex items-center justify-between px-lg py-md border-b border-hairline flex-shrink-0">
           <h2 className="text-title-md text-ink font-extrabold">Return items</h2>

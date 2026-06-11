@@ -171,21 +171,19 @@ function ShopHeader({ shop, total }: { shop: ShopProfile; total: number }) {
 
   return (
     <div className="mb-sm">
-      {/* Banner image */}
-      <div className="relative h-[160px] w-full overflow-hidden bg-hero-panel sm:h-[200px]">
-        {bannerUrl ? (
+      {/* Banner image — only render when a banner exists; no 200px empty gray otherwise */}
+      {bannerUrl ? (
+        <div className="relative h-[160px] w-full overflow-hidden sm:h-[200px]">
           <ImageBox url={bannerUrl} alt="" fit="cover" />
-        ) : (
-          <div className="size-full bg-hero-panel" />
-        )}
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "linear-gradient(to bottom, rgba(0,0,0,0.12), transparent 40%, rgba(0,0,0,0.48))",
-          }}
-        />
-      </div>
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(to bottom, rgba(0,0,0,0.12), transparent 40%, rgba(0,0,0,0.48))",
+            }}
+          />
+        </div>
+      ) : null}
 
       {/* Logo + info row */}
       <div className="px-lg pb-md pt-lg">

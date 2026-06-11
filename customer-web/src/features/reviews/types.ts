@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { zNum } from "@/shared/zod";
 
 export const reviewUserSchema = z.object({
   id: z.number(),
@@ -9,7 +10,7 @@ export const reviewSchema = z.object({
   id: z.number(),
   productId: z.number(),
   userId: z.number(),
-  rating: z.number(),
+  rating: zNum,
   title: z.string().nullable().optional(),
   body: z.string().nullable().optional(),
   createdAt: z.string(),

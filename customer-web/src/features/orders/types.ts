@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { zNum } from "@/shared/zod";
 
 // ─── Shared sub-schemas ───────────────────────────────────────────────────────
 
@@ -69,7 +70,7 @@ export const orderInvoiceRefSchema = z.object({
   total: z.coerce.number(),
   invoiceDate: z.string().optional(),
   paidAmount: z.coerce.number(),
-  balanceDue: z.number().optional(),
+  balanceDue: zNum.optional(),
   paymentStatus: z.string(),
 });
 export type OrderInvoiceRef = z.infer<typeof orderInvoiceRefSchema>;

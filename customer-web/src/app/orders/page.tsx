@@ -8,6 +8,7 @@ import { RequireAuth } from "@/features/auth/components/require-auth";
 import { OrderCard } from "@/features/orders/components/order-card";
 import { OrderListSkeleton } from "@/features/orders/components/order-skeleton";
 import { fetchOrders } from "@/features/orders/api";
+import { BackButton } from "@/shared/ui/back-button";
 import {
   isChildPending,
   isChildConfirmed,
@@ -218,6 +219,7 @@ export default function OrdersPage() {
       <AppHeader />
       <main className="min-h-screen bg-canvas">
         <div className="mx-auto max-w-shell px-lg pt-xl pb-sm">
+          <BackButton fallback="/" className="mb-sm" />
           <h1 className="text-headline-sm font-extrabold text-ink">My Orders</h1>
         </div>
         <OrdersContent />

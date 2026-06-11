@@ -9,6 +9,8 @@ import { fetchCatalogProducts, requestQuotation } from "@/features/merchant-ledg
 import { SkeletonBlock, SkeletonLine, Snackbar, type SnackMsg } from "@/features/merchant-ledger/components/shared";
 import type { CatalogProduct, BasketItem } from "@/features/merchant-ledger/types";
 import { formatINR } from "@/shared/format";
+import { BackButton } from "@/shared/ui/back-button";
+import { mediaSrc } from "@/shared/media";
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
@@ -107,11 +109,7 @@ function ProductRow({
   qty: number;
   onQtyChange: (q: number) => void;
 }) {
-  const imgUrl = product.images?.[0]?.url
-    ? product.images[0].url.startsWith("/images/")
-      ? `/api/media${product.images[0].url}`
-      : product.images[0].url
-    : null;
+  const imgUrl = mediaSrc(product.images?.[0]?.url);
 
   return (
     <div
@@ -126,12 +124,20 @@ function ProductRow({
           src={imgUrl}
           alt={product.name}
           className="h-12 w-12 shrink-0 rounded-md object-cover bg-hero-panel"
+          onError={(e) => {
+            const el = e.currentTarget as HTMLImageElement;
+            el.style.display = "none";
+            const sibling = el.nextElementSibling;
+            if (sibling) (sibling as HTMLElement).style.display = "flex";
+          }}
         />
-      ) : (
-        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-brand-soft">
-          <Package size={20} className="text-brand" />
-        </span>
-      )}
+      ) : null}
+      <span
+        className="h-12 w-12 shrink-0 items-center justify-center rounded-md bg-brand-soft"
+        style={{ display: imgUrl ? "none" : "flex" }}
+      >
+        <Package size={20} className="text-brand" />
+      </span>
 
       {/* Info */}
       <div className="flex-1 min-w-0">
@@ -195,8 +201,8 @@ function ConfirmPanel({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/30">
-      <div className="w-full max-w-lg rounded-t-bottom-sheet bg-white p-xl space-y-md shadow-floating">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 px-lg">
+      <div className="w-full max-w-panel rounded-dialog bg-white p-xl space-y-md shadow-floating">
         <h2 className="text-title-md font-extrabold text-ink">Send quote request</h2>
         <p className="text-body-md text-muted">
           {itemCount} item{itemCount !== 1 ? "s" : ""} ·{" "}
@@ -361,6 +367,7 @@ function RequestQuotePageContent() {
       <div className="mx-auto w-full max-w-content flex flex-col flex-1">
         {/* Page header */}
         <div className="px-lg sm:px-0 pt-xxxl pb-md">
+          <BackButton fallback={`/merchants/${role}/${id}/quotations`} className="mb-sm" />
           <h1 className="text-headline-sm font-extrabold text-ink">Request a quote</h1>
           <p className="text-body-sm text-muted mt-xs">
             Select items and the shop will send back a priced quotation.
@@ -437,7 +444,7 @@ function RequestQuotePageContent() {
                 No products match. Try another category or search term.
               </p>
             ) : (
-              <div className="divide-y divide-hairline pb-[120px]">
+              <div className="divide-y divide-hairline pb-lg">
                 {visible.map((p) => (
                   <ProductRow
                     key={p.id}
@@ -453,7 +460,9 @@ function RequestQuotePageContent() {
 
         {/* Bottom bar */}
         {!loading && !error && (
-          <div className="fixed bottom-0 left-0 right-0 border-t border-hairline bg-white px-lg py-md shadow-floating sm:relative sm:bottom-auto sm:shadow-none sm:border-0 sm:mt-md">
+          // Sticky on every size — with hundreds of products in the list, the
+          // CTA must stay reachable without scrolling to the end.
+          <div className="sticky bottom-0 left-0 right-0 border-t border-hairline bg-white px-lg py-md shadow-floating">
             <div className="mx-auto max-w-content">
               {itemCount > 0 && (
                 <div className="flex items-center justify-between mb-sm">

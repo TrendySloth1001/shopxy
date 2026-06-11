@@ -11,6 +11,12 @@ interface Props {
   product: ProductDetail;
   selectedVariant: Variant | null;
   onMessage: (msg: string, type: "success" | "error") => void;
+  /**
+   * When true, renders the action buttons inline (no sticky bar wrapper).
+   * Used by the desktop buy-box column where the bar is part of the flow,
+   * not a viewport overlay.
+   */
+  desktopInline?: boolean;
 }
 
 /** Build a CartProduct from the PDP product + optional selected variant. */
@@ -40,7 +46,7 @@ function toCartProduct(product: ProductDetail, variant: Variant | null): CartPro
   };
 }
 
-export function PdpActionBar({ product, selectedVariant, onMessage }: Props) {
+export function PdpActionBar({ product, selectedVariant, onMessage, desktopInline = false }: Props) {
   const router = useRouter();
   const { lines, add, setQty } = useCart();
   const [busy, setBusy] = useState(false);
@@ -94,70 +100,79 @@ export function PdpActionBar({ product, selectedVariant, onMessage }: Props) {
     }
   }, [cartLine, product.id, setQty]);
 
+  // Shared button content (same markup, different container wrapping below)
+  const buttons = isOutOfStock ? (
+    <div className="flex h-11 items-center justify-center rounded-button bg-disabled px-lg text-label-md font-extrabold text-white">
+      Out of stock
+    </div>
+  ) : inCart ? (
+    <div className="flex items-center gap-sm">
+      {/* Quantity stepper */}
+      <div className="flex items-center rounded-button border border-brand bg-brand-soft">
+        <button
+          onClick={handleDecrement}
+          aria-label={cartLine!.quantity === 1 ? "Remove from cart" : "Decrease quantity"}
+          className="flex h-11 w-11 items-center justify-center text-brand-strong transition-colors hover:bg-brand-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        >
+          {cartLine!.quantity === 1 ? (
+            <Trash2 size={16} aria-hidden />
+          ) : (
+            <Minus size={16} aria-hidden />
+          )}
+        </button>
+        <span className="min-w-[32px] text-center text-title-md font-extrabold text-brand-strong">
+          {cartLine!.quantity}
+        </span>
+        <button
+          onClick={handleIncrement}
+          aria-label="Increase quantity"
+          className="flex h-11 w-11 items-center justify-center text-brand-strong transition-colors hover:bg-brand-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        >
+          <Plus size={16} aria-hidden />
+        </button>
+      </div>
+      {/* Go to cart */}
+      <button
+        onClick={() => router.push("/cart")}
+        className="flex h-11 items-center justify-center gap-sm rounded-button bg-brand px-xl text-label-md font-extrabold text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+      >
+        <ArrowRight size={16} aria-hidden />
+        Go to cart
+      </button>
+    </div>
+  ) : (
+    <div className="flex items-center gap-sm">
+      {/* Add to cart */}
+      <button
+        onClick={handleAddToCart}
+        disabled={busy}
+        className="flex h-11 items-center justify-center gap-sm rounded-button border border-brand bg-brand-soft px-xl text-label-md font-extrabold text-brand-strong transition-colors hover:bg-brand-soft/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        <ShoppingCart size={16} aria-hidden />
+        {busy ? "Adding…" : "Add to cart"}
+      </button>
+      {/* Buy now */}
+      <button
+        onClick={handleBuyNow}
+        disabled={busy}
+        className="flex h-11 items-center justify-center gap-sm rounded-button bg-brand px-xl text-label-md font-extrabold text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        <Zap size={16} aria-hidden />
+        Buy now
+      </button>
+    </div>
+  );
+
+  // Desktop inline: no sticky bar, buttons sit inside the buy-box column
+  if (desktopInline) {
+    return <div className="flex flex-wrap items-center gap-sm">{buttons}</div>;
+  }
+
+  // Mobile: sticky bottom bar spanning the full viewport width
   return (
     <div className="sticky bottom-0 z-20 border-t border-hairline bg-white px-lg py-sm shadow-floating">
       <div className="mx-auto flex max-w-shell items-center gap-sm">
-        {isOutOfStock ? (
-          <div className="flex h-11 flex-1 items-center justify-center rounded-button bg-disabled text-label-md font-extrabold text-white">
-            Out of stock
-          </div>
-        ) : inCart ? (
-          <>
-            {/* Quantity stepper */}
-            <div className="flex items-center rounded-button border border-brand bg-brand-soft">
-              <button
-                onClick={handleDecrement}
-                aria-label={cartLine!.quantity === 1 ? "Remove from cart" : "Decrease quantity"}
-                className="flex h-11 w-11 items-center justify-center text-brand-strong transition-colors hover:bg-brand-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-              >
-                {cartLine!.quantity === 1 ? (
-                  <Trash2 size={16} aria-hidden />
-                ) : (
-                  <Minus size={16} aria-hidden />
-                )}
-              </button>
-              <span className="min-w-[32px] text-center text-title-md font-extrabold text-brand-strong">
-                {cartLine!.quantity}
-              </span>
-              <button
-                onClick={handleIncrement}
-                aria-label="Increase quantity"
-                className="flex h-11 w-11 items-center justify-center text-brand-strong transition-colors hover:bg-brand-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-              >
-                <Plus size={16} aria-hidden />
-              </button>
-            </div>
-            {/* Go to cart */}
-            <button
-              onClick={() => router.push("/cart")}
-              className="flex h-11 flex-1 items-center justify-center gap-sm rounded-button bg-brand text-label-md font-extrabold text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-            >
-              <ArrowRight size={16} aria-hidden />
-              Go to cart
-            </button>
-          </>
-        ) : (
-          <>
-            {/* Add to cart */}
-            <button
-              onClick={handleAddToCart}
-              disabled={busy}
-              className="flex h-11 flex-1 items-center justify-center gap-sm rounded-button border border-brand bg-brand-soft text-label-md font-extrabold text-brand-strong transition-colors hover:bg-brand-soft/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <ShoppingCart size={16} aria-hidden />
-              {busy ? "Adding…" : "Add to cart"}
-            </button>
-            {/* Buy now */}
-            <button
-              onClick={handleBuyNow}
-              disabled={busy}
-              className="flex h-11 flex-1 items-center justify-center gap-sm rounded-button bg-brand text-label-md font-extrabold text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <Zap size={16} aria-hidden />
-              Buy now
-            </button>
-          </>
-        )}
+        {buttons}
       </div>
     </div>
   );

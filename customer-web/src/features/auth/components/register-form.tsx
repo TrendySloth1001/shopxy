@@ -34,7 +34,7 @@ export function RegisterForm() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (status === "authed") router.replace("/dashboard");
+    if (status === "authed") router.replace("/");
   }, [status, router]);
 
   function set<K extends keyof typeof values>(key: K, value: string) {
@@ -71,7 +71,7 @@ export function RegisterForm() {
         acceptedTerms: true,
         acceptedPrivacy: true,
       });
-      router.replace("/dashboard");
+      router.replace("/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create your account.");
     } finally {

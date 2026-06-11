@@ -41,6 +41,8 @@ import type { UserAddress, AddressFormValues } from "@/features/addresses/types"
 import { addressOneLine } from "@/features/addresses/types";
 import { openRazorpayCheckout } from "@/shared/razorpay";
 import type { PaySession } from "@/shared/razorpay";
+import { BackButton } from "@/shared/ui/back-button";
+import { mediaSrc } from "@/shared/media";
 
 // ── Outcome enum (mirrors Flutter _PayAttemptOutcome) ────────────────────────
 
@@ -304,6 +306,7 @@ function CheckoutInner() {
     <>
       <AppHeader />
       <main className="mx-auto max-w-shell px-lg py-xl">
+        <BackButton fallback="/cart" className="mb-md" />
         {/* Page heading */}
         <div className="mb-xl border-b border-hairline pb-lg">
           <h1 className="text-headline-md text-ink">Checkout</h1>
@@ -445,9 +448,12 @@ function CheckoutInner() {
                           {line.product.images[0] ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
-                              src={`/api/media/${line.product.images[0].url.replace(/^\//, "")}`}
+                              src={mediaSrc(line.product.images[0].url) ?? ""}
                               alt={line.product.name}
                               className="h-full w-full object-cover"
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).style.display = "none";
+                              }}
                             />
                           ) : (
                             <div className="flex h-full w-full items-center justify-center text-muted">
@@ -612,7 +618,34 @@ function CheckoutInner() {
           {/* Right — sticky order summary */}
           <div className="lg:sticky lg:top-xl lg:w-72">
             <div className="rounded-md bg-white p-md shadow-floating">
-              <p className="mb-sm text-label-md text-muted">Total payable</p>
+              {/* Compact bill breakdown */}
+              <div className="mb-md flex flex-col gap-xs">
+                <StickyBillRow label="Items total" value={formatINR(subtotal)} />
+                {productSavings > 0 && (
+                  <StickyBillRow
+                    label="Savings"
+                    value={`− ${formatINR(productSavings)}`}
+                    valueClass="text-success"
+                  />
+                )}
+                {couponDiscount > 0 && (
+                  <StickyBillRow
+                    label="Coupon"
+                    value={`− ${formatINR(couponDiscount)}`}
+                    valueClass="text-success"
+                  />
+                )}
+                {walletApply > 0 && (
+                  <StickyBillRow
+                    label="Wallet"
+                    value={`− ${formatINR(walletApply)}`}
+                    valueClass="text-success"
+                  />
+                )}
+                <StickyBillRow label="Delivery" value="FREE" valueClass="text-success" />
+              </div>
+              <div className="mb-sm border-t border-hairline" />
+              <p className="text-label-md text-muted">Total payable</p>
               <p className="text-title-lg font-extrabold text-ink">{formatINR(grandTotal)}</p>
               {totalSavings > 0 && (
                 <p className="mt-xs text-body-sm text-success">
@@ -646,7 +679,7 @@ function CheckoutInner() {
             if (e.target === e.currentTarget) setShowAddressSheet(false);
           }}
         >
-          <div className="w-full max-w-lg rounded-t-dialog sm:rounded-dialog bg-white max-h-[80vh] overflow-auto">
+          <div className="w-full max-w-panel rounded-t-dialog sm:rounded-dialog bg-white max-h-[80vh] overflow-auto">
             <div className="sticky top-0 border-b border-hairline bg-white px-lg py-md">
               <h2 className="text-title-md font-extrabold text-ink">
                 Choose a delivery address
@@ -702,7 +735,7 @@ function CheckoutInner() {
       {/* Confirm dialog for ≥ ₹500 */}
       {showConfirmDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 px-lg">
-          <div className="w-full max-w-sm rounded-dialog bg-white p-xl">
+          <div className="w-full max-w-narrow rounded-dialog bg-white p-xl">
             <h2 className="text-title-md font-extrabold text-ink">Place this order?</h2>
             <p className="mt-sm text-body-sm text-muted">
               Total payable {formatINR(grandTotal)}. We double-check larger orders so a stray
@@ -988,6 +1021,25 @@ function PriceRow({
           {value}
         </span>
       </div>
+    </div>
+  );
+}
+
+function StickyBillRow({
+  label,
+  value,
+  valueClass = "",
+}: {
+  label: string;
+  value: string;
+  valueClass?: string;
+}) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-label-md text-muted">{label}</span>
+      <span className={["text-label-md font-bold text-ink", valueClass].filter(Boolean).join(" ")}>
+        {value}
+      </span>
     </div>
   );
 }

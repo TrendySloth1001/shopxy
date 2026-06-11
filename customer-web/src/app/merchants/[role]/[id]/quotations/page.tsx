@@ -17,6 +17,7 @@ import {
 import type { Quotation } from "@/features/merchant-ledger/types";
 import { formatINR } from "@/shared/format";
 import { formatDate } from "@/shared/datetime";
+import { BackButton } from "@/shared/ui/back-button";
 
 function QuotationRowSkeleton() {
   return (
@@ -35,6 +36,7 @@ function QuotationRowSkeleton() {
 }
 
 function QuotationRow({ q, href }: { q: Quotation; href: string }) {
+  const isQuoted = q.status === "QUOTED";
   return (
     <Link href={href} className="group flex items-center gap-md px-lg py-md hover:bg-surface-tint transition-colors">
       <div className="flex-1 min-w-0">
@@ -49,7 +51,13 @@ function QuotationRow({ q, href }: { q: Quotation; href: string }) {
       <span className="text-body-md font-extrabold text-ink tabular-nums shrink-0">
         {formatINR(q.total)}
       </span>
-      <ChevronRight size={18} className="text-muted group-hover:text-ink transition-colors shrink-0" />
+      {isQuoted ? (
+        <span className="inline-flex h-8 shrink-0 items-center rounded-button border border-brand px-md text-label-md font-bold text-brand group-hover:bg-brand-soft transition-colors">
+          Review
+        </span>
+      ) : (
+        <ChevronRight size={18} className="text-muted group-hover:text-ink transition-colors shrink-0" />
+      )}
     </Link>
   );
 }
@@ -102,22 +110,25 @@ function QuotationsPageContent() {
     <div className="mx-auto max-w-shell px-0 sm:px-lg py-xxxl">
       <div className="mx-auto max-w-content">
         {/* Header */}
-        <div className="px-lg sm:px-0 mb-xxl flex items-start justify-between gap-md">
-          <div>
-            <h1 className="text-headline-sm font-extrabold text-ink">Quotations</h1>
-            {total > 0 && !loading && (
-              <p className="text-body-sm text-muted mt-xs">
-                {total} quotation{total !== 1 ? "s" : ""}
-              </p>
-            )}
+        <div className="px-lg sm:px-0 mb-xxl">
+          <BackButton fallback="/merchants" className="mb-sm" />
+          <div className="flex items-start justify-between gap-md">
+            <div>
+              <h1 className="text-headline-sm font-extrabold text-ink">Quotations</h1>
+              {total > 0 && !loading && (
+                <p className="text-body-sm text-muted mt-xs">
+                  {total} quotation{total !== 1 ? "s" : ""}
+                </p>
+              )}
+            </div>
+            <Link
+              href={`/merchants/${role}/${id}/request-quote`}
+              className="inline-flex h-10 shrink-0 items-center gap-xs rounded-button bg-brand px-lg text-label-md font-bold text-white hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            >
+              <Plus size={16} />
+              Request quote
+            </Link>
           </div>
-          <Link
-            href={`/merchants/${role}/${id}/request-quote`}
-            className="inline-flex h-10 shrink-0 items-center gap-xs rounded-button bg-brand px-lg text-label-md font-bold text-white hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-          >
-            <Plus size={16} />
-            Request quote
-          </Link>
         </div>
 
         {/* Loading skeletons */}

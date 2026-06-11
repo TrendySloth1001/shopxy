@@ -19,20 +19,26 @@ interface Props {
 
 function HistogramRow({ star, count, total }: { star: number; count: number; total: number }) {
   const fraction = total > 0 ? Math.min(1, count / total) : 0;
+  // Use a star-colour scale matching typical marketplace conventions
   const barColor =
     star <= 2 ? "bg-error" : star === 3 ? "bg-warning" : "bg-success";
 
   return (
-    <div className="flex items-center gap-xs">
-      <span className="w-[16px] text-right text-label-md text-muted">{star}</span>
-      <span className="text-[10px] text-subtle">★</span>
-      <div className="relative h-[8px] flex-1 overflow-hidden rounded-full bg-canvas">
+    <div className="flex items-center gap-sm">
+      {/* Star label — fixed width so bars align */}
+      <span className="flex w-[32px] shrink-0 items-center justify-end gap-[2px]">
+        <span className="text-label-md font-semibold text-ink">{star}</span>
+        <span className="text-[9px] text-muted">★</span>
+      </span>
+      {/* Track + filled bar — bg-hairline gives a visible neutral track */}
+      <div className="relative h-[8px] flex-1 overflow-hidden rounded-full bg-hairline">
         <div
-          className={`absolute inset-y-0 left-0 rounded-full ${barColor}`}
+          className={`absolute inset-y-0 left-0 rounded-full transition-all ${barColor}`}
           style={{ width: `${fraction * 100}%` }}
         />
       </div>
-      <span className="w-[24px] text-right text-label-md text-muted">{count}</span>
+      {/* Count — fixed width so bars don't shift */}
+      <span className="w-[28px] shrink-0 text-right text-label-md text-muted">{count}</span>
     </div>
   );
 }

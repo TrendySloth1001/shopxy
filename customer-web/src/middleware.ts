@@ -7,7 +7,7 @@ import { NextResponse, type NextRequest } from "next/server";
  * `/api/auth/me` (and ultimately the backend's requireAuth) once the page
  * loads — see RequireAuth.
  */
-const PROTECTED = ["/dashboard", "/account", "/orders", "/returns"];
+const PROTECTED = ["/notifications", "/account", "/orders", "/returns"];
 const AUTH_PAGES = ["/login", "/register"];
 
 export function middleware(req: NextRequest) {
@@ -16,7 +16,15 @@ export function middleware(req: NextRequest) {
     req.cookies.has("sx_refresh") || req.cookies.has("sx_access");
 
   if (AUTH_PAGES.includes(pathname) && hasSession) {
-    return NextResponse.redirect(new URL("/dashboard", req.url));
+    return NextResponse.redirect(new URL("/", req.url));
+  }
+
+  // The old merchant-style dashboard is gone — the storefront home is "/".
+  if (pathname === "/dashboard" || pathname.startsWith("/dashboard/")) {
+    const dest = pathname.startsWith("/dashboard/notifications")
+      ? "/notifications"
+      : "/";
+    return NextResponse.redirect(new URL(dest, req.url));
   }
 
   const isProtected = PROTECTED.some(
@@ -32,5 +40,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/account/:path*", "/orders/:path*", "/returns/:path*", "/login", "/register"],
+  matcher: ["/dashboard/:path*", "/notifications/:path*", "/account/:path*", "/orders/:path*", "/returns/:path*", "/login", "/register"],
 };

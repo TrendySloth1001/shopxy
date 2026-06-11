@@ -22,7 +22,9 @@ export function PdpGallery({ images, offers, productName }: Props) {
 
   if (images.length === 0) {
     return (
-      <div className="flex aspect-square w-full items-center justify-center bg-canvas sm:aspect-[4/3] md:aspect-video lg:aspect-[4/3]">
+      // On desktop the gallery sits in a ~45% column (~580px at 1280px shell).
+      // Cap at 420px so an empty placeholder doesn't swallow the viewport.
+      <div className="flex aspect-square w-full items-center justify-center bg-canvas sm:aspect-[4/3] md:aspect-video lg:aspect-square lg:max-h-[420px]">
         <ImageIcon size={48} className="text-disabled" aria-hidden />
       </div>
     );
@@ -33,8 +35,8 @@ export function PdpGallery({ images, offers, productName }: Props) {
 
   return (
     <div className="relative w-full select-none">
-      {/* Main image */}
-      <div className="relative aspect-square w-full overflow-hidden bg-canvas sm:aspect-[4/3] md:aspect-video lg:aspect-[4/3]">
+      {/* Main image — on desktop cap at 420px so the buy-box stays visible above fold */}
+      <div className="relative aspect-square w-full overflow-hidden bg-canvas sm:aspect-[4/3] md:aspect-video lg:aspect-square lg:max-h-[420px]">
         {resolved ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img

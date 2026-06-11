@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Bell,
@@ -27,6 +27,7 @@ import {
   markNotificationRead,
 } from "@/features/notifications/api";
 import { isUnread, type AppNotification } from "@/features/notifications/schema";
+import { BackButton } from "@/shared/ui/back-button";
 
 const PAGE = 20;
 
@@ -157,6 +158,22 @@ function NotificationsBody() {
     load(1);
   }, [load]);
 
+  // Auto-mark-all-read after a short delay when the page opens with unread items.
+  // Only the bell badge/context updates; in-list unread dots stay for the session.
+  const autoMarkRef = useRef(false);
+  useEffect(() => {
+    if (autoMarkRef.current) return;
+    if (loading) return;
+    if (unread === 0) return;
+    autoMarkRef.current = true;
+    const timer = setTimeout(() => {
+      setUnread(0);
+      void markAllNotificationsRead().catch(() => { /* best-effort */ }).finally(() => { refresh(); });
+    }, 1000);
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, unread]);
+
   async function openOne(n: AppNotification) {
     if (isUnread(n)) {
       setItems((prev) => prev.map((x) => (x.id === n.id ? { ...x, readAt: new Date().toISOString() } : x)));
@@ -189,6 +206,7 @@ function NotificationsBody() {
 
   return (
     <main className="mx-auto max-w-content px-lg py-xxxl">
+      <BackButton fallback="/" className="mb-sm" />
       <div className="flex flex-wrap items-center justify-between gap-md">
         <div>
           <p className="text-label-md uppercase tracking-wide text-brand">Inbox</p>

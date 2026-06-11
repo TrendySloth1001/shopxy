@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Star } from "lucide-react";
 import type { CatalogProduct } from "../types";
 import { ImageBox } from "@/features/home/components/image-box";
-import { resolveImageUrl } from "@/features/home/format";
+import { mediaSrc } from "@/shared/media";
 import { formatINR } from "@/shared/format";
 
 /**
@@ -13,22 +13,28 @@ import { formatINR } from "@/shared/format";
  */
 export function CatalogProductCard({ product }: { product: CatalogProduct }) {
   const p = product;
-  const imageUrl = p.images.length > 0 ? resolveImageUrl(p.images[0].url) : "";
+  const imageUrl = p.images.length > 0 ? (mediaSrc(p.images[0].url) ?? "") : "";
   const discounted = p.mrp > p.sellingPrice;
   const discountPct = discounted
     ? Math.round(Math.min(99, Math.max(0, (1 - p.sellingPrice / p.mrp) * 100)))
     : 0;
+
+  // When imageUrl is truthy but 404s, ImageBox already swaps to its onError
+  // placeholder — this component just needs to cover the no-image case below.
 
   return (
     <Link
       href={`/p/${p.id}`}
       className="group flex flex-col overflow-hidden rounded-md border border-hairline bg-white transition-shadow hover:shadow-floating focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
     >
-      {/* Image */}
+      {/* Image — mediaSrc routes relative paths via /api/media proxy.
+          No image URL → neutral canvas placeholder; ImageBox handles 404s internally. */}
       <span className="relative block aspect-square w-full overflow-hidden rounded-t-md bg-hero-panel">
         {imageUrl ? (
           <ImageBox url={imageUrl} alt={p.name} />
-        ) : null}
+        ) : (
+          <ProductImageFallback name={p.name} />
+        )}
         {discountPct > 0 ? (
           <span className="absolute left-[6px] top-[6px] rounded-xs bg-gradient-to-br from-brand to-brand-strong px-[6px] py-[2px] text-[10px] font-extrabold tracking-[0.4px] text-white shadow-floating">
             {discountPct}% OFF
@@ -65,5 +71,17 @@ export function CatalogProductCard({ product }: { product: CatalogProduct }) {
         </span>
       </span>
     </Link>
+  );
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+/** Neutral canvas placeholder for products with no image — first letter of name. */
+function ProductImageFallback({ name }: { name: string }) {
+  const initial = name.trim()[0]?.toUpperCase() ?? "?";
+  return (
+    <span className="flex size-full items-center justify-center bg-hero-panel">
+      <span className="text-[28px] font-extrabold text-disabled">{initial}</span>
+    </span>
   );
 }

@@ -13,16 +13,36 @@ const MAX = 8;
 
 // ── Storage helpers ───────────────────────────────────────────────────────────
 
+// useSyncExternalStore requires getSnapshot to return a REFERENTIALLY STABLE
+// value until the store actually changes — returning a fresh array each call
+// trips React's infinite-loop guard and crashes the page. Cache the parsed
+// array keyed by the raw string.
+const EMPTY: string[] = [];
+let cachedRaw: string | null = null;
+let cachedParsed: string[] = EMPTY;
+
 function readStorage(): string[] {
+  let raw: string | null = null;
   try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) return [];
-    return (parsed as unknown[]).filter((v): v is string => typeof v === "string");
+    raw = localStorage.getItem(KEY);
   } catch {
-    return [];
+    return EMPTY;
   }
+  if (raw === cachedRaw) return cachedParsed;
+  cachedRaw = raw;
+  if (!raw) {
+    cachedParsed = EMPTY;
+    return cachedParsed;
+  }
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    cachedParsed = Array.isArray(parsed)
+      ? (parsed as unknown[]).filter((v): v is string => typeof v === "string")
+      : EMPTY;
+  } catch {
+    cachedParsed = EMPTY;
+  }
+  return cachedParsed;
 }
 
 function writeStorage(terms: string[]) {
@@ -51,7 +71,7 @@ function subscribe(callback: () => void): () => void {
 
 export function useRecentSearches() {
   // getSnapshot reads live storage; getServerSnapshot returns empty (no localStorage on server).
-  const recent = useSyncExternalStore(subscribe, readStorage, () => []);
+  const recent = useSyncExternalStore(subscribe, readStorage, () => EMPTY);
 
   const add = useCallback((term: string) => {
     const t = term.trim();

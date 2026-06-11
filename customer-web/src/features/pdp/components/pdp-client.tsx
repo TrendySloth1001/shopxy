@@ -15,6 +15,7 @@ import { PdpActionBar } from "./pdp-action-bar";
 import { PdpWishlistButton } from "./pdp-wishlist-button";
 import { PdpSpecs } from "./pdp-specs";
 import { ReviewsSection } from "@/features/reviews/components/reviews-section";
+import { BackButton } from "@/shared/ui/back-button";
 
 // ── System tag badge ──────────────────────────────────────────────────────────
 
@@ -93,25 +94,29 @@ function Shimmer({ className }: { className: string }) {
 
 function PdpSkeleton() {
   return (
-    <div className="pb-[80px]">
-      {/* Gallery */}
-      <div className="aspect-square w-full animate-pulse bg-canvas sm:aspect-[4/3] md:aspect-video lg:aspect-[4/3]" />
-      <div className="px-lg pb-sm pt-lg">
-        <Shimmer className="mb-sm h-[10px] w-1/4" />
-        <Shimmer className="mb-xs h-[18px] w-4/5" />
-        <Shimmer className="h-[18px] w-3/5" />
-        <Shimmer className="mt-sm h-[14px] w-[140px]" />
-        <Shimmer className="mt-sm h-[12px] w-full" />
-        <Shimmer className="mt-xs h-[12px] w-3/4" />
-        <Shimmer className="mt-sm h-[22px] w-[90px]" />
-      </div>
-      <div className="flex gap-sm px-lg pb-sm">
-        {[1, 2, 3, 4].map((i) => (
-          <Shimmer key={i} className="h-8 w-14" />
-        ))}
-      </div>
-      <div className="px-lg py-sm">
-        <Shimmer className="h-[28px] w-[120px]" />
+    <div className="pb-[80px] lg:pb-0">
+      {/* Two-column skeleton on desktop, single column on mobile */}
+      <div className="lg:grid lg:grid-cols-[minmax(0,45fr)_minmax(0,55fr)] lg:items-start lg:gap-xl lg:px-lg lg:pt-lg">
+        {/* Gallery shimmer */}
+        <div className="aspect-square w-full animate-pulse bg-canvas sm:aspect-[4/3] md:aspect-video lg:aspect-square lg:max-h-[420px]" />
+        {/* Buy-box shimmer */}
+        <div className="px-lg pb-sm pt-lg lg:px-0 lg:pt-0">
+          <Shimmer className="mb-sm h-[10px] w-1/4" />
+          <Shimmer className="mb-xs h-[18px] w-4/5" />
+          <Shimmer className="h-[18px] w-3/5" />
+          <Shimmer className="mt-sm h-[14px] w-[140px]" />
+          <Shimmer className="mt-sm h-[12px] w-full" />
+          <Shimmer className="mt-xs h-[12px] w-3/4" />
+          <Shimmer className="mt-sm h-[22px] w-[90px]" />
+          <div className="mt-md flex gap-sm">
+            {[1, 2, 3, 4].map((i) => (
+              <Shimmer key={i} className="h-8 w-14" />
+            ))}
+          </div>
+          <div className="mt-md">
+            <Shimmer className="h-[28px] w-[120px]" />
+          </div>
+        </div>
       </div>
       <SectionDivider />
       <SectionHeader title="Details" />
@@ -131,7 +136,7 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
     <div className="flex min-h-[60vh] flex-col items-center justify-center gap-md p-xl text-center">
       <CloudOff size={48} className="text-muted" aria-hidden />
       <p className="text-title-md font-bold text-ink">Couldn&apos;t load this product</p>
-      <p className="max-w-xs text-body-md text-muted">{message}</p>
+      <p className="max-w-snug text-body-md text-muted">{message}</p>
       <button
         onClick={onRetry}
         className="flex h-10 items-center gap-sm rounded-button border border-hairline px-lg text-label-md font-bold text-ink transition-colors hover:bg-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
@@ -241,84 +246,150 @@ function PdpBody({ product }: BodyProps) {
     return `${Math.floor(n / 10) * 10}`;
   };
 
+  // ── Buy-box content (shared between mobile inline and desktop right column) ──
+  const buyBoxContent = (
+    <>
+      {/* Title block */}
+      <div className="px-lg pb-sm pt-lg lg:px-0 lg:pt-0">
+        {product.systemTags.length > 0 ? (
+          <div className="mb-sm flex flex-wrap gap-xs">
+            {product.systemTags.map((t) => (
+              <SystemTagPill key={t} tag={t} />
+            ))}
+          </div>
+        ) : null}
+        {product.brand ? (
+          <p className="mb-xs text-[10px] font-extrabold uppercase tracking-[1px] text-muted">
+            {product.brand}
+          </p>
+        ) : null}
+        <h1 className="text-[18px] font-extrabold leading-snug tracking-[-0.2px] text-ink lg:text-[22px]">
+          {product.name}
+        </h1>
+        <div className="mt-sm">
+          <SoldByChip product={product} />
+        </div>
+        {product.soldLast30d >= 50 ? (
+          <p className="mt-xs text-body-sm font-bold text-muted">
+            {compact(product.soldLast30d)}+ bought in the past month
+          </p>
+        ) : null}
+        {product.description ? (
+          <p className="mt-sm line-clamp-2 text-body-sm leading-snug text-muted">
+            {product.description}
+          </p>
+        ) : null}
+        {/* Rating chip */}
+        {product.ratingAvg != null ? (
+          <div className="mt-sm flex items-center gap-sm">
+            <span className="flex items-center gap-xs rounded-[3px] bg-success px-sm py-xs">
+              <span className="text-label-md font-extrabold text-white">
+                {product.ratingAvg.toFixed(1)}
+              </span>
+              <span className="text-[10px] text-white">★</span>
+            </span>
+            <span className="text-label-md text-muted">
+              {product.ratingCount} ratings · {product.totalSold} sold
+            </span>
+          </div>
+        ) : (
+          <div className="mt-sm inline-flex rounded-[3px] bg-canvas px-sm py-xs">
+            <span className="text-label-md text-muted">No reviews yet</span>
+          </div>
+        )}
+      </div>
+
+      {/* Variant picker */}
+      <div className="lg:[&>div]:px-0">
+        <PdpVariantPicker product={product} onSelect={setSelectedVariant} />
+      </div>
+
+      {/* Price block */}
+      <div className="lg:[&>div]:px-0">
+        <PdpPriceBlock product={product} selectedVariant={selectedVariant} />
+      </div>
+
+      {/* Stock chip */}
+      <div className="lg:[&>div]:mx-0">
+        <StockChip qty={displayQty} />
+      </div>
+
+      {/* Offers */}
+      <div className="lg:[&>div]:px-0">
+        <PdpOffersStrip offers={offers} bankOffers={product.bankOffers} />
+      </div>
+
+      {/* Desktop-only buy actions (inline in right column, hidden on mobile) */}
+      <div className="hidden lg:block lg:px-0 lg:pb-md lg:pt-sm">
+        <PdpActionBar product={product} selectedVariant={selectedVariant} onMessage={showToast} desktopInline />
+      </div>
+
+      {/* Seller card */}
+      {product.shop ? (
+        <Link
+          href={`/shop/${product.shop.slug}`}
+          className="mx-lg mb-md flex items-center gap-md rounded-md border border-hairline bg-white p-md transition-shadow hover:shadow-floating focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand lg:mx-0"
+        >
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-sm bg-brand-soft text-[18px] font-extrabold text-brand-strong">
+            {(product.shop.name[0] ?? "?").toUpperCase()}
+          </div>
+          <div className="flex flex-1 flex-col">
+            <span className="text-body-md font-bold text-ink">
+              Sold by {product.shop.name}
+            </span>
+            {product.shop.rating != null ? (
+              <span className="text-body-sm text-muted">
+                {product.shop.rating.toFixed(1)} ★ · {product.shop.ratingCount} ratings
+              </span>
+            ) : null}
+          </div>
+          <span className="text-muted">›</span>
+        </Link>
+      ) : null}
+    </>
+  );
+
   return (
     <>
-      <div className="pb-[80px]">
-        {/* Gallery */}
-        <div className="relative">
-          <PdpGallery
-            images={selectedVariant?.imageUrls.map((url, i) => ({ url, sortOrder: i })) ?? product.images}
-            offers={offers}
-            productName={product.name}
-          />
-          {/* Overlay buttons (wishlist + share) */}
-          <div className="absolute right-md top-md flex flex-col gap-sm">
-            <PdpWishlistButton productId={product.id} />
-            <ShareButton productName={product.name} />
+      {/*
+       * Mobile layout: single column, sticky bottom bar.
+       * Desktop (lg+): two-column grid — left sticky gallery (~45%), right buy-box.
+       * Below the grid: Details, FBT rail, Specs, Reviews (full-width).
+       */}
+      <div className="pb-[80px] lg:pb-0">
+        <div className="px-sm pt-sm">
+          <BackButton fallback="/" />
+        </div>
+
+        {/* ── Two-column grid on lg+ ── */}
+        <div className="lg:grid lg:grid-cols-[minmax(0,45fr)_minmax(0,55fr)] lg:items-start lg:gap-xl lg:px-lg lg:pt-lg">
+
+          {/* Left: gallery (sticky within column on desktop) */}
+          <div className="relative lg:sticky lg:top-[72px]">
+            <PdpGallery
+              images={selectedVariant?.imageUrls.map((url, i) => ({ url, sortOrder: i })) ?? product.images}
+              offers={offers}
+              productName={product.name}
+            />
+            {/* Overlay buttons (wishlist + share) */}
+            <div className="absolute right-md top-md flex flex-col gap-sm">
+              <PdpWishlistButton productId={product.id} />
+              <ShareButton productName={product.name} />
+            </div>
+          </div>
+
+          {/* Right: buy-box — shown inline on desktop, hidden on mobile (rendered below) */}
+          <div className="hidden lg:block">
+            {buyBoxContent}
           </div>
         </div>
 
-        {/* Title block */}
-        <div className="px-lg pb-sm pt-lg">
-          {product.systemTags.length > 0 ? (
-            <div className="mb-sm flex flex-wrap gap-xs">
-              {product.systemTags.map((t) => (
-                <SystemTagPill key={t} tag={t} />
-              ))}
-            </div>
-          ) : null}
-          {product.brand ? (
-            <p className="mb-xs text-[10px] font-extrabold uppercase tracking-[1px] text-muted">
-              {product.brand}
-            </p>
-          ) : null}
-          <h1 className="text-[18px] font-extrabold leading-snug tracking-[-0.2px] text-ink">
-            {product.name}
-          </h1>
-          <div className="mt-sm">
-            <SoldByChip product={product} />
-          </div>
-          {product.soldLast30d >= 50 ? (
-            <p className="mt-xs text-body-sm font-bold text-muted">
-              {compact(product.soldLast30d)}+ bought in the past month
-            </p>
-          ) : null}
-          {product.description ? (
-            <p className="mt-sm line-clamp-2 text-body-sm leading-snug text-muted">
-              {product.description}
-            </p>
-          ) : null}
-          {/* Rating chip */}
-          {product.ratingAvg != null ? (
-            <div className="mt-sm flex items-center gap-sm">
-              <span className="flex items-center gap-xs rounded-[3px] bg-success px-sm py-xs">
-                <span className="text-label-md font-extrabold text-white">
-                  {product.ratingAvg.toFixed(1)}
-                </span>
-                <span className="text-[10px] text-white">★</span>
-              </span>
-              <span className="text-label-md text-muted">
-                {product.ratingCount} ratings · {product.totalSold} sold
-              </span>
-            </div>
-          ) : (
-            <div className="mt-sm inline-flex rounded-[3px] bg-canvas px-sm py-xs">
-              <span className="text-label-md text-muted">No reviews yet</span>
-            </div>
-          )}
+        {/* Mobile buy-box (below gallery, single column) */}
+        <div className="lg:hidden">
+          {buyBoxContent}
         </div>
 
-        {/* Variant picker */}
-        <PdpVariantPicker product={product} onSelect={setSelectedVariant} />
-
-        {/* Price block */}
-        <PdpPriceBlock product={product} selectedVariant={selectedVariant} />
-
-        {/* Stock chip */}
-        <StockChip qty={displayQty} />
-
-        {/* Offers */}
-        <PdpOffersStrip offers={offers} bankOffers={product.bankOffers} />
+        {/* ── Below-the-fold sections (full width on both breakpoints) ── */}
 
         {/* FBT */}
         <PdpFbtRail productId={product.id} />
@@ -342,28 +413,6 @@ function PdpBody({ product }: BodyProps) {
             <p className="text-body-sm leading-relaxed text-muted">{product.description}</p>
           </div>
         ) : null}
-        {/* Shop card */}
-        {product.shop ? (
-          <Link
-            href={`/shop/${product.shop.slug}`}
-            className="mx-lg mb-md flex items-center gap-md rounded-md border border-hairline bg-white p-md transition-shadow hover:shadow-floating focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-          >
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-sm bg-brand-soft text-[18px] font-extrabold text-brand-strong">
-              {(product.shop.name[0] ?? "?").toUpperCase()}
-            </div>
-            <div className="flex flex-1 flex-col">
-              <span className="text-body-md font-bold text-ink">
-                Sold by {product.shop.name}
-              </span>
-              {product.shop.rating != null ? (
-                <span className="text-body-sm text-muted">
-                  {product.shop.rating.toFixed(1)} ★ · {product.shop.ratingCount} ratings
-                </span>
-              ) : null}
-            </div>
-            <span className="text-muted">›</span>
-          </Link>
-        ) : null}
 
         {/* Specs section */}
         <SectionDivider />
@@ -376,8 +425,10 @@ function PdpBody({ product }: BodyProps) {
         <ReviewsSection productId={product.id} productName={product.name} />
       </div>
 
-      {/* Sticky bottom bar */}
-      <PdpActionBar product={product} selectedVariant={selectedVariant} onMessage={showToast} />
+      {/* Sticky bottom bar — mobile only (hidden on lg+) */}
+      <div className="lg:hidden">
+        <PdpActionBar product={product} selectedVariant={selectedVariant} onMessage={showToast} />
+      </div>
 
       {/* Toast */}
       {toast ? (
