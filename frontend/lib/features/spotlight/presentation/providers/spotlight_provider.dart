@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:shopxy/features/spotlight/data/datasources/spotlight_remote_data_source.dart';
 import 'package:shopxy/features/spotlight/data/models/spotlight.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 class SpotlightProvider extends ChangeNotifier {
   SpotlightProvider(this._ds);
@@ -24,7 +25,7 @@ class SpotlightProvider extends ChangeNotifier {
         ..clear()
         ..addAll(list);
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -38,7 +39,7 @@ class SpotlightProvider extends ChangeNotifier {
       notifyListeners();
       return created;
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
       notifyListeners();
       return null;
     }
@@ -51,7 +52,7 @@ class SpotlightProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
       notifyListeners();
       return false;
     }

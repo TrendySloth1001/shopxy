@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/features/products/data/datasources/products_remote_data_source.dart';
@@ -12,6 +13,8 @@ import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_section_header.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/glass_widgets.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/shared/constants/app_durations.dart';
 
 const _kReasons = [
   (code: 'DAMAGE', label: 'Damaged', defaultDirection: 'OUT'),
@@ -48,6 +51,7 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
   final _formKey = GlobalKey<FormState>();
   final _note = TextEditingController();
   final _searchCtrl = TextEditingController();
+  Timer? _searchDebounce;
 
   String _reason = 'DAMAGE';
   String _direction = 'OUT';
@@ -72,6 +76,7 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
   @override
   void dispose() {
     _note.dispose();
+    _searchDebounce?.cancel();
     _searchCtrl.dispose();
     super.dispose();
   }
@@ -81,6 +86,16 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
     setState(() {
       _reason = code;
       _direction = spec.defaultDirection;
+    });
+  }
+
+  void _onProductSearchChanged(String value) {
+    // Debounce — same pattern as OrdersInboxPage, so typing "sol" hits
+    // the backend once instead of once per keystroke.
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(AppDurations.searchDebounce, () {
+      if (!mounted) return;
+      _searchProducts(value);
     });
   }
 
@@ -148,7 +163,7 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(e.toString())));
+            .showSnackBar(SnackBar(content: Text(friendlyError(e))));
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -274,7 +289,7 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
                       )
                     : null,
               ),
-              onChanged: _searchProducts,
+              onChanged: _onProductSearchChanged,
             ),
             if (_searchResults.isNotEmpty) ...[
               const SizedBox(height: AppSizes.xs),

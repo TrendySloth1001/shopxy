@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shopxy/features/admin/data/datasources/admin_spotlight_remote_data_source.dart';
 import 'package:shopxy/features/admin/data/models/admin_spotlight.dart';
 import 'package:shopxy/features/spotlight/data/models/spotlight.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 class AdminSpotlightProvider extends ChangeNotifier {
   AdminSpotlightProvider(this._ds);
@@ -33,7 +34,7 @@ class AdminSpotlightProvider extends ChangeNotifier {
         ..clear()
         ..addAll(page.data);
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -46,7 +47,7 @@ class AdminSpotlightProvider extends ChangeNotifier {
       _replace(updated);
       return true;
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
       notifyListeners();
       return false;
     }
@@ -58,7 +59,7 @@ class AdminSpotlightProvider extends ChangeNotifier {
       _replace(updated);
       return true;
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
       notifyListeners();
       return false;
     }

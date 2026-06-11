@@ -9,6 +9,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 /// Admin-only page (drawer entry gated by `User.isPlatformAdmin`). One
 /// list of all platform bank offers regardless of status — admin
@@ -72,7 +73,7 @@ class _AdminBankOffersPageState extends State<AdminBankOffersPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(content: Text(friendlyError(e))),
       );
     }
   }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -9,6 +10,7 @@ import 'package:shopxy/features/products/domain/entities/product.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/constants/app_durations.dart';
 
 /// Bottom-sheet modal for creating or editing a flash deal. On create
 /// the merchant first picks a product, then sets price + stock +
@@ -405,6 +407,7 @@ class _ProductPickerSheet extends StatefulWidget {
 
 class _ProductPickerSheetState extends State<_ProductPickerSheet> {
   final _q = TextEditingController();
+  Timer? _searchDebounce;
   List<Product> _results = [];
   bool _loading = false;
 
@@ -416,8 +419,19 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _q.dispose();
     super.dispose();
+  }
+
+  void _onProductSearchChanged(String value) {
+    // Debounce — same pattern as OrdersInboxPage, so typing "sol" hits
+    // the backend once instead of once per keystroke.
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(AppDurations.searchDebounce, () {
+      if (!mounted) return;
+      _search(value);
+    });
   }
 
   Future<void> _search(String q) async {
@@ -471,7 +485,7 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
                 labelText: 'Search your catalog',
                 prefixIcon: Icon(Icons.search),
               ),
-              onChanged: _search,
+              onChanged: _onProductSearchChanged,
             ),
           ),
           const SizedBox(height: AppSizes.md),

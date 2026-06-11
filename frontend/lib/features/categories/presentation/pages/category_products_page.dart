@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -16,6 +17,8 @@ import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_error_view.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/shared/constants/app_durations.dart';
 
 /// Drill-down view from CategoriesPage. Loads the products for a single
 /// category directly (own state — not coupled to the global
@@ -45,6 +48,7 @@ class _CategoryProductsPageState extends State<CategoryProductsPage> {
   // Local search inside the category.
   final _searchCtrl = TextEditingController();
   String _search = '';
+  Timer? _searchDebounce;
 
   final ScrollController _scrollCtrl = ScrollController();
 
@@ -57,6 +61,7 @@ class _CategoryProductsPageState extends State<CategoryProductsPage> {
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _searchCtrl.dispose();
     _scrollCtrl
       ..removeListener(_onScroll)
@@ -102,7 +107,7 @@ class _CategoryProductsPageState extends State<CategoryProductsPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString();
+        _error = friendlyError(e);
         _isLoading = false;
         _loadingMore = false;
       });
@@ -119,9 +124,13 @@ class _CategoryProductsPageState extends State<CategoryProductsPage> {
 
   void _onSearchChanged(String value) {
     setState(() => _search = value.trim());
-    // Debounce-light: rely on user pausing — kick a load on every change
-    // but the network call is cheap and the user expects responsiveness.
-    _load();
+    // Debounce the reload — same pattern as OrdersInboxPage, so typing
+    // "sol" hits the backend once instead of once per keystroke.
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(AppDurations.searchDebounce, () {
+      if (!mounted) return;
+      _load();
+    });
   }
 
   void _openProduct(Product p) {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shopxy/features/invoices/data/datasources/invoices_remote_data_source.dart';
 import 'package:shopxy/features/invoices/domain/entities/invoice.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 class InvoicesProvider extends ChangeNotifier {
   InvoicesProvider(this._ds);
@@ -48,7 +49,7 @@ class InvoicesProvider extends ChangeNotifier {
         search: _search.isNotEmpty ? _search : null,
       );
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
     } finally {
       _isLoading = false;
       notifyListeners();

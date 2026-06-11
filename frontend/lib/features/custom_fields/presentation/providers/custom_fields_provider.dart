@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import 'package:shopxy/features/custom_fields/data/datasources/custom_fields_remote_data_source.dart';
 import 'package:shopxy/features/custom_fields/domain/entities/custom_field.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 /// Owns the shop-wide custom-fields tree (sections with their fields,
 /// plus the ungrouped fields). Single source of truth for both the
@@ -56,7 +57,7 @@ class CustomFieldsProvider extends ChangeNotifier {
       _templates = results[1] as List<CustomFieldTemplate>;
       _hasLoadedOnce = true;
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
     } finally {
       _isLoading = false;
       notifyListeners();

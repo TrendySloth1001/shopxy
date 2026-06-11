@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:shopxy/features/quotations/data/datasources/quotations_remote_data_source.dart';
 import 'package:shopxy/features/quotations/domain/entities/quotation.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 /// Holds the merchant's quotation list + submit state for create/cancel.
 class QuotationsProvider extends ChangeNotifier {
@@ -24,7 +25,7 @@ class QuotationsProvider extends ChangeNotifier {
     try {
       _items = await _ds.list(status: status);
     } catch (e) {
-      _error = e.toString().replaceFirst('Exception: ', '');
+      _error = friendlyError(e);
     } finally {
       _loading = false;
       notifyListeners();

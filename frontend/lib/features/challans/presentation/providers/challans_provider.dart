@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shopxy/features/challans/data/datasources/challans_remote_data_source.dart';
 import 'package:shopxy/features/challans/data/models/challan_dto.dart';
 import 'package:shopxy/features/challans/domain/entities/challan.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 class ChallansProvider extends ChangeNotifier {
   ChallansProvider(this._dataSource);
@@ -55,7 +56,7 @@ class ChallansProvider extends ChangeNotifier {
       _challans = result.challans;
       _total = result.total;
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
     } finally {
       _isLoading = false;
       notifyListeners();

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shopxy/features/notifications/data/datasources/notifications_remote_data_source.dart';
 import 'package:shopxy/features/notifications/domain/entities/invitation.dart';
 import 'package:shopxy/features/notifications/domain/entities/notification.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 /// Single provider that owns notifications + invitations. Keeps the
 /// unread count, the inbox feed, and both invitation lists in sync so
@@ -50,7 +51,7 @@ class NotificationsProvider extends ChangeNotifier {
       _items = page.items;
       _unread = page.unread;
     } catch (e) {
-      _error = e.toString().replaceFirst('Exception: ', '');
+      _error = friendlyError(e);
     } finally {
       _loadingInbox = false;
       notifyListeners();
@@ -73,7 +74,7 @@ class NotificationsProvider extends ChangeNotifier {
       _incoming = await _invitesDs.incoming(status: status);
       notifyListeners();
     } catch (e) {
-      _error = e.toString().replaceFirst('Exception: ', '');
+      _error = friendlyError(e);
       notifyListeners();
     }
   }
@@ -83,7 +84,7 @@ class NotificationsProvider extends ChangeNotifier {
       _outgoing = await _invitesDs.outgoing(status: status);
       notifyListeners();
     } catch (e) {
-      _error = e.toString().replaceFirst('Exception: ', '');
+      _error = friendlyError(e);
       notifyListeners();
     }
   }

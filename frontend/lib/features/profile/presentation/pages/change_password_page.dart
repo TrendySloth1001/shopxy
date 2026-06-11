@@ -4,6 +4,7 @@ import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 class ChangePasswordPage extends StatefulWidget {
   const ChangePasswordPage({super.key});
@@ -57,7 +58,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       if (!mounted) return;
       setState(() => _busy = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(content: Text(friendlyError(e))),
       );
     }
   }

@@ -26,6 +26,7 @@ import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 class InvoicesPage extends StatefulWidget {
   const InvoicesPage({super.key});
@@ -262,7 +263,7 @@ class _InvoicesPageState extends State<InvoicesPage> {
       await OpenFilex.open(file.path);
     } catch (e) {
       if (context.mounted) {
-        messenger.showSnackBar(SnackBar(content: Text(e.toString())));
+        messenger.showSnackBar(SnackBar(content: Text(friendlyError(e))));
       }
     }
   }
@@ -698,7 +699,7 @@ class _InvoiceTile extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    '${invoice.itemCount ?? invoice.items.length} items',
+                    '${invoice.itemCount ?? invoice.items.length} item${(invoice.itemCount ?? invoice.items.length) == 1 ? '' : 's'}',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: AppColors.muted,
                     ),

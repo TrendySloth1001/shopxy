@@ -8,6 +8,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 /// Shop-wide inbox of party-initiated caution requests awaiting review.
 /// Approving one turns it into a confirmed deposit on that party's ledger;
@@ -20,7 +21,7 @@ class CautionRequestsPage extends StatefulWidget {
 }
 
 class _CautionRequestsPageState extends State<CautionRequestsPage> {
-  final _currency = NumberFormat.currency(symbol: '₹', decimalDigits: 0);
+  final _currency = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 2);
   final _dateFmt = DateFormat('d MMM yyyy');
 
   List<CautionRequest> _requests = const [];
@@ -50,7 +51,7 @@ class _CautionRequestsPageState extends State<CautionRequestsPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString().replaceFirst('Exception: ', '');
+        _error = friendlyError(e);
         _loading = false;
       });
     }
@@ -75,7 +76,7 @@ class _CautionRequestsPageState extends State<CautionRequestsPage> {
       if (!mounted) return;
       setState(() => _busyId = null);
       messenger.showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(content: Text(friendlyError(e))),
       );
     }
   }
@@ -102,39 +103,16 @@ class _CautionRequestsPageState extends State<CautionRequestsPage> {
       if (!mounted) return;
       setState(() => _busyId = null);
       messenger.showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(content: Text(friendlyError(e))),
       );
     }
   }
 
   /// Returns the reason string (possibly empty) on confirm, or null on cancel.
   Future<String?> _askReason() {
-    final ctrl = TextEditingController();
     return showDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Decline request'),
-        content: TextField(
-          controller: ctrl,
-          autofocus: true,
-          maxLength: 500,
-          decoration: const InputDecoration(
-            labelText: 'Reason (optional)',
-            hintText: 'Shown to the customer',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(ctrl.text.trim()),
-            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
-            child: const Text('Decline'),
-          ),
-        ],
-      ),
+      builder: (_) => const _DeclineReasonDialog(),
     );
   }
 
@@ -432,6 +410,55 @@ class _RequestRow extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+
+/// Decline-reason prompt. A StatefulWidget so the TextEditingController's
+/// lifecycle is tied to the dialog — the previous closure-scoped
+/// controller was created per-show and never disposed.
+class _DeclineReasonDialog extends StatefulWidget {
+  const _DeclineReasonDialog();
+
+  @override
+  State<_DeclineReasonDialog> createState() => _DeclineReasonDialogState();
+}
+
+class _DeclineReasonDialogState extends State<_DeclineReasonDialog> {
+  final _ctrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Decline request'),
+      content: TextField(
+        controller: _ctrl,
+        autofocus: true,
+        maxLength: 500,
+        textCapitalization: TextCapitalization.sentences,
+        decoration: const InputDecoration(
+          labelText: 'Reason (optional)',
+          hintText: 'Shown to the customer',
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(_ctrl.text.trim()),
+          style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+          child: const Text('Decline'),
+        ),
+      ],
     );
   }
 }

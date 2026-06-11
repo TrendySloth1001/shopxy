@@ -9,6 +9,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/app_card.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_section_header.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 /// Audit trail of edits to a Party's or Vendor's contact details.
 /// Fetches `<endpoint>/changes` and renders a timeline of
@@ -70,7 +71,7 @@ class _ContactChangesSectionState extends State<ContactChangesSection> {
         setState(() {
           _entries = null;
           _loading = false;
-          _error = e.toString();
+          _error = friendlyError(e);
         });
       }
     }

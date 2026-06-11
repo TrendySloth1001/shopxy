@@ -20,7 +20,7 @@ class QuotationsPage extends StatefulWidget {
 }
 
 class _QuotationsPageState extends State<QuotationsPage> {
-  final _currency = NumberFormat.currency(symbol: '₹', decimalDigits: 0);
+  final _currency = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 2);
   final _dateFmt = DateFormat('d MMM y');
 
   @override
@@ -245,7 +245,7 @@ class _QuotationRow extends StatelessWidget {
                   ),
                   const SizedBox(height: AppSizes.xs),
                   Text(
-                    '${q.partyName} · ${dateFmt.format(q.createdAt)} · ${q.items.length} item(s)',
+                    '${q.partyName} · ${dateFmt.format(q.createdAt)} · ${q.items.length} item${q.items.length == 1 ? '' : 's'}',
                     style: theme.textTheme.bodySmall
                         ?.copyWith(color: AppColors.muted),
                     maxLines: 1,

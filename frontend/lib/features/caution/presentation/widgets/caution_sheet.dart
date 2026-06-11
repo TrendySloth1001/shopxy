@@ -7,6 +7,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 /// Bottom sheet for taking a caution deposit or refunding one.
 ///
@@ -93,7 +94,7 @@ class _CautionSheetState extends State<CautionSheet> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(e.toString())));
+            .showSnackBar(SnackBar(content: Text(friendlyError(e))));
       }
     }
   }
@@ -307,7 +308,7 @@ class _CautionForfeitSheetState extends State<CautionForfeitSheet> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(e.toString())));
+            .showSnackBar(SnackBar(content: Text(friendlyError(e))));
       }
     }
   }
@@ -546,7 +547,7 @@ class _CautionAdjustSheetState extends State<CautionAdjustSheet> {
       if (mounted) {
         setState(() => _loading = false);
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(e.toString())));
+            .showSnackBar(SnackBar(content: Text(friendlyError(e))));
       }
     }
   }
@@ -584,7 +585,7 @@ class _CautionAdjustSheetState extends State<CautionAdjustSheet> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(e.toString())));
+            .showSnackBar(SnackBar(content: Text(friendlyError(e))));
       }
     }
   }

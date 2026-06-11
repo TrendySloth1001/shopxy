@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shopxy/features/dashboard/data/datasources/dashboard_remote_data_source.dart';
 import 'package:shopxy/features/dashboard/domain/entities/dashboard_stats.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 class DashboardProvider extends ChangeNotifier {
   DashboardProvider(this._dataSource);
@@ -22,7 +23,7 @@ class DashboardProvider extends ChangeNotifier {
     try {
       _stats = await _dataSource.getStats();
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
     } finally {
       _isLoading = false;
       notifyListeners();

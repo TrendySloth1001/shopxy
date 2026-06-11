@@ -7,6 +7,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 /// Platform-admin editor for the marketplace taxonomy tree. Each node
 /// is rendered as an expandable tile; tapping it opens an inline editor
@@ -65,7 +66,7 @@ class _AdminCategoryTaxonomyPageState extends State<AdminCategoryTaxonomyPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString();
+        _error = friendlyError(e);
         _loading = false;
       });
     }
@@ -552,7 +553,7 @@ class _CategoryEditorSheetState extends State<_CategoryEditorSheet> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString();
+        _error = friendlyError(e);
         _busy = false;
       });
     }

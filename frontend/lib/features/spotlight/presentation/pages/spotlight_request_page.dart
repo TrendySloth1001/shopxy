@@ -373,7 +373,7 @@ class _SpotlightCard extends StatelessWidget {
                     const SizedBox(width: AppSizes.sm),
                     Expanded(
                       child: Text(
-                        '${df.format(spotlight.startAt)}  →  ${df.format(spotlight.endAt)}',
+                        '${df.format(spotlight.startAt.toLocal())}  →  ${df.format(spotlight.endAt.toLocal())}',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ),

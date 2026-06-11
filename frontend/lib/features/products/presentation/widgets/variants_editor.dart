@@ -363,7 +363,7 @@ class _VariantCard extends StatelessWidget {
               Expanded(
                 child: TextFormField(
                   initialValue: variant.mrp.toStringAsFixed(2),
-                  keyboardType: TextInputType.number,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   onChanged: (v) => onChange(variant.copyWith(
                       mrp: double.tryParse(v) ?? variant.mrp)),
                   decoration: const InputDecoration(
@@ -377,7 +377,7 @@ class _VariantCard extends StatelessWidget {
               Expanded(
                 child: TextFormField(
                   initialValue: variant.sellingPrice.toStringAsFixed(2),
-                  keyboardType: TextInputType.number,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   onChanged: (v) => onChange(variant.copyWith(
                       sellingPrice:
                           double.tryParse(v) ?? variant.sellingPrice)),
@@ -392,7 +392,7 @@ class _VariantCard extends StatelessWidget {
               Expanded(
                 child: TextFormField(
                   initialValue: variant.stockQuantity.toStringAsFixed(0),
-                  keyboardType: TextInputType.number,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   onChanged: (v) => onChange(variant.copyWith(
                       stockQuantity:
                           double.tryParse(v) ?? variant.stockQuantity)),

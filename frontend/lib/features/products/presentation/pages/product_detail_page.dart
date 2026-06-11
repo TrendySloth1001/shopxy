@@ -36,6 +36,7 @@ import 'package:shopxy/shared/widgets/app_dialog.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_section_header.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 class ProductDetailPage extends StatefulWidget {
   const ProductDetailPage({super.key, required this.productId});
@@ -240,7 +241,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _supplierHistoryError = e.toString();
+        _supplierHistoryError = friendlyError(e);
         _isSupplierHistoryLoading = false;
       });
     }
@@ -393,7 +394,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Couldn't update visibility: $e")),
+        SnackBar(content: Text("Couldn't update visibility: ${friendlyError(e)}")),
       );
     } finally {
       if (mounted) setState(() => _isTogglingPublish = false);

@@ -8,6 +8,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/validation/auth_validators.dart';
 import 'package:shopxy/shared/widgets/glass_widgets.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -68,7 +69,7 @@ class _RegisterPageState extends State<RegisterPage> {
     } catch (e) {
       if (mounted) {
         setState(
-          () => _error = e.toString().replaceFirst('Exception: ', ''),
+          () => _error = friendlyError(e),
         );
       }
     } finally {

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:shopxy/features/promotions/data/datasources/promotions_remote_data_source.dart';
 import 'package:shopxy/features/promotions/data/models/promotion.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 class PromotionsProvider extends ChangeNotifier {
   PromotionsProvider(this._ds);
@@ -24,7 +25,7 @@ class PromotionsProvider extends ChangeNotifier {
         ..clear()
         ..addAll(list);
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -38,7 +39,7 @@ class PromotionsProvider extends ChangeNotifier {
       notifyListeners();
       return created;
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
       notifyListeners();
       return null;
     }
@@ -52,7 +53,7 @@ class PromotionsProvider extends ChangeNotifier {
       notifyListeners();
       return updated;
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
       notifyListeners();
       return null;
     }
@@ -62,7 +63,7 @@ class PromotionsProvider extends ChangeNotifier {
     try {
       await _ds.cancel(id);
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
       notifyListeners();
       return false;
     }
@@ -72,7 +73,7 @@ class PromotionsProvider extends ChangeNotifier {
     try {
       await load();
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
       notifyListeners();
     }
     return true;

@@ -11,6 +11,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/constants/indian.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -122,7 +123,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(content: Text(friendlyError(e))),
       );
     } finally {
       if (mounted) setState(() => _uploadingAvatar = false);
@@ -135,7 +136,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(content: Text(friendlyError(e))),
       );
     }
   }
@@ -211,7 +212,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       if (!mounted) return;
       setState(() => _busy = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(content: Text(friendlyError(e))),
       );
     }
   }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/features/challans/domain/entities/challan.dart';
@@ -16,6 +17,8 @@ import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
 import 'package:shopxy/shared/widgets/app_section_header.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/glass_widgets.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/shared/constants/app_durations.dart';
 
 class CreateChallanPage extends StatefulWidget {
   const CreateChallanPage({super.key});
@@ -30,6 +33,7 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
   final _partyPhone = TextEditingController();
   final _note = TextEditingController();
   final _searchCtrl = TextEditingController();
+  Timer? _searchDebounce;
 
   final List<ChallanItemDraft> _items = [];
   List<Product> _searchResults = [];
@@ -56,8 +60,19 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
     _partyName.dispose();
     _partyPhone.dispose();
     _note.dispose();
+    _searchDebounce?.cancel();
     _searchCtrl.dispose();
     super.dispose();
+  }
+
+  void _onProductSearchChanged(String value) {
+    // Debounce — same pattern as OrdersInboxPage, so typing "sol" hits
+    // the backend once instead of once per keystroke.
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(AppDurations.searchDebounce, () {
+      if (!mounted) return;
+      _searchProducts(value);
+    });
   }
 
   Future<void> _searchProducts(String query) async {
@@ -140,7 +155,7 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(e.toString())));
+            .showSnackBar(SnackBar(content: Text(friendlyError(e))));
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -276,7 +291,7 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
                       )
                     : null,
               ),
-              onChanged: (v) => _searchProducts(v),
+              onChanged: _onProductSearchChanged,
             ),
             if (_searchResults.isNotEmpty) ...[
               const SizedBox(height: AppSizes.xs),

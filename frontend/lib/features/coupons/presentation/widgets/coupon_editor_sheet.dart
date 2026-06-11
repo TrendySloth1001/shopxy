@@ -7,6 +7,7 @@ import 'package:shopxy/features/coupons/domain/merchant_coupon.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 /// Bottom-sheet editor for creating or updating a single coupon.
 /// Returns `true` to the caller iff the save succeeded so the list can
@@ -160,7 +161,7 @@ class _CouponEditorSheetState extends State<_CouponEditorSheet> {
       if (mounted) {
         setState(() {
         _saving = false;
-        _error = e.toString().replaceFirst('Exception: ', '');
+        _error = friendlyError(e);
       });
       }
     }

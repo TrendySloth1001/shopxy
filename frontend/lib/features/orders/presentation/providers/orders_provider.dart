@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:shopxy/features/orders/data/datasources/orders_remote_data_source.dart';
 import 'package:shopxy/features/orders/domain/entities/merchant_order.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 class OrdersProvider extends ChangeNotifier {
   OrdersProvider(this._ds);
@@ -52,7 +53,7 @@ class OrdersProvider extends ChangeNotifier {
       _orders = result.data;
       _error = null;
     } catch (e) {
-      _error = e.toString().replaceFirst('Exception: ', '');
+      _error = friendlyError(e);
     } finally {
       _loading = false;
       notifyListeners();

@@ -179,7 +179,7 @@ class _CollectionRow extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '/${collection.slug}  ·  ${collection.itemCount} items',
+                    '/${collection.slug}  ·  ${collection.itemCount} item${collection.itemCount == 1 ? '' : 's'}',
                     style: Theme.of(context)
                         .textTheme
                         .bodySmall

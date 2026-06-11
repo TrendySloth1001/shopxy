@@ -18,6 +18,7 @@ import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_dialog.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 enum SettingsSection { account, appearance, notifications, about }
 
@@ -57,7 +58,7 @@ class _SettingsPageState extends State<SettingsPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Export failed: ${e.toString().replaceFirst('Exception: ', '')}',
+            'Export failed: ${friendlyError(e)}',
           ),
         ),
       );
@@ -79,7 +80,7 @@ class _SettingsPageState extends State<SettingsPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          content: Text(friendlyError(e)),
           duration: AppDurations.snackbarLong,
         ),
       );
@@ -107,7 +108,7 @@ class _SettingsPageState extends State<SettingsPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not save preference: ${e.toString().replaceFirst('Exception: ', '')}')),
+        SnackBar(content: Text('Could not save preference: ${friendlyError(e)}')),
       );
     } finally {
       if (mounted) setState(() => _savingEmailNotifications = false);

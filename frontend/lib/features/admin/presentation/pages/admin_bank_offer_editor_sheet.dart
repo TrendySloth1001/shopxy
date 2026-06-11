@@ -6,6 +6,7 @@ import 'package:shopxy/features/admin/presentation/providers/admin_bank_offers_p
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 /// Bottom-sheet editor for one PlatformBankOffer. Returns `true` to
 /// the caller iff the save succeeded so the list page can refresh.
@@ -165,7 +166,7 @@ class _BodyState extends State<_Body> {
       if (mounted) {
         setState(() {
           _saving = false;
-          _error = e.toString().replaceFirst('Exception: ', '');
+          _error = friendlyError(e);
         });
       }
     }

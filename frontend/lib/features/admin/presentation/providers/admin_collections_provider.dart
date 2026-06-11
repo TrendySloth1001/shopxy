@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:shopxy/features/admin/data/datasources/admin_collections_remote_data_source.dart';
 import 'package:shopxy/features/admin/data/models/admin_collection.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 class AdminCollectionsProvider extends ChangeNotifier {
   AdminCollectionsProvider(this._ds);
@@ -24,7 +25,7 @@ class AdminCollectionsProvider extends ChangeNotifier {
         ..clear()
         ..addAll(rows);
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -35,7 +36,7 @@ class AdminCollectionsProvider extends ChangeNotifier {
     try {
       return await _ds.getOne(id);
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
       notifyListeners();
       return null;
     }
@@ -48,7 +49,7 @@ class AdminCollectionsProvider extends ChangeNotifier {
       notifyListeners();
       return created;
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
       notifyListeners();
       return null;
     }
@@ -62,7 +63,7 @@ class AdminCollectionsProvider extends ChangeNotifier {
       notifyListeners();
       return updated;
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
       notifyListeners();
       return null;
     }
@@ -75,7 +76,7 @@ class AdminCollectionsProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
       notifyListeners();
       return false;
     }
@@ -88,7 +89,7 @@ class AdminCollectionsProvider extends ChangeNotifier {
     try {
       return await _ds.replaceItems(id, items);
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
       notifyListeners();
       return null;
     }
@@ -98,7 +99,7 @@ class AdminCollectionsProvider extends ChangeNotifier {
     try {
       return await _ds.searchProducts(q);
     } catch (e) {
-      _error = e.toString();
+      _error = friendlyError(e);
       notifyListeners();
       return const [];
     }

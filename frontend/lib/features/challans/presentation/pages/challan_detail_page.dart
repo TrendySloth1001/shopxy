@@ -18,6 +18,7 @@ import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/glass_widgets.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 class ChallanDetailPage extends StatefulWidget {
   const ChallanDetailPage({super.key, required this.challanId});
@@ -71,7 +72,7 @@ class _ChallanDetailPageState extends State<ChallanDetailPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(e.toString())));
+            .showSnackBar(SnackBar(content: Text(friendlyError(e))));
       }
     }
   }
@@ -90,7 +91,7 @@ class _ChallanDetailPageState extends State<ChallanDetailPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(e.toString())));
+            .showSnackBar(SnackBar(content: Text(friendlyError(e))));
       }
     } finally {
       if (mounted) setState(() => _isConverting = false);
@@ -169,7 +170,7 @@ class _ChallanDetailPageState extends State<ChallanDetailPage> {
                 ),
                 const SizedBox(height: AppSizes.xs),
                 Text(
-                  df.format(c.createdAt),
+                  df.format(c.createdAt.toLocal()),
                   style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
                 ),
                 const SizedBox(height: AppSizes.md),

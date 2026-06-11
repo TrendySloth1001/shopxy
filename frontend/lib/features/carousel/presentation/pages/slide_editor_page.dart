@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -17,6 +18,8 @@ import 'package:shopxy/features/shop/presentation/providers/shop_provider.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/shared/constants/app_durations.dart';
 
 /// Full-page slide editor. The merchant picks one of the 7 templated
 /// card layouts, fills the matching copy fields, uploads an image, and
@@ -1178,7 +1181,7 @@ class _DiscountedProductsSectionState
       });
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = e.toString());
+      setState(() => _error = friendlyError(e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -1580,6 +1583,7 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
   // Most-recent-query token: ignore stale responses if the merchant
   // typed something newer mid-flight.
   int _lastQueryId = 0;
+  Timer? _searchDebounce;
 
   @override
   void initState() {
@@ -1589,8 +1593,19 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _q.dispose();
     super.dispose();
+  }
+
+  void _onProductSearchChanged(String value) {
+    // Debounce — same pattern as OrdersInboxPage, so typing "sol" hits
+    // the backend once instead of once per keystroke.
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(AppDurations.searchDebounce, () {
+      if (!mounted) return;
+      _search(value);
+    });
   }
 
   Future<void> _search(String q) async {
@@ -1628,7 +1643,7 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
                   prefixIcon: Icon(Icons.search),
                   hintText: 'Search your products',
                 ),
-                onChanged: _search,
+                onChanged: _onProductSearchChanged,
               ),
             ),
             const Divider(height: 1),

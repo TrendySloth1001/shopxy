@@ -10,6 +10,7 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 /// Opens a modal search sheet to pick an existing Party or create a new one.
 /// Returns the selected [Party], or null if cancelled.
@@ -61,7 +62,7 @@ class _PartyPickerSheetState extends State<_PartyPickerSheet> {
       );
       if (mounted) setState(() => _parties = results);
     } catch (e) {
-      if (mounted) setState(() => _error = e.toString());
+      if (mounted) setState(() => _error = friendlyError(e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }

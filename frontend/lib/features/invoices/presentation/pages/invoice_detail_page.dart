@@ -17,12 +17,14 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
+import 'package:shopxy/shared/widgets/app_dialog.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_section_header.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/glass_widgets.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 class InvoiceDetailPage extends StatefulWidget {
   const InvoiceDetailPage({super.key, required this.invoiceId});
@@ -125,7 +127,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(e.toString())));
+            .showSnackBar(SnackBar(content: Text(friendlyError(e))));
       }
     } finally {
       if (mounted) setState(() => _isDownloading = false);
@@ -168,7 +170,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(e.toString())));
+            .showSnackBar(SnackBar(content: Text(friendlyError(e))));
       }
     } finally {
       if (mounted) setState(() => _isDownloading = false);
@@ -252,7 +254,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
         ),
       );
     } catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text(e.toString())));
+      messenger.showSnackBar(SnackBar(content: Text(friendlyError(e))));
     } finally {
       if (mounted) setState(() => _isDownloading = false);
     }
@@ -275,13 +277,26 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
 
   Future<void> _updateStatus(String status) async {
     final provider = context.read<InvoicesProvider>();
+    final messenger = ScaffoldMessenger.of(context);
     try {
       final updated = await provider.updateStatus(widget.invoiceId, status);
-      if (mounted) setState(() => _invoice = updated);
+      if (!mounted) return;
+      setState(() => _invoice = updated);
+      // Confirm/cancel are the page's headline actions — close the loop
+      // with an explicit success cue instead of a silent badge change.
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            status == 'CONFIRMED'
+                ? '${updated.invoiceNo} confirmed'
+                : '${updated.invoiceNo} cancelled',
+          ),
+        ),
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(e.toString())));
+            .showSnackBar(SnackBar(content: Text(friendlyError(e))));
       }
     }
   }
@@ -377,11 +392,33 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
               ],
               onSelected: (v) async {
                 if (v == 'delete') {
-                  await context
-                      .read<InvoicesProvider>()
-                      .deleteInvoice(invoice.id);
-                  if (!context.mounted) return;
-                  Navigator.pop(context);
+                  // Hard delete is irreversible — gate it behind a
+                  // confirm like every other destructive action.
+                  final confirmed = await AppConfirmDialog.show(
+                    context,
+                    title: AppStrings.delete,
+                    message:
+                        'Delete ${invoice.invoiceNo}? This can\'t be undone.',
+                    confirmLabel: AppStrings.delete,
+                    danger: true,
+                  );
+                  if (!confirmed || !context.mounted) return;
+                  final messenger = ScaffoldMessenger.of(context);
+                  try {
+                    await context
+                        .read<InvoicesProvider>()
+                        .deleteInvoice(invoice.id);
+                    if (!context.mounted) return;
+                    messenger.showSnackBar(
+                      SnackBar(content: Text('${invoice.invoiceNo} deleted')),
+                    );
+                    Navigator.pop(context);
+                  } catch (e) {
+                    if (!context.mounted) return;
+                    messenger.showSnackBar(
+                      SnackBar(content: Text(friendlyError(e))),
+                    );
+                  }
                 }
               },
             ),
@@ -446,7 +483,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                   ),
                 ),
                 Text(
-                  df.format(invoice.invoiceDate),
+                  df.format(invoice.invoiceDate.toLocal()),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: AppColors.muted,
                   ),
@@ -600,60 +637,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                                     ),
                                   ),
                                   Text(
-                                    '${p.referenceNo} · ${df.format(p.paymentDate)}',
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: AppColors.muted,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Text(
-                              '${AppStrings.currencySymbol}${p.amount.toStringAsFixed(2)}',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
-                ],
-                // Payments received against this invoice — covers ALL channels:
-                // cash/UPI recorded by the merchant AND online/wallet receipts
-                // the backend reconciles from a customer's order payment. Shown
-                // only once the invoice is a live liability (CONFIRMED).
-                if (invoice.status == 'CONFIRMED') ...[
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: AppSizes.sm),
-                    child: AppDivider.flush(),
-                  ),
-                  _TotalRow(label: 'Received', value: _paidTotal),
-                  _TotalRow(
-                    label: 'Outstanding',
-                    value: _outstanding(invoice),
-                    isHighlight: true,
-                  ),
-                  if (_payments.isNotEmpty) ...[
-                    const SizedBox(height: AppSizes.xs),
-                    for (final p in _payments)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    _paymentModeLabel(p),
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  Text(
-                                    '${p.referenceNo} · ${df.format(p.paymentDate)}',
+                                    '${p.referenceNo} · ${df.format(p.paymentDate.toLocal())}',
                                     style: theme.textTheme.bodySmall?.copyWith(
                                       color: AppColors.muted,
                                     ),

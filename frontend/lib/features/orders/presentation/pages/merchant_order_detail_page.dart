@@ -21,6 +21,7 @@ import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 class MerchantOrderDetailPage extends StatefulWidget {
   const MerchantOrderDetailPage({super.key, required this.orderId});
@@ -97,7 +98,7 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
       if (mounted) {
         setState(() {
           _loading = false;
-          _error = e.toString().replaceFirst('Exception: ', '');
+          _error = friendlyError(e);
         });
       }
     }
@@ -155,7 +156,7 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
     } catch (e) {
       if (!mounted) return;
       messenger.showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(content: Text(friendlyError(e))),
       );
       setState(() => _busy = false);
     }
@@ -192,7 +193,7 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
     } catch (e) {
       if (mounted) {
         messenger.showSnackBar(
-          SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+          SnackBar(content: Text(friendlyError(e))),
         );
         setState(() => _busy = false);
       }
@@ -236,7 +237,7 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
     } catch (e) {
       if (!mounted) return;
       messenger.showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(content: Text(friendlyError(e))),
       );
       setState(() => _busy = false);
     }
@@ -278,7 +279,7 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
     } catch (e) {
       if (!mounted) return;
       messenger.showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(content: Text(friendlyError(e))),
       );
     }
   }
@@ -306,7 +307,7 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
       if (!mounted) return;
       setState(() => _confirmingDraftIds.remove(draft.invoiceId));
       messenger.showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(content: Text(friendlyError(e))),
       );
     }
   }
@@ -371,7 +372,7 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
     if (order == null) return;
     final lines = <String>[
       'Order #${order.id} from ${order.customerName}',
-      _date.format(order.createdAt),
+      _date.format(order.createdAt.toLocal()),
       '',
       for (final i in order.items)
         '• ${i.productName} × ${_qtyLabel(i.quantity)} ${i.unit} — ${_currency.format(i.total)}',
@@ -656,7 +657,7 @@ class _Body extends StatelessWidget {
           child: Row(
             children: [
               Text(
-                dateFmt.format(order.createdAt),
+                dateFmt.format(order.createdAt.toLocal()),
                 style: theme.textTheme.bodySmall
                     ?.copyWith(color: AppColors.muted),
               ),
@@ -796,7 +797,7 @@ class _DecisionSummaryStrip extends StatelessWidget {
                   ),
                 ),
               Text(
-                '${relativeFmt.format(order.createdAt)} · ${_relative(order.createdAt)}',
+                '${relativeFmt.format(order.createdAt.toLocal())} · ${_relative(order.createdAt)}',
                 style: theme.textTheme.bodySmall
                     ?.copyWith(color: AppColors.muted),
               ),

@@ -16,6 +16,7 @@ import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
 
 /// Full chronological stock ledger for a single product.
 ///
@@ -68,7 +69,7 @@ class _StockLedgerPageState extends State<StockLedgerPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString();
+        _error = friendlyError(e);
         _isLoading = false;
       });
     }
