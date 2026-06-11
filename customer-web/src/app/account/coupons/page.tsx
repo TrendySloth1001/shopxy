@@ -10,6 +10,7 @@ import { formatDate } from "@/shared/datetime";
 import { fetchMyCoupons } from "@/features/account-extras/api";
 import { isCouponExhausted, couponHeadline, couponMinOrderLabel } from "@/features/account-extras/types";
 import type { Coupon } from "@/features/account-extras/types";
+import { BackButton } from "@/shared/ui/back-button";
 
 export default function MyCouponsPage() {
   return (
@@ -45,6 +46,7 @@ function CouponsBody() {
 
   return (
     <main className="mx-auto max-w-content px-lg py-xxxl">
+      <BackButton fallback="/account" className="mb-sm" />
       <div>
         <p className="text-label-md uppercase tracking-wide text-brand">Account</p>
         <h1 className="mt-xs text-headline-md text-ink">My Coupons</h1>

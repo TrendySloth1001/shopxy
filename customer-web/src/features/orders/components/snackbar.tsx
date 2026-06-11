@@ -20,7 +20,7 @@ export function Snackbar({ snack }: { snack: SnackMessage | null }) {
     <div
       role="status"
       aria-live="polite"
-      className={`fixed bottom-xl left-1/2 z-50 -translate-x-1/2 rounded-lg ${bg} px-lg py-sm text-label-md font-bold text-white shadow-snackbar max-w-xs text-center pointer-events-none`}
+      className={`fixed bottom-xl left-1/2 z-50 -translate-x-1/2 rounded-lg ${bg} px-lg py-sm text-label-md font-bold text-white shadow-snackbar max-w-snug text-center pointer-events-none`}
     >
       {snack.message}
     </div>

@@ -10,6 +10,7 @@ import { formatDateTime } from "@/shared/datetime";
 import { resolveImageUrl } from "@/features/home/format";
 import { fetchMyReviews, deleteReview, upsertReview } from "@/features/account-extras/api";
 import type { MyReview } from "@/features/account-extras/types";
+import { BackButton } from "@/shared/ui/back-button";
 
 export default function MyReviewsPage() {
   return (
@@ -83,6 +84,7 @@ function MyReviewsBody() {
 
   return (
     <main className="mx-auto max-w-content px-lg py-xxxl" ref={scrollRef}>
+      <BackButton fallback="/account" className="mb-sm" />
       <div>
         <p className="text-label-md uppercase tracking-wide text-brand">Account</p>
         <h1 className="mt-xs text-headline-md text-ink">My Reviews</h1>

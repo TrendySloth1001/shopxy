@@ -10,6 +10,7 @@ import { formatINR } from "@/shared/format";
 import { resolveImageUrl } from "@/features/home/format";
 import { fetchRecentlyViewed } from "@/features/account-extras/api";
 import type { RecentlyViewedItem } from "@/features/account-extras/types";
+import { BackButton } from "@/shared/ui/back-button";
 
 export default function RecentlyViewedPage() {
   return (
@@ -45,6 +46,7 @@ function RecentlyViewedBody() {
 
   return (
     <main className="mx-auto max-w-shell px-lg py-xxxl">
+      <BackButton fallback="/account" className="mb-sm" />
       <div>
         <p className="text-label-md uppercase tracking-wide text-brand">Account</p>
         <h1 className="mt-xs text-headline-md text-ink">Recently Viewed</h1>

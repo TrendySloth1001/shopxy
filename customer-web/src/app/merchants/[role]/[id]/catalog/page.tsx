@@ -297,7 +297,7 @@ function CatalogContent({ role: roleRaw, id }: CatalogContentProps) {
             <p className="text-title-sm font-extrabold text-ink">
               {debouncedSearch || activeCategory ? "No matching products" : "No products yet"}
             </p>
-            <p className="mt-xs max-w-xs text-body-md text-muted">
+            <p className="mt-xs max-w-snug text-body-md text-muted">
               {debouncedSearch
                 ? `No products match "${debouncedSearch}".`
                 : activeCategory

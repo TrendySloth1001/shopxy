@@ -2,7 +2,7 @@
 
 import { use, useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
-import { ArrowLeft, MapPin, Store, Download, Info, RotateCcw, X } from "lucide-react";
+import { ArrowLeft, MapPin, Store, Download, Info, RotateCcw, X, Package } from "lucide-react";
 import { AppHeader } from "@/features/auth/components/app-header";
 import { RequireAuth } from "@/features/auth/components/require-auth";
 import { OrderTimeline } from "@/features/orders/components/order-timeline";
@@ -23,6 +23,7 @@ import { formatINR } from "@/shared/format";
 import { setCartQty } from "@/features/cart/api";
 import type { CustomerOrderDetail, ShopOrderDetail } from "@/features/orders/types";
 import { orderNeedsOnlinePayment, orderPayableRemainder } from "@/features/orders/types";
+import { mediaSrc } from "@/shared/media";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -431,7 +432,7 @@ function OrderDetailContent({
       {/* Cancel confirm dialog */}
       {cancelConfirmChild && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 px-lg">
-          <div className="w-full max-w-sm rounded-dialog bg-white p-xl">
+          <div className="w-full max-w-narrow rounded-dialog bg-white p-xl">
             <h2 className="text-title-md font-extrabold text-ink">Cancel these items?</h2>
             <p className="mt-sm text-body-sm text-muted">
               Items from{" "}
@@ -590,21 +591,34 @@ function ShopSection({
 
       {/* Items */}
       {child.items.map((item, idx) => {
-        const img = item.product?.images?.[0]?.url;
-        const imgSrc = img ? `/api/media/${img.replace(/^\//, "")}` : null;
+        const imgSrc = mediaSrc(item.product?.images?.[0]?.url);
         return (
           <div key={item.id}>
             <div className="flex items-start gap-md px-lg py-md">
               {/* Product image */}
-              <div className="h-12 w-12 flex-shrink-0 rounded-md bg-hero-panel overflow-hidden">
+              <div className="h-12 w-12 flex-shrink-0 rounded-md bg-hero-panel overflow-hidden flex items-center justify-center">
                 {imgSrc ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={imgSrc}
                     alt={item.productName}
                     className="h-full w-full object-cover"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).style.display = "none";
+                      const parent = e.currentTarget.parentElement;
+                      if (parent) {
+                        const icon = parent.querySelector(".fallback-icon");
+                        if (icon) (icon as HTMLElement).style.display = "flex";
+                      }
+                    }}
                   />
                 ) : null}
+                <span
+                  className="fallback-icon h-full w-full items-center justify-center"
+                  style={{ display: imgSrc ? "none" : "flex" }}
+                >
+                  <Package size={18} className="text-muted" />
+                </span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-body-sm font-extrabold text-ink line-clamp-2">{item.productName}</p>
@@ -662,6 +676,15 @@ function ShopSection({
           <Info size={14} className="text-error flex-shrink-0 mt-[1px]" />
           <p className="text-body-sm text-error">{child.decisionNote}</p>
         </div>
+      )}
+
+      {/* Cancelled note */}
+      {child.status === "CANCELLED" && (
+        <p className="mx-lg mb-md mt-xs text-label-md text-muted">
+          {child.decidedAt
+            ? `Cancelled on ${new Date(child.decidedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}`
+            : "Cancelled — items will not be delivered."}
+        </p>
       )}
 
       {/* Cancel action */}

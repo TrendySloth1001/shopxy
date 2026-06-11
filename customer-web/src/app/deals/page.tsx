@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { AppHeader } from "@/features/auth/components/app-header";
 import { DealsView } from "@/features/deals/components/deals-view";
+import { BackButton } from "@/shared/ui/back-button";
 
 export const metadata: Metadata = {
   title: "Deals — ShopXY",
@@ -20,6 +21,7 @@ export default function DealsPage() {
     <>
       <AppHeader />
       <main className="mx-auto max-w-shell px-lg py-xxxl">
+        <BackButton fallback="/" className="mb-sm" />
         <h1 className="mb-xl text-headline-md text-ink">Deals</h1>
         <DealsView />
       </main>

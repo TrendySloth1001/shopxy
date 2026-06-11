@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { zNum } from "@/shared/zod";
 
 // ─── Invitations ───────────────────────────────────────────────────────────
 
@@ -71,7 +72,7 @@ export const linkedShopSchema = z
     logoUrl: z.string().nullish(),
     bannerUrl: z.string().nullish(),
     isPublished: z.boolean().nullish(),
-    rating: z.number().nullish(),
+    rating: zNum.nullish(),
     ratingCount: z.number().nullish(),
     roles: z
       .object({ party: z.boolean().default(false), vendor: z.boolean().default(false) })
@@ -87,7 +88,7 @@ export const linkedShopsResponseSchema = z.object({
 // /me/links shape — parties and vendors
 const invoiceSummarySchema = z.object({
   invoiceDate: z.string().nullish(),
-  total: z.number().nullish(),
+  total: zNum.nullish(),
 });
 
 const linkShopMiniSchema = z
@@ -164,10 +165,10 @@ export const catalogProductSchema = z
     sku: z.string().nullish(),
     hsnCode: z.string().nullish(),
     unit: z.string().nullish(),
-    mrp: z.number().nullish(),
-    sellingPrice: z.number().nullish(),
-    taxPercent: z.number().nullish(),
-    stockQuantity: z.number().nullish(),
+    mrp: zNum.nullish(),
+    sellingPrice: zNum.nullish(),
+    taxPercent: zNum.nullish(),
+    stockQuantity: zNum.nullish(),
     categoryId: z.number().nullish(),
     category: z.object({ id: z.number(), name: z.string(), iconName: z.string().nullish() }).nullish(),
     images: z.array(productImageSchema).nullish().transform((v) => v ?? []),

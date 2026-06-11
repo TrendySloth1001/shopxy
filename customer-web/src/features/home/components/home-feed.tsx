@@ -47,7 +47,12 @@ function productsInBlock(b: HomeBlock): ProductCard[] {
   }
 }
 
-const COLLAPSE_DISTANCE = 80;
+// Hysteresis band for the header collapse. Collapsing the search bar removes
+// ~88px of page height, which shifts scrollY — a single threshold makes that
+// feed back and flicker the header. Two thresholds with a dead band between
+// them (collapse past 96, only re-expand below 24) break the loop.
+const COLLAPSE_AT = 96;
+const EXPAND_AT = 24;
 
 export function HomeFeed() {
   const [status, setStatus] = useState<Status>("loading");
@@ -147,14 +152,24 @@ export function HomeFeed() {
     void boot();
   }, [boot]);
 
-  // Header collapse + endless prefetch on window scroll.
+  // Header collapse + endless prefetch on window scroll. rAF-throttled so a
+  // burst of scroll events collapses to one measurement per frame, and the
+  // collapse uses hysteresis (COLLAPSE_AT / EXPAND_AT) so the height change it
+  // triggers can't bounce the header across the threshold.
   useEffect(() => {
-    const onScroll = () => {
+    let ticking = false;
+    const measure = () => {
+      ticking = false;
       const y = window.scrollY;
-      setCollapsed(y > COLLAPSE_DISTANCE);
+      setCollapsed((prev) => (prev ? y > EXPAND_AT : y > COLLAPSE_AT));
       const nearBottom =
         window.innerHeight + y >= document.documentElement.scrollHeight - window.innerHeight * 1.5;
       if (nearBottom) void loadMore();
+    };
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(measure);
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);

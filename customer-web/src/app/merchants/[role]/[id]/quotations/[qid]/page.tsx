@@ -23,6 +23,7 @@ import {
 import type { Quotation } from "@/features/merchant-ledger/types";
 import { formatINR } from "@/shared/format";
 import { formatDateTime } from "@/shared/datetime";
+import { BackButton } from "@/shared/ui/back-button";
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
@@ -73,7 +74,7 @@ function AcceptDialog({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-ink/30 p-lg">
-      <div className="w-full max-w-sm rounded-dialog bg-white p-xl space-y-md shadow-floating">
+      <div className="w-full max-w-narrow rounded-dialog bg-white p-xl space-y-md shadow-floating">
         <h2 className="text-title-md font-extrabold text-ink">Accept quotation?</h2>
         <p className="text-body-md text-muted">
           This will create a confirmed invoice for{" "}
@@ -109,7 +110,7 @@ function DeclineDialog({
   const [note, setNote] = useState("");
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-ink/30 p-lg">
-      <div className="w-full max-w-sm rounded-dialog bg-white p-xl space-y-md shadow-floating">
+      <div className="w-full max-w-narrow rounded-dialog bg-white p-xl space-y-md shadow-floating">
         <h2 className="text-title-md font-extrabold text-ink">Decline quotation?</h2>
         <div>
           <label className="block text-body-sm font-bold text-ink mb-xs" htmlFor="decline-note">
@@ -153,7 +154,7 @@ function WithdrawDialog({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-ink/30 p-lg">
-      <div className="w-full max-w-sm rounded-dialog bg-white p-xl space-y-md shadow-floating">
+      <div className="w-full max-w-narrow rounded-dialog bg-white p-xl space-y-md shadow-floating">
         <h2 className="text-title-md font-extrabold text-ink">Withdraw request?</h2>
         <p className="text-body-md text-muted">
           The shop will no longer see this quote request.
@@ -528,6 +529,7 @@ function QuotationDetailPageContent() {
   return (
     <div className="mx-auto max-w-shell px-0 sm:px-lg py-xxxl">
       <div className="mx-auto max-w-content px-lg sm:px-0 pb-huge">
+        <BackButton fallback={`/merchants/${role}/${id}/quotations`} className="mb-sm" />
         {loading && !quotation && <QuotationDetailSkeleton />}
 
         {!loading && error && (

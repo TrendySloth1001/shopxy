@@ -8,6 +8,7 @@ import { RequireAuth } from "@/features/auth/components/require-auth";
 import { MerchantCard, MerchantCardSkeleton } from "@/features/merchants/components/merchant-card";
 import { fetchLinks, fetchIncomingInvitations } from "@/features/merchants/api";
 import type { Party, Vendor, MerchantRole } from "@/features/merchants/types";
+import { BackButton } from "@/shared/ui/back-button";
 
 // ─── Role filter ─────────────────────────────────────────────────────────────
 
@@ -88,7 +89,7 @@ function EmptyState() {
         <Store size={40} className="text-brand" />
       </div>
       <p className="text-title-md font-extrabold text-ink">No linked merchants yet</p>
-      <p className="mt-xs max-w-sm text-body-md text-muted">
+      <p className="mt-xs max-w-narrow text-body-md text-muted">
         When a shop adds you as a customer or supplier, they&apos;ll appear here with
         all their invoices.
       </p>
@@ -179,7 +180,7 @@ function MerchantsContent() {
   if (loading && items.length === 0) {
     return (
       <div className="mx-auto max-w-shell px-lg py-md">
-        <div className="grid grid-cols-1 gap-md sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-md md:grid-cols-2 xl:grid-cols-3">
           {[0, 1, 2].map((i) => (
             <MerchantCardSkeleton key={i} />
           ))}
@@ -225,7 +226,7 @@ function MerchantsContent() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-md sm:grid-cols-2 pb-lg">
+        <div className="grid grid-cols-1 gap-md md:grid-cols-2 xl:grid-cols-3 pb-lg">
           {visible.map((m) => (
             <MerchantCard key={`${m.role}-${m.item.id}`} item={m.item} role={m.role} />
           ))}
@@ -244,6 +245,7 @@ export default function MerchantsPage() {
       <main className="min-h-screen bg-canvas">
         {/* Page header */}
         <div className="mx-auto max-w-shell border-b border-hairline px-lg py-lg">
+          <BackButton fallback="/" className="mb-sm" />
           <p className="text-label-md font-extrabold uppercase tracking-widest text-brand">
             Your Merchants
           </p>

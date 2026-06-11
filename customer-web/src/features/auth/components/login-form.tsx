@@ -22,7 +22,7 @@ export function LoginForm() {
 
   // Already signed in → leave the auth screen.
   useEffect(() => {
-    if (status === "authed") router.replace("/dashboard");
+    if (status === "authed") router.replace("/");
   }, [status, router]);
 
   async function onSubmit(event: FormEvent) {
@@ -38,7 +38,7 @@ export function LoginForm() {
     setSubmitting(true);
     try {
       await login(parsed.data.email, parsed.data.password);
-      router.replace("/dashboard");
+      router.replace("/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign in failed.");
     } finally {

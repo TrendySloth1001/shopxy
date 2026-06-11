@@ -9,8 +9,8 @@ function SpotlightCard({ spotlight }: { spotlight: BrandSpotlight }) {
   return (
     <Link
       href={href}
-      className="group relative block aspect-video w-full overflow-hidden rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
-      style={{ backgroundColor: s.bgColor }}
+      className="group relative block w-full overflow-hidden rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+      style={{ backgroundColor: s.bgColor, aspectRatio: "21/6", maxHeight: "240px" }}
     >
       {/* Background image */}
       <ImageBox url={s.imageUrl} alt={s.brand} placeholderColor={s.bgColor} />
@@ -52,7 +52,7 @@ export function SpotlightsList({ spotlights }: { spotlights: BrandSpotlight[] })
   return (
     <section>
       <h2 className="mb-md text-[17px] font-extrabold text-ink">Brands in Spotlight</h2>
-      <div className="flex flex-col gap-md">
+      <div className="grid grid-cols-1 gap-md lg:grid-cols-2">
         {spotlights.map((s) => (
           <SpotlightCard key={s.spotlightId} spotlight={s} />
         ))}

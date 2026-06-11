@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { zNum } from "@/shared/zod";
 
 // ── Product sub-shape inside a cart line ──────────────────────────────────────
 
@@ -7,10 +8,10 @@ export const cartProductSchema = z.object({
   name: z.string(),
   sku: z.string().nullable().optional(),
   unit: z.string().nullable().optional(),
-  mrp: z.number(),
-  sellingPrice: z.number(),
-  taxPercent: z.number().default(0),
-  stockQuantity: z.number(),
+  mrp: zNum,
+  sellingPrice: zNum,
+  taxPercent: zNum.default(0),
+  stockQuantity: zNum,
   isActive: z.boolean(),
   isPublished: z.boolean(),
   categoryId: z.number().nullable().optional(),
@@ -29,7 +30,7 @@ export type CartProduct = z.infer<typeof cartProductSchema>;
 export const cartItemSchema = z.object({
   id: z.number(),
   productId: z.number(),
-  quantity: z.number(),
+  quantity: zNum,
   updatedAt: z.string(),
   product: cartProductSchema,
 });

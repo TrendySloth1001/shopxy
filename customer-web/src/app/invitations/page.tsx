@@ -13,6 +13,7 @@ import {
 } from "@/features/merchants/api";
 import type { Invitation } from "@/features/merchants/types";
 import { useNotifications } from "@/features/notifications/notifications-context";
+import { BackButton } from "@/shared/ui/back-button";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -64,7 +65,7 @@ function EmptyState({ tab }: { tab: Tab }) {
       {tab === "pending" ? (
         <>
           <p className="text-title-sm font-extrabold text-ink">No pending invitations</p>
-          <p className="mt-xs max-w-xs text-body-md text-muted">
+          <p className="mt-xs max-w-snug text-body-md text-muted">
             When a shop invites you to view their ledger, it will show up here.
           </p>
           <div className="mt-xl">
@@ -79,7 +80,7 @@ function EmptyState({ tab }: { tab: Tab }) {
       ) : (
         <>
           <p className="text-title-sm font-extrabold text-ink">No past invitations</p>
-          <p className="mt-xs max-w-xs text-body-md text-muted">
+          <p className="mt-xs max-w-snug text-body-md text-muted">
             Accepted and declined invitations will appear here.
           </p>
         </>
@@ -252,6 +253,7 @@ export default function InvitationsPage() {
       <AppHeader />
       <main className="min-h-screen bg-canvas">
         <div className="mx-auto max-w-shell px-lg pt-xl pb-sm">
+          <BackButton fallback="/" className="mb-sm" />
           <h1 className="text-headline-sm font-extrabold text-ink">Invitations</h1>
           <p className="mt-xs text-body-md text-muted">
             Shops that have invited you to view their ledger.

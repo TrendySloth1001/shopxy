@@ -24,6 +24,7 @@ import { ProfileForm } from "@/features/auth/components/profile-form";
 import { SecuritySection } from "@/features/auth/components/security-section";
 import { DangerZone } from "@/features/auth/components/danger-zone";
 import { Divider } from "@/shared/ui/divider";
+import { BackButton } from "@/shared/ui/back-button";
 
 /** Hub link descriptor. */
 interface HubLink {
@@ -134,6 +135,7 @@ export default function AccountPage() {
     <RequireAuth>
       <AppHeader />
       <main className="mx-auto max-w-content px-lg py-xxxl">
+        <BackButton fallback="/" className="mb-sm" />
         <h1 className="text-headline-md text-ink">Account</h1>
         <p className="mt-sm text-body-md text-muted">
           Manage your profile, security and data.

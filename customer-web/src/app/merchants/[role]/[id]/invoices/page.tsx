@@ -17,6 +17,7 @@ import {
 import type { InvoiceListItem, MerchantRole } from "@/features/merchant-ledger/types";
 import { formatINR } from "@/shared/format";
 import { formatDate } from "@/shared/datetime";
+import { BackButton } from "@/shared/ui/back-button";
 
 function InvoiceRowSkeleton() {
   return (
@@ -115,6 +116,7 @@ function InvoicesPageContent() {
       <div className="mx-auto max-w-content">
         {/* Header */}
         <div className="px-lg sm:px-0 mb-xxl">
+          <BackButton fallback="/merchants" className="mb-sm" />
           <h1 className="text-headline-sm font-extrabold text-ink">Invoices</h1>
           {total > 0 && !loading && (
             <p className="text-body-sm text-muted mt-xs">{total} invoice{total !== 1 ? "s" : ""}</p>

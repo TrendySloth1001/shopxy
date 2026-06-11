@@ -9,6 +9,7 @@ import { BannerSkeleton } from "./banner-skeleton";
 import { BannerHero } from "./banner-hero";
 import { BannerDealStrip } from "./banner-deal-strip";
 import { BannerProductCard } from "./banner-product-card";
+import { BackButton } from "@/shared/ui/back-button";
 
 function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
@@ -99,6 +100,9 @@ export function BannerDetailView({ bannerId }: { bannerId: number }) {
 
   return (
     <div className="min-h-screen bg-canvas">
+      <div className="px-lg pt-md pb-xs">
+        <BackButton fallback="/" />
+      </div>
       {/* Hero — bleeds to the edges of the shell */}
       <BannerHero banner={banner} productCount={products.length} />
 

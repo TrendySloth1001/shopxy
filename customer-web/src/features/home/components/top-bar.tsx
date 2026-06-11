@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, ChevronDown, MapPin, Search, Store } from "lucide-react";
+import { Bell, ChevronDown, MapPin, Search, ShoppingCart, Store } from "lucide-react";
 import { useAuth } from "@/features/auth/auth-context";
 import { useNotifications } from "@/features/notifications/notifications-context";
+import { useCart } from "@/features/cart/cart-context";
 import { Avatar } from "@/features/auth/components/avatar";
 import { SEARCH_HINTS, useRotatingHint } from "./search-bar";
 
@@ -21,6 +22,7 @@ import { SEARCH_HINTS, useRotatingHint } from "./search-bar";
 export function TopBar({ collapsed }: { collapsed: boolean }) {
   const { user, status } = useAuth();
   const { unread } = useNotifications();
+  const { count: cartCount } = useCart();
   const hint = useRotatingHint();
 
   return (
@@ -52,7 +54,20 @@ export function TopBar({ collapsed }: { collapsed: boolean }) {
         )}
 
         <Link
-          href="/dashboard/notifications"
+          href="/cart"
+          aria-label={cartCount > 0 ? `Cart (${cartCount} items)` : "Cart"}
+          className="relative flex size-9 shrink-0 items-center justify-center rounded-sm border border-hairline bg-white text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+        >
+          <ShoppingCart size={20} aria-hidden />
+          {cartCount > 0 ? (
+            <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-brand px-[3px] text-[9px] font-extrabold leading-none text-white ring-2 ring-canvas">
+              {cartCount > 99 ? "99+" : cartCount}
+            </span>
+          ) : null}
+        </Link>
+
+        <Link
+          href="/notifications"
           aria-label={unread > 0 ? `Notifications (${unread} unread)` : "Notifications"}
           className="relative flex size-9 shrink-0 items-center justify-center rounded-sm border border-hairline bg-white text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
         >

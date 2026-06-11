@@ -503,7 +503,7 @@ function IdleView({
         <h2 className="mt-lg text-title-lg font-extrabold text-ink">
           Find a product
         </h2>
-        <p className="mt-xs max-w-xs text-body-md text-muted">
+        <p className="mt-xs max-w-snug text-body-md text-muted">
           Search by name, brand, or what you need it for — the engine
           understands intent, not just exact words.
         </p>

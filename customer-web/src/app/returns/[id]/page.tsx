@@ -248,7 +248,7 @@ function ReturnDetailContent({ returnId }: { returnId: number }) {
       {/* Cancel confirm dialog */}
       {showCancelDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 px-lg">
-          <div className="w-full max-w-sm rounded-dialog bg-white p-xl">
+          <div className="w-full max-w-narrow rounded-dialog bg-white p-xl">
             <h2 className="text-title-md font-extrabold text-ink">Cancel this return?</h2>
             <p className="mt-sm text-body-sm text-muted">
               You&apos;ll need to start a new return if you change your mind.

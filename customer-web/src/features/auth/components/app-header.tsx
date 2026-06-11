@@ -288,7 +288,7 @@ export function AppHeader() {
             <>
               {/* Notifications */}
               <Link
-                href="/dashboard/notifications"
+                href="/notifications"
                 aria-label={
                   unread > 0 ? `Notifications (${unread} unread)` : "Notifications"
                 }

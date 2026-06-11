@@ -20,6 +20,7 @@ import { formatDateTime } from "@/shared/datetime";
 import { fetchWallet } from "@/features/account-extras/api";
 import { isWalletCredit } from "@/features/account-extras/types";
 import type { WalletSnapshot, WalletEntry, WalletSource } from "@/features/account-extras/types";
+import { BackButton } from "@/shared/ui/back-button";
 
 export default function WalletPage() {
   return (
@@ -55,6 +56,7 @@ function WalletBody() {
 
   return (
     <main className="mx-auto max-w-content px-lg py-xxxl">
+      <BackButton fallback="/account" className="mb-sm" />
       <div>
         <p className="text-label-md uppercase tracking-wide text-brand">Account</p>
         <h1 className="mt-xs text-headline-md text-ink">Wallet</h1>

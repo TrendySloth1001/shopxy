@@ -4,6 +4,7 @@
  * parties and vendors.
  */
 import { z } from "zod";
+import { zNum } from "@/shared/zod";
 
 // ─── Common ──────────────────────────────────────────────────────────────────
 
@@ -167,7 +168,7 @@ export const quotationLineSchema = z.object({
   quantity: z.coerce.number(),
   unitPrice: z.coerce.number(),
   taxPercent: z.coerce.number().default(0),
-  cessRate: z.number().default(0).optional(),
+  cessRate: zNum.default(0).optional(),
   discount: z.coerce.number().default(0).optional(),
   imageUrl: z.string().nullable().optional(),
   lineTotal: z.coerce.number(),

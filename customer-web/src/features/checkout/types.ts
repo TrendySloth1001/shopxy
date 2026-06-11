@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { zNum } from "@/shared/zod";
 
 // ── Place Order ───────────────────────────────────────────────────────────────
 
@@ -6,8 +7,8 @@ export const placeOrderRequestSchema = z.object({
   items: z.array(
     z.object({
       productId: z.number(),
-      quantity: z.number(),
-      expectedUnitPrice: z.number().optional(),
+      quantity: zNum,
+      expectedUnitPrice: zNum.optional(),
     }),
   ),
   note: z.string().max(500).optional(),
@@ -23,8 +24,8 @@ export const placeOrderResponseSchema = z.object({
   shopOrders: z.array(
     z.object({ id: z.number(), shopId: z.number() }),
   ),
-  couponDiscount: z.number(),
-  walletPaid: z.number(),
+  couponDiscount: zNum,
+  walletPaid: zNum,
 });
 
 export type PlaceOrderResponse = z.infer<typeof placeOrderResponseSchema>;
@@ -35,9 +36,9 @@ export const couponSchema = z.object({
   id: z.number(),
   code: z.string(),
   discountType: z.string(),
-  discountValue: z.number(),
-  maxDiscountAmount: z.number().nullable().optional(),
-  minOrderAmount: z.number().nullable().optional(),
+  discountValue: zNum,
+  maxDiscountAmount: zNum.nullable().optional(),
+  minOrderAmount: zNum.nullable().optional(),
   description: z.string().nullable().optional(),
   expiresAt: z.string().nullable().optional(),
 });
@@ -76,8 +77,8 @@ export function computeCouponDiscount(coupon: Coupon, subtotal: number): number 
 // ── Wallet snapshot ───────────────────────────────────────────────────────────
 
 export const walletSnapshotSchema = z.object({
-  balance: z.number(),
-  ledgerBalance: z.number(),
+  balance: zNum,
+  ledgerBalance: zNum,
 });
 
 export type WalletSnapshot = z.infer<typeof walletSnapshotSchema>;
@@ -88,12 +89,12 @@ export const paySessionSchema = z.object({
   intentId: z.number(),
   provider: z.literal("RAZORPAY"),
   providerOrderRef: z.string(),
-  amount: z.number(),
+  amount: zNum,
   currency: z.literal("INR"),
   clientParams: z.object({
     key: z.string(),
     order_id: z.string(),
-    amount: z.number(),
+    amount: zNum,
     currency: z.string().optional(),
   }),
   reused: z.boolean(),

@@ -6,8 +6,10 @@ import { Minus, Plus, ShoppingCart, Trash2, ShieldCheck } from "lucide-react";
 import { useCart } from "@/features/cart/cart-context";
 import { useAuth } from "@/features/auth/auth-context";
 import { AppHeader } from "@/features/auth/components/app-header";
+import { BackButton } from "@/shared/ui/back-button";
 import { formatINR } from "@/shared/format";
 import { useState } from "react";
+import { mediaSrc } from "@/shared/media";
 
 // ── Undo toast (simple transient overlay) ─────────────────────────────────────
 
@@ -82,6 +84,7 @@ export default function CartPage() {
     <>
       <AppHeader />
       <main className="mx-auto max-w-shell px-lg py-xl">
+        <BackButton fallback="/" className="mb-md" />
         {/* Header */}
         <div className="mb-xl border-b border-hairline pb-lg">
           <h1 className="text-headline-md text-ink">My Cart</h1>
@@ -126,9 +129,12 @@ export default function CartPage() {
                           {product.images[0] ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
-                              src={`/api/media/${product.images[0].url.replace(/^\//, "")}`}
+                              src={mediaSrc(product.images[0].url) ?? ""}
                               alt={product.name}
                               className="h-full w-full object-cover"
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).style.display = "none";
+                              }}
                             />
                           ) : (
                             <div className="flex h-full w-full items-center justify-center">
@@ -384,7 +390,7 @@ function EmptyCart() {
         <ShoppingCart className="h-12 w-12 text-muted" />
       </div>
       <h2 className="text-title-md font-extrabold text-ink">Your cart is empty</h2>
-      <p className="mt-xs max-w-xs text-body-sm text-muted">
+      <p className="mt-xs max-w-snug text-body-sm text-muted">
         Browse the marketplace and add items to start checkout.
       </p>
       <Link

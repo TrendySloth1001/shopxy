@@ -8,6 +8,7 @@ import type { Spotlight } from "@/features/catalog/types";
 import { ImageBox } from "@/features/home/components/image-box";
 import { resolveImageUrl, parseColor } from "@/features/home/format";
 import { color as tokens } from "@/shared/ui/tokens";
+import { BackButton } from "@/shared/ui/back-button";
 
 /**
  * Full-page list of all brand spotlights — port of the Flutter SpotlightsListPage.
@@ -40,6 +41,7 @@ export function SpotlightsListView() {
 
   return (
     <div className="mx-auto max-w-shell px-lg py-lg">
+      <BackButton fallback="/" className="mb-sm" />
       <h1 className="mb-lg text-headline-sm text-ink">Brands in Spotlight</h1>
 
       {loading ? (
@@ -74,7 +76,7 @@ export function SpotlightsListView() {
           </Link>
         </div>
       ) : (
-        <div className="flex flex-col gap-md">
+        <div className="grid grid-cols-1 gap-md lg:grid-cols-2">
           {spotlights.map((s) => (
             <SpotlightCard key={s.id} spotlight={s} />
           ))}
@@ -98,8 +100,8 @@ function SpotlightCard({ spotlight }: { spotlight: Spotlight }) {
       className="relative w-full overflow-hidden rounded-lg"
       style={{ backgroundColor: bgColor }}
     >
-      {/* 16:9 card */}
-      <div className="aspect-video w-full">
+      {/* ~21:6 banner — caps at 240px on desktop */}
+      <div className="w-full" style={{ aspectRatio: "21/6", maxHeight: "240px" }}>
         {imageUrl ? (
           <ImageBox url={imageUrl} alt={brandName} fit="cover" />
         ) : (

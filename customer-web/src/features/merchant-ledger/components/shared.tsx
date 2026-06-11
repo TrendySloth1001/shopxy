@@ -70,7 +70,7 @@ export function Snackbar({ snack }: { snack: SnackMsg | null }) {
     <div
       role="status"
       aria-live="polite"
-      className={`fixed bottom-xl left-1/2 z-50 -translate-x-1/2 rounded-lg ${bg} px-lg py-sm text-label-md font-bold text-white shadow-snackbar max-w-sm text-center pointer-events-none`}
+      className={`fixed bottom-xl left-1/2 z-50 -translate-x-1/2 rounded-lg ${bg} px-lg py-sm text-label-md font-bold text-white shadow-snackbar max-w-narrow text-center pointer-events-none`}
     >
       {snack.message}
     </div>
@@ -99,7 +99,7 @@ export function InvoiceEmptyState() {
     <div className="flex flex-col items-center justify-center py-huge px-lg text-center gap-md">
       <ReceiptText size={48} className="text-muted" />
       <p className="text-title-sm font-extrabold text-ink">No invoices yet</p>
-      <p className="text-body-md text-muted max-w-xs">
+      <p className="text-body-md text-muted max-w-snug">
         Invoices will appear here once the shop issues one to your account.
       </p>
     </div>
@@ -111,7 +111,7 @@ export function QuotationEmptyState({ onRequest }: { onRequest?: () => void }) {
     <div className="flex flex-col items-center justify-center py-huge px-lg text-center gap-md">
       <FileQuestion size={48} className="text-muted" />
       <p className="text-title-sm font-extrabold text-ink">No quotations yet</p>
-      <p className="text-body-md text-muted max-w-xs">
+      <p className="text-body-md text-muted max-w-snug">
         Request a quote from the shop catalogue to get started.
       </p>
       {onRequest && (
