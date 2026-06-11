@@ -108,6 +108,8 @@ export function ProductForm({ product }: { product?: Product }) {
   );
 
   const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesError, setCategoriesError] = useState(false);
+  const [categoriesNonce, setCategoriesNonce] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -117,15 +119,18 @@ export function ProductForm({ product }: { product?: Product }) {
     void (async () => {
       try {
         const cats = await listCategories();
-        if (active) setCategories(cats);
+        if (active) {
+          setCategories(cats);
+          setCategoriesError(false);
+        }
       } catch {
-        /* select just won't populate */
+        if (active) setCategoriesError(true);
       }
     })();
     return () => {
       active = false;
     };
-  }, []);
+  }, [categoriesNonce]);
 
   function validate(): boolean {
     const e: Record<string, string> = {};
@@ -134,8 +139,15 @@ export function ProductForm({ product }: { product?: Product }) {
     if (num(mrp) === undefined || num(mrp)! <= 0) e.mrp = "Enter a valid MRP";
     if (num(sellingPrice) === undefined || num(sellingPrice)! <= 0)
       e.sellingPrice = "Enter a valid selling price";
-    if (purchasePrice && num(purchasePrice) === undefined)
+    if (purchasePrice && (num(purchasePrice) === undefined || num(purchasePrice)! < 0))
       e.purchasePrice = "Enter a valid price";
+    const tax = num(taxPercent);
+    if (taxPercent && (tax === undefined || tax < 0 || tax > 100))
+      e.taxPercent = "Tax % must be between 0 and 100";
+    if (!isEdit && stockQuantity && (num(stockQuantity) === undefined || num(stockQuantity)! < 0))
+      e.stockQuantity = "Stock can't be negative";
+    if (lowStockThreshold && (num(lowStockThreshold) === undefined || num(lowStockThreshold)! < 0))
+      e.lowStockThreshold = "Threshold can't be negative";
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -288,31 +300,49 @@ export function ProductForm({ product }: { product?: Product }) {
 
         {/* Pricing */}
         <div className="mt-lg grid gap-lg sm:grid-cols-3">
-          <NumberField label="MRP" value={mrp} onChange={setMrp} error={errors.mrp} />
+          <NumberField label="MRP" value={mrp} onChange={setMrp} error={errors.mrp} min={0} step={0.01} />
           <NumberField
             label="Selling price"
             value={sellingPrice}
             onChange={setSellingPrice}
             error={errors.sellingPrice}
+            min={0}
+            step={0.01}
           />
           <NumberField
             label="Purchase price"
             value={purchasePrice}
             onChange={setPurchasePrice}
             error={errors.purchasePrice}
+            min={0}
+            step={0.01}
           />
-          <NumberField label="Tax %" value={taxPercent} onChange={setTaxPercent} />
+          <NumberField
+            label="Tax %"
+            value={taxPercent}
+            onChange={setTaxPercent}
+            error={errors.taxPercent}
+            min={0}
+            max={100}
+            step={0.01}
+          />
           {!isEdit ? (
             <NumberField
               label="Opening stock"
               value={stockQuantity}
               onChange={setStockQuantity}
+              error={errors.stockQuantity}
+              min={0}
+              step={1}
             />
           ) : null}
           <NumberField
             label="Low-stock threshold"
             value={lowStockThreshold}
             onChange={setLowStockThreshold}
+            error={errors.lowStockThreshold}
+            min={0}
+            step={1}
           />
         </div>
 
@@ -324,15 +354,29 @@ export function ProductForm({ product }: { product?: Product }) {
             onChange={setUnit}
             options={UNITS.map((u) => ({ value: u, label: unitLabel(u) }))}
           />
-          <SelectField
-            label="Category"
-            value={categoryId}
-            onChange={setCategoryId}
-            options={[
-              { value: "", label: "No category" },
-              ...categories.map((c) => ({ value: String(c.id), label: c.name })),
-            ]}
-          />
+          <div className="flex flex-col gap-xs">
+            <SelectField
+              label="Category"
+              value={categoryId}
+              onChange={setCategoryId}
+              options={[
+                { value: "", label: "No category" },
+                ...categories.map((c) => ({ value: String(c.id), label: c.name })),
+              ]}
+            />
+            {categoriesError ? (
+              <p className="text-body-sm text-error">
+                Couldn&rsquo;t load categories —{" "}
+                <button
+                  type="button"
+                  onClick={() => setCategoriesNonce((n) => n + 1)}
+                  className="underline underline-offset-2 hover:text-ink"
+                >
+                  retry
+                </button>
+              </p>
+            ) : null}
+          </div>
         </div>
 
         {isEdit ? (

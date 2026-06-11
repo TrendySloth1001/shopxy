@@ -76,6 +76,17 @@ export default function InvoiceDetailPage() {
         setInvoice(inv);
         setPayments(pays);
         setError(null);
+        // One-shot confirm-failure message handed over by the editor.
+        try {
+          const key = `invoice-confirm-error-${id}`;
+          const pendingMsg = sessionStorage.getItem(key);
+          if (pendingMsg) {
+            sessionStorage.removeItem(key);
+            setActionError(pendingMsg);
+          }
+        } catch {
+          /* storage unavailable — nothing to surface */
+        }
       } catch (e) {
         if (active) setError(e instanceof Error ? e.message : "Could not load the invoice.");
       } finally {

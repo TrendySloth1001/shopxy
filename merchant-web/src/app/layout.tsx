@@ -12,7 +12,10 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "ShopXY — Merchant",
+  title: {
+    default: "ShopXY — Merchant",
+    template: "%s · ShopXY Merchant",
+  },
   description: "Manage inventory, invoices, parties and vendors.",
 };
 

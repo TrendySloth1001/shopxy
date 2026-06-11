@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowDown, ArrowLeft, ArrowUp, ChevronRight, Plus, Trash2 } from "lucide-react";
@@ -36,8 +36,25 @@ export default function CarouselEditorPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [savingMeta, setSavingMeta] = useState(false);
+  const [showSaved, setShowSaved] = useState(false);
+  const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
+
+  // Clear any pending "Saved" hide timer on unmount.
+  useEffect(
+    () => () => {
+      if (savedTimer.current) clearTimeout(savedTimer.current);
+    },
+    [],
+  );
+
+  /** Flash a brief "Saved" confirmation after a successful autosave. */
+  function flashSaved() {
+    setShowSaved(true);
+    if (savedTimer.current) clearTimeout(savedTimer.current);
+    savedTimer.current = setTimeout(() => setShowSaved(false), 2000);
+  }
 
   useEffect(() => {
     let active = true;
@@ -74,6 +91,7 @@ export default function CarouselEditorPage() {
     try {
       const updated = await updateCarousel(carouselId, patch);
       setCarousel(updated);
+      flashSaved();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save the carousel.");
     } finally {
@@ -142,7 +160,14 @@ export default function CarouselEditorPage() {
         <div>
           <h1 className="text-headline-md text-ink">{carousel.name}</h1>
           <p className="mt-xs text-body-md text-muted">
-            {PLACEMENT_LABELS[carousel.placement]} · {savingMeta ? "Saving…" : "Changes save automatically"}
+            {PLACEMENT_LABELS[carousel.placement]} ·{" "}
+            {savingMeta ? (
+              "Saving…"
+            ) : showSaved ? (
+              <span className="text-success">Saved</span>
+            ) : (
+              "Changes save automatically"
+            )}
           </p>
         </div>
         <button

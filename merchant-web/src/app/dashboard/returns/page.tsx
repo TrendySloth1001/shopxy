@@ -97,6 +97,12 @@ export default function ReturnsPage() {
               <Undo2 size={22} />
             </span>
             <p className="text-body-md text-muted">No returns in this view.</p>
+            <Link
+              href="/dashboard/orders"
+              className="inline-flex h-10 items-center rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
+            >
+              View orders
+            </Link>
           </div>
         ) : (
           rows.map((r) => <ReturnRow key={r.id} ret={r} />)

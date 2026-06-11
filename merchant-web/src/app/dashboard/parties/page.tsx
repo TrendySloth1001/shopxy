@@ -150,8 +150,17 @@ export default function PartiesPage() {
       {deleteTarget ? (
         <Modal title={`Delete ${deleteTarget.name}?`} onClose={() => setDeleteTarget(null)}>
           <p className="text-body-md text-muted">
-            Removes the customer. If they have invoices or challans they&rsquo;re deactivated instead, so past
-            records stay intact.
+            {partyInvoiceCount(deleteTarget) + partyChallanCount(deleteTarget) > 0 ? (
+              <>
+                {deleteTarget.name} has {partyInvoiceCount(deleteTarget)}{" "}
+                {partyInvoiceCount(deleteTarget) === 1 ? "invoice" : "invoices"} and{" "}
+                {partyChallanCount(deleteTarget)}{" "}
+                {partyChallanCount(deleteTarget) === 1 ? "challan" : "challans"}, so
+                they&rsquo;ll be deactivated instead of deleted — past records stay intact.
+              </>
+            ) : (
+              <>Removes the customer permanently. They have no invoices or challans.</>
+            )}
           </p>
           <ModalActions
             busy={deleteBusy}
