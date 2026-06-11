@@ -38,27 +38,36 @@ export function AcceptInviteForm({ token }: { token: string }) {
     if (!token) return;
     let active = true;
     void (async () => {
-      const res = await fetch(
-        `/api/auth/team-invite/${encodeURIComponent(token)}`,
-        { cache: "no-store" },
-      );
-      const body = (await res.json().catch(() => ({}))) as {
-        email?: string;
-        roleLabel?: string;
-        shopName?: string;
-        error?: string;
-      };
-      if (!active) return;
-      if (res.ok && body.email) {
-        setPreview({
-          email: body.email,
-          roleLabel: body.roleLabel ?? "Staff",
-          shopName: body.shopName ?? "a shop",
-        });
-      } else {
-        setPreviewError(body.error ?? "This invitation is not valid.");
+      try {
+        const res = await fetch(
+          `/api/auth/team-invite/${encodeURIComponent(token)}`,
+          { cache: "no-store" },
+        );
+        const body = (await res.json().catch(() => ({}))) as {
+          email?: string;
+          roleLabel?: string;
+          shopName?: string;
+          error?: string;
+        };
+        if (!active) return;
+        if (res.ok && body.email) {
+          setPreview({
+            email: body.email,
+            roleLabel: body.roleLabel ?? "Staff",
+            shopName: body.shopName ?? "a shop",
+          });
+        } else {
+          setPreviewError(body.error ?? "This invitation is not valid.");
+        }
+      } catch {
+        if (active) {
+          setPreviewError(
+            "Could not check this invitation — check your connection and reload the page.",
+          );
+        }
+      } finally {
+        if (active) setLoading(false);
       }
-      setLoading(false);
     })();
     return () => {
       active = false;

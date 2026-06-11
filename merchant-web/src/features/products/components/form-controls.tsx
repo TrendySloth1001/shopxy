@@ -14,6 +14,9 @@ export function TextField({
   helper,
   placeholder,
   type = "text",
+  min,
+  max,
+  step,
 }: {
   label: string;
   value: string;
@@ -22,6 +25,9 @@ export function TextField({
   helper?: string;
   placeholder?: string;
   type?: string;
+  min?: number;
+  max?: number;
+  step?: number;
 }) {
   const id = useId();
   return (
@@ -34,6 +40,9 @@ export function TextField({
         type={type}
         value={value}
         placeholder={placeholder}
+        min={min}
+        max={max}
+        step={step}
         onChange={(e) => onChange(e.target.value)}
         aria-invalid={error ? true : undefined}
         className={`${inputClass} ${error ? "border-error" : "border-hairline"}`}

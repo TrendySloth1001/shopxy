@@ -8,6 +8,11 @@ import { StringListEditor } from "./string-list-editor";
 const cell =
   "h-9 rounded-input border border-hairline bg-white px-sm text-body-sm text-ink outline-none placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft";
 
+/** Parse a numeric input, clamping negatives to 0. */
+function nonNegative(raw: string): number {
+  return Math.max(0, Number(raw) || 0);
+}
+
 function emptyVariant(): ProductVariant {
   return {
     sku: "",
@@ -63,6 +68,16 @@ export function VariantsEditor({
   }
 
   const namedAxes = axes.filter((a) => a.name.trim());
+
+  // SKUs must be unique — flag duplicates inline before the backend rejects them.
+  const skuCounts = new Map<string, number>();
+  for (const v of variants) {
+    const s = v.sku.trim().toLowerCase();
+    if (s) skuCounts.set(s, (skuCounts.get(s) ?? 0) + 1);
+  }
+  const duplicateSkus = new Set(
+    [...skuCounts].filter(([, count]) => count > 1).map(([s]) => s),
+  );
 
   return (
     <div className="flex flex-col gap-lg">
@@ -130,16 +145,19 @@ export function VariantsEditor({
                   ))}
                 </select>
               ))}
-              <input className={`${cell} w-28`} placeholder="SKU" value={v.sku}
+              <input
+                className={`${cell} w-28 ${duplicateSkus.has(v.sku.trim().toLowerCase()) ? "border-error" : ""}`}
+                placeholder="SKU" value={v.sku}
+                aria-invalid={duplicateSkus.has(v.sku.trim().toLowerCase()) || undefined}
                 onChange={(e) => patchVariant(vi, { sku: e.target.value })} />
-              <input className={`${cell} w-20`} type="number" placeholder="MRP" value={String(v.mrp)}
-                onChange={(e) => patchVariant(vi, { mrp: Number(e.target.value) || 0 })} />
-              <input className={`${cell} w-20`} type="number" placeholder="Sell" value={String(v.sellingPrice)}
-                onChange={(e) => patchVariant(vi, { sellingPrice: Number(e.target.value) || 0 })} />
-              <input className={`${cell} w-20`} type="number" placeholder="Cost" value={String(v.purchasePrice)}
-                onChange={(e) => patchVariant(vi, { purchasePrice: Number(e.target.value) || 0 })} />
-              <input className={`${cell} w-16`} type="number" placeholder="Qty" value={String(v.stockQuantity)}
-                onChange={(e) => patchVariant(vi, { stockQuantity: Number(e.target.value) || 0 })} />
+              <input className={`${cell} w-20`} type="number" min={0} step={0.01} placeholder="MRP" value={String(v.mrp)}
+                onChange={(e) => patchVariant(vi, { mrp: nonNegative(e.target.value) })} />
+              <input className={`${cell} w-20`} type="number" min={0} step={0.01} placeholder="Sell" value={String(v.sellingPrice)}
+                onChange={(e) => patchVariant(vi, { sellingPrice: nonNegative(e.target.value) })} />
+              <input className={`${cell} w-20`} type="number" min={0} step={0.01} placeholder="Cost" value={String(v.purchasePrice)}
+                onChange={(e) => patchVariant(vi, { purchasePrice: nonNegative(e.target.value) })} />
+              <input className={`${cell} w-16`} type="number" min={0} step={1} placeholder="Qty" value={String(v.stockQuantity)}
+                onChange={(e) => patchVariant(vi, { stockQuantity: Math.round(nonNegative(e.target.value)) })} />
               <button type="button" aria-label="Remove variant"
                 onClick={() => onVariants(variants.filter((_, idx) => idx !== vi))}
                 className="rounded-md p-sm text-muted hover:bg-surface-tint hover:text-ink">
@@ -147,6 +165,11 @@ export function VariantsEditor({
               </button>
             </div>
           ))}
+          {duplicateSkus.size > 0 ? (
+            <p className="text-body-sm text-error">
+              Duplicate SKU{duplicateSkus.size === 1 ? "" : "s"}: {[...duplicateSkus].join(", ")} — each variant needs a unique SKU.
+            </p>
+          ) : null}
           <MiniButton onClick={() => onVariants([...variants, emptyVariant()])}>
             <Plus size={16} /> Add variant
           </MiniButton>

@@ -167,6 +167,11 @@ export default function InvoicesPage() {
       ) : null}
 
       <div className="mt-lg">
+        {!loading && rows.length > 0 ? (
+          <p className="mb-sm text-body-sm text-muted">
+            {rows.length} {rows.length === 1 ? "invoice" : "invoices"}
+          </p>
+        ) : null}
         {loading ? (
           <ListRowsSkeleton />
         ) : rows.length === 0 ? (

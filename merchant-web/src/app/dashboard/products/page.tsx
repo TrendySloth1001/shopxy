@@ -64,6 +64,8 @@ function ProductsListInner() {
   const [error, setError] = useState<string | null>(null);
   const [nonce, setNonce] = useState(0);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [togglingId, setTogglingId] = useState<number | null>(null);
+  const [toggleError, setToggleError] = useState<string | null>(null);
 
   // Debounce the search box (setState in a timeout — not synchronous).
   useEffect(() => {
@@ -149,12 +151,18 @@ function ProductsListInner() {
   }, [categories]);
 
   async function togglePublish(p: Product) {
+    if (togglingId != null) return;
+    setTogglingId(p.id);
+    setToggleError(null);
     try {
       await setPublished(p.id, !p.isPublished);
-      reload();
-    } catch {
-      /* surface later via a toast; reload keeps state honest */
-      reload();
+    } catch (e) {
+      setToggleError(
+        e instanceof Error ? e.message : `Could not update "${p.name}".`,
+      );
+    } finally {
+      setTogglingId(null);
+      reload(); // refetch either way so the row reflects server truth
     }
   }
 
@@ -243,6 +251,12 @@ function ProductsListInner() {
 
       <Divider className="mt-lg" />
 
+      {toggleError ? (
+        <p className="mt-md rounded-md bg-error-soft px-md py-sm text-body-sm text-error">
+          {toggleError}
+        </p>
+      ) : null}
+
       {/* List */}
       {loading && !data ? (
         <ListSkeleton />
@@ -269,6 +283,7 @@ function ProductsListInner() {
               product={p}
               categoryName={categoryName(p)}
               canEdit={canEdit}
+              toggling={togglingId === p.id}
               onTogglePublish={() => togglePublish(p)}
             />
           ))}
@@ -348,11 +363,13 @@ function ProductRow({
   product,
   categoryName,
   canEdit,
+  toggling,
   onTogglePublish,
 }: {
   product: Product;
   categoryName: string;
   canEdit: boolean;
+  toggling: boolean;
   onTogglePublish: () => void;
 }) {
   const showStrike = product.mrp > product.sellingPrice;
@@ -386,7 +403,8 @@ function ProductRow({
       <button
         type="button"
         onClick={onTogglePublish}
-        disabled={!canEdit}
+        disabled={!canEdit || toggling}
+        aria-busy={toggling || undefined}
         aria-pressed={product.isPublished}
         title={
           canEdit
@@ -396,12 +414,14 @@ function ProductRow({
             : "You don't have access. Ask the shop owner."
         }
         className={`shrink-0 rounded-full px-sm py-px text-body-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:text-disabled disabled:hover:bg-transparent ${
+          toggling ? "opacity-60" : ""
+        } ${
           product.isPublished
             ? "bg-brand-soft text-brand-strong"
             : "bg-surface-tint text-muted hover:text-ink"
         }`}
       >
-        {product.isPublished ? "Published" : "Draft"}
+        {toggling ? "Saving…" : product.isPublished ? "Published" : "Draft"}
       </button>
     </li>
   );

@@ -128,6 +128,12 @@ export function InvoiceEditor({
   function buildPayload(confirm: boolean): InvoiceWrite | string {
     if (lines.length === 0) return "Add at least one item.";
     if (type === "PURCHASE" && !vendor) return "Select a vendor for a purchase invoice.";
+    if (lines.some((l) => l.quantity <= 0)) return "Every item needs a quantity above zero.";
+    if (lines.some((l) => l.unitPrice < 0)) return "Item rates can't be negative.";
+    if (lines.some((l) => l.taxPercent < 0 || l.taxPercent > 100)) {
+      return "GST % must be between 0 and 100.";
+    }
+    if ((Number(discount) || 0) < 0) return "The discount can't be negative.";
     const payload: InvoiceWrite = {
       type,
       documentType: type === "SALE" ? documentType : "TAX_INVOICE",
@@ -167,6 +173,19 @@ export function InvoiceEditor({
         router.push(`/dashboard/invoices/${existing.id}`);
       } else {
         const result = await createInvoice(payload);
+        if (confirm && !result.confirmed) {
+          // The invoice saved as a draft but auto-confirm failed — hand the
+          // message to the detail page (we navigate away, so local state dies).
+          try {
+            sessionStorage.setItem(
+              `invoice-confirm-error-${result.invoice.id}`,
+              result.confirmError ??
+                "The invoice was saved as a draft but could not be confirmed.",
+            );
+          } catch {
+            /* storage unavailable — the draft badge still tells the story */
+          }
+        }
         router.push(`/dashboard/invoices/${result.invoice.id}`);
       }
       router.refresh();
