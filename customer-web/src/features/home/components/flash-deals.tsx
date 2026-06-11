@@ -6,7 +6,6 @@ import { ChevronRight, Zap } from "lucide-react";
 import type { FlashDeal } from "../types";
 import { recordTap } from "../tracking";
 import { productHref } from "./product-tile";
-import { searchHref } from "./product-carousel";
 import { ImageBox } from "./image-box";
 
 /** "HH:MM:SS" remaining until `endAtMs`; clamps to 00:00:00 once elapsed. */
@@ -44,7 +43,7 @@ export function FlashDeals({ deals }: { deals: FlashDeal[] }) {
           Ends in {countdown(soonest, now)}
         </span>
         <Link
-          href={searchHref("flash deals")}
+          href="/deals"
           className="ml-auto flex items-center gap-[2px] text-[12px] font-bold text-flash-accent focus-visible:outline-none focus-visible:underline"
         >
           See all <ChevronRight size={14} aria-hidden />

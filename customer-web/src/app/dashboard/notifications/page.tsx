@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   Bell,
   CheckCheck,
+  ClipboardList,
   IndianRupee,
   Mail,
   Package,
@@ -40,6 +41,8 @@ function accentFor(kind: string): { Icon: LucideIcon; cls: string } {
   if (kind.startsWith("BACK_IN_STOCK"))
     return { Icon: PackageCheck, cls: "bg-accent-rose-soft text-accent-rose" };
   if (kind.startsWith("INVITE")) return { Icon: Mail, cls: "bg-brand-soft text-brand-strong" };
+  if (kind.startsWith("CAUTION")) return { Icon: IndianRupee, cls: "bg-accent-amber-soft text-accent-amber" };
+  if (kind.startsWith("QUOTATION")) return { Icon: ClipboardList, cls: "bg-accent-teal-soft text-accent-teal" };
   if (kind.startsWith("PAYMENT") || kind.startsWith("REFUND"))
     return { Icon: IndianRupee, cls: "bg-success-soft text-success" };
   if (kind.startsWith("RETURN")) return { Icon: Undo2, cls: "bg-accent-amber-soft text-accent-amber" };
@@ -47,19 +50,66 @@ function accentFor(kind: string): { Icon: LucideIcon; cls: string } {
   return { Icon: Bell, cls: "bg-accent-indigo-soft text-accent-indigo" };
 }
 
-/** Where tapping a notification should go, or null for informational ones. */
-function hrefFor(kind: string): string | null {
-  if (kind === "SECURITY") return "/account";
-  if (
-    kind.startsWith("ORDER") ||
-    kind.startsWith("PURCHASE_REQUEST") ||
-    kind.startsWith("PAYMENT") ||
-    kind.startsWith("REFUND") ||
-    kind.startsWith("RETURN") ||
-    kind.startsWith("INVITE")
-  )
-    return "/dashboard";
-  return null;
+/**
+ * Where tapping a notification should go, or null for informational ones.
+ * Uses the structured `data` payload for precise deep links.
+ */
+function hrefFor(kind: string, data: Record<string, unknown> | null | undefined): string | null {
+  const str = (key: string) => {
+    const v = data?.[key];
+    return typeof v === "string" || typeof v === "number" ? String(v) : null;
+  };
+
+  switch (kind) {
+    // Invitations ─────────────────────────────────────────────────────────────
+    case "INVITE_RECEIVED":
+    case "INVITE_ACCEPTED":
+    case "INVITE_DECLINED":
+    case "INVITE_CANCELLED":
+      return "/invitations";
+
+    // Caution requests ────────────────────────────────────────────────────────
+    case "CAUTION_REQUEST_RECEIVED":
+    case "CAUTION_REQUEST_APPROVED":
+    case "CAUTION_REQUEST_REJECTED": {
+      const partyId = str("partyId");
+      return partyId ? `/merchants/party/${partyId}/caution` : "/merchants";
+    }
+
+    // Quotations ──────────────────────────────────────────────────────────────
+    case "QUOTATION_RECEIVED":
+    case "QUOTATION_ACCEPTED":
+    case "QUOTATION_DECLINED":
+    case "QUOTATION_REQUESTED":
+    case "QUOTATION_REQUEST_DECLINED": {
+      const partyId = str("partyId");
+      const quotationId = str("quotationId");
+      if (partyId && quotationId) return `/merchants/party/${partyId}/quotations/${quotationId}`;
+      if (partyId) return `/merchants/party/${partyId}/quotations`;
+      return "/merchants";
+    }
+
+    // Orders / payments / returns ─────────────────────────────────────────────
+    case "SECURITY":
+      return "/account";
+
+    default:
+      if (kind.startsWith("ORDER") || kind.startsWith("PURCHASE_REQUEST"))
+        return str("orderId") ? `/orders/${str("orderId")}` : "/orders";
+      if (kind.startsWith("PAYMENT") || kind.startsWith("REFUND"))
+        return str("orderId") ? `/orders/${str("orderId")}` : "/orders";
+      if (kind.startsWith("RETURN"))
+        return str("returnId") ? `/returns/${str("returnId")}` : "/returns";
+      if (kind.startsWith("FLASH_DEAL") || kind.startsWith("DEAL"))
+        return "/deals";
+      if (kind.startsWith("PRICE_DROP") || kind.startsWith("WISHLIST"))
+        return str("productId") ? `/p/${str("productId")}` : "/wishlist";
+      if (kind.startsWith("BACK_IN_STOCK"))
+        return str("productId") ? `/p/${str("productId")}` : null;
+      if (kind.startsWith("INVITE"))
+        return "/invitations";
+      return null;
+  }
 }
 
 export default function NotificationsPage() {
@@ -120,7 +170,7 @@ function NotificationsBody() {
         refresh();
       }
     }
-    const href = hrefFor(n.kind);
+    const href = hrefFor(n.kind, n.data);
     if (href) router.push(href);
   }
 

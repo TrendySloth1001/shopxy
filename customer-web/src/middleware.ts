@@ -7,7 +7,7 @@ import { NextResponse, type NextRequest } from "next/server";
  * `/api/auth/me` (and ultimately the backend's requireAuth) once the page
  * loads — see RequireAuth.
  */
-const PROTECTED = ["/dashboard", "/account"];
+const PROTECTED = ["/dashboard", "/account", "/orders", "/returns"];
 const AUTH_PAGES = ["/login", "/register"];
 
 export function middleware(req: NextRequest) {
@@ -32,5 +32,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/account/:path*", "/login", "/register"],
+  matcher: ["/dashboard/:path*", "/account/:path*", "/orders/:path*", "/returns/:path*", "/login", "/register"],
 };

@@ -8,6 +8,20 @@ const dateTimeFmt = new Intl.DateTimeFormat("en-IN", {
   minute: "2-digit",
 });
 
+const dateFmt = new Intl.DateTimeFormat("en-IN", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+});
+
+/** "5 Jun 2026" (date only) — null/invalid → "—". */
+export function formatDate(iso?: string | null): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return dateFmt.format(d);
+}
+
 /** "5 Jun 2026, 2:30 pm" — null/invalid → "—". */
 export function formatDateTime(iso?: string | null): string {
   if (!iso) return "—";

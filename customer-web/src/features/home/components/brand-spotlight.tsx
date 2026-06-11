@@ -4,7 +4,7 @@ import type { BrandSpotlight } from "../types";
 import { ImageBox } from "./image-box";
 import { searchHref } from "./product-carousel";
 
-/** Tap destination for a spotlight — the shop profile page is future work. */
+/** Tap destination for a spotlight card. */
 function spotlightHref(s: BrandSpotlight): string {
   if (s.shopSlug) return `/shop/${s.shopSlug}`;
   return searchHref(s.brand || s.subtitle || "");
@@ -22,7 +22,7 @@ export function BrandSpotlightCard({ spotlight }: { spotlight: BrandSpotlight })
       <div className="flex items-center justify-between px-lg">
         <h2 className="text-[17px] font-extrabold text-ink">Brands in Spotlight</h2>
         <Link
-          href={searchHref(s.brand || "brands")}
+          href="/spotlights"
           className="flex items-center gap-[2px] text-[12px] font-bold text-brand focus-visible:outline-none focus-visible:underline"
         >
           View all <ChevronRight size={16} aria-hidden />

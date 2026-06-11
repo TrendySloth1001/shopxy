@@ -2,9 +2,9 @@ import Link from "next/link";
 import type { CategoryPuck } from "../types";
 import { ImageBox } from "./image-box";
 
-/** Category destination — the category listing page is future work (see PENDING). */
+/** Category destination — canonical category products route. */
 function categoryHref(p: CategoryPuck): string {
-  return p.slug ? `/category/${p.slug}` : "/search";
+  return p.slug ? `/c/${p.slug}` : "/categories";
 }
 
 /**
