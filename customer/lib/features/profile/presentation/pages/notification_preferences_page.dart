@@ -5,6 +5,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/widgets/app_bar.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
+import 'package:shopxy_customer/shared/format/friendly_error.dart';
 
 /// Per-category notification preferences. Each row toggles a
 /// `notify*` flag on the user row; the channel rows at the bottom
@@ -46,7 +47,7 @@ class _NotificationPreferencesPageState
       if (!mounted) return;
       showAppSnackbar(
         context,
-        message: e.toString().replaceFirst('Exception: ', ''),
+        message: friendlyError(e),
         tone: AppSnackbarTone.error,
       );
     } finally {

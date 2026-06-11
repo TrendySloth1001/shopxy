@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import 'package:shopxy_customer/features/catalog/presentation/providers/cart_provider.dart';
@@ -12,11 +11,13 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/widgets/app_bar.dart';
 import 'package:shopxy_customer/shared/widgets/app_button.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
+import 'package:shopxy_customer/shared/format/app_format.dart';
+import 'package:shopxy_customer/shared/format/friendly_error.dart';
 
 /// Indian-grouped rupee formatter — "₹3,84,580.00". Shared by this
 /// page and the home top-bar badge so the two read identically.
 final _rupee =
-    NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 2);
+    AppFormat.inrPrecise;
 
 String formatPendingAmount(double v) => _rupee.format(v);
 
@@ -50,25 +51,33 @@ class _PendingPaymentsPageState extends State<PendingPaymentsPage> {
         clientParams: checkout.clientParams,
         description: 'Order #${order.id}',
       );
+      String? syncedStatus;
       if (result.isSuccess) {
         // Webhook can lag (and can't reach localhost) — confirm now so
         // the order flips to PAID immediately. Best-effort.
         try {
-          await cart.syncOrderPayment(order.id);
+          syncedStatus = await cart.syncOrderPayment(order.id);
         } catch (_) {
           /* non-fatal — the reload below still reflects server state */
         }
       }
       if (!mounted) return;
       if (result.isSuccess) {
+        final confirmed = syncedStatus == 'PAID';
         showAppSnackbar(context,
-            message: 'Payment successful', tone: AppSnackbarTone.success);
+            message: confirmed
+                ? 'Payment successful'
+                : 'Payment received — being confirmed. This can take a minute.',
+            tone: confirmed ? AppSnackbarTone.success : AppSnackbarTone.info);
       } else if (result.outcome == RazorpayOutcome.dismissed) {
         showAppSnackbar(context,
-            message: 'Payment cancelled', tone: AppSnackbarTone.error);
+            message:
+                'Payment not completed — nothing was charged. Pay whenever you\'re ready.',
+            tone: AppSnackbarTone.info);
       } else {
         showAppSnackbar(context,
-            message: result.message ?? 'Payment failed',
+            message:
+                '${result.message ?? 'Payment failed'} — you can retry from here.',
             tone: AppSnackbarTone.error);
       }
     } catch (e) {
@@ -80,7 +89,7 @@ class _PendingPaymentsPageState extends State<PendingPaymentsPage> {
           context,
           message: alreadyPaid
               ? 'This order is already paid'
-              : 'Could not start payment: ${msg.replaceFirst('Exception: ', '')}',
+              : 'Could not start payment: ${friendlyError(e)}',
           tone: alreadyPaid ? AppSnackbarTone.info : AppSnackbarTone.error,
         );
       }

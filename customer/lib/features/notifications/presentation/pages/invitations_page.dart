@@ -7,6 +7,7 @@ import 'package:shopxy_customer/features/shops/presentation/providers/shops_prov
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
+import 'package:shopxy_customer/shared/format/friendly_error.dart';
 
 /// Dedicated screen for invitations addressed to the current user. Two
 /// tabs — Pending (actionable) and History — both read from
@@ -353,7 +354,7 @@ class _ActionableInviteRowState extends State<_ActionableInviteRow> {
       if (!mounted) return;
       messenger.showSnackBar(
         SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          content: Text(friendlyError(e)),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
         ),

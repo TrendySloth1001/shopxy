@@ -10,6 +10,7 @@ import 'package:shopxy_customer/shared/constants/app_strings.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_divider.dart';
+import 'package:shopxy_customer/shared/format/app_format.dart';
 
 /// The per-shop landing for a customer. Every record the shop keeps for them —
 /// invoices, caution deposit, quotations — is a first-class section here, so
@@ -41,7 +42,7 @@ class _ShopSectionsPageState extends State<ShopSectionsPage> {
   }
 
   String _moneyShort(double v) =>
-      '${AppStrings.currencySymbol}${v.toStringAsFixed(v == v.roundToDouble() ? 0 : 2)}';
+      AppFormat.rupeesSmart(v);
 
   @override
   Widget build(BuildContext context) {

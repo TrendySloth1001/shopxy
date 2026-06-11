@@ -15,6 +15,7 @@ import 'package:shopxy_customer/shared/widgets/app_bar.dart';
 import 'package:shopxy_customer/shared/widgets/app_button.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 import 'package:shopxy_customer/shared/widgets/app_text_field.dart';
+import 'package:shopxy_customer/shared/format/friendly_error.dart';
 
 /// Lets the user change their display name and reach the change-password
 /// flow. Email stays read-only — backend doesn't expose an email-change
@@ -119,7 +120,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       );
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = e.toString().replaceFirst('Exception: ', ''));
+      setState(() => _error = friendlyError(e));
     } finally {
       if (mounted) setState(() => _uploadingAvatar = false);
     }
@@ -134,7 +135,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       await context.read<AuthProvider>().updateAvatar(null);
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = e.toString().replaceFirst('Exception: ', ''));
+      setState(() => _error = friendlyError(e));
     } finally {
       if (mounted) setState(() => _uploadingAvatar = false);
     }
@@ -179,7 +180,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = e.toString().replaceFirst('Exception: ', ''));
+      setState(() => _error = friendlyError(e));
     } finally {
       if (mounted) setState(() => _saving = false);
     }

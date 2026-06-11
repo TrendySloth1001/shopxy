@@ -9,6 +9,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shadows.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+import 'package:shopxy_customer/shared/format/app_format.dart';
 
 /// Customer-facing detail page for a single carousel slide. Hits
 /// /banners/:id/slide and renders the merchant's curated product list
@@ -612,7 +613,7 @@ class _ProductCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          '₹${priceShown.toStringAsFixed(0)}',
+                          AppFormat.rupees(priceShown),
                           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w800,
                                 height: 1,
@@ -623,7 +624,7 @@ class _ProductCard extends StatelessWidget {
                           Padding(
                             padding: const EdgeInsets.only(bottom: 1),
                             child: Text(
-                              '₹${priceCrossed.toStringAsFixed(0)}',
+                              AppFormat.rupees(priceCrossed),
                               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                                     color: AppColors.muted,
                                     decoration: TextDecoration.lineThrough,
@@ -636,7 +637,7 @@ class _ProductCard extends StatelessWidget {
                     if (saves > 0) ...[
                       const SizedBox(height: AppSizes.xs),
                       Text(
-                        'You save ₹${saves.toStringAsFixed(0)}',
+                        'You save ${AppFormat.rupees(saves)}',
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
                               color: AppColors.success,
                               fontWeight: FontWeight.w800,

@@ -127,8 +127,10 @@ class ListingFacets {
     return ListingFacets(
       priceMin: (j['priceMin'] as num?)?.toDouble() ?? 0,
       priceMax: (j['priceMax'] as num?)?.toDouble() ?? 0,
-      gte4Count: (ratingBuckets['gte4'] as num?)?.toInt() ?? 0,
-      gte3Count: (ratingBuckets['gte3'] as num?)?.toInt() ?? 0,
+      // Server keys are ge1..ge5 (see marketplace + search facet
+      // payloads); the old 'gte4'/'gte3' reads always came back 0.
+      gte4Count: (ratingBuckets['ge4'] as num?)?.toInt() ?? 0,
+      gte3Count: (ratingBuckets['ge3'] as num?)?.toInt() ?? 0,
       inStockCount: (j['inStockCount'] as num?)?.toInt() ?? 0,
       brands: ((j['brands'] as List<dynamic>?) ?? const [])
           .whereType<Map<String, dynamic>>()

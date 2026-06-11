@@ -11,6 +11,7 @@ import 'package:shopxy_customer/features/shops/presentation/providers/shops_prov
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+import 'package:shopxy_customer/shared/widgets/app_error_view.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 
 /// V2 notifications inbox. Was a static mock with invented "delivered
@@ -154,6 +155,14 @@ class _TabView extends StatelessWidget {
   Widget build(BuildContext context) {
     if (provider.isLoadingInbox && items.isEmpty) {
       return const _NotificationListSkeleton();
+    }
+    // A failed initial load must not masquerade as an empty inbox —
+    // give the user the reason and a retry.
+    if (provider.error != null && provider.items.isEmpty) {
+      return AppErrorView(
+        message: provider.error,
+        onRetry: () => provider.loadInbox(),
+      );
     }
     if (items.isEmpty) {
       return ListView(

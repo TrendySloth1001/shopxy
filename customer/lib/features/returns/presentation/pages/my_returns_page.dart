@@ -9,6 +9,8 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_bar.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
+import 'package:shopxy_customer/shared/format/app_format.dart';
+import 'package:shopxy_customer/shared/format/friendly_error.dart';
 
 /// Customer-side list of return requests. Each row links to the
 /// return detail page.
@@ -53,8 +55,7 @@ class _MyReturnsPageState extends State<MyReturnsPage> {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(AppSizes.xxl),
-                child: Text(snap.error.toString()
-                    .replaceFirst('Exception: ', '')),
+                child: Text(friendlyError(snap.error ?? '')),
               ),
             );
           }
@@ -117,7 +118,7 @@ class _ReturnRow extends StatelessWidget {
               ),
               const SizedBox(height: AppSizes.xs),
               Text(
-                '${r.items.length} ${r.items.length == 1 ? "item" : "items"} · ₹${r.refundAmount.toStringAsFixed(0)}',
+                '${r.items.length} ${r.items.length == 1 ? "item" : "items"} · ${AppFormat.rupees(r.refundAmount)}',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: AppColors.muted,
                     ),

@@ -13,6 +13,8 @@ import 'package:shopxy_customer/shared/widgets/app_bar.dart';
 import 'package:shopxy_customer/shared/widgets/app_dialog.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
+import 'package:shopxy_customer/shared/format/app_format.dart';
+import 'package:shopxy_customer/shared/format/friendly_error.dart';
 
 class ReturnDetailPage extends StatefulWidget {
   const ReturnDetailPage({super.key, required this.returnId});
@@ -51,7 +53,7 @@ class _ReturnDetailPageState extends State<ReturnDetailPage> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = e.toString().replaceFirst('Exception: ', '');
+        _error = friendlyError(e);
       });
     }
   }
@@ -80,7 +82,7 @@ class _ReturnDetailPageState extends State<ReturnDetailPage> {
       if (!mounted) return;
       showAppSnackbar(
         context,
-        message: e.toString().replaceFirst('Exception: ', ''),
+        message: friendlyError(e),
         tone: AppSnackbarTone.error,
       );
     } finally {
@@ -222,7 +224,7 @@ class _HeroCard extends StatelessWidget {
                   ),
             ),
             Text(
-              '₹${data.refundAmount.toStringAsFixed(0)}',
+              AppFormat.rupees(data.refundAmount),
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     color: AppColors.black,
                     fontWeight: FontWeight.w800,
@@ -325,7 +327,7 @@ class _ItemRow extends StatelessWidget {
           ),
           const SizedBox(width: AppSizes.sm),
           Text(
-            '₹${item.refundAmount.toStringAsFixed(0)}',
+            AppFormat.rupees(item.refundAmount),
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: AppColors.black,
                   fontWeight: FontWeight.w800,

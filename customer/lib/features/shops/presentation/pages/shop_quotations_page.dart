@@ -10,6 +10,7 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_list_section.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
+import 'package:shopxy_customer/shared/format/app_format.dart';
 
 /// Clean list of quotations the shop sent the customer. Tapping a row opens the
 /// full detail page (line items, totals, Accept / Decline).
@@ -22,7 +23,7 @@ class ShopQuotationsPage extends StatefulWidget {
 }
 
 class _ShopQuotationsPageState extends State<ShopQuotationsPage> {
-  final _currency = NumberFormat.currency(symbol: '₹', decimalDigits: 0);
+  final NumberFormat _currency = AppFormat.inr;
   final _dateFmt = DateFormat('d MMM yyyy');
 
   @override

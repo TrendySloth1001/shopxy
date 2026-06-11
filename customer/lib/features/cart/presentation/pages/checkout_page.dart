@@ -17,6 +17,8 @@ import 'package:shopxy_customer/features/home/presentation/widgets/network_image
 import 'package:shopxy_customer/features/orders/presentation/pages/order_detail_page.dart';
 import 'package:shopxy_customer/features/orders/presentation/providers/orders_provider.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
+import 'package:shopxy_customer/shared/format/app_format.dart';
+import 'package:shopxy_customer/shared/format/friendly_error.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_button.dart';
@@ -36,6 +38,11 @@ class CheckoutPage extends StatefulWidget {
   @override
   State<CheckoutPage> createState() => _CheckoutPageState();
 }
+
+/// How a single Razorpay attempt resolved, from the customer's point of
+/// view. `pendingConfirmation` = the sheet succeeded but the server
+/// hasn't confirmed PAID yet (webhook lag) — calm copy, not an error.
+enum _PayAttemptOutcome { paid, pendingConfirmation, dismissed, failed }
 
 class _CheckoutPageState extends State<CheckoutPage> {
   int? _selectedAddressId;
@@ -222,7 +229,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       if (!mounted) return;
       showAppSnackbar(
         context,
-        message: e.toString().replaceFirst('Exception: ', ''),
+        message: friendlyError(e, fallback: 'Could not check that code. Please try again.'),
         tone: AppSnackbarTone.error,
       );
     }
@@ -237,6 +244,22 @@ class _CheckoutPageState extends State<CheckoutPage> {
   /// this synchronously inside the tap handler closes the window.
   bool _submitting = false;
 
+  /// The same "Total payable" number the price card and footer render —
+  /// items − coupon − wallet, never negative. Kept in one place so the
+  /// ≥₹500 confirm sheet can't quote a different figure than the bill.
+  double _currentGrandTotal(CartProvider cart) {
+    final subtotal = cart.totalPrice;
+    final couponDiscount = _appliedCoupon?.ok == true
+        ? (_appliedCoupon!.discount ?? 0).clamp(0, subtotal).toDouble()
+        : 0.0;
+    final afterCoupon = (subtotal + _deliveryStandard - couponDiscount)
+        .clamp(0, double.infinity)
+        .toDouble();
+    final walletApply =
+        _useWallet ? _walletBalance.clamp(0, afterCoupon).toDouble() : 0.0;
+    return (afterCoupon - walletApply).clamp(0, double.infinity).toDouble();
+  }
+
   Future<void> _placeOrder() async {
     if (_submitting) return;
     if (_selectedAddressId == null) {
@@ -248,21 +271,24 @@ class _CheckoutPageState extends State<CheckoutPage> {
       return;
     }
     // Confirm above a reasonable threshold so an accidental tap doesn't
-    // commit a meaningful order silently.
+    // commit a meaningful order silently. Quotes the exact figure the
+    // bill card shows, and explains why we ask.
     final cart = context.read<CartProvider>();
-    final estimatedTotal = cart.itemsTotal;
-    if (estimatedTotal >= 500) {
+    final grandTotal = _currentGrandTotal(cart);
+    if (grandTotal >= 500) {
       final ok = await AppConfirmSheet.show(
         context,
         title: 'Place this order?',
         message:
-            'Estimated total ₹${estimatedTotal.toStringAsFixed(2)}. '
-            'You can cancel a per-shop slice from the order detail page '
-            'before it\'s confirmed by the merchant.',
+            'Total payable ${AppFormat.rupeesPrecise(grandTotal)}. '
+            'We double-check larger orders so a stray tap doesn\'t place one. '
+            'You can still cancel a per-shop slice from the order detail page '
+            'before the merchant confirms it.',
         confirmLabel: 'Place order',
         cancelLabel: 'Review',
       );
       if (!ok || !mounted) return;
+      if (_submitting) return;
     }
     setState(() => _submitting = true);
     final result = await cart.placeOrder(
@@ -293,18 +319,33 @@ class _CheckoutPageState extends State<CheckoutPage> {
     // remainder, then land on the order detail regardless of outcome (the
     // order exists either way; the webhook is the source of truth for PAID).
     if (_payOnline) {
-      final paid = await _startOnlinePayment(orderId);
+      final outcome = await _startOnlinePayment(orderId);
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => OrderDetailPage(orderId: orderId)),
       );
-      showAppSnackbar(
-        context,
-        message: paid
-            ? 'Payment successful'
-            : 'Order placed — you can complete payment from the order page',
-        tone: paid ? AppSnackbarTone.success : AppSnackbarTone.error,
-      );
+      // Distinguish the calm cases (dismissed sheet, webhook lag) from a
+      // genuine failure — a closed sheet isn't an error, and a pending
+      // confirmation isn't either.
+      final (message, tone) = switch (outcome) {
+        _PayAttemptOutcome.paid => (
+            'Payment successful',
+            AppSnackbarTone.success,
+          ),
+        _PayAttemptOutcome.pendingConfirmation => (
+            'Payment received — being confirmed. This can take a minute.',
+            AppSnackbarTone.info,
+          ),
+        _PayAttemptOutcome.dismissed => (
+            'Payment not completed — your order is placed. Use "Pay Now" below whenever you\'re ready.',
+            AppSnackbarTone.info,
+          ),
+        _PayAttemptOutcome.failed => (
+            'Payment didn\'t go through — your order is placed. You can retry with "Pay Now" below.',
+            AppSnackbarTone.error,
+          ),
+      };
+      showAppSnackbar(context, message: message, tone: tone);
       return;
     }
 
@@ -323,9 +364,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
   }
 
   /// Initiate the gateway payment for [orderId] and open the Razorpay sheet.
-  /// Returns true only on a client-side success handshake — the backend
+  /// A `paid` result is still only the client-side handshake — the backend
   /// webhook is what authoritatively flips the order to PAID.
-  Future<bool> _startOnlinePayment(int orderId) async {
+  Future<_PayAttemptOutcome> _startOnlinePayment(int orderId) async {
     try {
       final cart = context.read<CartProvider>();
       final checkout = await cart.payForOrder(orderId);
@@ -337,12 +378,20 @@ class _CheckoutPageState extends State<CheckoutPage> {
         // The webhook can't reach a localhost dev server (and may lag in
         // prod), so confirm with the server now — it settles the payment by
         // checking the live provider order. Best-effort: the webhook is still
-        // authoritative, so a sync failure shouldn't flip success to failure.
+        // authoritative, so a sync failure shouldn't flip success to failure;
+        // it just means the confirmation is still in flight.
         try {
-          await cart.syncOrderPayment(orderId);
-        } catch (_) {/* non-fatal — order page will reflect it once settled */}
+          final status = await cart.syncOrderPayment(orderId);
+          return status == 'PAID'
+              ? _PayAttemptOutcome.paid
+              : _PayAttemptOutcome.pendingConfirmation;
+        } catch (_) {
+          return _PayAttemptOutcome.pendingConfirmation;
+        }
       }
-      return result.isSuccess;
+      return result.outcome == RazorpayOutcome.dismissed
+          ? _PayAttemptOutcome.dismissed
+          : _PayAttemptOutcome.failed;
     } catch (e, st) {
       // Surface the real cause instead of silently falling back to COD.
       // ignore: avoid_print
@@ -350,11 +399,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
       if (mounted) {
         showAppSnackbar(
           context,
-          message: 'Could not start payment: $e',
+          message: friendlyError(e, fallback: 'Could not start the payment.'),
           tone: AppSnackbarTone.error,
         );
       }
-      return false;
+      return _PayAttemptOutcome.failed;
     }
   }
 
@@ -477,10 +526,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
         );
 
     final subtotal = cart.totalPrice;
-    final mrpTotal = cart.lines.fold<double>(
-      0,
-      (s, l) => s + l.product.mrp * l.quantity,
-    );
+    final mrpTotal = cart.mrpTotal;
     final productSavings =
         (mrpTotal - subtotal).clamp(0, double.infinity).toDouble();
     final deliverySavings = _deliveryStrike - _deliveryStandard;
@@ -535,6 +581,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   ),
                   if (addressesProvider.isLoading && addresses.isEmpty)
                     const _LoadingCard()
+                  else if (addressesProvider.error != null &&
+                      addresses.isEmpty)
+                    _AddressErrorCard(
+                      onRetry: () => addressesProvider.load(),
+                    )
                   else if (selected == null)
                     _AddAddressCard(onTap: _pickAddress)
                   else
@@ -929,6 +980,49 @@ class _AddAddressCard extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Shown when the address book failed to load — without this the page
+/// would render the "Add a delivery address" card, which lies to a
+/// customer who *has* addresses but lost connectivity.
+class _AddressErrorCard extends StatelessWidget {
+  const _AddressErrorCard({required this.onRetry});
+  final VoidCallback onRetry;
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+      padding: const EdgeInsets.all(AppSizes.md),
+      decoration: ShapeDecoration(
+        color: AppColors.white,
+        shape: AppShapes.squircle(
+          AppSizes.radiusMd,
+          side: const BorderSide(color: AppColors.hairline),
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.cloud_off_rounded, color: AppColors.muted),
+          const SizedBox(width: AppSizes.md),
+          Expanded(
+            child: Text(
+              "Couldn't load your addresses. Check your connection and retry.",
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: AppColors.muted, height: 1.3),
+            ),
+          ),
+          const SizedBox(width: AppSizes.sm),
+          AppButton.secondary(
+            label: 'Retry',
+            size: AppButtonSize.sm,
+            onPressed: onRetry,
+          ),
+        ],
       ),
     );
   }
@@ -1482,7 +1576,7 @@ class _CouponCardState extends State<_CouponCard> {
                       ),
                       if (c.discount != null)
                         Text(
-                          '₹${c.discount!.toStringAsFixed(0)} off',
+                          '${AppFormat.rupees(c.discount!)} off',
                           style: Theme.of(context).textTheme.labelMedium
                               ?.copyWith(
                                 color: AppColors.success,
@@ -1581,7 +1675,7 @@ class _WalletToggleCard extends StatelessWidget {
               children: [
                 Text(
                   enabled && applied > 0
-                      ? 'Using ₹${applied.toStringAsFixed(0)} from wallet'
+                      ? 'Using ${AppFormat.rupees(applied)} from wallet'
                       : 'Use wallet balance',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppColors.black,
@@ -1589,7 +1683,7 @@ class _WalletToggleCard extends StatelessWidget {
                       ),
                 ),
                 Text(
-                  'Available · ₹${balance.toStringAsFixed(0)}',
+                  'Available · ${AppFormat.rupees(balance)}',
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
                         color: AppColors.muted,
                         fontWeight: FontWeight.w600,

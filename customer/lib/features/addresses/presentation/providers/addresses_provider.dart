@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import 'package:shopxy_customer/features/addresses/data/datasources/addresses_remote_data_source.dart';
 import 'package:shopxy_customer/features/addresses/domain/entities/user_address.dart';
+import 'package:shopxy_customer/shared/format/friendly_error.dart';
 
 /// Owns the user's address book. Eagerly loads on auth so the
 /// home top-bar chip can render the default address without a
@@ -38,7 +39,7 @@ class AddressesProvider extends ChangeNotifier {
     try {
       _items = await _ds.list();
     } catch (e) {
-      _error = e.toString().replaceFirst('Exception: ', '');
+      _error = friendlyError(e);
     } finally {
       _loading = false;
       notifyListeners();
@@ -64,7 +65,7 @@ class AddressesProvider extends ChangeNotifier {
       notifyListeners();
       return addr;
     } catch (e) {
-      _error = e.toString().replaceFirst('Exception: ', '');
+      _error = friendlyError(e);
       notifyListeners();
       return null;
     }
@@ -107,7 +108,7 @@ class AddressesProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      _error = e.toString().replaceFirst('Exception: ', '');
+      _error = friendlyError(e);
       notifyListeners();
       return false;
     }
@@ -120,7 +121,7 @@ class AddressesProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      _error = e.toString().replaceFirst('Exception: ', '');
+      _error = friendlyError(e);
       notifyListeners();
       return false;
     }

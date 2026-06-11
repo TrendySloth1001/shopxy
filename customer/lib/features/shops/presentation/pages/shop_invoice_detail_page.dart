@@ -4,11 +4,12 @@ import 'package:provider/provider.dart';
 import 'package:shopxy_customer/features/shops/domain/entities/linked_shop.dart';
 import 'package:shopxy_customer/features/shops/presentation/providers/shops_provider.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
-import 'package:shopxy_customer/shared/constants/app_strings.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_divider.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
+import 'package:shopxy_customer/shared/format/app_format.dart';
+import 'package:shopxy_customer/shared/format/friendly_error.dart';
 
 class ShopInvoiceDetailPage extends StatefulWidget {
   const ShopInvoiceDetailPage({
@@ -38,10 +39,7 @@ class _ShopInvoiceDetailPageState extends State<ShopInvoiceDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    final money = NumberFormat.currency(
-      symbol: AppStrings.currencySymbol,
-      decimalDigits: 2,
-    );
+    final money = AppFormat.inrPrecise;
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
@@ -67,7 +65,7 @@ class _ShopInvoiceDetailPageState extends State<ShopInvoiceDetailPage> {
                         color: AppColors.error, size: AppSizes.iconXl),
                     const SizedBox(height: AppSizes.sm),
                     Text(
-                      snap.error.toString().replaceFirst('Exception: ', ''),
+                      friendlyError(snap.error ?? ''),
                       textAlign: TextAlign.center,
                     ),
                   ],

@@ -12,6 +12,7 @@ import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_bar.dart';
 import 'package:shopxy_customer/shared/widgets/app_button.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
+import 'package:shopxy_customer/shared/format/friendly_error.dart';
 
 /// "My reviews" — every review the caller has written, newest first.
 /// Tap a row → PDP. Cursor-paginated; loads next page when the user
@@ -76,7 +77,7 @@ class _MyReviewsPageState extends State<MyReviewsPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString().replaceFirst('Exception: ', '');
+        _error = friendlyError(e);
         _initialLoad = false;
       });
     } finally {

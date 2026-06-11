@@ -10,11 +10,14 @@ import 'package:shopxy_customer/features/shops/presentation/widgets/caution_info
 import 'package:shopxy_customer/features/shops/presentation/widgets/post_caution_sheet.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/constants/app_strings.dart';
+import 'package:shopxy_customer/shared/format/app_format.dart';
+import 'package:shopxy_customer/shared/format/friendly_error.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_divider.dart';
 import 'package:shopxy_customer/shared/widgets/app_list_section.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
+import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 
 /// The caution / security deposit a shop holds against the customer. Flat,
 /// divider-based layout: a balance + breakdown header, the customer's own
@@ -29,7 +32,9 @@ class ShopCautionPage extends StatefulWidget {
 }
 
 class _ShopCautionPageState extends State<ShopCautionPage> {
-  final _currency = NumberFormat.currency(symbol: '₹', decimalDigits: 0);
+  // Canonical en_IN formatter — the previous ad-hoc NumberFormat here
+  // used the default locale's digit grouping (1,000,000 vs 10,00,000).
+  final NumberFormat _currency = AppFormat.inr;
   final _dateFmt = DateFormat('d MMM yyyy');
 
   @override
@@ -49,8 +54,7 @@ class _ShopCautionPageState extends State<ShopCautionPage> {
     await p.loadCautionRequests(widget.shop);
   }
 
-  String _money(double v) =>
-      '${AppStrings.currencySymbol}${v.toStringAsFixed(v == v.roundToDouble() ? 0 : 2)}';
+  String _money(double v) => AppFormat.rupeesSmart(v);
 
   @override
   Widget build(BuildContext context) {
@@ -520,7 +524,7 @@ class _RequestRowState extends State<_RequestRow> {
                     Row(
                       children: [
                         Text(
-                          '${AppStrings.currencySymbol}${req.amount.toStringAsFixed(req.amount == req.amount.roundToDouble() ? 0 : 2)}',
+                          AppFormat.rupeesSmart(req.amount),
                           style: theme.textTheme.bodyLarge
                               ?.copyWith(fontWeight: FontWeight.w800),
                         ),
@@ -546,7 +550,7 @@ class _RequestRowState extends State<_RequestRow> {
               ),
               if (req.isPending)
                 TextButton(
-                  onPressed: _paying ? null : () => _cancel(context),
+                  onPressed: _paying ? null : _cancel,
                   style: TextButton.styleFrom(foregroundColor: AppColors.error),
                   child: Text('Cancel',
                       style: theme.textTheme.bodyMedium
@@ -585,8 +589,8 @@ class _RequestRowState extends State<_RequestRow> {
   /// then client-confirm via payment/sync (the webhook stays authoritative —
   /// a sync failure never flips a client success into an error).
   Future<void> _payOnline() async {
+    if (_paying) return;
     final prov = context.read<ShopsProvider>();
-    final messenger = ScaffoldMessenger.of(context);
     setState(() => _paying = true);
     try {
       final checkout = await prov.payCautionRequest(widget.shop, widget.req.id);
@@ -602,50 +606,79 @@ class _RequestRowState extends State<_RequestRow> {
               widget.shop, widget.req.id);
           settled = sync.settled;
         } catch (_) {/* non-fatal — the webhook will settle it */}
-        messenger.showSnackBar(SnackBar(
-          content: Text(settled
-              ? 'Deposit confirmed'
-              : 'Payment received — confirming…'),
-        ));
+        if (mounted) {
+          showAppSnackbar(
+            context,
+            message: settled
+                ? 'Deposit confirmed'
+                : 'Payment received — being confirmed. This can take a minute.',
+            tone: settled ? AppSnackbarTone.success : AppSnackbarTone.info,
+          );
+        }
         await widget.onChanged();
       } else if (result.outcome == RazorpayOutcome.dismissed) {
-        messenger.showSnackBar(
-          const SnackBar(content: Text('Payment cancelled')),
-        );
+        // Sheet closed by the customer — nothing charged, request still
+        // pending; calm copy pointing back at this page's button.
+        if (mounted) {
+          showAppSnackbar(
+            context,
+            message:
+                'Payment not completed — nothing was charged. You can pay this deposit from here whenever you\'re ready.',
+            tone: AppSnackbarTone.info,
+          );
+        }
       } else {
-        messenger.showSnackBar(
-          SnackBar(content: Text(result.message ?? 'Payment failed')),
-        );
+        if (mounted) {
+          showAppSnackbar(
+            context,
+            message:
+                '${result.message ?? 'Payment failed'} — you can retry from this page.',
+            tone: AppSnackbarTone.error,
+          );
+        }
       }
     } on CautionPayException catch (e) {
       // NOT_PENDING = the shop approved/cancelled it while this page was
       // open — refresh so the row reflects reality instead of a dead CTA.
-      messenger.showSnackBar(SnackBar(
-        content: Text(e.isNotPending
-            ? 'This request is no longer pending — refreshing'
-            : e.message),
-      ));
+      if (mounted) {
+        showAppSnackbar(
+          context,
+          message: e.isNotPending
+              ? 'This request is no longer pending — refreshing'
+              : e.message,
+          tone: e.isNotPending ? AppSnackbarTone.info : AppSnackbarTone.error,
+        );
+      }
       if (e.isNotPending) await widget.onChanged();
     } catch (e) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
-      );
+      if (mounted) {
+        showAppSnackbar(
+          context,
+          message: friendlyError(e),
+          tone: AppSnackbarTone.error,
+        );
+      }
     } finally {
       if (mounted) setState(() => _paying = false);
     }
   }
 
-  Future<void> _cancel(BuildContext context) async {
+  Future<void> _cancel() async {
     final prov = context.read<ShopsProvider>();
-    final messenger = ScaffoldMessenger.of(context);
     try {
       await prov.cancelCautionRequest(widget.shop, widget.req.id);
-      messenger.showSnackBar(
-        const SnackBar(content: Text(AppStrings.cautionRequestCancelled)),
+      if (!mounted) return;
+      showAppSnackbar(
+        context,
+        message: AppStrings.cautionRequestCancelled,
+        tone: AppSnackbarTone.success,
       );
     } catch (e) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+      if (!mounted) return;
+      showAppSnackbar(
+        context,
+        message: friendlyError(e),
+        tone: AppSnackbarTone.error,
       );
     }
   }

@@ -1,4 +1,5 @@
 import 'package:shopxy_customer/features/marketplace/domain/entities/marketplace_shop.dart';
+import 'package:shopxy_customer/shared/format/app_format.dart';
 
 /// Detail-level product as returned by `GET /marketplace/products/:id`.
 /// Carries enough fields to render the V2 PDP: gallery, price/MRP +
@@ -238,9 +239,9 @@ class PlatformBankOffer {
   String get headline {
     final discount = discountType == 'PERCENT'
         ? '${discountValue.toStringAsFixed(0)}% off'
-        : '₹${discountValue.toStringAsFixed(0)} off';
+        : '${AppFormat.rupees(discountValue)} off';
     final capPart = (discountType == 'PERCENT' && maxDiscount != null)
-        ? ' up to ₹${maxDiscount!.toStringAsFixed(0)}'
+        ? ' up to ${AppFormat.rupees(maxDiscount!)}'
         : '';
     final cardPart = _cardTypeLabel(cardType);
     return '$discount$capPart on ${bankDisplayName(bank)}$cardPart';

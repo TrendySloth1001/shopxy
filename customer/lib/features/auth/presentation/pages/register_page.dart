@@ -10,6 +10,7 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/validation/auth_validators.dart';
 import 'package:shopxy_customer/shared/widgets/app_pill_button.dart';
+import 'package:shopxy_customer/shared/format/friendly_error.dart';
 
 /// Multi-step, onboarding-style registration. One question per screen
 /// (name → email → password) with a progress bar, so signing up feels
@@ -99,7 +100,7 @@ class _RegisterPageState extends State<RegisterPage> {
           .register(_name.text.trim(), _email.text.trim(), _password.text);
     } catch (e) {
       if (mounted) {
-        setState(() => _error = e.toString().replaceFirst('Exception: ', ''));
+        setState(() => _error = friendlyError(e));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

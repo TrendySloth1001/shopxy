@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:shopxy_customer/shared/constants/app_strings.dart';
+import 'package:shopxy_customer/shared/format/app_format.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 
 /// Consistent currency rendering. Two key rules from `DESIGN.md`:
@@ -49,22 +48,10 @@ class AppPriceText extends StatelessWidget {
   final Color? color;
   final FontWeight? fontWeight;
 
-  static final _compactFmt = NumberFormat.currency(
-    locale: 'en_IN',
-    symbol: AppStrings.currencySymbol,
-    decimalDigits: 0,
-  );
-
-  static final _preciseFmt = NumberFormat.currency(
-    locale: 'en_IN',
-    symbol: AppStrings.currencySymbol,
-    decimalDigits: 2,
-  );
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final formatted = (precise ? _preciseFmt : _compactFmt).format(amount);
+    final formatted = (precise ? AppFormat.inrPrecise : AppFormat.inr).format(amount);
     final base = style ?? theme.textTheme.bodyLarge;
     return Text(
       formatted,

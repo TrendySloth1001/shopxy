@@ -4,6 +4,8 @@ import 'package:shopxy_customer/features/orders/domain/entities/customer_order.d
 import 'package:shopxy_customer/features/returns/data/datasources/returns_remote_data_source.dart';
 import 'package:shopxy_customer/features/returns/domain/entities/return_request.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
+import 'package:shopxy_customer/shared/format/app_format.dart';
+import 'package:shopxy_customer/shared/format/friendly_error.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
@@ -62,6 +64,7 @@ class _SheetState extends State<_Sheet> {
   }
 
   Future<void> _submit() async {
+    if (_submitting) return;
     if (_picks.isEmpty) {
       setState(() => _error = 'Pick at least one item to return');
       return;
@@ -76,11 +79,13 @@ class _SheetState extends State<_Sheet> {
         parentOrderId: widget.parentOrderId,
         shopOrderId: widget.shopOrder.id,
         items: _picks.entries
-            .map((e) => (
-                  purchaseRequestItemId: e.key,
-                  quantity: e.value,
-                  reason: _reason,
-                ))
+            .map(
+              (e) => (
+                purchaseRequestItemId: e.key,
+                quantity: e.value,
+                reason: _reason,
+              ),
+            )
             .toList(),
         note: _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim(),
       );
@@ -90,7 +95,7 @@ class _SheetState extends State<_Sheet> {
       if (!mounted) return;
       setState(() {
         _submitting = false;
-        _error = e.toString().replaceFirst('Exception: ', '');
+        _error = friendlyError(e);
       });
     }
   }
@@ -107,7 +112,10 @@ class _SheetState extends State<_Sheet> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(
-              AppSizes.lg, AppSizes.md, AppSizes.lg, AppSizes.sm,
+              AppSizes.lg,
+              AppSizes.md,
+              AppSizes.lg,
+              AppSizes.sm,
             ),
             child: Row(
               children: [
@@ -128,72 +136,85 @@ class _SheetState extends State<_Sheet> {
           ),
           const Divider(height: 1, color: AppColors.hairline),
           Expanded(
-            child: ListView(
-              controller: controller,
-              padding: const EdgeInsets.fromLTRB(
-                AppSizes.lg, AppSizes.md, AppSizes.lg, AppSizes.lg,
-              ),
-              children: [
-                const _SectionLabel('Choose items'),
-                for (final item in widget.shopOrder.items)
-                  _ItemPickerRow(
-                    item: item,
-                    picked: _picks[item.id],
-                    onChanged: (q) {
-                      setState(() {
-                        if (q == null || q <= 0) {
-                          _picks.remove(item.id);
-                        } else {
-                          _picks[item.id] = q;
-                        }
-                      });
-                    },
+            // Freeze the form while the request is in flight so the
+            // picks/reason/note can't drift from what's being submitted.
+            child: AbsorbPointer(
+              absorbing: _submitting,
+              child: ListView(
+                controller: controller,
+                padding: const EdgeInsets.fromLTRB(
+                  AppSizes.lg,
+                  AppSizes.md,
+                  AppSizes.lg,
+                  AppSizes.lg,
+                ),
+                children: [
+                  const _SectionLabel('Choose items'),
+                  for (final item in widget.shopOrder.items)
+                    _ItemPickerRow(
+                      item: item,
+                      picked: _picks[item.id],
+                      onChanged: (q) {
+                        setState(() {
+                          if (q == null || q <= 0) {
+                            _picks.remove(item.id);
+                          } else {
+                            _picks[item.id] = q;
+                          }
+                        });
+                      },
+                    ),
+                  const SizedBox(height: AppSizes.lg),
+                  const _SectionLabel('Reason'),
+                  Wrap(
+                    spacing: AppSizes.sm,
+                    runSpacing: AppSizes.sm,
+                    children: [
+                      for (final r in kReturnReasons)
+                        _ReasonChip(
+                          label: reasonLabel(r),
+                          selected: _reason == r,
+                          onTap: () => setState(() => _reason = r),
+                        ),
+                    ],
                   ),
-                const SizedBox(height: AppSizes.lg),
-                const _SectionLabel('Reason'),
-                Wrap(
-                  spacing: AppSizes.sm,
-                  runSpacing: AppSizes.sm,
-                  children: [
-                    for (final r in kReturnReasons)
-                      _ReasonChip(
-                        label: reasonLabel(r),
-                        selected: _reason == r,
-                        onTap: () => setState(() => _reason = r),
+                  const SizedBox(height: AppSizes.lg),
+                  const _SectionLabel('Add a note (optional)'),
+                  TextField(
+                    controller: _noteCtrl,
+                    maxLines: 3,
+                    maxLength: 500,
+                    decoration: InputDecoration(
+                      hintText: 'Tell the seller what happened',
+                      border: OutlineInputBorder(
+                        borderRadius: AppShapes.squircleRadius(
+                          AppSizes.radiusMd,
+                        ),
+                        borderSide: const BorderSide(color: AppColors.hairline),
                       ),
+                    ),
+                  ),
+                  if (_error != null) ...[
+                    const SizedBox(height: AppSizes.md),
+                    Text(
+                      _error!,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: AppColors.error,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ],
-                ),
-                const SizedBox(height: AppSizes.lg),
-                const _SectionLabel('Add a note (optional)'),
-                TextField(
-                  controller: _noteCtrl,
-                  maxLines: 3,
-                  maxLength: 500,
-                  decoration: InputDecoration(
-                    hintText: 'Tell the seller what happened',
-                    border: OutlineInputBorder(
-                      borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
-                      borderSide: const BorderSide(color: AppColors.hairline),
-                    ),
-                  ),
-                ),
-                if (_error != null) ...[
-                  const SizedBox(height: AppSizes.md),
-                  Text(
-                    _error!,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: AppColors.error,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
                 ],
-              ],
+              ),
             ),
           ),
           const Divider(height: 1, color: AppColors.hairline),
           Padding(
             padding: const EdgeInsets.fromLTRB(
-              AppSizes.lg, AppSizes.md, AppSizes.lg, AppSizes.md,
+              AppSizes.lg,
+              AppSizes.md,
+              AppSizes.lg,
+              AppSizes.md,
             ),
             child: Row(
               children: [
@@ -210,7 +231,7 @@ class _SheetState extends State<_Sheet> {
                         ),
                       ),
                       Text(
-                        '₹${_refundEstimate.toStringAsFixed(0)}',
+                        AppFormat.rupeesSmart(_refundEstimate),
                         style: theme.textTheme.titleLarge?.copyWith(
                           color: AppColors.black,
                           fontWeight: FontWeight.w800,
@@ -259,16 +280,16 @@ class _SectionLabel extends StatelessWidget {
   final String label;
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: AppSizes.sm),
-        child: Text(
-          label.toUpperCase(),
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: AppColors.muted,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.6,
-              ),
-        ),
-      );
+    padding: const EdgeInsets.only(bottom: AppSizes.sm),
+    child: Text(
+      label.toUpperCase(),
+      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+        color: AppColors.muted,
+        fontWeight: FontWeight.w800,
+        letterSpacing: 0.6,
+      ),
+    ),
+  );
 }
 
 class _ItemPickerRow extends StatelessWidget {
@@ -313,19 +334,31 @@ class _ItemPickerRow extends StatelessWidget {
                     Text(
                       item.productName,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppColors.black,
-                            fontWeight: FontWeight.w700,
-                          ),
+                        color: AppColors.black,
+                        fontWeight: FontWeight.w700,
+                      ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: AppSizes.xs),
                     Text(
-                      'Ordered: ${item.quantity.toStringAsFixed(item.quantity == item.quantity.roundToDouble() ? 0 : 2)} ${item.unit} · ₹${item.unitPrice.toStringAsFixed(0)} each',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.muted,
-                          ),
+                      'Ordered: ${item.quantity.toStringAsFixed(item.quantity == item.quantity.roundToDouble() ? 0 : 2)} ${item.unit} · ${AppFormat.rupeesSmart(item.unitPrice)} each',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(color: AppColors.muted),
                     ),
+                    if (selected) ...[
+                      const SizedBox(height: 2),
+                      // Refund math made explicit: "2 × ₹250 = ₹500".
+                      Text(
+                        'Refund: ${picked!.toStringAsFixed(picked! == picked!.roundToDouble() ? 0 : 2)} × ${AppFormat.rupeesSmart(item.unitPrice)} = ${AppFormat.rupeesSmart(picked! * item.unitPrice)}',
+                        style: Theme.of(context).textTheme.labelMedium
+                            ?.copyWith(
+                              color: AppColors.success,
+                              fontWeight: FontWeight.w700,
+                            ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -338,9 +371,9 @@ class _ItemPickerRow extends StatelessWidget {
                 Text(
                   'Quantity:',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.muted,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    color: AppColors.muted,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(width: AppSizes.sm),
                 _QtyStepper(
@@ -381,9 +414,9 @@ class _QtyStepper extends StatelessWidget {
         Text(
           value.toStringAsFixed(value == value.roundToDouble() ? 0 : 2),
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.black,
-                fontWeight: FontWeight.w800,
-              ),
+            color: AppColors.black,
+            fontWeight: FontWeight.w800,
+          ),
         ),
         IconButton(
           icon: const Icon(Icons.add_circle_outline_rounded),
@@ -427,9 +460,9 @@ class _ReasonChip extends StatelessWidget {
           child: Text(
             label,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: selected ? AppColors.white : AppColors.black,
-                  fontWeight: FontWeight.w700,
-                ),
+              color: selected ? AppColors.white : AppColors.black,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
       ),

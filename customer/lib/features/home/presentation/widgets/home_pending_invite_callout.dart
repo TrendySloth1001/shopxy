@@ -7,6 +7,7 @@ import 'package:shopxy_customer/features/notifications/presentation/widgets/invi
 import 'package:shopxy_customer/features/shops/presentation/providers/shops_provider.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
+import 'package:shopxy_customer/shared/format/friendly_error.dart';
 
 /// Home-screen preview of the user's first pending invitation. Wraps
 /// the shared [InviteCard] with: a tap-through to the dedicated
@@ -49,7 +50,7 @@ class _HomePendingInviteCalloutState extends State<HomePendingInviteCallout> {
       if (!mounted) return;
       messenger.showSnackBar(
         SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          content: Text(friendlyError(e)),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
         ),

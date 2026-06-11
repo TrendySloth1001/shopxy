@@ -5,6 +5,7 @@ import 'package:shopxy_customer/features/marketplace/domain/entities/marketplace
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+import 'package:shopxy_customer/shared/format/app_format.dart';
 
 /// Price block + active flash-sale countdown. When [MarketplaceProduct.flashSale]
 /// is non-null and `endAt > now`, the price uses the flash price and a
@@ -92,7 +93,7 @@ class _PdpPriceBlockState extends State<PdpPriceBlock> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '₹${price.toStringAsFixed(0)}',
+                AppFormat.rupees(price),
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       color: AppColors.black,
                       fontSize: 26,
@@ -105,7 +106,7 @@ class _PdpPriceBlockState extends State<PdpPriceBlock> {
                 Padding(
                   padding: const EdgeInsets.only(bottom: AppSizes.xs),
                   child: Text(
-                    'M.R.P. ₹${baseMrp.toStringAsFixed(0)}',
+                    'M.R.P. ${AppFormat.rupees(baseMrp)}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: AppColors.muted,
                           fontWeight: FontWeight.w600,

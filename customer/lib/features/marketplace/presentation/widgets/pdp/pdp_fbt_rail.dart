@@ -8,6 +8,7 @@ import 'package:shopxy_customer/features/marketplace/presentation/pages/product_
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+import 'package:shopxy_customer/shared/format/app_format.dart';
 
 /// Phase G — "Frequently bought together" rail. Sits between the offers
 /// strip and the tab bar in the PDP. Self-loads its own cohort on
@@ -134,7 +135,7 @@ class _Card extends StatelessWidget {
                     Row(
                       children: [
                         Text(
-                          '₹${card.sellingPrice.toStringAsFixed(0)}',
+                          AppFormat.rupees(card.sellingPrice),
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                 color: AppColors.black,
                                 fontWeight: FontWeight.w800,
@@ -143,7 +144,7 @@ class _Card extends StatelessWidget {
                         if (card.isDiscounted) ...[
                           const SizedBox(width: AppSizes.xs),
                           Text(
-                            '₹${card.mrp.toStringAsFixed(0)}',
+                            AppFormat.rupees(card.mrp),
                             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                                   color: AppColors.muted,
                                   decoration: TextDecoration.lineThrough,

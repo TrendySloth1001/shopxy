@@ -10,6 +10,7 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_divider.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
+import 'package:shopxy_customer/shared/format/app_format.dart';
 
 class ShopInvoicesPage extends StatefulWidget {
   const ShopInvoicesPage({super.key, required this.shop});
@@ -123,7 +124,7 @@ class _InvoiceTile extends StatelessWidget {
               ),
             ),
             Text(
-              '${AppStrings.currencySymbol}${invoice.total.toStringAsFixed(2)}',
+              AppFormat.rupeesPrecise(invoice.total),
               style: theme.textTheme.bodyLarge?.copyWith(
                 fontWeight: FontWeight.w800,
                 fontFeatures: const [FontFeature.tabularFigures()],

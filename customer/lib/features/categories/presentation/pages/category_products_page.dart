@@ -9,6 +9,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
+import 'package:shopxy_customer/shared/format/app_format.dart';
 
 /// Paginated product feed for a single canonical category. Backend
 /// rolls children up under the parent slug, so picking "Electronics"
@@ -280,7 +281,7 @@ class _ProductTile extends StatelessWidget {
           Row(
             children: [
               Text(
-                '₹${product.sellingPrice.toStringAsFixed(0)}',
+                AppFormat.rupees(product.sellingPrice),
                 style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
@@ -288,7 +289,7 @@ class _ProductTile extends StatelessWidget {
               if (product.isDiscounted) ...[
                 const SizedBox(width: AppSizes.sm),
                 Text(
-                  '₹${product.mrp.toStringAsFixed(0)}',
+                  AppFormat.rupees(product.mrp),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: AppColors.muted,
                     decoration: TextDecoration.lineThrough,
