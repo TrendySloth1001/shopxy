@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shopxy_customer/shared/domain/entities/catalog_product.dart';
 import 'package:shopxy_customer/features/orders/data/datasources/orders_remote_data_source.dart';
 import 'package:shopxy_customer/features/orders/domain/entities/customer_order.dart';
+import 'package:shopxy_customer/shared/format/friendly_error.dart';
 
 /// Customer-facing orders inbox + detail loader. Sits in front of
 /// [OrdersRemoteDataSource]; caches the parent list so list rows
@@ -25,7 +26,7 @@ class OrdersProvider extends ChangeNotifier {
       _orders = await _ds.list();
       _error = null;
     } catch (e) {
-      _error = e.toString().replaceFirst('Exception: ', '');
+      _error = friendlyError(e);
     } finally {
       _loading = false;
       notifyListeners();

@@ -8,6 +8,8 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_bar.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
+import 'package:shopxy_customer/shared/format/app_format.dart';
+import 'package:shopxy_customer/shared/format/friendly_error.dart';
 
 /// Wallet page — header balance card + ledger of credits/debits.
 /// Phase 3 ships read-only; Phase 4 (coupons) and Phase 5 (loyalty /
@@ -53,8 +55,7 @@ class _WalletPageState extends State<WalletPage> {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(AppSizes.xxl),
-                child: Text(snap.error.toString()
-                    .replaceFirst('Exception: ', '')),
+                child: Text(friendlyError(snap.error ?? '')),
               ),
             );
           }
@@ -138,7 +139,7 @@ class _BalanceCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSizes.sm),
           Text(
-            '₹${balance.toStringAsFixed(balance == balance.roundToDouble() ? 0 : 2)}',
+            AppFormat.rupeesSmart(balance),
             style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                   color: AppColors.white,
                   fontWeight: FontWeight.w800,
@@ -225,7 +226,7 @@ class _LedgerRow extends StatelessWidget {
           ),
           const SizedBox(width: AppSizes.sm),
           Text(
-            '$sign₹${entry.amount.abs().toStringAsFixed(0)}',
+            '$sign${AppFormat.rupees(entry.amount.abs())}',
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
                   color: color,
                   fontWeight: FontWeight.w800,

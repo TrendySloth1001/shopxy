@@ -12,6 +12,8 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
+import 'package:shopxy_customer/shared/format/app_format.dart';
+import 'package:shopxy_customer/shared/format/friendly_error.dart';
 
 /// Public shop landing page. Reached from any "brand" tap — brand
 /// spotlight cards, sponsored product rails, and the PDP "Visit shop"
@@ -89,7 +91,7 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
       });
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = e.toString().replaceFirst('Exception: ', ''));
+      setState(() => _error = friendlyError(e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -792,7 +794,7 @@ class _ProductTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '₹${product.sellingPrice.toStringAsFixed(0)}',
+                AppFormat.rupees(product.sellingPrice),
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: AppColors.black,
                       fontWeight: FontWeight.w800,
@@ -801,7 +803,7 @@ class _ProductTile extends StatelessWidget {
               const SizedBox(width: AppSizes.xs),
               if (product.isDiscounted)
                 Text(
-                  '₹${product.mrp.toStringAsFixed(0)}',
+                  AppFormat.rupees(product.mrp),
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         color: AppColors.muted,
                         decoration: TextDecoration.lineThrough,

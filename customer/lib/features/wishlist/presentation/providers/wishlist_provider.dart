@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:shopxy_customer/features/wishlist/data/datasources/wishlist_remote_data_source.dart';
+import 'package:shopxy_customer/shared/format/friendly_error.dart';
 
 /// Tracks the user's wishlist. The provider holds:
 ///   * full [entries] for the dedicated wishlist page (lazy-loaded),
@@ -40,7 +41,7 @@ class WishlistProvider extends ChangeNotifier {
       _loaded = true;
       _error = null;
     } catch (e) {
-      _error = e.toString().replaceFirst('Exception: ', '');
+      _error = friendlyError(e);
     } finally {
       _loading = false;
       notifyListeners();
@@ -70,7 +71,7 @@ class WishlistProvider extends ChangeNotifier {
       return true;
     } catch (e) {
       _ids.remove(productId);
-      _error = e.toString().replaceFirst('Exception: ', '');
+      _error = friendlyError(e);
       notifyListeners();
       return false;
     }
@@ -86,7 +87,7 @@ class WishlistProvider extends ChangeNotifier {
       return true;
     } catch (e) {
       _ids.add(productId);
-      _error = e.toString().replaceFirst('Exception: ', '');
+      _error = friendlyError(e);
       // Reload so the in-memory entries match the server again.
       _loaded = false;
       notifyListeners();

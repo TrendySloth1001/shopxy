@@ -8,6 +8,8 @@ import 'package:shopxy_customer/shared/constants/app_strings.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
+import 'package:shopxy_customer/shared/format/app_format.dart';
+import 'package:shopxy_customer/shared/format/friendly_error.dart';
 
 /// How the customer says they'll move the money. There's no payment gateway
 /// yet — the transfer happens off-platform and the merchant confirms receipt,
@@ -106,7 +108,7 @@ class _SheetState extends State<_Sheet> {
       if (!mounted) return;
       setState(() {
         _submitting = false;
-        _error = e.toString().replaceFirst('Exception: ', '');
+        _error = friendlyError(e);
       });
     }
   }
@@ -164,7 +166,7 @@ class _SheetState extends State<_Sheet> {
                       Expanded(
                         child: Text(
                           'Against ${widget.basket!.length} item(s)'
-                          '${widget.basketValue != null ? ' · ${AppStrings.currencySymbol}${widget.basketValue!.toStringAsFixed(0)} intended' : ''}',
+                          '${widget.basketValue != null ? ' · ${AppFormat.rupees(widget.basketValue!)} intended' : ''}',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: AppColors.brand,
                             fontWeight: FontWeight.w700,

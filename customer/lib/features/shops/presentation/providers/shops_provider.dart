@@ -4,6 +4,7 @@ import 'package:shopxy_customer/features/orders/data/datasources/orders_remote_d
     show GatewayCheckout;
 import 'package:shopxy_customer/features/shops/data/datasources/me_remote_data_source.dart';
 import 'package:shopxy_customer/features/shops/domain/entities/linked_shop.dart';
+import 'package:shopxy_customer/shared/format/friendly_error.dart';
 
 /// Persisted hint of "was the user linked to at least one merchant as
 /// a customer (party) when we last checked?" — used to seed the
@@ -82,7 +83,7 @@ class ShopsProvider extends ChangeNotifier {
         );
       }
     } catch (e) {
-      _error = e.toString().replaceFirst('Exception: ', '');
+      _error = friendlyError(e);
     } finally {
       _loading = false;
       notifyListeners();
@@ -109,7 +110,7 @@ class ShopsProvider extends ChangeNotifier {
     try {
       _invoiceCache[key] = await _ds.invoices(s);
     } catch (e) {
-      _invoiceError[key] = e.toString().replaceFirst('Exception: ', '');
+      _invoiceError[key] = friendlyError(e);
     } finally {
       _invoiceLoading[key] = false;
       notifyListeners();
@@ -140,7 +141,7 @@ class ShopsProvider extends ChangeNotifier {
     try {
       _cautionCache[key] = await _ds.caution(s);
     } catch (e) {
-      _cautionError[key] = e.toString().replaceFirst('Exception: ', '');
+      _cautionError[key] = friendlyError(e);
     } finally {
       _cautionLoading[key] = false;
       notifyListeners();
@@ -236,7 +237,7 @@ class ShopsProvider extends ChangeNotifier {
     try {
       _quotationCache[key] = await _ds.quotations(s);
     } catch (e) {
-      _quotationError[key] = e.toString().replaceFirst('Exception: ', '');
+      _quotationError[key] = friendlyError(e);
     } finally {
       _quotationLoading[key] = false;
       notifyListeners();

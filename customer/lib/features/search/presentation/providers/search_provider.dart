@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shopxy_customer/features/marketplace/domain/entities/listing_filters.dart';
 import 'package:shopxy_customer/features/search/data/datasources/marketplace_search_remote_data_source.dart';
 import 'package:shopxy_customer/shared/constants/app_durations.dart';
+import 'package:shopxy_customer/shared/format/friendly_error.dart';
 
 /// Marketplace product search. Hits the public `/search` endpoint
 /// (hybrid semantic + FTS ranker on the backend; falls back to
@@ -151,7 +152,7 @@ class SearchProvider extends ChangeNotifier {
       if (res.facets != null) _facets = res.facets;
     } catch (e) {
       if (seq != _seq) return;
-      _error = e.toString().replaceFirst('Exception: ', '');
+      _error = friendlyError(e);
       _results = const [];
     } finally {
       if (seq == _seq) {

@@ -9,6 +9,7 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_bar.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart' show AppShimmerLine;
+import 'package:shopxy_customer/shared/format/friendly_error.dart';
 
 /// Per-user "recently viewed" page. Pulls the capped (≤20) list from
 /// `GET /me/recently-viewed` and renders it as a 2-col grid so the
@@ -53,7 +54,7 @@ class _RecentlyViewedPageState extends State<RecentlyViewedPage> {
           }
           if (snap.hasError) {
             return _ErrorBlock(
-              message: snap.error.toString().replaceFirst('Exception: ', ''),
+              message: friendlyError(snap.error ?? ''),
               onRetry: _refresh,
             );
           }

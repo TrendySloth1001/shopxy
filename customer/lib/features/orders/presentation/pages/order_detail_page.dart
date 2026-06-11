@@ -20,6 +20,8 @@ import 'package:shopxy_customer/features/shops/presentation/pages/shop_invoice_d
 import 'package:shopxy_customer/shared/constants/app_durations.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/constants/app_strings.dart';
+import 'package:shopxy_customer/shared/format/app_format.dart';
+import 'package:shopxy_customer/shared/format/friendly_error.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_bar.dart';
@@ -93,7 +95,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
       if (mounted) {
         setState(() {
           _loading = false;
-          _error = e.toString().replaceFirst('Exception: ', '');
+          _error = friendlyError(e);
         });
       }
     }
@@ -112,32 +114,42 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
         clientParams: checkout.clientParams,
         description: 'Order #${widget.orderId}',
       );
+      String? syncedStatus;
       if (result.isSuccess) {
         // Webhook can't reach localhost (and may lag in prod): confirm with the
         // server now so the order flips to PAID immediately. Best-effort.
         try {
-          await cart.syncOrderPayment(widget.orderId);
+          syncedStatus = await cart.syncOrderPayment(widget.orderId);
         } catch (_) {
           /* non-fatal — the reload below still reflects server state */
         }
       }
       if (!mounted) return;
       if (result.isSuccess) {
+        // Sheet succeeded but the server hasn't confirmed yet (webhook
+        // lag / sync miss) — that's normal, not an error.
+        final confirmed = syncedStatus == 'PAID';
         showAppSnackbar(
           context,
-          message: 'Payment successful',
-          tone: AppSnackbarTone.success,
+          message: confirmed
+              ? 'Payment successful'
+              : 'Payment received — being confirmed. This can take a minute.',
+          tone: confirmed ? AppSnackbarTone.success : AppSnackbarTone.info,
         );
       } else if (result.outcome == RazorpayOutcome.dismissed) {
+        // The customer closed the sheet — nothing was charged. Calm copy
+        // that points at the retry path instead of an error tone.
         showAppSnackbar(
           context,
-          message: 'Payment cancelled',
-          tone: AppSnackbarTone.error,
+          message:
+              'Payment not completed — nothing was charged. Tap "Pay Now" whenever you\'re ready.',
+          tone: AppSnackbarTone.info,
         );
       } else {
         showAppSnackbar(
           context,
-          message: result.message ?? 'Payment failed',
+          message:
+              '${result.message ?? 'Payment failed'} — you can retry with "Pay Now".',
           tone: AppSnackbarTone.error,
         );
       }
@@ -154,7 +166,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
           context,
           message: alreadyPaid
               ? 'This order is already paid'
-              : 'Could not start payment: ${msg.replaceFirst('Exception: ', '')}',
+              : 'Could not start payment: ${friendlyError(e)}',
           tone: alreadyPaid ? AppSnackbarTone.info : AppSnackbarTone.error,
         );
       }
@@ -189,7 +201,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
       if (!mounted) return;
       showAppSnackbar(
         context,
-        message: e.toString().replaceFirst('Exception: ', ''),
+        message: friendlyError(e, fallback: 'Could not download the invoice.'),
         tone: AppSnackbarTone.error,
       );
     } finally {
@@ -237,7 +249,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
       if (!mounted) return;
       showAppSnackbar(
         context,
-        message: e.toString().replaceFirst('Exception: ', ''),
+        message: friendlyError(e),
         tone: AppSnackbarTone.error,
       );
     } finally {
@@ -246,6 +258,10 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
   }
 
   Future<void> _cancelShop(ShopOrderDetail child) async {
+    // Re-entry guard: the capsule only shows its spinner *after* the
+    // confirm sheet resolves, so a double-tap on "Cancel items" could
+    // otherwise stack two confirm sheets.
+    if (_cancellingChildId != null) return;
     final sellerName = child.shop?.displayName ?? 'this seller';
     final ok = await AppConfirmSheet.show(
       context,
@@ -296,7 +312,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
       if (!mounted) return;
       showAppSnackbar(
         context,
-        message: e.toString().replaceFirst('Exception: ', ''),
+        message: friendlyError(e),
         tone: AppSnackbarTone.error,
       );
     } finally {
@@ -872,6 +888,47 @@ class _ShopOrderCard extends StatelessWidget {
   final int? packageIndex;
   final int packageCount;
 
+  /// One-liner shown when the Cancel button is absent but the slice is
+  /// still mid-fulfilment — explains *why* using the shop's
+  /// server-provided cancellation policy. Null when no note is needed
+  /// (cancellable, already cancelled/rejected, or delivered).
+  String? get _cancelUnavailableNote {
+    if (child.canCancel) return null;
+    if (child.status != 'CONFIRMED') return null;
+    if (child.deliveredAt != null) return null;
+    final why = switch (child.cancellationPolicy) {
+      'UNTIL_CONFIRMED' =>
+        'this shop accepts cancellations only until it confirms the order',
+      'UNTIL_PACKED' =>
+        'this shop accepts cancellations only until the order is packed',
+      'UNTIL_SHIPPED' =>
+        'this shop accepts cancellations only until the order is shipped',
+      _ => "the shop's cancellation window has passed",
+    };
+    return 'This order can no longer be cancelled — $why.';
+  }
+
+  /// One-liner shown when the slice is delivered but Request-a-return is
+  /// absent. Only covers the two cases we can explain with certainty
+  /// (returns disabled / window elapsed); stays quiet otherwise — e.g.
+  /// when a return was already filed — rather than guess wrong.
+  String? get _returnUnavailableNote {
+    if (child.canReturn) return null;
+    if (child.status != 'CONFIRMED') return null;
+    final deliveredAt = child.deliveredAt;
+    if (deliveredAt == null) return null;
+    final shop = child.shop;
+    if (shop == null) return null;
+    if (!shop.returnsEnabled) {
+      return "This shop doesn't accept returns.";
+    }
+    final windowEnd = deliveredAt.add(Duration(days: shop.returnWindowDays));
+    if (DateTime.now().isAfter(windowEnd)) {
+      return 'The ${shop.returnWindowDays}-day return window for this order has closed.';
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final vendorName = child.shop?.displayName ?? 'Seller';
@@ -1083,7 +1140,54 @@ class _ShopOrderCard extends StatelessWidget {
               ),
             ),
           ),
+        // When an action is absent but the customer would reasonably
+        // look for it, say why in one quiet line instead of leaving a
+        // silent gap. Still no client-side eligibility derivation — we
+        // only ever explain a server-computed `false`.
+        if (_cancelUnavailableNote != null)
+          _ActionUnavailableNote(text: _cancelUnavailableNote!),
+        if (_returnUnavailableNote != null)
+          _ActionUnavailableNote(text: _returnUnavailableNote!),
       ],
+    );
+  }
+}
+
+/// Muted single-line footnote under a vendor section explaining why a
+/// cancel/return action isn't offered.
+class _ActionUnavailableNote extends StatelessWidget {
+  const _ActionUnavailableNote({required this.text});
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.xs,
+        AppSizes.lg,
+        AppSizes.md,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.info_outline_rounded,
+            size: AppSizes.iconSm,
+            color: AppColors.muted,
+          ),
+          const SizedBox(width: AppSizes.sm),
+          Expanded(
+            child: Text(
+              text,
+              style: Theme.of(context)
+                  .textTheme
+                  .labelMedium
+                  ?.copyWith(color: AppColors.muted, height: 1.3),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1194,8 +1298,8 @@ class _InvoiceFooter extends StatelessWidget {
     if (invoice.isPartiallyPaid) {
       return (
         AppColors.warning,
-        '${AppStrings.currencySymbol}${invoice.paidAmount.toStringAsFixed(0)} of '
-            '${AppStrings.currencySymbol}${invoice.total.toStringAsFixed(0)} paid · '
+        '${AppFormat.rupees(invoice.paidAmount)} of '
+            '${AppFormat.rupees(invoice.total)} paid · '
             'Invoice ${invoice.invoiceNo}',
       );
     }
@@ -1329,7 +1433,7 @@ class _ItemRow extends StatelessWidget {
                             ),
                       ),
                       Text(
-                        '${AppStrings.currencySymbol}${item.unitPrice.toStringAsFixed(2)} each',
+                        '${AppFormat.rupeesSmart(item.unitPrice)} each',
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
                               color: AppColors.muted,
                               fontSize: 11,
@@ -1906,7 +2010,7 @@ class _PayNowBar extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${AppStrings.currencySymbol}${amount.toStringAsFixed(2)}',
+                      AppFormat.rupeesPrecise(amount),
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             color: AppColors.black,
                             fontWeight: FontWeight.w800,

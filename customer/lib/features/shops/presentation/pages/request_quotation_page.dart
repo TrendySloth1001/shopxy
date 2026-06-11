@@ -15,6 +15,8 @@ import 'package:shopxy_customer/shared/widgets/app_bottom_sheet.dart';
 import 'package:shopxy_customer/shared/widgets/app_divider.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
+import 'package:shopxy_customer/shared/format/app_format.dart';
+import 'package:shopxy_customer/shared/format/friendly_error.dart';
 
 /// Browse a *single linked shop's* catalogue, build a basket of what the
 /// customer wants, and send it as a QUOTE REQUEST. The shop prices it and
@@ -104,7 +106,7 @@ class _RequestQuotationPageState extends State<RequestQuotationPage> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = e.toString().replaceFirst('Exception: ', '');
+        _error = friendlyError(e);
       });
     }
   }
@@ -171,7 +173,7 @@ class _RequestQuotationPageState extends State<RequestQuotationPage> {
       Navigator.of(context).pop(true);
     } catch (e) {
       messenger.showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(content: Text(friendlyError(e))),
       );
     }
   }
@@ -190,7 +192,7 @@ class _RequestQuotationPageState extends State<RequestQuotationPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '$_itemCount item(s) · ${AppStrings.currencySymbol}${_basketValue.toStringAsFixed(0)} (indicative). '
+              '$_itemCount item(s) · ${AppFormat.rupees(_basketValue)} (indicative). '
               'The shop will price it and send back a quotation you can accept.',
               style: Theme.of(ctx)
                   .textTheme
@@ -592,7 +594,7 @@ class _ProductRow extends StatelessWidget {
                 Row(
                   children: [
                     Text(
-                      '${AppStrings.currencySymbol}${product.sellingPrice.toStringAsFixed(0)}',
+                      AppFormat.rupees(product.sellingPrice),
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: AppColors.black,
                         fontWeight: FontWeight.w800,
@@ -606,7 +608,7 @@ class _ProductRow extends StatelessWidget {
                     if (product.isDiscounted) ...[
                       const SizedBox(width: AppSizes.sm),
                       Text(
-                        '${AppStrings.currencySymbol}${product.mrp.toStringAsFixed(0)}',
+                        AppFormat.rupees(product.mrp),
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: AppColors.subtle,
                           decoration: TextDecoration.lineThrough,
@@ -790,7 +792,7 @@ class _BottomBar extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '${AppStrings.currencySymbol}${basketValue.toStringAsFixed(0)} indicative',
+                      '${AppFormat.rupees(basketValue)} indicative',
                       style: theme.textTheme.bodySmall
                           ?.copyWith(color: AppColors.muted),
                     ),
@@ -933,7 +935,7 @@ class _ProductPreviewSheetState extends State<_ProductPreviewSheet> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      '${AppStrings.currencySymbol}${p.sellingPrice.toStringAsFixed(0)}',
+                      AppFormat.rupees(p.sellingPrice),
                       style: theme.textTheme.titleLarge
                           ?.copyWith(fontWeight: FontWeight.w800),
                     ),
@@ -949,7 +951,7 @@ class _ProductPreviewSheetState extends State<_ProductPreviewSheet> {
                       Padding(
                         padding: const EdgeInsets.only(bottom: AppSizes.xs),
                         child: Text(
-                          '${AppStrings.currencySymbol}${p.mrp.toStringAsFixed(0)}',
+                          AppFormat.rupees(p.mrp),
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: AppColors.subtle,
                             decoration: TextDecoration.lineThrough,

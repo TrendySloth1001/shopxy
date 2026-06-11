@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:shopxy_customer/features/shops/data/datasources/me_remote_data_source.dart';
 import 'package:shopxy_customer/features/shops/domain/entities/linked_merchant.dart';
+import 'package:shopxy_customer/shared/format/friendly_error.dart';
 
 /// Owns the customer's "Your linked merchants" list. Eagerly loaded
 /// on auth via main.dart so the Home rail can render without waiting.
@@ -28,7 +29,7 @@ class LinkedMerchantsProvider extends ChangeNotifier {
       _items = await _ds.linkedShops();
       _hasLoaded = true;
     } catch (e) {
-      _error = e.toString().replaceFirst('Exception: ', '');
+      _error = friendlyError(e);
     } finally {
       _loading = false;
       notifyListeners();

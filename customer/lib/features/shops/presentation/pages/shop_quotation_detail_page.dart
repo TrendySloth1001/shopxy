@@ -11,6 +11,8 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_divider.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
+import 'package:shopxy_customer/shared/format/app_format.dart';
+import 'package:shopxy_customer/shared/format/friendly_error.dart';
 
 /// Full quotation detail for the customer: line items, totals, status timeline
 /// and Accept / Decline. Accepting turns it into a confirmed invoice.
@@ -29,7 +31,7 @@ class ShopQuotationDetailPage extends StatefulWidget {
 }
 
 class _ShopQuotationDetailPageState extends State<ShopQuotationDetailPage> {
-  final _currency = NumberFormat.currency(symbol: '₹', decimalDigits: 0);
+  final NumberFormat _currency = AppFormat.inr;
   final _dateFmt = DateFormat('d MMM yyyy, h:mm a');
   bool _busy = false;
   bool _sharing = false;
@@ -63,7 +65,7 @@ class _ShopQuotationDetailPageState extends State<ShopQuotationDetailPage> {
       if (!mounted) return;
       setState(() => _busy = false);
       messenger.showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(content: Text(friendlyError(e))),
       );
     }
   }
@@ -109,7 +111,7 @@ class _ShopQuotationDetailPageState extends State<ShopQuotationDetailPage> {
       if (!mounted) return;
       setState(() => _busy = false);
       messenger.showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(content: Text(friendlyError(e))),
       );
     }
   }
@@ -129,7 +131,7 @@ class _ShopQuotationDetailPageState extends State<ShopQuotationDetailPage> {
       );
     } catch (e) {
       messenger.showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(content: Text(friendlyError(e))),
       );
     } finally {
       if (mounted) setState(() => _sharing = false);
@@ -169,7 +171,7 @@ class _ShopQuotationDetailPageState extends State<ShopQuotationDetailPage> {
       if (!mounted) return;
       setState(() => _busy = false);
       messenger.showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(content: Text(friendlyError(e))),
       );
     }
   }

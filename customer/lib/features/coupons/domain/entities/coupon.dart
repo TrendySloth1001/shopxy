@@ -1,3 +1,5 @@
+import 'package:shopxy_customer/shared/format/app_format.dart';
+
 double _d(dynamic v) {
   if (v == null) return 0;
   if (v is num) return v.toDouble();
@@ -65,16 +67,16 @@ class Coupon {
           ? discountValue.toStringAsFixed(0)
           : discountValue.toStringAsFixed(1);
       if (maxDiscount != null) {
-        return '$pct% off · up to ₹${maxDiscount!.toStringAsFixed(0)}';
+        return '$pct% off · up to ${AppFormat.rupees(maxDiscount!)}';
       }
       return '$pct% off';
     }
-    return 'Flat ₹${discountValue.toStringAsFixed(0)} off';
+    return 'Flat ${AppFormat.rupees(discountValue)} off';
   }
 
   /// "Min cart ₹X" subtitle — empty when the coupon has no minimum.
   String get minOrderLabel =>
-      minOrderAmount > 0 ? 'Min cart ₹${minOrderAmount.toStringAsFixed(0)}' : '';
+      minOrderAmount > 0 ? 'Min cart ${AppFormat.rupees(minOrderAmount)}' : '';
 
   factory Coupon.fromJson(Map<String, dynamic> j) => Coupon(
         id: j['id'] as int,

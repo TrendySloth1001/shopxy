@@ -14,6 +14,7 @@ import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_button.dart';
 import 'package:shopxy_customer/shared/widgets/app_price_text.dart';
 import 'package:shopxy_customer/shared/widgets/app_quantity_stepper.dart';
+import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 import 'package:shopxy_customer/shared/widgets/shop_chip.dart';
 
 /// Cart page. Rewritten from zero (May 2026, build3) because earlier
@@ -56,10 +57,7 @@ class CartPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final cart = context.watch<CartProvider>();
     final subtotal = cart.totalPrice;
-    final mrpTotal = cart.lines.fold<double>(
-      0,
-      (s, l) => s + l.product.mrp * l.quantity,
-    );
+    final mrpTotal = cart.mrpTotal;
     final savings = (mrpTotal - subtotal).clamp(0, double.infinity).toDouble();
 
     return Scaffold(
@@ -393,14 +391,40 @@ class _CartLineRow extends StatelessWidget {
                     AppQuantityStepper(
                       dense: true,
                       quantity: qty,
-                      onChanged: (v) => context
-                          .read<CartProvider>()
-                          .setQuantity(product.id, v.toDouble()),
+                      // Cap + at the known stock so the customer isn't
+                      // invited to request more than the shop can sell.
+                      maxQuantity: product.stockQuantity > 0
+                          ? product.stockQuantity.floor()
+                          : null,
+                      onChanged: (v) {
+                        final result = context
+                            .read<CartProvider>()
+                            .setQuantity(product.id, v.toDouble());
+                        if (result == AddToCartResult.capped) {
+                          showAppSnackbar(
+                            context,
+                            message:
+                                'Only ${product.stockQuantity.floor()} left in stock',
+                            tone: AppSnackbarTone.info,
+                          );
+                        }
+                      },
                     ),
                     const Spacer(),
                     InkWell(
-                      onTap: () =>
-                          context.read<CartProvider>().remove(product.id),
+                      onTap: () {
+                        // Keep what we need for UNDO before the line is gone.
+                        final removedQty = line.quantity;
+                        final cart = context.read<CartProvider>();
+                        cart.remove(product.id);
+                        showAppSnackbar(
+                          context,
+                          message: 'Removed ${product.name}',
+                          actionLabel: 'UNDO',
+                          onAction: () =>
+                              cart.add(product, quantity: removedQty),
+                        );
+                      },
                       borderRadius: AppShapes.squircleRadius(AppSizes.radiusSm),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(

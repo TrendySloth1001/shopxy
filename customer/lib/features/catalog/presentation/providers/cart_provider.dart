@@ -9,6 +9,7 @@ import 'package:shopxy_customer/features/catalog/domain/entities/cart_item.dart'
 import 'package:shopxy_customer/shared/domain/entities/catalog_product.dart';
 import 'package:shopxy_customer/features/orders/data/datasources/orders_remote_data_source.dart';
 import 'package:shopxy_customer/shared/constants/app_durations.dart';
+import 'package:shopxy_customer/shared/format/friendly_error.dart';
 
 /// Outcome of [CartProvider.placeOrder]. On success [orderId] is the
 /// parent CustomerOrder id and [shopOrderCount] is how many vendor
@@ -119,6 +120,11 @@ class CartProvider extends ChangeNotifier {
   /// market-standard name so checkout helpers (coupon validate, wallet
   /// preview) don't have to recompute the fold.
   double get itemsTotal => totalPrice;
+  /// Sum of MRP × qty across the cart — the strike-through baseline the
+  /// cart and checkout bill cards both render. Centralised so the two
+  /// pages can't drift.
+  double get mrpTotal =>
+      _lines.values.fold(0.0, (sum, l) => sum + l.product.mrp * l.quantity);
   /// Distinct shop ids the cart spans. Used by coupon validation to
   /// enforce shop-scoped redemption rules.
   List<int> get shopIds {
@@ -302,7 +308,7 @@ class CartProvider extends ChangeNotifier {
           'Prices have changed since you viewed the cart. Please review and try again.';
       return const PlaceOrderResult.failure('PRICE_DRIFT');
     } catch (e) {
-      final msg = e.toString().replaceFirst('Exception: ', '');
+      final msg = friendlyError(e);
       _error = msg;
       return PlaceOrderResult.failure(msg);
     } finally {

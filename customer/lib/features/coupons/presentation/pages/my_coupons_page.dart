@@ -10,6 +10,7 @@ import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_bar.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
+import 'package:shopxy_customer/shared/format/friendly_error.dart';
 
 /// "My coupons" — read-only list of redeemable promo codes. Customers
 /// copy a code here and paste it into the checkout sheet. Exhausted
@@ -60,7 +61,7 @@ class _MyCouponsPageState extends State<MyCouponsPage> {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(AppSizes.xxl),
-                child: Text(snap.error.toString().replaceFirst('Exception: ', '')),
+                child: Text(friendlyError(snap.error ?? '')),
               ),
             );
           }

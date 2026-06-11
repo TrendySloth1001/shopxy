@@ -12,6 +12,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/constants/app_strings.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+import 'package:shopxy_customer/shared/format/app_format.dart';
 
 /// Customer-side "Merchants" tab (index 1 once the user is linked).
 /// Single screen, three layers stacked vertically:
@@ -389,10 +390,7 @@ class _ShopCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final money = NumberFormat.currency(
-      symbol: AppStrings.currencySymbol,
-      decimalDigits: 0,
-    );
+    final money = AppFormat.inr;
     final displayName = shop.shopName ?? shop.name;
     final isParty = shop.role == ShopRole.party;
     final roleLabel = isParty
