@@ -28,7 +28,6 @@ import 'package:shopxy_customer/features/home/presentation/services/tracking_ser
 import 'package:shopxy_customer/features/onboarding/presentation/providers/onboarding_controller.dart';
 import 'package:shopxy_customer/features/addresses/data/datasources/addresses_remote_data_source.dart';
 import 'package:shopxy_customer/features/addresses/presentation/providers/addresses_provider.dart';
-import 'package:shopxy_customer/features/banner_slide/data/datasources/banner_slide_remote_data_source.dart';
 import 'package:shopxy_customer/features/reviews/data/datasources/reviews_remote_data_source.dart';
 import 'package:shopxy_customer/features/marketplace/data/datasources/marketplace_remote_data_source.dart';
 import 'package:shopxy_customer/features/categories/data/datasources/categories_remote_data_source.dart';
@@ -62,7 +61,6 @@ void main() async {
   final marketplaceSearchDs = MarketplaceSearchRemoteDataSource(apiClient);
   final addressesDs = AddressesRemoteDataSource(apiClient);
   final categoriesDs = CategoriesRemoteDataSource(apiClient);
-  final bannerSlideDs = BannerSlideRemoteDataSource(apiClient);
   final reviewsDs = ReviewsRemoteDataSource(apiClient);
   final recentlyViewedDs = RecentlyViewedRemoteDataSource(apiClient);
   final returnsDs = ReturnsRemoteDataSource(apiClient);
@@ -203,10 +201,6 @@ void main() async {
         // Categories DS: the category-products page hits it directly so
         // route-scoped pages can load without a parent provider.
         Provider<CategoriesRemoteDataSource>.value(value: categoriesDs),
-        // Banner slide-detail page loads its own payload from the
-        // /banners/:id/slide endpoint via this DS — provided so the
-        // route-scoped page doesn't need a parent provider.
-        Provider<BannerSlideRemoteDataSource>.value(value: bannerSlideDs),
         // Reviews API — PDP section + all-reviews page + write sheet
         // all read this DS directly (no parent provider) so the page
         // can be opened by id from anywhere.

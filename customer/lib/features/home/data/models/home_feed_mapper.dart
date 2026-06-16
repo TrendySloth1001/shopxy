@@ -9,62 +9,36 @@ class HomeFeed {
   const HomeFeed({
     required this.heroSlides,
     required this.categoryPucks,
-    required this.flashDeals,
     required this.adStrip,
-    required this.brandSpotlights,
     required this.promoBanners,
     required this.curatedRails,
-    required this.collectionTiles,
     required this.trending,
-    required this.offers,
-    required this.bestValue,
     required this.newInStock,
-    required this.sponsoredProducts,
     required this.recommended,
     required this.recentlyViewed,
   });
 
   final List<HeroSlide> heroSlides;
   final List<CategoryPuck> categoryPucks;
-  final List<FlashDealProduct> flashDeals;
-  // adStrip / promoBanners / curatedRails are all banner placements
-  // authored with the same template editor as `heroSlides`; we render
-  // every one of them with the templated card system so the merchant's
-  // chosen layout (Classic, Minimal, Split, …) survives the round-trip.
+  // adStrip / promoBanners / curatedRails are all banner placements —
+  // each is just a plain tappable image + optional link, distinguished
+  // only by where on the page they render.
   final List<HeroSlide> adStrip;
-  final List<BrandSpotlight> brandSpotlights;
   final List<HeroSlide> promoBanners;
   final List<HeroSlide> curatedRails;
-  final List<CollectionTile> collectionTiles;
   final List<ProductCard> trending;
-  /// Editorial subsets derived server-side from the same trending pool
-  /// the rail uses. Each is short (max ~12) so the customer can render
-  /// it as a horizontal carousel without scroll fatigue.
-  final List<ProductCard> offers;
-  final List<ProductCard> bestValue;
   final List<ProductCard> newInStock;
-  /// Merchant-paid sponsored rail. Every entry has `isAd = true` and a
-  /// `promotionId` set so the impression tracker can bill the right
-  /// promo. Rendered as its own section with an explicit "Sponsored"
-  /// label so users aren't confused with organic trending.
-  final List<ProductCard> sponsoredProducts;
   final List<ProductCard> recommended;
   final List<ProductCard> recentlyViewed;
 
   static const HomeFeed empty = HomeFeed(
     heroSlides: [],
     categoryPucks: [],
-    flashDeals: [],
     adStrip: [],
-    brandSpotlights: [],
     promoBanners: [],
     curatedRails: [],
-    collectionTiles: [],
     trending: [],
-    offers: [],
-    bestValue: [],
     newInStock: [],
-    sponsoredProducts: [],
     recommended: [],
     recentlyViewed: [],
   );
@@ -76,17 +50,11 @@ class HomeFeed {
     return HomeFeed(
       heroSlides: heroSlides,
       categoryPucks: categoryPucks,
-      flashDeals: flashDeals,
       adStrip: adStrip,
-      brandSpotlights: brandSpotlights,
       promoBanners: promoBanners,
       curatedRails: curatedRails,
-      collectionTiles: collectionTiles,
       trending: trending,
-      offers: offers,
-      bestValue: bestValue,
       newInStock: newInStock,
-      sponsoredProducts: sponsoredProducts,
       recommended: recommended ?? this.recommended,
       recentlyViewed: recentlyViewed ?? this.recentlyViewed,
     );
@@ -105,63 +73,26 @@ class HomeFeedMapper {
     final adStrip = _list(json['adStripBanners']);
     final promoBanners = _list(json['promoBanners']);
     final curatedRailBanners = _list(json['curatedRailBanners']);
-    final flashDeals = _list(json['flashDeals']);
-    final spotlights = _list(json['brandSpotlights']);
-    final collections = _list(json['collections']);
     final trending = _list(json['trending']);
-    final offers = _list(json['offers']);
-    final bestValue = _list(json['bestValue']);
-    // Server sends raw Product rows under `newArrivals` (not the
-    // trending-wrap shape), so we feed them through the same mapper
-    // the endless page uses. The legacy `newInStock` key is read as
-    // a fallback for older payloads.
-    final newInStock = _list(json['newArrivals']).isNotEmpty
-        ? _list(json['newArrivals'])
-        : _list(json['newInStock']);
-    final sponsored = _list(json['sponsoredProducts']);
+    // Server sends raw Product rows under `newArrivals`, so we feed them
+    // through the same mapper the endless page uses.
+    final newArrivals = _list(json['newArrivals']);
     final pucks = _list(json['categoryPucks']);
-
-    List<ProductCard> mapTrendingList(List<dynamic> rows) => rows
-        .map(_productCardFromTrending)
-        .whereType<ProductCard>()
-        .toList();
 
     return HomeFeed(
       heroSlides: heroBanners.map(_heroFromBanner).toList(),
       adStrip: adStrip.map(_heroFromBanner).toList(),
       promoBanners: promoBanners.map(_heroFromBanner).toList(),
-      curatedRails: _curatedRails(curatedRailBanners, collections),
-      brandSpotlights: spotlights.map(_brandFromSpotlight).toList(),
-      flashDeals: flashDeals.map(_flashFromSale).whereType<FlashDealProduct>().toList(),
-      collectionTiles: collections.map(_collectionTile).toList(),
+      curatedRails: curatedRailBanners.map(_heroFromBanner).toList(),
       categoryPucks: pucks.asMap().entries.map(_categoryPuck).toList(),
-      trending: mapTrendingList(trending),
-      offers: mapTrendingList(offers),
-      bestValue: mapTrendingList(bestValue),
-      // newArrivals/newInStock are raw product rows from the server;
-      // route them through the raw-row mapper rather than the
-      // trending-wrap one. Probes the first row's shape to stay
-      // compatible with legacy {score, product}-wrapped payloads.
-      newInStock: _mapMaybeWrapped(newInStock),
-      sponsoredProducts: mapTrendingList(sponsored),
+      trending: trending
+          .map(_productCardFromTrending)
+          .whereType<ProductCard>()
+          .toList(),
+      newInStock: fromEndlessPage(newArrivals),
       recommended: const [],
       recentlyViewed: const [],
     );
-  }
-
-  /// Routes a list whose rows might be raw products or trending
-  /// `{score, product}` wrappers through the right card mapper.
-  /// Empty lists short-circuit so the type-probe never panics.
-  static List<ProductCard> _mapMaybeWrapped(List<dynamic> rows) {
-    if (rows.isEmpty) return const [];
-    final first = rows.first;
-    if (first is Map<String, dynamic> && first['product'] is Map<String, dynamic>) {
-      return rows
-          .map(_productCardFromTrending)
-          .whereType<ProductCard>()
-          .toList();
-    }
-    return fromEndlessPage(rows);
   }
 
   /// Endless-scroll page → list of ProductCard. The endpoint returns
@@ -197,71 +128,11 @@ class HomeFeedMapper {
   static HeroSlide _heroFromBanner(dynamic raw) {
     final m = raw as Map<String, dynamic>;
     return HeroSlide(
-      // brand still carries brandLabel (or eyebrow as a fallback for
-      // legacy templates that read off `brand`); eyebrow now flows
-      // separately so templates can show both at once.
-      brand: (m['brandLabel'] ?? m['eyebrow'] ?? '') as String,
-      title: (m['title'] ?? '') as String,
-      subtitle: (m['subtitle'] ?? '') as String,
+      id: _asInt(m['id']) ?? 0,
       imageUrl: (m['imageUrl'] ?? '') as String,
-      bgColor: _parseColor(m['bgColor'] as String?, fallback: AppColors.heroPanel),
-      accent: _parseColor(m['accentColor'] as String?, fallback: AppColors.brand),
-      template: HeroSlideTemplate.fromWire(m['template'] as String?),
-      imageFit: HeroImageFit.fromWire(m['imageFit'] as String?),
-      brandImageUrl: m['brandImageUrl'] as String?,
-      brandImageFit: HeroImageFit.fromWire(m['brandImageFit'] as String?),
-      ctaText: m['ctaText'] as String?,
-      ctaTarget: m['ctaTarget'] as String?,
-      eyebrow: m['eyebrow'] as String?,
-      bannerId: _asInt(m['id']),
-    );
-  }
-
-  // ── BrandSpotlight ────────────────────────────────────────────────
-
-  static BrandSpotlight _brandFromSpotlight(dynamic raw) {
-    final m = raw as Map<String, dynamic>;
-    final shop = m['shop'] is Map<String, dynamic>
-        ? m['shop'] as Map<String, dynamic>
-        : null;
-    return BrandSpotlight(
-      spotlightId: (m['id'] as num).toInt(),
-      brand: (shop?['name'] ?? '') as String,
-      subtitle: (m['subtitle'] ?? '') as String,
-      dealLabel: (m['dealLabel'] ?? '') as String,
-      imageUrl: (m['heroImageUrl'] ?? '') as String,
-      bgColor: _parseColor(m['bgColor'] as String?, fallback: AppColors.heroPanel),
-      ctaTarget: m['ctaTarget'] as String?,
-      shopSlug: shop?['slug'] as String?,
-    );
-  }
-
-  // ── Flash sale ────────────────────────────────────────────────────
-
-  static FlashDealProduct? _flashFromSale(dynamic raw) {
-    final m = raw as Map<String, dynamic>;
-    final product = m['product'] as Map<String, dynamic>?;
-    if (product == null) return null;
-    final flashPrice = _asDouble(m['flashPrice']) ?? 0;
-    final mrp = _asDouble(product['mrp']) ?? _asDouble(product['sellingPrice']) ?? flashPrice;
-    final sold = _asInt(m['soldCount']) ?? 0;
-    final limit = _asInt(m['stockLimit']) ?? 0;
-    final discount = mrp > 0
-        ? ((1 - flashPrice / mrp) * 100).clamp(0, 99).toInt()
-        : 0;
-    final image = _firstImage(product);
-    final endAt = DateTime.tryParse((m['endAt'] ?? '') as String)?.toLocal() ??
-        DateTime.now().add(const Duration(hours: 1));
-    return FlashDealProduct(
-      productId: (product['id'] as num).toInt(),
-      saleId: (m['id'] as num).toInt(),
-      name: (product['name'] ?? '') as String,
-      price: _money(flashPrice),
-      originalPrice: _money(mrp),
-      discountPct: discount,
-      imageUrl: image,
-      soldPct: limit > 0 ? (sold / limit).clamp(0, 1).toDouble() : 0,
-      endAt: endAt,
+      linkUrl: (m['linkUrl'] as String?)?.trim().isEmpty == false
+          ? (m['linkUrl'] as String).trim()
+          : null,
     );
   }
 
@@ -271,18 +142,10 @@ class HomeFeedMapper {
     final m = row as Map<String, dynamic>;
     final product = m['product'] as Map<String, dynamic>?;
     if (product == null) return null;
-    // Sponsored slots come through with `isAd: true` and a
-    // `promotionId` set by the backend's injectSponsoredIntoRail.
-    final isAd = m['isAd'] == true;
-    final promotionId = _asInt(m['promotionId']);
-    return _productCardFromProduct(product, isAd: isAd, promotionId: promotionId);
+    return _productCardFromProduct(product);
   }
 
-  static ProductCard? _productCardFromProduct(
-    Map<String, dynamic> p, {
-    bool isAd = false,
-    int? promotionId,
-  }) {
+  static ProductCard? _productCardFromProduct(Map<String, dynamic> p) {
     final mrp = _asDouble(p['mrp']);
     final selling = _asDouble(p['sellingPrice']) ?? mrp ?? 0;
     if (selling <= 0) return null;
@@ -305,51 +168,10 @@ class HomeFeedMapper {
       ratingCountRaw: ratingCount,
       imageUrl: image,
       bgColor: AppColors.heroPanel,
-      isAd: isAd,
-      promotionId: promotionId,
       shopSlug: shop?['slug'] as String?,
       brand: p['brand'] as String?,
       discountPct: discountPct,
     );
-  }
-
-  // ── Collections / curated rails ──────────────────────────────────
-
-  static CollectionTile _collectionTile(dynamic raw) {
-    final m = raw as Map<String, dynamic>;
-    return CollectionTile(
-      collectionId: (m['id'] as num).toInt(),
-      slug: (m['slug'] ?? '') as String,
-      label: (m['title'] ?? '') as String,
-      imageUrl: (m['coverImageUrl'] ?? '') as String,
-    );
-  }
-
-  static List<HeroSlide> _curatedRails(
-    List<dynamic> bannerRows,
-    List<dynamic> collectionRows,
-  ) {
-    final fromBanners = bannerRows.map(_heroFromBanner);
-    // Collections become curated rails when there's no banner content
-    // — guarantees the section has something to show even before a
-    // platform admin has curated the home page. Defaults to Classic
-    // template; merchants can later override per-collection.
-    final fromCollections = collectionRows.take(4).map((raw) {
-      final m = raw as Map<String, dynamic>;
-      final slug = (m['slug'] ?? '') as String;
-      return HeroSlide(
-        brand: ((m['eyebrow'] ?? 'EDITORIAL') as String).toUpperCase(),
-        title: (m['title'] ?? '') as String,
-        subtitle: (m['subtitle'] ?? '') as String,
-        imageUrl: (m['coverImageUrl'] ?? '') as String,
-        bgColor: _parseColor(m['bgColor'] as String?, fallback: AppColors.heroPanel),
-        accent: AppColors.brand,
-        ctaText: (m['ctaText'] ?? 'Explore') as String,
-        ctaTarget: (m['ctaTarget'] ?? 'collection:$slug') as String,
-        eyebrow: (m['eyebrow'] ?? 'EDITORIAL') as String,
-      );
-    });
-    return [...fromBanners, ...fromCollections];
   }
 
   // ── Category pucks ────────────────────────────────────────────────
@@ -372,9 +194,8 @@ class HomeFeedMapper {
 
   /// Prisma `Decimal` fields serialise as **strings** in JSON (e.g.
   /// `"199.00"`), not numbers. Anywhere we read a price / rating /
-  /// score from a Prisma row we must accept both — using `as num` was
-  /// blowing up on the first product card. Returns null on anything
-  /// we can't parse so callers fall back to a sensible default.
+  /// score from a Prisma row we must accept both. Returns null on
+  /// anything we can't parse so callers fall back to a sensible default.
   static double? _asDouble(dynamic v) {
     if (v == null) return null;
     if (v is num) return v.toDouble();
@@ -397,15 +218,6 @@ class HomeFeedMapper {
       if (first is Map<String, dynamic>) return (first['url'] ?? '') as String;
     }
     return '';
-  }
-
-  static Color _parseColor(String? hex, {required Color fallback}) {
-    if (hex == null) return fallback;
-    final m = RegExp(r'^#([0-9a-fA-F]{6}|[0-9a-fA-F]{8})$').firstMatch(hex);
-    if (m == null) return fallback;
-    var raw = m.group(1)!;
-    if (raw.length == 6) raw = 'FF$raw';
-    return Color(int.parse(raw, radix: 16));
   }
 
   // MOD-1: shared formatter — see AppFormat.
