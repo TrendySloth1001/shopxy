@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:shopxy_customer/features/home/data/models/home_blocks.dart';
 import 'package:shopxy_customer/features/home/data/models/home_feed_mapper.dart';
 import 'package:shopxy_customer/features/home/data/models/home_feed_models.dart';
 import 'package:shopxy_customer/features/home/presentation/providers/home_feed_provider.dart';
 import 'package:shopxy_customer/features/home/presentation/services/tracking_service.dart';
 import 'package:shopxy_customer/features/categories/presentation/widgets/categories_rail.dart';
-import 'package:shopxy_customer/features/home/presentation/widgets/home_feed_blocks.dart';
+import 'package:shopxy_customer/features/home/presentation/widgets/home_ad_strip.dart';
+import 'package:shopxy_customer/features/home/presentation/widgets/home_curated_rail.dart';
 import 'package:shopxy_customer/features/home/presentation/widgets/home_footer_strip.dart';
+import 'package:shopxy_customer/features/home/presentation/widgets/home_hero_carousel.dart';
 import 'package:shopxy_customer/features/home/presentation/widgets/home_pending_invite_callout.dart';
 import 'package:shopxy_customer/features/home/presentation/pages/section_products_page.dart';
 import 'package:shopxy_customer/features/home/presentation/widgets/home_product_carousel.dart';
@@ -118,37 +119,32 @@ class _HomePageState extends State<HomePage> {
     }
     return RefreshIndicator(
       onRefresh: provider.refresh,
-      // The pending-payment affordance now lives in the top bar (a
-      // wallet icon + badge next to the bell) so the feed stays a clean
+      // The pending-payment affordance lives in the top bar (a wallet
+      // icon + badge next to the bell) so the feed stays a clean
       // shopping surface — see HomeTopBar.
-      child: Column(
-        children: [
-          Expanded(
-            child: _HomeFeedList(
-              feed: provider.feed,
-              feedVersion: provider.feedVersion,
-              blocks: provider.blocks,
-              isLoadingMore: provider.endlessLoading,
-              isExhausted: provider.endlessExhausted,
-              loadMore: provider.loadMore,
-              endlessError: provider.endlessError,
-              scroll: _scroll,
-            ),
-          ),
-        ],
+      child: _HomeFeedList(
+        feed: provider.feed,
+        feedVersion: provider.feedVersion,
+        products: provider.products,
+        isLoadingMore: provider.endlessLoading,
+        isExhausted: provider.endlessExhausted,
+        loadMore: provider.loadMore,
+        endlessError: provider.endlessError,
+        scroll: _scroll,
       ),
     );
   }
 }
 
-/// Renders the home feed sections. Empty sections collapse silently
-/// (each widget early-returns on empty input), so a backend with no
-/// banners but live flash deals still produces a coherent page.
+/// Renders the home feed: category pucks, banners, product rails, then
+/// an endless product grid. Empty sections collapse silently (each
+/// widget early-returns on empty input) so a backend with no banners
+/// but live trending still produces a coherent page.
 class _HomeFeedList extends StatefulWidget {
   const _HomeFeedList({
     required this.feed,
     required this.feedVersion,
-    required this.blocks,
+    required this.products,
     required this.isLoadingMore,
     required this.isExhausted,
     required this.loadMore,
@@ -164,9 +160,9 @@ class _HomeFeedList extends StatefulWidget {
   /// the impression batch.
   final int feedVersion;
 
-  /// Composed block list owned by the provider — grows as the endless
-  /// pager fetches more pages.
-  final List<HomeBlock> blocks;
+  /// Flat product list owned by the provider — grows as the endless
+  /// pager fetches more pages. Rendered as a 2-column grid.
+  final List<ProductCard> products;
   final bool isLoadingMore;
   final bool isExhausted;
   final String? endlessError;
@@ -181,8 +177,8 @@ class _HomeFeedListState extends State<_HomeFeedList> {
   /// for. Prevents the impression burst from re-firing on every
   /// rebuild (e.g. when the cart badge changes higher in the tree).
   int? _trackedFeedVersion;
-  // Track how many blocks we'd already counted impressions for so a
-  // newly-appended endless page only fires impressions for its own
+  // Track how many grid products we'd already counted impressions for
+  // so a newly-appended page only fires impressions for its own
   // products, not the entire growing list.
   int _impressionWatermark = 0;
 
@@ -213,15 +209,15 @@ class _HomeFeedListState extends State<_HomeFeedList> {
   @override
   void didUpdateWidget(covariant _HomeFeedList oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // A successful refresh resets blocks to a smaller list — drop the
+    // A successful refresh resets products to a smaller list — drop the
     // watermark so post-refresh impressions fire from the start.
     if (widget.feedVersion != oldWidget.feedVersion) {
       _impressionWatermark = 0;
     }
     WidgetsBinding.instance.addPostFrameCallback((_) => _trackImpressions());
-    // If new content arrived but the list is shorter than the
-    // viewport the scroll listener never fires — kick the pager
-    // manually until the page fills up.
+    // If new content arrived but the list is shorter than the viewport
+    // the scroll listener never fires — kick the pager manually until
+    // the page fills up.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (!widget.scroll.hasClients) return;
@@ -237,68 +233,36 @@ class _HomeFeedListState extends State<_HomeFeedList> {
   void _trackImpressions() {
     if (!mounted) return;
     if (widget.feedVersion == _trackedFeedVersion &&
-        _impressionWatermark >= widget.blocks.length) {
+        _impressionWatermark >= widget.products.length) {
       return;
     }
     _trackedFeedVersion = widget.feedVersion;
     final tracking = context.read<TrackingService>();
     // Server batches + dedupes on clientUuid, so a quick scroll-by
     // burst still stays cheap even if we fire a few extras. We walk
-    // only the newly-appended blocks since the last call.
-    for (var i = _impressionWatermark; i < widget.blocks.length; i++) {
-      for (final p in _productsInBlock(widget.blocks[i])) {
-        tracking.recordImpression(p.productId);
-      }
+    // only the newly-appended products since the last call.
+    for (var i = _impressionWatermark; i < widget.products.length; i++) {
+      tracking.recordImpression(widget.products[i].productId);
     }
-    _impressionWatermark = widget.blocks.length;
-  }
-
-  Iterable<ProductCard> _productsInBlock(HomeBlock b) {
-    return switch (b) {
-      MosaicBlock m => [m.hero, m.topRight, m.bottomRight],
-      Grid2ColBlock g => g.products,
-      Grid3CompactBlock g => g.products,
-      VerticalCardsBlock v => v.products,
-      ReelsTallBlock r => r.products,
-      CategoryCapsuleBlock c => c.products,
-      QuickAddChipsBlock q => q.products,
-      ComparisonBlock c => [c.left, c.right],
-      CarouselBlock c => c.products,
-      SponsoredCarouselBlock s => s.products,
-      RecentlyViewedBlock r => r.products,
-      // Non-product blocks (banners, curated rails, single promos)
-      // are tracked as banner impressions elsewhere, not here.
-      CuratedRailBlock _ => const <ProductCard>[],
-      CollectionBannerBlock _ => const <ProductCard>[],
-      HeroSingleBlock _ => const <ProductCard>[],
-      AdSingleBlock _ => const <ProductCard>[],
-      PromoSingleBlock _ => const <ProductCard>[],
-      FlashSingleBlock _ => const <ProductCard>[],
-      SpotlightSingleBlock _ => const <ProductCard>[],
-      PosterProductBlock p => [p.product],
-      LeaderboardBlock l => l.products,
-      BrandFocusBlock f => f.products,
-      PriceBandBlock p => p.products,
-      ZigZagDuoBlock z => [z.hero, z.pair],
-      ShopShowcaseBlock s => s.products,
-    };
+    _impressionWatermark = widget.products.length;
   }
 
   @override
   Widget build(BuildContext context) {
-    final blocks = widget.blocks;
     final feed = widget.feed;
 
-    // Conditional prelude slots. Order matches the user's mental
-    // model: browse intent (categories) → continuity (things they
-    // viewed) → freshness (new arrivals) → then the endless cycle.
-    // Empty slots collapse so the layout doesn't leave a hole.
-    final preludeSlots = <Widget>[
-      // Invite preview sits at the top of the scroll so a pending
-      // invite reads as the first card the user sees, but still
-      // scrolls away with the rest of the feed.
+    // Section slots above the endless grid. Order matches the user's
+    // mental model: browse intent (categories) → marketing (hero) →
+    // trust → continuity (recently viewed) → freshness → trending →
+    // curated banners → then the endless grid. Empty slots collapse.
+    final sections = <Widget>[
       const HomePendingInviteCallout(),
       const CategoriesRail(),
+      if (feed.heroSlides.isNotEmpty)
+        Padding(
+          padding: const EdgeInsets.only(bottom: AppSizes.xl),
+          child: HomeHeroCarousel(slides: feed.heroSlides),
+        ),
       const Padding(
         padding: EdgeInsets.only(bottom: AppSizes.lg),
         child: HomeTrustStrip(),
@@ -308,74 +272,141 @@ class _HomeFeedListState extends State<_HomeFeedList> {
           padding: const EdgeInsets.only(bottom: AppSizes.xl),
           child: HomeRecentlyViewed(items: feed.recentlyViewed),
         ),
+      if (feed.adStrip.isNotEmpty)
+        Padding(
+          padding: const EdgeInsets.only(bottom: AppSizes.xl),
+          child: HomeAdStrip(slides: feed.adStrip),
+        ),
       if (feed.newInStock.isNotEmpty)
         Padding(
           padding: const EdgeInsets.only(bottom: AppSizes.xl),
-          child: Builder(
-            builder: (ctx) => HomeProductCarousel(
-              eyebrow: 'JUST LANDED',
-              title: 'Fresh in stock',
-              products: feed.newInStock,
-              onSeeAll: () => Navigator.of(ctx).push(
-                MaterialPageRoute(
-                  builder: (_) => SectionProductsPage(
-                    eyebrow: 'JUST LANDED',
-                    title: 'Fresh in stock',
-                    products: feed.newInStock,
-                  ),
-                ),
-              ),
-            ),
+          child: _ProductRail(
+            eyebrow: 'JUST LANDED',
+            title: 'Fresh in stock',
+            products: feed.newInStock,
           ),
+        ),
+      if (feed.promoBanners.isNotEmpty)
+        Padding(
+          padding: const EdgeInsets.only(bottom: AppSizes.xl),
+          child: HomeAdStrip(slides: feed.promoBanners),
+        ),
+      if (feed.trending.isNotEmpty)
+        Padding(
+          padding: const EdgeInsets.only(bottom: AppSizes.xl),
+          child: _ProductRail(
+            eyebrow: 'TRENDING NOW',
+            title: 'Popular right now',
+            products: feed.trending,
+          ),
+        ),
+      for (final slide in feed.curatedRails)
+        Padding(
+          padding: const EdgeInsets.only(bottom: AppSizes.xl),
+          child: HomeCuratedRail(slide: slide),
         ),
     ];
 
-    return ListView.builder(
+    final products = widget.products;
+    // 2-column product grid laid out manually (rows of two) inside the
+    // single scroll view so it shares the page's scroll controller.
+    final gridRows = (products.length / 2).ceil();
+
+    return CustomScrollView(
       controller: widget.scroll,
-      padding: const EdgeInsets.only(bottom: AppSizes.huge),
-      // Prelude (variable, depending on which conditional slots have
-      // data) + composed blocks + tail sentinel (loader / footer).
-      itemCount: preludeSlots.length + blocks.length + 1,
-      itemBuilder: (context, i) {
-        if (i < preludeSlots.length) return preludeSlots[i];
-
-        final blockIdx = i - preludeSlots.length;
-        if (blockIdx < blocks.length) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: AppSizes.xl),
-            child: HomeFeedBlock(block: blocks[blockIdx]),
-          );
-        }
-
-        // Tail sentinel. Spinner only when a page is actually in
-        // flight — the older `isLoadingMore || blocks.isNotEmpty`
-        // gated wrong and kept the spinner glued on after every
-        // successful page, making the feed look frozen.
-        if (widget.isExhausted) {
-          return _EndlessExhausted(
-            message: widget.endlessError == null
-                ? "You've reached the end — pull to refresh"
-                : 'Took a breather to avoid rate limits — pull to refresh',
-          );
-        }
-        if (widget.isLoadingMore) {
-          return const Padding(
-            padding: EdgeInsets.symmetric(vertical: AppSizes.xl),
-            child: Center(
-              child: SizedBox(
-                width: 22, height: 22,
-                child: CircularProgressIndicator(strokeWidth: 2.4),
+      slivers: [
+        SliverList(
+          delegate: SliverChildListDelegate(sections),
+        ),
+        if (products.isNotEmpty)
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, row) {
+                  final left = products[row * 2];
+                  final rightIdx = row * 2 + 1;
+                  final right =
+                      rightIdx < products.length ? products[rightIdx] : null;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: AppSizes.md),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: HomeProductTile(product: left, width: null),
+                        ),
+                        const SizedBox(width: AppSizes.md),
+                        Expanded(
+                          child: right == null
+                              ? const SizedBox.shrink()
+                              : HomeProductTile(product: right, width: null),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                childCount: gridRows,
               ),
             ),
-          );
-        }
-        // Empty-state safety net: nothing loaded, nothing loading,
-        // nothing exhausted — show the footer instead of a blank tile.
-        if (blocks.isEmpty) return const HomeFooterStrip();
-        // Idle tail between pages — let the scroll listener notice
-        // we've passed the prefetch threshold and call loadMore.
-        return const SizedBox(height: AppSizes.xl);
-      },
+          ),
+        SliverToBoxAdapter(child: _tail()),
+      ],
+    );
+  }
+
+  Widget _tail() {
+    if (widget.isExhausted) {
+      return _EndlessExhausted(
+        message: widget.endlessError == null
+            ? "You've reached the end — pull to refresh"
+            : 'Took a breather to avoid rate limits — pull to refresh',
+      );
+    }
+    if (widget.isLoadingMore) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: AppSizes.xl),
+        child: Center(
+          child: SizedBox(
+            width: 22,
+            height: 22,
+            child: CircularProgressIndicator(strokeWidth: 2.4),
+          ),
+        ),
+      );
+    }
+    // Nothing loading / loaded / exhausted — show the footer.
+    if (widget.products.isEmpty) return const HomeFooterStrip();
+    return const SizedBox(height: AppSizes.xl);
+  }
+}
+
+/// Thin wrapper that gives a product carousel a "see all" target.
+class _ProductRail extends StatelessWidget {
+  const _ProductRail({
+    required this.eyebrow,
+    required this.title,
+    required this.products,
+  });
+  final String eyebrow;
+  final String title;
+  final List<ProductCard> products;
+
+  @override
+  Widget build(BuildContext context) {
+    return HomeProductCarousel(
+      eyebrow: eyebrow,
+      title: title,
+      products: products,
+      onSeeAll: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => SectionProductsPage(
+            eyebrow: eyebrow,
+            title: title,
+            products: products,
+          ),
+        ),
+      ),
     );
   }
 }
@@ -510,4 +541,3 @@ class _ErrorRetry extends StatelessWidget {
     );
   }
 }
-
