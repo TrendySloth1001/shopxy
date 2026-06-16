@@ -3,46 +3,47 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/core/network/image_url.dart';
 import 'package:shopxy/features/admin/data/models/banner.dart';
-import 'package:shopxy/features/admin/presentation/pages/admin_banner_editor_sheet.dart';
-import 'package:shopxy/features/admin/presentation/providers/admin_banners_provider.dart';
+import 'package:shopxy/features/banners/presentation/pages/merchant_banner_editor_sheet.dart';
+import 'package:shopxy/features/banners/presentation/providers/merchant_banners_provider.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 
-class AdminBannersPage extends StatefulWidget {
-  const AdminBannersPage({super.key});
+class MerchantBannersPage extends StatefulWidget {
+  const MerchantBannersPage({super.key});
 
   @override
-  State<AdminBannersPage> createState() => _AdminBannersPageState();
+  State<MerchantBannersPage> createState() => _MerchantBannersPageState();
 }
 
-class _AdminBannersPageState extends State<AdminBannersPage> {
+class _MerchantBannersPageState extends State<MerchantBannersPage> {
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      context.read<AdminBannersProvider>().load();
+      context.read<MerchantBannersProvider>().load();
     });
   }
 
   Future<void> _openEditor({AdminBanner? existing}) async {
-    final changed = await AdminBannerEditorSheet.show(context, existing: existing);
+    final changed =
+        await MerchantBannerEditorSheet.show(context, existing: existing);
     if (changed == true && mounted) {
-      await context.read<AdminBannersProvider>().load();
+      await context.read<MerchantBannersProvider>().load();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<AdminBannersProvider>();
+    final provider = context.watch<MerchantBannersProvider>();
     final grouped = provider.grouped;
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
-        title: const Text('Banner manager'),
+        title: const Text('Banners'),
         actions: [
           IconButton(
             tooltip: 'Refresh',
@@ -102,7 +103,7 @@ class _AdminBannersPageState extends State<AdminBannersPage> {
                             );
                             if (confirm == true && context.mounted) {
                               await context
-                                  .read<AdminBannersProvider>()
+                                  .read<MerchantBannersProvider>()
                                   .delete(b.id);
                             }
                           },

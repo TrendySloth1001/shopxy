@@ -17,14 +17,4 @@ class AnalyticsRemoteDataSource {
     }
     return ProductAnalytics.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
-
-  Future<FlashDealAnalytics> getFlashDeal(int id) async {
-    final res = await _client.get('/me/analytics/flash-deals/$id');
-    if (res.statusCode != 200) {
-      throw Exception('Failed to load flash analytics: ${res.body}');
-    }
-    return FlashDealAnalytics.fromJson(
-      jsonDecode(res.body) as Map<String, dynamic>,
-    );
-  }
 }
