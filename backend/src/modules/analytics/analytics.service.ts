@@ -140,13 +140,6 @@ export function encodeAnalyticsCursor(productId: number): string {
   return Buffer.from(String(productId), 'utf8').toString('base64url');
 }
 
-interface FlashSeriesRow {
-  hour: Date;
-  sold: number;
-  taps: number;
-  views: number;
-}
-
 export class AnalyticsService {
   /// Estimate how many product rows the per-product aggregate would
   /// emit for this shop. The aggregate groups by product, so the
@@ -391,51 +384,6 @@ export class AnalyticsService {
       repeatRate: total > 0 ? roundTo(returningCustomers / total, 4) : 0,
       repeatInPeriod,
       top,
-    };
-  }
-
-  /// Per-flash-deal time series. Returns hourly buckets between the
-  /// deal's [startAt, endAt] window with running sold count, taps,
-  /// and views. Sold count comes from PURCHASE events on the product
-  /// while the deal was live (a brief overcount is possible if a
-  /// PURCHASE event fires for a non-flash order in the same window,
-  /// but that's an upstream attribution problem — Phase 9 fixes it
-  /// with sponsored-source tagging).
-  async getFlashDealAnalytics(shopId: number, flashSaleId: number) {
-    const sale = await prisma.flashSale.findUnique({
-      where: { id: flashSaleId },
-      include: { product: { select: { id: true, name: true, shopId: true } } },
-    });
-    if (!sale || sale.product.shopId !== shopId) return null;
-
-    const series = await prisma.$queryRaw<FlashSeriesRow[]>`
-      SELECT
-        date_trunc('hour', pe.occurred_at) AS hour,
-        COALESCE(SUM(CASE WHEN pe.event_type = 'PURCHASE' THEN 1 ELSE 0 END), 0)::float AS sold,
-        COALESCE(SUM(CASE WHEN pe.event_type = 'TAP'      THEN 1 ELSE 0 END), 0)::float AS taps,
-        COALESCE(SUM(CASE WHEN pe.event_type = 'VIEW'     THEN 1 ELSE 0 END), 0)::float AS views
-      FROM product_events pe
-      WHERE pe.product_id = ${sale.productId}
-        AND pe.occurred_at >= ${sale.startAt}
-        AND pe.occurred_at <  ${sale.endAt}
-      GROUP BY hour
-      ORDER BY hour ASC
-    `;
-
-    return {
-      flashSaleId: sale.id,
-      productId: sale.productId,
-      productName: sale.product.name,
-      startAt: sale.startAt.toISOString(),
-      endAt: sale.endAt.toISOString(),
-      stockLimit: sale.stockLimit,
-      soldCount: sale.soldCount,
-      series: series.map((r) => ({
-        hour: r.hour.toISOString(),
-        sold: Math.trunc(r.sold),
-        taps: Math.trunc(r.taps),
-        views: Math.trunc(r.views),
-      })),
     };
   }
 }

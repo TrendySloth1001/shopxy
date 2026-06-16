@@ -35,23 +35,6 @@ import {
   bannersAdminRouter,
   bannersMerchantRouter,
 } from '../../modules/banners/banners.routes.js';
-import {
-  carouselsAdminRouter,
-  carouselsMerchantRouter,
-} from '../../modules/carousels/carousels.routes.js';
-import {
-  flashSalesMerchantRouter,
-  flashSalesPublicRouter,
-} from '../../modules/flash-sales/flash-sales.routes.js';
-import {
-  brandSpotlightPublicRouter,
-  brandSpotlightMerchantRouter,
-  brandSpotlightAdminRouter,
-} from '../../modules/brand-spotlight/brand-spotlight.routes.js';
-import {
-  collectionsPublicRouter,
-  collectionsAdminRouter,
-} from '../../modules/collections/collections.routes.js';
 import { platformBankOffersAdminRouter } from '../../modules/platform-bank-offers/platform-bank-offers.routes.js';
 import {
   eventsIngestRouter,
@@ -88,7 +71,6 @@ import {
   merchantCouponsRouter,
 } from '../../modules/coupons/coupons.routes.js';
 import searchRouter from '../../modules/search/search.routes.js';
-import promotionsRouter from '../../modules/promotions/promotions.routes.js';
 import linkedAccountsRouter from '../../modules/linked-accounts/linked-accounts.routes.js';
 import { requirePlatformAdmin } from '../../shared/http/requireRole.js';
 import {
@@ -185,14 +167,6 @@ export function buildApp(): express.Express {
 
   // Public read of marketplace banners (home feed surfaces).
   app.use('/banners', publicLimiter, bannersPublicRouter);
-
-  // Public read of currently-running flash sales for the home feed.
-  app.use('/flash-deals', publicLimiter, flashSalesPublicRouter);
-
-  // Public read of currently-running brand spotlights + editorial
-  // collections — both surface on the unauthenticated home feed.
-  app.use('/brand-spotlights', publicLimiter, brandSpotlightPublicRouter);
-  app.use('/collections', publicLimiter, collectionsPublicRouter);
 
   // Public search — anyone can hit /search; the service attributes
   // to req.user.sub if the JWT happens to be present (we don't gate).
@@ -294,9 +268,6 @@ export function buildApp(): express.Express {
   // category taxonomy, collections). Gated by User.isPlatformAdmin,
   // independent of merchant/customer role.
   app.use('/admin/banners', requirePlatformAdmin, bannersAdminRouter);
-  app.use('/admin/carousels', requirePlatformAdmin, carouselsAdminRouter);
-  app.use('/admin/brand-spotlight', requirePlatformAdmin, brandSpotlightAdminRouter);
-  app.use('/admin/collections', requirePlatformAdmin, collectionsAdminRouter);
   app.use(
     '/admin/platform-bank-offers',
     requirePlatformAdmin,
@@ -330,19 +301,12 @@ export function buildApp(): express.Express {
 
   mountMerchant('/me/team', teamRouter, [resolveShop]);
   mountMerchant('/me/shop', shopRouter);
-  mountMerchant('/me/flash-deals', flashSalesMerchantRouter, [resolveShop]);
-  mountMerchant('/me/carousels', carouselsMerchantRouter, [
-    resolveShop,
-    carouselWriteLimiter,
-  ]);
   mountMerchant('/me/banners', bannersMerchantRouter, [
     resolveShop,
     carouselWriteLimiter,
   ]);
   mountMerchant('/me/analytics', analyticsRouter, [resolveShop]);
-  mountMerchant('/me/promotions', promotionsRouter, [resolveShop]);
   mountMerchant('/me/coupons-admin', merchantCouponsRouter, [resolveShop]);
-  mountMerchant('/me/brand-spotlight', brandSpotlightMerchantRouter, [resolveShop]);
   mountMerchant('/custom-fields', customFieldsRouter);
   mountMerchant('/products', productsRouter, [resolveShop]);
   mountMerchant('/stock', stockRouter);

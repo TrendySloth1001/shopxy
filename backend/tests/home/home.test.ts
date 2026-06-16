@@ -23,10 +23,8 @@ describe('home feed', () => {
       'adStripBanners',
       'promoBanners',
       'curatedRailBanners',
-      'flashDeals',
-      'brandSpotlights',
-      'collections',
       'trending',
+      'newArrivals',
       'categoryPucks',
     ]) {
       expect(res.body).toHaveProperty(key);
@@ -39,10 +37,8 @@ describe('home feed', () => {
     const banner = await prisma.banner.create({
       data: {
         placement: 'HERO',
-        title: 'Festive Edit',
-        subtitle: 'Up to 70% off',
         imageUrl: '/images/home-hero-test.webp',
-        bgColor: '#EFE4D6',
+        linkUrl: '/search?q=festive',
         isActive: true,
       },
     });
@@ -55,36 +51,6 @@ describe('home feed', () => {
       expect(found).toBe(true);
     } finally {
       await prisma.banner.delete({ where: { id: banner.id } }).catch(() => undefined);
-      await cleanupTestUser(ctx);
-    }
-  });
-
-  it('GET /home/feed returns active flash deals only', async () => {
-    const ctx = await createTestUser();
-    const product = await createTestProduct(ctx.shopId, {
-      isPublished: true,
-      sellingPrice: 199,
-      mrp: 599,
-    });
-    const now = new Date();
-    const sale = await prisma.flashSale.create({
-      data: {
-        shopId: ctx.shopId,
-        productId: product.id,
-        flashPrice: 99,
-        stockLimit: 10,
-        startAt: new Date(now.getTime() - 3600_000),
-        endAt: new Date(now.getTime() + 3600_000),
-        isActive: true,
-      },
-    });
-    try {
-      const res = await request(app).get('/home/feed');
-      expect(res.status).toBe(200);
-      const ids = (res.body.flashDeals as Array<{ id: number }>).map((d) => d.id);
-      expect(ids).toContain(sale.id);
-    } finally {
-      await prisma.flashSale.delete({ where: { id: sale.id } }).catch(() => undefined);
       await cleanupTestUser(ctx);
     }
   });
