@@ -110,16 +110,4 @@ class AnalyticsProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
-
-  Future<FlashDealAnalytics?> loadFlashDeal(int id) async {
-    try {
-      final result = await _ds.getFlashDeal(id);
-      notifyListeners();
-      return result;
-    } catch (e) {
-      _error = friendlyError(e);
-      notifyListeners();
-      return null;
-    }
-  }
 }

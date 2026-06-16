@@ -12,20 +12,14 @@ import 'package:provider/provider.dart';
 import 'package:shopxy/core/auth/token_manager.dart';
 import 'package:shopxy/core/network/api_client.dart';
 import 'package:shopxy/features/admin/data/datasources/admin_collections_remote_data_source.dart';
-import 'package:shopxy/features/admin/data/datasources/admin_spotlight_remote_data_source.dart';
 import 'package:shopxy/features/admin/presentation/pages/admin_collections_page.dart';
-import 'package:shopxy/features/admin/presentation/pages/admin_spotlight_approval_page.dart';
 import 'package:shopxy/features/admin/presentation/providers/admin_collections_provider.dart';
-import 'package:shopxy/features/admin/presentation/providers/admin_spotlight_provider.dart';
 import 'package:shopxy/features/analytics/data/datasources/analytics_remote_data_source.dart';
 import 'package:shopxy/features/analytics/presentation/pages/merchant_analytics_page.dart';
 import 'package:shopxy/features/analytics/presentation/providers/analytics_provider.dart';
-import 'package:shopxy/features/promotions/data/datasources/promotions_remote_data_source.dart';
-import 'package:shopxy/features/promotions/presentation/pages/promotion_manager_page.dart';
-import 'package:shopxy/features/promotions/presentation/providers/promotions_provider.dart';
-import 'package:shopxy/features/spotlight/data/datasources/spotlight_remote_data_source.dart';
-import 'package:shopxy/features/spotlight/presentation/pages/spotlight_request_page.dart';
-import 'package:shopxy/features/spotlight/presentation/providers/spotlight_provider.dart';
+import 'package:shopxy/features/banners/data/datasources/merchant_banners_remote_data_source.dart';
+import 'package:shopxy/features/banners/presentation/pages/merchant_banners_page.dart';
+import 'package:shopxy/features/banners/presentation/providers/merchant_banners_provider.dart';
 import 'package:shopxy/features/shop/data/datasources/linked_account_remote_data_source.dart';
 import 'package:shopxy/features/shop/data/datasources/shop_remote_data_source.dart';
 import 'package:shopxy/features/shop/presentation/pages/shop_operations_page.dart';
@@ -36,30 +30,17 @@ import 'package:shopxy/features/shop/presentation/providers/shop_provider.dart';
 ApiClient _api() => ApiClient(TokenManager());
 
 void main() {
-  testWidgets('SpotlightRequestPage renders chrome', (tester) async {
-    final ds = SpotlightRemoteDataSource(_api());
+  testWidgets('MerchantBannersPage renders chrome', (tester) async {
+    final ds = MerchantBannersRemoteDataSource(_api());
     await tester.pumpWidget(
       ChangeNotifierProvider(
-        create: (_) => SpotlightProvider(ds),
-        child: const MaterialApp(home: SpotlightRequestPage()),
+        create: (_) => MerchantBannersProvider(ds),
+        child: const MaterialApp(home: MerchantBannersPage()),
       ),
     );
     await tester.pump();
-    expect(find.text('Brand spotlight'), findsOneWidget);
-    expect(find.text('Request slot'), findsOneWidget);
-  });
-
-  testWidgets('PromotionManagerPage renders chrome', (tester) async {
-    final ds = PromotionsRemoteDataSource(_api());
-    await tester.pumpWidget(
-      ChangeNotifierProvider(
-        create: (_) => PromotionsProvider(ds),
-        child: const MaterialApp(home: PromotionManagerPage()),
-      ),
-    );
-    await tester.pump();
-    expect(find.text('Promotions'), findsOneWidget);
-    expect(find.text('New promo'), findsOneWidget);
+    expect(find.text('Banners'), findsOneWidget);
+    expect(find.text('New banner'), findsOneWidget);
   });
 
   testWidgets('MerchantAnalyticsPage renders the app bar', (tester) async {
@@ -72,22 +53,6 @@ void main() {
     );
     await tester.pump();
     expect(find.text('Analytics'), findsOneWidget);
-  });
-
-  testWidgets('AdminSpotlightApprovalPage renders filter chips',
-      (tester) async {
-    final ds = AdminSpotlightRemoteDataSource(_api());
-    await tester.pumpWidget(
-      ChangeNotifierProvider(
-        create: (_) => AdminSpotlightProvider(ds),
-        child: const MaterialApp(home: AdminSpotlightApprovalPage()),
-      ),
-    );
-    await tester.pump();
-    expect(find.text('Spotlight approvals'), findsOneWidget);
-    expect(find.text('Pending'), findsOneWidget);
-    expect(find.text('Approved'), findsOneWidget);
-    expect(find.text('Rejected'), findsOneWidget);
   });
 
   testWidgets('AdminCollectionsPage renders chrome', (tester) async {

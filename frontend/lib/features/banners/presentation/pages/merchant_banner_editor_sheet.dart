@@ -6,18 +6,18 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/core/network/image_url.dart';
 import 'package:shopxy/features/admin/data/models/banner.dart';
-import 'package:shopxy/features/admin/presentation/providers/admin_banners_provider.dart';
+import 'package:shopxy/features/banners/presentation/providers/merchant_banners_provider.dart';
 import 'package:shopxy/features/shop/presentation/providers/shop_provider.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 
-/// Modal sheet for creating or editing a banner. The slim banner is just
+/// Modal sheet for creating or editing a merchant banner. A banner is just
 /// an image + placement + optional link + optional schedule, so the editor
-/// is correspondingly lean: upload the artwork, pick where it shows, and
-/// (optionally) when and where it links.
-class AdminBannerEditorSheet extends StatefulWidget {
-  const AdminBannerEditorSheet({super.key, this.existing});
+/// is lean: upload the artwork, pick where it shows, and (optionally) when
+/// and where it links.
+class MerchantBannerEditorSheet extends StatefulWidget {
+  const MerchantBannerEditorSheet({super.key, this.existing});
   final AdminBanner? existing;
 
   static Future<bool?> show(BuildContext context, {AdminBanner? existing}) {
@@ -35,17 +35,18 @@ class AdminBannerEditorSheet extends StatefulWidget {
             color: AppColors.canvas,
             shape: AppShapes.squircleTop(AppSizes.bottomSheetRadius),
           ),
-          child: AdminBannerEditorSheet(existing: existing),
+          child: MerchantBannerEditorSheet(existing: existing),
         ),
       ),
     );
   }
 
   @override
-  State<AdminBannerEditorSheet> createState() => _AdminBannerEditorSheetState();
+  State<MerchantBannerEditorSheet> createState() =>
+      _MerchantBannerEditorSheetState();
 }
 
-class _AdminBannerEditorSheetState extends State<AdminBannerEditorSheet> {
+class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
   late BannerPlacement _placement;
   late final TextEditingController _linkUrl;
   late final TextEditingController _sortOrder;
@@ -97,9 +98,9 @@ class _AdminBannerEditorSheetState extends State<AdminBannerEditorSheet> {
     setState(() => _imageUrl = url);
   }
 
-  /// Hard 5 MB ceiling — anything bigger usually means the admin
-  /// uploaded a raw camera capture, which both blows past the backend
-  /// limit and stalls on slow connections.
+  /// Hard 5 MB ceiling — anything bigger usually means a raw camera
+  /// capture, which both blows past the backend limit and stalls on
+  /// slow connections.
   bool _validateImageSize(File file) {
     const maxBytes = 5 * 1024 * 1024;
     if (file.lengthSync() > maxBytes) {
@@ -148,7 +149,7 @@ class _AdminBannerEditorSheetState extends State<AdminBannerEditorSheet> {
       return;
     }
     setState(() => _busy = true);
-    final provider = context.read<AdminBannersProvider>();
+    final provider = context.read<MerchantBannersProvider>();
     final body = <String, dynamic>{
       'placement': _placement.wire,
       'imageUrl': _imageUrl,
