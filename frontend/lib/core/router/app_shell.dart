@@ -13,19 +13,15 @@ import 'package:shopxy/features/products/presentation/pages/products_page.dart';
 import 'package:shopxy/features/profile/presentation/pages/profile_page.dart';
 import 'package:shopxy/features/reports/presentation/pages/reports_page.dart';
 import 'package:shopxy/features/shop/presentation/pages/shop_profile_page.dart';
-import 'package:shopxy/features/flash_deals/presentation/pages/flash_deals_page.dart';
 import 'package:shopxy/features/admin/presentation/pages/admin_bank_offers_page.dart';
 import 'package:shopxy/features/admin/presentation/pages/admin_banners_page.dart';
 import 'package:shopxy/features/admin/presentation/pages/admin_category_taxonomy_page.dart';
 import 'package:shopxy/features/admin/presentation/pages/admin_collections_page.dart';
 import 'package:shopxy/features/admin/presentation/pages/admin_shops_page.dart';
-import 'package:shopxy/features/admin/presentation/pages/admin_spotlight_approval_page.dart';
-import 'package:shopxy/features/carousel/presentation/pages/my_carousels_page.dart';
+import 'package:shopxy/features/banners/presentation/pages/merchant_banners_page.dart';
 import 'package:shopxy/features/coupons/presentation/pages/merchant_coupons_page.dart';
 import 'package:shopxy/features/returns/presentation/pages/merchant_returns_page.dart';
-import 'package:shopxy/features/spotlight/presentation/pages/spotlight_request_page.dart';
 import 'package:shopxy/features/analytics/presentation/pages/merchant_analytics_page.dart';
-import 'package:shopxy/features/promotions/presentation/pages/promotion_manager_page.dart';
 import 'package:shopxy/core/auth/shop_capabilities.dart';
 import 'package:shopxy/features/auth/domain/entities/auth_user.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
@@ -100,35 +96,11 @@ List<_Shortcut> get _manageShortcuts => [
         requires: (u) => u.canView('shop'),
       ),
       _Shortcut(
-        label: 'My Carousels',
-        icon: Icons.view_carousel_outlined,
+        label: 'Banners',
+        icon: Icons.image_outlined,
         accent: AppColors.accentIndigo,
         accentSoft: AppColors.accentIndigoSoft,
-        builder: (_) => const MyCarouselsPage(),
-        requires: (u) => u.canView('marketing'),
-      ),
-      _Shortcut(
-        label: 'Flash deals',
-        icon: Icons.bolt_outlined,
-        accent: AppColors.flashDeal,
-        accentSoft: AppColors.flashDealSoft,
-        builder: (_) => const FlashDealsPage(),
-        requires: (u) => u.canView('marketing'),
-      ),
-      _Shortcut(
-        label: 'Brand spotlight',
-        icon: Icons.star_outline,
-        accent: AppColors.accentAmber,
-        accentSoft: AppColors.accentAmberSoft,
-        builder: (_) => const SpotlightRequestPage(),
-        requires: (u) => u.canView('marketing'),
-      ),
-      _Shortcut(
-        label: 'Promotions',
-        icon: Icons.campaign_outlined,
-        accent: AppColors.accentRose,
-        accentSoft: AppColors.accentRoseSoft,
-        builder: (_) => const PromotionManagerPage(),
+        builder: (_) => const MerchantBannersPage(),
         requires: (u) => u.canView('marketing'),
       ),
       _Shortcut(
@@ -497,15 +469,6 @@ class _NavDrawer extends StatelessWidget {
                         accent: AppColors.accentTeal,
                         accentSoft: AppColors.accentTealSoft,
                         builder: (_) => const AdminCategoryTaxonomyPage(),
-                      ),
-                    ),
-                    _DrawerShortcutTile(
-                      shortcut: _Shortcut(
-                        label: 'Spotlight approvals',
-                        icon: Icons.verified_outlined,
-                        accent: AppColors.accentAmber,
-                        accentSoft: AppColors.accentAmberSoft,
-                        builder: (_) => const AdminSpotlightApprovalPage(),
                       ),
                     ),
                     _DrawerShortcutTile(
