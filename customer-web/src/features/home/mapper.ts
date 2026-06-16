@@ -9,15 +9,10 @@
  */
 
 import { color } from "@/shared/ui/tokens";
-import { parseColor, rupees } from "./format";
+import { rupees } from "./format";
 import {
-  type BrandSpotlight,
   type CategoryPuck,
-  type CollectionTile,
-  type FlashDeal,
-  type HeroImageFit,
   type HeroSlide,
-  type HeroTemplate,
   type HomeFeed,
   type ProductCard,
 } from "./types";
@@ -62,28 +57,6 @@ const PUCK_TINTS = [
   "#DEEAF1",
 ];
 
-function templateFromWire(v: unknown): HeroTemplate {
-  switch (asStr(v)) {
-    case "MINIMAL":
-      return "minimal";
-    case "IMAGE_ONLY":
-      return "imageOnly";
-    case "SPLIT":
-      return "split";
-    case "OVERLAY":
-      return "overlay";
-    case "DEAL":
-      return "deal";
-    case "POSTER":
-      return "poster";
-    default:
-      return "classic";
-  }
-}
-function fitFromWire(v: unknown): HeroImageFit {
-  return asStr(v) === "CONTAIN" ? "contain" : "cover";
-}
-
 function firstImage(product: Json): string {
   const imgs = product["images"];
   if (Array.isArray(imgs) && imgs.length > 0 && isObj(imgs[0])) {
@@ -97,75 +70,15 @@ function firstImage(product: Json): string {
 function heroFromBanner(raw: unknown): HeroSlide {
   const m = isObj(raw) ? raw : {};
   return {
-    brand: asStr(m["brandLabel"]) || asStr(m["eyebrow"]),
-    title: asStr(m["title"]),
-    subtitle: asStr(m["subtitle"]),
+    bannerId: asInt(m["id"]) ?? 0,
     imageUrl: asStr(m["imageUrl"]),
-    bgColor: parseColor(asStrOrNull(m["bgColor"]), color.surface.heroPanel),
-    accent: parseColor(asStrOrNull(m["accentColor"]), color.brand.default),
-    template: templateFromWire(m["template"]),
-    imageFit: fitFromWire(m["imageFit"]),
-    brandImageUrl: asStrOrNull(m["brandImageUrl"]),
-    brandImageFit: fitFromWire(m["brandImageFit"]),
-    ctaText: asStrOrNull(m["ctaText"]),
-    ctaTarget: asStrOrNull(m["ctaTarget"]),
-    eyebrow: asStrOrNull(m["eyebrow"]),
-    bannerId: asInt(m["id"]),
-  };
-}
-
-// ── BrandSpotlight ──────────────────────────────────────────────────────────
-
-function brandFromSpotlight(raw: unknown): BrandSpotlight {
-  const m = isObj(raw) ? raw : {};
-  const shop = isObj(m["shop"]) ? (m["shop"] as Json) : null;
-  return {
-    spotlightId: asInt(m["id"]) ?? 0,
-    brand: shop ? asStr(shop["name"]) : "",
-    subtitle: asStr(m["subtitle"]),
-    dealLabel: asStr(m["dealLabel"]),
-    imageUrl: asStr(m["heroImageUrl"]),
-    bgColor: parseColor(asStrOrNull(m["bgColor"]), color.surface.heroPanel),
-    ctaTarget: asStrOrNull(m["ctaTarget"]),
-    shopSlug: shop ? asStrOrNull(shop["slug"]) : null,
-  };
-}
-
-// ── Flash sale ──────────────────────────────────────────────────────────────
-
-function flashFromSale(raw: unknown): FlashDeal | null {
-  const m = isObj(raw) ? raw : {};
-  const product = isObj(m["product"]) ? (m["product"] as Json) : null;
-  if (!product) return null;
-  const flashPrice = asNum(m["flashPrice"]) ?? 0;
-  const mrp = asNum(product["mrp"]) ?? asNum(product["sellingPrice"]) ?? flashPrice;
-  const sold = asInt(m["soldCount"]) ?? 0;
-  const limit = asInt(m["stockLimit"]) ?? 0;
-  const discount = mrp > 0 ? Math.trunc(Math.min(99, Math.max(0, (1 - flashPrice / mrp) * 100))) : 0;
-  const endRaw = asStr(m["endAt"]);
-  const endAt = endRaw && !Number.isNaN(Date.parse(endRaw))
-    ? endRaw
-    : new Date(Date.now() + 3_600_000).toISOString();
-  return {
-    productId: asInt(product["id"]) ?? 0,
-    saleId: asInt(m["id"]) ?? 0,
-    name: asStr(product["name"]),
-    price: rupees(flashPrice),
-    originalPrice: rupees(mrp),
-    discountPct: discount,
-    imageUrl: firstImage(product),
-    soldPct: limit > 0 ? Math.min(1, Math.max(0, sold / limit)) : 0,
-    endAt,
+    linkUrl: asStrOrNull(m["linkUrl"]),
   };
 }
 
 // ── Product cards ───────────────────────────────────────────────────────────
 
-function productCardFromProduct(
-  p: Json,
-  isAd = false,
-  promotionId: number | null = null,
-): ProductCard | null {
+function productCardFromProduct(p: Json): ProductCard | null {
   const mrp = asNum(p["mrp"]);
   const selling = asNum(p["sellingPrice"]) ?? mrp ?? 0;
   if (selling <= 0) return null;
@@ -184,21 +97,20 @@ function productCardFromProduct(
     ratingCountRaw: ratingCount,
     imageUrl: firstImage(p),
     bgColor: color.surface.heroPanel,
-    isAd,
-    promotionId,
     shopSlug: shop ? asStrOrNull(shop["slug"]) : null,
+    shopName: shop ? asStrOrNull(shop["name"]) : null,
     brand: asStrOrNull(p["brand"]),
     discountPct,
     freeDelivery: true,
   };
 }
 
-/** `{score, product, isAd?, promotionId?}` wrapper → card. */
+/** `{score, product}` wrapper → card. */
 function productCardFromTrending(row: unknown): ProductCard | null {
   const m = isObj(row) ? row : {};
   const product = isObj(m["product"]) ? (m["product"] as Json) : null;
   if (!product) return null;
-  return productCardFromProduct(product, m["isAd"] === true, asInt(m["promotionId"]));
+  return productCardFromProduct(product);
 }
 
 function mapTrendingList(rows: unknown[]): ProductCard[] {
@@ -218,42 +130,6 @@ function mapMaybeWrapped(rows: unknown[]): ProductCard[] {
   const first = rows[0];
   if (isObj(first) && isObj(first["product"])) return mapTrendingList(rows);
   return mapEndlessProducts(rows);
-}
-
-// ── Collections / curated rails ─────────────────────────────────────────────
-
-function collectionTile(raw: unknown): CollectionTile {
-  const m = isObj(raw) ? raw : {};
-  return {
-    collectionId: asInt(m["id"]) ?? 0,
-    slug: asStr(m["slug"]),
-    label: asStr(m["title"]),
-    imageUrl: asStr(m["coverImageUrl"]),
-  };
-}
-
-function curatedRails(bannerRows: unknown[], collectionRows: unknown[]): HeroSlide[] {
-  const fromBanners = bannerRows.map(heroFromBanner);
-  const fromCollections = collectionRows.slice(0, 4).map((raw): HeroSlide => {
-    const m = isObj(raw) ? raw : {};
-    const slug = asStr(m["slug"]);
-    const eyebrow = asStr(m["eyebrow"]) || "EDITORIAL";
-    return {
-      brand: eyebrow.toUpperCase(),
-      title: asStr(m["title"]),
-      subtitle: asStr(m["subtitle"]),
-      imageUrl: asStr(m["coverImageUrl"]),
-      bgColor: parseColor(asStrOrNull(m["bgColor"]), color.surface.heroPanel),
-      accent: color.brand.default,
-      template: "classic",
-      imageFit: "cover",
-      brandImageFit: "cover",
-      ctaText: asStr(m["ctaText"]) || "Explore",
-      ctaTarget: asStr(m["ctaTarget"]) || `collection:${slug}`,
-      eyebrow,
-    };
-  });
-  return [...fromBanners, ...fromCollections];
 }
 
 // ── Category pucks ──────────────────────────────────────────────────────────
@@ -279,16 +155,10 @@ export function mapFeed(json: unknown): HomeFeed {
     heroSlides: asList(j["heroBanners"]).map(heroFromBanner),
     adStrip: asList(j["adStripBanners"]).map(heroFromBanner),
     promoBanners: asList(j["promoBanners"]).map(heroFromBanner),
-    curatedRails: curatedRails(asList(j["curatedRailBanners"]), asList(j["collections"])),
-    brandSpotlights: asList(j["brandSpotlights"]).map(brandFromSpotlight),
-    flashDeals: asList(j["flashDeals"]).map(flashFromSale).filter((x): x is FlashDeal => x !== null),
-    collectionTiles: asList(j["collections"]).map(collectionTile),
+    curatedRails: asList(j["curatedRailBanners"]).map(heroFromBanner),
     categoryPucks: asList(j["categoryPucks"]).map(categoryPuck),
     trending: mapTrendingList(asList(j["trending"])),
-    offers: mapTrendingList(asList(j["offers"])),
-    bestValue: mapTrendingList(asList(j["bestValue"])),
     newInStock: mapMaybeWrapped(newRows),
-    sponsoredProducts: mapTrendingList(asList(j["sponsoredProducts"])),
     recommended: [],
     recentlyViewed: [],
   };

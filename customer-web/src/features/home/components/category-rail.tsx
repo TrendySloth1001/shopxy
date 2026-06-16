@@ -12,9 +12,11 @@ function categoryHref(p: CategoryPuck): string {
 }
 
 /**
- * Circular category pucks — port of `home_category_pucks`. Horizontally
- * scrolling 64px circles with a label; falls back to the tint + first letter
- * when a category has no image. Desktop shows left/right scroll arrows on hover.
+ * Category chips — a horizontally scrolling rail of pill chips, each with a
+ * small round thumbnail and the full category label inline (chips size to
+ * content, so long names aren't truncated). Falls back to the tint + first
+ * letter when a category has no image. Desktop shows left/right scroll arrows
+ * on hover.
  */
 export function CategoryRail({ pucks }: { pucks: CategoryPuck[] }) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -40,25 +42,27 @@ export function CategoryRail({ pucks }: { pucks: CategoryPuck[] }) {
 
       <div
         ref={scrollRef}
-        className="flex gap-lg overflow-x-auto scroll-smooth px-lg py-md [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex gap-sm overflow-x-auto scroll-smooth px-lg py-md [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {pucks.map((p) => (
           <Link
             key={p.categoryId}
             href={categoryHref(p)}
-            className="group flex w-16 shrink-0 flex-col items-center gap-[6px] focus-visible:outline-none"
+            className="group flex shrink-0 items-center gap-sm rounded-full border border-hairline bg-white py-[5px] pl-[5px] pr-md transition-all duration-200 hover:border-brand hover:bg-brand-soft hover:shadow-floating focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           >
             <span
-              className="flex size-16 items-center justify-center overflow-hidden rounded-full transition-transform duration-200 group-hover:scale-105"
+              className="flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-full"
               style={{ backgroundColor: p.tint }}
             >
               {p.imageUrl ? (
                 <ImageBox url={p.imageUrl} alt={p.label} placeholderColor={p.tint} />
               ) : (
-                <span className="text-[22px] font-extrabold text-ink">{(p.label[0] ?? "?").toUpperCase()}</span>
+                <span className="text-[12px] font-extrabold text-ink">{(p.label[0] ?? "?").toUpperCase()}</span>
               )}
             </span>
-            <span className="line-clamp-1 max-w-full text-center text-[11px] text-ink">{p.label}</span>
+            <span className="whitespace-nowrap text-body-sm font-semibold text-ink group-hover:text-brand-strong">
+              {p.label}
+            </span>
           </Link>
         ))}
       </div>

@@ -12,20 +12,25 @@ export function searchHref(query: string): string {
 }
 
 /**
- * Horizontal product rail — port of `HomeProductCarousel`. Header (eyebrow +
- * title + circular see-all) over a horizontally-scrolling row of product tiles.
- * Desktop shows left/right arrow chips that appear on hover of the rail.
+ * Product section — header (eyebrow + title + circular see-all) over a set of
+ * product tiles. Two layouts:
+ *  - "grid" (default): tiles wrap into a responsive grid that flows DOWN the
+ *    page (no nested horizontal scroll) — the primary storefront feel.
+ *  - "rail": a horizontally-scrolling row with hover arrow chips — used for
+ *    secondary strips like Sponsored where a compact single line reads better.
  */
 export function ProductCarousel({
   eyebrow,
   title,
   products,
   source = "home",
+  layout = "grid",
 }: {
   eyebrow?: string;
   title: string;
   products: ProductCard[];
   source?: string;
+  layout?: "grid" | "rail";
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -36,6 +41,21 @@ export function ProductCarousel({
   }
 
   if (products.length === 0) return null;
+
+  // Grid: tiles wrap into rows that continue below as the list grows.
+  if (layout === "grid") {
+    return (
+      <section>
+        <SectionHeader eyebrow={eyebrow} title={title} seeAllHref={searchHref(title)} variant="circle" />
+        <div className="mt-md grid grid-cols-2 gap-md px-lg md:grid-cols-3 lg:grid-cols-4">
+          {products.map((p) => (
+            <ProductTile key={p.productId} product={p} source={source} />
+          ))}
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="group/rail">
       <SectionHeader eyebrow={eyebrow} title={title} seeAllHref={searchHref(title)} variant="circle" />
