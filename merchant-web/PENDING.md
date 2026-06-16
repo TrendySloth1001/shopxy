@@ -381,6 +381,16 @@ this should be revisited.
   rules banning raw hex / arbitrary Tailwind values and commitlint + husky are
   still not wired. The conventions in CLAUDE.md are followed but not all gated.
 
+## Banners
+
+- [ ] **Platform-admin banner manager UI.** The backend exposes `/admin/banners`
+  CRUD (create/edit platform-wide banners with `shopId = null`, and see every
+  shop's banners), but there's no merchant-web screen for it — the `admin-banners`
+  nav item was removed when the promo systems were collapsed into image banners.
+  Merchants author their own via `/dashboard/banners` (`features/banners/`).
+  Trigger: when platform-curated banners are needed, build an admin screen reusing
+  `features/banners/` (point its api at `/api/admin/banners`).
+
 ## Cross-app
 
 - [ ] **Keep tokens + auth + CLAUDE.md in sync with `customer-web`** when changing
