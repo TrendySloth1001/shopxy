@@ -18,9 +18,5 @@ router.get(
   '/customers',
   asyncHandler(analyticsController.customers.bind(analyticsController)),
 );
-router.get(
-  '/flash-deals/:id',
-  asyncHandler(analyticsController.flashDeal.bind(analyticsController)),
-);
 
 export default router;
