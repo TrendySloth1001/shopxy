@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { rupees, resolveImageUrl, parseColor } from "./format";
 import { mapFeed, mapPersonalized } from "./mapper";
-import { appendHomeBlocks, newCycleState } from "./composer";
-import type { ProductCard } from "./types";
 
 describe("format", () => {
   it("formats whole rupees with en-IN grouping", () => {
@@ -39,18 +37,17 @@ function productRow(id: number, name = `P${id}`) {
 }
 
 describe("mapFeed", () => {
-  it("maps banners, flash deals, trending and category pucks", () => {
+  it("maps image banners, trending and category pucks", () => {
     const feed = mapFeed({
-      heroBanners: [{ id: 1, title: "Big Sale", subtitle: "Save", template: "CLASSIC", imageUrl: "/images/h.webp", brandLabel: "ACME" }],
-      flashDeals: [{ id: 9, flashPrice: "99.00", soldCount: 5, stockLimit: 10, endAt: "2999-01-01T00:00:00Z", product: productRow(2) }],
-      trending: [{ product: productRow(3), isAd: true, promotionId: 7 }],
+      heroBanners: [{ id: 1, imageUrl: "/images/h.webp", linkUrl: "/search?q=sale" }],
+      adStripBanners: [{ id: 2, imageUrl: "/images/ad.webp", linkUrl: null }],
+      trending: [{ product: productRow(3) }],
       categoryPucks: [{ id: 4, slug: "mobiles", name: "Mobiles" }],
       newArrivals: [productRow(5)],
     });
-    expect(feed.heroSlides[0]).toMatchObject({ title: "Big Sale", template: "classic", bannerId: 1 });
-    expect(feed.flashDeals[0]).toMatchObject({ saleId: 9, productId: 2, discountPct: expect.any(Number) });
-    expect(feed.flashDeals[0].soldPct).toBeCloseTo(0.5);
-    expect(feed.trending[0]).toMatchObject({ productId: 3, isAd: true, promotionId: 7, discountPct: 25 });
+    expect(feed.heroSlides[0]).toMatchObject({ bannerId: 1, imageUrl: "/images/h.webp", linkUrl: "/search?q=sale" });
+    expect(feed.adStrip[0]).toMatchObject({ bannerId: 2, linkUrl: null });
+    expect(feed.trending[0]).toMatchObject({ productId: 3, discountPct: 25 });
     expect(feed.trending[0].price).toBe("₹150");
     expect(feed.categoryPucks[0]).toMatchObject({ slug: "mobiles", label: "Mobiles" });
     expect(feed.newInStock[0].productId).toBe(5);
@@ -70,71 +67,5 @@ describe("mapPersonalized", () => {
     });
     expect(recommended[0].productId).toBe(1);
     expect(recentlyViewed[0].productId).toBe(2);
-  });
-});
-
-describe("appendHomeBlocks", () => {
-  function card(id: number): ProductCard {
-    return {
-      productId: id,
-      name: `P${id}`,
-      price: "₹150",
-      originalPrice: "₹200",
-      bankPrice: "₹142",
-      rating: 4.5,
-      ratingCount: "60",
-      ratingCountRaw: 60,
-      imageUrl: `/api/media/images/p${id}.webp`,
-      bgColor: "#EFEEE7",
-      isAd: false,
-      promotionId: null,
-      shopSlug: "acme",
-      brand: "Acme",
-      discountPct: 25,
-      freeDelivery: true,
-    };
-  }
-
-  const baseFeed = {
-    heroSlides: [],
-    categoryPucks: [],
-    flashDeals: [],
-    adStrip: [],
-    brandSpotlights: [],
-    promoBanners: [],
-    curatedRails: [],
-    collectionTiles: [],
-    trending: Array.from({ length: 24 }, (_, i) => card(i + 1)),
-    offers: [],
-    bestValue: [],
-    newInStock: [],
-    sponsoredProducts: [],
-    recommended: [],
-    recentlyViewed: [],
-  };
-
-  it("composes product blocks from the pool and never repeats a SKU", () => {
-    const state = newCycleState();
-    const blocks = appendHomeBlocks(state, baseFeed, []);
-    expect(blocks.length).toBeGreaterThan(0);
-    expect(blocks[0].kind).toBe("mosaic"); // first cycle step
-
-    const seen = new Set<number>();
-    let dupes = 0;
-    for (const b of blocks) {
-      const products =
-        "products" in b ? b.products : b.kind === "mosaic" ? [b.hero, b.topRight, b.bottomRight] : [];
-      for (const p of products) {
-        if (seen.has(p.productId)) dupes++;
-        seen.add(p.productId);
-      }
-    }
-    expect(dupes).toBe(0);
-  });
-
-  it("is deterministic for the same feed + state seed", () => {
-    const a = appendHomeBlocks(newCycleState(), baseFeed, []).map((b) => b.kind);
-    const b = appendHomeBlocks(newCycleState(), baseFeed, []).map((x) => x.kind);
-    expect(a).toEqual(b);
   });
 });

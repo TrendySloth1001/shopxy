@@ -8,12 +8,10 @@ import {
   CategoryNodeSchema,
   PaginationSchema,
   ShopProfileSchema,
-  SpotlightSchema,
   type CatalogProduct,
   type CategoryNode,
   type Pagination,
   type ShopProfile,
-  type Spotlight,
   type SortOption,
 } from "./types";
 import { z } from "zod";
@@ -117,14 +115,3 @@ export async function fetchCategoryProducts(
   };
 }
 
-// ── Spotlights (from home feed) ─────────────────────────────────────────────
-
-const SpotlightsFeedSchema = z.object({
-  brandSpotlights: z.array(SpotlightSchema).optional().default([]),
-});
-
-export async function fetchSpotlights(): Promise<Spotlight[]> {
-  const raw = await getJson("/api/home/feed");
-  const parsed = SpotlightsFeedSchema.parse(raw);
-  return parsed.brandSpotlights;
-}

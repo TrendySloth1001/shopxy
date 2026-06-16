@@ -9,17 +9,6 @@ export const productImageSchema = z.object({
 });
 export type ProductImage = z.infer<typeof productImageSchema>;
 
-// ── Flash sale ────────────────────────────────────────────────────────────────
-
-export const flashSaleSchema = z.object({
-  id: z.number(),
-  flashPrice: z.coerce.number(),
-  stockLimit: z.number(),
-  soldCount: z.number(),
-  endAt: z.string(),
-});
-export type FlashSale = z.infer<typeof flashSaleSchema>;
-
 // ── Variant ───────────────────────────────────────────────────────────────────
 
 export const variantSchema = z.object({
@@ -129,7 +118,6 @@ export const productDetailSchema = z.object({
   images: z.array(productImageSchema).default([]),
   shop: shopSummarySchema.nullable().optional(),
   category: categorySummarySchema.nullable().optional(),
-  flashSales: z.array(flashSaleSchema).default([]),
   bankOffers: z.array(bankOfferSchema).default([]),
 });
 export type ProductDetail = z.infer<typeof productDetailSchema>;
@@ -172,13 +160,3 @@ export function parseOffers(raw: unknown): ProductOffer[] {
   });
 }
 
-// ── Active flash sale ─────────────────────────────────────────────────────────
-
-/** Returns the first still-active flash sale from the product's flashSales[]. */
-export function getActiveFlashSale(p: ProductDetail): FlashSale | null {
-  const now = Date.now();
-  for (const s of p.flashSales) {
-    if (new Date(s.endAt).getTime() > now) return s;
-  }
-  return null;
-}

@@ -19,8 +19,6 @@ const COLUMNS = [
     heading: "Shop",
     links: [
       { label: "Categories",  href: "/categories" },
-      { label: "Deals",       href: "/deals" },
-      { label: "Brands",      href: "/spotlights" },
       { label: "Search",      href: "/search" },
     ],
   },

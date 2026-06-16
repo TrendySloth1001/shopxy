@@ -127,27 +127,6 @@ export const CategoryNodeSchema = z
   .array(CategoryNodeWireSchema)
   .transform((arr) => arr.map(parseCategoryNode));
 
-// ── Spotlight (from /home/feed brandSpotlights) ─────────────────────────────
-
-export const SpotlightSchema = z.object({
-  id: z.number(),
-  subtitle: z.string().default(""),
-  dealLabel: z.string().default(""),
-  heroImageUrl: z.string().default(""),
-  bgColor: z.string().nullable().optional(),
-  ctaTarget: z.string().nullable().optional(),
-  shop: z
-    .object({
-      id: z.number(),
-      name: z.string(),
-      slug: z.string().nullable().optional(),
-    })
-    .nullable()
-    .optional(),
-});
-
-export type Spotlight = z.infer<typeof SpotlightSchema>;
-
 // ── Pagination ──────────────────────────────────────────────────────────────
 
 export interface Pagination {
