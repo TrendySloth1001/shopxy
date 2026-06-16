@@ -32,22 +32,14 @@ import 'package:shopxy/features/admin/data/datasources/admin_bank_offers_remote_
 import 'package:shopxy/features/admin/data/datasources/admin_banners_remote_data_source.dart';
 import 'package:shopxy/features/admin/data/datasources/admin_shops_remote_data_source.dart';
 import 'package:shopxy/features/admin/data/datasources/admin_collections_remote_data_source.dart';
-import 'package:shopxy/features/admin/data/datasources/admin_spotlight_remote_data_source.dart';
 import 'package:shopxy/features/admin/presentation/providers/admin_bank_offers_provider.dart';
 import 'package:shopxy/features/admin/presentation/providers/admin_banners_provider.dart';
 import 'package:shopxy/features/admin/presentation/providers/admin_collections_provider.dart';
-import 'package:shopxy/features/admin/presentation/providers/admin_spotlight_provider.dart';
-import 'package:shopxy/features/carousel/data/datasources/carousels_remote_data_source.dart';
-import 'package:shopxy/features/carousel/presentation/providers/carousels_provider.dart';
-import 'package:shopxy/features/flash_deals/data/datasources/flash_deals_remote_data_source.dart';
-import 'package:shopxy/features/flash_deals/presentation/providers/flash_deals_provider.dart';
-import 'package:shopxy/features/spotlight/data/datasources/spotlight_remote_data_source.dart';
-import 'package:shopxy/features/spotlight/presentation/providers/spotlight_provider.dart';
+import 'package:shopxy/features/banners/data/datasources/merchant_banners_remote_data_source.dart';
+import 'package:shopxy/features/banners/presentation/providers/merchant_banners_provider.dart';
 import 'package:shopxy/features/analytics/data/datasources/analytics_remote_data_source.dart';
 import 'package:shopxy/features/analytics/presentation/providers/analytics_provider.dart';
-import 'package:shopxy/features/promotions/data/datasources/promotions_remote_data_source.dart';
 import 'package:shopxy/features/reviews/data/datasources/reviews_remote_data_source.dart';
-import 'package:shopxy/features/promotions/presentation/providers/promotions_provider.dart';
 import 'package:shopxy/features/parties/data/datasources/parties_remote_data_source.dart';
 import 'package:shopxy/features/parties/presentation/providers/parties_provider.dart';
 import 'package:shopxy/features/payments/data/datasources/payments_remote_data_source.dart';
@@ -106,16 +98,12 @@ void main() async {
   final quotationsDs = QuotationsRemoteDataSource(apiClient);
   final shopDs = ShopRemoteDataSource(apiClient);
   final adminBannersDs = AdminBannersRemoteDataSource(apiClient);
-  final carouselsDs = CarouselsRemoteDataSource(apiClient);
-  final carouselsProvider = CarouselsProvider(carouselsDs);
-  final adminSpotlightDs = AdminSpotlightRemoteDataSource(apiClient);
+  final merchantBannersDs = MerchantBannersRemoteDataSource(apiClient);
+  final merchantBannersProvider = MerchantBannersProvider(merchantBannersDs);
   final adminCollectionsDs = AdminCollectionsRemoteDataSource(apiClient);
   final adminBankOffersDs = AdminBankOffersRemoteDataSource(apiClient);
   final adminShopsDs = AdminShopsRemoteDataSource(apiClient);
-  final flashDealsDs = FlashDealsRemoteDataSource(apiClient);
-  final spotlightDs = SpotlightRemoteDataSource(apiClient);
   final analyticsDs = AnalyticsRemoteDataSource(apiClient);
-  final promotionsDs = PromotionsRemoteDataSource(apiClient);
   final reviewsDs = ReviewsRemoteDataSource(apiClient);
   final couponsDs = MerchantCouponsRemoteDataSource(apiClient);
   final returnsDs = MerchantReturnsRemoteDataSource(apiClient);
@@ -147,7 +135,7 @@ void main() async {
   authProvider.registerOnClear(shopProvider.reset);
   authProvider.registerOnClear(linkedAccountProvider.reset);
   authProvider.registerOnClear(ordersProvider.reset);
-  authProvider.registerOnClear(carouselsProvider.reset);
+  authProvider.registerOnClear(merchantBannersProvider.reset);
 
   // When ApiClient can't recover a 401 (refresh failed), force re-login
   // — the registered callbacks fan out via clearAuth().
@@ -229,15 +217,12 @@ void main() async {
         ChangeNotifierProvider<LinkedAccountProvider>.value(
             value: linkedAccountProvider),
         ChangeNotifierProvider(create: (_) => AdminBannersProvider(adminBannersDs)),
-        ChangeNotifierProvider<CarouselsProvider>.value(value: carouselsProvider),
-        ChangeNotifierProvider(create: (_) => AdminSpotlightProvider(adminSpotlightDs)),
+        ChangeNotifierProvider<MerchantBannersProvider>.value(
+            value: merchantBannersProvider),
         ChangeNotifierProvider(create: (_) => AdminCollectionsProvider(adminCollectionsDs)),
         ChangeNotifierProvider(create: (_) => AdminBankOffersProvider(adminBankOffersDs)),
         Provider<AdminShopsRemoteDataSource>.value(value: adminShopsDs),
-        ChangeNotifierProvider(create: (_) => FlashDealsProvider(flashDealsDs)),
-        ChangeNotifierProvider(create: (_) => SpotlightProvider(spotlightDs)),
         ChangeNotifierProvider(create: (_) => AnalyticsProvider(analyticsDs)),
-        ChangeNotifierProvider(create: (_) => PromotionsProvider(promotionsDs)),
         ChangeNotifierProvider<OrdersProvider>.value(value: ordersProvider),
       ],
       child: const ShopxyApp(),
