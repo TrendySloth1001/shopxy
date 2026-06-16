@@ -3,8 +3,8 @@ import 'package:shopxy_customer/shared/format/app_format.dart';
 
 /// Detail-level product as returned by `GET /marketplace/products/:id`.
 /// Carries enough fields to render the V2 PDP: gallery, price/MRP +
-/// derived discount, rating denorms, the owning shop, an optional
-/// in-flight flash sale, and tags-as-highlights.
+/// derived discount, rating denorms, the owning shop, and
+/// tags-as-highlights.
 class MarketplaceProduct {
   const MarketplaceProduct({
     required this.id,
@@ -26,7 +26,6 @@ class MarketplaceProduct {
     this.ratingCount = 0,
     this.shop,
     this.category,
-    this.flashSale,
     this.brand,
     this.soldLast30d = 0,
     this.systemTags = const [],
@@ -65,7 +64,6 @@ class MarketplaceProduct {
   final int ratingCount;
   final MarketplaceShop? shop;
   final ProductCategoryRef? category;
-  final ActiveFlashSale? flashSale;
 
   /// Free-text brand surfaced under the title.
   final String? brand;
@@ -116,8 +114,6 @@ class MarketplaceProduct {
     return (((mrp - sellingPrice) / mrp) * 100).round();
   }
 
-  double get effectivePrice => flashSale?.price ?? sellingPrice;
-
   static double _asDouble(dynamic v) {
     if (v == null) return 0;
     if (v is num) return v.toDouble();
@@ -130,7 +126,6 @@ class MarketplaceProduct {
         .map((e) => (e as Map<String, dynamic>)['url'] as String?)
         .whereType<String>()
         .toList();
-    final flashList = j['flashSales'] as List<dynamic>? ?? [];
     final specRaw = j['specs'];
     final offersRaw = j['offers'];
     return MarketplaceProduct(
@@ -168,9 +163,6 @@ class MarketplaceProduct {
       category: j['category'] is Map<String, dynamic>
           ? ProductCategoryRef.fromJson(j['category'] as Map<String, dynamic>)
           : null,
-      flashSale: flashList.isEmpty
-          ? null
-          : ActiveFlashSale.fromJson(flashList.first as Map<String, dynamic>),
       brand: (j['brand'] as String?)?.trim().isEmpty == false
           ? (j['brand'] as String).trim()
           : null,
@@ -519,40 +511,4 @@ class ProductCategoryRef {
   final String slug;
   factory ProductCategoryRef.fromJson(Map<String, dynamic> j) =>
       ProductCategoryRef(id: j['id'] as int, name: j['name'] as String, slug: j['slug'] as String);
-}
-
-class ActiveFlashSale {
-  const ActiveFlashSale({
-    required this.id,
-    required this.price,
-    required this.stockLimit,
-    required this.soldCount,
-    required this.endAt,
-  });
-  final int id;
-  final double price;
-  final int stockLimit;
-  final int soldCount;
-  final DateTime endAt;
-
-  double get soldPct =>
-      stockLimit <= 0 ? 0 : (soldCount / stockLimit).clamp(0.0, 1.0).toDouble();
-  int get remaining => (stockLimit - soldCount).clamp(0, stockLimit).toInt();
-
-  static double _asDouble(dynamic v) {
-    if (v == null) return 0;
-    if (v is num) return v.toDouble();
-    if (v is String) return double.tryParse(v) ?? 0;
-    return 0;
-  }
-
-  factory ActiveFlashSale.fromJson(Map<String, dynamic> j) {
-    return ActiveFlashSale(
-      id: j['id'] as int,
-      price: _asDouble(j['flashPrice']),
-      stockLimit: j['stockLimit'] as int? ?? 0,
-      soldCount: j['soldCount'] as int? ?? 0,
-      endAt: DateTime.parse(j['endAt'] as String),
-    );
-  }
 }
