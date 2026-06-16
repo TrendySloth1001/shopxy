@@ -88,21 +88,6 @@ export class AnalyticsController {
     }
     res.json(await analyticsService.getCustomerRetention(shopId, from, to));
   }
-
-  async flashDeal(req: Request, res: Response): Promise<void> {
-    const shopId = req.shopId!;
-    const id = parseId(req.params.id);
-    if (!id) {
-      res.status(400).json({ error: 'Invalid id' });
-      return;
-    }
-    const data = await analyticsService.getFlashDealAnalytics(shopId, id);
-    if (!data) {
-      res.status(404).json({ error: 'Flash deal not found' });
-      return;
-    }
-    res.json(data);
-  }
 }
 
 export const analyticsController = new AnalyticsController();

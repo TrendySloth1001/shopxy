@@ -8,13 +8,9 @@ import type { Area } from './permissions.js';
 export const MERCHANT_AREAS: Record<string, Area> = {
   '/me/team': 'team',
   '/me/shop': 'shop',
-  '/me/flash-deals': 'marketing',
-  '/me/carousels': 'marketing',
   '/me/banners': 'marketing',
   '/me/analytics': 'reports',
-  '/me/promotions': 'marketing',
   '/me/coupons-admin': 'marketing',
-  '/me/brand-spotlight': 'marketing',
   '/custom-fields': 'products',
   '/products': 'products',
   '/stock': 'stock',

@@ -10,16 +10,10 @@ bannersPublicRouter.get(
   '/',
   asyncHandler(bannersController.listPublic.bind(bannersController)),
 );
-// Public slide-detail — banner + curated product list with computed
-// sale prices. Used by the customer carousel tap target.
-bannersPublicRouter.get(
-  '/:id/slide',
-  asyncHandler(bannersController.getPublicSlide.bind(bannersController)),
-);
 
-/// Admin CRUD — mounted under /admin/banners with requirePlatformAdmin
-/// guard. List/get exposes full schedule + active state; create/update
-/// validate CTA target + colors via zod schemas in the controller.
+/// Admin CRUD — mounted under /admin/banners with requirePlatformAdmin.
+/// Manages platform-wide banners (shopId = null) and can see/edit every
+/// shop's banners. List/get expose full schedule + active state.
 export const bannersAdminRouter = Router();
 bannersAdminRouter.get(
   '/',
@@ -43,13 +37,9 @@ bannersAdminRouter.delete(
 );
 
 /// Merchant CRUD — mounted under /me/banners with requireAuth +
-/// requireRole(OWNER) + resolveShop. Phase 7: writes are deprecated;
-/// new merchant flows use /me/carousels/:cid/slides which validates
-/// carousel ownership before any DB mutation. The GET endpoints stay
-/// as a read-only shim so older client builds keep listing the
-/// merchant's slides (sorted oldest-first across all their carousels)
-/// without breaking on missing endpoints. Writes return 410 GONE with
-/// a Location header pointing at the new surface.
+/// requireRole(OWNER) + resolveShop. A merchant uploads an image, picks
+/// a placement + optional link + schedule, and owns the list. Every
+/// query is scoped to the caller's shop.
 export const bannersMerchantRouter = Router();
 bannersMerchantRouter.get(
   '/',
@@ -59,37 +49,15 @@ bannersMerchantRouter.get(
   '/:id',
   asyncHandler(bannersController.getOneForShop.bind(bannersController)),
 );
-
-function gone(req: import('express').Request, res: import('express').Response) {
-  res
-    .status(410)
-    .set('Location', '/me/carousels')
-    .json({
-      error:
-        'POST/PATCH/DELETE on /me/banners is deprecated. Use ' +
-        '/me/carousels/:carouselId/slides instead.',
-    });
-}
-
-bannersMerchantRouter.post('/', gone);
-bannersMerchantRouter.patch('/:id', gone);
-bannersMerchantRouter.delete('/:id', gone);
-
-// Per-slide linked-product CRUD stays on this surface for now — the
-// new slide editor doesn't ship its own product picker yet, so the
-// legacy /me/banners/:id/products PUT is still the canonical write
-// for the BannerProduct join table. Lifting it onto /me/carousels is
-// a follow-up; until then keeping these wired here avoids losing the
-// feature entirely. Ownership is enforced server-side via shopId.
-bannersMerchantRouter.get(
-  '/:id/products',
-  asyncHandler(
-    bannersController.listProductsForShopBanner.bind(bannersController),
-  ),
+bannersMerchantRouter.post(
+  '/',
+  asyncHandler(bannersController.createForShop.bind(bannersController)),
 );
-bannersMerchantRouter.put(
-  '/:id/products',
-  asyncHandler(
-    bannersController.replaceProductsForShopBanner.bind(bannersController),
-  ),
+bannersMerchantRouter.patch(
+  '/:id',
+  asyncHandler(bannersController.updateForShop.bind(bannersController)),
+);
+bannersMerchantRouter.delete(
+  '/:id',
+  asyncHandler(bannersController.deleteForShop.bind(bannersController)),
 );

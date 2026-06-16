@@ -38,8 +38,6 @@ function derivePaymentSummary(
   }
   return { paidAmount: paid, balanceDue, paymentStatus };
 }
-import { flashSalesService } from '../flash-sales/flash-sales.service.js';
-import { resolveActiveProductPromos } from '../banners/promo-pricing.js';
 import { couponsService } from '../coupons/coupons.service.js';
 import { walletService } from '../wallet/wallet.service.js';
 import { notificationsService } from '../notifications/notifications.service.js';
@@ -399,49 +397,18 @@ export class PurchaseRequestsService {
       }
     }
 
-    // ── Flash-sale claim pass (across all lines, all shops) ─────────
-    // Atomically reserve units from any active flash sale. Lines that
-    // claim get billed at the flash price; the rest at sellingPrice.
-    // Out-of-stock at submit time rolls back every prior claim so the
-    // customer never holds a partial reserve they can't unwind.
-    const claimedQty = new Map<number, number>();
-    const flashPrices = new Map<number, number>();
-    for (const line of opts.items) {
-      const result = await flashSalesService.claim(line.productId, Math.ceil(line.quantity));
-      if (result.ok) {
-        claimedQty.set(line.productId, (claimedQty.get(line.productId) ?? 0) + Math.ceil(line.quantity));
-        flashPrices.set(line.productId, result.flashPrice);
-        continue;
-      }
-      if (result.reason === 'not_active') continue;
-      for (const [pid, q] of claimedQty.entries()) {
-        await flashSalesService.release(pid, q);
-      }
-      return { error: 'PRODUCT_INACTIVE' };
-    }
-
-    // ── Carousel-promo lookup (per product, cross-shop) ──────────────
-    // Customer carts can span many shops; we resolve the best active
-    // promo for every product in one round-trip and use it as the
-    // fallback effective price when no flash sale is claimed. Flash
-    // sales always win over carousel promos — flash is explicit,
-    // stock-bounded, and the customer already saw the flash badge.
-    const carouselPromos = await resolveActiveProductPromos(null, productIds);
+    // ── Effective unit price ─────────────────────────────────────────
+    // Customer carts bill at each product's canonical sellingPrice.
     const effectiveUnitPrice = (productId: number): number => {
-      const flash = flashPrices.get(productId);
-      if (flash !== undefined) return flash;
       const product = productMap.get(productId)!;
-      const selling = Number(product.sellingPrice);
-      const promo = carouselPromos.get(productId);
-      return promo ? round2(selling - promo.perUnit) : selling;
+      return Number(product.sellingPrice);
     };
 
     // ── Price-drift guard ────────────────────────────────────────────
     // Every line whose client sent `expectedUnitPrice` is compared
-    // against the effective price (flash sale > carousel promo > selling
-    // price). On any mismatch we roll back the flash claims and surface
-    // the corrected prices so the FE can show "₹X has changed to ₹Y"
-    // in one toast.
+    // against the current sellingPrice. On any mismatch we surface the
+    // corrected prices so the FE can show "₹X has changed to ₹Y" in one
+    // toast.
     const priceDrift: {
       productId: number;
       expectedUnitPrice: number;
@@ -460,9 +427,6 @@ export class PurchaseRequestsService {
       }
     }
     if (priceDrift.length > 0) {
-      for (const [pid, q] of claimedQty.entries()) {
-        await flashSalesService.release(pid, q).catch(() => undefined);
-      }
       return { error: 'PRICE_DRIFT', priceDrift };
     }
 
@@ -567,10 +531,6 @@ export class PurchaseRequestsService {
     }
 
     // ── Persist parent + children in one transaction ────────────────
-    // Flash-sale claims happened above (outside the transaction) — if
-    // the persist phase fails for ANY reason we MUST release them, or
-    // the reserved stock is permanently lost until the cron sweep.
-    let orderPersisted = false;
     try {
       const order = await prisma.$transaction(async (tx) => {
         const parent = await tx.customerOrder.create({
@@ -711,7 +671,6 @@ export class PurchaseRequestsService {
           walletPaid: round2(walletPaid),
         };
       });
-      orderPersisted = true;
       return { order };
     } catch (e) {
       if (e instanceof CouponRedeemError) {
@@ -737,10 +696,6 @@ export class PurchaseRequestsService {
           },
         });
         if (existing) {
-          // Deduplicated: the prior call already holds the flash claims
-          // we'd otherwise release. Mark persisted so the finally
-          // doesn't unwind them.
-          orderPersisted = true;
           return {
             order: {
               id: existing.id,
@@ -753,14 +708,6 @@ export class PurchaseRequestsService {
         }
       }
       throw e;
-    } finally {
-      if (!orderPersisted && claimedQty.size > 0) {
-        // Best-effort release. Each release is its own Redis op; we
-        // don't fail the caller if one of them errors.
-        for (const [pid, qty] of claimedQty.entries()) {
-          await flashSalesService.release(pid, qty).catch(() => undefined);
-        }
-      }
     }
   }
 
@@ -1027,14 +974,6 @@ export class PurchaseRequestsService {
         }
       }
 
-      // Best-effort flash-sale release. Outside Redis-aware code paths
-      // this is a no-op (the cron also reconciles).
-      for (const item of child.items) {
-        await flashSalesService
-          .release(item.productId, Math.ceil(Number(item.quantity)))
-          .catch(() => undefined);
-      }
-
       // If THIS cancellation was the last live child, decrement the
       // parent's coupon redemption (so the customer's per-user cap +
       // the global totalRedemptions counter aren't permanently
@@ -1242,12 +1181,6 @@ export class PurchaseRequestsService {
             });
           }
         }
-      }
-
-      for (const item of child.items) {
-        await flashSalesService
-          .release(item.productId, Math.ceil(Number(item.quantity)))
-          .catch(() => undefined);
       }
 
       const liveSiblings = await tx.purchaseRequest.count({
@@ -1646,13 +1579,6 @@ export class PurchaseRequestsService {
             }
           }
         }
-      }
-
-      // Release flash-sale reservations.
-      for (const item of child.items) {
-        await flashSalesService
-          .release(item.productId, Math.ceil(Number(item.quantity)))
-          .catch(() => undefined);
       }
 
       // Decrement coupon redemption when this rejection drops the last
