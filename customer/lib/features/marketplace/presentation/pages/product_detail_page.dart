@@ -87,7 +87,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       name: p.name,
       sku: p.sku,
       unit: p.unit,
-      sellingPrice: p.effectivePrice,
+      sellingPrice: p.sellingPrice,
       mrp: p.mrp,
       taxPercent: p.taxPercent,
       stockQuantity: p.stockQuantity,

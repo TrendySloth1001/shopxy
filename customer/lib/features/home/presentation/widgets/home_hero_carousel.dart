@@ -1,13 +1,15 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:shopxy_customer/features/banner_slide/presentation/pages/banner_slide_detail_page.dart';
+import 'package:shopxy_customer/core/network/image_url.dart';
 import 'package:shopxy_customer/features/home/data/models/home_feed_models.dart';
-import 'package:shopxy_customer/features/home/presentation/widgets/hero_slide_templates.dart';
+import 'package:shopxy_customer/features/home/presentation/widgets/home_banner_image.dart';
 import 'package:shopxy_customer/shared/constants/app_durations.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 
+/// Full-width banner carousel. Each slide is now just a plain tappable
+/// image (see [HomeBannerImage]) — the templated card system is gone.
 class HomeHeroCarousel extends StatefulWidget {
   const HomeHeroCarousel({super.key, required this.slides});
   final List<HeroSlide> slides;
@@ -17,13 +19,16 @@ class HomeHeroCarousel extends StatefulWidget {
 }
 
 class _HomeHeroCarouselState extends State<HomeHeroCarousel> {
-  // Full-width pages: a fractional viewport leaks the next slide's bg
-  // colour into the right margin and reads as a dead strip when the
-  // adjacent slide is light. Symmetric breathing room comes from the
-  // itemBuilder padding instead.
+  // Full-width pages: a fractional viewport leaks the next slide into
+  // the right margin and reads as a dead strip. Symmetric breathing
+  // room comes from the itemBuilder padding instead.
   final _controller = PageController();
   int _page = 0;
   Timer? _autoPlay;
+
+  // Banner aspect ratio — a wide marketing strip. Drives the carousel's
+  // definite height so the PageView never overflows.
+  static const double _aspectRatio = 16 / 7;
 
   @override
   void initState() {
@@ -54,12 +59,8 @@ class _HomeHeroCarouselState extends State<HomeHeroCarousel> {
     if (slides.isEmpty) return const SizedBox.shrink();
     return LayoutBuilder(
       builder: (context, constraints) {
-        // PageView needs a definite height. Compute it from the
-        // template card's aspect ratio so the carousel matches the
-        // exact size each templated slide will render at — eliminates
-        // the overflow that a hard-coded 188 used to cause.
         final cardWidth = constraints.maxWidth - (AppSizes.sm * 2);
-        final pageHeight = cardWidth / HeroSlideTemplateRenderer.aspectRatio;
+        final pageHeight = cardWidth / _aspectRatio;
         return Column(
           children: [
             SizedBox(
@@ -68,26 +69,14 @@ class _HomeHeroCarouselState extends State<HomeHeroCarousel> {
                 controller: _controller,
                 itemCount: slides.length,
                 onPageChanged: (i) => setState(() => _page = i),
-                itemBuilder: (context, i) {
-                  final slide = slides[i];
-                  final card = _HeroSlideCard(slide: slide);
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm),
-                    child: slide.bannerId == null
-                        ? card
-                        : GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: () => Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => BannerSlideDetailPage(
-                                  bannerId: slide.bannerId!,
-                                ),
-                              ),
-                            ),
-                            child: card,
-                          ),
-                  );
-                },
+                itemBuilder: (context, i) => Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm),
+                  child: HomeBannerImage(
+                    url: resolveImageUrl(slides[i].imageUrl),
+                    linkUrl: slides[i].linkUrl,
+                    borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: AppSizes.sm),
@@ -110,51 +99,6 @@ class _HomeHeroCarouselState extends State<HomeHeroCarousel> {
           ],
         );
       },
-    );
-  }
-}
-
-/// Renders one slide using the template the merchant picked.
-class _HeroSlideCard extends StatelessWidget {
-  const _HeroSlideCard({required this.slide});
-  final HeroSlide slide;
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        HeroSlideTemplateRenderer(slide: slide),
-        const Positioned(
-          right: 6,
-          bottom: 6,
-          child: _AdBadge(),
-        ),
-      ],
-    );
-  }
-}
-
-/// Small "AD" affordance over the bottom-right of every hero slide so
-/// the merchant's paid placement is disclosed to the shopper.
-class _AdBadge extends StatelessWidget {
-  const _AdBadge();
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-      decoration: BoxDecoration(
-        color: AppColors.white.withValues(alpha: 0.7),
-        borderRadius: BorderRadius.circular(3),
-      ),
-      child: const Text(
-        'AD',
-        style: TextStyle(
-          color: AppColors.muted,
-          fontSize: 9,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.5,
-        ),
-      ),
     );
   }
 }

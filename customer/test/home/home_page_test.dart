@@ -47,7 +47,7 @@ class _FakeHomeFeedProvider extends HomeFeedProvider {
   @override
   bool get isInitial =>
       _seed.heroSlides.isEmpty &&
-      _seed.flashDeals.isEmpty &&
+      _seed.newInStock.isEmpty &&
       _seed.trending.isEmpty;
   @override
   bool get isLoading => _statusOverride == HomeFeedStatus.loading;
@@ -173,36 +173,29 @@ const _sampleFeed = <String, dynamic>{
   'heroBanners': [
     {
       'id': 1,
-      'title': 'Festive Edit',
-      'subtitle': 'Up to 70% off',
-      'brandLabel': 'ETHNIC',
+      'placement': 'HERO',
       'imageUrl': '/images/hero.webp',
-      'bgColor': '#EFE4D6',
-      'accentColor': '#B23A2E',
+      'linkUrl': '/category/fashion',
+      'sortOrder': 0,
     },
   ],
   'adStripBanners': [],
   'promoBanners': [],
   'curatedRailBanners': [],
-  'flashDeals': [
+  'trending': [
     {
-      'id': 9,
-      'flashPrice': 999,
-      'stockLimit': 100,
-      'soldCount': 40,
-      'endAt': '2026-05-25T00:00:00Z',
+      'score': 5,
       'product': {
         'id': 10,
         'name': 'Wireless Earbuds',
         'mrp': 1999,
+        'sellingPrice': 999,
         'images': [
           {'url': '/images/earbuds.webp', 'sortOrder': 0},
         ],
       },
     },
   ],
-  'brandSpotlights': [],
-  'collections': [],
-  'trending': [],
+  'newArrivals': [],
   'categoryPucks': [],
 };

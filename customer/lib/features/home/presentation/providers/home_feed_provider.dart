@@ -2,9 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:shopxy_customer/features/home/data/datasources/home_feed_remote_data_source.dart';
-import 'package:shopxy_customer/features/home/data/models/home_blocks.dart';
-import 'package:shopxy_customer/features/home/data/models/home_feed_mapper.dart';
 import 'package:shopxy_customer/features/home/data/models/home_feed_models.dart';
+import 'package:shopxy_customer/features/home/data/models/home_feed_mapper.dart';
 
 enum HomeFeedStatus { idle, loading, ready, error }
 
@@ -24,11 +23,11 @@ class HomeFeedProvider extends ChangeNotifier {
   HomeFeed _feed = HomeFeed.empty;
   bool _personalizedInFlight = false;
 
-  // Endless-scroll state. The block composer is stateful — it threads
-  // intro/category cursors and a seen-product set across page loads —
-  // so we own its state here rather than recomputing in the widget.
-  List<HomeBlock> _blocks = const [];
-  final HomeBlockCycleState _composerState = HomeBlockCycleState();
+  // Endless-scroll state. The home tail is now a plain product grid:
+  // each page from `/home/feed/page` appends mapped products (deduped
+  // by id) to a flat list the widget renders as a grid.
+  final List<ProductCard> _products = [];
+  final Set<int> _productIds = {};
   int? _endlessSeed;
   int _endlessPage = 0;
   bool _endlessLoading = false;
@@ -39,7 +38,7 @@ class HomeFeedProvider extends ChangeNotifier {
   // checks `endlessExhausted` and stops calling `loadMore`.
   int _endlessFailureStreak = 0;
 
-  List<HomeBlock> get blocks => _blocks;
+  List<ProductCard> get products => List.unmodifiable(_products);
   bool get endlessLoading => _endlessLoading;
   bool get endlessExhausted => _endlessExhausted;
   String? get endlessError => _endlessError;
@@ -96,11 +95,7 @@ class HomeFeedProvider extends ChangeNotifier {
       _feedVersion++;
       _status = HomeFeedStatus.ready;
       // Reset the endless-feed pagination so a refresh re-shuffles.
-      // Seed the composer with the static feed lists (trending +
-      // recommended + …) so the first paint already has product
-      // blocks; the first remote page load then keeps appending.
       _resetEndless();
-      _composeMoreFromFeed();
       notifyListeners();
       // Fire personalised load in the background — don't block first
       // paint on it.
@@ -108,7 +103,7 @@ class HomeFeedProvider extends ChangeNotifier {
         debugPrint('home_feed: personalized load failed: $e');
       }));
       // Prime the endless pipeline with one page so the user doesn't
-      // hit a loader as soon as they scroll past the seeded blocks.
+      // hit a loader as soon as they scroll past the rails.
       unawaited(loadMore());
     } catch (e) {
       _status = HomeFeedStatus.error;
@@ -118,15 +113,8 @@ class HomeFeedProvider extends ChangeNotifier {
   }
 
   void _resetEndless() {
-    _blocks = [];
-    _composerState.seenProductIds.clear();
-    _composerState.blockCount = 0;
-    _composerState.introIdx = 0;
-    _composerState.categoryIdx = 0;
-    _composerState.curatedCursor = 0;
-    _composerState.collectionCursor = 0;
-    _composerState.sponsoredCursor = 0;
-    _composerState.recentInjected = false;
+    _products.clear();
+    _productIds.clear();
     _endlessSeed = null;
     _endlessPage = 0;
     _endlessLoading = false;
@@ -135,36 +123,16 @@ class HomeFeedProvider extends ChangeNotifier {
     _endlessFailureStreak = 0;
   }
 
-  void _composeMoreFromFeed({List<ProductCard> newProducts = const []}) {
-    final updated = List<HomeBlock>.from(_blocks);
-    appendHomeBlocks(
-      state: _composerState,
-      feed: _feed,
-      newProducts: newProducts,
-      blocks: updated,
-    );
-    _blocks = updated;
-  }
-
-  /// Fetch one more endless-page worth of products and append fresh
-  /// blocks. The widget calls this from a scroll listener as the user
-  /// nears the tail. Safe to invoke concurrently — re-entrant calls
-  /// short-circuit on `_endlessLoading`.
-  ///
-  /// If a page completes without growing the block list (composer
-  /// skipped this batch because no cycle step could be satisfied), we
-  /// silently fire one more page so the user never sees an idle
-  /// "loaded but no progress" state. Capped at one auto-retry per
-  /// invocation to keep this loop bounded.
-  Future<void> loadMore() => _loadMore(allowAutoRetry: true);
-
-  Future<void> _loadMore({required bool allowAutoRetry}) async {
+  /// Fetch one more endless-page worth of products and append the new
+  /// (deduped) cards. The widget calls this from a scroll listener as
+  /// the user nears the tail. Safe to invoke concurrently — re-entrant
+  /// calls short-circuit on `_endlessLoading`.
+  Future<void> loadMore() async {
     if (_endlessLoading || _endlessExhausted) return;
     if (_status != HomeFeedStatus.ready) return;
     _endlessLoading = true;
     _endlessError = null;
     notifyListeners();
-    final blocksBefore = _blocks.length;
     try {
       final page = await _remote.endlessPage(
         page: _endlessPage,
@@ -173,8 +141,16 @@ class HomeFeedProvider extends ChangeNotifier {
       _endlessSeed ??= page.seed;
       _endlessPage = page.nextPage;
       _endlessFailureStreak = 0;
-      final products = page.products.whereType<ProductCard>().toList();
-      _composeMoreFromFeed(newProducts: products);
+      var added = 0;
+      for (final p in page.products.whereType<ProductCard>()) {
+        if (_productIds.add(p.productId)) {
+          _products.add(p);
+          added++;
+        }
+      }
+      // A page that returned nothing new (server out of fresh rows)
+      // ends the endless scroll.
+      if (added == 0 && page.products.isEmpty) _endlessExhausted = true;
     } catch (e) {
       _endlessFailureStreak++;
       _endlessError = e.toString();
@@ -184,15 +160,6 @@ class HomeFeedProvider extends ChangeNotifier {
     } finally {
       _endlessLoading = false;
       notifyListeners();
-    }
-    // Composer produced nothing this round (rare — happens when the
-    // current cycle position is on a one-shot promo step and the pool
-    // didn't have enough variety). Pull one more page so the visible
-    // block list keeps growing without the user having to scroll.
-    if (allowAutoRetry &&
-        !_endlessExhausted &&
-        _blocks.length == blocksBefore) {
-      await _loadMore(allowAutoRetry: false);
     }
   }
 
