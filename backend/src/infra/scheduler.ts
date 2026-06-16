@@ -1,9 +1,7 @@
 import cron, { ScheduledTask } from 'node-cron';
 import { logger } from '../shared/logging/logger.js';
-import { flashSalesService } from '../modules/flash-sales/flash-sales.service.js';
 import { eventsService } from '../modules/events/events.service.js';
 import { trendingService } from '../modules/trending/trending.service.js';
-import { promotionsService } from '../modules/promotions/promotions.service.js';
 import { embeddingService } from '../modules/search/embedding.service.js';
 import { productsService } from '../modules/products/products.service.js';
 import { marketplaceService } from '../modules/marketplace/marketplace.service.js';
@@ -44,22 +42,6 @@ export function startScheduler(): void {
     logger.info('scheduler disabled by env');
     return;
   }
-
-  // Every 60s — persist Redis flash-sale soldCounts back to Postgres.
-  // No-op when Redis isn't reachable.
-  jobs.push(
-    cron.schedule('*/60 * * * * *', () =>
-      runSafely('flash:flush-sold', () => flashSalesService.flushSoldCountersToDb()),
-    ),
-  );
-
-  // Every 5min — flip is_active=false on flash sales past their endAt.
-  // Cheap UPDATE … WHERE; runs even without Redis.
-  jobs.push(
-    cron.schedule('*/5 * * * *', () =>
-      runSafely('flash:sweep-expired', () => flashSalesService.sweepExpired()),
-    ),
-  );
 
   // Hourly — cap each user's recently_viewed list at 20 rows.
   // Cheap window-function DELETE; safe to skip a tick.
@@ -118,16 +100,6 @@ export function startScheduler(): void {
     cron.schedule('30 3 * * *', () =>
       runSafely('marketplace:recompute-fbt', () =>
         marketplaceService.recomputeFbtCache(),
-      ),
-    ),
-  );
-
-  // Hourly — verify promotion day-state + auto-expire windows past
-  // endAt. Belt-and-braces over the inline recordImpressions check.
-  jobs.push(
-    cron.schedule('30 * * * *', () =>
-      runSafely('promotions:sweep', () =>
-        promotionsService.sweepDailyCaps(),
       ),
     ),
   );

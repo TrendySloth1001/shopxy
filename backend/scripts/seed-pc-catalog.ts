@@ -607,23 +607,17 @@ async function wipePcShops() {
   ).map((p) => p.id);
 
   if (productIds.length > 0) {
-    await prisma.flashSale.deleteMany({ where: { productId: { in: productIds } } });
-    await prisma.promotion.deleteMany({ where: { productId: { in: productIds } } });
     await prisma.productEvent.deleteMany({ where: { productId: { in: productIds } } });
     await prisma.recentlyViewed.deleteMany({ where: { productId: { in: productIds } } });
     await prisma.trendingScore.deleteMany({ where: { productId: { in: productIds } } });
-    await prisma.bannerProduct.deleteMany({ where: { productId: { in: productIds } } });
-    await prisma.collectionItem.deleteMany({ where: { productId: { in: productIds } } });
     await prisma.wishlistItem.deleteMany({ where: { productId: { in: productIds } } });
     await prisma.productImage.deleteMany({ where: { productId: { in: productIds } } });
     await prisma.productReview.deleteMany({ where: { productId: { in: productIds } } });
     await prisma.product.deleteMany({ where: { id: { in: productIds } } });
   }
-  // Cascade-on-shop-delete handles BrandSpotlight, Banner sponsorship
-  // (SetNull), FlashSale (already cleared), Promotion (already cleared),
-  // Counter, CustomFieldSection, etc.
-  await prisma.banner.deleteMany({ where: { sponsorShopId: { in: shopIds } } });
-  await prisma.brandSpotlight.deleteMany({ where: { shopId: { in: shopIds } } });
+  // Banners point at the shop via shopId (SetNull on shop delete); clear
+  // the seed's shop-scoped banners explicitly so re-runs stay idempotent.
+  await prisma.banner.deleteMany({ where: { shopId: { in: shopIds } } });
   await prisma.shop.deleteMany({ where: { id: { in: shopIds } } });
   console.log(`  - wiped ${shops.length} PC shops (${productIds.length} products)`);
 }
@@ -705,92 +699,25 @@ async function seedProductsForShop(opts: {
   return createdIds;
 }
 
-// ── Spotlight + banners + flash + promotions ─────────────────────
-
-async function seedSpotlight(shopId: number, m: MerchantSeed) {
-  await prisma.brandSpotlight.create({
-    data: {
-      shopId,
-      dealLabel: m.spotlight.dealLabel,
-      subtitle: m.spotlight.subtitle,
-      heroImageUrl: m.spotlight.image,
-      bgColor: m.spotlight.bg,
-      accentColor: m.spotlight.accent,
-      ctaTarget: `shop:${m.slug}`,
-      startAt: new Date(Date.now() - 3_600_000),
-      endAt: new Date(Date.now() + 30 * 86_400_000),
-      status: 'APPROVED',
-      reviewedAt: new Date(),
-    },
-  });
-}
+// ── Image banners ────────────────────────────────────────────────
+// A banner is now just an uploaded image + an optional click-through
+// link + a placement. No templates, colours, or product pinning.
 
 async function seedHeroBanners() {
-  // 4 hero slides — independent of any specific shop. We re-create
-  // them each run so they stay fresh + match the seed merchants.
-  await prisma.banner.deleteMany({
-    where: { placement: 'HERO', title: { startsWith: '[SEED]' } },
-  });
+  // 4 platform-wide hero slides (shopId = null). Re-created each run.
+  await prisma.banner.deleteMany({ where: { placement: 'HERO', shopId: null } });
   const slides = [
-    {
-      title: '[SEED] Build Season Sale',
-      subtitle: 'CPUs, GPUs and bundles up to 35% off',
-      eyebrow: 'PC Components',
-      brandLabel: 'CoreForge',
-      ctaText: 'Shop now',
-      ctaTarget: 'category:pc-components',
-      imageUrl: IMAGES.gpu[0],
-      bg: '#191A2C',
-      accent: '#E14B4B',
-    },
-    {
-      title: '[SEED] Workstation Refresh',
-      subtitle: 'Premium monitors, docks, and laptop stands',
-      eyebrow: 'For your desk',
-      brandLabel: 'LumiStore',
-      ctaText: 'Explore',
-      ctaTarget: 'shop:pc-lumistore',
-      imageUrl: IMAGES.monitor[0],
-      bg: '#1A2A3A',
-      accent: '#3DB2FF',
-    },
-    {
-      title: '[SEED] Studio-grade Audio',
-      subtitle: 'Headphones, speakers, ANC buds — flat 30% off',
-      eyebrow: 'Listen better',
-      brandLabel: 'Soundwave',
-      ctaText: 'Shop',
-      ctaTarget: 'shop:pc-soundwave-audio',
-      imageUrl: IMAGES.headphone[0],
-      bg: '#0F1A2A',
-      accent: '#FF6B6B',
-    },
-    {
-      title: '[SEED] Laptops & Travel Gear',
-      subtitle: 'Up to ₹35,000 off — bags & stands included',
-      eyebrow: 'On the move',
-      brandLabel: 'MobileMuse',
-      ctaText: 'Shop now',
-      ctaTarget: 'shop:pc-mobilemuse',
-      imageUrl: IMAGES.laptop[0],
-      bg: '#2C2A4A',
-      accent: '#F8B400',
-    },
+    { imageUrl: IMAGES.gpu[0], linkUrl: '/search?q=gpu' },
+    { imageUrl: IMAGES.monitor[0], linkUrl: '/shop/pc-lumistore' },
+    { imageUrl: IMAGES.headphone[0], linkUrl: '/shop/pc-soundwave-audio' },
+    { imageUrl: IMAGES.laptop[0], linkUrl: '/shop/pc-mobilemuse' },
   ];
   for (let i = 0; i < slides.length; i++) {
-    const s = slides[i];
     await prisma.banner.create({
       data: {
         placement: 'HERO',
-        title: s.title,
-        subtitle: s.subtitle,
-        eyebrow: s.eyebrow,
-        brandLabel: s.brandLabel,
-        ctaText: s.ctaText,
-        ctaTarget: s.ctaTarget,
-        imageUrl: s.imageUrl,
-        bgColor: s.bg,
-        accentColor: s.accent,
+        imageUrl: slides[i].imageUrl,
+        linkUrl: slides[i].linkUrl,
         sortOrder: i,
         isActive: true,
         startAt: new Date(Date.now() - 3_600_000),
@@ -801,131 +728,40 @@ async function seedHeroBanners() {
   console.log(`  + ${slides.length} hero banners`);
 }
 
-async function seedAdStripAndPromoBanners(shopIds: Map<string, number>) {
-  // 3 sponsored mid-feed ad cards + 2 promo banners. Re-created each
-  // run, scoped to the seed via the `[SEED]` title prefix.
-  await prisma.banner.deleteMany({
-    where: {
-      placement: { in: ['AD_STRIP', 'PROMO'] },
-      title: { startsWith: '[SEED]' },
-    },
-  });
-
-  const adCards = [
-    {
-      title: '[SEED] Mech keyboards from ₹2,299',
-      eyebrow: 'TechBazaar',
-      brandLabel: 'TechBazaar',
-      ctaText: 'Shop now',
-      ctaTarget: 'category:keyboards',
-      imageUrl: IMAGES.keyboard[0],
-      bg: '#1E1E26',
-      sponsor: shopIds.get('pc-techbazaar-india') ?? null,
-    },
-    {
-      title: '[SEED] 100W GaN chargers, flat 30%',
-      eyebrow: 'PowerGrid',
-      brandLabel: 'PowerGrid',
-      ctaText: 'Buy',
-      ctaTarget: 'category:wall-chargers',
-      imageUrl: IMAGES.charger[0],
-      bg: '#FFE8C2',
-      sponsor: shopIds.get('pc-powergrid-accessories') ?? null,
-    },
-    {
-      title: '[SEED] Curated cable kits & hubs',
-      eyebrow: "Nikhil's Warehouse",
-      brandLabel: "Nikhil's",
-      ctaText: 'Shop',
-      ctaTarget: 'shop:pc-nikhils-warehouse',
-      imageUrl: IMAGES.cable[0],
-      bg: '#EFE4D6',
-      sponsor: shopIds.get('pc-nikhils-warehouse') ?? null,
-    },
+async function seedShopBanners(shopIds: Map<string, number>) {
+  // Shop-authored image banners across AD_STRIP / PROMO / CURATED_RAIL.
+  const cards: Array<{ placement: 'AD_STRIP' | 'PROMO' | 'CURATED_RAIL'; imageUrl: string; slug: string }> = [
+    { placement: 'AD_STRIP', imageUrl: IMAGES.keyboard[0], slug: 'pc-techbazaar-india' },
+    { placement: 'AD_STRIP', imageUrl: IMAGES.charger[0], slug: 'pc-powergrid-accessories' },
+    { placement: 'PROMO', imageUrl: IMAGES.cable[0], slug: 'pc-nikhils-warehouse' },
+    { placement: 'CURATED_RAIL', imageUrl: IMAGES.monitor[0], slug: 'pc-lumistore' },
   ];
-  for (let i = 0; i < adCards.length; i++) {
-    const c = adCards[i];
+  const shopList = [...new Set(cards.map((c) => shopIds.get(c.slug)).filter((x): x is number => x != null))];
+  if (shopList.length > 0) {
+    await prisma.banner.deleteMany({
+      where: { placement: { in: ['AD_STRIP', 'PROMO', 'CURATED_RAIL'] }, shopId: { in: shopList } },
+    });
+  }
+  let count = 0;
+  for (let i = 0; i < cards.length; i++) {
+    const c = cards[i];
+    const shopId = shopIds.get(c.slug);
+    if (shopId == null) continue;
     await prisma.banner.create({
       data: {
-        placement: 'AD_STRIP',
-        title: c.title,
-        eyebrow: c.eyebrow,
-        brandLabel: c.brandLabel,
-        ctaText: c.ctaText,
-        ctaTarget: c.ctaTarget,
+        placement: c.placement,
+        shopId,
         imageUrl: c.imageUrl,
-        bgColor: c.bg,
+        linkUrl: `/shop/${c.slug}`,
         sortOrder: i,
         isActive: true,
         startAt: new Date(Date.now() - 3_600_000),
         endAt: new Date(Date.now() + 30 * 86_400_000),
-        sponsorShopId: c.sponsor,
-      },
-    });
-  }
-  console.log(`  + ${adCards.length} ad-strip banners`);
-}
-
-async function seedFlashSales(productsByShop: Map<number, number[]>) {
-  // Pick the first 3 products from each shop and run a 6-hour
-  // flash sale at ~20% off the sellingPrice. Wipe any existing flash
-  // sales for these products first so re-runs are idempotent.
-  let count = 0;
-  for (const [shopId, productIds] of productsByShop) {
-    for (const productId of productIds.slice(0, 3)) {
-      const product = await prisma.product.findUnique({
-        where: { id: productId },
-        select: { sellingPrice: true },
-      });
-      if (!product) continue;
-      const sp = Number(product.sellingPrice);
-      const flashPrice = asDecimal(Math.round(sp * 0.8));
-      await prisma.flashSale.deleteMany({ where: { productId } });
-      await prisma.flashSale.create({
-        data: {
-          shopId,
-          productId,
-          flashPrice,
-          stockLimit: 25,
-          soldCount: 4 + Math.floor(Math.random() * 10),
-          startAt: new Date(Date.now() - 3_600_000),
-          endAt: new Date(Date.now() + 6 * 3_600_000),
-          isActive: true,
-        },
-      });
-      count++;
-    }
-  }
-  console.log(`  + ${count} flash sales`);
-}
-
-async function seedPromotions(productsByShop: Map<number, number[]>) {
-  // One sponsored promotion per shop, on the 4th product, so the
-  // sponsored-slot injection in the trending rail has candidates.
-  let count = 0;
-  for (const [shopId, productIds] of productsByShop) {
-    const productId = productIds[3];
-    if (!productId) continue;
-    await prisma.promotion.deleteMany({ where: { productId } });
-    await prisma.promotion.create({
-      data: {
-        shopId,
-        productId,
-        budgetPaise: 500_000,
-        dailyCapPaise: 100_000,
-        cpmPaise: 5_000,
-        startAt: new Date(Date.now() - 3_600_000),
-        endAt: new Date(Date.now() + 14 * 86_400_000),
-        isActive: true,
-        deliveredImpressions: 200 + Math.floor(Math.random() * 600),
-        spendPaise: 1_000,
-        spendTodayPaise: 1_000,
-        spendTodayDate: new Date(),
       },
     });
     count++;
   }
-  console.log(`  + ${count} promotions`);
+  console.log(`  + ${count} shop banners`);
 }
 
 async function seedEvents(allProductIds: number[], userId: number) {
@@ -998,13 +834,6 @@ async function main() {
     console.log(`  ✓ ${m.shopName} → shop #${shop.id}`);
   }
 
-  console.log('4. Creating spotlights…');
-  for (const m of MERCHANTS) {
-    const shopId = shopBySlug.get(m.slug)!;
-    await seedSpotlight(shopId, m);
-  }
-  console.log(`  + ${MERCHANTS.length} brand spotlights`);
-
   console.log('5. Creating products…');
   // Distribute templates across merchants by interleaving: each
   // merchant gets every Nth template starting at their index, so each
@@ -1036,15 +865,9 @@ async function main() {
   }
   console.log(`  + ${totalProducts} products across ${MERCHANTS.length} shops`);
 
-  console.log('6. Creating hero + ad-strip banners…');
+  console.log('6. Creating image banners…');
   await seedHeroBanners();
-  await seedAdStripAndPromoBanners(shopBySlug);
-
-  console.log('7. Creating flash sales…');
-  await seedFlashSales(productsByShop);
-
-  console.log('8. Creating sponsored promotions…');
-  await seedPromotions(productsByShop);
+  await seedShopBanners(shopBySlug);
 
   const allProductIds = Array.from(productsByShop.values()).flat();
   const devUserId = userByEmail.get('nkumawat8956@gmail.com')!;

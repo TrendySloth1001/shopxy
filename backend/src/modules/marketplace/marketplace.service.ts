@@ -58,11 +58,6 @@ const detailSelect = {
     select: { id: true, name: true, slug: true, logoUrl: true, rating: true, ratingCount: true },
   },
   category: { select: { id: true, name: true, slug: true } },
-  flashSales: {
-    where: { isActive: true, startAt: { lte: new Date() }, endAt: { gte: new Date() } },
-    select: { id: true, flashPrice: true, stockLimit: true, soldCount: true, endAt: true },
-    take: 1,
-  },
 } satisfies Prisma.ProductSelect;
 
 const listSelect = {

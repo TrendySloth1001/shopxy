@@ -42,76 +42,25 @@ async function main() {
   }
   console.log(`SEED: ${products.length} active products`);
 
-  // ── Brand spotlight (APPROVED, live now) ────────────────────────
-  const existingSpot = await prisma.brandSpotlight.findFirst({
-    where: { shopId, status: 'APPROVED' },
+  // ── Shop image banner (PROMO, live now) ─────────────────────────
+  const existingBanner = await prisma.banner.findFirst({
+    where: { shopId, placement: 'PROMO' },
   });
-  if (!existingSpot) {
-    await prisma.brandSpotlight.create({
+  if (!existingBanner) {
+    await prisma.banner.create({
       data: {
         shopId,
-        dealLabel: 'Festive electronics — up to 40% off',
-        subtitle: 'Curated cables, hubs, and gamepads',
-        heroImageUrl:
+        placement: 'PROMO',
+        imageUrl:
           'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800',
-        bgColor: '#EFE4D6',
-        accentColor: '#B23A2E',
-        ctaTarget: 'collection:wedding-edit',
+        linkUrl: `/shop/${user.shop.slug}`,
+        sortOrder: 0,
         startAt: new Date(Date.now() - 3_600_000),
         endAt: new Date(Date.now() + 30 * 86_400_000),
-        status: 'APPROVED',
-        reviewedAt: new Date(),
+        isActive: true,
       },
     });
-    console.log('SEED: brand spotlight (APPROVED)');
-  }
-
-  // ── Flash deal on first published product ───────────────────────
-  const firstProduct = products[0];
-  if (firstProduct) {
-    const existingFlash = await prisma.flashSale.findFirst({
-      where: { productId: firstProduct.id, isActive: true },
-    });
-    if (!existingFlash) {
-      await prisma.flashSale.create({
-        data: {
-          productId: firstProduct.id,
-          flashPrice: 999,
-          stockLimit: 25,
-          soldCount: 4,
-          startAt: new Date(Date.now() - 3_600_000),
-          endAt: new Date(Date.now() + 6 * 3_600_000),
-          isActive: true,
-        },
-      });
-      console.log(`SEED: flash sale on product #${firstProduct.id}`);
-    }
-  }
-
-  // ── Promotion on second published product ───────────────────────
-  if (products[1]) {
-    const existingPromo = await prisma.promotion.findFirst({
-      where: { productId: products[1].id, isActive: true },
-    });
-    if (!existingPromo) {
-      await prisma.promotion.create({
-        data: {
-          shopId,
-          productId: products[1].id,
-          budgetPaise: 500_000, // ₹5,000
-          dailyCapPaise: 100_000, // ₹1,000/day
-          cpmPaise: 5_000, // ₹50/1k impressions
-          startAt: new Date(Date.now() - 3_600_000),
-          endAt: new Date(Date.now() + 14 * 86_400_000),
-          isActive: true,
-          deliveredImpressions: 320,
-          spendPaise: 1_600, // 320 * 5000 / 1000
-          spendTodayPaise: 1_600,
-          spendTodayDate: new Date(),
-        },
-      });
-      console.log(`SEED: promotion on product #${products[1].id}`);
-    }
+    console.log('SEED: shop PROMO banner');
   }
 
   // ── Seed 240 ProductEvents across 4 published products ──────────
