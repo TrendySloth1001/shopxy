@@ -3,49 +3,19 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CloudOff, Loader2, RefreshCw } from "lucide-react";
 import { fetchEndlessPage, fetchFeed, fetchPersonalized } from "../api";
-import { appendHomeBlocks, newCycleState, type CycleState } from "../composer";
 import { recordImpression } from "../tracking";
-import { EMPTY_FEED, type HomeBlock, type HomeFeed, type ProductCard } from "../types";
+import { EMPTY_FEED, type HeroSlide, type HomeFeed, type ProductCard } from "../types";
 import { TopBar } from "./top-bar";
 import { SearchBar } from "./search-bar";
 import { CategoryRail } from "./category-rail";
 import { TrustStrip } from "./trust-strip";
 import { RecentlyViewed } from "./recently-viewed";
 import { ProductCarousel } from "./product-carousel";
-import { FeedBlock } from "./feed-block";
+import { ProductTile } from "./product-tile";
+import { HeroSlideCard } from "./hero-slide";
 import { FooterStrip } from "./footer-strip";
 
 type Status = "loading" | "ready" | "error";
-
-/** Products a block surfaces — used to fire impressions for appended blocks. */
-function productsInBlock(b: HomeBlock): ProductCard[] {
-  switch (b.kind) {
-    case "mosaic":
-      return [b.hero, b.topRight, b.bottomRight];
-    case "compare":
-      return [b.left, b.right];
-    case "zigzag":
-      return [b.hero, b.pair];
-    case "poster":
-      return [b.product];
-    case "grid2":
-    case "grid3":
-    case "vertical":
-    case "reels":
-    case "category":
-    case "chips":
-    case "carousel":
-    case "sponsored":
-    case "recentlyViewed":
-    case "leaderboard":
-    case "brandFocus":
-    case "priceBand":
-    case "shopShowcase":
-      return b.products;
-    default:
-      return [];
-  }
-}
 
 // Hysteresis band for the header collapse. Collapsing the search bar removes
 // ~88px of page height, which shifts scrollY — a single threshold makes that
@@ -58,55 +28,54 @@ export function HomeFeed() {
   const [status, setStatus] = useState<Status>("loading");
   const [error, setError] = useState<string | null>(null);
   const [feed, setFeed] = useState<HomeFeed>(EMPTY_FEED);
-  const [blocks, setBlocks] = useState<HomeBlock[]>([]);
+  const [products, setProducts] = useState<ProductCard[]>([]);
   const [collapsed, setCollapsed] = useState(false);
 
   const [loadingMore, setLoadingMore] = useState(false);
   const [exhausted, setExhausted] = useState(false);
 
-  // Mutable pager/composer state kept in refs (doesn't drive rendering).
-  const cycle = useRef<CycleState>(newCycleState());
+  // Mutable pager state kept in refs (doesn't drive rendering).
   const seed = useRef<number | undefined>(undefined);
   const page = useRef(0);
+  const seen = useRef<Set<number>>(new Set());
   const failureStreak = useRef(0);
   const loadingMoreRef = useRef(false);
   const exhaustedRef = useRef(false);
   const statusRef = useRef<Status>("loading");
   const booted = useRef(false);
 
-  const fireImpressions = useCallback((appended: HomeBlock[]) => {
-    for (const b of appended) for (const p of productsInBlock(b)) recordImpression(p.productId);
+  const appendProducts = useCallback((incoming: ProductCard[]) => {
+    const fresh = incoming.filter((p) => !seen.current.has(p.productId));
+    if (fresh.length === 0) return;
+    for (const p of fresh) {
+      seen.current.add(p.productId);
+      recordImpression(p.productId);
+    }
+    setProducts((prev) => [...prev, ...fresh]);
   }, []);
 
-  const loadMore = useCallback(
-    async (feedOverride?: HomeFeed) => {
-      if (loadingMoreRef.current || exhaustedRef.current) return;
-      if (statusRef.current !== "ready") return;
-      loadingMoreRef.current = true;
-      setLoadingMore(true);
-      try {
-        const pg = await fetchEndlessPage(page.current, seed.current);
-        seed.current ??= pg.seed;
-        page.current = pg.nextPage;
-        failureStreak.current = 0;
-        const appended = appendHomeBlocks(cycle.current, feedOverride ?? feed, pg.products);
-        if (appended.length > 0) {
-          setBlocks((prev) => [...prev, ...appended]);
-          fireImpressions(appended);
-        }
-      } catch {
-        failureStreak.current += 1;
-        if (failureStreak.current >= 3) {
-          exhaustedRef.current = true;
-          setExhausted(true);
-        }
-      } finally {
-        loadingMoreRef.current = false;
-        setLoadingMore(false);
+  const loadMore = useCallback(async () => {
+    if (loadingMoreRef.current || exhaustedRef.current) return;
+    if (statusRef.current !== "ready") return;
+    loadingMoreRef.current = true;
+    setLoadingMore(true);
+    try {
+      const pg = await fetchEndlessPage(page.current, seed.current);
+      seed.current ??= pg.seed;
+      page.current = pg.nextPage;
+      failureStreak.current = 0;
+      appendProducts(pg.products);
+    } catch {
+      failureStreak.current += 1;
+      if (failureStreak.current >= 3) {
+        exhaustedRef.current = true;
+        setExhausted(true);
       }
-    },
-    [fireImpressions, feed],
-  );
+    } finally {
+      loadingMoreRef.current = false;
+      setLoadingMore(false);
+    }
+  }, [appendProducts]);
 
   useEffect(() => {
     statusRef.current = status;
@@ -116,19 +85,16 @@ export function HomeFeed() {
     setStatus("loading");
     statusRef.current = "loading";
     setError(null);
-    // reset pager/composer
-    cycle.current = newCycleState();
     seed.current = undefined;
     page.current = 0;
+    seen.current = new Set();
     failureStreak.current = 0;
     exhaustedRef.current = false;
     setExhausted(false);
+    setProducts([]);
     try {
       const next = await fetchFeed();
       setFeed(next);
-      const initial = appendHomeBlocks(cycle.current, next, []);
-      setBlocks(initial);
-      fireImpressions(initial);
       setStatus("ready");
       statusRef.current = "ready";
       // personalised overlay (background) — non-fatal
@@ -137,14 +103,14 @@ export function HomeFeed() {
           setFeed((prev) => ({ ...prev, recommended: p.recommended, recentlyViewed: p.recentlyViewed }));
         })
         .catch(() => {});
-      // prime one endless page so the first scroll doesn't hit a loader
-      void loadMore(next);
+      // prime the first endless page so the first scroll doesn't hit a loader
+      void loadMore();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not load home");
       setStatus("error");
       statusRef.current = "error";
     }
-  }, [fireImpressions, loadMore]);
+  }, [loadMore]);
 
   useEffect(() => {
     if (booted.current) return;
@@ -152,10 +118,9 @@ export function HomeFeed() {
     void boot();
   }, [boot]);
 
-  // Header collapse + endless prefetch on window scroll. rAF-throttled so a
-  // burst of scroll events collapses to one measurement per frame, and the
-  // collapse uses hysteresis (COLLAPSE_AT / EXPAND_AT) so the height change it
-  // triggers can't bounce the header across the threshold.
+  // Header collapse + endless prefetch on window scroll. rAF-throttled, with
+  // hysteresis (COLLAPSE_AT / EXPAND_AT) so the height change it triggers can't
+  // bounce the header across the threshold.
   useEffect(() => {
     let ticking = false;
     const measure = () => {
@@ -194,49 +159,91 @@ export function HomeFeed() {
         ) : status === "loading" ? (
           <HomeSkeleton />
         ) : (
-          <Feed feed={feed} blocks={blocks} loadingMore={loadingMore} exhausted={exhausted} />
+          <Feed feed={feed} products={products} loadingMore={loadingMore} exhausted={exhausted} />
         )}
       </div>
     </div>
   );
 }
 
+/** A horizontal, snap-scrolling strip of banner images for one placement. */
+function BannerStrip({ slides, widthClass }: { slides: HeroSlide[]; widthClass: string }) {
+  if (slides.length === 0) return null;
+  return (
+    <div className="flex snap-x snap-mandatory gap-md overflow-x-auto px-lg pb-xs [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {slides.map((s) => (
+        <div key={s.bannerId} className={`${widthClass} shrink-0 snap-center`}>
+          <HeroSlideCard slide={s} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function Feed({
   feed,
-  blocks,
+  products,
   loadingMore,
   exhausted,
 }: {
   feed: HomeFeed;
-  blocks: HomeBlock[];
+  products: ProductCard[];
   loadingMore: boolean;
   exhausted: boolean;
 }) {
   return (
     <main className="flex flex-col gap-xl pb-massive pt-md">
-      {/* Prelude — browse intent → continuity → freshness, then the endless cycle. */}
       <CategoryRail pucks={feed.categoryPucks} />
+
+      {/* Hero banners — full-width snap carousel. */}
+      <BannerStrip slides={feed.heroSlides} widthClass="w-[88%] sm:w-[70%] lg:w-[48%]" />
+
       <TrustStrip />
+
       {feed.recentlyViewed.length > 0 ? <RecentlyViewed items={feed.recentlyViewed} /> : null}
-      {feed.newInStock.length > 0 ? (
-        <ProductCarousel eyebrow="JUST LANDED" title="Fresh in stock" products={feed.newInStock} />
+
+      {feed.adStrip.length > 0 ? (
+        <BannerStrip slides={feed.adStrip} widthClass="w-[70%] sm:w-[46%] lg:w-[31%]" />
       ) : null}
 
-      {blocks.map((b, i) => (
-        <FeedBlock key={`${b.kind}-${i}`} block={b} />
-      ))}
+      {feed.newInStock.length > 0 ? (
+        <ProductCarousel eyebrow="JUST LANDED" title="Fresh in stock" products={feed.newInStock} layout="rail" />
+      ) : null}
+
+      {feed.promoBanners.length > 0 ? (
+        <BannerStrip slides={feed.promoBanners} widthClass="w-[70%] sm:w-[46%] lg:w-[31%]" />
+      ) : null}
+
+      {feed.trending.length > 0 ? (
+        <ProductCarousel eyebrow="TRENDING" title="Trending now" products={feed.trending} layout="rail" />
+      ) : null}
+
+      {feed.curatedRails.length > 0 ? (
+        <BannerStrip slides={feed.curatedRails} widthClass="w-[88%] sm:w-[70%] lg:w-[48%]" />
+      ) : null}
+
+      {/* Endless product grid — the main browse surface. */}
+      {products.length > 0 ? (
+        <section>
+          <div className="mt-md grid grid-cols-2 gap-md px-lg md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            {products.map((p) => (
+              <ProductTile key={p.productId} product={p} source="home" />
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {/* Tail sentinel */}
       {exhausted ? (
         <div className="flex flex-col items-center gap-lg px-lg pb-massive">
           <FooterStrip />
-          <p className="text-center text-[12.5px] text-muted">You&apos;ve reached the end — refresh for more</p>
+          <p className="text-center text-label-md text-muted">You&apos;ve reached the end — refresh for more</p>
         </div>
       ) : loadingMore ? (
         <div className="flex justify-center py-xl">
           <Loader2 size={22} className="animate-spin text-muted" aria-hidden />
         </div>
-      ) : blocks.length === 0 ? (
+      ) : products.length === 0 ? (
         <FooterStrip />
       ) : null}
     </main>
@@ -266,8 +273,8 @@ function ErrorRetry({ message, onRetry }: { message: string; onRetry: () => void
   return (
     <div className="flex flex-col items-center gap-md px-xl py-massive text-center">
       <CloudOff size={56} className="text-muted" aria-hidden />
-      <p className="text-[17px] font-extrabold text-ink">Couldn&apos;t load your home feed</p>
-      <p className="text-[13px] text-muted">{message}</p>
+      <p className="text-headline-sm font-extrabold text-ink">Couldn&apos;t load your home feed</p>
+      <p className="text-body-sm text-muted">{message}</p>
       <button
         type="button"
         onClick={onRetry}
