@@ -92,10 +92,27 @@ class AppShimmerLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FractionallySizedBox(
-      widthFactor: widthFactor.clamp(0.1, 1.0),
-      alignment: Alignment.centerLeft,
-      child: AppShimmerBox(height: height, radius: height / 2),
+    final factor = widthFactor.clamp(0.1, 1.0);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // `FractionallySizedBox` can't take a fraction of an unbounded width —
+        // dropping a shimmer line straight into a `Row` (a common skeleton
+        // shape: Expanded text block + a short trailing bar) hands it infinite
+        // width and throws. Fall back to a fixed-width bar there so the
+        // skeleton still renders. The bounded case is unchanged (pixel-identical).
+        if (!constraints.hasBoundedWidth) {
+          return AppShimmerBox(
+            width: (factor * 200).clamp(24.0, 220.0),
+            height: height,
+            radius: height / 2,
+          );
+        }
+        return FractionallySizedBox(
+          widthFactor: factor,
+          alignment: Alignment.centerLeft,
+          child: AppShimmerBox(height: height, radius: height / 2),
+        );
+      },
     );
   }
 }
