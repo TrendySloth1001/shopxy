@@ -13,6 +13,8 @@ export interface HeroSlide {
   imageUrl: string;
   /** Optional click-through: a relative app path or absolute URL. */
   linkUrl: string | null;
+  /** Number of products pinned to this banner; >0 → tap opens its detail page. */
+  productCount: number;
 }
 
 export interface CategoryPuck {
