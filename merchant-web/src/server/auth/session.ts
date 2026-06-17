@@ -20,8 +20,12 @@ import {
  * exchange the refresh token for a new pair and retry once.
  */
 
-const ACCESS_COOKIE = "sx_access";
-const REFRESH_COOKIE = "sx_refresh";
+// App-scoped cookie names. merchant-web and customer-web run on the same host
+// in dev (localhost:3010 / :3009) and cookies are NOT port-scoped, so identical
+// names would let one app read the other's session. Distinct prefixes keep the
+// two sessions isolated. (`sxm_` = ShopXY merchant.)
+const ACCESS_COOKIE = "sxm_access";
+const REFRESH_COOKIE = "sxm_refresh";
 /** Matches the backend refresh-token lifetime (7 days). */
 const REFRESH_MAX_AGE = 7 * 24 * 60 * 60;
 
