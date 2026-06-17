@@ -9,6 +9,7 @@ export const MERCHANT_AREAS: Record<string, Area> = {
   '/me/team': 'team',
   '/me/shop': 'shop',
   '/me/banners': 'marketing',
+  '/me/scan-console': 'products',
   '/me/analytics': 'reports',
   '/me/coupons-admin': 'marketing',
   '/custom-fields': 'products',
