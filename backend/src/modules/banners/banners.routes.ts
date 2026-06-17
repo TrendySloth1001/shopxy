@@ -10,6 +10,12 @@ bannersPublicRouter.get(
   '/',
   asyncHandler(bannersController.listPublic.bind(bannersController)),
 );
+// Public banner detail — the banner + its pinned products (with computed
+// sale prices). The customer banner-detail page calls this.
+bannersPublicRouter.get(
+  '/:id',
+  asyncHandler(bannersController.getPublicDetail.bind(bannersController)),
+);
 
 /// Admin CRUD — mounted under /admin/banners with requirePlatformAdmin.
 /// Manages platform-wide banners (shopId = null) and can see/edit every
@@ -60,4 +66,13 @@ bannersMerchantRouter.patch(
 bannersMerchantRouter.delete(
   '/:id',
   asyncHandler(bannersController.deleteForShop.bind(bannersController)),
+);
+// Pinned-product list (curated showcase + optional per-product discount).
+bannersMerchantRouter.get(
+  '/:id/products',
+  asyncHandler(bannersController.listProductsForShopBanner.bind(bannersController)),
+);
+bannersMerchantRouter.put(
+  '/:id/products',
+  asyncHandler(bannersController.replaceProductsForShopBanner.bind(bannersController)),
 );

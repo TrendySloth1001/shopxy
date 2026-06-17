@@ -42,6 +42,24 @@ const updateBannerSchema = createBannerSchema
     message: 'At least one field is required',
   });
 
+// Replace-the-list payload for PUT /me/banners/:id/products. Empty `items`
+// clears the banner's pinned products. Accepts the typed shape
+// (discountType + discountValue) and the legacy `discountPct` int; the
+// service clamps per-product.
+const replaceBannerProductsSchema = z.object({
+  items: z
+    .array(
+      z.object({
+        productId: z.number().int().positive(),
+        discountType: z.enum(['PERCENT', 'AMOUNT']).optional(),
+        discountValue: z.number().min(0).max(1_000_000).optional(),
+        discountPct: z.number().int().min(0).max(90).optional(),
+        position: z.number().int().min(0).max(10_000).optional(),
+      }),
+    )
+    .max(60),
+});
+
 function parseId(raw: string): number | null {
   const id = Number(raw);
   return Number.isInteger(id) && id > 0 ? id : null;
@@ -206,6 +224,67 @@ export class BannersController {
       return;
     }
     res.status(204).send();
+  }
+
+  // ── Pinned products ──────────────────────────────────────────────
+
+  async listProductsForShopBanner(req: Request, res: Response): Promise<void> {
+    const id = parseId(req.params.id);
+    if (!id) {
+      res.status(400).json({ error: 'Invalid id' });
+      return;
+    }
+    const rows = await bannersService.listProductsForShopBanner(req.shopId!, id);
+    if (rows === null) {
+      res.status(404).json({ error: 'Banner not found' });
+      return;
+    }
+    res.json({ data: rows });
+  }
+
+  async replaceProductsForShopBanner(req: Request, res: Response): Promise<void> {
+    const id = parseId(req.params.id);
+    if (!id) {
+      res.status(400).json({ error: 'Invalid id' });
+      return;
+    }
+    const payload = replaceBannerProductsSchema.parse(req.body);
+    const rows = await bannersService.replaceProductsForShopBanner(
+      req.shopId!,
+      id,
+      payload.items.map((it, idx) => {
+        const hasTyped = it.discountType !== undefined || it.discountValue !== undefined;
+        const type = it.discountType ?? 'PERCENT';
+        const rawValue = hasTyped ? (it.discountValue ?? 0) : (it.discountPct ?? 0);
+        return {
+          productId: it.productId,
+          discountType: type,
+          discountValueRaw: rawValue,
+          position: it.position ?? idx,
+        };
+      }),
+    );
+    if (rows === null) {
+      res.status(404).json({ error: 'Banner not found' });
+      return;
+    }
+    res.json({ data: rows });
+  }
+
+  /// GET /banners/:id — public banner detail (banner + pinned products
+  /// with computed sale prices). 404 when the banner isn't visible.
+  async getPublicDetail(req: Request, res: Response): Promise<void> {
+    const id = parseId(req.params.id);
+    if (!id) {
+      res.status(400).json({ error: 'Invalid id' });
+      return;
+    }
+    const detail = await bannersService.getPublicBannerWithProducts(id);
+    if (!detail) {
+      res.status(404).json({ error: 'Banner not found' });
+      return;
+    }
+    res.json(detail);
   }
 }
 
