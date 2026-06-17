@@ -329,6 +329,27 @@ class _BannerTile extends StatelessWidget {
                                   color: AppColors.muted,
                                 ),
                           ),
+                          if (banner.productCount > 0) ...[
+                            const SizedBox(width: AppSizes.sm),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.inventory_2_outlined,
+                                  size: AppSizes.iconSm,
+                                  color: AppColors.muted,
+                                ),
+                                const SizedBox(width: 2),
+                                Text(
+                                  '${banner.productCount} product${banner.productCount == 1 ? '' : 's'}',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelSmall
+                                      ?.copyWith(color: AppColors.muted),
+                                ),
+                              ],
+                            ),
+                          ],
                           if (banner.startAt != null || banner.endAt != null) ...[
                             const SizedBox(width: AppSizes.sm),
                             Text(

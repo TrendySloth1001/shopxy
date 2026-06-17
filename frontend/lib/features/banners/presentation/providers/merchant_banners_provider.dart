@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:shopxy/features/admin/data/models/banner.dart';
 import 'package:shopxy/features/banners/data/datasources/merchant_banners_remote_data_source.dart';
+import 'package:shopxy/features/banners/data/models/banner_product.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 
 class MerchantBannersProvider extends ChangeNotifier {
@@ -88,6 +89,18 @@ class MerchantBannersProvider extends ChangeNotifier {
       return false;
     }
   }
+
+  /// Curated products pinned to a banner, in display order.
+  Future<List<BannerProductRow>> listBannerProducts(int bannerId) =>
+      _ds.listBannerProducts(bannerId);
+
+  /// Replaces the entire pinned-product list for a banner. Empty [items]
+  /// clears it. Returns the re-read rows (with server-computed sale prices).
+  Future<List<BannerProductRow>> replaceBannerProducts(
+    int bannerId,
+    List<BannerProductInput> items,
+  ) =>
+      _ds.replaceBannerProducts(bannerId, items);
 
   /// Drops cached state on logout / 401-refresh so the next user doesn't
   /// momentarily see the previous merchant's banners.
