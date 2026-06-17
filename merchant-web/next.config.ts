@@ -9,6 +9,11 @@ const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
   env: { NEXT_PUBLIC_APP_VERSION: version },
+  // `next build` writes to a separate dir (set by the build/start scripts) so a
+  // production build never clobbers the live `next dev` Turbopack cache in
+  // `.next/` — that overlap corrupts the dev cache (missing .sst files). Dev
+  // stays on the default `.next`; build/start use `.next-build`.
+  distDir: process.env.NEXT_DIST_DIR ?? ".next",
 };
 
 export default nextConfig;
