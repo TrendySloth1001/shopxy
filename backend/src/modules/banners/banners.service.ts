@@ -2,6 +2,12 @@ import { BannerPlacement, Prisma } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
 import { getRedis, redisAvailable } from '../../infra/redis.js';
 import { logger } from '../../shared/logging/logger.js';
+import { HttpError } from '../../shared/http/errorHandler.js';
+import {
+  clampDiscountValue,
+  discountPerUnit,
+  type DiscountType,
+} from './promo-pricing.js';
 
 const ACTIVE_CACHE_TTL_SECONDS = 60;
 
@@ -15,6 +21,7 @@ const publicBannerSelect = {
   imageUrl: true,
   linkUrl: true,
   sortOrder: true,
+  _count: { select: { products: true } },
 } as const;
 
 const ownerBannerSelect = {
@@ -26,6 +33,14 @@ const ownerBannerSelect = {
   createdAt: true,
   updatedAt: true,
 } as const;
+
+/** Flatten Prisma's `_count.products` into a plain `productCount` field. */
+function withCount<T extends { _count: { products: number } }>(
+  row: T,
+): Omit<T, '_count'> & { productCount: number } {
+  const { _count, ...rest } = row;
+  return { ...rest, productCount: _count.products };
+}
 
 export interface CreateBannerInput {
   placement: BannerPlacement;
@@ -69,12 +84,13 @@ export class BannersService {
       orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
       select: publicBannerSelect,
     });
+    const mapped = rows.map(withCount);
 
     if (redisAvailable()) {
       try {
         await getRedis().set(
           activeCacheKey(placement),
-          JSON.stringify(rows),
+          JSON.stringify(mapped),
           'EX',
           ACTIVE_CACHE_TTL_SECONDS,
         );
@@ -83,7 +99,7 @@ export class BannersService {
       }
     }
 
-    return rows;
+    return mapped;
   }
 
   /// Admin listing — ALL banners regardless of schedule + active state
@@ -105,11 +121,15 @@ export class BannersService {
     });
     const hasMore = rows.length > limit;
     const data = hasMore ? rows.slice(0, limit) : rows;
-    return { data, nextCursor: hasMore ? data[data.length - 1].id : null };
+    return {
+      data: data.map(withCount),
+      nextCursor: hasMore ? data[data.length - 1].id : null,
+    };
   }
 
   async getById(id: number) {
-    return prisma.banner.findUnique({ where: { id }, select: ownerBannerSelect });
+    const row = await prisma.banner.findUnique({ where: { id }, select: ownerBannerSelect });
+    return row ? withCount(row) : null;
   }
 
   async create(input: CreateBannerInput) {
@@ -118,7 +138,7 @@ export class BannersService {
       select: ownerBannerSelect,
     });
     await this._invalidate(input.placement);
-    return row;
+    return withCount(row);
   }
 
   async update(id: number, input: UpdateBannerInput) {
@@ -136,7 +156,7 @@ export class BannersService {
     if (input.placement && input.placement !== existing.placement) {
       await this._invalidate(input.placement);
     }
-    return row;
+    return withCount(row);
   }
 
   async delete(id: number) {
@@ -155,18 +175,20 @@ export class BannersService {
   // queries scope through shopId so id-probing across shops returns 404.
 
   async listForShop(shopId: number) {
-    return prisma.banner.findMany({
+    const rows = await prisma.banner.findMany({
       where: { shopId },
       orderBy: [{ placement: 'asc' }, { sortOrder: 'asc' }, { id: 'desc' }],
       select: ownerBannerSelect,
     });
+    return rows.map(withCount);
   }
 
   async getByIdForShop(shopId: number, id: number) {
-    return prisma.banner.findFirst({
+    const row = await prisma.banner.findFirst({
       where: { id, shopId },
       select: ownerBannerSelect,
     });
+    return row ? withCount(row) : null;
   }
 
   async createForShop(shopId: number, input: CreateBannerInput) {
@@ -220,6 +242,174 @@ export class BannersService {
     } catch (err) {
       logger.warn({ err: (err as Error).message }, 'banner cache invalidate failed');
     }
+  }
+
+  // ── Pinned products ──────────────────────────────────────────────
+  // A merchant pins a curated list of their own products to a banner,
+  // each with an optional promo discount. The customer banner-detail
+  // page renders them with the discounted price; the discount also flows
+  // into the order line + invoice via promo-pricing.resolveActiveProductPromos.
+
+  /// Merchant read — the banner's pinned products (no published filter so
+  /// the merchant sees their unpublished ones too). null if not owned.
+  async listProductsForShopBanner(shopId: number, bannerId: number) {
+    const owned = await prisma.banner.findFirst({
+      where: { id: bannerId, shopId },
+      select: { id: true },
+    });
+    if (!owned) return null;
+    const rows = await prisma.bannerProduct.findMany({
+      where: { bannerId },
+      orderBy: [{ position: 'asc' }, { id: 'asc' }],
+      select: {
+        id: true,
+        productId: true,
+        position: true,
+        discountType: true,
+        discountValue: true,
+        product: {
+          select: {
+            id: true,
+            name: true,
+            sku: true,
+            mrp: true,
+            sellingPrice: true,
+            isActive: true,
+            isPublished: true,
+            images: { select: { url: true, sortOrder: true }, orderBy: { sortOrder: 'asc' }, take: 1 },
+          },
+        },
+      },
+    });
+    return rows.map((r) => {
+      const value = Number(r.discountValue);
+      const selling = Number(r.product.sellingPrice);
+      const perUnit = discountPerUnit(r.discountType, value, selling);
+      return {
+        ...r,
+        discountValue: value,
+        salePrice: +(selling - perUnit).toFixed(2),
+        perUnitDiscount: perUnit,
+      };
+    });
+  }
+
+  /// Full-list replace, transactional. Validates every productId belongs
+  /// to the caller's shop, clamps each discount, then rewrites the join.
+  /// Returns the new rows, or null when the banner isn't owned.
+  async replaceProductsForShopBanner(
+    shopId: number,
+    bannerId: number,
+    items: Array<{
+      productId: number;
+      discountType: DiscountType;
+      discountValueRaw: number;
+      position: number;
+    }>,
+  ) {
+    const owned = await prisma.banner.findFirst({
+      where: { id: bannerId, shopId },
+      select: { id: true },
+    });
+    if (!owned) return null;
+
+    let priceByProduct = new Map<number, number>();
+    if (items.length > 0) {
+      const productIds = items.map((i) => i.productId);
+      const owns = await prisma.product.findMany({
+        where: { id: { in: productIds }, shopId },
+        select: { id: true, sellingPrice: true },
+      });
+      const ownedSet = new Set(owns.map((p) => p.id));
+      const stranger = productIds.find((id) => !ownedSet.has(id));
+      if (stranger !== undefined) {
+        throw new HttpError(
+          400,
+          'CROSS_SHOP_PRODUCT',
+          `Product ${stranger} does not belong to this shop`,
+          { productId: stranger },
+        );
+      }
+      priceByProduct = new Map(owns.map((p) => [p.id, Number(p.sellingPrice)]));
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.bannerProduct.deleteMany({ where: { bannerId } });
+      if (items.length === 0) return;
+      await tx.bannerProduct.createMany({
+        data: items.map((i) => ({
+          bannerId,
+          productId: i.productId,
+          discountType: i.discountType,
+          discountValue: clampDiscountValue(
+            i.discountType,
+            i.discountValueRaw,
+            priceByProduct.get(i.productId) ?? 0,
+          ),
+          position: i.position,
+        })),
+      });
+    });
+
+    return this.listProductsForShopBanner(shopId, bannerId);
+  }
+
+  /// Public banner detail — the visible banner + its pinned, published
+  /// products with computed sale prices. null if the banner is off,
+  /// outside its window, or doesn't exist.
+  async getPublicBannerWithProducts(id: number) {
+    const now = new Date();
+    const banner = await prisma.banner.findFirst({
+      where: {
+        id,
+        isActive: true,
+        AND: [
+          { OR: [{ startAt: null }, { startAt: { lte: now } }] },
+          { OR: [{ endAt: null }, { endAt: { gte: now } }] },
+        ],
+      },
+      select: publicBannerSelect,
+    });
+    if (!banner) return null;
+
+    const rows = await prisma.bannerProduct.findMany({
+      where: { bannerId: id, product: { isActive: true, isPublished: true } },
+      orderBy: [{ position: 'asc' }, { id: 'asc' }],
+      select: {
+        discountType: true,
+        discountValue: true,
+        product: {
+          select: {
+            id: true,
+            name: true,
+            mrp: true,
+            sellingPrice: true,
+            brand: true,
+            ratingAvg: true,
+            ratingCount: true,
+            shop: { select: { id: true, name: true, slug: true } },
+            images: { select: { url: true, sortOrder: true }, orderBy: { sortOrder: 'asc' } },
+          },
+        },
+      },
+    });
+
+    const products = rows.map((r) => {
+      const selling = Number(r.product.sellingPrice);
+      const value = Number(r.discountValue);
+      const perUnit = discountPerUnit(r.discountType, value, selling);
+      const salePrice = +(selling - perUnit).toFixed(2);
+      const derivedPct = selling > 0 ? Math.round((perUnit / selling) * 100) : 0;
+      return {
+        ...r.product,
+        discountType: r.discountType,
+        discountValue: value,
+        discountPct: derivedPct,
+        salePrice: salePrice.toFixed(2),
+      };
+    });
+
+    return { banner: withCount(banner), products };
   }
 }
 
