@@ -23,10 +23,30 @@ export const scanItemSchema = z.object({
 });
 export type ScanItem = z.infer<typeof scanItemSchema>;
 
+/** Live counts of each end connected to the shop's room. */
+export const presenceSchema = z.object({
+  consoles: z.number(),
+  scanners: z.number(),
+});
+export type Presence = z.infer<typeof presenceSchema>;
+
 /** Discriminated WebSocket event envelope. Validated on every message. */
 export const scanEventSchema = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("connected"), shopId: z.number() }),
+  z.object({
+    type: z.literal("connected"),
+    shopId: z.number(),
+    role: z.enum(["scanner", "console"]),
+    presence: presenceSchema,
+  }),
+  z.object({ type: z.literal("presence"), presence: presenceSchema }),
   z.object({ type: z.literal("scan"), scan: scanItemSchema }),
+  z.object({
+    type: z.literal("ack"),
+    matched: z.boolean(),
+    code: z.string(),
+    name: z.string().optional(),
+    sku: z.string().optional(),
+  }),
   z.object({ type: z.literal("clear"), by: z.number() }),
 ]);
 export type ScanEvent = z.infer<typeof scanEventSchema>;

@@ -4,6 +4,7 @@ import Image from "next/image";
 import {
   ImageOff,
   ScanLine,
+  Smartphone,
   Trash2,
   Wifi,
   WifiOff,
@@ -18,7 +19,8 @@ import { useScanConsole } from "./use-scan-console";
 import type { ConsoleRow, ConsoleStatus } from "./types";
 
 export function ScanConsoleView() {
-  const { rows, status, error, clear, totals } = useScanConsole();
+  const { rows, status, error, clear, totals, presence } = useScanConsole();
+  const scannerConnected = status === "live" && presence.scanners > 0;
 
   return (
     <div className="w-full px-lg py-xxl md:px-xxl">
@@ -29,6 +31,18 @@ export function ScanConsoleView() {
         subtitle="Open the scanner on the ShopXY app and scan products — they appear here live."
       >
         <StatusBadge status={status} />
+        {status === "live" ? (
+          <span
+            className={`inline-flex h-10 items-center gap-xs rounded-button px-md text-label-md ${
+              scannerConnected ? "bg-success-soft text-success" : "bg-surface-tint text-muted"
+            }`}
+          >
+            <Smartphone size={15} />
+            {scannerConnected
+              ? `Scanner connected${presence.scanners > 1 ? ` ×${presence.scanners}` : ""}`
+              : "Waiting for scanner"}
+          </span>
+        ) : null}
         <button
           type="button"
           onClick={() => void clear()}
@@ -46,7 +60,7 @@ export function ScanConsoleView() {
       <Divider className="my-xl" />
 
       {rows.length === 0 ? (
-        <EmptyState status={status} />
+        <EmptyState status={status} scannerConnected={scannerConnected} />
       ) : (
         <>
           <SummaryBar
@@ -134,16 +148,24 @@ function ScanRow({ row }: { row: ConsoleRow }) {
   );
 }
 
-function EmptyState({ status }: { status: ConsoleStatus }) {
+function EmptyState({
+  status,
+  scannerConnected,
+}: {
+  status: ConsoleStatus;
+  scannerConnected: boolean;
+}) {
   return (
     <div className="flex flex-col items-center gap-md py-xxxl text-center">
       <span className="flex size-12 items-center justify-center rounded-full bg-accent-indigo-soft text-accent-indigo">
         <ScanLine size={22} />
       </span>
       <p className="text-body-md text-muted">
-        {status === "live"
-          ? "Connected — waiting for the first scan."
-          : "Connecting to the scan feed…"}
+        {status !== "live"
+          ? "Connecting to the scan feed…"
+          : scannerConnected
+            ? "Scanner connected — waiting for the first scan."
+            : "Connected — open the scanner on the app to begin."}
       </p>
       <p className="max-w-content text-body-sm text-subtle">
         On the ShopXY app, open the scanner and point it at a product’s barcode or QR.

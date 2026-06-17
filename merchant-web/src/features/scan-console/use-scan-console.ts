@@ -2,7 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { clearConsole, requestTicket, wsBase } from "./api";
-import { scanEventSchema, type ConsoleRow, type ConsoleStatus, type ScanItem } from "./types";
+import {
+  scanEventSchema,
+  type ConsoleRow,
+  type ConsoleStatus,
+  type Presence,
+  type ScanItem,
+} from "./types";
 
 const MAX_BACKOFF_MS = 8_000;
 
@@ -15,6 +21,7 @@ const MAX_BACKOFF_MS = 8_000;
 export function useScanConsole() {
   const [rows, setRows] = useState<ConsoleRow[]>([]);
   const [status, setStatus] = useState<ConsoleStatus>("connecting");
+  const [presence, setPresence] = useState<Presence>({ consoles: 0, scanners: 0 });
   const [error, setError] = useState<string | null>(null);
 
   const wsRef = useRef<WebSocket | null>(null);
@@ -68,7 +75,7 @@ export function useScanConsole() {
       const ticket = await requestTicket();
       if (closedRef.current) return;
 
-      const ws = new WebSocket(`${wsBase()}${ticket.path}?ticket=${ticket.ticket}`);
+      const ws = new WebSocket(`${wsBase()}${ticket.path}?ticket=${ticket.ticket}&role=console`);
       wsRef.current = ws;
 
       ws.onopen = () => {
@@ -86,7 +93,10 @@ export function useScanConsole() {
         const result = scanEventSchema.safeParse(parsed);
         if (!result.success) return;
         const event = result.data;
-        if (event.type === "connected") setStatus("live");
+        if (event.type === "connected") {
+          setStatus("live");
+          setPresence(event.presence);
+        } else if (event.type === "presence") setPresence(event.presence);
         else if (event.type === "scan") upsert(event.scan);
         else if (event.type === "clear") setRows([]);
       };
@@ -100,6 +110,7 @@ export function useScanConsole() {
         if (closedRef.current) return;
         wsRef.current = null;
         setStatus("reconnecting");
+        setPresence({ consoles: 0, scanners: 0 });
         scheduleReconnect();
       };
     } catch (e) {
@@ -148,5 +159,5 @@ export function useScanConsole() {
     return { qty, value, distinct: rows.length };
   }, [rows]);
 
-  return { rows, status, error, clear, totals };
+  return { rows, status, error, clear, totals, presence };
 }
