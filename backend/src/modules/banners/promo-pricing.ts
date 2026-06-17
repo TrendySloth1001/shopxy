@@ -37,7 +37,9 @@ export function discountPerUnit(
   sellingPrice: number,
 ): number {
   if (value <= 0 || sellingPrice <= 0) return 0;
-  if (type === 'PERCENT') return round2((sellingPrice * value) / 100);
+  // Re-clamp PERCENT defensively: a legacy/raw row with value > MAX_PERCENT must
+  // never produce a per-unit discount that exceeds the price (negative line).
+  if (type === 'PERCENT') return round2((sellingPrice * Math.min(MAX_PERCENT, value)) / 100);
   return round2(Math.min(value, Math.max(0, sellingPrice - 0.01)));
 }
 

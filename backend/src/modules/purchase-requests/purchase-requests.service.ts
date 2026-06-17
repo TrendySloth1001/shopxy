@@ -407,7 +407,7 @@ export class PurchaseRequestsService {
       const product = productMap.get(productId)!;
       const selling = Number(product.sellingPrice);
       const promo = bannerPromos.get(productId);
-      return promo ? round2(selling - promo.perUnit) : selling;
+      return promo ? Math.max(0, round2(selling - promo.perUnit)) : selling;
     };
 
     // ── Price-drift guard ────────────────────────────────────────────
