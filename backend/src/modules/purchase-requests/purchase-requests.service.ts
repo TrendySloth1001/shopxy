@@ -1,6 +1,7 @@
 import prisma from '../../infra/db/prisma.js';
 import type { Prisma } from '@prisma/client';
 import { round2 } from '../../shared/numbering/decimal.js';
+import { resolveActiveProductPromos } from '../banners/promo-pricing.js';
 import { invoicesService } from '../invoices/invoices.service.js';
 import { paymentGatewayService } from '../payment-gateway/index.js';
 import { ensureOrderInvoiceReceipts } from '../payment-gateway/order-receipts.js';
@@ -398,10 +399,15 @@ export class PurchaseRequestsService {
     }
 
     // ── Effective unit price ─────────────────────────────────────────
-    // Customer carts bill at each product's canonical sellingPrice.
+    // Carts span many shops, so resolve the best active banner promo per
+    // product in one cross-shop lookup; lines bill at sellingPrice minus
+    // that promo's per-unit discount (or sellingPrice when none applies).
+    const bannerPromos = await resolveActiveProductPromos(null, productIds);
     const effectiveUnitPrice = (productId: number): number => {
       const product = productMap.get(productId)!;
-      return Number(product.sellingPrice);
+      const selling = Number(product.sellingPrice);
+      const promo = bannerPromos.get(productId);
+      return promo ? round2(selling - promo.perUnit) : selling;
     };
 
     // ── Price-drift guard ────────────────────────────────────────────

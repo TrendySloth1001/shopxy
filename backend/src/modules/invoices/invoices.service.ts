@@ -5,6 +5,10 @@ import { nextInvoiceNo } from '../../shared/numbering/sequences.js';
 import { isInterstateSupply } from '../../shared/validation/indian.js';
 import { amountInWords } from '../../shared/numbering/amount_in_words.js';
 import { renderInvoicePdf } from './invoice-pdf-renderer.js';
+import {
+  resolveActiveProductPromos,
+  lineDiscount,
+} from '../banners/promo-pricing.js';
 
 type InvoiceType = 'SALE' | 'PURCHASE';
 type InvoiceStatus = 'DRAFT' | 'CONFIRMED' | 'CANCELLED';
@@ -342,14 +346,28 @@ export class InvoicesService {
       }
     }
 
+    // Banner-promo auto-fill: a line where the merchant didn't type a
+    // discount inherits the best currently-active banner promo for that
+    // product (own shop only). An explicit value (including 0) always wins.
+    const promos = await resolveActiveProductPromos(data.shopId, productIds);
+
     // First pass: each line's gross value (qty * unitPrice) and its own
     // discount, clamped so a single line can never exceed its gross value.
     // An unbounded line discount would otherwise mint a negative taxable
-    // value and negative output GST (a document invalid for GSTR-1).
-    // Discount is whatever the merchant typed, or 0.
+    // value and negative output GST (a document invalid for GSTR-1). The
+    // promo branch is already clamped via lineDiscount(); we clamp the
+    // explicit branch the same way (defense in depth).
     const lines = data.items.map((item) => {
       const gross = this.round2(item.quantity * item.unitPrice);
-      const rawItemDiscount = item.discount ?? 0;
+      let rawItemDiscount: number;
+      if (item.discount !== undefined) {
+        rawItemDiscount = item.discount;
+      } else {
+        const promo = promos.get(item.productId);
+        rawItemDiscount = promo
+          ? lineDiscount(promo.type, promo.value, item.unitPrice, item.quantity)
+          : 0;
+      }
       // 0..gross inclusive — a 100% "free" line is legitimate; negative is not.
       const itemDiscount = Math.min(Math.max(0, this.round2(rawItemDiscount)), gross);
       return { item, gross, itemDiscount };
