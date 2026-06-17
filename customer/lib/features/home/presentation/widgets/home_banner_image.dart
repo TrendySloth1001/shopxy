@@ -1,29 +1,43 @@
 import 'package:flutter/material.dart';
+import 'package:shopxy_customer/features/banner_detail/presentation/pages/banner_detail_page.dart';
 import 'package:shopxy_customer/features/home/presentation/widgets/network_image_box.dart';
 import 'package:shopxy_customer/features/search/presentation/pages/search_page.dart';
 
-/// A banner placement is now JUST an image + an optional link. This
-/// renders the image (cover-fit, optionally rounded) and makes it
-/// tappable when [linkUrl] is set.
+/// A banner placement is an image + an optional link, and may now also
+/// have products pinned to it. This renders the image (cover-fit,
+/// optionally rounded) and makes it tappable:
 ///
-/// Link resolution is intentionally light-touch: the backend hands us a
-/// free-text [linkUrl]. App-route hints (those starting with '/') don't
-/// map cleanly onto the customer app's navigator yet, so for now any
-/// tappable banner just opens search — a non-null link keeps the banner
-/// interactive without pretending to deep-link somewhere we can't reach.
+///   * [productCount] > 0 → open the banner-detail page (image + the
+///     pinned product grid). This takes priority over [linkUrl].
+///   * else [linkUrl] set → open search (in-app route hints aren't
+///     resolvable yet, so a non-link query falls back to search).
+///   * else → decorative, not tappable.
 class HomeBannerImage extends StatelessWidget {
   const HomeBannerImage({
     super.key,
     required this.url,
+    required this.bannerId,
     this.linkUrl,
+    this.productCount = 0,
     this.borderRadius,
   });
 
   final String url;
+  final int bannerId;
   final String? linkUrl;
+  final int productCount;
   final BorderRadius? borderRadius;
 
+  bool get _isTappable =>
+      productCount > 0 || (linkUrl != null && linkUrl!.isNotEmpty);
+
   void _onTap(BuildContext context) {
+    if (productCount > 0) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => BannerDetailPage(bannerId: bannerId)),
+      );
+      return;
+    }
     final link = linkUrl;
     if (link == null || link.isEmpty) return;
     // In-app route hints aren't resolvable yet; fall back to search.
@@ -42,7 +56,7 @@ class HomeBannerImage extends StatelessWidget {
         borderRadius: borderRadius,
       ),
     );
-    if (linkUrl == null || linkUrl!.isEmpty) return image;
+    if (!_isTappable) return image;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => _onTap(context),

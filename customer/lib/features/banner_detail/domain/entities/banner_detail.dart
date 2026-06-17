@@ -1,0 +1,156 @@
+/// Detail-level banner as returned by `GET /banners/:id`.
+///
+/// A banner header (the image to render at the top of the page) plus the
+/// list of products pinned to it. Distinct from the slim home `HeroSlide`:
+/// that one only knows enough to render a tappable image in the feed; this
+/// carries the full product grid behind the tap.
+class BannerDetail {
+  const BannerDetail({
+    required this.banner,
+    required this.products,
+  });
+
+  final BannerHeader banner;
+  final List<BannerProduct> products;
+
+  factory BannerDetail.fromJson(Map<String, dynamic> json) {
+    final banner = json['banner'] as Map<String, dynamic>;
+    final products = (json['products'] as List?) ?? const [];
+    return BannerDetail(
+      banner: BannerHeader.fromJson(banner),
+      products: products
+          .whereType<Map<String, dynamic>>()
+          .map(BannerProduct.fromJson)
+          .toList(),
+    );
+  }
+}
+
+/// The banner row itself — image + placement metadata.
+class BannerHeader {
+  const BannerHeader({
+    required this.id,
+    required this.imageUrl,
+    required this.productCount,
+    this.placement,
+    this.linkUrl,
+    this.sortOrder = 0,
+  });
+
+  final int id;
+
+  /// Server-relative or absolute. Rendered through `NetworkImageBox`
+  /// after `resolveImageUrl(...)`.
+  final String imageUrl;
+  final int productCount;
+  final String? placement;
+  final String? linkUrl;
+  final int sortOrder;
+
+  factory BannerHeader.fromJson(Map<String, dynamic> json) {
+    return BannerHeader(
+      id: _asInt(json['id']) ?? 0,
+      imageUrl: (json['imageUrl'] ?? '') as String,
+      productCount: _asInt(json['productCount']) ?? 0,
+      placement: json['placement'] as String?,
+      linkUrl: (json['linkUrl'] as String?)?.trim().isEmpty == false
+          ? (json['linkUrl'] as String).trim()
+          : null,
+      sortOrder: _asInt(json['sortOrder']) ?? 0,
+    );
+  }
+}
+
+/// A product card pinned to a banner. Carries the discounted [salePrice]
+/// alongside the catalogue [sellingPrice] so the tile can show the
+/// strike-through + discount chip.
+class BannerProduct {
+  const BannerProduct({
+    required this.id,
+    required this.name,
+    required this.sellingPrice,
+    required this.salePrice,
+    required this.discountPct,
+    required this.imageUrl,
+    required this.rating,
+    required this.ratingCount,
+    this.mrp,
+    this.brand,
+    this.shopName,
+    this.shopSlug,
+  });
+
+  final int id;
+  final String name;
+
+  /// Catalogue price before any banner discount.
+  final double sellingPrice;
+
+  /// Banner-discounted price. Parsed from the server's string field.
+  /// Equals [sellingPrice] when the banner applies no discount.
+  final double salePrice;
+
+  /// Integer percent-off applied by the banner. 0 → no chip.
+  final int discountPct;
+
+  final String imageUrl;
+  final double rating;
+  final int ratingCount;
+  final double? mrp;
+  final String? brand;
+  final String? shopName;
+  final String? shopSlug;
+
+  /// True when the banner price genuinely undercuts the selling price —
+  /// drives the strike-through. Guards against showing a struck-through
+  /// price equal to the sale price.
+  bool get hasDiscount => salePrice < sellingPrice;
+
+  factory BannerProduct.fromJson(Map<String, dynamic> json) {
+    final shop = json['shop'] as Map<String, dynamic>?;
+    final selling = _asDouble(json['sellingPrice']) ?? 0;
+    return BannerProduct(
+      id: _asInt(json['id']) ?? 0,
+      name: (json['name'] ?? '') as String,
+      sellingPrice: selling,
+      salePrice: _asDouble(json['salePrice']) ?? selling,
+      discountPct: _asInt(json['discountPct']) ?? 0,
+      imageUrl: _firstImage(json),
+      rating: _asDouble(json['ratingAvg']) ?? 0,
+      ratingCount: _asInt(json['ratingCount']) ?? 0,
+      mrp: _asDouble(json['mrp']),
+      brand: json['brand'] as String?,
+      shopName: shop?['name'] as String?,
+      shopSlug: shop?['slug'] as String?,
+    );
+  }
+}
+
+// ── JSON helpers ────────────────────────────────────────────────────
+// Prisma `Decimal` fields serialise as strings (e.g. "30591.00"), so
+// price/rating reads must accept both num and String. Mirrors the
+// coercion the home-feed mapper uses.
+
+double? _asDouble(dynamic v) {
+  if (v == null) return null;
+  if (v is num) return v.toDouble();
+  if (v is String) return double.tryParse(v);
+  return null;
+}
+
+int? _asInt(dynamic v) {
+  if (v == null) return null;
+  if (v is int) return v;
+  if (v is num) return v.toInt();
+  if (v is String) return int.tryParse(v);
+  return null;
+}
+
+String _firstImage(Map<String, dynamic> product) {
+  final imgs = product['images'];
+  if (imgs is List && imgs.isNotEmpty) {
+    final first = imgs.first;
+    if (first is Map<String, dynamic>) return (first['url'] ?? '') as String;
+  }
+  return '';
+}
