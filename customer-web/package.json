@@ -4,8 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3009",
-    "build": "next build",
-    "start": "next start -p 3009",
+    "build": "NEXT_DIST_DIR=.next-build next build",
+    "start": "NEXT_DIST_DIR=.next-build next start -p 3009",
+    "clean": "rm -rf .next .next-build",
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
