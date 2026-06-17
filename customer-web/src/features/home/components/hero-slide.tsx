@@ -2,9 +2,10 @@ import Link from "next/link";
 import type { HeroSlide } from "../types";
 import { ImageBox } from "./image-box";
 
-/** Tap destination for a banner. Falls back to the home page when the
- *  merchant didn't set a link. */
+/** Tap destination for a banner: a product-backed banner opens its detail
+ *  page; otherwise the merchant's link; otherwise the home page. */
 export function slideHref(slide: HeroSlide): string {
+  if (slide.productCount > 0) return `/banner/${slide.bannerId}`;
   return slide.linkUrl && slide.linkUrl.length > 0 ? slide.linkUrl : "/";
 }
 

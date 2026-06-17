@@ -73,6 +73,7 @@ function heroFromBanner(raw: unknown): HeroSlide {
     bannerId: asInt(m["id"]) ?? 0,
     imageUrl: asStr(m["imageUrl"]),
     linkUrl: asStrOrNull(m["linkUrl"]),
+    productCount: asInt(m["productCount"]) ?? 0,
   };
 }
 
