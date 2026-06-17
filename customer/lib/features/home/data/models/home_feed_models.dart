@@ -21,6 +21,7 @@ class HeroSlide {
     required this.id,
     required this.imageUrl,
     this.linkUrl,
+    this.productCount = 0,
   });
 
   final int id;
@@ -31,6 +32,11 @@ class HeroSlide {
   /// Optional tap target. Absolute URLs / app-route hints come straight
   /// from the merchant; null means the banner is decorative (no tap).
   final String? linkUrl;
+
+  /// Count of products pinned to this banner. When > 0, tapping the
+  /// banner opens the banner-detail page (image + product grid) instead
+  /// of falling back to search.
+  final int productCount;
 }
 
 class CategoryPuck {
