@@ -1,4 +1,12 @@
-import { bannerListSchema, bannerSchema, type Banner, type Placement } from "./schema";
+import {
+  bannerListSchema,
+  bannerProductListSchema,
+  bannerSchema,
+  type Banner,
+  type BannerProductRow,
+  type DiscountType,
+  type Placement,
+} from "./schema";
 
 async function jsonOrThrow<T>(res: Response, parse: (raw: unknown) => T, fallback: string): Promise<T> {
   if (!res.ok) {
@@ -57,4 +65,32 @@ export async function deleteBanner(id: number): Promise<void> {
   if (!res.ok && res.status !== 204) {
     await jsonOrThrow(res, () => null, "Could not delete the banner.");
   }
+}
+
+// ── Pinned products ────────────────────────────────────────────────────────
+
+export type BannerProductInput = {
+  productId: number;
+  discountType: DiscountType;
+  discountValue: number;
+  position: number;
+};
+
+export function listBannerProducts(bannerId: number): Promise<BannerProductRow[]> {
+  return fetch(`/api/banners/${bannerId}/products`, { cache: "no-store" }).then((r) =>
+    jsonOrThrow(r, (raw) => bannerProductListSchema.parse(raw).data, "Could not load banner products."),
+  );
+}
+
+export function replaceBannerProducts(
+  bannerId: number,
+  items: BannerProductInput[],
+): Promise<BannerProductRow[]> {
+  return fetch(`/api/banners/${bannerId}/products`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ items }),
+  }).then((r) =>
+    jsonOrThrow(r, (raw) => bannerProductListSchema.parse(raw).data, "Could not save banner products."),
+  );
 }
