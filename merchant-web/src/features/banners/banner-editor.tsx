@@ -1,22 +1,70 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ImageOff } from "lucide-react";
+import { ImageOff, Plus, Trash2 } from "lucide-react";
 import { BackLink } from "@/shared/ui/page-header";
 import { DateTimeField, SelectField, TextField, ToggleField } from "@/shared/ui/form";
 import { ImageUploadField } from "@/shared/ui/image-upload";
+import { PickerModal } from "@/shared/ui/picker-modal";
 import { mediaSrc } from "@/features/products/components/product-thumb";
-import { createBanner, updateBanner, type BannerInput } from "./api";
-import { PLACEMENTS, PLACEMENT_LABELS, type Banner, type Placement } from "./schema";
+import { listProducts } from "@/features/products/api";
+import type { Product } from "@/features/products/schema";
+import {
+  createBanner,
+  listBannerProducts,
+  replaceBannerProducts,
+  updateBanner,
+  type BannerInput,
+} from "./api";
+import {
+  DISCOUNT_TYPES,
+  PLACEMENTS,
+  PLACEMENT_LABELS,
+  type Banner,
+  type DiscountType,
+  type Placement,
+} from "./schema";
 
 const BACK = "/dashboard/banners";
 
 const PLACEMENT_OPTIONS = PLACEMENTS.map((p) => ({ value: p, label: PLACEMENT_LABELS[p] }));
+const DISCOUNT_OPTIONS = DISCOUNT_TYPES.map((t) => ({
+  value: t,
+  label: t === "PERCENT" ? "% off" : "₹ off",
+}));
 
-/** Create / edit a single image banner. Pass `banner` to edit an existing row. */
+/** A pinned product being edited in the form. */
+type PinnedRow = {
+  productId: number;
+  name: string;
+  sku: string | null;
+  imageUrl: string | null;
+  sellingPrice: number;
+  discountType: DiscountType;
+  discountValue: string;
+};
+
+const loadProducts = (s: string) => listProducts({ search: s, limit: "20" }).then((r) => r.data);
+
+function rupee(n: number): string {
+  return `₹${Math.round(n).toLocaleString("en-IN")}`;
+}
+
+/** Effective sale price preview, mirroring the backend clamp. */
+function salePreview(sellingPrice: number, type: DiscountType, raw: string): number {
+  const v = Number.parseFloat(raw);
+  if (!Number.isFinite(v) || v <= 0) return sellingPrice;
+  const perUnit =
+    type === "PERCENT"
+      ? (sellingPrice * Math.min(90, v)) / 100
+      : Math.min(v, Math.max(0, sellingPrice - 0.01));
+  return Math.max(0, +(sellingPrice - perUnit).toFixed(2));
+}
+
+/** Create / edit a single image banner + its pinned products. */
 export function BannerEditor({ banner }: { banner?: Banner }) {
   const router = useRouter();
   const editing = banner != null;
@@ -28,8 +76,63 @@ export function BannerEditor({ banner }: { banner?: Banner }) {
   const [isActive, setIsActive] = useState(banner?.isActive ?? true);
   const [startAt, setStartAt] = useState<string | null>(banner?.startAt ?? null);
   const [endAt, setEndAt] = useState<string | null>(banner?.endAt ?? null);
+  const [products, setProducts] = useState<PinnedRow[]>([]);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Load existing pinned products when editing.
+  useEffect(() => {
+    if (!banner) return;
+    let active = true;
+    void listBannerProducts(banner.id)
+      .then((rows) => {
+        if (!active) return;
+        setProducts(
+          rows.map((r) => ({
+            productId: r.productId,
+            name: r.product.name,
+            sku: r.product.sku ?? null,
+            imageUrl: r.product.images[0]?.url ?? null,
+            sellingPrice: r.product.sellingPrice,
+            discountType: r.discountType,
+            discountValue: r.discountValue > 0 ? String(r.discountValue) : "",
+          })),
+        );
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [banner]);
+
+  function addProduct(p: Product) {
+    setProducts((prev) =>
+      prev.some((r) => r.productId === p.id)
+        ? prev
+        : [
+            ...prev,
+            {
+              productId: p.id,
+              name: p.name,
+              sku: p.sku ?? null,
+              imageUrl: p.images?.[0]?.url ?? null,
+              sellingPrice: p.sellingPrice,
+              discountType: "PERCENT",
+              discountValue: "",
+            },
+          ],
+    );
+    setPickerOpen(false);
+  }
+
+  function patchRow(productId: number, patch: Partial<PinnedRow>) {
+    setProducts((prev) => prev.map((r) => (r.productId === productId ? { ...r, ...patch } : r)));
+  }
+
+  function removeRow(productId: number) {
+    setProducts((prev) => prev.filter((r) => r.productId !== productId));
+  }
 
   async function save() {
     setError(null);
@@ -53,8 +156,16 @@ export function BannerEditor({ banner }: { banner?: Banner }) {
     };
     setBusy(true);
     try {
-      if (editing) await updateBanner(banner.id, payload);
-      else await createBanner(payload);
+      const saved = editing ? await updateBanner(banner.id, payload) : await createBanner(payload);
+      await replaceBannerProducts(
+        saved.id,
+        products.map((r, i) => ({
+          productId: r.productId,
+          discountType: r.discountType,
+          discountValue: Number.parseFloat(r.discountValue) || 0,
+          position: i,
+        })),
+      );
       router.push(BACK);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Save failed.");
@@ -69,8 +180,7 @@ export function BannerEditor({ banner }: { banner?: Banner }) {
       <BackLink href={BACK} label="Banners" />
       <h1 className="mt-md text-headline-md text-ink">{editing ? "Edit banner" : "New banner"}</h1>
       <p className="mt-xs text-body-md text-muted">
-        Upload an image, choose where it shows, and where a tap takes the shopper. The image is the
-        whole banner — design any text into the artwork itself.
+        Upload an image, choose where it shows, and optionally pin products shoppers see when they tap it.
       </p>
 
       {error ? (
@@ -114,7 +224,7 @@ export function BannerEditor({ banner }: { banner?: Banner }) {
             value={linkUrl}
             onChange={setLinkUrl}
             placeholder="/shop/my-store or https://…"
-            helper="Where a tap takes the shopper. Leave blank for a non-tappable banner."
+            helper="Used only when no products are pinned. Pinned products open a detail page instead."
           />
           <TextField
             label="Sort order"
@@ -133,6 +243,77 @@ export function BannerEditor({ banner }: { banner?: Banner }) {
             checked={isActive}
             onChange={setIsActive}
           />
+
+          {/* Pinned products */}
+          <div className="flex flex-col gap-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-label-md text-muted">Pinned products</span>
+              <button
+                type="button"
+                onClick={() => setPickerOpen(true)}
+                className="inline-flex h-9 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
+              >
+                <Plus size={15} /> Add product
+              </button>
+            </div>
+            {products.length === 0 ? (
+              <p className="rounded-md bg-surface-tint px-md py-sm text-body-sm text-muted">
+                No products pinned. Tapping the banner uses the link above. Pin products to open a
+                product showcase instead, each with an optional discount.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-sm">
+                {products.map((r) => {
+                  const sale = salePreview(r.sellingPrice, r.discountType, r.discountValue);
+                  const thumb = mediaSrc(r.imageUrl);
+                  return (
+                    <div
+                      key={r.productId}
+                      className="flex items-center gap-md rounded-md border border-hairline p-sm"
+                    >
+                      <span className="relative size-12 shrink-0 overflow-hidden rounded-md bg-hero-panel">
+                        {thumb ? (
+                          <Image src={thumb} alt="" fill unoptimized className="object-cover" sizes="48px" />
+                        ) : null}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-body-md text-ink">{r.name}</p>
+                        <p className="text-body-sm text-muted">
+                          {rupee(r.sellingPrice)}
+                          {sale < r.sellingPrice ? ` → ${rupee(sale)}` : ""}
+                        </p>
+                      </div>
+                      <div className="w-[110px] shrink-0">
+                        <SelectField
+                          label=""
+                          value={r.discountType}
+                          onChange={(v) => patchRow(r.productId, { discountType: v })}
+                          options={DISCOUNT_OPTIONS}
+                        />
+                      </div>
+                      <div className="w-[88px] shrink-0">
+                        <TextField
+                          label=""
+                          value={r.discountValue}
+                          onChange={(v) => patchRow(r.productId, { discountValue: v })}
+                          inputMode="decimal"
+                          placeholder="0"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeRow(r.productId)}
+                        aria-label="Remove product"
+                        className="inline-flex size-9 shrink-0 items-center justify-center rounded-button border border-hairline text-muted transition-colors hover:text-error"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -153,6 +334,22 @@ export function BannerEditor({ banner }: { banner?: Banner }) {
           {busy ? "Saving…" : editing ? "Save changes" : "Create banner"}
         </button>
       </div>
+
+      {pickerOpen ? (
+        <PickerModal<Product>
+          title="Add product"
+          placeholder="Search products by name or SKU"
+          load={loadProducts}
+          rowOf={(p) => ({
+            title: p.name,
+            subtitle: p.sku ?? undefined,
+            meta: rupee(p.sellingPrice),
+          })}
+          onPick={addProduct}
+          onClose={() => setPickerOpen(false)}
+          emptyHint="No products match."
+        />
+      ) : null}
     </div>
   );
 }
