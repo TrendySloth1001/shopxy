@@ -133,7 +133,11 @@ function BannerCard({ banner, onDelete }: { banner: Banner; onDelete: () => void
         <div className="min-w-0">
           <p className="truncate text-title-sm font-bold text-ink">{PLACEMENT_LABELS[banner.placement]}</p>
           <p className="truncate text-body-sm text-muted">
-            {banner.linkUrl ? banner.linkUrl : "No link"}
+            {banner.productCount > 0
+              ? `${banner.productCount} product${banner.productCount === 1 ? "" : "s"}`
+              : banner.linkUrl
+                ? banner.linkUrl
+                : "No link"}
             {banner.startAt || banner.endAt ? ` · ${formatDateRange(banner.startAt, banner.endAt)}` : ""}
           </p>
         </div>
