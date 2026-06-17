@@ -26,7 +26,9 @@ class HomeCuratedRail extends StatelessWidget {
             height: height,
             child: HomeBannerImage(
               url: resolveImageUrl(slide.imageUrl),
+              bannerId: slide.id,
               linkUrl: slide.linkUrl,
+              productCount: slide.productCount,
               borderRadius: BorderRadius.circular(AppSizes.radiusMd),
             ),
           ),

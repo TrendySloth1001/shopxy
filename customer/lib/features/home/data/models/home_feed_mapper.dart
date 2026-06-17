@@ -133,6 +133,7 @@ class HomeFeedMapper {
       linkUrl: (m['linkUrl'] as String?)?.trim().isEmpty == false
           ? (m['linkUrl'] as String).trim()
           : null,
+      productCount: _asInt(m['productCount']) ?? 0,
     );
   }
 
