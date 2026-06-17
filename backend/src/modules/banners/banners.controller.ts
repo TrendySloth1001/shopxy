@@ -57,7 +57,12 @@ const replaceBannerProductsSchema = z.object({
         position: z.number().int().min(0).max(10_000).optional(),
       }),
     )
-    .max(60),
+    .max(60)
+    // The join table is unique on (bannerId, productId); reject dupes with a
+    // clear 400 instead of letting createMany throw a P2002 → 500.
+    .refine((items) => new Set(items.map((i) => i.productId)).size === items.length, {
+      message: 'A product can only be pinned to a banner once',
+    }),
 });
 
 function parseId(raw: string): number | null {
