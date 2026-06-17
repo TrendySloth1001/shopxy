@@ -73,7 +73,9 @@ class _HomeHeroCarouselState extends State<HomeHeroCarousel> {
                   padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm),
                   child: HomeBannerImage(
                     url: resolveImageUrl(slides[i].imageUrl),
+                    bannerId: slides[i].id,
                     linkUrl: slides[i].linkUrl,
+                    productCount: slides[i].productCount,
                     borderRadius: BorderRadius.circular(AppSizes.radiusMd),
                   ),
                 ),

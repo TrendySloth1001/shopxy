@@ -29,6 +29,7 @@ import 'package:shopxy_customer/features/onboarding/presentation/providers/onboa
 import 'package:shopxy_customer/features/addresses/data/datasources/addresses_remote_data_source.dart';
 import 'package:shopxy_customer/features/addresses/presentation/providers/addresses_provider.dart';
 import 'package:shopxy_customer/features/reviews/data/datasources/reviews_remote_data_source.dart';
+import 'package:shopxy_customer/features/banner_detail/data/datasources/banner_detail_remote_data_source.dart';
 import 'package:shopxy_customer/features/marketplace/data/datasources/marketplace_remote_data_source.dart';
 import 'package:shopxy_customer/features/categories/data/datasources/categories_remote_data_source.dart';
 import 'package:shopxy_customer/features/categories/presentation/providers/categories_provider.dart';
@@ -58,6 +59,7 @@ void main() async {
   final wishlistDs = WishlistRemoteDataSource(apiClient);
   final homeFeedDs = HomeFeedRemoteDataSource(apiClient);
   final marketplaceDs = MarketplaceRemoteDataSource(apiClient);
+  final bannerDetailDs = BannerDetailRemoteDataSource(apiClient);
   final marketplaceSearchDs = MarketplaceSearchRemoteDataSource(apiClient);
   final addressesDs = AddressesRemoteDataSource(apiClient);
   final categoriesDs = CategoriesRemoteDataSource(apiClient);
@@ -198,6 +200,7 @@ void main() async {
         // their own loads from this DS rather than via a parent provider
         // so the data follows the productId/slug in the route arguments.
         Provider<MarketplaceRemoteDataSource>.value(value: marketplaceDs),
+        Provider<BannerDetailRemoteDataSource>.value(value: bannerDetailDs),
         // Categories DS: the category-products page hits it directly so
         // route-scoped pages can load without a parent provider.
         Provider<CategoriesRemoteDataSource>.value(value: categoriesDs),
