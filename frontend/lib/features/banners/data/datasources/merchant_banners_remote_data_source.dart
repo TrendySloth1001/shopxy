@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:shopxy/core/network/api_client.dart';
 import 'package:shopxy/features/admin/data/models/banner.dart';
+import 'package:shopxy/features/banners/data/models/banner_product.dart';
 
 /// Merchant-side banner CRUD against the slim `/me/banners` API. Reuses
 /// the slim [AdminBanner]/[BannerPlacement] model — the wire shape is
@@ -43,4 +44,60 @@ class MerchantBannersRemoteDataSource {
       throw Exception('Delete failed: ${res.body}');
     }
   }
+
+  /// Curated products pinned to a banner, in display order.
+  Future<List<BannerProductRow>> listBannerProducts(int bannerId) async {
+    final res = await _client.get('/me/banners/$bannerId/products');
+    if (res.statusCode != 200) {
+      throw Exception('Failed to load banner products: ${res.body}');
+    }
+    final body = jsonDecode(res.body) as Map<String, dynamic>;
+    return (body['data'] as List<dynamic>)
+        .map((e) => BannerProductRow.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// PUT replaces the entire pinned-product list — simpler and safer than
+  /// diffing on the client. Empty [items] clears the list. Returns the
+  /// re-read rows (with server-computed sale prices).
+  Future<List<BannerProductRow>> replaceBannerProducts(
+    int bannerId,
+    List<BannerProductInput> items,
+  ) async {
+    final res = await _client.put(
+      '/me/banners/$bannerId/products',
+      body: {
+        'items': items
+            .map((i) => {
+                  'productId': i.productId,
+                  'discountType': i.discountType.wire,
+                  'discountValue': i.discountValue,
+                  'position': i.position,
+                })
+            .toList(),
+      },
+    );
+    if (res.statusCode != 200) {
+      throw Exception('Replace banner products failed: ${res.body}');
+    }
+    final body = jsonDecode(res.body) as Map<String, dynamic>;
+    return (body['data'] as List<dynamic>)
+        .map((e) => BannerProductRow.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+}
+
+/// One product to pin to a banner, as sent to the PUT endpoint.
+class BannerProductInput {
+  const BannerProductInput({
+    required this.productId,
+    required this.discountType,
+    required this.discountValue,
+    required this.position,
+  });
+
+  final int productId;
+  final BannerDiscountType discountType;
+  final double discountValue;
+  final int position;
 }
