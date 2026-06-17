@@ -1,45 +1,30 @@
 import 'dart:convert';
 import 'package:shopxy/core/network/api_client.dart';
 
-/// A product resolved from a scanned code by the backend.
-class ScannedProduct {
-  const ScannedProduct({
-    required this.productId,
-    required this.name,
-    required this.sku,
-    required this.sellingPrice,
-  });
-
-  final int productId;
-  final String name;
-  final String sku;
-
-  /// Selling price as a decimal string (backend serialises Decimal as text).
-  final String? sellingPrice;
+/// A one-time ticket for opening the scan-console WebSocket.
+class ScanTicket {
+  const ScanTicket({required this.ticket, required this.path});
+  final String ticket;
+  final String path;
 }
 
-/// Talks to the merchant scan-console endpoints. The phone is a pure publisher:
-/// each scan is a discrete POST; the live list lives on the web console, which
-/// receives the broadcast over a WebSocket. No socket is held on the device.
+/// HTTP side of the scan console: mint a WebSocket ticket and clear the feed.
+/// Scans themselves travel over the WebSocket (see ScanConsoleClient), so a
+/// "connection established" state is real and every scan is acked.
 class ScanConsoleRemoteDataSource {
   const ScanConsoleRemoteDataSource(this._client);
   final ApiClient _client;
 
-  /// Publish a scanned code. Returns the resolved product, or null when no
-  /// product in this shop matches the code (HTTP 404). Throws otherwise.
-  Future<ScannedProduct?> pushScan(String code) async {
-    final response = await _client.post('/me/scan-console/scan', body: {'code': code});
-    if (response.statusCode == 404) return null;
+  /// Mint a single-use ticket (Bearer-authed via ApiClient, with refresh).
+  Future<ScanTicket> requestTicket() async {
+    final response = await _client.post('/me/scan-console/ticket');
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Scan failed (${response.statusCode}): ${response.body}');
+      throw Exception('Ticket failed (${response.statusCode}): ${response.body}');
     }
     final body = jsonDecode(response.body) as Map<String, dynamic>;
-    final scan = body['scan'] as Map<String, dynamic>;
-    return ScannedProduct(
-      productId: scan['productId'] as int,
-      name: scan['name'] as String,
-      sku: scan['sku'] as String,
-      sellingPrice: scan['sellingPrice'] as String?,
+    return ScanTicket(
+      ticket: body['ticket'] as String,
+      path: body['path'] as String,
     );
   }
 
