@@ -53,6 +53,7 @@ class AdminBanner {
     this.startAt,
     this.endAt,
     required this.isActive,
+    this.productCount = 0,
   });
 
   final int id;
@@ -63,6 +64,10 @@ class AdminBanner {
   final DateTime? startAt;
   final DateTime? endAt;
   final bool isActive;
+
+  /// Number of curated products pinned to this banner. Surfaced on the
+  /// list row so merchants can see which banners are product-backed.
+  final int productCount;
 
   factory AdminBanner.fromJson(Map<String, dynamic> j) => AdminBanner(
         id: j['id'] as int,
@@ -77,6 +82,7 @@ class AdminBanner {
             ? DateTime.tryParse(j['endAt'] as String)
             : null,
         isActive: (j['isActive'] as bool?) ?? true,
+        productCount: (j['productCount'] as int?) ?? 0,
       );
 
   Map<String, dynamic> toJson() => {
