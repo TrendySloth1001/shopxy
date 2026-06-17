@@ -28,28 +28,36 @@ export type LoginInput = z.infer<typeof loginSchema>;
  * its Shop atomically on the backend, so `shopName` is required. Consent to
  * both the terms and privacy policy is required at the wire level (DPDP).
  */
-export const registerSchema = z
-  .object({
-    name: z.string().trim().min(2, "Name must be at least 2 characters").max(80),
-    shopName: z
-      .string()
-      .trim()
-      .min(2, "Shop name must be at least 2 characters")
-      .max(200),
-    email: z.string().trim().email("Enter a valid email address"),
-    password: passwordSchema,
-    confirmPassword: z.string(),
-    acceptedTerms: z.literal(true, {
-      errorMap: () => ({ message: "You must accept the Terms of Service" }),
-    }),
-    acceptedPrivacy: z.literal(true, {
-      errorMap: () => ({ message: "You must accept the Privacy Policy" }),
-    }),
-  })
-  .refine((d) => d.password === d.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
-  });
+const registerFields = z.object({
+  name: z.string().trim().min(2, "Name must be at least 2 characters").max(80),
+  shopName: z
+    .string()
+    .trim()
+    .min(2, "Shop name must be at least 2 characters")
+    .max(200),
+  email: z.string().trim().email("Enter a valid email address"),
+  password: passwordSchema,
+  confirmPassword: z.string(),
+  acceptedTerms: z.literal(true, {
+    errorMap: () => ({ message: "You must accept the Terms of Service" }),
+  }),
+  acceptedPrivacy: z.literal(true, {
+    errorMap: () => ({ message: "You must accept the Privacy Policy" }),
+  }),
+});
+
+/** Form schema — includes `confirmPassword` + the match check. */
+export const registerSchema = registerFields.refine(
+  (d) => d.password === d.confirmPassword,
+  { message: "Passwords do not match", path: ["confirmPassword"] },
+);
+
+/**
+ * Wire schema the BFF route validates. `confirmPassword` is a form-only field
+ * (never sent over the wire — the form drops it from the payload), so the BFF
+ * must NOT require it; it mirrors exactly what gets forwarded to the backend.
+ */
+export const registerWireSchema = registerFields.omit({ confirmPassword: true });
 
 export type RegisterInput = z.infer<typeof registerSchema>;
 

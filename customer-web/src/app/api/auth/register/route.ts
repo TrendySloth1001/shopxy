@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { registerSchema } from "@/features/auth/schema";
+import { registerWireSchema } from "@/features/auth/schema";
 import { authResultSchema } from "@/features/auth/types";
 import {
   ALLOWED_ROLE,
@@ -15,7 +15,7 @@ import {
 // literals are forwarded as the backend requires them.
 export async function POST(req: Request) {
   const json = await req.json().catch(() => null);
-  const parsed = registerSchema.safeParse(json);
+  const parsed = registerWireSchema.safeParse(json);
   if (!parsed.success) {
     const first =
       parsed.error.issues[0]?.message ?? "Please check the form and try again.";
