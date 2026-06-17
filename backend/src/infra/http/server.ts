@@ -1,13 +1,20 @@
 import 'dotenv/config';
+import { createServer } from 'node:http';
 import prisma from '../db/prisma.js';
 import { ensureBucket } from '../../modules/upload/upload.service.js';
 import { pingRedis, closeRedis } from '../redis.js';
 import { startScheduler, stopScheduler } from '../scheduler.js';
 import { seedCanonicalCategories } from '../../modules/categories/categories.seed.js';
+import { attachScanConsoleWs } from '../../modules/scan-console/scan-console.service.js';
 import { logger } from '../../shared/logging/logger.js';
 import { buildApp } from './app.js';
 
 const app = buildApp();
+// Wrap Express in a raw http.Server so we can own the WebSocket upgrade
+// handshake (scan-console live feed). `app.listen()` hides the server, so we
+// create it explicitly and listen on it instead.
+const httpServer = createServer(app);
+attachScanConsoleWs(httpServer);
 const port = Number(process.env.PORT) || 3003;
 const host = process.env.HOST || '0.0.0.0';
 
@@ -26,7 +33,7 @@ async function startServer(): Promise<void> {
     // Recurring jobs (flash-sale flush, expiry sweep, …). No-op in
     // NODE_ENV=test so vitest runs don't fire timers.
     startScheduler();
-    app.listen(port, host, () => {
+    httpServer.listen(port, host, () => {
       logger.info({ port, host }, 'server listening');
     });
   } catch (err) {

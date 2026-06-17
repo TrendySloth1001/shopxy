@@ -10,6 +10,7 @@ import 'package:shopxy/features/orders/presentation/pages/orders_inbox_page.dart
 import 'package:shopxy/features/orders/presentation/providers/orders_provider.dart';
 import 'package:shopxy/features/parties/presentation/pages/parties_page.dart';
 import 'package:shopxy/features/products/presentation/pages/products_page.dart';
+import 'package:shopxy/features/scan_console/presentation/pages/scan_console_page.dart';
 import 'package:shopxy/features/profile/presentation/pages/profile_page.dart';
 import 'package:shopxy/features/reports/presentation/pages/reports_page.dart';
 import 'package:shopxy/features/shop/presentation/pages/shop_profile_page.dart';
@@ -138,6 +139,14 @@ List<_Shortcut> get _manageShortcuts => [
     ];
 
 List<_Shortcut> get _operationShortcuts => [
+      _Shortcut(
+        label: 'Scan to console',
+        icon: Icons.qr_code_scanner_rounded,
+        accent: AppColors.accentTeal,
+        accentSoft: AppColors.accentTealSoft,
+        builder: (_) => const ScanConsolePage(),
+        requires: (u) => u.canView('products'),
+      ),
       _Shortcut(
         label: AppStrings.navInvoices,
         icon: Icons.receipt_long_outlined,
