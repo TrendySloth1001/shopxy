@@ -6,7 +6,7 @@ import { backendFetch, clearSessionCookies } from "@/server/auth/session";
 // and clear the session cookies regardless of the backend's response.
 export async function POST() {
   const store = await cookies();
-  const refreshToken = store.get("sx_refresh")?.value;
+  const refreshToken = store.get("sxc_refresh")?.value;
   if (refreshToken) {
     try {
       await backendFetch("/auth/logout", {

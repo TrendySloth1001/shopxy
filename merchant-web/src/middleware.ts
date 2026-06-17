@@ -13,7 +13,7 @@ const AUTH_PAGES = ["/login", "/register"];
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const hasSession =
-    req.cookies.has("sx_refresh") || req.cookies.has("sx_access");
+    req.cookies.has("sxm_refresh") || req.cookies.has("sxm_access");
 
   if (AUTH_PAGES.includes(pathname) && hasSession) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
