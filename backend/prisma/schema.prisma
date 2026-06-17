@@ -409,6 +409,7 @@ model Product {
   events               ProductEvent[]
   recentlyViewedBy     RecentlyViewed[]
   trendingScores       TrendingScore[]
+  bannerLinks          BannerProduct[]
   fbtCache             FbtCache?
   variants             ProductVariant[]
 
@@ -1690,9 +1691,43 @@ model Banner {
   createdAt DateTime        @default(now()) @map("created_at")
   updatedAt DateTime        @updatedAt @map("updated_at")
 
+  /// Optional curated product list pinned to this banner. Tapping a
+  /// product-backed banner opens a detail page listing them.
+  products BannerProduct[]
+
   @@index([placement, isActive, startAt, endAt])
   @@index([shopId])
   @@map("banners")
+}
+
+/// Products a merchant pins to a banner, with an optional per-row
+/// promotional discount. The discount flows through to BOTH the customer
+/// order line and the merchant-created invoice (auto-stamped unless the
+/// merchant typed their own discount). Best-promo resolution: a product
+/// can sit on multiple active banners; the resolver picks the row giving
+/// the largest per-unit discount at the product's current sellingPrice.
+model BannerProduct {
+  id            Int                       @id @default(autoincrement())
+  bannerId      Int                       @map("banner_id")
+  banner        Banner                    @relation(fields: [bannerId], references: [id], onDelete: Cascade)
+  productId     Int                       @map("product_id")
+  product       Product                   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  position      Int                       @default(0)
+  /// PERCENT: discountValue is a percent 0..90 off sellingPrice.
+  /// AMOUNT:  discountValue is a flat rupee discount per unit.
+  discountType  BannerProductDiscountType @default(PERCENT) @map("discount_type")
+  discountValue Decimal                   @default(0) @map("discount_value") @db.Decimal(12, 2)
+  createdAt     DateTime                  @default(now()) @map("created_at")
+
+  @@unique([bannerId, productId])
+  @@index([bannerId, position])
+  @@index([productId])
+  @@map("banner_products")
+}
+
+enum BannerProductDiscountType {
+  PERCENT
+  AMOUNT
 }
 
 enum BannerPlacement {
