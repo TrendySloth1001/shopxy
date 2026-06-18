@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
 import { Writable } from 'stream';
 import { ledgerService } from '../ledger/ledger.service.js';
@@ -52,6 +53,18 @@ interface ResolveInvoiceInput {
   note?: string;
   invoiceDate?: string;
   items: InvoiceItemInput[];
+}
+
+/// Thrown by `createConfirmedSaleInTx` so a failed POS checkout rolls the whole
+/// transaction back with a structured reason (surfaced to the till).
+export class PosInvoiceError extends Error {
+  constructor(
+    message: string,
+    readonly detail?: { productId: number; available: number; requested: number },
+  ) {
+    super(message);
+    this.name = 'PosInvoiceError';
+  }
 }
 
 export class InvoicesService {
@@ -127,6 +140,86 @@ export class InvoicesService {
       };
     }
     return { invoice: confirmResult.invoice, confirmed: true as const };
+  }
+
+  /// POS support: compute the GST split + totals for a set of lines WITHOUT
+  /// writing anything. Lets the POS cart show live, server-authoritative totals
+  /// using the exact same math the bill will use. Returns the same
+  /// `{ header, itemsData }` shape as the internal resolver, or `{ error }`.
+  async previewSaleTotals(data: ResolveInvoiceInput) {
+    return this.resolveInvoiceFields(data);
+  }
+
+  /// POS support: create an already-CONFIRMED sale invoice (with stock posted
+  /// via the ledger) inside a caller-provided transaction. This is the invoice
+  /// half of the single-transaction POS checkout (the payment is recorded in
+  /// the same `tx` by the POS service), so a sale is fully all-or-nothing.
+  ///
+  /// Reuses `resolveInvoiceFields` (identical tax math), `nextInvoiceNo` and
+  /// `ledgerService.post` — no duplicated billing logic. Throws on a resolver
+  /// error or insufficient stock so the surrounding transaction rolls back.
+  async createConfirmedSaleInTx(
+    tx: Prisma.TransactionClient,
+    data: ResolveInvoiceInput,
+    createdById?: number,
+  ) {
+    const resolved = await this.resolveInvoiceFields(data);
+    if ('error' in resolved) {
+      throw new PosInvoiceError(resolved.error);
+    }
+    const { header, itemsData } = resolved;
+    const { invoiceNo, financialYear } = await nextInvoiceNo(
+      data.shopId,
+      data.type,
+      header.documentType,
+      header.invoiceDate,
+      tx,
+    );
+    const invoice = await tx.invoice.create({
+      data: {
+        ...header,
+        shopId: data.shopId,
+        invoiceNo,
+        financialYear,
+        status: 'CONFIRMED',
+        items: { create: itemsData },
+      },
+      include: { items: true },
+    });
+
+    // Stock OUT — same posting shape as the DRAFT→CONFIRMED path in
+    // updateStatus, with the same idempotency key, so it dedupes identically.
+    const posted = await ledgerService.post(
+      {
+        shopId: data.shopId,
+        direction: 'OUT',
+        reasonCode: 'SALE',
+        sourceType: 'INVOICE',
+        sourceId: invoice.id,
+        idempotencyKey: `INVOICE:${invoice.id}:CONFIRM`,
+        counterpartyName: header.customerName ?? undefined,
+        counterpartyGstin: header.customerGstin ?? undefined,
+        createdById,
+        note: `Invoice ${invoice.invoiceNo}`,
+        lines: invoice.items.map((it) => ({
+          productId: it.productId,
+          quantity: Number(it.quantity),
+          sourceLineId: it.id,
+        })),
+      },
+      tx,
+    );
+    if ('error' in posted) {
+      if (posted.error === 'Insufficient stock') {
+        throw new PosInvoiceError('Insufficient stock for one or more items', {
+          productId: posted.productId,
+          available: posted.available,
+          requested: posted.requested,
+        });
+      }
+      throw new PosInvoiceError(posted.error);
+    }
+    return invoice;
   }
 
   /// Pure resolution step shared by create + update: party/vendor look-ups,
