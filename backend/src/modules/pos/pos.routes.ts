@@ -8,6 +8,7 @@ import { posController } from './pos.controller.js';
 /// mutation returns the fresh sale snapshot.
 export const posMerchantRouter = Router();
 
+posMerchantRouter.post('/ticket', asyncHandler(posController.ticket.bind(posController)));
 posMerchantRouter.post('/sales', asyncHandler(posController.openSale.bind(posController)));
 posMerchantRouter.get('/sales', asyncHandler(posController.listOpenSales.bind(posController)));
 posMerchantRouter.get('/sales/:id', asyncHandler(posController.getSale.bind(posController)));
