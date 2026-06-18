@@ -985,24 +985,56 @@ class _StatusSection extends StatelessWidget {
           const SizedBox(height: AppSizes.xs),
           Text(
             activated
-                ? 'Your settlement account is verified. Order payouts will land '
-                    'in your bank.'
-                : 'Verification usually takes a little while. Tap refresh to check '
-                    'again.',
+                ? 'Your settlement account is verified. Order + UPI payouts will '
+                    'land in your bank.'
+                : 'Razorpay is still reviewing this account. We show the status we '
+                    'last fetched — tap refresh to re-check live.',
             style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
           ),
-          if (!activated) ...[
-            const SizedBox(height: AppSizes.xs),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                onPressed: onRefresh,
-                style: TextButton.styleFrom(padding: EdgeInsets.zero),
-                icon: const Icon(Icons.refresh, size: 18),
-                label: const Text('Refresh status'),
-              ),
+          const SizedBox(height: AppSizes.lg),
+          _DetailRow(label: 'Account ID', value: status!.providerAccountId ?? '—'),
+          _DetailRow(label: 'Name', value: status!.contactName ?? '—'),
+          _DetailRow(label: 'Email', value: status!.email ?? '—'),
+          if (status!.businessType != null)
+            _DetailRow(label: 'Business type', value: status!.businessType!),
+          _DetailRow(label: 'KYC status', value: status!.kycStatus),
+          _DetailRow(label: 'Payouts', value: activated ? 'Enabled' : 'Not enabled yet'),
+          const SizedBox(height: AppSizes.sm),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: onRefresh,
+              style: TextButton.styleFrom(padding: EdgeInsets.zero),
+              icon: const Icon(Icons.refresh, size: 18),
+              label: const Text('Refresh from Razorpay'),
             ),
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  const _DetailRow({required this.label, required this.value});
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSizes.xs),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 110,
+            child: Text(label, style: theme.textTheme.bodySmall?.copyWith(color: AppColors.subtle)),
+          ),
+          Expanded(
+            child: SelectableText(value, style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.black)),
+          ),
         ],
       ),
     );
