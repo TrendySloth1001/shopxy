@@ -75,16 +75,19 @@ export const shopSchema = z
   .passthrough();
 export type Shop = z.infer<typeof shopSchema>;
 
-/** Razorpay-Route linked account status — loosely typed (provider passthrough). */
+/** Razorpay-Route linked account — matches the backend `LinkedAccountView`. */
 export const payoutAccountSchema = z
   .object({
-    id: z.number().nullish(),
+    shopId: z.number().nullish(),
+    providerAccountId: z.string().nullish(),
+    kycStatus: z.string().nullish(),
+    payoutsEnabled: z.boolean().nullish(),
+    email: z.string().nullish(),
+    contactName: z.string().nullish(),
+    businessType: z.string().nullish(),
+    // Legacy fields tolerated for forward/backward compat.
     status: z.string().nullish(),
     accountId: z.string().nullish(),
-    bankName: z.string().nullish(),
-    last4: z.string().nullish(),
-    createdAt: z.string().nullish(),
-    updatedAt: z.string().nullish(),
   })
   .passthrough();
 export type PayoutAccount = z.infer<typeof payoutAccountSchema>;

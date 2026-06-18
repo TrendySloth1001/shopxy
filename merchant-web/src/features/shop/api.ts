@@ -72,8 +72,10 @@ export async function uploadShopImage(file: File): Promise<string> {
 }
 
 /** Returns null when onboarding hasn't started (backend 404). */
-export async function getPayoutStatus(): Promise<PayoutAccount | null> {
-  const res = await fetch("/api/payouts", { cache: "no-store" });
+export async function getPayoutStatus(opts?: { refresh?: boolean }): Promise<PayoutAccount | null> {
+  // refresh=1 makes the backend re-poll Razorpay live (picks up an activation
+  // that happened after we last stored the status).
+  const res = await fetch(`/api/payouts${opts?.refresh ? "?refresh=1" : ""}`, { cache: "no-store" });
   if (res.status === 404) return null;
   return okJson(res, (raw) => payoutAccountSchema.parse(raw), "Could not load payout status.");
 }
