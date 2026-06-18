@@ -48,6 +48,19 @@ export type SaleSnapshot = z.infer<typeof saleSnapshotSchema>;
 /** Unknown-scan response (P2 quick-add hook point). */
 export const unknownScanSchema = z.object({ unknown: z.literal(true), code: z.string() });
 
+export const ticketSchema = z.object({
+  ticket: z.string(),
+  path: z.string(),
+  expiresInMs: z.number(),
+});
+
+export const checkoutResultSchema = z.object({
+  invoice: z.object({ id: z.number(), invoiceNo: z.string(), total: z.union([z.string(), z.number()]) }),
+  payment: z.object({ referenceNo: z.string().optional(), mode: z.string().optional() }).nullable(),
+  replayed: z.boolean().optional(),
+});
+export type CheckoutResult = z.infer<typeof checkoutResultSchema>;
+
 export const TENDER_MODES = ["CASH", "UPI", "CARD", "OTHER"] as const;
 export type TenderMode = (typeof TENDER_MODES)[number];
 

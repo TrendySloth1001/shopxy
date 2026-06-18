@@ -228,7 +228,7 @@ function ConnBadge({ status }: { status: ConnStatus }) {
   );
 }
 
-function CheckoutDone({ invoiceNo, total }: { invoiceNo: string; total: string }) {
+function CheckoutDone({ invoiceNo, total }: { invoiceNo: string; total: string | number }) {
   return (
     <div className="flex min-h-[60vh] w-full flex-col items-center justify-center px-lg py-xxxl text-center">
       <span className="flex size-14 items-center justify-center rounded-full bg-success-soft text-success"><CheckCircle2 size={28} /></span>
