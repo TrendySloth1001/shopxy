@@ -42,6 +42,11 @@ class _PosPageState extends State<PosPage> {
       _shownInvoice = true;
       _controller.stop();
       WidgetsBinding.instance.addPostFrameCallback((_) => _showReceipt(inv));
+    } else if (inv == null && _client.isClosed && !_shownInvoice) {
+      // Closed on another till (or voided) — show a terminal state too.
+      _shownInvoice = true;
+      _controller.stop();
+      WidgetsBinding.instance.addPostFrameCallback((_) => _showReceipt('completed on another till'));
     }
     final unknown = _client.unknownCode;
     if (unknown != null && !_quickAddOpen) {

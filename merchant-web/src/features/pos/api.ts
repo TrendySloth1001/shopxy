@@ -1,4 +1,11 @@
-import { saleSnapshotSchema, unknownScanSchema, type SaleSnapshot, type TenderMode } from "./types";
+import {
+  saleSnapshotSchema,
+  unknownScanSchema,
+  ticketSchema,
+  checkoutResultSchema,
+  type SaleSnapshot,
+  type TenderMode,
+} from "./types";
 
 async function call(path: string, init?: RequestInit): Promise<unknown> {
   const res = await fetch(path, {
@@ -15,6 +22,9 @@ async function call(path: string, init?: RequestInit): Promise<unknown> {
 const snap = (b: unknown): SaleSnapshot => saleSnapshotSchema.parse(b);
 
 export const posApi = {
+  /** Mint a POS-area WS ticket (works for invoices-only cashiers). */
+  ticket: () => call("/api/pos/ticket", { method: "POST" }).then((b) => ticketSchema.parse(b)),
+
   open: (body?: { customerName?: string; customerPhone?: string }) =>
     call("/api/pos/sales", { method: "POST", body: JSON.stringify(body ?? {}) }).then(snap),
 
@@ -47,9 +57,7 @@ export const posApi = {
     call(`/api/pos/sales/${saleId}`, { method: "PATCH", body: JSON.stringify({ headerDiscount }) }).then(snap),
 
   checkout: (saleId: number, tender: { mode: TenderMode; modeReference?: string }) =>
-    call(`/api/pos/sales/${saleId}/checkout`, { method: "POST", body: JSON.stringify({ tender }) }) as Promise<{
-      invoice: { id: number; invoiceNo: string; total: string };
-      payment: { referenceNo: string; mode: string };
-      replayed?: boolean;
-    }>,
+    call(`/api/pos/sales/${saleId}/checkout`, { method: "POST", body: JSON.stringify({ tender }) }).then((b) =>
+      checkoutResultSchema.parse(b),
+    ),
 };
