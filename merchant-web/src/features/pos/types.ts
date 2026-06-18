@@ -55,9 +55,12 @@ export const ticketSchema = z.object({
 });
 
 export const checkoutResultSchema = z.object({
-  invoice: z.object({ id: z.number(), invoiceNo: z.string(), total: z.union([z.string(), z.number()]) }),
-  payment: z.object({ referenceNo: z.string().optional(), mode: z.string().optional() }).nullable(),
-  replayed: z.boolean().optional(),
+  invoiceId: z.number(),
+  invoiceNo: z.string(),
+  total: z.union([z.string(), z.number()]),
+  paymentRef: z.string().nullable(),
+  mode: z.string().nullable(),
+  replayed: z.boolean(),
 });
 export type CheckoutResult = z.infer<typeof checkoutResultSchema>;
 
