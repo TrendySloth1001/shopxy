@@ -759,4 +759,35 @@ export class RazorpayProvider
     );
     return mapProviderKyc(res.status ?? 'created');
   }
+
+  /** Fetch identity + status for the connect-an-existing-account flow. A GET on
+   *  a non-existent / not-ours account id throws (→ surfaced as NOT_FOUND). */
+  async fetchAccount(providerAccountId: string): Promise<{
+    accountId: string;
+    kycStatus: string;
+    payoutsEnabled: boolean;
+    email: string | null;
+    legalBusinessName: string | null;
+    contactName: string | null;
+    businessType: string | null;
+  }> {
+    const res = await this.call<{
+      id?: string;
+      status?: string;
+      email?: string;
+      legal_business_name?: string;
+      business_type?: string;
+      contact_name?: string;
+    }>('GET', `${RAZORPAY_API_V2}/accounts/${providerAccountId}`);
+    const { kycStatus, payoutsEnabled } = mapProviderKyc(res.status ?? 'created');
+    return {
+      accountId: res.id ?? providerAccountId,
+      kycStatus,
+      payoutsEnabled,
+      email: res.email ?? null,
+      legalBusinessName: res.legal_business_name ?? null,
+      contactName: res.contact_name ?? null,
+      businessType: res.business_type ?? null,
+    };
+  }
 }

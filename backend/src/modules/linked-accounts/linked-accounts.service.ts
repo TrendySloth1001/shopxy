@@ -17,6 +17,17 @@ const PROVIDER = 'RAZORPAY';
 // spamming ?refresh=1 would otherwise burn API quota + trip the shared breaker).
 const REFRESH_MIN_INTERVAL_MS = 30_000;
 
+/** Identity + status returned by the connect-account verify step. */
+export interface ConnectAccountDetails {
+  accountId: string;
+  kycStatus: string;
+  payoutsEnabled: boolean;
+  email: string | null;
+  legalBusinessName: string | null;
+  contactName: string | null;
+  businessType: string | null;
+}
+
 export interface LinkedAccountView {
   shopId: number;
   providerAccountId: string | null;
@@ -187,6 +198,71 @@ export class LinkedAccountsService {
       }
     }
     return { scanned: pending.length, activated, errors };
+  }
+
+  /**
+   * Connect an EXISTING Razorpay linked account by its id — verify step. Fetches
+   * the account so the merchant can confirm it's theirs before storing. A GET on
+   * an id that isn't a linked account under our platform throws → NOT_FOUND.
+   * Writes nothing.
+   */
+  async verifyConnect(
+    accountId: string,
+  ): Promise<{ ok: true; details: ConnectAccountDetails } | { error: 'PROVIDER_UNAVAILABLE' | 'NOT_FOUND' }> {
+    const provider = getProvider(PROVIDER);
+    if (!isOnboardingCapable(provider)) return { error: 'PROVIDER_UNAVAILABLE' };
+    try {
+      return { ok: true, details: await provider.fetchAccount(accountId) };
+    } catch {
+      return { error: 'NOT_FOUND' };
+    }
+  }
+
+  /**
+   * Connect an existing linked account — confirm step. Re-fetches (authoritative,
+   * never trusts a stale verify), then stores it as the shop's linked account
+   * with mapper-derived KYC/payouts. Rejects if the shop already has a DIFFERENT
+   * provider account (so we never orphan an in-flight wizard account).
+   */
+  async confirmConnect(
+    shopId: number,
+    accountId: string,
+  ): Promise<
+    { ok: true; account: LinkedAccountView } | { error: 'PROVIDER_UNAVAILABLE' | 'NOT_FOUND' | 'ALREADY_LINKED' }
+  > {
+    const provider = getProvider(PROVIDER);
+    if (!isOnboardingCapable(provider)) return { error: 'PROVIDER_UNAVAILABLE' };
+
+    const existing = await prisma.linkedAccount.findUnique({
+      where: { shopId },
+      select: { providerAccountId: true },
+    });
+    if (existing?.providerAccountId && existing.providerAccountId !== accountId) {
+      return { error: 'ALREADY_LINKED' };
+    }
+
+    let acct: ConnectAccountDetails;
+    try {
+      acct = await provider.fetchAccount(accountId);
+    } catch {
+      return { error: 'NOT_FOUND' };
+    }
+
+    const data = {
+      providerAccountId: acct.accountId,
+      kycStatus: acct.kycStatus,
+      payoutsEnabled: acct.payoutsEnabled,
+      email: acct.email,
+      contactName: acct.contactName,
+      businessType: acct.businessType,
+    };
+    const row = await prisma.linkedAccount.upsert({
+      where: { shopId },
+      create: { shopId, provider: PROVIDER, ...data },
+      update: data,
+      select: SELECT,
+    });
+    return { ok: true, account: view(row) };
   }
 
   /** The shop's linked account as we last knew it (no provider call). */
