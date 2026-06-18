@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { z } from 'zod';
 import { posService } from './pos.service.js';
 import { hasRight, manageRight } from '../../shared/http/permissions.js';
+import { issueScanTicket } from '../scan-console/scan-console.service.js';
 
 const qty = z.number().positive().max(100000);
 
@@ -68,6 +69,14 @@ function sendSnapshot(res: Response, result: { error: string } | unknown, okStat
 }
 
 class PosController {
+  /// Mint a WebSocket ticket for the live cart from the POS (invoices) area, so
+  /// a cashier with invoices perms but not products:manage can still connect —
+  /// the scan-console ticket endpoint sits under the products area (review H3).
+  async ticket(req: Request, res: Response): Promise<void> {
+    const ticket = issueScanTicket(req.shopId!, req.user!.sub, Date.now());
+    res.json({ ticket, path: '/ws/scan-console', expiresInMs: 30_000 });
+  }
+
   async openSale(req: Request, res: Response): Promise<void> {
     const parsed = openSaleSchema.safeParse(req.body ?? {});
     if (!parsed.success) {

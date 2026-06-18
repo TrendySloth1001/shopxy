@@ -9,6 +9,7 @@ import { paymentGatewayService } from '../modules/payment-gateway/index.js';
 import { reconcileStaleTransfers } from '../modules/payment-gateway/settlement/transfer-reconcile.js';
 import { isRouteSplitEnabled } from '../modules/payment-gateway/settlement/order-split.js';
 import { linkedAccountsService } from '../modules/linked-accounts/linked-accounts.service.js';
+import { posService } from '../modules/pos/pos.service.js';
 import { tryAcquireJobLock } from './redis.js';
 
 /// Lightweight in-process cron registry. We deliberately stay on
@@ -49,6 +50,16 @@ export function startScheduler(): void {
     cron.schedule('0 * * * *', () =>
       runSafely('events:trim-recently-viewed', () =>
         eventsService.trimRecentlyViewed(),
+      ),
+    ),
+  );
+
+  // Hourly — void abandoned POS carts (OPEN, no lines, untouched > 6h) so empty
+  // sales don't accumulate. Idempotent; safe to skip a tick (review H4).
+  jobs.push(
+    cron.schedule('30 * * * *', () =>
+      runSafely('pos:sweep-stale-sales', () =>
+        posService.sweepStaleSales(new Date(Date.now() - 6 * 60 * 60 * 1000)),
       ),
     ),
   );
