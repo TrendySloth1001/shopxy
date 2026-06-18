@@ -10,6 +10,7 @@ import 'package:shopxy/features/orders/presentation/pages/orders_inbox_page.dart
 import 'package:shopxy/features/orders/presentation/providers/orders_provider.dart';
 import 'package:shopxy/features/parties/presentation/pages/parties_page.dart';
 import 'package:shopxy/features/products/presentation/pages/products_page.dart';
+import 'package:shopxy/features/pos/presentation/pages/pos_page.dart';
 import 'package:shopxy/features/scan_console/presentation/pages/scan_console_page.dart';
 import 'package:shopxy/features/profile/presentation/pages/profile_page.dart';
 import 'package:shopxy/features/reports/presentation/pages/reports_page.dart';
@@ -139,6 +140,14 @@ List<_Shortcut> get _manageShortcuts => [
     ];
 
 List<_Shortcut> get _operationShortcuts => [
+      _Shortcut(
+        label: 'Point of sale',
+        icon: Icons.point_of_sale_rounded,
+        accent: AppColors.brand,
+        accentSoft: AppColors.brandSoft,
+        builder: (_) => const PosPage(),
+        requires: (u) => u.canView('invoices'),
+      ),
       _Shortcut(
         label: 'Scan to console',
         icon: Icons.qr_code_scanner_rounded,
