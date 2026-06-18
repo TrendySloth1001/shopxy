@@ -169,6 +169,44 @@ describe('pos.service — money path', () => {
     }
   });
 
+  it('openSale reuses the caller\'s empty OPEN sale instead of leaking a new one (H4)', async () => {
+    const ctx = await createTestUser();
+    try {
+      const a = snap(await posService.openSale(ctx.shopId, ctx.userId));
+      const b = snap(await posService.openSale(ctx.shopId, ctx.userId));
+      expect(b.sale.id).toBe(a.sale.id); // reused, not a second empty sale
+
+      // Once it has a line it's a real cart; a new open then creates a fresh one.
+      const product = await createTestProduct(ctx.shopId, { sellingPrice: 10, stockQuantity: 5 });
+      await posService.addScan(ctx.shopId, a.sale.id, product.sku, ctx.userId);
+      const c = snap(await posService.openSale(ctx.shopId, ctx.userId));
+      expect(c.sale.id).not.toBe(a.sale.id);
+
+      const open = await posService.listOpenSales(ctx.shopId);
+      // Only the one WITH a line is "held"; the fresh empty isn't listed.
+      expect(open.map((s) => s.id)).toContain(a.sale.id);
+      expect(open.every((s) => s.lineCount > 0)).toBe(true);
+    } finally {
+      await cleanupTestUser(ctx);
+    }
+  });
+
+  it('voidSale only voids an OPEN sale (no TOCTOU with checkout)', async () => {
+    const ctx = await createTestUser();
+    try {
+      await registerShop(ctx.userId);
+      const product = await createTestProduct(ctx.shopId, { sellingPrice: 30, stockQuantity: 5 });
+      const opened = snap(await posService.openSale(ctx.shopId, ctx.userId));
+      await posService.addScan(ctx.shopId, opened.sale.id, product.sku, ctx.userId);
+      await posService.checkout(ctx.shopId, opened.sale.id, { tender: { mode: 'CASH' } }, ctx.userId);
+
+      const voided = await posService.voidSale(ctx.shopId, opened.sale.id);
+      expect('error' in voided).toBe(true); // checked-out sale can't be voided
+    } finally {
+      await cleanupTestUser(ctx);
+    }
+  });
+
   it('unknown scan returns { unknown } so the till can offer Quick add', async () => {
     const ctx = await createTestUser();
     try {

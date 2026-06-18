@@ -52,6 +52,7 @@ startServer();
 
 async function shutdown(): Promise<void> {
   stopScheduler();
+  await saleBus.close();
   await prisma.$disconnect();
   await closeRedis();
   process.exit(0);

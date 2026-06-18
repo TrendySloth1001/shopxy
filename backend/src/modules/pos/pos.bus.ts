@@ -1,13 +1,14 @@
 import { scanConsoleHub } from '../scan-console/scan-console.service.js';
 import { getRedis, redisAvailable } from '../../infra/redis.js';
 import { logger } from '../../shared/logging/logger.js';
-import type { SaleSnapshot } from './pos.service.js';
 
-/// Realtime events for the live shared cart. Carried over the existing
+/// Realtime notifications for the live shared cart. Carried over the existing
 /// scan-console WebSocket (shop rooms + ticket auth); each event names its
-/// `saleId` so a till only reacts to the sale it's viewing.
+/// `saleId` so a till only reacts to the sale it's viewing. Deliberately carries
+/// NO cart contents (customer PII + pricing) — `pos.sale` is just a version
+/// nudge and the till re-fetches the shop-gated snapshot (review M3).
 export type SaleEvent =
-  | { type: 'pos.sale'; saleId: number; snapshot: SaleSnapshot }
+  | { type: 'pos.sale'; saleId: number; version: number }
   | { type: 'pos.checkout'; saleId: number; invoiceId: number }
   | { type: 'pos.void'; saleId: number };
 
@@ -47,6 +48,16 @@ class SaleBusImpl implements SaleBus {
       logger.info({ channel: CHANNEL }, 'pos: SaleBus using Redis pub/sub (multi-instance)');
     } catch (err) {
       logger.warn({ err }, 'pos: Redis SaleBus init failed; staying in-memory');
+    }
+  }
+
+  /// Close the dedicated subscriber connection on shutdown (it's a separate
+  /// ioredis connection from the shared cache client — review M6).
+  async close(): Promise<void> {
+    if (this.subscriber) {
+      await this.subscriber.quit().catch(() => undefined);
+      this.subscriber = undefined;
+      this.useRedis = false;
     }
   }
 

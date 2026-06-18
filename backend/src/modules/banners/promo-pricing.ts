@@ -74,12 +74,14 @@ export interface ResolvedPromo {
 export async function resolveActiveProductPromos(
   shopId: number | null,
   productIds: number[],
+  tx?: Prisma.TransactionClient,
 ): Promise<Map<number, ResolvedPromo>> {
   const out = new Map<number, ResolvedPromo>();
   if (productIds.length === 0) return out;
 
+  const db = tx ?? prisma;
   const now = new Date();
-  const rows = await prisma.bannerProduct.findMany({
+  const rows = await db.bannerProduct.findMany({
     where: {
       productId: { in: productIds },
       banner: {
