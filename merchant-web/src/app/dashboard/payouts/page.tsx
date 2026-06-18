@@ -138,8 +138,10 @@ export default function PayoutsPage() {
 
           {!account.payoutsEnabled ? (
             <p className="mt-xl text-body-sm text-muted">
-              Razorpay is still reviewing this account — this is the status we last fetched.
-              Hit Refresh to re-check live; UPI at the till turns on once payouts are enabled.
+              This account isn’t payout-enabled yet (Razorpay status:{" "}
+              <span className="font-medium">{humanStatus(account.kycStatus)}</span>). Finish its
+              Route KYC in the Razorpay dashboard, then Refresh to re-check live. UPI at the till
+              turns on only once Razorpay activates payouts.
             </p>
           ) : null}
         </div>
