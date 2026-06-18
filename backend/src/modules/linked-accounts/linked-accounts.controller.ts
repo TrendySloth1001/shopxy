@@ -44,6 +44,11 @@ const startSchema = z.object({
   bankIfsc: z.string().regex(/^[A-Z]{4}0[A-Z0-9]{6}$/, 'invalid IFSC'),
 });
 
+// Connect an existing Razorpay linked account by id (skip the wizard).
+const connectSchema = z.object({
+  accountId: z.string().trim().regex(/^acc_[A-Za-z0-9]+$/, 'invalid account id'),
+});
+
 export const linkedAccountsController = {
   /** POST /linked-account — start (or resume) KYC onboarding for the shop. */
   async start(req: Request, res: Response): Promise<void> {
@@ -60,6 +65,58 @@ export const linkedAccountsController = {
     const result = await linkedAccountsService.startOnboarding({ shopId, ...parsed.data });
     if ('error' in result) {
       res.status(503).json({ error: 'Onboarding is not available (payment provider not configured).' });
+      return;
+    }
+    res.status(201).json(result.account);
+  },
+
+  /** POST /linked-account/connect — verify an existing acc_XXXX (fetch + show). */
+  async connectVerify(req: Request, res: Response): Promise<void> {
+    if (req.shopId == null) {
+      res.status(403).json({ error: 'No shop linked to this account.' });
+      return;
+    }
+    const parsed = connectSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: 'Invalid account id (expected acc_…).' });
+      return;
+    }
+    const result = await linkedAccountsService.verifyConnect(parsed.data.accountId);
+    if ('error' in result) {
+      res
+        .status(result.error === 'PROVIDER_UNAVAILABLE' ? 503 : 404)
+        .json({
+          error:
+            result.error === 'PROVIDER_UNAVAILABLE'
+              ? 'Payouts are not available (payment provider not configured).'
+              : "That account wasn't found, or isn't linked to ShopXY.",
+        });
+      return;
+    }
+    res.json(result.details);
+  },
+
+  /** POST /linked-account/connect/confirm — store the verified account. */
+  async connectConfirm(req: Request, res: Response): Promise<void> {
+    if (req.shopId == null) {
+      res.status(403).json({ error: 'No shop linked to this account.' });
+      return;
+    }
+    const parsed = connectSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: 'Invalid account id (expected acc_…).' });
+      return;
+    }
+    const result = await linkedAccountsService.confirmConnect(req.shopId, parsed.data.accountId);
+    if ('error' in result) {
+      const status = result.error === 'PROVIDER_UNAVAILABLE' ? 503 : result.error === 'ALREADY_LINKED' ? 409 : 404;
+      const error =
+        result.error === 'PROVIDER_UNAVAILABLE'
+          ? 'Payouts are not available (payment provider not configured).'
+          : result.error === 'ALREADY_LINKED'
+            ? 'This shop already has a different payout account linked.'
+            : "That account wasn't found, or isn't linked to ShopXY.";
+      res.status(status).json({ error });
       return;
     }
     res.status(201).json(result.account);

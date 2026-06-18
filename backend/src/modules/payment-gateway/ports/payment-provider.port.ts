@@ -205,6 +205,18 @@ export interface OnboardingCapablePort {
   fetchAccountStatus(
     providerAccountId: string,
   ): Promise<{ kycStatus: string; payoutsEnabled: boolean }>;
+  /** Fetch an existing account's identity + status — for the "connect an
+   *  existing acc_XXXX" flow (verify the id, show details to confirm). Rejects
+   *  if the id isn't a linked account under this platform. */
+  fetchAccount(providerAccountId: string): Promise<{
+    accountId: string;
+    kycStatus: string;
+    payoutsEnabled: boolean;
+    email: string | null;
+    legalBusinessName: string | null;
+    contactName: string | null;
+    businessType: string | null;
+  }>;
 }
 
 export function isOnboardingCapable(

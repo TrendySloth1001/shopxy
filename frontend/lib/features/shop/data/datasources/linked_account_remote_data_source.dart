@@ -26,6 +26,40 @@ class LinkedAccountStatus {
   }
 }
 
+/// Identity + status fetched when connecting an existing acc_XXXX, shown to the
+/// merchant to confirm before linking.
+class ConnectAccountDetails {
+  const ConnectAccountDetails({
+    required this.accountId,
+    required this.kycStatus,
+    required this.payoutsEnabled,
+    this.email,
+    this.legalBusinessName,
+    this.contactName,
+    this.businessType,
+  });
+
+  final String accountId;
+  final String kycStatus;
+  final bool payoutsEnabled;
+  final String? email;
+  final String? legalBusinessName;
+  final String? contactName;
+  final String? businessType;
+
+  factory ConnectAccountDetails.fromJson(Map<String, dynamic> json) {
+    return ConnectAccountDetails(
+      accountId: json['accountId'] as String,
+      kycStatus: (json['kycStatus'] as String?) ?? 'CREATED',
+      payoutsEnabled: (json['payoutsEnabled'] as bool?) ?? false,
+      email: json['email'] as String?,
+      legalBusinessName: json['legalBusinessName'] as String?,
+      contactName: json['contactName'] as String?,
+      businessType: json['businessType'] as String?,
+    );
+  }
+}
+
 class LinkedAccountRemoteDataSource {
   const LinkedAccountRemoteDataSource(this._client);
   final ApiClient _client;
@@ -94,6 +128,25 @@ class LinkedAccountRemoteDataSource {
     });
     if (res.statusCode != 201 && res.statusCode != 200) {
       throw Exception(_error(res.body, 'Failed to start onboarding'));
+    }
+    return LinkedAccountStatus.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+  }
+
+  /// POST /linked-account/connect — verify an existing acc_XXXX (fetch + show
+  /// details so the merchant can confirm it's theirs). Writes nothing.
+  Future<ConnectAccountDetails> verifyConnect(String accountId) async {
+    final res = await _client.post('/linked-account/connect', body: {'accountId': accountId});
+    if (res.statusCode != 200) {
+      throw Exception(_error(res.body, 'Could not verify that account'));
+    }
+    return ConnectAccountDetails.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+  }
+
+  /// POST /linked-account/connect/confirm — store the verified account.
+  Future<LinkedAccountStatus> confirmConnect(String accountId) async {
+    final res = await _client.post('/linked-account/connect/confirm', body: {'accountId': accountId});
+    if (res.statusCode != 201 && res.statusCode != 200) {
+      throw Exception(_error(res.body, 'Could not link that account'));
     }
     return LinkedAccountStatus.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
