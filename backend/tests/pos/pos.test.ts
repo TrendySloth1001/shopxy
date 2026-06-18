@@ -1,6 +1,6 @@
 import { describe, it, expect, afterAll } from 'vitest';
 import prisma from '../../src/infra/db/prisma.js';
-import { posService } from '../../src/modules/pos/pos.service.js';
+import * as pos from '../../src/modules/pos/pos.service.js';
 import { createTestUser, cleanupTestUser, createTestProduct } from '../helpers/setup.js';
 
 /// Money-path tests for the POS service. Pins the load-bearing behaviours:
@@ -18,7 +18,7 @@ function snap(r: unknown) {
   if (r && typeof r === 'object' && 'error' in (r as Record<string, unknown>)) {
     throw new Error(`expected snapshot, got error: ${(r as { error: string }).error}`);
   }
-  return r as Awaited<ReturnType<typeof posService.snapshot>> & { totals: { total: number } };
+  return r as Awaited<ReturnType<typeof pos.snapshot>> & { totals: { total: number } };
 }
 
 describe('pos.service — money path', () => {
@@ -33,13 +33,13 @@ describe('pos.service — money path', () => {
       const product = await createTestProduct(ctx.shopId, { sellingPrice: 100, stockQuantity: 10 });
       await prisma.product.update({ where: { id: product.id }, data: { taxPercent: 18 } });
 
-      const opened = snap(await posService.openSale(ctx.shopId, ctx.userId));
+      const opened = snap(await pos.openSale(ctx.shopId, ctx.userId));
       const saleId = opened.sale.id;
       expect(opened.totals.total).toBe(0);
 
       // Scan twice (by sku) — POS-style qty bump to 2.
-      await posService.addScan(ctx.shopId, saleId, product.sku, ctx.userId);
-      const after = snap(await posService.addScan(ctx.shopId, saleId, product.sku, ctx.userId));
+      await pos.addScan(ctx.shopId, saleId, product.sku, ctx.userId);
+      const after = snap(await pos.addScan(ctx.shopId, saleId, product.sku, ctx.userId));
       expect(after.lines).toHaveLength(1);
       expect(after.lines[0].quantity).toBe(2);
       // ₹100 × 2 = ₹200 taxable, 18% GST = ₹36 → ₹236, split 18 CGST + 18 SGST.
@@ -49,7 +49,7 @@ describe('pos.service — money path', () => {
       expect(after.totals.igst).toBe(0);
       expect(after.totals.total).toBe(236);
 
-      const result = await posService.checkout(
+      const result = await pos.checkout(
         ctx.shopId,
         saleId,
         { tender: { mode: 'CASH' } },
@@ -57,14 +57,20 @@ describe('pos.service — money path', () => {
       );
       expect('error' in result).toBe(false);
       if ('error' in result) return;
-      const invoice = result.invoice as { id: number; status: string; total: unknown; type: string };
-      const payment = result.payment as { amount: unknown; mode: string; invoiceId: number };
-      expect(invoice.status).toBe('CONFIRMED');
-      expect(invoice.type).toBe('SALE');
-      expect(Number(invoice.total)).toBe(236);
-      expect(payment.mode).toBe('CASH');
-      expect(Number(payment.amount)).toBe(236);
-      expect(payment.invoiceId).toBe(invoice.id);
+      // Flat CheckoutResultDto.
+      expect(result.invoiceNo).toBeTruthy();
+      expect(Number(result.total)).toBe(236);
+      expect(result.mode).toBe('CASH');
+      expect(result.replayed).toBe(false);
+
+      // Invoice is CONFIRMED + the receipt matches (verified at the DB).
+      const inv = await prisma.invoice.findUnique({ where: { id: result.invoiceId }, select: { status: true, type: true, total: true } });
+      expect(inv!.status).toBe('CONFIRMED');
+      expect(inv!.type).toBe('SALE');
+      expect(Number(inv!.total)).toBe(236);
+      const pay = await prisma.payment.findFirst({ where: { invoiceId: result.invoiceId, type: 'RECEIPT' }, select: { amount: true, mode: true } });
+      expect(pay!.mode).toBe('CASH');
+      expect(Number(pay!.amount)).toBe(236);
 
       // Stock decremented 10 → 8.
       const stocked = await prisma.product.findUnique({ where: { id: product.id }, select: { stockQuantity: true } });
@@ -73,17 +79,17 @@ describe('pos.service — money path', () => {
       // Sale is now CHECKED_OUT and points at the invoice.
       const sale = await prisma.sale.findUnique({ where: { id: saleId }, select: { status: true, invoiceId: true } });
       expect(sale!.status).toBe('CHECKED_OUT');
-      expect(sale!.invoiceId).toBe(invoice.id);
+      expect(sale!.invoiceId).toBe(result.invoiceId);
 
       // Idempotent replay: same invoice, no double-bill, no double-decrement.
-      const replay = await posService.checkout(ctx.shopId, saleId, { tender: { mode: 'CASH' } }, ctx.userId);
+      const replay = await pos.checkout(ctx.shopId, saleId, { tender: { mode: 'CASH' } }, ctx.userId);
       expect('error' in replay).toBe(false);
       if ('error' in replay) return;
-      expect((replay.invoice as { id: number }).id).toBe(invoice.id);
+      expect(replay.invoiceId).toBe(result.invoiceId);
       expect(replay.replayed).toBe(true);
       const stockedAgain = await prisma.product.findUnique({ where: { id: product.id }, select: { stockQuantity: true } });
       expect(Number(stockedAgain!.stockQuantity)).toBe(8);
-      const paymentCount = await prisma.payment.count({ where: { invoiceId: invoice.id } });
+      const paymentCount = await prisma.payment.count({ where: { invoiceId: result.invoiceId } });
       expect(paymentCount).toBe(1);
     } finally {
       await cleanupTestUser(ctx);
@@ -96,10 +102,10 @@ describe('pos.service — money path', () => {
       await registerShop(ctx.userId);
       const product = await createTestProduct(ctx.shopId, { sellingPrice: 50, stockQuantity: 3 });
 
-      const opened = snap(await posService.openSale(ctx.shopId, ctx.userId));
-      await posService.addProduct(ctx.shopId, opened.sale.id, product.id, 5, ctx.userId); // > stock 3
+      const opened = snap(await pos.openSale(ctx.shopId, ctx.userId));
+      await pos.addProduct(ctx.shopId, opened.sale.id, product.id, 5, ctx.userId); // > stock 3
 
-      const result = await posService.checkout(ctx.shopId, opened.sale.id, { tender: { mode: 'CASH' } }, ctx.userId);
+      const result = await pos.checkout(ctx.shopId, opened.sale.id, { tender: { mode: 'CASH' } }, ctx.userId);
       expect('error' in result).toBe(true);
       if (!('error' in result)) return;
       expect(result.error).toMatch(/stock/i);
@@ -121,14 +127,14 @@ describe('pos.service — money path', () => {
     const ctx = await createTestUser();
     try {
       await registerShop(ctx.userId);
-      const opened = snap(await posService.openSale(ctx.shopId, ctx.userId));
+      const opened = snap(await pos.openSale(ctx.shopId, ctx.userId));
       const saleId = opened.sale.id;
 
       // sku/barcode are globally unique — use a per-run code so re-runs (and
       // products left behind by invoice FKs) don't collide.
       const code = `QA-${Date.now()}`;
       const added = snap(
-        await posService.quickAddProduct(
+        await pos.quickAddProduct(
           ctx.shopId,
           saleId,
           { code, name: 'Loose item', sellingPrice: 50, taxPercent: 0, openingStock: 3 },
@@ -139,7 +145,7 @@ describe('pos.service — money path', () => {
       expect(added.lines[0].sku).toBe(code);
 
       // The freshly-minted product must be checkout-able (opening stock posted).
-      const result = await posService.checkout(ctx.shopId, saleId, { tender: { mode: 'CASH' } }, ctx.userId);
+      const result = await pos.checkout(ctx.shopId, saleId, { tender: { mode: 'CASH' } }, ctx.userId);
       expect('error' in result).toBe(false);
       const product = await prisma.product.findFirst({ where: { shopId: ctx.shopId, sku: code }, select: { stockQuantity: true } });
       expect(Number(product!.stockQuantity)).toBe(2); // opening 3 − sold 1
@@ -152,17 +158,17 @@ describe('pos.service — money path', () => {
     const ctx = await createTestUser();
     try {
       const product = await createTestProduct(ctx.shopId, { sellingPrice: 20, stockQuantity: 10 });
-      const opened = snap(await posService.openSale(ctx.shopId, ctx.userId));
+      const opened = snap(await pos.openSale(ctx.shopId, ctx.userId));
       const saleId = opened.sale.id;
 
       // Same opId twice (simulates a retried request whose first response was lost).
-      await posService.addScan(ctx.shopId, saleId, product.sku, ctx.userId, 'op-abc');
-      const after = snap(await posService.addScan(ctx.shopId, saleId, product.sku, ctx.userId, 'op-abc'));
+      await pos.addScan(ctx.shopId, saleId, product.sku, ctx.userId, 'op-abc');
+      const after = snap(await pos.addScan(ctx.shopId, saleId, product.sku, ctx.userId, 'op-abc'));
       expect(after.lines).toHaveLength(1);
       expect(after.lines[0].quantity).toBe(1); // not 2 — replay skipped
 
       // A different opId applies normally.
-      const again = snap(await posService.addScan(ctx.shopId, saleId, product.sku, ctx.userId, 'op-def'));
+      const again = snap(await pos.addScan(ctx.shopId, saleId, product.sku, ctx.userId, 'op-def'));
       expect(again.lines[0].quantity).toBe(2);
     } finally {
       await cleanupTestUser(ctx);
@@ -172,17 +178,17 @@ describe('pos.service — money path', () => {
   it('openSale reuses the caller\'s empty OPEN sale instead of leaking a new one (H4)', async () => {
     const ctx = await createTestUser();
     try {
-      const a = snap(await posService.openSale(ctx.shopId, ctx.userId));
-      const b = snap(await posService.openSale(ctx.shopId, ctx.userId));
+      const a = snap(await pos.openSale(ctx.shopId, ctx.userId));
+      const b = snap(await pos.openSale(ctx.shopId, ctx.userId));
       expect(b.sale.id).toBe(a.sale.id); // reused, not a second empty sale
 
       // Once it has a line it's a real cart; a new open then creates a fresh one.
       const product = await createTestProduct(ctx.shopId, { sellingPrice: 10, stockQuantity: 5 });
-      await posService.addScan(ctx.shopId, a.sale.id, product.sku, ctx.userId);
-      const c = snap(await posService.openSale(ctx.shopId, ctx.userId));
+      await pos.addScan(ctx.shopId, a.sale.id, product.sku, ctx.userId);
+      const c = snap(await pos.openSale(ctx.shopId, ctx.userId));
       expect(c.sale.id).not.toBe(a.sale.id);
 
-      const open = await posService.listOpenSales(ctx.shopId);
+      const open = await pos.listOpenSales(ctx.shopId);
       // Only the one WITH a line is "held"; the fresh empty isn't listed.
       expect(open.map((s) => s.id)).toContain(a.sale.id);
       expect(open.every((s) => s.lineCount > 0)).toBe(true);
@@ -196,11 +202,11 @@ describe('pos.service — money path', () => {
     try {
       await registerShop(ctx.userId);
       const product = await createTestProduct(ctx.shopId, { sellingPrice: 30, stockQuantity: 5 });
-      const opened = snap(await posService.openSale(ctx.shopId, ctx.userId));
-      await posService.addScan(ctx.shopId, opened.sale.id, product.sku, ctx.userId);
-      await posService.checkout(ctx.shopId, opened.sale.id, { tender: { mode: 'CASH' } }, ctx.userId);
+      const opened = snap(await pos.openSale(ctx.shopId, ctx.userId));
+      await pos.addScan(ctx.shopId, opened.sale.id, product.sku, ctx.userId);
+      await pos.checkout(ctx.shopId, opened.sale.id, { tender: { mode: 'CASH' } }, ctx.userId);
 
-      const voided = await posService.voidSale(ctx.shopId, opened.sale.id);
+      const voided = await pos.voidSale(ctx.shopId, opened.sale.id);
       expect('error' in voided).toBe(true); // checked-out sale can't be voided
     } finally {
       await cleanupTestUser(ctx);
@@ -210,8 +216,8 @@ describe('pos.service — money path', () => {
   it('unknown scan returns { unknown } so the till can offer Quick add', async () => {
     const ctx = await createTestUser();
     try {
-      const opened = snap(await posService.openSale(ctx.shopId, ctx.userId));
-      const result = await posService.addScan(ctx.shopId, opened.sale.id, 'NO-SUCH-CODE-xyz', ctx.userId);
+      const opened = snap(await pos.openSale(ctx.shopId, ctx.userId));
+      const result = await pos.addScan(ctx.shopId, opened.sale.id, 'NO-SUCH-CODE-xyz', ctx.userId);
       expect(result).toMatchObject({ unknown: true, code: 'NO-SUCH-CODE-xyz' });
     } finally {
       await cleanupTestUser(ctx);
