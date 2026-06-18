@@ -53,6 +53,7 @@ export const ticketSchema = z.object({
   path: z.string(),
   expiresInMs: z.number(),
 });
+export type Ticket = z.infer<typeof ticketSchema>;
 
 export const checkoutResultSchema = z.object({
   invoiceId: z.number(),

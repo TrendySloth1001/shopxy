@@ -86,11 +86,3 @@ class SaleTotals {
         total: _d(json['total']),
       );
 }
-
-/// Result of a POS scan: either the updated cart, or an unknown code.
-class ScanOutcome {
-  ScanOutcome({this.snapshot, this.unknownCode});
-  final SaleSnapshot? snapshot;
-  final String? unknownCode;
-  bool get isUnknown => unknownCode != null;
-}

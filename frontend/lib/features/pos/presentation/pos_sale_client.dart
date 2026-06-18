@@ -16,11 +16,11 @@ class _QueuedScan {
   final String code;
 }
 
-/// Drives one POS sale on the phone: opens a sale, mirrors the
-/// server-authoritative cart, and stays live across devices over the
-/// scan-console WebSocket (role=console). Scans/edits go over REST (which adds
-/// to the shared cart); the socket sends a version nudge and we re-fetch the
-/// snapshot. The server is the source of truth.
+/// Drives one POS sale on the phone ENTIRELY over the WebSocket: every op is a
+/// `{t:'cmd', reqId, op, …}` frame answered with `{t:'res', reqId, ok, data}`;
+/// the other till's changes arrive as version-nudge events and we re-fetch with
+/// a `snapshot` command. Server is the source of truth. Functional collaborators,
+/// state held here (a ChangeNotifier is Flutter's idiom, not domain logic).
 class PosSaleClient extends ChangeNotifier {
   PosSaleClient(ApiClient client) : _ds = PosRemoteDataSource(client);
 
@@ -41,8 +41,6 @@ class PosSaleClient extends ChangeNotifier {
   String? _checkoutInvoiceNo;
   String? get checkoutInvoiceNo => _checkoutInvoiceNo;
 
-  /// True once the sale closed (here or on another till) — lets the page show a
-  /// terminal state even when this till didn't initiate the checkout.
   bool get isClosed => _snapshot != null && _snapshot!.status != 'OPEN';
 
   WebSocketChannel? _channel;
@@ -52,35 +50,45 @@ class PosSaleClient extends ChangeNotifier {
   bool _flushing = false;
   int? _saleId;
   int _appliedVersion = -1;
+  int _seq = 0;
 
+  final Map<String, Completer<Map<String, dynamic>>> _pending = {};
+  final Map<String, Timer> _pendingTimers = {};
   final List<_QueuedScan> _outbox = [];
-  int _opSeq = 0;
   int get pendingCount => _outbox.length;
 
-  String _newOpId() => '${DateTime.now().microsecondsSinceEpoch}-${_opSeq++}';
+  String _newId() => '${DateTime.now().microsecondsSinceEpoch}-${_seq++}';
 
-  /// Apply a snapshot only if it's at least as new as what we've shown — drops
-  /// stale out-of-order responses (e.g. an outbox replay).
-  void _apply(SaleSnapshot s) {
-    if (s.version < _appliedVersion) return;
-    _appliedVersion = s.version;
-    _snapshot = s;
+  void _apply(Map<String, dynamic> data) {
+    final snap = SaleSnapshot.fromJson(data);
+    if (snap.version < _appliedVersion) return; // drop stale
+    _appliedVersion = snap.version;
+    _saleId = snap.saleId;
+    _snapshot = snap;
     notifyListeners();
+  }
+
+  /// Send a command and await its `{ok, data|error}` reply. Resolves
+  /// `{ok:false, error:'offline'|'timeout'}` when the socket can't carry it.
+  Future<Map<String, dynamic>> _send(String op, [Map<String, dynamic> args = const {}]) {
+    final channel = _channel;
+    if (channel == null) return Future.value({'ok': false, 'error': 'offline'});
+    final reqId = _newId();
+    final completer = Completer<Map<String, dynamic>>();
+    _pending[reqId] = completer;
+    _pendingTimers[reqId] = Timer(const Duration(seconds: 12), () {
+      _pendingTimers.remove(reqId);
+      if (_pending.remove(reqId) != null && !completer.isCompleted) {
+        completer.complete({'ok': false, 'error': 'timeout'});
+      }
+    });
+    channel.sink.add(jsonEncode({'t': 'cmd', 'reqId': reqId, 'op': op, ...args}));
+    return completer.future;
   }
 
   Future<void> start() async {
     _disposed = false;
-    try {
-      final s = await _ds.openSale();
-      if (_disposed) return;
-      _saleId = s.saleId;
-      _apply(s);
-      await _connect();
-    } catch (e) {
-      if (_disposed) return;
-      _error = e.toString();
-      _setStatus(PosConnStatus.offline);
-    }
+    await _connect();
   }
 
   Future<void> _connect() async {
@@ -101,8 +109,9 @@ class PosSaleClient extends ChangeNotifier {
       }
       _setStatus(PosConnStatus.live);
       _sub = channel.stream.listen(_onData, onDone: _onDone, onError: (_) => _onDone());
-      // Self-heal on (re)connect: re-fetch the snapshot, then replay queued scans.
-      unawaited(_refresh());
+      // First connect → open (reuses an empty sale); reconnect → resume same sale.
+      final res = _saleId == null ? await _send('open') : await _send('snapshot', {'saleId': _saleId});
+      if (res['ok'] == true) _apply(res['data'] as Map<String, dynamic>);
       unawaited(_flushOutbox());
     } catch (_) {
       if (_disposed) return;
@@ -118,11 +127,15 @@ class PosSaleClient extends ChangeNotifier {
     } catch (_) {
       return;
     }
-    if (msg['saleId'] != _saleId) return; // only our sale
-    // All POS events are version nudges (no cart contents) — re-fetch the
-    // authoritative snapshot. review M3.
+    if (msg['t'] == 'res' && msg['reqId'] is String) {
+      final reqId = msg['reqId'] as String;
+      _pendingTimers.remove(reqId)?.cancel();
+      final c = _pending.remove(reqId);
+      if (c != null && !c.isCompleted) c.complete(msg);
+      return;
+    }
     final type = msg['type'];
-    if (type == 'pos.sale' || type == 'pos.checkout' || type == 'pos.void') {
+    if ((type == 'pos.sale' || type == 'pos.checkout' || type == 'pos.void') && msg['saleId'] == _saleId) {
       unawaited(_refresh());
     }
   }
@@ -132,6 +145,12 @@ class PosSaleClient extends ChangeNotifier {
     _sub?.cancel();
     _sub = null;
     _channel = null;
+    // Fail in-flight commands so callers don't hang.
+    for (final entry in _pending.entries) {
+      _pendingTimers.remove(entry.key)?.cancel();
+      if (!entry.value.isCompleted) entry.value.complete({'ok': false, 'error': 'disconnected'});
+    }
+    _pending.clear();
     _setStatus(PosConnStatus.reconnecting);
     _scheduleReconnect();
   }
@@ -146,33 +165,30 @@ class PosSaleClient extends ChangeNotifier {
 
   Future<void> _refresh() async {
     if (_saleId == null) return;
-    try {
-      final s = await _ds.getSale(_saleId!);
-      if (_disposed) return;
-      _apply(s);
-    } catch (_) {}
+    final res = await _send('snapshot', {'saleId': _saleId});
+    if (res['ok'] == true && !_disposed) _apply(res['data'] as Map<String, dynamic>);
   }
 
-  // ── Actions (REST; snapshot adopted from the response) ──
+  // ── actions ──
   Future<void> scan(String code) async {
     final c = code.trim();
     if (_saleId == null || c.isEmpty) return;
     _error = null;
-    final opId = _newOpId();
-    try {
-      final outcome = await _ds.scan(_saleId!, c, opId: opId);
-      if (_disposed) return;
-      if (outcome.isUnknown) {
-        _unknownCode = outcome.unknownCode;
-        notifyListeners();
-      } else if (outcome.snapshot != null) {
-        _apply(outcome.snapshot!);
-      }
-    } catch (_) {
-      if (_disposed) return;
+    final opId = _newId();
+    final res = await _send('scan', {'saleId': _saleId, 'code': c, 'opId': opId});
+    if (_disposed) return;
+    if (res['ok'] != true) {
       _outbox.add(_QueuedScan(opId, c));
       _error = 'Offline — scan queued, will sync on reconnect.';
       notifyListeners();
+      return;
+    }
+    final dataMap = res['data'] as Map<String, dynamic>;
+    if (dataMap['unknown'] == true) {
+      _unknownCode = dataMap['code'] as String?;
+      notifyListeners();
+    } else {
+      _apply(dataMap);
     }
   }
 
@@ -182,24 +198,33 @@ class PosSaleClient extends ChangeNotifier {
     try {
       while (_outbox.isNotEmpty) {
         final next = _outbox.first;
-        try {
-          final outcome = await _ds.scan(_saleId!, next.code, opId: next.opId);
-          if (_disposed) return;
-          if (outcome.snapshot != null) _apply(outcome.snapshot!);
-          _outbox.removeAt(0);
-        } catch (_) {
-          break; // still offline; retry on next reconnect
-        }
+        final res = await _send('scan', {'saleId': _saleId, 'code': next.code, 'opId': next.opId});
+        if (res['ok'] != true) break;
+        if (_disposed) return;
+        final dataMap = res['data'] as Map<String, dynamic>;
+        if (dataMap['unknown'] != true) _apply(dataMap);
+        _outbox.removeAt(0);
       }
     } finally {
       _flushing = false;
     }
   }
 
-  void clearUnknown() {
-    _unknownCode = null;
-    notifyListeners();
+  Future<void> _runSnap(String op, Map<String, dynamic> args) async {
+    if (_saleId == null) return;
+    _error = null;
+    final res = await _send(op, {'saleId': _saleId, ...args});
+    if (_disposed) return;
+    if (res['ok'] == true) {
+      _apply(res['data'] as Map<String, dynamic>);
+    } else {
+      _error = _human(res['error']);
+      notifyListeners();
+    }
   }
+
+  Future<void> setQty(int productId, double quantity) => _runSnap('setQty', {'productId': productId, 'quantity': quantity});
+  Future<void> removeItem(int productId) => _runSnap('removeLine', {'productId': productId});
 
   Future<void> quickAdd({
     required String code,
@@ -210,38 +235,20 @@ class PosSaleClient extends ChangeNotifier {
   }) async {
     if (_saleId == null) return;
     _error = null;
-    try {
-      final s = await _ds.quickAdd(
-        _saleId!,
-        code: code,
-        name: name,
-        sellingPrice: sellingPrice,
-        taxPercent: taxPercent,
-        openingStock: openingStock,
-      );
-      if (_disposed) return;
+    final res = await _send('quickAdd', {
+      'saleId': _saleId,
+      'code': code,
+      'name': name,
+      'sellingPrice': sellingPrice,
+      'taxPercent': ?taxPercent,
+      'openingStock': ?openingStock,
+    });
+    if (_disposed) return;
+    if (res['ok'] == true) {
       _unknownCode = null;
-      _apply(s);
-    } catch (e) {
-      if (_disposed) return;
-      _error = e.toString();
-      notifyListeners();
-    }
-  }
-
-  Future<void> setQty(int productId, double quantity) => _run(() => _ds.setQty(_saleId!, productId, quantity));
-  Future<void> removeItem(int productId) => _run(() => _ds.removeItem(_saleId!, productId));
-
-  Future<void> _run(Future<SaleSnapshot> Function() fn) async {
-    if (_saleId == null) return;
-    _error = null;
-    try {
-      final s = await fn();
-      if (_disposed) return;
-      _apply(s);
-    } catch (e) {
-      if (_disposed) return;
-      _error = e.toString();
+      _apply(res['data'] as Map<String, dynamic>);
+    } else {
+      _error = _human(res['error']);
       notifyListeners();
     }
   }
@@ -249,16 +256,29 @@ class PosSaleClient extends ChangeNotifier {
   Future<void> checkout(String mode) async {
     if (_saleId == null) return;
     _error = null;
-    try {
-      final invoiceNo = await _ds.checkout(_saleId!, mode);
-      if (_disposed) return;
-      _checkoutInvoiceNo = invoiceNo;
+    final res = await _send('checkout', {
+      'saleId': _saleId,
+      'tender': {'mode': mode},
+    });
+    if (_disposed) return;
+    if (res['ok'] == true) {
+      _checkoutInvoiceNo = (res['data'] as Map<String, dynamic>)['invoiceNo'] as String? ?? '—';
       notifyListeners();
-    } catch (e) {
-      if (_disposed) return;
-      _error = e.toString();
+    } else {
+      _error = _human(res['error']);
       notifyListeners();
     }
+  }
+
+  void clearUnknown() {
+    _unknownCode = null;
+    notifyListeners();
+  }
+
+  String _human(dynamic error) {
+    final e = error?.toString() ?? '';
+    if (e == 'offline' || e == 'timeout' || e == 'disconnected') return 'Reconnecting…';
+    return e.isEmpty ? 'Something went wrong.' : e;
   }
 
   void _setStatus(PosConnStatus s) {
@@ -271,6 +291,11 @@ class PosSaleClient extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     _retry?.cancel();
+    for (final t in _pendingTimers.values) {
+      t.cancel();
+    }
+    _pendingTimers.clear();
+    _pending.clear();
     _sub?.cancel();
     _channel?.sink.close();
     super.dispose();
