@@ -15,7 +15,7 @@ export function PosTillView() {
   const [code, setCode] = useState("");
 
   if (pos.checkout) {
-    return <CheckoutDone invoiceNo={pos.checkout.invoice.invoiceNo} total={pos.checkout.invoice.total} />;
+    return <CheckoutDone invoiceNo={pos.checkout.invoiceNo} total={pos.checkout.total} />;
   }
 
   const lines = pos.snapshot?.lines ?? [];

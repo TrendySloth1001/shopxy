@@ -9,7 +9,7 @@ import { paymentGatewayService } from '../modules/payment-gateway/index.js';
 import { reconcileStaleTransfers } from '../modules/payment-gateway/settlement/transfer-reconcile.js';
 import { isRouteSplitEnabled } from '../modules/payment-gateway/settlement/order-split.js';
 import { linkedAccountsService } from '../modules/linked-accounts/linked-accounts.service.js';
-import { posService } from '../modules/pos/pos.service.js';
+import { sweepStaleSales } from '../modules/pos/pos.service.js';
 import { tryAcquireJobLock } from './redis.js';
 
 /// Lightweight in-process cron registry. We deliberately stay on
@@ -59,7 +59,7 @@ export function startScheduler(): void {
   jobs.push(
     cron.schedule('30 * * * *', () =>
       runSafely('pos:sweep-stale-sales', () =>
-        posService.sweepStaleSales(new Date(Date.now() - 6 * 60 * 60 * 1000)),
+        sweepStaleSales(new Date(Date.now() - 6 * 60 * 60 * 1000)),
       ),
     ),
   );

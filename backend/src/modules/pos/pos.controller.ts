@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
-import { posService } from './pos.service.js';
+import * as pos from './pos.service.js';
 import { hasRight, manageRight } from '../../shared/http/permissions.js';
 import { issueScanTicket } from '../scan-console/scan-console.service.js';
 
@@ -83,15 +83,15 @@ class PosController {
       res.status(400).json({ error: 'Invalid sale', issues: parsed.error.issues });
       return;
     }
-    sendSnapshot(res, await posService.openSale(req.shopId!, req.user!.sub, parsed.data), 201);
+    sendSnapshot(res, await pos.openSale(req.shopId!, req.user!.sub, parsed.data), 201);
   }
 
   async listOpenSales(req: Request, res: Response): Promise<void> {
-    res.json(await posService.listOpenSales(req.shopId!));
+    res.json(await pos.listOpenSales(req.shopId!));
   }
 
   async getSale(req: Request, res: Response): Promise<void> {
-    const result = await posService.snapshot(req.shopId!, saleId(req));
+    const result = await pos.snapshot(req.shopId!, saleId(req));
     if ('error' in result) {
       res.status(404).json(result);
       return;
@@ -105,7 +105,7 @@ class PosController {
       res.status(400).json({ error: 'A scanned "code" is required' });
       return;
     }
-    const result = await posService.addScan(req.shopId!, saleId(req), parsed.data.code, req.user!.sub, parsed.data.opId);
+    const result = await pos.addScan(req.shopId!, saleId(req), parsed.data.code, req.user!.sub, parsed.data.opId);
     // Unknown code → 200 with { unknown } so the till can offer Quick add.
     sendSnapshot(res, result);
   }
@@ -118,7 +118,7 @@ class PosController {
     }
     sendSnapshot(
       res,
-      await posService.addProduct(req.shopId!, saleId(req), parsed.data.productId, parsed.data.quantity, req.user!.sub, parsed.data.opId),
+      await pos.addProduct(req.shopId!, saleId(req), parsed.data.productId, parsed.data.quantity, req.user!.sub, parsed.data.opId),
     );
   }
 
@@ -132,15 +132,15 @@ class PosController {
     const pId = productId(req);
     const { quantity, lineDiscount, unitPrice } = parsed.data;
     // Apply in a stable order; each returns a snapshot, last one wins as response.
-    let result: Awaited<ReturnType<typeof posService.setQty>> | undefined;
-    if (unitPrice != null) result = await posService.setUnitPrice(req.shopId!, sId, pId, unitPrice);
-    if (lineDiscount != null) result = await posService.setLineDiscount(req.shopId!, sId, pId, lineDiscount);
-    if (quantity != null) result = await posService.setQty(req.shopId!, sId, pId, quantity);
+    let result: Awaited<ReturnType<typeof pos.setQty>> | undefined;
+    if (unitPrice != null) result = await pos.setUnitPrice(req.shopId!, sId, pId, unitPrice);
+    if (lineDiscount != null) result = await pos.setLineDiscount(req.shopId!, sId, pId, lineDiscount);
+    if (quantity != null) result = await pos.setQty(req.shopId!, sId, pId, quantity);
     sendSnapshot(res, result!);
   }
 
   async removeItem(req: Request, res: Response): Promise<void> {
-    sendSnapshot(res, await posService.removeLine(req.shopId!, saleId(req), productId(req)));
+    sendSnapshot(res, await pos.removeLine(req.shopId!, saleId(req), productId(req)));
   }
 
   /// Quick-add a brand-new product from an unknown scan, then add it to the cart.
@@ -156,7 +156,7 @@ class PosController {
       res.status(400).json({ error: 'Invalid product', issues: parsed.error.issues });
       return;
     }
-    sendSnapshot(res, await posService.quickAddProduct(req.shopId!, saleId(req), parsed.data, req.user!.sub), 201);
+    sendSnapshot(res, await pos.quickAddProduct(req.shopId!, saleId(req), parsed.data, req.user!.sub), 201);
   }
 
   async patchSale(req: Request, res: Response): Promise<void> {
@@ -166,14 +166,14 @@ class PosController {
       return;
     }
     if (parsed.data.headerDiscount == null) {
-      sendSnapshot(res, await posService.snapshot(req.shopId!, saleId(req)));
+      sendSnapshot(res, await pos.snapshot(req.shopId!, saleId(req)));
       return;
     }
-    sendSnapshot(res, await posService.setHeaderDiscount(req.shopId!, saleId(req), parsed.data.headerDiscount));
+    sendSnapshot(res, await pos.setHeaderDiscount(req.shopId!, saleId(req), parsed.data.headerDiscount));
   }
 
   async voidSale(req: Request, res: Response): Promise<void> {
-    const result = await posService.voidSale(req.shopId!, saleId(req));
+    const result = await pos.voidSale(req.shopId!, saleId(req));
     if ('error' in result) {
       res.status(400).json(result);
       return;
@@ -187,7 +187,7 @@ class PosController {
       res.status(400).json({ error: 'Invalid checkout', issues: parsed.error.issues });
       return;
     }
-    const result = await posService.checkout(req.shopId!, saleId(req), parsed.data, req.user!.sub);
+    const result = await pos.checkout(req.shopId!, saleId(req), parsed.data, req.user!.sub);
     if ('error' in result) {
       res.status(409).json(result);
       return;
