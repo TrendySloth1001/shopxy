@@ -1093,7 +1093,10 @@ class _PulseLegendSkeleton extends StatelessWidget {
               radius: AppSizes.radiusFull,
             ),
             SizedBox(width: AppSizes.sm),
-            AppShimmerLine(widthFactor: 0.55, height: 18),
+            // Expanded so the bar fills the remaining (narrow) column width
+            // rather than taking a fraction of the LimitedBox fallback, which
+            // would overflow this ~125px legend column.
+            Expanded(child: AppShimmerLine(widthFactor: 0.55, height: 18)),
           ],
         ),
         SizedBox(height: 2),
