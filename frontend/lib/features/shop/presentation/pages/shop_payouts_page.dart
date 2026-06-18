@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:shopxy/core/network/api_client.dart';
 import 'package:shopxy/features/shop/data/datasources/linked_account_remote_data_source.dart';
 import 'package:shopxy/features/shop/data/datasources/onboarding_draft_store.dart';
+import 'package:shopxy/features/shop/presentation/pages/connect_linked_account_page.dart';
 import 'package:shopxy/features/shop/presentation/providers/linked_account_provider.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
@@ -265,7 +266,21 @@ class _ShopPayoutsPageState extends State<ShopPayoutsPage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(title: const Text('Payouts & settlement')),
+      appBar: AppBar(
+        title: const Text('Payouts & settlement'),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              final linked = await Navigator.push<bool>(
+                context,
+                MaterialPageRoute(builder: (_) => const ConnectLinkedAccountPage()),
+              );
+              if (linked == true && mounted) await _load(refresh: true);
+            },
+            child: const Text('Connect existing'),
+          ),
+        ],
+      ),
       body: _loading
           ? const _PayoutsWizardSkeleton()
           : _status != null

@@ -4,7 +4,7 @@
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-const { linkedAccount, createLinkedAccount, fetchAccountStatus, provider } = vi.hoisted(() => {
+const { linkedAccount, createLinkedAccount, fetchAccountStatus, fetchAccount, provider } = vi.hoisted(() => {
   const linkedAccount = {
     findUnique: vi.fn(),
     upsert: vi.fn(),
@@ -14,8 +14,9 @@ const { linkedAccount, createLinkedAccount, fetchAccountStatus, provider } = vi.
   };
   const createLinkedAccount = vi.fn();
   const fetchAccountStatus = vi.fn();
-  const provider = { name: 'RAZORPAY', createLinkedAccount, fetchAccountStatus };
-  return { linkedAccount, createLinkedAccount, fetchAccountStatus, provider };
+  const fetchAccount = vi.fn();
+  const provider = { name: 'RAZORPAY', createLinkedAccount, fetchAccountStatus, fetchAccount };
+  return { linkedAccount, createLinkedAccount, fetchAccountStatus, fetchAccount, provider };
 });
 
 vi.mock('../../src/infra/db/prisma.js', () => ({ default: { linkedAccount } }));
@@ -136,6 +137,62 @@ describe('startOnboarding', () => {
       where: { shopId: 7, kycStatus: 'CREATING' },
       data: { kycStatus: 'CREATED' },
     });
+  });
+});
+
+describe('connect existing account', () => {
+  const DETAILS = {
+    accountId: 'acc_LIVE',
+    kycStatus: 'ACTIVATED',
+    payoutsEnabled: true,
+    email: 'm@shop.test',
+    legalBusinessName: 'Shop LLP',
+    contactName: 'Owner',
+    businessType: 'partnership',
+  };
+
+  it('verifyConnect fetches + returns details without writing', async () => {
+    fetchAccount.mockResolvedValue(DETAILS);
+    const r = await linkedAccountsService.verifyConnect('acc_LIVE');
+    expect(r).toEqual({ ok: true, details: DETAILS });
+    expect(linkedAccount.upsert).not.toHaveBeenCalled();
+    expect(linkedAccount.update).not.toHaveBeenCalled();
+  });
+
+  it('verifyConnect → NOT_FOUND when the account fetch fails (bad/foreign id)', async () => {
+    fetchAccount.mockRejectedValue(new Error('razorpay 400'));
+    const r = await linkedAccountsService.verifyConnect('acc_NOPE');
+    expect(r).toEqual({ error: 'NOT_FOUND' });
+  });
+
+  it('confirmConnect stores the account with mapper-derived status', async () => {
+    linkedAccount.findUnique.mockResolvedValue(null); // no prior account
+    fetchAccount.mockResolvedValue(DETAILS);
+    linkedAccount.upsert.mockResolvedValue(
+      row({ providerAccountId: 'acc_LIVE', kycStatus: 'ACTIVATED', payoutsEnabled: true }),
+    );
+
+    const r = await linkedAccountsService.confirmConnect(7, 'acc_LIVE');
+
+    expect(r).toMatchObject({ ok: true, account: { providerAccountId: 'acc_LIVE', payoutsEnabled: true } });
+    const data = (linkedAccount.upsert.mock.calls[0][0] as { update: Record<string, unknown> }).update;
+    expect(data).toMatchObject({ providerAccountId: 'acc_LIVE', payoutsEnabled: true });
+  });
+
+  it('confirmConnect rejects when a DIFFERENT account is already linked', async () => {
+    linkedAccount.findUnique.mockResolvedValue({ providerAccountId: 'acc_OTHER' });
+    const r = await linkedAccountsService.confirmConnect(7, 'acc_LIVE');
+    expect(r).toEqual({ error: 'ALREADY_LINKED' });
+    expect(fetchAccount).not.toHaveBeenCalled();
+    expect(linkedAccount.upsert).not.toHaveBeenCalled();
+  });
+
+  it('confirmConnect is idempotent for the SAME account id', async () => {
+    linkedAccount.findUnique.mockResolvedValue({ providerAccountId: 'acc_LIVE' });
+    fetchAccount.mockResolvedValue(DETAILS);
+    linkedAccount.upsert.mockResolvedValue(row({ providerAccountId: 'acc_LIVE', payoutsEnabled: true }));
+    const r = await linkedAccountsService.confirmConnect(7, 'acc_LIVE');
+    expect(r).toMatchObject({ ok: true });
   });
 });
 
