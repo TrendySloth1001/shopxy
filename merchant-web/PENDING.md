@@ -391,6 +391,24 @@ this should be revisited.
   Trigger: when platform-curated banners are needed, build an admin screen reusing
   `features/banners/` (point its api at `/api/admin/banners`).
 
+## Scan console (prototype)
+
+- [ ] **WS goes direct to the backend (steps outside the BFF).** The live Scan
+  console (`features/scan-console/`, `/dashboard/scan-console`) opens a WebSocket
+  straight to the backend via `NEXT_PUBLIC_BACKEND_WS_URL`, because Next 16's App
+  Router can't proxy a WS upgrade. This is the one place the browser talks to the
+  backend directly. Mitigation in place: the JWT is never exposed — the browser
+  authenticates the socket with a single-use, 30s ticket minted at
+  `POST /api/scan-console/ticket` (cookie-authed via the BFF). **Production-correct
+  path:** terminate the WS on the same origin (reverse-proxy `/ws/*` → backend at
+  the ingress, or a thin custom server) so the backend origin isn't shipped to the
+  client. Trigger: hardening this beyond a dev prototype, or first prod deploy.
+- [ ] **Single-instance only.** The backend scan hub + tickets are in-process
+  (`backend/src/modules/scan-console/scan-console.service.ts`). Behind >1 node a
+  scan won't reach a console on another instance, and a ticket minted on one node
+  is unknown to another. Trigger: multi-instance deploy → move the room fan-out
+  and ticket store to Redis pub/sub keyed by shopId.
+
 ## Cross-app
 
 - [ ] **Keep tokens + auth + CLAUDE.md in sync with `customer-web`** when changing
