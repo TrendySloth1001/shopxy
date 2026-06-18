@@ -44,6 +44,25 @@ class PosRemoteDataSource {
     return ScanOutcome(snapshot: SaleSnapshot.fromJson(body));
   }
 
+  /// Quick-add a new product (from an unknown scan) and add it to the cart.
+  Future<SaleSnapshot> quickAdd(
+    int saleId, {
+    required String code,
+    required String name,
+    required double sellingPrice,
+    double? taxPercent,
+    double? openingStock,
+  }) async {
+    final r = await _client.post('/me/pos/sales/$saleId/quick-add', body: {
+      'code': code,
+      'name': name,
+      'sellingPrice': sellingPrice,
+      'taxPercent': ?taxPercent,
+      'openingStock': ?openingStock,
+    });
+    return _snap(r, 'Quick add');
+  }
+
   Future<SaleSnapshot> setQty(int saleId, int productId, double quantity) async {
     final r = await _client.patch('/me/pos/sales/$saleId/items/$productId', body: {'quantity': quantity});
     return _snap(r, 'Update quantity');

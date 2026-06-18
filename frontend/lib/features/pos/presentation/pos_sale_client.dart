@@ -155,6 +155,32 @@ class PosSaleClient extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> quickAdd({
+    required String code,
+    required String name,
+    required double sellingPrice,
+    double? taxPercent,
+    double? openingStock,
+  }) async {
+    if (_saleId == null) return;
+    _error = null;
+    try {
+      _snapshot = await _ds.quickAdd(
+        _saleId!,
+        code: code,
+        name: name,
+        sellingPrice: sellingPrice,
+        taxPercent: taxPercent,
+        openingStock: openingStock,
+      );
+      _unknownCode = null;
+      notifyListeners();
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+    }
+  }
+
   Future<void> setQty(int productId, double quantity) => _run(() => _ds.setQty(_saleId!, productId, quantity));
   Future<void> removeItem(int productId) => _run(() => _ds.removeItem(_saleId!, productId));
 
