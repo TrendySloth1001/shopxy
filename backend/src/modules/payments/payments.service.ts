@@ -243,6 +243,43 @@ export class PaymentsService {
     );
   }
 
+  /// POS support: record a full RECEIPT against a just-created invoice inside a
+  /// caller-provided transaction, so the POS checkout (invoice + stock +
+  /// payment) commits all-or-nothing. No outstanding re-check — the invoice was
+  /// created in this same transaction for exactly `amount`. The idempotency key
+  /// (`POS:<saleId>:PAY`) guards retries.
+  async recordReceiptInTx(
+    tx: Prisma.TransactionClient,
+    input: {
+      shopId: number;
+      amount: number;
+      mode: string;
+      modeReference?: string | null;
+      invoiceId: number;
+      partyId?: number | null;
+      createdById?: number | null;
+      idempotencyKey?: string | null;
+    },
+  ) {
+    const { referenceNo } = await nextPaymentRef(input.shopId, 'RECEIPT', new Date(), tx);
+    return tx.payment.create({
+      data: {
+        shopId: input.shopId,
+        type: 'RECEIPT',
+        referenceNo,
+        amount: new Prisma.Decimal(input.amount),
+        mode: input.mode,
+        modeReference: input.modeReference ?? null,
+        paymentDate: new Date(),
+        partyId: input.partyId ?? null,
+        vendorId: null,
+        invoiceId: input.invoiceId,
+        createdById: input.createdById ?? null,
+        idempotencyKey: input.idempotencyKey ?? null,
+      },
+    });
+  }
+
   async listPayments(
     shopId: number,
     options: {
