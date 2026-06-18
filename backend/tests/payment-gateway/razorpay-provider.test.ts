@@ -484,7 +484,8 @@ describe('RazorpayProvider — onboarding (Accounts /v2)', () => {
       bankIfsc: 'HDFC0001234',
     });
 
-    expect(res).toEqual({ providerAccountId: 'acc_NEW', kycStatus: 'CREATED', payoutsEnabled: false });
+    // Razorpay Route `created` is the individual-account active state → payout-ready.
+    expect(res).toEqual({ providerAccountId: 'acc_NEW', kycStatus: 'ACTIVATED', payoutsEnabled: true });
     expect(fetchSpy).toHaveBeenCalledTimes(3);
 
     // 1) create account — identity + profile + legal_info (PAN/GST).

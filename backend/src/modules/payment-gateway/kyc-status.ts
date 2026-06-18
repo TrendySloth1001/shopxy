@@ -19,6 +19,14 @@ export function mapProviderKyc(providerStatus: string): KycState {
   switch (providerStatus) {
     case 'activated':
     case 'funds_released':
+    // Razorpay INDIVIDUAL Route linked accounts use `created` as their terminal,
+    // ready-to-receive-transfers state (they never move to `activated` — that's
+    // the business-account path after full KYC). The dashboard shows such an
+    // account as "Activated" while the v2 API reports `created`. Treating
+    // `created` as payout-ready matches Razorpay's behaviour (verified against a
+    // working production Route integration) — without this, a live, dashboard-
+    // activated individual account is wrongly gated off.
+    case 'created':
       return { kycStatus: 'ACTIVATED', payoutsEnabled: true };
     case 'under_review':
       return { kycStatus: 'UNDER_REVIEW', payoutsEnabled: false };
