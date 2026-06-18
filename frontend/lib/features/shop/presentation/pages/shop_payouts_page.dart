@@ -959,7 +959,9 @@ class _StatusSection extends StatelessWidget {
                 Icons.error_outline,
               ),
             'SUSPENDED' => ('Suspended — contact support', AppColors.error, Icons.block),
-            _ => ('Under review by Razorpay', AppColors.info, Icons.hourglass_top_rounded),
+            'UNDER_REVIEW' => ('Under review by Razorpay', AppColors.info, Icons.hourglass_top_rounded),
+            // 'created' (and anything else) = not yet submitted/activated for Route.
+            _ => ('Not activated yet — finish KYC at Razorpay', AppColors.warning, Icons.pending_outlined),
           };
 
     return Padding(
@@ -987,8 +989,9 @@ class _StatusSection extends StatelessWidget {
             activated
                 ? 'Your settlement account is verified. Order + UPI payouts will '
                     'land in your bank.'
-                : 'Razorpay is still reviewing this account. We show the status we '
-                    'last fetched — tap refresh to re-check live.',
+                : 'This account is not payout-enabled yet (Razorpay status: '
+                    '${status!.kycStatus.toLowerCase()}). Finish its Route KYC in the '
+                    'Razorpay dashboard, then tap refresh to re-check live.',
             style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
           ),
           const SizedBox(height: AppSizes.lg),
