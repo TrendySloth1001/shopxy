@@ -56,6 +56,7 @@ export async function nextInvoiceNo(
     | 'CREDIT_NOTE'
     | 'DEBIT_NOTE' = 'TAX_INVOICE',
   invoiceDate: Date = new Date(),
+  tx?: Prisma.TransactionClient,
 ): Promise<{ invoiceNo: string; financialYear: string }> {
   let prefix: string;
   switch (documentType) {
@@ -72,7 +73,7 @@ export async function nextInvoiceNo(
     default:
       prefix = type === 'SALE' ? 'INV' : 'PUR';
   }
-  const { ref, financialYear } = await fyScopedRef(shopId, prefix, invoiceDate);
+  const { ref, financialYear } = await fyScopedRef(shopId, prefix, invoiceDate, tx);
   return { invoiceNo: ref, financialYear };
 }
 
