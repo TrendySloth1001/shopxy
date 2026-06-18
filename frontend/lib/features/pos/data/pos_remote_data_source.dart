@@ -35,9 +35,10 @@ class PosRemoteDataSource {
     return _snap(r, 'Load sale');
   }
 
-  /// Scan a code: resolved + added to the shared cart, or unknown.
-  Future<ScanOutcome> scan(int saleId, String code) async {
-    final r = await _client.post('/me/pos/sales/$saleId/scan', body: {'code': code});
+  /// Scan a code: resolved + added to the shared cart, or unknown. `opId` makes
+  /// a retry idempotent (the server dedupes increments).
+  Future<ScanOutcome> scan(int saleId, String code, {String? opId}) async {
+    final r = await _client.post('/me/pos/sales/$saleId/scan', body: {'code': code, 'opId': ?opId});
     _ok(r, 'Scan');
     final body = jsonDecode(r.body) as Map<String, dynamic>;
     if (body['unknown'] == true) return ScanOutcome(unknownCode: body['code'] as String?);
