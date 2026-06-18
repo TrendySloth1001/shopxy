@@ -53,7 +53,7 @@ export type ScanConsoleEvent =
   | { type: 'ack'; matched: boolean; code: string; name?: string; sku?: string }
   | { type: 'clear'; by: number };
 
-type TaggedWs = WebSocket & { isAlive?: boolean; scanRole?: ScanRole };
+type TaggedWs = WebSocket & { isAlive?: boolean; scanRole?: ScanRole; auth?: WsAuthCtx };
 
 // ── Subscriber hub: shopId → set of live sockets (tagged by role) ─────────────
 
@@ -166,20 +166,56 @@ export async function resolveScan(
 // `POST /me/scan-console/ticket`, then opens the WebSocket with the ticket. The
 // long-lived JWT never travels on the socket / reaches browser JS.
 
-type Ticket = { shopId: number; userId: number; expiresAt: number };
+type Ticket = {
+  shopId: number;
+  userId: number;
+  expiresAt: number;
+  /// Shop role + granted permissions, carried so WS commands can gate the same
+  /// way the REST mount's requireArea did (e.g. POS quick-add needs products:manage).
+  shopRole?: string;
+  permissions?: string[];
+};
 
 const TICKET_TTL_MS = 30_000;
 const tickets = new Map<string, Ticket>();
 
-export function issueScanTicket(shopId: number, userId: number, now: number): string {
+export function issueScanTicket(
+  shopId: number,
+  userId: number,
+  now: number,
+  auth?: { shopRole?: string; permissions?: string[] },
+): string {
   const token = randomBytes(24).toString('hex');
-  tickets.set(token, { shopId, userId, expiresAt: now + TICKET_TTL_MS });
+  tickets.set(token, {
+    shopId,
+    userId,
+    expiresAt: now + TICKET_TTL_MS,
+    shopRole: auth?.shopRole,
+    permissions: auth?.permissions,
+  });
   if (tickets.size > 1_000) {
     for (const [t, entry] of tickets) {
       if (entry.expiresAt <= now) tickets.delete(t);
     }
   }
   return token;
+}
+
+/// Identity + grants attached to a live socket, for WS command authorisation.
+export interface WsAuthCtx {
+  shopId: number;
+  userId: number;
+  shopRole?: string;
+  permissions?: string[];
+}
+
+/// POS (and any future feature) registers a command handler invoked when a
+/// socket sends `{ t: 'cmd', ... }`. Registration (rather than scan-console
+/// importing POS) keeps the dependency one-way and avoids an import cycle.
+type WsCommandHandler = (ws: WebSocket, ctx: WsAuthCtx, msg: Record<string, unknown>) => void;
+let commandHandler: WsCommandHandler | null = null;
+export function registerWsCommandHandler(fn: WsCommandHandler): void {
+  commandHandler = fn;
 }
 
 /** Consume (single-use) and validate a ticket. Returns null if invalid/expired. */
@@ -228,6 +264,7 @@ export function attachScanConsoleWs(server: HttpServer): void {
     wss.handleUpgrade(req, socket, head, (raw) => {
       const ws = raw as TaggedWs;
       const { shopId, userId } = entry;
+      ws.auth = { shopId, userId, shopRole: entry.shopRole, permissions: entry.permissions };
       scanConsoleHub.subscribe(shopId, ws, role);
       const presence = scanConsoleHub.presence(shopId);
       logger.info({ shopId, role, ...presence }, 'scan-console: client connected');
@@ -240,21 +277,24 @@ export function attachScanConsoleWs(server: HttpServer): void {
       // A scanner pushes codes over the socket; resolve + fan out to consoles,
       // and ack back so the phone can confirm each scan reached the server.
       ws.on('message', (data: RawData) => {
-        if (ws.scanRole !== 'scanner') return;
         let msg: unknown;
         try {
           msg = JSON.parse(data.toString());
         } catch {
           return;
         }
-        if (
-          typeof msg !== 'object' ||
-          msg === null ||
-          (msg as { type?: unknown }).type !== 'scan'
-        ) {
+        if (typeof msg !== 'object' || msg === null) return;
+        const m = msg as Record<string, unknown>;
+
+        // POS (and future features) command channel: `{ t:'cmd', reqId, op, … }`.
+        if (m.t === 'cmd') {
+          if (ws.auth && commandHandler) commandHandler(ws, ws.auth, m);
           return;
         }
-        const code = (msg as { code?: unknown }).code;
+
+        // scan-console scanner pushes: `{ type:'scan', code }`.
+        if (ws.scanRole !== 'scanner' || m.type !== 'scan') return;
+        const code = m.code;
         if (typeof code !== 'string' || code.trim() === '') return;
 
         void resolveScan(shopId, code.trim(), userId)

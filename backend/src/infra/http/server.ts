@@ -5,8 +5,9 @@ import { ensureBucket } from '../../modules/upload/upload.service.js';
 import { pingRedis, closeRedis } from '../redis.js';
 import { startScheduler, stopScheduler } from '../scheduler.js';
 import { seedCanonicalCategories } from '../../modules/categories/categories.seed.js';
-import { attachScanConsoleWs } from '../../modules/scan-console/scan-console.service.js';
+import { attachScanConsoleWs, registerWsCommandHandler } from '../../modules/scan-console/scan-console.service.js';
 import { saleBus } from '../../modules/pos/pos.bus.js';
+import { handlePosCommand } from '../../modules/pos/pos.ws.js';
 import { logger } from '../../shared/logging/logger.js';
 import { buildApp } from './app.js';
 
@@ -15,6 +16,9 @@ const app = buildApp();
 // handshake (scan-console live feed). `app.listen()` hides the server, so we
 // create it explicitly and listen on it instead.
 const httpServer = createServer(app);
+// POS commands ride the scan-console socket; register the handler before the
+// server accepts upgrades.
+registerWsCommandHandler(handlePosCommand);
 attachScanConsoleWs(httpServer);
 const port = Number(process.env.PORT) || 3003;
 const host = process.env.HOST || '0.0.0.0';
