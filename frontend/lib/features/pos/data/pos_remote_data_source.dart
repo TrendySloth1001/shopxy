@@ -91,7 +91,6 @@ class PosRemoteDataSource {
     });
     _ok(r, 'Checkout');
     final body = jsonDecode(r.body) as Map<String, dynamic>;
-    final invoice = body['invoice'] as Map<String, dynamic>?;
-    return (invoice?['invoiceNo'] as String?) ?? '—';
+    return (body['invoiceNo'] as String?) ?? '—';
   }
 }
