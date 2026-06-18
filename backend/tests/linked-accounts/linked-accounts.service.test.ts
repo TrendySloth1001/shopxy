@@ -71,7 +71,10 @@ describe('mapProviderKyc (single source of truth)', () => {
     expect(mapProviderKyc('under_review')).toEqual({ kycStatus: 'UNDER_REVIEW', payoutsEnabled: false });
     expect(mapProviderKyc('suspended')).toEqual({ kycStatus: 'SUSPENDED', payoutsEnabled: false });
     expect(mapProviderKyc('funds_held')).toEqual({ kycStatus: 'FUNDS_HELD', payoutsEnabled: false });
-    expect(mapProviderKyc('created')).toEqual({ kycStatus: 'CREATED', payoutsEnabled: false });
+    // Razorpay individual Route accounts use `created` as their terminal active
+    // state (dashboard shows "Activated") — treat it as payout-ready.
+    expect(mapProviderKyc('created')).toEqual({ kycStatus: 'ACTIVATED', payoutsEnabled: true });
+    expect(mapProviderKyc('some_unknown')).toEqual({ kycStatus: 'CREATED', payoutsEnabled: false });
   });
 });
 
