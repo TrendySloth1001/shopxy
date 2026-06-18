@@ -252,6 +252,11 @@ for scan-console (add sale-room messages).
 
 ## 12. Phased delivery
 
+> Status: **P0–P4 implemented and merged to `main`** (single-device → live shared
+> cart on web + Flutter → quick-add → resilient-online → Redis scaling seam).
+> P5 (integrated gateway payments) remains future work.
+
+
 - **P0 — Cart + checkout (no realtime):** `Sale`/`SaleLine` migration,
   `pos.service` (add/qty/remove/discount), checkout reusing invoice+payment+ledger,
   REST endpoints, idempotency. Backend tests for the money path. *Shippable as a

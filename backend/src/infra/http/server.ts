@@ -6,6 +6,7 @@ import { pingRedis, closeRedis } from '../redis.js';
 import { startScheduler, stopScheduler } from '../scheduler.js';
 import { seedCanonicalCategories } from '../../modules/categories/categories.seed.js';
 import { attachScanConsoleWs } from '../../modules/scan-console/scan-console.service.js';
+import { saleBus } from '../../modules/pos/pos.bus.js';
 import { logger } from '../../shared/logging/logger.js';
 import { buildApp } from './app.js';
 
@@ -24,6 +25,9 @@ async function startServer(): Promise<void> {
     await ensureBucket().catch((e) => logger.warn({ err: e }, 'minio bucket init failed'));
     // Best-effort: cache helpers degrade gracefully if Redis is down.
     await pingRedis().catch(() => undefined);
+    // POS live-cart bus: use Redis pub/sub for cross-instance fan-out when Redis
+    // is up, else stay in-memory (single instance). Must run after the ping.
+    saleBus.init();
     // Canonical category taxonomy — idempotent upsert from the
     // checked-in manifest. Best-effort: the server still boots if the
     // seed fails so we don't lock ourselves out of fixing a bad row.
