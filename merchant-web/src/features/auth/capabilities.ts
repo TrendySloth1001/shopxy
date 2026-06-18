@@ -38,6 +38,7 @@ export function canManage(user: AuthUser | null | undefined, area: Area): boolea
  */
 const PATH_AREAS: readonly [string, Area][] = [
   ["/dashboard/products", "products"],
+  ["/dashboard/scan-console", "products"],
   ["/dashboard/custom-fields", "products"],
   ["/dashboard/orders", "orders"],
   ["/dashboard/returns", "orders"],

@@ -35,6 +35,7 @@ import {
   bannersAdminRouter,
   bannersMerchantRouter,
 } from '../../modules/banners/banners.routes.js';
+import { scanConsoleMerchantRouter } from '../../modules/scan-console/scan-console.routes.js';
 import { platformBankOffersAdminRouter } from '../../modules/platform-bank-offers/platform-bank-offers.routes.js';
 import {
   eventsIngestRouter,
@@ -305,6 +306,7 @@ export function buildApp(): express.Express {
     resolveShop,
     carouselWriteLimiter,
   ]);
+  mountMerchant('/me/scan-console', scanConsoleMerchantRouter, [resolveShop]);
   mountMerchant('/me/analytics', analyticsRouter, [resolveShop]);
   mountMerchant('/me/coupons-admin', merchantCouponsRouter, [resolveShop]);
   mountMerchant('/custom-fields', customFieldsRouter);
