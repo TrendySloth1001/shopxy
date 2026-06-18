@@ -162,7 +162,9 @@ function PayoutNudge() {
     void (async () => {
       try {
         const acct = await getPayoutStatus();
-        if (active && (acct?.status ?? "").toUpperCase() !== "ACTIVE") setShow(true);
+        // Nudge until payouts are actually enabled (the real signal); a linked
+        // but still-under-review account still needs attention.
+        if (active && !acct?.payoutsEnabled) setShow(true);
       } catch {
         /* no nudge on failure */
       }
