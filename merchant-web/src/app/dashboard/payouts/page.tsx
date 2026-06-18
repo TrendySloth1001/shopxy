@@ -23,13 +23,31 @@ function tone(status?: string | null): string {
   return (status && STATUS_TONE[status.toUpperCase()]) || "bg-surface-tint text-muted";
 }
 
+// "UNDER_REVIEW" → "Under review"
+function humanStatus(status?: string | null): string {
+  if (!status) return "Unknown";
+  const s = status.replace(/_/g, " ").toLowerCase();
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 export default function PayoutsPage() {
   const [account, setAccount] = useState<PayoutAccount | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [nonce, setNonce] = useState(0);
 
-  const reload = useCallback(() => setNonce((n) => n + 1), []);
+  // refresh=true re-polls Razorpay live (picks up an activation that happened
+  // after we last stored the status).
+  const load = useCallback(async (refresh = false) => {
+    setLoading(true);
+    try {
+      setAccount(await getPayoutStatus({ refresh }));
+      setError(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not load payout status.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -37,9 +55,10 @@ export default function PayoutsPage() {
       setLoading(true);
       try {
         const a = await getPayoutStatus();
-        if (!active) return;
-        setAccount(a);
-        setError(null);
+        if (active) {
+          setAccount(a);
+          setError(null);
+        }
       } catch (e) {
         if (active) setError(e instanceof Error ? e.message : "Could not load payout status.");
       } finally {
@@ -49,7 +68,7 @@ export default function PayoutsPage() {
     return () => {
       active = false;
     };
-  }, [nonce]);
+  }, []);
 
   return (
     <div className="w-full px-lg py-xxl md:px-xxl">
@@ -69,7 +88,7 @@ export default function PayoutsPage() {
         </div>
         <button
           type="button"
-          onClick={reload}
+          onClick={() => void load(true)}
           disabled={loading}
           className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint disabled:text-disabled"
         >
@@ -86,7 +105,7 @@ export default function PayoutsPage() {
           <p className="text-body-md text-muted">{error}</p>
           <button
             type="button"
-            onClick={reload}
+            onClick={() => void load(true)}
             className="inline-flex h-10 items-center rounded-button border border-hairline px-lg text-label-md text-ink transition-colors hover:bg-surface-tint"
           >
             Try again
@@ -99,32 +118,29 @@ export default function PayoutsPage() {
               <Wallet size={22} />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-title-md text-ink">Linked account</p>
-              <p className="text-body-sm text-muted">
-                {account.bankName
-                  ? `${account.bankName}${account.last4 ? ` ····${account.last4}` : ""}`
-                  : "Razorpay Route settlement account"}
-              </p>
+              <p className="text-title-md text-ink">{account.contactName ?? "Linked account"}</p>
+              <p className="text-body-sm text-muted">Razorpay Route settlement account</p>
             </div>
-            <span
-              className={`rounded-full px-sm py-px text-body-sm ${tone(account.status)}`}
-            >
-              {account.status ?? "Unknown"}
+            <span className={`rounded-full px-sm py-px text-body-sm ${tone(account.kycStatus)}`}>
+              {account.payoutsEnabled ? "Payouts enabled" : humanStatus(account.kycStatus)}
             </span>
           </div>
 
           <dl className="mt-lg grid grid-cols-2 gap-x-xxl gap-y-md">
-            {account.accountId ? (
-              <Fact label="Account ID" value={account.accountId} />
-            ) : null}
-            {account.status ? <Fact label="Status" value={account.status} /> : null}
+            {account.providerAccountId ? <Fact label="Account ID" value={account.providerAccountId} /> : null}
+            <Fact label="Name" value={account.contactName ?? "—"} />
+            {account.email ? <Fact label="Email" value={account.email} /> : null}
+            {account.businessType ? <Fact label="Business type" value={account.businessType} /> : null}
+            <Fact label="KYC status" value={humanStatus(account.kycStatus)} />
+            <Fact label="Payouts" value={account.payoutsEnabled ? "Enabled" : "Not enabled yet"} />
           </dl>
 
-          <p className="mt-xl text-body-sm text-muted">
-            To change bank details or re-submit KYC, use the secure onboarding flow
-            in the ShopXY mobile app — sensitive details (PAN, bank account) are
-            captured there and forwarded straight to the payment provider.
-          </p>
+          {!account.payoutsEnabled ? (
+            <p className="mt-xl text-body-sm text-muted">
+              Razorpay is still reviewing this account — this is the status we last fetched.
+              Hit Refresh to re-check live; UPI at the till turns on once payouts are enabled.
+            </p>
+          ) : null}
         </div>
       ) : (
         <div className="flex max-w-content flex-col gap-lg">
@@ -142,7 +158,7 @@ export default function PayoutsPage() {
               </p>
             </div>
           </div>
-          <ConnectAccountCard onLinked={reload} />
+          <ConnectAccountCard onLinked={() => void load(true)} />
         </div>
       )}
     </div>

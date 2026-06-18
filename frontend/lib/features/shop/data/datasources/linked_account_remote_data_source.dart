@@ -9,6 +9,9 @@ class LinkedAccountStatus {
     required this.kycStatus,
     required this.payoutsEnabled,
     this.providerAccountId,
+    this.email,
+    this.contactName,
+    this.businessType,
   });
 
   /// CREATED | UNDER_REVIEW | NEEDS_CLARIFICATION | ACTIVATED | SUSPENDED |
@@ -16,12 +19,18 @@ class LinkedAccountStatus {
   final String kycStatus;
   final bool payoutsEnabled;
   final String? providerAccountId;
+  final String? email;
+  final String? contactName;
+  final String? businessType;
 
   factory LinkedAccountStatus.fromJson(Map<String, dynamic> json) {
     return LinkedAccountStatus(
       kycStatus: (json['kycStatus'] as String?) ?? 'CREATED',
       payoutsEnabled: (json['payoutsEnabled'] as bool?) ?? false,
       providerAccountId: json['providerAccountId'] as String?,
+      email: json['email'] as String?,
+      contactName: json['contactName'] as String?,
+      businessType: json['businessType'] as String?,
     );
   }
 }
