@@ -3,6 +3,7 @@ import prisma from '../../infra/db/prisma.js';
 import { productsService } from '../products/products.service.js';
 import { invoicesService, PosInvoiceError } from '../invoices/invoices.service.js';
 import { paymentsService } from '../payments/payments.service.js';
+import { saleBus } from './pos.bus.js';
 
 /// POS (point-of-sale) service — the server-authoritative shopping cart that the
 /// till(s) mutate via intents, plus the single-transaction checkout that turns a
@@ -168,7 +169,11 @@ class PosService {
       return { ok: true as const };
     });
     if (!res.ok) return { error: res.error };
-    return this.snapshot(shopId, saleId);
+    const snapshot = await this.snapshot(shopId, saleId);
+    // Fan the new cart state to every till on this sale (the other device sees
+    // the change live). Best-effort: realtime is an accelerator, DB is truth.
+    if (!('error' in snapshot)) saleBus.publish(shopId, { type: 'pos.sale', saleId, snapshot });
+    return snapshot;
   }
 
   async openSale(
@@ -313,6 +318,7 @@ class PosService {
     if (!sale) return { error: 'Sale not found' };
     if (sale.status === 'CHECKED_OUT') return { error: 'A checked-out sale cannot be voided' };
     await prisma.sale.update({ where: { id: saleId }, data: { status: 'VOIDED', version: { increment: 1 } } });
+    saleBus.publish(shopId, { type: 'pos.void', saleId });
     return { ok: true };
   }
 
@@ -353,7 +359,7 @@ class PosService {
     }));
 
     try {
-      return await prisma.$transaction(
+      const result = await prisma.$transaction(
         async (tx) => {
           const invoice = await invoicesService.createConfirmedSaleInTx(
             tx,
@@ -386,6 +392,13 @@ class PosService {
         },
         { isolationLevel: 'Serializable' },
       );
+      // Tell every till on this sale it's done (close the cart, show the receipt).
+      saleBus.publish(shopId, {
+        type: 'pos.checkout',
+        saleId,
+        invoiceId: (result.invoice as { id: number }).id,
+      });
+      return result;
     } catch (e) {
       if (e instanceof PosInvoiceError) return { error: e.message, detail: e.detail };
       throw e;
