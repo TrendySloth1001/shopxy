@@ -60,6 +60,14 @@ type SaleWithLines = Prisma.SaleGetPayload<{
 const num = (d: Prisma.Decimal | number | null | undefined): number =>
   d == null ? 0 : typeof d === 'number' ? d : Number(d);
 
+/// Internal checkout control-flow signals (caught in `checkout`, never leak out).
+class AlreadyCheckedOut extends Error {
+  constructor(readonly invoiceId: number) {
+    super('Sale already checked out');
+  }
+}
+class PosCheckoutConflict extends Error {}
+
 class PosService {
   private loadSale(shopId: number, saleId: number): Promise<SaleWithLines | null> {
     return prisma.sale.findFirst({
@@ -170,17 +178,32 @@ class PosService {
     });
     if (!res.ok) return { error: res.error };
     const snapshot = await this.snapshot(shopId, saleId);
-    // Fan the new cart state to every till on this sale (the other device sees
-    // the change live). Best-effort: realtime is an accelerator, DB is truth.
-    if (!('error' in snapshot)) saleBus.publish(shopId, { type: 'pos.sale', saleId, snapshot });
+    // Notify every till on this sale that it changed — carrying only the saleId
+    // and new version, NOT the cart (which holds customer PII + pricing). Tills
+    // re-fetch the shop-gated snapshot when the version advances. Best-effort:
+    // realtime is an accelerator, Postgres is truth.
+    if (!('error' in snapshot)) {
+      saleBus.publish(shopId, { type: 'pos.sale', saleId, version: snapshot.sale.version });
+    }
     return snapshot;
   }
 
+  /// Open a till: reuse the caller's most recent empty OPEN sale if one exists,
+  /// else create one. Reuse stops a fresh empty Sale leaking on every page
+  /// open / refresh / StrictMode double-mount (review H4).
   async openSale(
     shopId: number,
     openedById: number,
     opts?: { partyId?: number; customerName?: string; customerPhone?: string },
   ): Promise<SaleSnapshot | { error: string }> {
+    if (!opts?.partyId && !opts?.customerName && !opts?.customerPhone) {
+      const existing = await prisma.sale.findFirst({
+        where: { shopId, openedById, status: 'OPEN', lines: { none: {} } },
+        orderBy: { updatedAt: 'desc' },
+        select: { id: true },
+      });
+      if (existing) return this.snapshot(shopId, existing.id);
+    }
     const sale = await prisma.sale.create({
       data: {
         shopId,
@@ -193,11 +216,13 @@ class PosService {
     return this.snapshot(shopId, sale.id);
   }
 
-  /// Held/parked carts: every OPEN sale for the shop, with a light summary.
+  /// Held/parked carts: OPEN sales for the shop that actually have items (empty
+  /// carts are abandoned, not held), most-recent first, capped.
   async listOpenSales(shopId: number) {
     const sales = await prisma.sale.findMany({
-      where: { shopId, status: 'OPEN' },
+      where: { shopId, status: 'OPEN', lines: { some: {} } },
       orderBy: { updatedAt: 'desc' },
+      take: 50,
       include: { _count: { select: { lines: true } } },
     });
     return sales.map((s) => ({
@@ -206,6 +231,16 @@ class PosService {
       lineCount: s._count.lines,
       updatedAt: s.updatedAt,
     }));
+  }
+
+  /// Sweep abandoned carts: void OPEN sales with no lines older than the cutoff.
+  /// Called by the scheduler so empties don't accumulate (review H4).
+  async sweepStaleSales(olderThan: Date): Promise<number> {
+    const res = await prisma.sale.updateMany({
+      where: { status: 'OPEN', lines: { none: {} }, updatedAt: { lt: olderThan } },
+      data: { status: 'VOIDED' },
+    });
+    return res.count;
   }
 
   /// Add a scanned code: resolve to a product and bump its line qty (POS-style).
@@ -243,13 +278,16 @@ class PosService {
     // violation INSIDE the tx would abort the whole transaction, so we can't
     // catch-and-continue there). The in-tx insert is the race backstop: a rare
     // concurrent duplicate fails its tx and the client's retry then sees it here.
-    if (opId) {
-      const seen = await prisma.saleOp.findUnique({ where: { saleId_opId: { saleId, opId } } });
+    // Scope the opId to the user so one till on a shared cart can't shadow
+    // another till's op by colliding ids (review L).
+    const scopedOpId = opId ? `${addedById}:${opId}` : undefined;
+    if (scopedOpId) {
+      const seen = await prisma.saleOp.findUnique({ where: { saleId_opId: { saleId, opId: scopedOpId } } });
       if (seen) return this.snapshot(shopId, saleId);
     }
 
     return this.mutate(shopId, saleId, async (tx) => {
-      if (opId) await tx.saleOp.create({ data: { saleId, opId } });
+      if (scopedOpId) await tx.saleOp.create({ data: { saleId, opId: scopedOpId } });
       await tx.saleLine.upsert({
         where: { saleId_productId: { saleId, productId } },
         create: {
@@ -335,7 +373,7 @@ class PosService {
   async quickAddProduct(
     shopId: number,
     saleId: number,
-    input: { code: string; name: string; sellingPrice: number; taxPercent?: number; openingStock?: number },
+    input: { code: string; name: string; sellingPrice: number; costPrice?: number; taxPercent?: number; openingStock?: number },
     userId: number,
   ): Promise<SaleSnapshot | { error: string }> {
     const sale = await prisma.sale.findFirst({ where: { id: saleId, shopId }, select: { status: true } });
@@ -351,7 +389,10 @@ class PosService {
           barcode: input.code,
           mrp: input.sellingPrice,
           sellingPrice: input.sellingPrice,
-          purchasePrice: 0,
+          // Opening stock funds a FIFO cost layer at this price. Default the cost
+          // basis to the selling price (zero margin) rather than 0 — a ₹0 cost
+          // would book 100% phantom margin and ₹0 inventory value (review M1).
+          purchasePrice: input.costPrice ?? input.sellingPrice,
           taxPercent: input.taxPercent ?? 0,
           stockQuantity: input.openingStock ?? 1,
           unit: 'PCS',
@@ -370,10 +411,16 @@ class PosService {
   }
 
   async voidSale(shopId: number, saleId: number): Promise<{ ok: true } | { error: string }> {
-    const sale = await prisma.sale.findFirst({ where: { id: saleId, shopId }, select: { status: true } });
-    if (!sale) return { error: 'Sale not found' };
-    if (sale.status === 'CHECKED_OUT') return { error: 'A checked-out sale cannot be voided' };
-    await prisma.sale.update({ where: { id: saleId }, data: { status: 'VOIDED', version: { increment: 1 } } });
+    // Atomic status-guarded void — no TOCTOU against a concurrent checkout
+    // (which flips OPEN→CHECKED_OUT in its own tx). Only an OPEN row is voided.
+    const res = await prisma.sale.updateMany({
+      where: { id: saleId, shopId, status: 'OPEN' },
+      data: { status: 'VOIDED', version: { increment: 1 } },
+    });
+    if (res.count === 0) {
+      const sale = await prisma.sale.findFirst({ where: { id: saleId, shopId }, select: { id: true } });
+      return { error: sale ? 'Only an open sale can be voided' : 'Sale not found' };
+    }
     saleBus.publish(shopId, { type: 'pos.void', saleId });
     return { ok: true };
   }
@@ -394,17 +441,13 @@ class PosService {
     if (!sale) return { error: 'Sale not found' };
 
     // Idempotent replay: a sale yields exactly one invoice.
-    if (sale.invoiceId) {
-      const invoice = await prisma.invoice.findUnique({ where: { id: sale.invoiceId }, include: { items: true } });
-      const payment = await prisma.payment.findFirst({ where: { invoiceId: sale.invoiceId, type: 'RECEIPT' } });
-      return { invoice, payment, replayed: true };
-    }
+    if (sale.invoiceId) return this.replayCheckout(sale.invoiceId);
     if (sale.status !== 'OPEN') return { error: 'Sale is not open' };
     if (sale.lines.length === 0) return { error: 'Cannot check out an empty sale' };
 
     // SALE invoices require a party (DB XOR constraint); a true walk-in maps to
     // the shop's system "Walk-in Customer". Resolve/commit it BEFORE the tx so
-    // the invoice resolver (which reads parties on the main connection) sees it.
+    // the invoice resolver sees it.
     const partyId = sale.partyId ?? (await this.ensureWalkInParty(shopId));
 
     const items = sale.lines.map((l) => ({
@@ -417,6 +460,18 @@ class PosService {
     try {
       const result = await prisma.$transaction(
         async (tx) => {
+          // Lock the sale row and RE-CHECK inside the tx — the check above ran on
+          // a different connection and is only advisory. Two simultaneous
+          // checkouts on a shared cart serialise here: the loser blocks on the
+          // lock, then sees invoiceId set and replays instead of double-billing.
+          const locked = await tx.$queryRaw<Array<{ invoice_id: number | null; status: string }>>`
+            SELECT invoice_id, status FROM sales WHERE id = ${saleId} AND shop_id = ${shopId} FOR UPDATE
+          `;
+          const row = locked[0];
+          if (!row) throw new PosCheckoutConflict('Sale not found');
+          if (row.invoice_id != null) throw new AlreadyCheckedOut(row.invoice_id);
+          if (row.status !== 'OPEN') throw new PosCheckoutConflict('Sale is not open');
+
           const invoice = await invoicesService.createConfirmedSaleInTx(
             tx,
             {
@@ -436,7 +491,9 @@ class PosService {
             mode: input.tender.mode,
             modeReference: input.tender.modeReference ?? null,
             invoiceId: invoice.id,
-            partyId: sale.partyId ?? null,
+            // Same counterparty as the invoice (incl. the resolved walk-in party)
+            // so the receipt nets against the bill in the party ledger (review H1).
+            partyId,
             createdById: userId,
             idempotencyKey: `POS:${saleId}:PAY`,
           });
@@ -456,9 +513,25 @@ class PosService {
       });
       return result;
     } catch (e) {
+      if (e instanceof AlreadyCheckedOut) return this.replayCheckout(e.invoiceId);
       if (e instanceof PosInvoiceError) return { error: e.message, detail: e.detail };
+      if (e instanceof PosCheckoutConflict) return { error: e.message };
+      // A concurrent winner can also surface as a unique/serialization failure —
+      // re-read and replay rather than 500 on an already-successful sale.
+      const fresh = await prisma.sale.findUnique({ where: { id: saleId }, select: { invoiceId: true } });
+      if (fresh?.invoiceId) return this.replayCheckout(fresh.invoiceId);
       throw e;
     }
+  }
+
+  /// Idempotent checkout replay: return the sale's existing invoice + (live) receipt.
+  private async replayCheckout(invoiceId: number) {
+    const invoice = await prisma.invoice.findUnique({ where: { id: invoiceId }, include: { items: true } });
+    const payment = await prisma.payment.findFirst({
+      where: { invoiceId, type: 'RECEIPT', voidedAt: null },
+      orderBy: { id: 'asc' },
+    });
+    return { invoice, payment, replayed: true as const };
   }
 }
 

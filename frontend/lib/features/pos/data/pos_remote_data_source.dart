@@ -25,6 +25,15 @@ class PosRemoteDataSource {
     return SaleSnapshot.fromJson(jsonDecode(r.body) as Map<String, dynamic>);
   }
 
+  /// Mint a WebSocket ticket from the POS (invoices) area, so a cashier without
+  /// products:manage can still open the live cart (review H3).
+  Future<({String ticket, String path})> requestTicket() async {
+    final r = await _client.post('/me/pos/ticket');
+    _ok(r, 'Ticket');
+    final body = jsonDecode(r.body) as Map<String, dynamic>;
+    return (ticket: body['ticket'] as String, path: body['path'] as String);
+  }
+
   Future<SaleSnapshot> openSale() async {
     final r = await _client.post('/me/pos/sales', body: {});
     return _snap(r, 'Open sale');

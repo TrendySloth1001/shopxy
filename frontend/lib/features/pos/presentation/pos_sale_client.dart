@@ -7,7 +7,6 @@ import 'package:shopxy/core/config/app_config.dart';
 import 'package:shopxy/core/network/api_client.dart';
 import 'package:shopxy/features/pos/data/pos_models.dart';
 import 'package:shopxy/features/pos/data/pos_remote_data_source.dart';
-import 'package:shopxy/features/scan_console/data/scan_console_remote_data_source.dart';
 
 enum PosConnStatus { connecting, live, reconnecting, offline }
 
@@ -20,14 +19,12 @@ class _QueuedScan {
 /// Drives one POS sale on the phone: opens a sale, mirrors the
 /// server-authoritative cart, and stays live across devices over the
 /// scan-console WebSocket (role=console). Scans/edits go over REST (which adds
-/// to the shared cart); the socket delivers the other till's changes.
+/// to the shared cart); the socket sends a version nudge and we re-fetch the
+/// snapshot. The server is the source of truth.
 class PosSaleClient extends ChangeNotifier {
-  PosSaleClient(ApiClient client)
-      : _ds = PosRemoteDataSource(client),
-        _scanDs = ScanConsoleRemoteDataSource(client);
+  PosSaleClient(ApiClient client) : _ds = PosRemoteDataSource(client);
 
   final PosRemoteDataSource _ds;
-  final ScanConsoleRemoteDataSource _scanDs;
 
   PosConnStatus _status = PosConnStatus.connecting;
   PosConnStatus get status => _status;
@@ -44,19 +41,32 @@ class PosSaleClient extends ChangeNotifier {
   String? _checkoutInvoiceNo;
   String? get checkoutInvoiceNo => _checkoutInvoiceNo;
 
+  /// True once the sale closed (here or on another till) — lets the page show a
+  /// terminal state even when this till didn't initiate the checkout.
+  bool get isClosed => _snapshot != null && _snapshot!.status != 'OPEN';
+
   WebSocketChannel? _channel;
   StreamSubscription<dynamic>? _sub;
   Timer? _retry;
   bool _disposed = false;
+  bool _flushing = false;
   int? _saleId;
+  int _appliedVersion = -1;
 
-  // Outbox (P3): scans that failed to send, queued with their opId and replayed
-  // on reconnect (server dedupes by opId, so a lost-response retry is safe).
   final List<_QueuedScan> _outbox = [];
   int _opSeq = 0;
   int get pendingCount => _outbox.length;
 
   String _newOpId() => '${DateTime.now().microsecondsSinceEpoch}-${_opSeq++}';
+
+  /// Apply a snapshot only if it's at least as new as what we've shown — drops
+  /// stale out-of-order responses (e.g. an outbox replay).
+  void _apply(SaleSnapshot s) {
+    if (s.version < _appliedVersion) return;
+    _appliedVersion = s.version;
+    _snapshot = s;
+    notifyListeners();
+  }
 
   Future<void> start() async {
     _disposed = false;
@@ -64,10 +74,10 @@ class PosSaleClient extends ChangeNotifier {
       final s = await _ds.openSale();
       if (_disposed) return;
       _saleId = s.saleId;
-      _snapshot = s;
-      notifyListeners();
+      _apply(s);
       await _connect();
     } catch (e) {
+      if (_disposed) return;
       _error = e.toString();
       _setStatus(PosConnStatus.offline);
     }
@@ -76,7 +86,7 @@ class PosSaleClient extends ChangeNotifier {
   Future<void> _connect() async {
     if (_disposed) return;
     try {
-      final ticket = await _scanDs.requestTicket();
+      final ticket = await _ds.requestTicket();
       if (_disposed) return;
       final wsBase = AppConfig.apiBaseUrl
           .replaceFirst(RegExp(r'^http'), 'ws')
@@ -91,8 +101,7 @@ class PosSaleClient extends ChangeNotifier {
       }
       _setStatus(PosConnStatus.live);
       _sub = channel.stream.listen(_onData, onDone: _onDone, onError: (_) => _onDone());
-      // Self-heal on (re)connect: re-fetch the snapshot (in case we missed
-      // events) and replay any queued scans.
+      // Self-heal on (re)connect: re-fetch the snapshot, then replay queued scans.
       unawaited(_refresh());
       unawaited(_flushOutbox());
     } catch (_) {
@@ -110,18 +119,11 @@ class PosSaleClient extends ChangeNotifier {
       return;
     }
     if (msg['saleId'] != _saleId) return; // only our sale
-    switch (msg['type']) {
-      case 'pos.sale':
-        final snap = msg['snapshot'];
-        if (snap is Map<String, dynamic>) {
-          _snapshot = SaleSnapshot.fromJson(snap);
-          notifyListeners();
-        }
-      case 'pos.checkout':
-        _checkoutInvoiceNo ??= '✓';
-        notifyListeners();
-      case 'pos.void':
-        _refresh();
+    // All POS events are version nudges (no cart contents) — re-fetch the
+    // authoritative snapshot. review M3.
+    final type = msg['type'];
+    if (type == 'pos.sale' || type == 'pos.checkout' || type == 'pos.void') {
+      unawaited(_refresh());
     }
   }
 
@@ -145,8 +147,9 @@ class PosSaleClient extends ChangeNotifier {
   Future<void> _refresh() async {
     if (_saleId == null) return;
     try {
-      _snapshot = await _ds.getSale(_saleId!);
-      notifyListeners();
+      final s = await _ds.getSale(_saleId!);
+      if (_disposed) return;
+      _apply(s);
     } catch (_) {}
   }
 
@@ -158,13 +161,15 @@ class PosSaleClient extends ChangeNotifier {
     final opId = _newOpId();
     try {
       final outcome = await _ds.scan(_saleId!, c, opId: opId);
+      if (_disposed) return;
       if (outcome.isUnknown) {
         _unknownCode = outcome.unknownCode;
+        notifyListeners();
       } else if (outcome.snapshot != null) {
-        _snapshot = outcome.snapshot;
+        _apply(outcome.snapshot!);
       }
-      notifyListeners();
     } catch (_) {
+      if (_disposed) return;
       _outbox.add(_QueuedScan(opId, c));
       _error = 'Offline — scan queued, will sync on reconnect.';
       notifyListeners();
@@ -172,17 +177,22 @@ class PosSaleClient extends ChangeNotifier {
   }
 
   Future<void> _flushOutbox() async {
-    if (_saleId == null) return;
-    while (_outbox.isNotEmpty) {
-      final next = _outbox.first;
-      try {
-        final outcome = await _ds.scan(_saleId!, next.code, opId: next.opId);
-        if (outcome.snapshot != null) _snapshot = outcome.snapshot;
-        _outbox.removeAt(0);
-        notifyListeners();
-      } catch (_) {
-        break; // still offline; retry on next reconnect
+    if (_saleId == null || _flushing) return;
+    _flushing = true;
+    try {
+      while (_outbox.isNotEmpty) {
+        final next = _outbox.first;
+        try {
+          final outcome = await _ds.scan(_saleId!, next.code, opId: next.opId);
+          if (_disposed) return;
+          if (outcome.snapshot != null) _apply(outcome.snapshot!);
+          _outbox.removeAt(0);
+        } catch (_) {
+          break; // still offline; retry on next reconnect
+        }
       }
+    } finally {
+      _flushing = false;
     }
   }
 
@@ -201,7 +211,7 @@ class PosSaleClient extends ChangeNotifier {
     if (_saleId == null) return;
     _error = null;
     try {
-      _snapshot = await _ds.quickAdd(
+      final s = await _ds.quickAdd(
         _saleId!,
         code: code,
         name: name,
@@ -209,9 +219,11 @@ class PosSaleClient extends ChangeNotifier {
         taxPercent: taxPercent,
         openingStock: openingStock,
       );
+      if (_disposed) return;
       _unknownCode = null;
-      notifyListeners();
+      _apply(s);
     } catch (e) {
+      if (_disposed) return;
       _error = e.toString();
       notifyListeners();
     }
@@ -224,9 +236,11 @@ class PosSaleClient extends ChangeNotifier {
     if (_saleId == null) return;
     _error = null;
     try {
-      _snapshot = await fn();
-      notifyListeners();
+      final s = await fn();
+      if (_disposed) return;
+      _apply(s);
     } catch (e) {
+      if (_disposed) return;
       _error = e.toString();
       notifyListeners();
     }
@@ -236,15 +250,19 @@ class PosSaleClient extends ChangeNotifier {
     if (_saleId == null) return;
     _error = null;
     try {
-      _checkoutInvoiceNo = await _ds.checkout(_saleId!, mode);
+      final invoiceNo = await _ds.checkout(_saleId!, mode);
+      if (_disposed) return;
+      _checkoutInvoiceNo = invoiceNo;
       notifyListeners();
     } catch (e) {
+      if (_disposed) return;
       _error = e.toString();
       notifyListeners();
     }
   }
 
   void _setStatus(PosConnStatus s) {
+    if (_disposed) return;
     _status = s;
     notifyListeners();
   }

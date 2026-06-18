@@ -163,7 +163,7 @@ export class InvoicesService {
     data: ResolveInvoiceInput,
     createdById?: number,
   ) {
-    const resolved = await this.resolveInvoiceFields(data);
+    const resolved = await this.resolveInvoiceFields(data, tx);
     if ('error' in resolved) {
       throw new PosInvoiceError(resolved.error);
     }
@@ -228,7 +228,7 @@ export class InvoicesService {
   ///
   /// Query budget: ≤ 4 statements (party + vendor + shop owner + products),
   /// each one bounded — no per-item round trips.
-  private async resolveInvoiceFields(data: ResolveInvoiceInput): Promise<
+  private async resolveInvoiceFields(data: ResolveInvoiceInput, tx?: Prisma.TransactionClient): Promise<
     | { error: string }
     | {
         header: {
@@ -305,6 +305,11 @@ export class InvoicesService {
     }
     let documentType: DocumentType = data.documentType ?? 'TAX_INVOICE';
 
+    // When called inside a transaction (POS checkout), read on the SAME
+    // connection so price/tax/party are resolved within the serializable
+    // boundary that locks stock — not a separate, possibly-stale snapshot.
+    const db = tx ?? prisma;
+
     let partyId: number | null = null;
     let customerName = data.customerName ?? null;
     let customerPhone = data.customerPhone ?? null;
@@ -327,7 +332,7 @@ export class InvoicesService {
     let vendorPanNumber: string | null = null;
 
     if (data.partyId) {
-      const party = await prisma.party.findFirst({
+      const party = await db.party.findFirst({
         where: { id: data.partyId, shopId: data.shopId },
         select: {
           id: true, name: true, phone: true, gstin: true, isActive: true,
@@ -351,7 +356,7 @@ export class InvoicesService {
 
     let resolvedVendorId: number | null = null;
     if (data.vendorId) {
-      const vendor = await prisma.vendor.findFirst({
+      const vendor = await db.vendor.findFirst({
         where: { id: data.vendorId, shopId: data.shopId },
         select: {
           id: true, name: true, phone: true, gstin: true, isActive: true,
@@ -377,7 +382,7 @@ export class InvoicesService {
     // owning Shop's owner User row, not the global "first OWNER" — that
     // pre-multi-tenant query went to whichever merchant was alphabetically
     // first and was the cause of cross-tenant invoice corruption.
-    const shop = await prisma.shop.findUnique({
+    const shop = await db.shop.findUnique({
       where: { id: data.shopId },
       select: {
         owner: {
@@ -428,7 +433,7 @@ export class InvoicesService {
 
     // One findMany regardless of item count — no per-line lookups.
     const productIds = [...new Set(data.items.map((i) => i.productId))];
-    const products = await prisma.product.findMany({
+    const products = await db.product.findMany({
       where: { id: { in: productIds }, shopId: data.shopId },
       select: { id: true, name: true, sku: true, hsnCode: true, unit: true, stockQuantity: true, taxPercent: true, cessRate: true },
     });
@@ -442,7 +447,7 @@ export class InvoicesService {
     // Banner-promo auto-fill: a line where the merchant didn't type a
     // discount inherits the best currently-active banner promo for that
     // product (own shop only). An explicit value (including 0) always wins.
-    const promos = await resolveActiveProductPromos(data.shopId, productIds);
+    const promos = await resolveActiveProductPromos(data.shopId, productIds, tx);
 
     // First pass: each line's gross value (qty * unitPrice) and its own
     // discount, clamped so a single line can never exceed its gross value.
