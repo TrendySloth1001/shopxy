@@ -92,6 +92,25 @@ class ScanConsoleHub {
   }
 
   /**
+   * Broadcast an arbitrary JSON event to every socket in a shop room. Lets other
+   * features that share this socket (e.g. POS live cart) fan out without coupling
+   * their event types here; clients ignore event `type`s they don't recognise.
+   */
+  publishRaw(shopId: number, event: Record<string, unknown>): number {
+    const room = this.rooms.get(shopId);
+    if (!room || room.size === 0) return 0;
+    const data = JSON.stringify(event);
+    let delivered = 0;
+    for (const ws of room) {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(data);
+        delivered += 1;
+      }
+    }
+    return delivered;
+  }
+
+  /**
    * Fan a payload out to the shop's sockets. `role` limits delivery to one side
    * (e.g. scans only go to consoles); omit it to reach everyone. Best-effort.
    */

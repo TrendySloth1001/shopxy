@@ -1,0 +1,49 @@
+import { saleSnapshotSchema, unknownScanSchema, type SaleSnapshot, type TenderMode } from "./types";
+
+async function call(path: string, init?: RequestInit): Promise<unknown> {
+  const res = await fetch(path, {
+    ...init,
+    headers: init?.body ? { "Content-Type": "application/json" } : undefined,
+  });
+  const body = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error((body as { error?: string } | null)?.error ?? "Request failed.");
+  }
+  return body;
+}
+
+const snap = (b: unknown): SaleSnapshot => saleSnapshotSchema.parse(b);
+
+export const posApi = {
+  open: (body?: { customerName?: string; customerPhone?: string }) =>
+    call("/api/pos/sales", { method: "POST", body: JSON.stringify(body ?? {}) }).then(snap),
+
+  get: (saleId: number) => call(`/api/pos/sales/${saleId}`).then(snap),
+
+  /** Returns a snapshot, or `{ unknown, code }` when the scan matched nothing. */
+  scan: async (saleId: number, code: string): Promise<SaleSnapshot | { unknown: true; code: string }> => {
+    const body = await call(`/api/pos/sales/${saleId}/scan`, { method: "POST", body: JSON.stringify({ code }) });
+    const unknown = unknownScanSchema.safeParse(body);
+    if (unknown.success) return unknown.data;
+    return snap(body);
+  },
+
+  addItem: (saleId: number, productId: number, quantity = 1) =>
+    call(`/api/pos/sales/${saleId}/items`, { method: "POST", body: JSON.stringify({ productId, quantity }) }).then(snap),
+
+  patchItem: (saleId: number, productId: number, patch: { quantity?: number; lineDiscount?: number; unitPrice?: number }) =>
+    call(`/api/pos/sales/${saleId}/items/${productId}`, { method: "PATCH", body: JSON.stringify(patch) }).then(snap),
+
+  removeItem: (saleId: number, productId: number) =>
+    call(`/api/pos/sales/${saleId}/items/${productId}`, { method: "DELETE" }).then(snap),
+
+  setHeaderDiscount: (saleId: number, headerDiscount: number) =>
+    call(`/api/pos/sales/${saleId}`, { method: "PATCH", body: JSON.stringify({ headerDiscount }) }).then(snap),
+
+  checkout: (saleId: number, tender: { mode: TenderMode; modeReference?: string }) =>
+    call(`/api/pos/sales/${saleId}/checkout`, { method: "POST", body: JSON.stringify({ tender }) }) as Promise<{
+      invoice: { id: number; invoiceNo: string; total: string };
+      payment: { referenceNo: string; mode: string };
+      replayed?: boolean;
+    }>,
+};
