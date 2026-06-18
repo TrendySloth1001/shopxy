@@ -104,24 +104,36 @@ QRs unpaid past N minutes → `closeQr` + Sale back to `OPEN` (or VOIDED).
   image URL and both already receive `pos.checkout`.
 - Manual cash/card tender path is unchanged.
 
-## The one decision you need to make — settlement target
-A POS sale is **single-merchant**, so no proportional split is needed — but the
-money must reach the merchant:
+## Settlement — Route to the merchant (DECIDED)
+A POS sale is **single-merchant**, so no proportional split — one **Route**
+transfer per sale to the shop's `LinkedAccount` (`acc_XXXX`). The marketplace
+"hold the payout in Razorpay until the merchant signs up" fallback
+(`writeHeldTransferRows` HELD/KYC_GATED) is **NOT used for POS** — in-store money
+must settle immediately, so **POS UPI-QR is gated on the shop already having an
+active linked account**. No account → the "UPI (show QR)" tender is disabled with
+"Connect a payout account first".
 
-- **A. Collect to platform (simplest, works today).** QR money lands in the
-  platform Razorpay account; the platform remits to the merchant out of band
-  (or via existing payouts). No per-merchant KYC needed to start. Good for a
-  pilot; **not** how a real multi-merchant POS should run long-term.
-- **B. Route straight to the merchant (correct, needs onboarding).** Create the
-  QR/transfer against the **merchant's LinkedAccount** (the payout-onboarding
-  flow already exists, gated by `ROUTE_SPLIT_ENABLED` + `payoutsEnabled`). One
-  immediate transfer per sale (no on-hold split needed — single shop). Requires
-  the merchant to have completed KYC.
+### Connect-an-account flow (skip the KYC wizard)
+The merchant can attach an existing Razorpay linked account instead of running
+the 4-step onboarding:
+1. **Enter** their `acc_XXXX`.
+2. **Backend verifies** by *fetching* it — `GET /v2/accounts/acc_XXXX` (Accounts
+   API, a GET — not a webhook). Reject if it doesn't exist / isn't a linked
+   account under our platform / isn't active.
+3. **Confirm**: show the fetched details (business/legal name, status, contact,
+   payouts-enabled) so the merchant confirms it's theirs.
+4. **Store** as the shop's `LinkedAccount` (`providerAccountId = acc_XXXX`,
+   `payoutsEnabled` from the fetched status). Done — no PAN/bank re-entry.
+- Also subscribe to the **`account.activated`** webhook (push) to flip
+  `payoutsEnabled` if the account finishes KYC later.
+- Constraint (Razorpay): the id must be a linked account **under our platform**
+  account — an arbitrary external Razorpay account can't receive Route transfers
+  until it's linked. The GET in step 2 is exactly what enforces this.
 
-Recommendation: **A for the first cut** (ship + validate the QR UX), with the
-`POS` settlement handler written so flipping to **B** is just "create a transfer
-to the shop's linked account in `afterCommit` when `payoutsEnabled`" — the Route
-plumbing for that already exists.
+> Net for POS checkout: require `shop.linkedAccount.payoutsEnabled === true`
+> before offering UPI-QR; the `POS` settlement handler creates one immediate
+> transfer to `providerAccountId` in `afterCommit`. Cash/card tender is
+> unaffected and needs no linked account.
 
 ## Security / correctness (reused)
 - Webhook HMAC verify (fail-closed), exactly-once event claim, captured-amount ==
@@ -133,14 +145,20 @@ plumbing for that already exists.
 - `pay-qr` gated under the POS area (`invoices:manage`); `shopId` server-derived.
 
 ## Phasing
-- **P5.1** adapter `createPosQr`/`fetchQrStatus`/`closeQr` + `QrCapablePort`;
-  `qr_code.credited` mapping; `POS` settlement target + handler; `pay-qr`
-  endpoint + `AWAITING_PAYMENT` lock + cancel. Backend tests (webhook → sale
-  completes; idempotent; amount mismatch rejected). Settlement option **A**.
-- **P5.2** web + Flutter "UPI (show QR)" tender UI (render QR, await `pos.checkout`,
-  cancel). Abandon-sweep for unpaid QRs.
-- **P5.3** settlement option **B** (Route transfer to the merchant's linked
-  account) behind the existing flag.
+- **P5.0 — Connect account** (prerequisite): `POST /me/linked-account/connect
+  {accountId}` → `GET /v2/accounts/:id` verify → return details for confirm →
+  `POST …/confirm` stores the `LinkedAccount`; `account.activated` webhook flips
+  `payoutsEnabled`. Web + Flutter "Connect Razorpay account" screen (enter id →
+  review fetched details → confirm).
+- **P5.1 — Backend QR**: adapter `createPosQr`/`fetchQrStatus`/`closeQr` +
+  `QrCapablePort`; `qr_code.credited` mapping; `POS` settlement target + handler
+  that creates the immediate **Route transfer to the shop's linked account**;
+  `pay-qr` endpoint gated on `payoutsEnabled` + `AWAITING_PAYMENT` lock + cancel.
+  Backend tests (webhook → sale completes + transfer created; idempotent; amount
+  mismatch rejected; gated when no linked account).
+- **P5.2 — Till UI**: web + Flutter "UPI (show QR)" tender (render QR, await
+  `pos.checkout`, cancel), disabled with a "connect payout account" hint when the
+  shop has none. Abandon-sweep closes unpaid QRs and unlocks the cart.
 
 ## Risk notes
 - Razorpay **QR Codes** must be enabled on the account (and UPI on the MID).
