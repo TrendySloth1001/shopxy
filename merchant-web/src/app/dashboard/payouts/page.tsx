@@ -7,6 +7,7 @@ import { Divider } from "@/shared/ui/divider";
 import { getPayoutStatus } from "@/features/shop/api";
 import type { PayoutAccount } from "@/features/shop/schema";
 import { CardsSkeleton } from "@/shared/ui/skeleton";
+import { ConnectAccountCard } from "@/features/payouts/connect-account-card";
 
 const STATUS_TONE: Record<string, string> = {
   ACTIVE: "bg-success-soft text-success",
@@ -126,7 +127,7 @@ export default function PayoutsPage() {
           </p>
         </div>
       ) : (
-        <div className="max-w-content">
+        <div className="flex max-w-content flex-col gap-lg">
           <div className="flex items-start gap-md rounded-md bg-surface-tint px-md py-md">
             <Wallet size={20} className="mt-px shrink-0 text-muted" />
             <div>
@@ -134,13 +135,14 @@ export default function PayoutsPage() {
                 Payout onboarding not started
               </p>
               <p className="mt-px text-body-sm text-muted">
-                Set up bank settlement and KYC in the ShopXY mobile app. The
-                onboarding wizard captures your PAN and bank account securely and
-                forwards them to the payment provider — they’re never stored on the
-                web. Once submitted, this page shows your live status.
+                New to Razorpay? Set up bank settlement and KYC in the ShopXY mobile
+                app — the wizard captures PAN and bank details securely and forwards
+                them to the payment provider. Already have a Razorpay account?
+                Connect it below.
               </p>
             </div>
           </div>
+          <ConnectAccountCard onLinked={reload} />
         </div>
       )}
     </div>
