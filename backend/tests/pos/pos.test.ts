@@ -117,6 +117,34 @@ describe('pos.service — money path', () => {
     }
   });
 
+  it('quick-add creates a sellable product (opening stock) and adds it to the cart', async () => {
+    const ctx = await createTestUser();
+    try {
+      await registerShop(ctx.userId);
+      const opened = snap(await posService.openSale(ctx.shopId, ctx.userId));
+      const saleId = opened.sale.id;
+
+      const added = snap(
+        await posService.quickAddProduct(
+          ctx.shopId,
+          saleId,
+          { code: 'QA-001', name: 'Loose item', sellingPrice: 50, taxPercent: 0, openingStock: 3 },
+          ctx.userId,
+        ),
+      );
+      expect(added.lines).toHaveLength(1);
+      expect(added.lines[0].sku).toBe('QA-001');
+
+      // The freshly-minted product must be checkout-able (opening stock posted).
+      const result = await posService.checkout(ctx.shopId, saleId, { tender: { mode: 'CASH' } }, ctx.userId);
+      expect('error' in result).toBe(false);
+      const product = await prisma.product.findFirst({ where: { shopId: ctx.shopId, sku: 'QA-001' }, select: { stockQuantity: true } });
+      expect(Number(product!.stockQuantity)).toBe(2); // opening 3 − sold 1
+    } finally {
+      await cleanupTestUser(ctx);
+    }
+  });
+
   it('unknown scan returns { unknown } so the till can offer Quick add', async () => {
     const ctx = await createTestUser();
     try {

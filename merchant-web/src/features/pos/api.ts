@@ -37,6 +37,11 @@ export const posApi = {
   removeItem: (saleId: number, productId: number) =>
     call(`/api/pos/sales/${saleId}/items/${productId}`, { method: "DELETE" }).then(snap),
 
+  quickAdd: (
+    saleId: number,
+    input: { code: string; name: string; sellingPrice: number; taxPercent?: number; openingStock?: number },
+  ) => call(`/api/pos/sales/${saleId}/quick-add`, { method: "POST", body: JSON.stringify(input) }).then(snap),
+
   setHeaderDiscount: (saleId: number, headerDiscount: number) =>
     call(`/api/pos/sales/${saleId}`, { method: "PATCH", body: JSON.stringify({ headerDiscount }) }).then(snap),
 

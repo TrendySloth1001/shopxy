@@ -13,6 +13,7 @@ posMerchantRouter.get('/sales', asyncHandler(posController.listOpenSales.bind(po
 posMerchantRouter.get('/sales/:id', asyncHandler(posController.getSale.bind(posController)));
 posMerchantRouter.patch('/sales/:id', asyncHandler(posController.patchSale.bind(posController)));
 posMerchantRouter.post('/sales/:id/scan', asyncHandler(posController.scan.bind(posController)));
+posMerchantRouter.post('/sales/:id/quick-add', asyncHandler(posController.quickAdd.bind(posController)));
 posMerchantRouter.post('/sales/:id/items', asyncHandler(posController.addItem.bind(posController)));
 posMerchantRouter.patch('/sales/:id/items/:productId', asyncHandler(posController.patchItem.bind(posController)));
 posMerchantRouter.delete('/sales/:id/items/:productId', asyncHandler(posController.removeItem.bind(posController)));

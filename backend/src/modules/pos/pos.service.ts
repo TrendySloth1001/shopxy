@@ -313,6 +313,48 @@ class PosService {
     return created.id;
   }
 
+  /// Quick-add (P2): an unknown scan → create a minimal catalog product and add
+  /// it to the open sale. Opening stock is posted via the ledger so the item can
+  /// actually be sold at checkout (a 0-stock product would fail oversell). The
+  /// controller gates this on `products:manage` (creating catalogue is not a
+  /// plain billing action).
+  async quickAddProduct(
+    shopId: number,
+    saleId: number,
+    input: { code: string; name: string; sellingPrice: number; taxPercent?: number; openingStock?: number },
+    userId: number,
+  ): Promise<SaleSnapshot | { error: string }> {
+    const sale = await prisma.sale.findFirst({ where: { id: saleId, shopId }, select: { status: true } });
+    if (!sale) return { error: 'Sale not found' };
+    if (sale.status !== 'OPEN') return { error: 'Sale is not open' };
+
+    let created: unknown;
+    try {
+      created = await productsService.createProduct(
+        {
+          name: input.name,
+          sku: input.code,
+          barcode: input.code,
+          mrp: input.sellingPrice,
+          sellingPrice: input.sellingPrice,
+          purchasePrice: 0,
+          taxPercent: input.taxPercent ?? 0,
+          stockQuantity: input.openingStock ?? 1,
+          unit: 'PCS',
+        },
+        { shopId, createdById: userId },
+      );
+    } catch (e) {
+      // Most likely a duplicate sku/barcode (the code already exists in some shop).
+      return { error: e instanceof Error ? e.message : 'Could not create the product' };
+    }
+    if (created && typeof created === 'object' && 'error' in created) {
+      return { error: String((created as { error: unknown }).error) };
+    }
+    const productId = (created as { id: number }).id;
+    return this.addProduct(shopId, saleId, productId, 1, userId);
+  }
+
   async voidSale(shopId: number, saleId: number): Promise<{ ok: true } | { error: string }> {
     const sale = await prisma.sale.findFirst({ where: { id: saleId, shopId }, select: { status: true } });
     if (!sale) return { error: 'Sale not found' };
