@@ -36,10 +36,11 @@ export function PosTillView() {
         <p className="mt-md rounded-md bg-error-soft px-md py-sm text-body-sm text-error">{pos.error}</p>
       ) : null}
       {pos.unknownCode ? (
-        <div className="mt-md flex items-center justify-between gap-md rounded-md bg-warning-soft px-md py-sm text-body-sm text-warning">
-          <span>No product matches “{pos.unknownCode}”. (Quick-add arrives in P2.)</span>
-          <button type="button" onClick={pos.clearUnknown} className="font-semibold underline">Dismiss</button>
-        </div>
+        <QuickAddForm
+          code={pos.unknownCode}
+          onAdd={(v) => void pos.quickAdd(v)}
+          onCancel={pos.clearUnknown}
+        />
       ) : null}
 
       <form
@@ -146,6 +147,55 @@ function CheckoutPanel({ totals, disabled, onCheckout }: { totals: NonNullable<R
         ))}
       </div>
     </div>
+  );
+}
+
+function QuickAddForm({
+  code,
+  onAdd,
+  onCancel,
+}: {
+  code: string;
+  onAdd: (v: { code: string; name: string; sellingPrice: number; taxPercent?: number; openingStock?: number }) => void;
+  onCancel: () => void;
+}) {
+  const [name, setName] = useState("");
+  const [price, setPrice] = useState("");
+  const [tax, setTax] = useState("");
+  const [stock, setStock] = useState("1");
+
+  const sellingPrice = Number(price);
+  const valid = name.trim().length > 0 && sellingPrice > 0;
+
+  return (
+    <form
+      className="mt-md rounded-lg border border-hairline bg-surface-tint p-md"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!valid) return;
+        onAdd({
+          code,
+          name: name.trim(),
+          sellingPrice,
+          taxPercent: tax ? Number(tax) : undefined,
+          openingStock: stock ? Number(stock) : undefined,
+        });
+      }}
+    >
+      <p className="text-body-sm text-muted">
+        New item for code <span className="font-semibold text-ink">{code}</span> — add it to the catalogue and the cart.
+      </p>
+      <div className="mt-sm grid grid-cols-2 gap-sm sm:grid-cols-4">
+        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" className="col-span-2 h-10 rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft sm:col-span-1" />
+        <input value={price} onChange={(e) => setPrice(e.target.value)} inputMode="decimal" placeholder="Price ₹" className="h-10 rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
+        <input value={tax} onChange={(e) => setTax(e.target.value)} inputMode="decimal" placeholder="GST %" className="h-10 rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
+        <input value={stock} onChange={(e) => setStock(e.target.value)} inputMode="decimal" placeholder="On hand" className="h-10 rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
+      </div>
+      <div className="mt-sm flex items-center gap-sm">
+        <button type="submit" disabled={!valid} className="inline-flex h-10 items-center rounded-button bg-brand px-lg text-label-md text-white hover:bg-brand-strong disabled:bg-disabled">Add to cart</button>
+        <button type="button" onClick={onCancel} className="inline-flex h-10 items-center rounded-button border border-hairline px-lg text-label-md text-ink hover:bg-surface-tint">Cancel</button>
+      </div>
+    </form>
   );
 }
 

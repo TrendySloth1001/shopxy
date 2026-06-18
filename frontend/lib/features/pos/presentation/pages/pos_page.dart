@@ -44,10 +44,51 @@ class _PosPageState extends State<PosPage> {
       WidgetsBinding.instance.addPostFrameCallback((_) => _showReceipt(inv));
     }
     final unknown = _client.unknownCode;
-    if (unknown != null) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text('No product matches "$unknown" (Quick add: P2)')));
+    if (unknown != null && !_quickAddOpen) {
+      _quickAddOpen = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _showQuickAdd(unknown));
+    }
+  }
+
+  bool _quickAddOpen = false;
+
+  Future<void> _showQuickAdd(String code) async {
+    final nameCtrl = TextEditingController();
+    final priceCtrl = TextEditingController();
+    final taxCtrl = TextEditingController();
+    final stockCtrl = TextEditingController(text: '1');
+    final added = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('New item · $code'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Name')),
+              TextField(controller: priceCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Selling price ₹')),
+              TextField(controller: taxCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'GST % (optional)')),
+              TextField(controller: stockCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'On hand')),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Add')),
+        ],
+      ),
+    );
+    _quickAddOpen = false;
+    final price = double.tryParse(priceCtrl.text.trim());
+    if (added == true && nameCtrl.text.trim().isNotEmpty && price != null && price > 0) {
+      await _client.quickAdd(
+        code: code,
+        name: nameCtrl.text.trim(),
+        sellingPrice: price,
+        taxPercent: double.tryParse(taxCtrl.text.trim()),
+        openingStock: double.tryParse(stockCtrl.text.trim()),
+      );
+    } else {
       _client.clearUnknown();
     }
   }
