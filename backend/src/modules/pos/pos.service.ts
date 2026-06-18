@@ -216,10 +216,11 @@ class PosService {
     saleId: number,
     code: string,
     addedById: number,
+    opId?: string,
   ): Promise<SaleSnapshot | { unknown: true; code: string } | { error: string }> {
     const product = await productsService.lookupProduct(shopId, code);
     if (!product) return { unknown: true as const, code };
-    return this.addProduct(shopId, saleId, product.id, 1, addedById);
+    return this.addProduct(shopId, saleId, product.id, 1, addedById, opId);
   }
 
   async addProduct(
@@ -228,6 +229,7 @@ class PosService {
     productId: number,
     quantity: number,
     addedById: number,
+    opId?: string,
   ): Promise<SaleSnapshot | { error: string }> {
     if (quantity <= 0) return { error: 'Quantity must be positive' };
     const product = await prisma.product.findFirst({
@@ -235,7 +237,19 @@ class PosService {
       select: { id: true, sellingPrice: true },
     });
     if (!product) return { error: 'Product not found in this shop' };
+
+    // Op-id dedupe (P3): scan/add bump quantity, so a retried-after-timeout
+    // request must not apply twice. Pre-check the opId (a Postgres constraint
+    // violation INSIDE the tx would abort the whole transaction, so we can't
+    // catch-and-continue there). The in-tx insert is the race backstop: a rare
+    // concurrent duplicate fails its tx and the client's retry then sees it here.
+    if (opId) {
+      const seen = await prisma.saleOp.findUnique({ where: { saleId_opId: { saleId, opId } } });
+      if (seen) return this.snapshot(shopId, saleId);
+    }
+
     return this.mutate(shopId, saleId, async (tx) => {
+      if (opId) await tx.saleOp.create({ data: { saleId, opId } });
       await tx.saleLine.upsert({
         where: { saleId_productId: { saleId, productId } },
         create: {

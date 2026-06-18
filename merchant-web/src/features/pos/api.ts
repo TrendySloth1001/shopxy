@@ -20,9 +20,10 @@ export const posApi = {
 
   get: (saleId: number) => call(`/api/pos/sales/${saleId}`).then(snap),
 
-  /** Returns a snapshot, or `{ unknown, code }` when the scan matched nothing. */
-  scan: async (saleId: number, code: string): Promise<SaleSnapshot | { unknown: true; code: string }> => {
-    const body = await call(`/api/pos/sales/${saleId}/scan`, { method: "POST", body: JSON.stringify({ code }) });
+  /** Returns a snapshot, or `{ unknown, code }` when the scan matched nothing.
+   * `opId` makes a retry idempotent (the server dedupes increments). */
+  scan: async (saleId: number, code: string, opId?: string): Promise<SaleSnapshot | { unknown: true; code: string }> => {
+    const body = await call(`/api/pos/sales/${saleId}/scan`, { method: "POST", body: JSON.stringify({ code, opId }) });
     const unknown = unknownScanSchema.safeParse(body);
     if (unknown.success) return unknown.data;
     return snap(body);

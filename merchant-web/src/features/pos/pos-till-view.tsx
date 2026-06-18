@@ -30,6 +30,11 @@ export function PosTillView() {
         subtitle="Scan items here or from the app — the cart is shared live. Check out to bill."
       >
         <ConnBadge status={pos.status} />
+        {pos.pending > 0 ? (
+          <span className="inline-flex h-10 items-center gap-xs rounded-button bg-warning-soft px-md text-label-md text-warning">
+            {pos.pending} queued
+          </span>
+        ) : null}
       </PageHeader>
 
       {pos.error ? (
