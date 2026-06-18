@@ -11,6 +11,12 @@ import 'package:shopxy/features/scan_console/data/scan_console_remote_data_sourc
 
 enum PosConnStatus { connecting, live, reconnecting, offline }
 
+class _QueuedScan {
+  _QueuedScan(this.opId, this.code);
+  final String opId;
+  final String code;
+}
+
 /// Drives one POS sale on the phone: opens a sale, mirrors the
 /// server-authoritative cart, and stays live across devices over the
 /// scan-console WebSocket (role=console). Scans/edits go over REST (which adds
@@ -43,6 +49,14 @@ class PosSaleClient extends ChangeNotifier {
   Timer? _retry;
   bool _disposed = false;
   int? _saleId;
+
+  // Outbox (P3): scans that failed to send, queued with their opId and replayed
+  // on reconnect (server dedupes by opId, so a lost-response retry is safe).
+  final List<_QueuedScan> _outbox = [];
+  int _opSeq = 0;
+  int get pendingCount => _outbox.length;
+
+  String _newOpId() => '${DateTime.now().microsecondsSinceEpoch}-${_opSeq++}';
 
   Future<void> start() async {
     _disposed = false;
@@ -77,6 +91,10 @@ class PosSaleClient extends ChangeNotifier {
       }
       _setStatus(PosConnStatus.live);
       _sub = channel.stream.listen(_onData, onDone: _onDone, onError: (_) => _onDone());
+      // Self-heal on (re)connect: re-fetch the snapshot (in case we missed
+      // events) and replay any queued scans.
+      unawaited(_refresh());
+      unawaited(_flushOutbox());
     } catch (_) {
       if (_disposed) return;
       _setStatus(PosConnStatus.reconnecting);
@@ -134,19 +152,37 @@ class PosSaleClient extends ChangeNotifier {
 
   // ── Actions (REST; snapshot adopted from the response) ──
   Future<void> scan(String code) async {
-    if (_saleId == null || code.trim().isEmpty) return;
+    final c = code.trim();
+    if (_saleId == null || c.isEmpty) return;
     _error = null;
+    final opId = _newOpId();
     try {
-      final outcome = await _ds.scan(_saleId!, code.trim());
+      final outcome = await _ds.scan(_saleId!, c, opId: opId);
       if (outcome.isUnknown) {
         _unknownCode = outcome.unknownCode;
       } else if (outcome.snapshot != null) {
         _snapshot = outcome.snapshot;
       }
       notifyListeners();
-    } catch (e) {
-      _error = e.toString();
+    } catch (_) {
+      _outbox.add(_QueuedScan(opId, c));
+      _error = 'Offline — scan queued, will sync on reconnect.';
       notifyListeners();
+    }
+  }
+
+  Future<void> _flushOutbox() async {
+    if (_saleId == null) return;
+    while (_outbox.isNotEmpty) {
+      final next = _outbox.first;
+      try {
+        final outcome = await _ds.scan(_saleId!, next.code, opId: next.opId);
+        if (outcome.snapshot != null) _snapshot = outcome.snapshot;
+        _outbox.removeAt(0);
+        notifyListeners();
+      } catch (_) {
+        break; // still offline; retry on next reconnect
+      }
     }
   }
 

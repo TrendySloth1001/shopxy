@@ -11,7 +11,8 @@ const openSaleSchema = z.object({
   customerPhone: z.string().trim().max(20).optional(),
 });
 
-const scanSchema = z.object({ code: z.string().trim().min(1).max(128) });
+const opId = z.string().trim().min(1).max(64).optional();
+const scanSchema = z.object({ code: z.string().trim().min(1).max(128), opId });
 
 const quickAddSchema = z.object({
   code: z.string().trim().min(1).max(128),
@@ -24,6 +25,7 @@ const quickAddSchema = z.object({
 const addItemSchema = z.object({
   productId: z.number().int().positive(),
   quantity: qty.default(1),
+  opId,
 });
 
 const patchItemSchema = z
@@ -94,7 +96,7 @@ class PosController {
       res.status(400).json({ error: 'A scanned "code" is required' });
       return;
     }
-    const result = await posService.addScan(req.shopId!, saleId(req), parsed.data.code, req.user!.sub);
+    const result = await posService.addScan(req.shopId!, saleId(req), parsed.data.code, req.user!.sub, parsed.data.opId);
     // Unknown code → 200 with { unknown } so the till can offer Quick add.
     sendSnapshot(res, result);
   }
@@ -107,7 +109,7 @@ class PosController {
     }
     sendSnapshot(
       res,
-      await posService.addProduct(req.shopId!, saleId(req), parsed.data.productId, parsed.data.quantity, req.user!.sub),
+      await posService.addProduct(req.shopId!, saleId(req), parsed.data.productId, parsed.data.quantity, req.user!.sub, parsed.data.opId),
     );
   }
 
