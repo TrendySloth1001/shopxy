@@ -2,12 +2,18 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { wsBase } from "@/features/scan-console/api";
-import { posApi } from "./api";
-import { type CheckoutResult, type ConnStatus, type SaleSnapshot, type TenderMode } from "./types";
+import { requestPosTicket } from "./api";
+import {
+  saleSnapshotSchema,
+  unknownScanSchema,
+  checkoutResultSchema,
+  type CheckoutResult,
+  type ConnStatus,
+  type SaleSnapshot,
+  type TenderMode,
+} from "./types";
 
-/** Opaque op-id. `crypto.randomUUID` only exists in secure contexts (HTTPS or
- * localhost); a till reached by bare LAN IP over http would otherwise throw and
- * silently lose the scan — so fall back. (review M4) */
+/** Opaque op-id; falls back when crypto.randomUUID is unavailable (non-secure LAN). */
 function opId(): string {
   try {
     if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
@@ -17,12 +23,16 @@ function opId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
+type CmdResult = { ok: true; data: unknown } | { ok: false; error: string; detail?: unknown };
+type Pending = { resolve: (r: CmdResult) => void; timer: ReturnType<typeof setTimeout> };
+
+const CMD_TIMEOUT_MS = 12_000;
+
 /**
- * Drives one POS sale: opens (or resumes) a sale, mirrors the server-authoritative
- * cart, and keeps it live across devices over the scan-console WebSocket. Every
- * action calls the REST endpoint (which returns the fresh snapshot); the socket
- * sends a version nudge for changes made on the OTHER till and we re-fetch the
- * shop-gated snapshot. The server is the source of truth.
+ * Drives one POS sale ENTIRELY over the WebSocket: every op is a `{t:'cmd',
+ * reqId, op, …}` frame answered with `{t:'res', reqId, ok, data|error}`; the
+ * other till's changes arrive as version-nudge events and we re-fetch via a
+ * `snapshot` command. Server is the source of truth.
  */
 export function usePosSale() {
   const [snapshot, setSnapshot] = useState<SaleSnapshot | null>(null);
@@ -30,58 +40,72 @@ export function usePosSale() {
   const [error, setError] = useState<string | null>(null);
   const [unknownCode, setUnknownCode] = useState<string | null>(null);
   const [checkout, setCheckout] = useState<CheckoutResult | null>(null);
+  const [pending, setPending] = useState(0);
 
-  const saleIdRef = useRef<number | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const closedRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const connectRef = useRef<() => void>(() => {});
-  const openStartedRef = useRef(false);
-  const flushingRef = useRef(false);
-  // Highest sale.version applied — drops stale out-of-order responses.
+  const startedRef = useRef(false);
+  const saleIdRef = useRef<number | null>(null);
   const versionRef = useRef(-1);
-  const outboxRef = useRef<Array<{ opId: string; code: string }>>([]);
-  const [pending, setPending] = useState(0);
+  const pendingCmds = useRef<Map<string, Pending>>(new Map());
+  // Scans that failed while disconnected — replayed on reconnect (opId-deduped).
+  const outboxRef = useRef<Array<{ code: string; id: string }>>([]);
+  const flushingRef = useRef(false);
 
-  // Apply a snapshot only if it's at least as new as what we've shown — a
-  // late/stale response (e.g. an outbox replay) can't clobber a newer cart.
-  const applySnapshot = useCallback((s: SaleSnapshot) => {
-    if (s.sale.version < versionRef.current) return;
-    versionRef.current = s.sale.version;
-    setSnapshot(s);
+  // ── command send / response correlation ──
+  const sendCmd = useCallback((op: string, args: Record<string, unknown> = {}): Promise<CmdResult> => {
+    return new Promise((resolve) => {
+      const ws = wsRef.current;
+      const reqId = opId();
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        resolve({ ok: false, error: "offline" });
+        return;
+      }
+      const timer = setTimeout(() => {
+        pendingCmds.current.delete(reqId);
+        resolve({ ok: false, error: "timeout" });
+      }, CMD_TIMEOUT_MS);
+      pendingCmds.current.set(reqId, { resolve, timer });
+      ws.send(JSON.stringify({ t: "cmd", reqId, op, ...args }));
+    });
   }, []);
 
-  const refreshSnapshot = useCallback(async () => {
+  const applySnapshot = useCallback((raw: unknown) => {
+    const parsed = saleSnapshotSchema.safeParse(raw);
+    if (!parsed.success) return;
+    if (parsed.data.sale.version < versionRef.current) return; // drop stale
+    versionRef.current = parsed.data.sale.version;
+    saleIdRef.current = parsed.data.sale.id;
+    setSnapshot(parsed.data);
+  }, []);
+
+  const refresh = useCallback(async () => {
     const saleId = saleIdRef.current;
     if (saleId == null) return;
-    try {
-      applySnapshot(await posApi.get(saleId));
-    } catch {
-      /* transient; the next event/action re-syncs */
-    }
-  }, [applySnapshot]);
+    const r = await sendCmd("snapshot", { saleId });
+    if (r.ok) applySnapshot(r.data);
+  }, [sendCmd, applySnapshot]);
 
   const flushOutbox = useCallback(async () => {
     const saleId = saleIdRef.current;
     if (saleId == null || flushingRef.current) return;
     flushingRef.current = true;
     try {
-      const queue = outboxRef.current;
-      while (queue.length > 0) {
-        const next = queue[0];
-        try {
-          const r = await posApi.scan(saleId, next.code, next.opId);
-          if (!("unknown" in r)) applySnapshot(r);
-          queue.shift();
-          setPending(queue.length);
-        } catch {
-          break; // still offline; retry on next reconnect
-        }
+      const q = outboxRef.current;
+      while (q.length > 0) {
+        const next = q[0];
+        const r = await sendCmd("scan", { saleId, code: next.code, opId: next.id });
+        if (!r.ok) break; // still offline; retry next reconnect
+        if (!unknownScanSchema.safeParse(r.data).success) applySnapshot(r.data);
+        q.shift();
+        setPending(q.length);
       }
     } finally {
       flushingRef.current = false;
     }
-  }, [applySnapshot]);
+  }, [sendCmd, applySnapshot]);
 
   const scheduleReconnect = useCallback((delay: number) => {
     if (closedRef.current || timerRef.current) return;
@@ -91,19 +115,24 @@ export function usePosSale() {
     }, delay);
   }, []);
 
-  const connectWs = useCallback(async () => {
+  const connect = useCallback(async () => {
     if (closedRef.current) return;
     try {
-      const ticket = await posApi.ticket();
+      const ticket = await requestPosTicket();
       if (closedRef.current) return;
       const ws = new WebSocket(`${wsBase()}${ticket.path}?ticket=${ticket.ticket}&role=console`);
       wsRef.current = ws;
-      ws.onopen = () => {
+
+      ws.onopen = async () => {
         setStatus("live");
-        // Self-heal on (re)connect: re-fetch the snapshot, then replay queued scans.
-        void refreshSnapshot();
+        // First connect → open (reuses an empty sale); reconnect → resume the same sale.
+        const r = saleIdRef.current == null
+          ? await sendCmd("open")
+          : await sendCmd("snapshot", { saleId: saleIdRef.current });
+        if (r.ok) applySnapshot(r.data);
         void flushOutbox();
       };
+
       ws.onmessage = (ev) => {
         let msg: unknown;
         try {
@@ -112,18 +141,32 @@ export function usePosSale() {
           return;
         }
         if (typeof msg !== "object" || msg === null) return;
-        const m = msg as { type?: string; saleId?: number };
-        if (m.saleId !== saleIdRef.current) return; // only our sale
-        // All POS events are version nudges — re-fetch the authoritative snapshot
-        // (events deliberately carry no cart contents). review M3.
-        if (m.type === "pos.sale" || m.type === "pos.checkout" || m.type === "pos.void") {
-          void refreshSnapshot();
+        const m = msg as { t?: string; reqId?: string; type?: string; saleId?: number };
+        if (m.t === "res" && typeof m.reqId === "string") {
+          const p = pendingCmds.current.get(m.reqId);
+          if (p) {
+            clearTimeout(p.timer);
+            pendingCmds.current.delete(m.reqId);
+            p.resolve(m as unknown as CmdResult);
+          }
+          return;
+        }
+        // Version-nudge events for our sale → re-fetch.
+        if ((m.type === "pos.sale" || m.type === "pos.checkout" || m.type === "pos.void") && m.saleId === saleIdRef.current) {
+          void refresh();
         }
       };
+
       ws.onerror = () => ws.close();
       ws.onclose = () => {
         if (closedRef.current) return;
         wsRef.current = null;
+        // Fail any in-flight commands so callers don't hang.
+        for (const [id, p] of pendingCmds.current) {
+          clearTimeout(p.timer);
+          p.resolve({ ok: false, error: "disconnected" });
+          pendingCmds.current.delete(id);
+        }
         setStatus("reconnecting");
         scheduleReconnect(1500);
       };
@@ -132,49 +175,36 @@ export function usePosSale() {
       setStatus("offline");
       scheduleReconnect(2000);
     }
-  }, [scheduleReconnect, flushOutbox, refreshSnapshot]);
+  }, [sendCmd, applySnapshot, flushOutbox, refresh, scheduleReconnect]);
 
   useEffect(() => {
-    connectRef.current = () => void connectWs();
-  }, [connectWs]);
+    connectRef.current = () => void connect();
+  }, [connect]);
 
-  // Open a sale then connect the live channel. Guarded so a fast remount /
-  // StrictMode double-invoke doesn't fire two opens (review H4).
   useEffect(() => {
     closedRef.current = false;
-    if (!openStartedRef.current) {
-      openStartedRef.current = true;
-      void (async () => {
-        try {
-          const s = await posApi.open();
-          saleIdRef.current = s.sale.id;
-          applySnapshot(s);
-          void connectWs();
-        } catch (e) {
-          setError(e instanceof Error ? e.message : "Could not open a sale.");
-          setStatus("offline");
-        }
-      })();
+    if (!startedRef.current) {
+      startedRef.current = true;
+      void connect();
     }
     return () => {
       closedRef.current = true;
       if (timerRef.current) clearTimeout(timerRef.current);
       wsRef.current?.close();
     };
-  }, [connectWs, applySnapshot]);
+  }, [connect]);
 
-  const run = useCallback(
-    async (fn: (saleId: number) => Promise<SaleSnapshot>) => {
+  // ── actions (all over WS) ──
+  const runSnap = useCallback(
+    async (op: string, args: Record<string, unknown>) => {
       const saleId = saleIdRef.current;
       if (saleId == null) return;
       setError(null);
-      try {
-        applySnapshot(await fn(saleId));
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Action failed.");
-      }
+      const r = await sendCmd(op, { saleId, ...args });
+      if (r.ok) applySnapshot(r.data);
+      else setError(r.error === "offline" || r.error === "timeout" || r.error === "disconnected" ? "Reconnecting…" : r.error);
     },
-    [applySnapshot],
+    [sendCmd, applySnapshot],
   );
 
   const scan = useCallback(
@@ -184,49 +214,58 @@ export function usePosSale() {
       if (saleId == null || !c) return;
       setError(null);
       const id = opId();
-      try {
-        const r = await posApi.scan(saleId, c, id);
-        if ("unknown" in r) setUnknownCode(r.code);
-        else applySnapshot(r);
-      } catch {
-        outboxRef.current.push({ opId: id, code: c });
+      const r = await sendCmd("scan", { saleId, code: c, opId: id });
+      if (!r.ok) {
+        outboxRef.current.push({ code: c, id });
         setPending(outboxRef.current.length);
         setError("Offline — scan queued, will sync on reconnect.");
+        return;
+      }
+      if (unknownScanSchema.safeParse(r.data).success) {
+        setUnknownCode(unknownScanSchema.parse(r.data).code);
+      } else {
+        applySnapshot(r.data);
       }
     },
-    [applySnapshot],
+    [sendCmd, applySnapshot],
   );
 
-  const setQty = useCallback((productId: number, quantity: number) => run((id) => posApi.patchItem(id, productId, { quantity })), [run]);
-  const setLineDiscount = useCallback((productId: number, lineDiscount: number) => run((id) => posApi.patchItem(id, productId, { lineDiscount })), [run]);
-  const removeItem = useCallback((productId: number) => run((id) => posApi.removeItem(id, productId)), [run]);
-  const setHeaderDiscount = useCallback((d: number) => run((id) => posApi.setHeaderDiscount(id, d)), [run]);
+  const setQty = useCallback((productId: number, quantity: number) => runSnap("setQty", { productId, quantity }), [runSnap]);
+  const setLineDiscount = useCallback((productId: number, discount: number) => runSnap("setLineDiscount", { productId, discount }), [runSnap]);
+  const removeItem = useCallback((productId: number) => runSnap("removeLine", { productId }), [runSnap]);
+  const setHeaderDiscount = useCallback((discount: number) => runSnap("setHeaderDiscount", { discount }), [runSnap]);
 
   const quickAdd = useCallback(
     async (input: { code: string; name: string; sellingPrice: number; taxPercent?: number; openingStock?: number }) => {
       const saleId = saleIdRef.current;
       if (saleId == null) return;
       setError(null);
-      try {
-        applySnapshot(await posApi.quickAdd(saleId, input));
+      const r = await sendCmd("quickAdd", { saleId, ...input });
+      if (r.ok) {
+        applySnapshot(r.data);
         setUnknownCode(null);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Quick add failed.");
+      } else {
+        setError(r.error);
       }
     },
-    [applySnapshot],
+    [sendCmd, applySnapshot],
   );
 
-  const doCheckout = useCallback(async (mode: TenderMode, modeReference?: string) => {
-    const saleId = saleIdRef.current;
-    if (saleId == null) return;
-    setError(null);
-    try {
-      setCheckout(await posApi.checkout(saleId, { mode, modeReference }));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Checkout failed.");
-    }
-  }, []);
+  const doCheckout = useCallback(
+    async (mode: TenderMode, modeReference?: string) => {
+      const saleId = saleIdRef.current;
+      if (saleId == null) return;
+      setError(null);
+      const r = await sendCmd("checkout", { saleId, tender: { mode, modeReference } });
+      if (r.ok) {
+        const parsed = checkoutResultSchema.safeParse(r.data);
+        if (parsed.success) setCheckout(parsed.data);
+      } else {
+        setError(r.error === "offline" || r.error === "timeout" ? "Couldn't reach the till — please retry." : r.error);
+      }
+    },
+    [sendCmd],
+  );
 
   return {
     snapshot,
