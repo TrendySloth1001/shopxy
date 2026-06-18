@@ -26,6 +26,28 @@ export function usePosSale() {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Indirection so the reconnect timer can call connectWs without a forward ref.
   const connectRef = useRef<() => void>(() => {});
+  // Outbox (P3): scans that failed to send are queued with their opId and
+  // replayed on reconnect; the server dedupes by opId so a lost-response retry
+  // never double-counts.
+  const outboxRef = useRef<Array<{ opId: string; code: string }>>([]);
+  const [pending, setPending] = useState(0);
+
+  const flushOutbox = useCallback(async () => {
+    const saleId = saleIdRef.current;
+    if (saleId == null) return;
+    const queue = outboxRef.current;
+    while (queue.length > 0) {
+      const next = queue[0];
+      try {
+        const r = await posApi.scan(saleId, next.code, next.opId);
+        if (!("unknown" in r)) setSnapshot(r);
+        queue.shift();
+        setPending(queue.length);
+      } catch {
+        break; // still offline; try again on next reconnect
+      }
+    }
+  }, []);
 
   const scheduleReconnect = useCallback((delay: number) => {
     if (closedRef.current || timerRef.current) return;
@@ -42,7 +64,14 @@ export function usePosSale() {
       if (closedRef.current) return;
       const ws = new WebSocket(`${wsBase()}${ticket.path}?ticket=${ticket.ticket}&role=console`);
       wsRef.current = ws;
-      ws.onopen = () => setStatus("live");
+      ws.onopen = () => {
+        setStatus("live");
+        // Self-heal on (re)connect: re-fetch the authoritative snapshot in case
+        // we missed events while disconnected, then replay any queued scans.
+        const saleId = saleIdRef.current;
+        if (saleId != null) void posApi.get(saleId).then(setSnapshot).catch(() => undefined);
+        void flushOutbox();
+      };
       ws.onmessage = (ev) => {
         let msg: unknown;
         try {
@@ -75,7 +104,7 @@ export function usePosSale() {
       setStatus("offline");
       scheduleReconnect(2000);
     }
-  }, [scheduleReconnect]);
+  }, [scheduleReconnect, flushOutbox]);
 
   useEffect(() => {
     connectRef.current = () => void connectWs();
@@ -118,14 +147,19 @@ export function usePosSale() {
   const scan = useCallback(
     async (code: string) => {
       const saleId = saleIdRef.current;
-      if (saleId == null || !code.trim()) return;
+      const c = code.trim();
+      if (saleId == null || !c) return;
       setError(null);
+      const opId = crypto.randomUUID();
       try {
-        const r = await posApi.scan(saleId, code.trim());
+        const r = await posApi.scan(saleId, c, opId);
         if ("unknown" in r) setUnknownCode(r.code);
         else setSnapshot(r);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Scan failed.");
+      } catch {
+        // Queue with the opId; replayed on reconnect, deduped server-side.
+        outboxRef.current.push({ opId, code: c });
+        setPending(outboxRef.current.length);
+        setError("Offline — scan queued, will sync on reconnect.");
       }
     },
     [],
@@ -177,5 +211,6 @@ export function usePosSale() {
     setHeaderDiscount,
     quickAdd,
     doCheckout,
+    pending,
   };
 }

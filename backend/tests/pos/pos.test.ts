@@ -124,22 +124,46 @@ describe('pos.service — money path', () => {
       const opened = snap(await posService.openSale(ctx.shopId, ctx.userId));
       const saleId = opened.sale.id;
 
+      // sku/barcode are globally unique — use a per-run code so re-runs (and
+      // products left behind by invoice FKs) don't collide.
+      const code = `QA-${Date.now()}`;
       const added = snap(
         await posService.quickAddProduct(
           ctx.shopId,
           saleId,
-          { code: 'QA-001', name: 'Loose item', sellingPrice: 50, taxPercent: 0, openingStock: 3 },
+          { code, name: 'Loose item', sellingPrice: 50, taxPercent: 0, openingStock: 3 },
           ctx.userId,
         ),
       );
       expect(added.lines).toHaveLength(1);
-      expect(added.lines[0].sku).toBe('QA-001');
+      expect(added.lines[0].sku).toBe(code);
 
       // The freshly-minted product must be checkout-able (opening stock posted).
       const result = await posService.checkout(ctx.shopId, saleId, { tender: { mode: 'CASH' } }, ctx.userId);
       expect('error' in result).toBe(false);
-      const product = await prisma.product.findFirst({ where: { shopId: ctx.shopId, sku: 'QA-001' }, select: { stockQuantity: true } });
+      const product = await prisma.product.findFirst({ where: { shopId: ctx.shopId, sku: code }, select: { stockQuantity: true } });
       expect(Number(product!.stockQuantity)).toBe(2); // opening 3 − sold 1
+    } finally {
+      await cleanupTestUser(ctx);
+    }
+  });
+
+  it('op-id dedupe: replaying the same scan does not double-count', async () => {
+    const ctx = await createTestUser();
+    try {
+      const product = await createTestProduct(ctx.shopId, { sellingPrice: 20, stockQuantity: 10 });
+      const opened = snap(await posService.openSale(ctx.shopId, ctx.userId));
+      const saleId = opened.sale.id;
+
+      // Same opId twice (simulates a retried request whose first response was lost).
+      await posService.addScan(ctx.shopId, saleId, product.sku, ctx.userId, 'op-abc');
+      const after = snap(await posService.addScan(ctx.shopId, saleId, product.sku, ctx.userId, 'op-abc'));
+      expect(after.lines).toHaveLength(1);
+      expect(after.lines[0].quantity).toBe(1); // not 2 — replay skipped
+
+      // A different opId applies normally.
+      const again = snap(await posService.addScan(ctx.shopId, saleId, product.sku, ctx.userId, 'op-def'));
+      expect(again.lines[0].quantity).toBe(2);
     } finally {
       await cleanupTestUser(ctx);
     }

@@ -872,6 +872,20 @@ model SaleLine {
   @@map("sale_lines")
 }
 
+/// Idempotency ledger for non-idempotent POS intents (scan / add — they bump
+/// quantity, so a blind retry would double-count). The client stamps each such
+/// intent with an opId; the server records it here and skips the apply on
+/// replay. Absolute ops (set-qty, discount, remove) don't need this. (P3.)
+model SaleOp {
+  id        Int      @id @default(autoincrement())
+  saleId    Int      @map("sale_id")
+  opId      String   @map("op_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([saleId, opId])
+  @@map("sale_ops")
+}
+
 model Invoice {
   id                     Int              @id @default(autoincrement())
   /// Owning shop. Invoice numbers reset per shop, so the unique
