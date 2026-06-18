@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import { posService } from './pos.service.js';
+import { hasRight, manageRight } from '../../shared/http/permissions.js';
 
 const qty = z.number().positive().max(100000);
 
@@ -11,6 +12,14 @@ const openSaleSchema = z.object({
 });
 
 const scanSchema = z.object({ code: z.string().trim().min(1).max(128) });
+
+const quickAddSchema = z.object({
+  code: z.string().trim().min(1).max(128),
+  name: z.string().trim().min(1).max(200),
+  sellingPrice: z.number().positive().max(10_000_000),
+  taxPercent: z.number().min(0).max(28).optional(),
+  openingStock: z.number().positive().max(1_000_000).optional(),
+});
 
 const addItemSchema = z.object({
   productId: z.number().int().positive(),
@@ -121,6 +130,22 @@ class PosController {
 
   async removeItem(req: Request, res: Response): Promise<void> {
     sendSnapshot(res, await posService.removeLine(req.shopId!, saleId(req), productId(req)));
+  }
+
+  /// Quick-add a brand-new product from an unknown scan, then add it to the cart.
+  /// Creating catalogue requires products:manage (beyond the POS area's
+  /// invoices:manage), so a cashier can bill but not silently mint products.
+  async quickAdd(req: Request, res: Response): Promise<void> {
+    if (!hasRight(req.user!.shopRole, req.user!.shopPermissions, manageRight('products'))) {
+      res.status(403).json({ error: 'You need product management access to add new products' });
+      return;
+    }
+    const parsed = quickAddSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: 'Invalid product', issues: parsed.error.issues });
+      return;
+    }
+    sendSnapshot(res, await posService.quickAddProduct(req.shopId!, saleId(req), parsed.data, req.user!.sub), 201);
   }
 
   async patchSale(req: Request, res: Response): Promise<void> {

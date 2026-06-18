@@ -136,6 +136,21 @@ export function usePosSale() {
   const removeItem = useCallback((productId: number) => run((id) => posApi.removeItem(id, productId)), [run]);
   const setHeaderDiscount = useCallback((d: number) => run((id) => posApi.setHeaderDiscount(id, d)), [run]);
 
+  const quickAdd = useCallback(
+    async (input: { code: string; name: string; sellingPrice: number; taxPercent?: number; openingStock?: number }) => {
+      const saleId = saleIdRef.current;
+      if (saleId == null) return;
+      setError(null);
+      try {
+        setSnapshot(await posApi.quickAdd(saleId, input));
+        setUnknownCode(null);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Quick add failed.");
+      }
+    },
+    [],
+  );
+
   const doCheckout = useCallback(async (mode: TenderMode, modeReference?: string) => {
     const saleId = saleIdRef.current;
     if (saleId == null) return;
@@ -160,6 +175,7 @@ export function usePosSale() {
     setLineDiscount,
     removeItem,
     setHeaderDiscount,
+    quickAdd,
     doCheckout,
   };
 }
