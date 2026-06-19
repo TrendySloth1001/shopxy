@@ -37,6 +37,7 @@ import {
 } from '../../modules/banners/banners.routes.js';
 import { scanConsoleMerchantRouter } from '../../modules/scan-console/scan-console.routes.js';
 import { posMerchantRouter } from '../../modules/pos/pos.routes.js';
+import { cashierMerchantRouter } from '../../modules/cashier/cashier.routes.js';
 import { platformBankOffersAdminRouter } from '../../modules/platform-bank-offers/platform-bank-offers.routes.js';
 import {
   eventsIngestRouter,
@@ -309,6 +310,7 @@ export function buildApp(): express.Express {
   ]);
   mountMerchant('/me/scan-console', scanConsoleMerchantRouter, [resolveShop]);
   mountMerchant('/me/pos', posMerchantRouter, [resolveShop]);
+  mountMerchant('/me/cashier', cashierMerchantRouter, [resolveShop]);
   mountMerchant('/me/analytics', analyticsRouter, [resolveShop]);
   mountMerchant('/me/coupons-admin', merchantCouponsRouter, [resolveShop]);
   mountMerchant('/custom-fields', customFieldsRouter);

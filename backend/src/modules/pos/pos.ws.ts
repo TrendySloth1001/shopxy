@@ -1,6 +1,8 @@
 import { WebSocket } from 'ws';
 import { z } from 'zod';
 import * as pos from './pos.service.js';
+import * as posPay from './pos.payments.js';
+import { openShiftIdFor } from '../cashier/cashier.service.js';
 import type { WsAuthCtx } from '../scan-console/scan-console.service.js';
 import { hasRight, manageRight } from '../../shared/http/permissions.js';
 import { logger } from '../../shared/logging/logger.js';
@@ -21,7 +23,8 @@ const schemas = {
   open: z.object({ partyId: z.number().int().positive().optional(), customerName: z.string().trim().max(120).optional(), customerPhone: z.string().trim().max(20).optional() }),
   snapshot: z.object({ saleId }),
   listOpen: z.object({}),
-  scan: z.object({ saleId, code: z.string().trim().min(1).max(128), opId }),
+  search: z.object({ term: z.string().trim().min(1).max(80) }),
+  scan: z.object({ saleId, code: z.string().trim().min(1).max(128), opId, quantity: qty.optional() }),
   addItem: z.object({ saleId, productId: z.number().int().positive(), quantity: qty.default(1), opId }),
   setQty: z.object({ saleId, productId: z.number().int().positive(), quantity: z.number().min(0).max(100_000) }),
   setLineDiscount: z.object({ saleId, productId: z.number().int().positive(), discount: z.number().min(0) }),
@@ -43,6 +46,9 @@ const schemas = {
     customer: z.object({ name: z.string().trim().max(120).optional(), phone: z.string().trim().max(20).optional() }).optional(),
   }),
   void: z.object({ saleId }),
+  payOnline: z.object({ saleId }),
+  syncOnline: z.object({ saleId }),
+  cancelOnline: z.object({ saleId }),
 } as const;
 
 function send(ws: WebSocket, payload: Record<string, unknown>): void {
@@ -80,6 +86,14 @@ export function handlePosCommand(ws: WebSocket, ctx: WsAuthCtx, msg: Record<stri
   }
   const a = parsed.data as Record<string, never> & { [k: string]: number & string };
 
+  // Shift gate: no scanning or selling until the cashier has opened a till shift.
+  // POS runs entirely over this socket, so enforcing it here is authoritative.
+  const requireShift = async <T>(run: () => Promise<T>): Promise<T | { error: string }> => {
+    const sid = await openShiftIdFor(shopId, userId);
+    if (sid == null) return { error: 'Open a shift before you can scan or sell.' };
+    return run();
+  };
+
   switch (op) {
     case 'open':
       void reply(ws, reqId, () => pos.openSale(shopId, userId, parsed.data as object));
@@ -90,26 +104,29 @@ export function handlePosCommand(ws: WebSocket, ctx: WsAuthCtx, msg: Record<stri
     case 'listOpen':
       void reply(ws, reqId, () => pos.listOpenSales(shopId));
       return;
+    case 'search':
+      void reply(ws, reqId, () => pos.searchProducts(shopId, (parsed.data as { term: string }).term));
+      return;
     case 'scan':
-      void reply(ws, reqId, () => pos.addScan(shopId, a.saleId, a.code, userId, a.opId));
+      void reply(ws, reqId, () => requireShift(() => pos.addScan(shopId, a.saleId, a.code, userId, a.opId, a.quantity)));
       return;
     case 'addItem':
-      void reply(ws, reqId, () => pos.addProduct(shopId, a.saleId, a.productId, a.quantity, userId, a.opId));
+      void reply(ws, reqId, () => requireShift(() => pos.addProduct(shopId, a.saleId, a.productId, a.quantity, userId, a.opId)));
       return;
     case 'setQty':
-      void reply(ws, reqId, () => pos.setQty(shopId, a.saleId, a.productId, a.quantity));
+      void reply(ws, reqId, () => requireShift(() => pos.setQty(shopId, a.saleId, a.productId, a.quantity)));
       return;
     case 'setLineDiscount':
-      void reply(ws, reqId, () => pos.setLineDiscount(shopId, a.saleId, a.productId, a.discount));
+      void reply(ws, reqId, () => requireShift(() => pos.setLineDiscount(shopId, a.saleId, a.productId, a.discount)));
       return;
     case 'setUnitPrice':
-      void reply(ws, reqId, () => pos.setUnitPrice(shopId, a.saleId, a.productId, a.unitPrice));
+      void reply(ws, reqId, () => requireShift(() => pos.setUnitPrice(shopId, a.saleId, a.productId, a.unitPrice)));
       return;
     case 'removeLine':
-      void reply(ws, reqId, () => pos.removeLine(shopId, a.saleId, a.productId));
+      void reply(ws, reqId, () => requireShift(() => pos.removeLine(shopId, a.saleId, a.productId)));
       return;
     case 'setHeaderDiscount':
-      void reply(ws, reqId, () => pos.setHeaderDiscount(shopId, a.saleId, a.discount));
+      void reply(ws, reqId, () => requireShift(() => pos.setHeaderDiscount(shopId, a.saleId, a.discount)));
       return;
     case 'quickAdd':
       // Creating catalogue is products:manage — beyond the POS area's invoices gate.
@@ -118,16 +135,28 @@ export function handlePosCommand(ws: WebSocket, ctx: WsAuthCtx, msg: Record<stri
         return;
       }
       void reply(ws, reqId, () =>
-        pos.quickAddProduct(shopId, a.saleId, parsed.data as Parameters<typeof pos.quickAddProduct>[2], userId),
+        requireShift(() => pos.quickAddProduct(shopId, a.saleId, parsed.data as Parameters<typeof pos.quickAddProduct>[2], userId)),
       );
       return;
     case 'checkout':
       void reply(ws, reqId, () =>
-        pos.checkout(shopId, a.saleId, parsed.data as Parameters<typeof pos.checkout>[2], userId),
+        requireShift(() => pos.checkout(shopId, a.saleId, parsed.data as Parameters<typeof pos.checkout>[2], userId)),
       );
       return;
     case 'void':
-      void reply(ws, reqId, () => pos.voidSale(shopId, a.saleId));
+      void reply(ws, reqId, () => requireShift(() => pos.voidSale(shopId, a.saleId)));
+      return;
+    case 'payOnline':
+      // Online tender: lock the cart + create a Razorpay order; the till opens
+      // Razorpay Checkout with the returned clientParams. The sale settles on the
+      // payment.captured webhook (or syncOnline) → broadcasts pos.checkout.
+      void reply(ws, reqId, () => requireShift(() => posPay.payOnline(shopId, a.saleId)));
+      return;
+    case 'syncOnline':
+      void reply(ws, reqId, () => posPay.syncOnline(shopId, a.saleId));
+      return;
+    case 'cancelOnline':
+      void reply(ws, reqId, () => posPay.cancelOnline(shopId, a.saleId));
       return;
   }
 }
