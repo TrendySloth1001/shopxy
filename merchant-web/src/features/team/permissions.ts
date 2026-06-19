@@ -24,9 +24,9 @@ export const AREA_LABELS: Record<Area, string> = {
   dashboard: "Dashboard",
   products: "Products",
   orders: "Orders",
-  invoices: "Invoices",
+  invoices: "Billing & POS",
   payments: "Payments",
-  parties: "Parties",
+  parties: "Customers",
   stock: "Stock",
   vendors: "Vendors",
   marketing: "Marketing",
@@ -34,6 +34,23 @@ export const AREA_LABELS: Record<Area, string> = {
   reports: "Reports",
   payouts: "Payouts",
   team: "Team",
+};
+
+/** One-line hint per area so the access grid is self-explanatory. */
+export const AREA_HINTS: Record<Area, string> = {
+  dashboard: "Home overview",
+  products: "Catalogue, prices, stock items",
+  orders: "Online orders inbox",
+  invoices: "Point of sale (till), bills, returns, cashier shifts",
+  payments: "Receipts & payments",
+  parties: "Customers & suppliers",
+  stock: "Stock in / out & adjustments",
+  vendors: "Vendors / suppliers",
+  marketing: "Banners & coupons",
+  shop: "Shop profile & settings",
+  reports: "Sales reports",
+  payouts: "Razorpay payouts",
+  team: "Team members & roles",
 };
 
 /** Areas with no write surface — only `:view` exists. */

@@ -3,12 +3,18 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { wsBase } from "@/features/scan-console/api";
 import { requestPosTicket } from "./api";
+import { openRazorpayCheckout } from "@/shared/razorpay";
 import {
   saleSnapshotSchema,
   unknownScanSchema,
   checkoutResultSchema,
+  posPaySessionSchema,
+  openSaleSummarySchema,
+  productSearchResultSchema,
   type CheckoutResult,
   type ConnStatus,
+  type OpenSaleSummary,
+  type ProductSearchResult,
   type SaleSnapshot,
   type TenderMode,
 } from "./types";
@@ -40,7 +46,11 @@ export function usePosSale() {
   const [error, setError] = useState<string | null>(null);
   const [unknownCode, setUnknownCode] = useState<string | null>(null);
   const [checkout, setCheckout] = useState<CheckoutResult | null>(null);
+  const [onlinePaid, setOnlinePaid] = useState<{ amount: number; invoiceId: number | null } | null>(null);
+  const [paying, setPaying] = useState(false);
   const [pending, setPending] = useState(0);
+  // Amount of an in-flight online payment (set while Razorpay Checkout is open).
+  const onlineRef = useRef<number | null>(null);
 
   const wsRef = useRef<WebSocket | null>(null);
   const closedRef = useRef(false);
@@ -51,7 +61,7 @@ export function usePosSale() {
   const versionRef = useRef(-1);
   const pendingCmds = useRef<Map<string, Pending>>(new Map());
   // Scans that failed while disconnected — replayed on reconnect (opId-deduped).
-  const outboxRef = useRef<Array<{ code: string; id: string }>>([]);
+  const outboxRef = useRef<Array<{ code: string; id: string; quantity: number }>>([]);
   const flushingRef = useRef(false);
 
   // ── command send / response correlation ──
@@ -96,7 +106,7 @@ export function usePosSale() {
       const q = outboxRef.current;
       while (q.length > 0) {
         const next = q[0];
-        const r = await sendCmd("scan", { saleId, code: next.code, opId: next.id });
+        const r = await sendCmd("scan", { saleId, code: next.code, opId: next.id, quantity: next.quantity });
         if (!r.ok) break; // still offline; retry next reconnect
         if (!unknownScanSchema.safeParse(r.data).success) applySnapshot(r.data);
         q.shift();
@@ -141,7 +151,7 @@ export function usePosSale() {
           return;
         }
         if (typeof msg !== "object" || msg === null) return;
-        const m = msg as { t?: string; reqId?: string; type?: string; saleId?: number };
+        const m = msg as { t?: string; reqId?: string; type?: string; saleId?: number; invoiceId?: number };
         if (m.t === "res" && typeof m.reqId === "string") {
           const p = pendingCmds.current.get(m.reqId);
           if (p) {
@@ -150,6 +160,11 @@ export function usePosSale() {
             p.resolve(m as unknown as CmdResult);
           }
           return;
+        }
+        // An online payment settled (webhook → pos.checkout) → flip to paid.
+        if (m.type === "pos.checkout" && m.saleId === saleIdRef.current && onlineRef.current != null) {
+          setOnlinePaid({ amount: onlineRef.current, invoiceId: typeof m.invoiceId === "number" ? m.invoiceId : null });
+          onlineRef.current = null;
         }
         // Version-nudge events for our sale → re-fetch.
         if ((m.type === "pos.sale" || m.type === "pos.checkout" || m.type === "pos.void") && m.saleId === saleIdRef.current) {
@@ -208,15 +223,16 @@ export function usePosSale() {
   );
 
   const scan = useCallback(
-    async (code: string) => {
+    async (code: string, quantity = 1) => {
       const saleId = saleIdRef.current;
       const c = code.trim();
+      const q = quantity > 0 ? quantity : 1;
       if (saleId == null || !c) return;
       setError(null);
       const id = opId();
-      const r = await sendCmd("scan", { saleId, code: c, opId: id });
+      const r = await sendCmd("scan", { saleId, code: c, opId: id, quantity: q });
       if (!r.ok) {
-        outboxRef.current.push({ code: c, id });
+        outboxRef.current.push({ code: c, id, quantity: q });
         setPending(outboxRef.current.length);
         setError("Offline — scan queued, will sync on reconnect.");
         return;
@@ -228,6 +244,17 @@ export function usePosSale() {
       }
     },
     [sendCmd, applySnapshot],
+  );
+
+  const addItem = useCallback((productId: number, quantity = 1) => runSnap("addItem", { productId, quantity }), [runSnap]);
+  const searchProducts = useCallback(
+    async (term: string): Promise<ProductSearchResult[]> => {
+      const r = await sendCmd("search", { term });
+      if (!r.ok) return [];
+      const parsed = productSearchResultSchema.array().safeParse(r.data);
+      return parsed.success ? parsed.data : [];
+    },
+    [sendCmd],
   );
 
   const setQty = useCallback((productId: number, quantity: number) => runSnap("setQty", { productId, quantity }), [runSnap]);
@@ -252,11 +279,11 @@ export function usePosSale() {
   );
 
   const doCheckout = useCallback(
-    async (mode: TenderMode, modeReference?: string) => {
+    async (mode: TenderMode, modeReference?: string, customer?: { name?: string; phone?: string }) => {
       const saleId = saleIdRef.current;
       if (saleId == null) return;
       setError(null);
-      const r = await sendCmd("checkout", { saleId, tender: { mode, modeReference } });
+      const r = await sendCmd("checkout", { saleId, tender: { mode, modeReference }, customer });
       if (r.ok) {
         const parsed = checkoutResultSchema.safeParse(r.data);
         if (parsed.success) setCheckout(parsed.data);
@@ -267,6 +294,77 @@ export function usePosSale() {
     [sendCmd],
   );
 
+  // Online tender: create an order, open Razorpay Checkout (UPI QR + cards), then
+  // settle. The pos.checkout bus event flips the till to paid; syncOnline is the
+  // backstop when the webhook can't reach the server (localhost / delayed).
+  const payOnline = useCallback(async () => {
+    const saleId = saleIdRef.current;
+    if (saleId == null) return;
+    setError(null);
+    const r = await sendCmd("payOnline", { saleId });
+    if (!r.ok) {
+      setError(r.error === "offline" || r.error === "timeout" ? "Couldn't reach the till — please retry." : r.error);
+      return;
+    }
+    const parsed = posPaySessionSchema.safeParse(r.data);
+    if (!parsed.success) {
+      setError("Couldn't start the online payment. Please retry.");
+      return;
+    }
+    onlineRef.current = parsed.data.amount;
+    void refresh(); // sale is now AWAITING_PAYMENT
+    setPaying(true);
+    try {
+      const result = await openRazorpayCheckout(parsed.data);
+      if (result.outcome === "success") {
+        // Settle (webhook backstop). The pos.checkout event flips onlinePaid.
+        await sendCmd("syncOnline", { saleId });
+        void refresh();
+      } else {
+        // Dismissed or failed → unlock the cart for another attempt/tender.
+        onlineRef.current = null;
+        await sendCmd("cancelOnline", { saleId });
+        void refresh();
+        if (result.outcome === "failed") setError(result.message ?? "Payment failed. Please retry.");
+      }
+    } catch {
+      onlineRef.current = null;
+      await sendCmd("cancelOnline", { saleId });
+      void refresh();
+      setError("Couldn't open Razorpay. Please retry.");
+    } finally {
+      setPaying(false);
+    }
+  }, [sendCmd, refresh]);
+
+  // Hold the current bill (park it) and start a fresh empty cart. The parked
+  // sale stays OPEN and is recallable from `listOpen`.
+  const holdAndNew = useCallback(async () => {
+    setError(null);
+    versionRef.current = -1; // switching sales — accept the new (lower-version) snapshot
+    const r = await sendCmd("open");
+    if (r.ok) applySnapshot(r.data);
+  }, [sendCmd, applySnapshot]);
+
+  // Recall a parked bill by id (make it the active cart).
+  const recall = useCallback(
+    async (saleId: number) => {
+      setError(null);
+      versionRef.current = -1;
+      const r = await sendCmd("snapshot", { saleId });
+      if (r.ok) applySnapshot(r.data);
+    },
+    [sendCmd, applySnapshot],
+  );
+
+  // The parked (held) bills with items.
+  const listOpen = useCallback(async (): Promise<OpenSaleSummary[]> => {
+    const r = await sendCmd("listOpen");
+    if (!r.ok) return [];
+    const parsed = openSaleSummarySchema.array().safeParse(r.data);
+    return parsed.success ? parsed.data : [];
+  }, [sendCmd]);
+
   return {
     snapshot,
     status,
@@ -274,13 +372,21 @@ export function usePosSale() {
     unknownCode,
     clearUnknown: () => setUnknownCode(null),
     checkout,
+    onlinePaid,
+    paying,
+    payOnline,
     scan,
+    addItem,
+    searchProducts,
     setQty,
     setLineDiscount,
     removeItem,
     setHeaderDiscount,
     quickAdd,
     doCheckout,
+    holdAndNew,
+    recall,
+    listOpen,
     pending,
   };
 }

@@ -55,9 +55,13 @@ export function Sidebar() {
     router.replace("/login");
   }
 
-  const groups = NAV_GROUPS.filter(
-    (g) => !g.adminOnly || user?.isPlatformAdmin,
-  );
+  // Cashier kiosk lock: a plain Cashier is confined to the till — only Point of
+  // sale + Cashier are shown (everything else hidden), matching a register.
+  const isKiosk = user?.shopRole === "CASHIER";
+  const KIOSK_KEYS = new Set(["pos", "cashier"]);
+  const groups = NAV_GROUPS.filter((g) => !g.adminOnly || user?.isPlatformAdmin)
+    .map((g) => (isKiosk ? { ...g, items: g.items.filter((i) => KIOSK_KEYS.has(i.key)) } : g))
+    .filter((g) => g.items.length > 0);
 
   function isActive(href: string): boolean {
     if (href === "/dashboard") return pathname === "/dashboard";
