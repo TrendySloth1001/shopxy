@@ -68,4 +68,42 @@ export type CheckoutResult = z.infer<typeof checkoutResultSchema>;
 export const TENDER_MODES = ["CASH", "UPI", "CARD", "OTHER"] as const;
 export type TenderMode = (typeof TENDER_MODES)[number];
 
+/** Pay-session returned by the `payOnline` command — opens Razorpay Checkout. */
+export const posPaySessionSchema = z.object({
+  intentId: z.number(),
+  provider: z.string(),
+  providerOrderRef: z.string(),
+  amount: z.number(),
+  currency: z.string(),
+  clientParams: z.object({
+    key: z.string(),
+    order_id: z.string(),
+    amount: z.number(),
+    currency: z.string().optional(),
+  }),
+  reused: z.boolean(),
+});
+export type PosPaySession = z.infer<typeof posPaySessionSchema>;
+
 export type ConnStatus = "connecting" | "live" | "reconnecting" | "offline";
+
+/** A catalogue search hit for the "add without a barcode" picker. */
+export const productSearchResultSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  sku: z.string(),
+  sellingPrice: z.number(),
+  mrp: z.number(),
+  stock: z.number(),
+  imageUrl: z.string().nullable(),
+});
+export type ProductSearchResult = z.infer<typeof productSearchResultSchema>;
+
+/** A parked (held) bill summary from the `listOpen` command. */
+export const openSaleSummarySchema = z.object({
+  id: z.number(),
+  customerName: z.string().nullable(),
+  lineCount: z.number(),
+  updatedAt: z.string(),
+});
+export type OpenSaleSummary = z.infer<typeof openSaleSummarySchema>;

@@ -3,6 +3,7 @@
 import {
   AREAS,
   AREA_LABELS,
+  AREA_HINTS,
   VIEW_ONLY,
   manageRight,
   viewRight,
@@ -63,7 +64,10 @@ export function PermissionMatrix({
         const viewOnly = VIEW_ONLY.has(area);
         return (
           <div key={area} className="flex items-center gap-md border-b border-hairline py-sm">
-            <span className="flex-1 text-body-md text-ink">{AREA_LABELS[area]}</span>
+            <span className="flex-1">
+              <span className="block text-body-md text-ink">{AREA_LABELS[area]}</span>
+              <span className="block text-body-sm text-subtle">{AREA_HINTS[area]}</span>
+            </span>
             <span className="flex w-14 justify-center">
               <Check
                 checked={value.has(v)}

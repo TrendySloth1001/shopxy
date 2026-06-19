@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, Mail, Timer, Wallet, X } from "lucide-react";
 import { useAuth } from "@/features/auth/auth-context";
 import { Divider } from "@/shared/ui/divider";
@@ -69,7 +70,15 @@ function useDashboardStats() {
 
 export function DashboardHome() {
   const { user } = useAuth();
+  const router = useRouter();
   const { data, error, loading, reload } = useDashboardStats();
+
+  // Cashier kiosk lock: a plain Cashier lands on the till, not the dashboard.
+  const isKiosk = user?.shopRole === "CASHIER";
+  useEffect(() => {
+    if (isKiosk) router.replace("/dashboard/pos");
+  }, [isKiosk, router]);
+  if (isKiosk) return null;
 
   return (
     <div className="w-full px-lg py-xxl md:px-xxl">
