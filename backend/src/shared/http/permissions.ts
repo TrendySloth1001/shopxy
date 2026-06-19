@@ -120,7 +120,9 @@ export const ROLE_PRESETS: Record<Exclude<ShopRole, 'OWNER' | 'STAFF'>, string[]
     'dashboard:view',
     'invoices:manage',
     'payments:manage',
-    'parties:manage',
+    // View customers only — billing attaches a walk-in/customer server-side; a
+    // cashier shouldn't edit/delete shop-wide party records (least privilege).
+    'parties:view',
     'products:view',
     'orders:view',
     'reports:view',

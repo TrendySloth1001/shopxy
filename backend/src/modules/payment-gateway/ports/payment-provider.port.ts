@@ -224,3 +224,41 @@ export function isOnboardingCapable(
 ): p is PaymentGatewayPort & OnboardingCapablePort {
   return typeof (p as Partial<OnboardingCapablePort>).createLinkedAccount === 'function';
 }
+
+// ── Optional capability: dynamic UPI QR (Razorpay QR Codes) ────────────────
+//
+// A provider that can mint a fixed-amount, single-use UPI QR implements this.
+// The POS uses it to take an in-store online payment: the customer scans the
+// QR with any UPI app, and the `qr_code.credited` webhook drives settlement.
+// Non-QR providers simply don't implement it; the POS checks `isQrCapable()`
+// before offering the QR tender — same isolation discipline as Split/Onboarding.
+
+export interface CreatePosQrParams {
+  amountMinor: number;
+  /** Our intent id, threaded into notes so the webhook ties back. */
+  intentRef: string;
+  notes?: Record<string, string>;
+}
+
+export interface PosQrResult {
+  /** Provider QR id (Razorpay: qr_XXXX) — stored as the intent's order ref so
+   *  the webhook ownership lookup resolves it without a new column. */
+  qrId: string;
+  /** Image to render at the till (a hosted PNG/SVG URL). */
+  imageUrl: string;
+}
+
+export interface QrCapablePort {
+  /** Create a fixed-amount, single-use UPI QR for one sale. */
+  createPosQr(p: CreatePosQrParams): Promise<PosQrResult>;
+  /** Re-fetch a QR's image + closed flag (for a resumed/replayed pay request). */
+  fetchQr(qrId: string): Promise<{ imageUrl: string; closed: boolean }>;
+  /** Close a QR so it stops accepting payments (cancel / abandon-sweep). */
+  closeQr(qrId: string): Promise<void>;
+}
+
+export function isQrCapable(
+  p: PaymentGatewayPort,
+): p is PaymentGatewayPort & QrCapablePort {
+  return typeof (p as Partial<QrCapablePort>).createPosQr === 'function';
+}

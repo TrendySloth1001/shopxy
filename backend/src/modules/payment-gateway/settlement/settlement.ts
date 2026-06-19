@@ -17,6 +17,11 @@ import {
   writeHeldTransferRows,
   executeHeldTransfers,
 } from './order-split.js';
+import { settlePosTransfer } from './pos-split.js';
+import * as posService from '../../pos/pos.service.js';
+import { saleBus } from '../../pos/pos.bus.js';
+import { getProvider } from '../providers/registry.js';
+import { isQrCapable } from '../ports/payment-provider.port.js';
 
 export interface SettlementHandler {
   /**
@@ -33,6 +38,14 @@ export interface SettlementHandler {
    * onPaid are healable by reconciliation. Idempotent.
    */
   afterCommit?(intent: GatewayPaymentRecord): Promise<void>;
+  /**
+   * Optional: tear down an intent that was abandoned (never paid past the
+   * recheck window, or cancelled at the till). Lets a target undo any provider-
+   * side artefact and release its domain lock — e.g. POS closes the QR and
+   * unlocks the cart. Best-effort + idempotent; the core calls it before FAILING
+   * the intent.
+   */
+  onAbandon?(intent: GatewayPaymentRecord): Promise<void>;
 }
 
 // Dedicated source for gateway-funded wallet top-ups (added to WalletSource).
@@ -220,6 +233,65 @@ const cautionDeposit: SettlementHandler = {
   },
 };
 
+// POS: an in-store customer paid a sale via a Razorpay UPI-QR. target.id IS the
+// Sale id. Capturing the QR is what turns the locked cart into a confirmed sale
+// — so onPaid runs the SAME money path manual checkout uses (invoice + stock +
+// UPI receipt) inside the settlement tx, idempotent on sale.invoiceId. The Route
+// transfer to the merchant's linked account + the till "paid ✓" nudge run after
+// commit. An abandoned/cancelled QR is closed and the cart unlocked.
+const posSale: SettlementHandler = {
+  async onPaid(intent, tx) {
+    if (intent.shopId == null) {
+      throw Object.assign(new Error('POS settlement requires shopId'), { status: 400 });
+    }
+    const settle = (t: Prisma.TransactionClient) =>
+      posService.settlePaidSaleInTx(t, {
+        shopId: intent.shopId!,
+        saleId: intent.target.id,
+        // The Razorpay payment id is the receipt's mode reference.
+        modeReference: intent.providerPaymentRef,
+      });
+    // confirm() always passes a tx; the branch is a defensive fallback only.
+    if (tx) await settle(tx);
+    else await prisma.$transaction(settle);
+  },
+  async afterCommit(intent) {
+    // Route the captured amount to the shop's linked account (gated by
+    // ROUTE_SPLIT_ENABLED + payoutsEnabled; fetch-before-create idempotent).
+    await settlePosTransfer(intent);
+    // Flip both tills to the receipt (no cart/PII on the wire — just the ids).
+    const sale = await prisma.sale.findUnique({
+      where: { id: intent.target.id },
+      select: { invoiceId: true },
+    });
+    if (intent.shopId != null && sale?.invoiceId != null) {
+      saleBus.publish(intent.shopId, {
+        type: 'pos.checkout',
+        saleId: intent.target.id,
+        invoiceId: sale.invoiceId,
+      });
+    }
+  },
+  async onAbandon(intent) {
+    // Close a standalone QR (qr_…) so a late scan can't pay an abandoned sale.
+    // An online-order intent (order_…) has no QR — the Razorpay order just
+    // expires — so we only unlock the cart. Both best-effort.
+    if (intent.providerOrderRef?.startsWith('qr_')) {
+      const provider = getProvider(intent.provider);
+      if (isQrCapable(provider)) {
+        try {
+          await provider.closeQr(intent.providerOrderRef);
+        } catch {
+          /* best-effort — a single-use QR may already be closed */
+        }
+      }
+    }
+    if (intent.shopId != null) {
+      await posService.unlockSale(intent.shopId, intent.target.id);
+    }
+  },
+};
+
 function notWired(type: string): SettlementHandler {
   return {
     async onPaid() {
@@ -235,6 +307,7 @@ const handlers: Record<SettlementTargetType, SettlementHandler> = {
   ORDER: orderPayment,
   INVOICE: notWired('INVOICE'),
   CAUTION: cautionDeposit,
+  POS: posSale,
 };
 
 export function settlementFor(type: SettlementTargetType): SettlementHandler {
