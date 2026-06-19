@@ -234,26 +234,27 @@ class TeamService {
 // ── Permission area metadata (mirror of backend AREAS) ──────────────
 
 class PermissionAreaInfo {
-  const PermissionAreaInfo(this.key, this.label, {this.viewOnly = false});
+  const PermissionAreaInfo(this.key, this.label, {this.hint = '', this.viewOnly = false});
   final String key;
   final String label;
+  final String hint;
   final bool viewOnly;
 }
 
 const List<PermissionAreaInfo> kPermissionAreaInfos = [
-  PermissionAreaInfo('dashboard', 'Dashboard & overview', viewOnly: true),
-  PermissionAreaInfo('products', 'Products & pricing'),
-  PermissionAreaInfo('orders', 'Orders & fulfilment'),
-  PermissionAreaInfo('invoices', 'Invoices, quotations & challans'),
-  PermissionAreaInfo('payments', 'Payments'),
-  PermissionAreaInfo('parties', 'Customers'),
-  PermissionAreaInfo('stock', 'Stock & inventory'),
-  PermissionAreaInfo('vendors', 'Vendors & purchases'),
-  PermissionAreaInfo('marketing', 'Marketing & offers'),
-  PermissionAreaInfo('shop', 'Shop profile & hours'),
-  PermissionAreaInfo('reports', 'Reports & analytics', viewOnly: true),
-  PermissionAreaInfo('payouts', 'Payouts & KYC'),
-  PermissionAreaInfo('team', 'Team & roles'),
+  PermissionAreaInfo('dashboard', 'Dashboard', hint: 'Home overview', viewOnly: true),
+  PermissionAreaInfo('products', 'Products', hint: 'Catalogue, prices, stock items'),
+  PermissionAreaInfo('orders', 'Orders', hint: 'Online orders inbox'),
+  PermissionAreaInfo('invoices', 'Billing & POS', hint: 'Point of sale (till), bills, returns, cashier shifts'),
+  PermissionAreaInfo('payments', 'Payments', hint: 'Receipts & payments'),
+  PermissionAreaInfo('parties', 'Customers', hint: 'Customers & suppliers'),
+  PermissionAreaInfo('stock', 'Stock', hint: 'Stock in / out & adjustments'),
+  PermissionAreaInfo('vendors', 'Vendors', hint: 'Vendors / suppliers'),
+  PermissionAreaInfo('marketing', 'Marketing', hint: 'Banners & coupons'),
+  PermissionAreaInfo('shop', 'Shop', hint: 'Shop profile & settings'),
+  PermissionAreaInfo('reports', 'Reports', hint: 'Sales reports', viewOnly: true),
+  PermissionAreaInfo('payouts', 'Payouts', hint: 'Razorpay payouts'),
+  PermissionAreaInfo('team', 'Team', hint: 'Team members & roles'),
 ];
 
 /// Plain-language "what you can do" bullets derived from an actual grant
