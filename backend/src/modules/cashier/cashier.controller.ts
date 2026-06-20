@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { z } from 'zod';
 import * as cashier from './cashier.service.js';
 import * as returns from './returns.service.js';
+import { authorizeOverride, verifyOverride } from './override.js';
+import { hasRight, POS_OVERRIDE_RIGHT } from '../../shared/http/permissions.js';
 
 /// Cashier control center REST endpoints (mounted at /me/cashier, invoices area).
 /// The shift lifecycle is low-frequency and stateful, so it's plain REST rather
@@ -81,20 +83,32 @@ export const cashierController = {
     res.json(r);
   },
 
-  /// Shift history (Z-receipt list).
+  /// Shift history (Z-receipt list). A plain cashier sees only their own
+  /// shifts; an owner/manager (the override right) sees every employee's,
+  /// labelled by name + email.
   async shifts(req: Request, res: Response): Promise<void> {
     const limit = Number(req.query.limit) || 30;
-    res.json(await cashier.listShifts(req.shopId!, limit));
+    const seesAll = hasRight(req.user!.shopRole, req.user!.shopPermissions, POS_OVERRIDE_RIGHT);
+    res.json(
+      await cashier.listShifts(req.shopId!, {
+        limit,
+        openedById: seesAll ? undefined : req.user!.sub,
+      }),
+    );
   },
 
-  /// Full Z-report for a past (or open) shift.
+  /// Full Z-report for a past (or open) shift. Same scope as the list: a
+  /// cashier may only open their own; managers/owners may open any.
   async shiftReport(req: Request, res: Response): Promise<void> {
     const id = Number(req.params.id);
     if (!Number.isInteger(id) || id <= 0) {
       res.status(400).json({ error: 'Invalid shift id' });
       return;
     }
-    const r = await cashier.report(req.shopId!, id);
+    const seesAll = hasRight(req.user!.shopRole, req.user!.shopPermissions, POS_OVERRIDE_RIGHT);
+    const r = await cashier.report(req.shopId!, id, {
+      openedById: seesAll ? undefined : req.user!.sub,
+    });
     if (isErr(r)) {
       res.status(404).json(r);
       return;
@@ -123,9 +137,33 @@ export const cashierController = {
       res.status(400).json({ error: 'Invalid return payload' });
       return;
     }
+    // Returns are a privileged action: require the override right or a manager grant.
+    const allowed =
+      hasRight(req.user!.shopRole, req.user!.shopPermissions, POS_OVERRIDE_RIGHT) ||
+      verifyOverride(parsed.data.override, req.shopId!) != null;
+    if (!allowed) {
+      res.status(403).json({ error: 'Manager authorisation required to process a return.', code: 'OVERRIDE_REQUIRED' });
+      return;
+    }
     const r = await returns.returnSale(req.shopId!, req.user!.sub, parsed.data);
     if (isErr(r)) {
       res.status(400).json(r);
+      return;
+    }
+    res.json(r);
+  },
+
+  /// Manager-authorise a privileged till action — verify credentials + privilege,
+  /// return a short-lived grant the cashier replays on the action.
+  async authorize(req: Request, res: Response): Promise<void> {
+    const parsed = authorizeSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: 'Enter the manager email and password' });
+      return;
+    }
+    const r = await authorizeOverride(req.shopId!, parsed.data.email, parsed.data.password);
+    if (isErr(r)) {
+      res.status(403).json(r);
       return;
     }
     res.json(r);
@@ -139,4 +177,11 @@ const returnSchema = z.object({
     .array(z.object({ productId: z.number().int().positive(), quantity: z.number().positive().max(100_000) }))
     .min(1)
     .max(200),
+  /// A manager-authorisation grant, when the cashier lacks the override right.
+  override: z.string().optional(),
+});
+
+const authorizeSchema = z.object({
+  email: z.string().trim().email().max(200),
+  password: z.string().min(1).max(200),
 });

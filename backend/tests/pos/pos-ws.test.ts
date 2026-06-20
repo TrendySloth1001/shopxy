@@ -79,6 +79,34 @@ describe('pos.ws — command dispatch', () => {
     }
   });
 
+  it('gates discounts on the override right (manager approval)', async () => {
+    const ctx0 = await createTestUser();
+    try {
+      await cashier.openShift(ctx0.shopId, ctx0.userId, 0);
+      const product = await createTestProduct(ctx0.shopId, { sellingPrice: 100, stockQuantity: 5 });
+      const sale = snap(await pos.openSale(ctx0.shopId, ctx0.userId));
+      const owner: WsAuthCtx = { shopId: ctx0.shopId, userId: ctx0.userId, shopRole: 'OWNER', permissions: [] };
+      const s = fakeWs();
+      handlePosCommand(s.ws as never, owner, { t: 'cmd', reqId: 's1', op: 'scan', saleId: sale.sale.id, code: product.sku });
+      await s.next;
+
+      // A plain CASHIER (invoices:manage, no override) → discount blocked.
+      const cashierCtx: WsAuthCtx = { shopId: ctx0.shopId, userId: ctx0.userId, shopRole: 'CASHIER', permissions: ['invoices:manage'] };
+      const d = fakeWs();
+      handlePosCommand(d.ws as never, cashierCtx, { t: 'cmd', reqId: 'd1', op: 'setLineDiscount', saleId: sale.sale.id, productId: product.id, discount: 10 });
+      const blocked = (await d.next) as { ok: boolean; detail?: { code?: string } };
+      expect(blocked.ok).toBe(false);
+      expect(blocked.detail?.code).toBe('OVERRIDE_REQUIRED');
+
+      // OWNER (override via role) → allowed.
+      const d2 = fakeWs();
+      handlePosCommand(d2.ws as never, owner, { t: 'cmd', reqId: 'd2', op: 'setLineDiscount', saleId: sale.sale.id, productId: product.id, discount: 10 });
+      expect(((await d2.next) as { ok: boolean }).ok).toBe(true);
+    } finally {
+      await cleanupTestUser(ctx0);
+    }
+  });
+
   it('rejects an invalid command and gates quick-add on products:manage', async () => {
     const ctx0 = await createTestUser();
     try {

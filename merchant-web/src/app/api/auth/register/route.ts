@@ -10,9 +10,10 @@ import {
   setSessionCookies,
 } from "@/server/auth/session";
 
-// POST /api/auth/register — merchant signup. Creates an OWNER account and its
-// Shop atomically on the backend, then persists the session as httpOnly
-// cookies. Consent literals are forwarded as the backend requires them.
+// POST /api/auth/register — merchant signup. Creates a shopless OWNER account
+// on the backend (the shop is named later via the onboarding screen, or the
+// account joins a team if a matching invite is pending), then persists the
+// session as httpOnly cookies. Consent literals are forwarded as required.
 export async function POST(req: Request) {
   const json = await req.json().catch(() => null);
   const parsed = registerWireSchema.safeParse(json);
@@ -29,7 +30,6 @@ export async function POST(req: Request) {
       email: parsed.data.email,
       password: parsed.data.password,
       role: "OWNER",
-      shopName: parsed.data.shopName,
       acceptedTerms: true,
       acceptedPrivacy: true,
     }),

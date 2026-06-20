@@ -16,3 +16,4 @@ cashierMerchantRouter.get('/shifts', asyncHandler((req, res) => cashierControlle
 cashierMerchantRouter.get('/shifts/:id/report', asyncHandler((req, res) => cashierController.shiftReport(req, res)));
 cashierMerchantRouter.get('/returnable/:invoiceId', asyncHandler((req, res) => cashierController.returnable(req, res)));
 cashierMerchantRouter.post('/return', asyncHandler((req, res) => cashierController.processReturn(req, res)));
+cashierMerchantRouter.post('/authorize', asyncHandler((req, res) => cashierController.authorize(req, res)));

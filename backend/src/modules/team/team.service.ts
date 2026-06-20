@@ -85,6 +85,12 @@ export class TeamService {
         teamPermissions: true,
         createdAt: true,
         expiresAt: true,
+        // The single-use accept-invite token, so the owner can copy a
+        // shareable link for a new hire who has no account yet (there's
+        // no email delivery — the link is the delivery mechanism). Safe
+        // to expose: this list is scoped to the owner's own shop and the
+        // token only works for the invited email.
+        token: true,
       },
       orderBy: { createdAt: 'desc' },
     });

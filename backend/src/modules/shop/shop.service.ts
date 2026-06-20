@@ -1,4 +1,6 @@
 import prisma from '../../infra/db/prisma.js';
+import { seedDefaultRoles } from '../team/team.service.js';
+import { invalidateMembershipCache } from '../../shared/http/requireAuth.js';
 
 const publicShopSelect = {
   id: true,
@@ -74,6 +76,74 @@ export class ShopService {
       where: { ownerUserId: userId },
       select: merchantShopSelect,
     });
+  }
+
+  /// First-shop onboarding for a freshly-registered OWNER who signed up
+  /// without a shop name (the new two-step flow: account → onboarding).
+  /// Creates the Shop + the owner's ShopMember + seeds the starter roles,
+  /// and mirrors the name + a few details onto the User so invoice headers
+  /// have a value. Refuses if the caller already owns a shop or is already
+  /// on a team (ShopMember.userId is unique — one team per user).
+  async createMyShop(
+    userId: number,
+    data: {
+      name: string;
+      phoneNumber?: string | null;
+      shopCity?: string | null;
+      shopState?: string | null;
+    },
+  ): Promise<{ shop: Awaited<ReturnType<ShopService['getMyShop']>> } | { error: string }> {
+    const membership = await prisma.shopMember.findUnique({
+      where: { userId },
+      select: { role: true },
+    });
+    if (membership) {
+      return {
+        error:
+          membership.role === 'OWNER'
+            ? 'You already have a shop.'
+            : "You're already on a shop team, so you can't create your own shop.",
+      };
+    }
+
+    const name = data.name.trim();
+    const slug = await uniqueSlug(slugify(name));
+    const shopCity = data.shopCity?.trim() || null;
+    const shopState = data.shopState?.trim() || null;
+    const phoneNumber = data.phoneNumber?.trim() || null;
+
+    const shop = await prisma.$transaction(async (tx) => {
+      const created = await tx.shop.create({
+        data: {
+          ownerUserId: userId,
+          name,
+          slug,
+          locationCity: shopCity,
+          locationState: shopState,
+        },
+        select: merchantShopSelect,
+      });
+      // Seed the owner's membership + starter roles, same as one-step signup.
+      await tx.shopMember.create({
+        data: { shopId: created.id, userId, role: 'OWNER' },
+      });
+      await seedDefaultRoles(tx, created.id);
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          shopName: name,
+          shopCity: shopCity ?? undefined,
+          shopState: shopState ?? undefined,
+          phoneNumber: phoneNumber ?? undefined,
+        },
+      });
+      return created;
+    });
+
+    // The membership was cached as "none" during the shopless window
+    // (60s TTL) — bust it so the very next request resolves the new shopId.
+    invalidateMembershipCache(userId);
+    return { shop };
   }
 
   async updateMyShop(

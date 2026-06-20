@@ -12,10 +12,10 @@ import {
 import type { AuthUser } from "./types";
 import type { UpdateProfileInput } from "./schema";
 
-/** Payload the register form sends to the provider (confirm is dropped). */
+/** Payload the register form sends to the provider (confirm is dropped).
+ *  The shop is named later on the onboarding screen, not at signup. */
 export type RegisterPayload = {
   name: string;
-  shopName: string;
   email: string;
   password: string;
   acceptedTerms: true;

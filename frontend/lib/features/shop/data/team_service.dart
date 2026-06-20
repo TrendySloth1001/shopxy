@@ -246,6 +246,8 @@ const List<PermissionAreaInfo> kPermissionAreaInfos = [
   PermissionAreaInfo('products', 'Products', hint: 'Catalogue, prices, stock items'),
   PermissionAreaInfo('orders', 'Orders', hint: 'Online orders inbox'),
   PermissionAreaInfo('invoices', 'Billing & POS', hint: 'Point of sale (till), bills, returns, cashier shifts'),
+  PermissionAreaInfo('quotations', 'Quotations', hint: 'Price quotes / estimates sent to customers'),
+  PermissionAreaInfo('challans', 'Challans', hint: 'Delivery / dispatch challans for goods'),
   PermissionAreaInfo('payments', 'Payments', hint: 'Receipts & payments'),
   PermissionAreaInfo('parties', 'Customers', hint: 'Customers & suppliers'),
   PermissionAreaInfo('stock', 'Stock', hint: 'Stock in / out & adjustments'),

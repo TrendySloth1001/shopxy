@@ -96,6 +96,7 @@ export const shiftSummarySchema = z.object({
   status: z.string(),
   openedById: z.number(),
   openedByName: z.string().nullable(),
+  openedByEmail: z.string().nullable(),
   openedAt: z.string(),
   closedAt: z.string().nullable(),
   openingFloat: z.number(),
@@ -108,10 +109,28 @@ export type ShiftSummary = z.infer<typeof shiftSummarySchema>;
 async function jsonOrThrow(res: Response): Promise<unknown> {
   const data = await res.json().catch(() => null);
   if (!res.ok) {
-    const msg = (data as { error?: string } | null)?.error ?? "Request failed.";
-    throw new Error(msg);
+    const body = data as { error?: string; code?: string } | null;
+    throw Object.assign(new Error(body?.error ?? "Request failed."), { code: body?.code });
   }
   return data;
+}
+
+/** True when an error from this module is "needs a manager to authorise". */
+export function isOverrideRequired(e: unknown): boolean {
+  return typeof e === "object" && e !== null && (e as { code?: string }).code === "OVERRIDE_REQUIRED";
+}
+
+export const overrideGrantSchema = z.object({ token: z.string(), authorizerName: z.string() });
+export type OverrideGrant = z.infer<typeof overrideGrantSchema>;
+
+/** Manager authorises a privileged till action with their credentials. */
+export async function authorizeOverride(email: string, password: string): Promise<OverrideGrant> {
+  const res = await fetch("/api/cashier/authorize", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  return overrideGrantSchema.parse(await jsonOrThrow(res));
 }
 
 export async function fetchCurrent(): Promise<{ shift: Shift | null; report: ShiftReport | null }> {
@@ -169,6 +188,8 @@ export async function processReturn(input: {
   originalInvoiceId: number;
   refundMode: "CASH" | "UPI" | "CARD" | "OTHER";
   lines: Array<{ productId: number; quantity: number }>;
+  /** Manager-authorisation grant when the cashier lacks the override right. */
+  override?: string;
 }): Promise<ReturnResult> {
   const res = await fetch("/api/cashier/return", {
     method: "POST",

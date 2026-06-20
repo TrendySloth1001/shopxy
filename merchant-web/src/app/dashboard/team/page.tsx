@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Plus, Pencil, Trash2, Mail, ShieldCheck } from "lucide-react";
+import { Plus, Pencil, Trash2, Mail, ShieldCheck, Link2, Check } from "lucide-react";
 import { Divider } from "@/shared/ui/divider";
 import { Modal, ModalActions } from "@/shared/ui/modal";
+import { SideSheet } from "@/shared/ui/side-sheet";
 import { Avatar } from "@/features/auth/components/avatar";
 import {
   cancelInvite,
@@ -181,6 +182,11 @@ export default function TeamPage() {
               <h2 className="text-title-md text-ink">
                 Pending invites <span className="text-subtle">· {invites.length}</span>
               </h2>
+              <p className="mt-xs text-body-sm text-muted">
+                Copy each person&rsquo;s invite link and send it to them. If they don&rsquo;t
+                have an account yet it lets them join your team as staff — without creating
+                their own shop. If they already have an account, the link sends them to sign in.
+              </p>
               <ul className="mt-sm">
                 {invites.map((inv) => (
                   <li
@@ -196,15 +202,18 @@ export default function TeamPage() {
                         {inv.teamRoleName || "Staff"} · {summariseRights(inv.teamPermissions)}
                       </p>
                     </div>
-                    <button
-                      type="button"
-                      disabled={busy || !canEdit}
-                      onClick={() => run(() => cancelInvite(inv.id))}
-                      title={canEdit ? undefined : lockTitle}
-                      className="inline-flex h-9 items-center rounded-button px-md text-label-md text-muted transition-colors hover:text-error disabled:text-disabled disabled:hover:text-muted"
-                    >
-                      Cancel
-                    </button>
+                    <div className="flex shrink-0 items-center gap-xs">
+                      <CopyInviteLink token={inv.token ?? null} />
+                      <button
+                        type="button"
+                        disabled={busy || !canEdit}
+                        onClick={() => run(() => cancelInvite(inv.id))}
+                        title={canEdit ? undefined : lockTitle}
+                        className="inline-flex h-9 items-center rounded-button px-md text-label-md text-muted transition-colors hover:text-error disabled:text-disabled disabled:hover:text-muted"
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -322,6 +331,42 @@ export default function TeamPage() {
   );
 }
 
+/** Copies a shareable `/accept-invite?token=…` URL for a pending invite.
+ *  The link is the only delivery channel (there's no invite email), so this
+ *  is how a brand-new hire reaches the correct onboarding screen instead of
+ *  the "Set up your shop" register form. */
+function CopyInviteLink({ token }: { token: string | null }) {
+  const [copied, setCopied] = useState(false);
+
+  if (!token) return null;
+
+  const onCopy = async () => {
+    // Built from the current origin so it works in any environment.
+    const url = `${window.location.origin}/accept-invite?token=${encodeURIComponent(token)}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard blocked (insecure context / permissions) — surface the
+      // URL so the owner can copy it by hand rather than failing silently.
+      window.prompt("Copy this invite link:", url);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={() => void onCopy()}
+      title="Copy invite link"
+      className="inline-flex h-9 items-center gap-xs rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
+    >
+      {copied ? <Check size={15} className="text-success" /> : <Link2 size={15} />}
+      {copied ? "Copied" : "Copy link"}
+    </button>
+  );
+}
+
 function InviteModal({
   roles,
   busy,
@@ -358,7 +403,7 @@ function InviteModal({
   }
 
   return (
-    <Modal title="Invite teammate" onClose={onClose} wide>
+    <SideSheet title="Invite teammate" onClose={onClose} side="right" width="w-[600px]">
       <label className="flex flex-col gap-xs">
         <span className="text-label-md text-muted">Email</span>
         <input
@@ -426,7 +471,7 @@ function InviteModal({
           })
         }
       />
-    </Modal>
+    </SideSheet>
   );
 }
 

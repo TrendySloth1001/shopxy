@@ -234,9 +234,18 @@ export async function closeShift(
 // ── reporting (X / Z) ───────────────────────────────────────────────────────
 
 /// Full reconciliation report for a shift — live (X-report) or final (Z-report).
-export async function report(shopId: number, shiftId: number): Promise<ShiftReport | CashierError> {
+///
+/// `openedById` restricts the lookup to the caller's own shift: a plain
+/// cashier may only pull their own Z-report, so the controller passes their
+/// id; a manager/owner leaves it undefined and can pull any shift's. A
+/// mismatch reads as "not found" rather than leaking the shift's existence.
+export async function report(
+  shopId: number,
+  shiftId: number,
+  opts: { openedById?: number } = {},
+): Promise<ShiftReport | CashierError> {
   const row = await prisma.cashierShift.findFirst({
-    where: { id: shiftId, shopId },
+    where: { id: shiftId, shopId, ...(opts.openedById != null ? { openedById: opts.openedById } : {}) },
     select: SHIFT_SELECT,
   });
   if (!row) return { error: 'Shift not found' };
@@ -382,6 +391,7 @@ export interface ShiftSummary {
   status: string;
   openedById: number;
   openedByName: string | null;
+  openedByEmail: string | null;
   openedAt: Date;
   closedAt: Date | null;
   openingFloat: number;
@@ -390,11 +400,20 @@ export interface ShiftSummary {
   variance: number | null;
 }
 
-/// Shift history for the shop (newest first) — the Z-receipt list. Open shifts
-/// show null expected/counted/variance (those are snapshotted on close).
-export async function listShifts(shopId: number, limit = 30): Promise<ShiftSummary[]> {
+/// Shift history (newest first) — the Z-receipt list. Open shifts show null
+/// expected/counted/variance (those are snapshotted on close).
+///
+/// `openedById` scopes the list to one cashier's own shifts. The controller
+/// passes the caller's id for a plain cashier (they only ever see their own
+/// Z-reports) and leaves it undefined for a manager/owner (who see every
+/// employee's, labelled by name + email).
+export async function listShifts(
+  shopId: number,
+  opts: { limit?: number; openedById?: number } = {},
+): Promise<ShiftSummary[]> {
+  const limit = opts.limit ?? 30;
   const rows = await prisma.cashierShift.findMany({
-    where: { shopId },
+    where: { shopId, ...(opts.openedById != null ? { openedById: opts.openedById } : {}) },
     orderBy: { id: 'desc' },
     take: Math.min(Math.max(limit, 1), 100),
     select: {
@@ -410,13 +429,17 @@ export async function listShifts(shopId: number, limit = 30): Promise<ShiftSumma
     },
   });
   const userIds = [...new Set(rows.map((r) => r.openedById))];
-  const users = await prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, name: true } });
-  const nameById = new Map(users.map((u) => [u.id, u.name]));
+  const users = await prisma.user.findMany({
+    where: { id: { in: userIds } },
+    select: { id: true, name: true, email: true },
+  });
+  const byId = new Map(users.map((u) => [u.id, u]));
   return rows.map((r) => ({
     id: r.id,
     status: r.status,
     openedById: r.openedById,
-    openedByName: nameById.get(r.openedById) ?? null,
+    openedByName: byId.get(r.openedById)?.name ?? null,
+    openedByEmail: byId.get(r.openedById)?.email ?? null,
     openedAt: r.openedAt,
     closedAt: r.closedAt,
     openingFloat: num(r.openingFloat),
