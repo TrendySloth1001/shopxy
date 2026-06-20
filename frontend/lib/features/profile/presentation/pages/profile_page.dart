@@ -178,7 +178,7 @@ class ProfilePage extends StatelessWidget {
             MaterialPageRoute(builder: (_) => const InvoicesPage()),
           ),
         ),
-      if (user.canView('invoices'))
+      if (user.canView('challans'))
         _ManageTile(
           icon: Icons.assignment_outlined,
           accent: AppColors.accentAmber,

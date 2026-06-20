@@ -58,6 +58,16 @@ const updateShopSchema = z
     message: 'At least one field is required',
   });
 
+// First-shop onboarding. A small, low-friction set of details collected
+// right after signup — name is required, the rest optional (the merchant
+// fills GSTIN/PAN/policies later in settings).
+const createShopSchema = z.object({
+  name: z.string().trim().min(2).max(200),
+  phoneNumber: z.string().trim().max(20).optional(),
+  shopCity: z.string().trim().max(120).optional(),
+  shopState: z.string().trim().max(120).optional(),
+});
+
 const setVerifiedSchema = z.object({
   isVerified: z.boolean(),
 });
@@ -75,6 +85,23 @@ export class ShopController {
       return;
     }
     res.json(shop);
+  }
+
+  /// POST /me/onboarding/shop — create the caller's first shop. Sits
+  /// behind ownerOnly (not requireArea): a shopless OWNER has no ShopMember
+  /// yet, so the area gate would 403. Returns 409 if they already have one.
+  async createMine(req: Request, res: Response): Promise<void> {
+    const parsed = createShopSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.issues[0]?.message ?? 'Invalid input' });
+      return;
+    }
+    const result = await shopService.createMyShop(req.user!.sub, parsed.data);
+    if ('error' in result) {
+      res.status(409).json({ error: result.error });
+      return;
+    }
+    res.status(201).json(result.shop);
   }
 
   async updateMine(req: Request, res: Response): Promise<void> {

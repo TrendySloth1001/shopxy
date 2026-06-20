@@ -10,7 +10,6 @@ import { AuthErrorBanner } from "./auth-shell";
 
 type FieldKey =
   | "name"
-  | "shopName"
   | "email"
   | "password"
   | "confirmPassword"
@@ -22,7 +21,6 @@ export function RegisterForm() {
   const router = useRouter();
   const [values, setValues] = useState({
     name: "",
-    shopName: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -36,7 +34,9 @@ export function RegisterForm() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (status === "authed") router.replace("/dashboard");
+    // Authed visitors continue to onboarding; its own gate forwards anyone
+    // who already has a shop (or joined a team) straight to the dashboard.
+    if (status === "authed") router.replace("/onboarding");
   }, [status, router]);
 
   function set<K extends keyof typeof values>(key: K, value: string) {
@@ -55,7 +55,6 @@ export function RegisterForm() {
       const f = parsed.error.flatten().fieldErrors;
       setFieldErrors({
         name: f.name?.[0],
-        shopName: f.shopName?.[0],
         email: f.email?.[0],
         password: f.password?.[0],
         confirmPassword: f.confirmPassword?.[0],
@@ -69,13 +68,13 @@ export function RegisterForm() {
     try {
       await register({
         name: parsed.data.name,
-        shopName: parsed.data.shopName,
         email: parsed.data.email,
         password: parsed.data.password,
         acceptedTerms: true,
         acceptedPrivacy: true,
       });
-      router.replace("/dashboard");
+      // Next step: name the shop (or skip if they joined a team via invite).
+      router.replace("/onboarding");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create your account.");
     } finally {
@@ -96,15 +95,6 @@ export function RegisterForm() {
         value={values.name}
         onChange={(e) => set("name", e.target.value)}
         error={fieldErrors.name}
-      />
-      <Field
-        label="Shop name"
-        name="shopName"
-        autoComplete="organization"
-        helper="Shown to customers in the marketplace. You can rename it later."
-        value={values.shopName}
-        onChange={(e) => set("shopName", e.target.value)}
-        error={fieldErrors.shopName}
       />
       <Field
         label="Email"

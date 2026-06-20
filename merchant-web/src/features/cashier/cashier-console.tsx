@@ -5,6 +5,8 @@ import { Calculator, RefreshCw, LockOpen, Lock, ArrowDownToLine, ArrowUpFromLine
 import { PageHeader } from "@/shared/ui/page-header";
 import { Divider } from "@/shared/ui/divider";
 import { formatINR2 } from "@/shared/money";
+import { useAuth } from "@/features/auth/auth-context";
+import { isShopOwner } from "@/features/auth/capabilities";
 import {
   fetchCurrent,
   openShift,
@@ -153,6 +155,12 @@ function ConsoleTimer({ since }: { since: string }) {
 
 /** Past shifts = the Z-receipt archive. Tap one to view/print its Z-report. */
 function ShiftHistory() {
+  const { user } = useAuth();
+  // Owners + managers (the override right) see every employee's Z-reports;
+  // a plain cashier sees only their own. The backend enforces this scope —
+  // this only adjusts the copy so each role knows what they're looking at.
+  const seesAll =
+    isShopOwner(user) || (user?.shopPermissions ?? []).includes("invoices:override");
   const [shifts, setShifts] = useState<ShiftSummary[] | null>(null);
   const [viewing, setViewing] = useState<ShiftReport | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -182,6 +190,11 @@ function ShiftHistory() {
   return (
     <div className="mt-xl rounded-lg border border-hairline p-lg">
       <h2 className="flex items-center gap-sm text-title-md text-ink"><History size={18} /> Past shifts · Z-receipts</h2>
+      <p className="mt-xs text-body-sm text-muted">
+        {seesAll
+          ? "Every cashier's shifts, labelled by who opened them."
+          : "Your own shifts. Owners and managers can see the whole team's."}
+      </p>
       {err ? <p className="mt-sm rounded-md bg-error-soft px-md py-xs text-body-sm text-error">{err}</p> : null}
       {shifts == null ? (
         <p className="mt-md text-body-sm text-muted">Loading…</p>
@@ -205,7 +218,10 @@ function ShiftHistory() {
               {shifts.map((s) => (
                 <tr key={s.id} className="border-t border-hairline">
                   <td className="py-sm pr-md text-ink">{new Date(s.openedAt).toLocaleString("en-IN")}</td>
-                  <td className="py-sm pr-md text-ink">{s.openedByName ?? "—"}</td>
+                  <td className="py-sm pr-md text-ink">
+                    <span className="block">{s.openedByName ?? "—"}</span>
+                    {s.openedByEmail ? <span className="block text-label-sm text-subtle">{s.openedByEmail}</span> : null}
+                  </td>
                   <td className="py-sm pr-md"><span className={s.status === "OPEN" ? "text-success" : "text-muted"}>{s.status}</span></td>
                   <td className="py-sm pr-md text-right text-ink">{s.expectedCash == null ? "—" : formatINR2(s.expectedCash)}</td>
                   <td className="py-sm pr-md text-right text-ink">{s.closingCounted == null ? "—" : formatINR2(s.closingCounted)}</td>

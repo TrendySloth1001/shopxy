@@ -23,7 +23,10 @@ import reportsRouter from '../../modules/reports/reports.routes.js';
 import meRouter from '../../modules/me/me.routes.js';
 import paymentsRouter from '../../modules/payments/payments.routes.js';
 import customFieldsRouter from '../../modules/customFields/customFields.routes.js';
-import shopRouter, { adminShopRouter } from '../../modules/shop/shop.routes.js';
+import shopRouter, {
+  adminShopRouter,
+  shopOnboardingRouter,
+} from '../../modules/shop/shop.routes.js';
 import shopPublicRouter from '../../modules/shop/shop.public.routes.js';
 import {
   reviewsPublicRouter,
@@ -304,6 +307,9 @@ export function buildApp(): express.Express {
 
   mountMerchant('/me/team', teamRouter, [resolveShop]);
   mountMerchant('/me/shop', shopRouter);
+  // First-shop onboarding — ownerOnly but NOT area-gated (a shopless OWNER
+  // has no ShopMember yet, which requireArea('shop') would reject).
+  app.use('/me/onboarding', ownerOnly, shopOnboardingRouter);
   mountMerchant('/me/banners', bannersMerchantRouter, [
     resolveShop,
     carouselWriteLimiter,

@@ -188,7 +188,7 @@ List<_Shortcut> get _operationShortcuts => [
         accent: AppColors.accentIndigo,
         accentSoft: AppColors.accentIndigoSoft,
         builder: (_) => const QuotationsPage(),
-        requires: (u) => u.canView('invoices'),
+        requires: (u) => u.canView('quotations'),
       ),
       _Shortcut(
         label: AppStrings.navChallans,
@@ -196,7 +196,7 @@ List<_Shortcut> get _operationShortcuts => [
         accent: AppColors.accentAmber,
         accentSoft: AppColors.accentAmberSoft,
         builder: (_) => const ChallansPage(),
-        requires: (u) => u.canView('invoices'),
+        requires: (u) => u.canView('challans'),
       ),
       _Shortcut(
         label: 'Stock adjustments',
@@ -216,7 +216,7 @@ List<_Shortcut> get _operationShortcuts => [
       ),
       _Shortcut(
         label: 'Reports',
-        icon: Icons.insights_outlined,
+        icon: Icons.summarize_outlined,
         accent: AppColors.brandStrong,
         accentSoft: AppColors.brandSoft,
         builder: (_) => const ReportsPage(),

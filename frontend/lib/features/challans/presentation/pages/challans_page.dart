@@ -144,7 +144,7 @@ class _ChallansPageState extends State<ChallansPage> {
       ),
       floatingActionButton: MaybeLocked(
         allowed: context.select<AuthProvider, bool>(
-            (a) => a.user?.canManage('invoices') ?? false),
+            (a) => a.user?.canManage('challans') ?? false),
         what: 'create challans',
         child: FloatingActionButton.extended(
           onPressed: _openCreate,

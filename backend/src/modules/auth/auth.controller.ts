@@ -22,8 +22,10 @@ const registerSchema = z
     // customer app sends CUSTOMER. Defaults to CUSTOMER so any
     // pre-existing client that omits the field stays on the safer side.
     role: z.enum(['OWNER', 'CUSTOMER']).optional().default('CUSTOMER'),
-    // Required when role is OWNER. The Shop row is created in the same
-    // transaction as the user and a unique slug is generated from this.
+    // Optional. When an OWNER provides it, the Shop is created in the same
+    // transaction as the user (legacy one-step signup). When omitted, the
+    // OWNER is created shopless and names their shop on the onboarding
+    // screen next (POST /me/onboarding/shop). Either flow is supported.
     shopName: z.string().trim().min(2).max(200).optional(),
     // DPDP consent gate. We require both checkboxes to be true at the
     // wire level too, so a malicious client can't bypass the UI ticks.
@@ -33,10 +35,6 @@ const registerSchema = z
     acceptedPrivacy: z.literal(true, {
       errorMap: () => ({ message: 'You must accept the privacy policy' }),
     }),
-  })
-  .refine((d) => d.role !== 'OWNER' || (d.shopName && d.shopName.length >= 2), {
-    message: 'shopName is required when registering as a merchant',
-    path: ['shopName'],
   });
 
 const deleteAccountSchema = z.object({

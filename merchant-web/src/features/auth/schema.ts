@@ -24,17 +24,14 @@ export const loginSchema = z.object({
 export type LoginInput = z.infer<typeof loginSchema>;
 
 /**
- * Merchant registration. Every merchant signup creates an OWNER account and
- * its Shop atomically on the backend, so `shopName` is required. Consent to
- * both the terms and privacy policy is required at the wire level (DPDP).
+ * Merchant registration. Signup now creates the OWNER account only — the
+ * shop is named on the onboarding screen straight after (or skipped entirely
+ * if the new account is joining a team via invite). So `shopName` is no
+ * longer collected here. Consent to both the terms and privacy policy is
+ * required at the wire level (DPDP).
  */
 const registerFields = z.object({
   name: z.string().trim().min(2, "Name must be at least 2 characters").max(80),
-  shopName: z
-    .string()
-    .trim()
-    .min(2, "Shop name must be at least 2 characters")
-    .max(200),
   email: z.string().trim().email("Enter a valid email address"),
   password: passwordSchema,
   confirmPassword: z.string(),

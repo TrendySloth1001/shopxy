@@ -1,12 +1,14 @@
 import 'package:shopxy/features/auth/domain/entities/auth_user.dart';
 
-/// The 12 permission areas — mirror of the backend (permissions.ts).
-/// Each (except `reports`) has a `:view` and a `:manage` right.
+/// The permission areas — mirror of the backend (permissions.ts).
+/// Each (except `dashboard`/`reports`) has a `:view` and a `:manage` right.
 const List<String> kPermissionAreas = [
   'dashboard',
   'products',
   'orders',
   'invoices',
+  'quotations',
+  'challans',
   'payments',
   'parties',
   'stock',
@@ -46,6 +48,10 @@ extension ShopCapabilities on AuthUser {
   bool get canWriteOrders => canManage('orders');
   bool get canViewOrders => canView('orders');
   bool get canWriteInvoices => canManage('invoices');
+  bool get canViewQuotations => canView('quotations');
+  bool get canWriteQuotations => canManage('quotations');
+  bool get canViewChallans => canView('challans');
+  bool get canWriteChallans => canManage('challans');
   bool get canWritePayments => canManage('payments');
   bool get canWriteParties => canManage('parties');
   bool get canWriteStock => canManage('stock');

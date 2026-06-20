@@ -9,8 +9,8 @@ export const metadata: Metadata = {
 export default function RegisterPage() {
   return (
     <AuthShell
-      title="Set up your shop"
-      subtitle="Create your merchant account — we'll create your shop at the same time."
+      title="Create your account"
+      subtitle="Set up your merchant account. You'll name your shop in the next step — or skip it if you've been invited to join a team."
       footerPrompt="Already have an account?"
       footerHref="/login"
       footerCta="Sign in"

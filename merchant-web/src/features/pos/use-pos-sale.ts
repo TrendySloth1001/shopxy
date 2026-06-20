@@ -258,9 +258,30 @@ export function usePosSale() {
   );
 
   const setQty = useCallback((productId: number, quantity: number) => runSnap("setQty", { productId, quantity }), [runSnap]);
-  const setLineDiscount = useCallback((productId: number, discount: number) => runSnap("setLineDiscount", { productId, discount }), [runSnap]);
   const removeItem = useCallback((productId: number) => runSnap("removeLine", { productId }), [runSnap]);
-  const setHeaderDiscount = useCallback((discount: number) => runSnap("setHeaderDiscount", { discount }), [runSnap]);
+
+  // Privileged actions (discounts) — return overrideRequired so the till can
+  // prompt for a manager grant and retry with the `override` token.
+  const runPrivileged = useCallback(
+    async (op: string, args: Record<string, unknown>): Promise<{ ok: boolean; overrideRequired: boolean }> => {
+      const saleId = saleIdRef.current;
+      if (saleId == null) return { ok: false, overrideRequired: false };
+      setError(null);
+      const r = await sendCmd(op, { saleId, ...args });
+      if (r.ok) {
+        applySnapshot(r.data);
+        return { ok: true, overrideRequired: false };
+      }
+      if ((r.detail as { code?: string } | undefined)?.code === "OVERRIDE_REQUIRED") {
+        return { ok: false, overrideRequired: true };
+      }
+      setError(r.error === "offline" || r.error === "timeout" || r.error === "disconnected" ? "Reconnecting…" : r.error);
+      return { ok: false, overrideRequired: false };
+    },
+    [sendCmd, applySnapshot],
+  );
+  const setLineDiscount = useCallback((productId: number, discount: number, override?: string) => runPrivileged("setLineDiscount", { productId, discount, override }), [runPrivileged]);
+  const setHeaderDiscount = useCallback((discount: number, override?: string) => runPrivileged("setHeaderDiscount", { discount, override }), [runPrivileged]);
 
   const quickAdd = useCallback(
     async (input: { code: string; name: string; sellingPrice: number; taxPercent?: number; openingStock?: number }) => {

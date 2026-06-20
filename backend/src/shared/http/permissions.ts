@@ -22,6 +22,8 @@ export const AREAS = [
   'products',
   'orders',
   'invoices',
+  'quotations',
+  'challans',
   'payments',
   'parties',
   'stock',
@@ -46,10 +48,18 @@ export function manageRight(area: Area): string {
   return `${area}:manage`;
 }
 
+/// Standalone privileged rights beyond the area × {view,manage} grid.
+/// `invoices:override` authorises sensitive till actions (discounts, price
+/// overrides, voids, returns) — held by Owner/Manager, NOT a plain Cashier; a
+/// cashier without it needs a manager to authorise the single action.
+export const POS_OVERRIDE_RIGHT = 'invoices:override';
+const EXTRA_RIGHTS: readonly string[] = [POS_OVERRIDE_RIGHT];
+
 /// Every grantable right, for validation of incoming permission sets.
-export const ALL_RIGHTS: readonly string[] = AREAS.flatMap((a) =>
-  VIEW_ONLY.has(a) ? [viewRight(a)] : [viewRight(a), manageRight(a)],
-);
+export const ALL_RIGHTS: readonly string[] = [
+  ...AREAS.flatMap((a) => (VIEW_ONLY.has(a) ? [viewRight(a)] : [viewRight(a), manageRight(a)])),
+  ...EXTRA_RIGHTS,
+];
 const ALL_RIGHTS_SET = new Set(ALL_RIGHTS);
 
 export function isValidRight(value: unknown): value is string {
@@ -100,6 +110,9 @@ export const ROLE_PRESETS: Record<Exclude<ShopRole, 'OWNER' | 'STAFF'>, string[]
     'products:manage',
     'orders:manage',
     'invoices:manage',
+    POS_OVERRIDE_RIGHT, // can authorise till discounts/voids/returns
+    'quotations:manage',
+    'challans:manage',
     'payments:manage',
     'parties:manage',
     'stock:manage',

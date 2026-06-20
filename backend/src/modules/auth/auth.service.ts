@@ -166,9 +166,90 @@ export class AuthService {
     const name = data.name.trim();
     const acceptedAt = new Date();
 
+    // A pending TEAM invite for this email takes precedence over creating a
+    // shop. The person was invited to join an existing shop's team, so even
+    // when the merchant app sends role=OWNER + a shopName we must NOT mint
+    // them their own shop: ShopMember.userId is unique, so owning a shop
+    // would permanently block them from ever accepting the invite
+    // (respond() throws ALREADY_ON_TEAM once any membership exists). Instead
+    // we onboard them as staff of the inviting shop, atomically — the same
+    // outcome as the token-based accept-invite screen, for people who just
+    // hit "register" without the invite link. Customer-app (role=CUSTOMER)
+    // signups keep the invite PENDING for explicit in-app acceptance.
     let user;
-    if (data.role === 'OWNER') {
-      const shopName = (data.shopName ?? '').trim();
+    const teamInvite =
+      data.role === 'OWNER'
+        ? await prisma.invitation.findFirst({
+            where: {
+              toEmail: email,
+              toUserId: null,
+              linkType: 'TEAM',
+              status: 'PENDING',
+              expiresAt: { gt: new Date() },
+            },
+            orderBy: { createdAt: 'desc' },
+            select: {
+              id: true,
+              shopId: true,
+              teamRoleName: true,
+              teamPermissions: true,
+              fromUserId: true,
+            },
+          })
+        : null;
+
+    if (teamInvite?.teamRoleName) {
+      const invite = teamInvite;
+      const roleName = teamInvite.teamRoleName;
+      try {
+        user = await prisma.$transaction(async (tx) => {
+          // Single-use claim first so a double submit can't onboard twice.
+          const claim = await tx.invitation.updateMany({
+            where: { id: invite.id, status: 'PENDING' },
+            data: { status: 'ACCEPTED', respondedAt: new Date() },
+          });
+          if (claim.count === 0) throw new InviteAlreadyUsedError();
+          // role=OWNER on the User row is "merchant app access", not shop
+          // ownership — they get into the merchant app, but their team role
+          // lives on ShopMember below (STAFF of the inviting shop). No Shop
+          // is created.
+          const created = await tx.user.create({
+            data: { email, name, passwordHash, role: 'OWNER', acceptedAt },
+            select: safeUserSelect,
+          });
+          await tx.invitation.update({
+            where: { id: invite.id },
+            data: { toUserId: created.id },
+          });
+          await tx.shopMember.create({
+            data: {
+              shopId: invite.shopId,
+              userId: created.id,
+              role: 'STAFF',
+              roleName,
+              permissions: normalizeRights(invite.teamPermissions),
+            },
+          });
+          await tx.notification.create({
+            data: {
+              userId: invite.fromUserId,
+              kind: 'INVITE_ACCEPTED',
+              title: `${email} joined your team`,
+              body: `As ${roleName}`,
+              data: { invitationId: invite.id, linkType: 'TEAM' },
+            },
+          });
+          return created;
+        });
+      } catch (err) {
+        // Lost the single-use race (the invite was consumed elsewhere) —
+        // fall through to a plain account below rather than failing signup.
+        if (!(err instanceof InviteAlreadyUsedError)) throw err;
+      }
+    }
+
+    const shopName = (data.shopName ?? '').trim();
+    if (!user && data.role === 'OWNER' && shopName) {
       const slug = await uniqueShopSlug(slugifyShop(shopName));
       user = await prisma.$transaction(async (tx) => {
         const created = await tx.user.create({
@@ -205,13 +286,17 @@ export class AuthService {
         await seedDefaultRoles(tx, shop.id);
         return created;
       });
-    } else {
+    } else if (!user) {
+      // No shop created at signup. A merchant (role=OWNER) who didn't send a
+      // shopName is created shopless and names their shop on the onboarding
+      // screen next (POST /me/onboarding/shop); a customer stays a customer.
+      // Either way no Shop/ShopMember row is created here.
       user = await prisma.user.create({
         data: {
           email,
           name,
           passwordHash,
-          role: 'CUSTOMER',
+          role: data.role === 'OWNER' ? 'OWNER' : 'CUSTOMER',
           // DPDP §6: record the moment of consent. The controller enforces
           // that both terms + privacy were ticked before reaching the
           // service, so reaching here implies a freely-given consent.

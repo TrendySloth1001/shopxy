@@ -5,7 +5,7 @@ import Image from "next/image";
 import {
   ImageOff, Minus, Plus, ScanBarcode, Trash2, Wifi, WifiOff, Loader2, CheckCircle2,
   Banknote, CreditCard, Smartphone, Pause, ListRestart, X, IndianRupee,
-  Calculator, Undo2, LockOpen, Lock, Search, Printer, Percent, Clock, UserRound,
+  Calculator, Undo2, LockOpen, Lock, Search, Printer, Percent, Clock, UserRound, ShieldCheck,
 } from "lucide-react";
 import { mediaSrc } from "@/features/products/components/product-thumb";
 import { formatINR2 } from "@/shared/money";
@@ -13,6 +13,7 @@ import { usePosSale } from "./use-pos-sale";
 import type { ConnStatus, OpenSaleSummary, SaleLine, TenderMode } from "./types";
 import {
   fetchCurrent, openShift, addCashMovement, closeShift, fetchReturnable, processReturn,
+  authorizeOverride, isOverrideRequired,
   type ShiftReport, type Returnable,
 } from "@/features/cashier/api";
 
@@ -36,6 +37,7 @@ export function PosTillView() {
   const [shiftLoaded, setShiftLoaded] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [discountLine, setDiscountLine] = useState<SaleLine | null>(null);
+  const [overridePrompt, setOverridePrompt] = useState<{ retry: (token: string) => void } | null>(null);
   const [customer, setCustomer] = useState<{ name: string; phone: string }>({ name: "", phone: "" });
   const scanRef = useRef<HTMLInputElement>(null);
 
@@ -254,7 +256,15 @@ export function PosTillView() {
             </div>
             <div className="mt-sm flex items-center gap-sm">
               <span className="text-label-md text-muted">Bill discount ₹</span>
-              <BillDiscountInput key={pos.snapshot?.sale.headerDiscount ?? 0} value={pos.snapshot?.sale.headerDiscount ?? 0} onCommit={(d) => pos.setHeaderDiscount(d)} disabled={lines.length === 0} />
+              <BillDiscountInput
+                key={pos.snapshot?.sale.headerDiscount ?? 0}
+                value={pos.snapshot?.sale.headerDiscount ?? 0}
+                onCommit={async (d) => {
+                  const r = await pos.setHeaderDiscount(d);
+                  if (r.overrideRequired) setOverridePrompt({ retry: (tok) => void pos.setHeaderDiscount(d, tok) });
+                }}
+                disabled={lines.length === 0}
+              />
             </div>
           </div>
 
@@ -299,8 +309,20 @@ export function PosTillView() {
       {discountLine ? (
         <LineDiscountModal
           line={discountLine}
-          onApply={(amount) => { pos.setLineDiscount(discountLine.productId, amount); setDiscountLine(null); }}
+          onApply={async (amount) => {
+            const productId = discountLine.productId;
+            setDiscountLine(null);
+            const r = await pos.setLineDiscount(productId, amount);
+            if (r.overrideRequired) setOverridePrompt({ retry: (tok) => void pos.setLineDiscount(productId, amount, tok) });
+          }}
           onClose={() => setDiscountLine(null)}
+        />
+      ) : null}
+
+      {overridePrompt ? (
+        <ManagerAuthModal
+          onClose={() => setOverridePrompt(null)}
+          onAuthorized={(token) => { overridePrompt.retry(token); setOverridePrompt(null); }}
         />
       ) : null}
 
@@ -313,7 +335,7 @@ export function PosTillView() {
       ) : null}
 
       {shiftModal ? <ShiftModal onClose={() => { setShiftModal(false); void loadShift(); }} /> : null}
-      {returnsModal ? <ReturnsModal onClose={() => { setReturnsModal(false); void loadShift(); }} /> : null}
+      {returnsModal ? <ReturnsModal onClose={() => { setReturnsModal(false); void loadShift(); }} onNeedManager={(retry) => setOverridePrompt({ retry })} /> : null}
     </div>
   );
 }
@@ -428,7 +450,7 @@ function ShiftModal({ onClose }: { onClose: () => void }) {
 }
 
 /** Process a return without leaving the till. */
-function ReturnsModal({ onClose }: { onClose: () => void }) {
+function ReturnsModal({ onClose, onNeedManager }: { onClose: () => void; onNeedManager: (retry: (token: string) => void) => void }) {
   const [invoiceId, setInvoiceId] = useState("");
   const [returnable, setReturnable] = useState<Returnable | null>(null);
   const [qty, setQty] = useState<Record<number, string>>({});
@@ -440,6 +462,24 @@ function ReturnsModal({ onClose }: { onClose: () => void }) {
   const run = async (fn: () => Promise<void>) => {
     setBusy(true); setError(null);
     try { await fn(); } catch (e) { setError(e instanceof Error ? e.message : "Something went wrong."); } finally { setBusy(false); }
+  };
+
+  // Returns are privileged: on OVERRIDE_REQUIRED, ask for a manager grant + retry.
+  const submitReturn = async (token?: string) => {
+    if (!returnable) return;
+    const lines = returnable.lines.map((l) => ({ productId: l.productId, quantity: Number(qty[l.productId]) || 0 })).filter((l) => l.quantity > 0);
+    if (lines.length === 0) { setError("Enter a quantity to return."); return; }
+    setBusy(true); setError(null);
+    try {
+      const res = await processReturn({ originalInvoiceId: returnable.invoiceId, refundMode, lines, override: token });
+      setDone(`Credit note ${res.creditNoteNo} · refund ${formatINR2(res.refundAmount)}`);
+      setReturnable(null); setQty({});
+    } catch (e) {
+      if (isOverrideRequired(e)) onNeedManager((tok) => void submitReturn(tok));
+      else setError(e instanceof Error ? e.message : "Something went wrong.");
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -480,13 +520,7 @@ function ReturnsModal({ onClose }: { onClose: () => void }) {
             <button
               type="button"
               disabled={busy}
-              onClick={() => run(async () => {
-                const lines = returnable.lines.map((l) => ({ productId: l.productId, quantity: Number(qty[l.productId]) || 0 })).filter((l) => l.quantity > 0);
-                if (lines.length === 0) throw new Error("Enter a quantity to return.");
-                const res = await processReturn({ originalInvoiceId: returnable.invoiceId, refundMode, lines });
-                setDone(`Credit note ${res.creditNoteNo} · refund ${formatINR2(res.refundAmount)}`);
-                setReturnable(null); setQty({});
-              })}
+              onClick={() => void submitReturn()}
               className="mt-sm inline-flex h-10 items-center gap-sm rounded-button bg-brand px-lg text-label-md text-white hover:bg-brand-strong disabled:bg-disabled"
             >
               <Undo2 size={16} /> Process return
@@ -643,6 +677,70 @@ function Modal({ children, onClose }: { children: React.ReactNode; onClose: () =
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 px-lg" onClick={onClose}>
       <div className="rounded-lg border border-hairline bg-canvas p-xl" onClick={(e) => e.stopPropagation()}>{children}</div>
     </div>
+  );
+}
+
+/** A manager enters their own credentials in person to authorise a privileged
+ *  till action (discount / void / price override / return) that the signed-in
+ *  cashier lacks the `invoices:override` right for. On success it hands back a
+ *  short-lived grant token that the caller replays with the original command. */
+function ManagerAuthModal({ onClose, onAuthorized }: { onClose: () => void; onAuthorized: (token: string) => void }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = async () => {
+    if (!email.trim() || !password || busy) return;
+    setBusy(true); setError(null);
+    try {
+      const grant = await authorizeOverride(email.trim(), password);
+      onAuthorized(grant.token);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Authorisation failed.");
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Modal onClose={onClose}>
+      <div className="w-[400px] max-w-full">
+        <div className="flex items-center justify-between gap-md">
+          <h2 className="flex items-center gap-sm text-title-md text-ink"><ShieldCheck size={18} /> Manager authorisation</h2>
+          <button type="button" onClick={onClose} className="text-muted hover:text-ink"><X size={18} /></button>
+        </div>
+        <p className="mt-xs text-body-sm text-muted">A manager must approve this action. Enter manager credentials below.</p>
+        {error ? <p className="mt-md rounded-button bg-error/10 px-md py-sm text-body-sm text-error">{error}</p> : null}
+        <label className="mt-lg block text-label-md text-muted">Manager email</label>
+        <input
+          type="email"
+          autoFocus
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") void submit(); }}
+          className="mt-xs h-10 w-full rounded-button border border-hairline px-md text-body-md text-ink focus-visible:border-brand focus-visible:outline-none"
+        />
+        <label className="mt-md block text-label-md text-muted">Password</label>
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") void submit(); }}
+          className="mt-xs h-10 w-full rounded-button border border-hairline px-md text-body-md text-ink focus-visible:border-brand focus-visible:outline-none"
+        />
+        <div className="mt-lg flex items-center justify-end gap-sm">
+          <button type="button" onClick={onClose} className="inline-flex h-10 items-center rounded-button border border-hairline px-lg text-label-md text-ink hover:bg-surface-tint">Cancel</button>
+          <button
+            type="button"
+            disabled={busy || !email.trim() || !password}
+            onClick={() => void submit()}
+            className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-lg text-label-md text-white hover:bg-brand-strong disabled:bg-disabled"
+          >
+            <ShieldCheck size={16} /> {busy ? "Authorising…" : "Authorise"}
+          </button>
+        </div>
+      </div>
+    </Modal>
   );
 }
 
