@@ -342,11 +342,18 @@ function InviteModal({
   const [roleName, setRoleName] = useState("");
   const [message, setMessage] = useState("");
   const [perms, setPerms] = useState<Set<string>>(new Set());
+  const [custom, setCustom] = useState(false);
   const ceiling = useGrantCeiling();
 
-  function applyRole(name: string) {
-    setRoleName(name);
-    const role = roles.find((r) => r.name === name);
+  function onPickRole(value: string) {
+    if (value === "__custom__") {
+      setCustom(true);
+      setRoleName("");
+      return;
+    }
+    setCustom(false);
+    setRoleName(value);
+    const role = roles.find((r) => r.name === value);
     if (role) setPerms(new Set(role.permissions));
   }
 
@@ -364,25 +371,35 @@ function InviteModal({
         />
       </label>
       <label className="flex flex-col gap-xs">
-        <span className="text-label-md text-muted">Role label</span>
-        <input
-          list="role-presets"
-          value={roleName}
-          onChange={(e) => applyRole(e.target.value)}
-          placeholder="e.g. Cashier"
+        <span className="text-label-md text-muted">Role</span>
+        <select
+          value={custom ? "__custom__" : roleName}
+          onChange={(e) => onPickRole(e.target.value)}
           className="h-10 rounded-input border border-hairline bg-white px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
-        />
-        <datalist id="role-presets">
+        >
+          <option value="" disabled>Choose a role…</option>
           {roles.map((r) => (
-            <option key={r.id} value={r.name} />
+            <option key={r.id} value={r.name}>{r.name}</option>
           ))}
-        </datalist>
+          <option value="__custom__">Custom role…</option>
+        </select>
+        {custom ? (
+          <input
+            value={roleName}
+            onChange={(e) => setRoleName(e.target.value)}
+            placeholder="Custom role label (e.g. Senior cashier)"
+            className="h-10 rounded-input border border-hairline bg-white px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+          />
+        ) : null}
         <span className="text-body-sm text-subtle">
-          Pick a saved role to prefill its access, then fine-tune below.
+          Pick a saved role to prefill its access, then fine-tune the checkboxes below.
         </span>
       </label>
       <div className="flex flex-col gap-xs">
         <span className="text-label-md text-muted">Access</span>
+        <p className="rounded-md bg-surface-tint px-md py-sm text-body-sm text-muted">
+          For a cashier, pick <span className="font-semibold text-ink">Cashier</span> above — or tick <span className="font-semibold text-ink">Billing &amp; POS → Manage</span> (that&rsquo;s what unlocks the Point of sale till &amp; cashier console).
+        </p>
         <PermissionMatrix value={perms} onChange={setPerms} ceiling={ceiling} />
       </div>
       <label className="flex flex-col gap-xs">
