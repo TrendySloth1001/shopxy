@@ -1,6 +1,7 @@
 import { describe, it, expect, afterAll } from 'vitest';
 import prisma from '../../src/infra/db/prisma.js';
 import * as pos from '../../src/modules/pos/pos.service.js';
+import * as cashier from '../../src/modules/cashier/cashier.service.js';
 import { handlePosCommand } from '../../src/modules/pos/pos.ws.js';
 import type { WsAuthCtx } from '../../src/modules/scan-console/scan-console.service.js';
 import { createTestUser, cleanupTestUser, createTestProduct } from '../helpers/setup.js';
@@ -31,6 +32,8 @@ describe('pos.ws — command dispatch', () => {
   it('routes a command to the service and replies under reqId', async () => {
     const ctx0 = await createTestUser();
     try {
+      // Scanning/selling is gated on an open shift (enforced in the WS router).
+      await cashier.openShift(ctx0.shopId, ctx0.userId, 0);
       const sale = snap(await pos.openSale(ctx0.shopId, ctx0.userId));
       const ctx: WsAuthCtx = { shopId: ctx0.shopId, userId: ctx0.userId, shopRole: 'OWNER', permissions: [] };
 
@@ -46,6 +49,31 @@ describe('pos.ws — command dispatch', () => {
       const res = (await b.next) as { ok: boolean; data: { lines: unknown[] } };
       expect(res.ok).toBe(true);
       expect(res.data.lines).toHaveLength(1);
+    } finally {
+      await cleanupTestUser(ctx0);
+    }
+  });
+
+  it('gates scanning/selling on an open shift', async () => {
+    const ctx0 = await createTestUser();
+    try {
+      const sale = snap(await pos.openSale(ctx0.shopId, ctx0.userId));
+      const ctx: WsAuthCtx = { shopId: ctx0.shopId, userId: ctx0.userId, shopRole: 'OWNER', permissions: [] };
+      const product = await createTestProduct(ctx0.shopId, { sellingPrice: 25, stockQuantity: 5 });
+
+      // No shift open → scan is rejected.
+      const a = fakeWs();
+      handlePosCommand(a.ws as never, ctx, { t: 'cmd', reqId: 'g1', op: 'scan', saleId: sale.sale.id, code: product.sku });
+      const blocked = (await a.next) as { ok: boolean; error: string };
+      expect(blocked.ok).toBe(false);
+      expect(blocked.error).toMatch(/shift/i);
+
+      // Open a shift → scan now succeeds.
+      await cashier.openShift(ctx0.shopId, ctx0.userId, 0);
+      const b = fakeWs();
+      handlePosCommand(b.ws as never, ctx, { t: 'cmd', reqId: 'g2', op: 'scan', saleId: sale.sale.id, code: product.sku });
+      const ok = (await b.next) as { ok: boolean };
+      expect(ok.ok).toBe(true);
     } finally {
       await cleanupTestUser(ctx0);
     }

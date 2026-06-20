@@ -222,6 +222,69 @@ export class InvoicesService {
     return invoice;
   }
 
+  /// Create a CONFIRMED **credit note** (sales return) inside a tx: mirrors
+  /// `createConfirmedSaleInTx` but restocks the goods (stock IN, reason
+  /// RETURN_IN) and links the original SALE invoice. The returned items carry
+  /// the original unit price + frozen tax so the credit note reverses GST
+  /// proportionally. Idempotency key namespaced per credit-note invoice.
+  async createSalesReturnInTx(
+    tx: Prisma.TransactionClient,
+    data: ResolveInvoiceInput & { originalInvoiceId: number },
+    createdById?: number,
+  ) {
+    const resolved = await this.resolveInvoiceFields({ ...data, documentType: 'CREDIT_NOTE' }, tx);
+    if ('error' in resolved) {
+      throw new PosInvoiceError(resolved.error);
+    }
+    const { header, itemsData } = resolved;
+    const { invoiceNo, financialYear } = await nextInvoiceNo(
+      data.shopId,
+      data.type,
+      header.documentType,
+      header.invoiceDate,
+      tx,
+    );
+    const invoice = await tx.invoice.create({
+      data: {
+        ...header,
+        shopId: data.shopId,
+        invoiceNo,
+        financialYear,
+        status: 'CONFIRMED',
+        originalInvoiceId: data.originalInvoiceId,
+        items: { create: itemsData },
+      },
+      include: { items: true },
+    });
+
+    // Stock IN — the returned goods come back to the shelf.
+    const posted = await ledgerService.post(
+      {
+        shopId: data.shopId,
+        direction: 'IN',
+        reasonCode: 'RETURN_IN',
+        sourceType: 'INVOICE',
+        sourceId: invoice.id,
+        idempotencyKey: `INVOICE:${invoice.id}:RETURN`,
+        counterpartyName: header.customerName ?? undefined,
+        counterpartyGstin: header.customerGstin ?? undefined,
+        createdById,
+        note: `Credit note ${invoice.invoiceNo}`,
+        lines: invoice.items.map((it) => ({
+          productId: it.productId,
+          quantity: Number(it.quantity),
+          unitPrice: Number(it.unitPrice),
+          sourceLineId: it.id,
+        })),
+      },
+      tx,
+    );
+    if ('error' in posted) {
+      throw new PosInvoiceError(posted.error);
+    }
+    return invoice;
+  }
+
   /// Pure resolution step shared by create + update: party/vendor look-ups,
   /// product snapshots, GST split and total calculation. Returns either an
   /// `error` or the ready-to-write header + items payload.

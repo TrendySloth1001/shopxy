@@ -284,6 +284,44 @@ export class ProductsService {
     return product;
   }
 
+  /// Lightweight catalogue search for the POS "add without a barcode" picker —
+  /// active products matching name / sku / barcode, minimal projection, capped.
+  async posSearch(shopId: number, term: string, limit = 15) {
+    const t = term.trim();
+    if (!t) return [];
+    const rows = await prisma.product.findMany({
+      where: {
+        shopId,
+        isActive: true,
+        OR: [
+          { name: { contains: t, mode: 'insensitive' } },
+          { sku: { contains: t, mode: 'insensitive' } },
+          { barcode: { contains: t, mode: 'insensitive' } },
+        ],
+      },
+      orderBy: { name: 'asc' },
+      take: Math.min(Math.max(limit, 1), 30),
+      select: {
+        id: true,
+        name: true,
+        sku: true,
+        sellingPrice: true,
+        mrp: true,
+        stockQuantity: true,
+        images: { orderBy: { sortOrder: 'asc' }, take: 1, select: { url: true } },
+      },
+    });
+    return rows.map((p) => ({
+      id: p.id,
+      name: p.name,
+      sku: p.sku,
+      sellingPrice: Number(p.sellingPrice),
+      mrp: Number(p.mrp),
+      stock: Number(p.stockQuantity),
+      imageUrl: p.images[0]?.url ?? null,
+    }));
+  }
+
   async listProducts(options: {
     shopId: number;
     activeOnly: boolean;
