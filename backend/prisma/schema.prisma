@@ -832,6 +832,15 @@ model Sale {
   /// Optimistic-concurrency cursor: every mutation bumps it; realtime deltas
   /// carry it so a client that missed a message can detect the gap and resync.
   version        Int        @default(0)
+  /// POS UPI-QR: the GatewayPayment intent backing an AWAITING_PAYMENT sale.
+  /// Loose Int FK (matches how GatewayPayment is referenced elsewhere). Set when
+  /// a QR is shown; cleared on cancel; the sale settles on the qr_code.credited
+  /// webhook via the POS settlement handler.
+  gatewayPaymentId Int?     @map("gateway_payment_id")
+  /// Cashier shift this sale was rung up in (set at open from the cashier's open
+  /// shift). Loose Int FK; null when no shift is open. The Z-report reconciles
+  /// cash via the receipts of the sales carrying its shiftId.
+  shiftId        Int?       @map("shift_id")
   /// Optional walk-in identity, kept off the legal document until checkout.
   partyId        Int?       @map("party_id")
   party          Party?     @relation(fields: [partyId], references: [id], onDelete: SetNull)
@@ -886,6 +895,57 @@ model SaleOp {
   @@map("sale_ops")
 }
 
+/// A cashier's till session ("control center" shift). Opened with an opening
+/// cash float; every POS sale the cashier rings up carries its id; closed with a
+/// counted-cash figure the service reconciles against expected cash
+/// (float + cash receipts + pay-ins − pay-outs − drops). Basis of the X-report
+/// (live, mid-shift) and the Z-report (final, on close). shopId is a plain Int
+/// (no back-relation) to keep the Shop model lean, matching GatewayPayment.
+model CashierShift {
+  id             Int            @id @default(autoincrement())
+  shopId         Int            @map("shop_id")
+  /// Cashier (user) who owns the session.
+  openedById     Int            @map("opened_by_id")
+  /// OPEN | CLOSED.
+  status         String         @default("OPEN")
+  openingFloat   Decimal        @default(0) @map("opening_float") @db.Decimal(12, 2)
+  /// Set on close: cash physically counted in the drawer.
+  closingCounted Decimal?       @map("closing_counted") @db.Decimal(12, 2)
+  /// Set on close: float + cash receipts + pay-ins − pay-outs − drops (snapshot).
+  expectedCash   Decimal?       @map("expected_cash") @db.Decimal(12, 2)
+  /// Set on close: closingCounted − expectedCash (over/short).
+  variance       Decimal?       @db.Decimal(12, 2)
+  closingNote    String?        @map("closing_note")
+  openedAt       DateTime       @default(now()) @map("opened_at")
+  closedAt       DateTime?      @map("closed_at")
+  closedById     Int?           @map("closed_by_id")
+  movements      CashMovement[]
+
+  @@index([shopId, status])
+  @@index([openedById, status])
+  @@map("cashier_shifts")
+}
+
+/// Non-sale cash-drawer movements during a shift: PAY_IN (float top-up / misc
+/// cash in), PAY_OUT (sundry / petty cash out), DROP (cash moved to the safe).
+/// `amount` is a positive magnitude; the sign is implied by `type`. These feed
+/// the shift's expected-cash reconciliation.
+model CashMovement {
+  id          Int          @id @default(autoincrement())
+  shopId      Int          @map("shop_id")
+  shiftId     Int          @map("shift_id")
+  shift       CashierShift @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  /// PAY_IN | PAY_OUT | DROP.
+  type        String
+  amount      Decimal      @db.Decimal(12, 2)
+  reason      String?
+  createdById Int?         @map("created_by_id")
+  createdAt   DateTime     @default(now()) @map("created_at")
+
+  @@index([shiftId])
+  @@map("cash_movements")
+}
+
 model Invoice {
   id                     Int              @id @default(autoincrement())
   /// Owning shop. Invoice numbers reset per shop, so the unique
@@ -898,6 +958,9 @@ model Invoice {
   /// CREDIT_NOTE | DEBIT_NOTE. Renders as the document title at the top of
   /// the printed PDF and drives the invoice-number prefix.
   documentType           String           @default("TAX_INVOICE") @map("document_type")
+  /// For a CREDIT_NOTE (sales return), the original SALE invoice it reverses.
+  /// Loose Int (no self-relation) — drives return-quantity tracking + display.
+  originalInvoiceId      Int?             @map("original_invoice_id")
   /// Indian FY ("25-26"). Denormalised so report filters and the
   /// invoice-number reset boundary survive without parsing invoiceDate.
   financialYear          String           @map("financial_year")

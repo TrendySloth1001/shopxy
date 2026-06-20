@@ -93,11 +93,16 @@ export class TeamService {
   // ── Roles (owner-defined, per-shop) ───────────────────────────────
 
   async listRoles(shopId: number) {
-    return prisma.teamRole.findMany({
-      where: { shopId },
-      select: { id: true, name: true, permissions: true, builtin: true },
-      orderBy: [{ builtin: 'desc' }, { name: 'asc' }],
-    });
+    const select = { id: true, name: true, permissions: true, builtin: true } as const;
+    const orderBy = [{ builtin: 'desc' as const }, { name: 'asc' as const }];
+    let roles = await prisma.teamRole.findMany({ where: { shopId }, select, orderBy });
+    // Self-heal: a shop with no roles (created before seeding, or a failed seed)
+    // would leave the invite picker without Manager/Stockist/Cashier presets.
+    if (roles.length === 0) {
+      await seedDefaultRoles(prisma, shopId);
+      roles = await prisma.teamRole.findMany({ where: { shopId }, select, orderBy });
+    }
+    return roles;
   }
 
   async createRole(opts: {

@@ -12,6 +12,7 @@ import type {
   WebhookEventRepository,
 } from './ports/repository.port.js';
 import type { HeaderBag } from './ports/payment-provider.port.js';
+import { isQrCapable } from './ports/payment-provider.port.js';
 import type {
   GatewayPaymentRecord,
   GatewayPaymentStatus,
@@ -258,8 +259,80 @@ export class PaymentGatewayService {
     };
   }
 
+  /**
+   * Create a POS UPI-QR intent + a fixed-amount Razorpay QR for one sale. The QR
+   * id is stored as the intent's order ref so the `qr_code.credited` webhook (and
+   * the QR-aware reconciliation sweep) resolve ownership through the existing
+   * paths. Caller (pos.payments) holds the sale lock, so this mints at most one
+   * QR per sale; it does no idempotency replay of its own.
+   */
+  async initiatePosQr(input: {
+    provider: string;
+    shopId: number;
+    saleId: number;
+    amount: number;
+    currency?: string;
+    idempotencyKey: string;
+  }): Promise<{ intentId: number; qrId: string; imageUrl: string; amount: number; currency: string }> {
+    const provider = getProvider(input.provider);
+    if (!isQrCapable(provider)) {
+      throw Object.assign(new Error('Provider does not support UPI-QR'), { status: 400 });
+    }
+    const currency = input.currency ?? 'INR';
+
+    const intent = await this.repo.create({
+      provider: input.provider.toUpperCase(),
+      amount: input.amount,
+      currency,
+      target: { type: 'POS', id: input.saleId },
+      shopId: input.shopId,
+      customerUserId: null,
+      idempotencyKey: input.idempotencyKey,
+    });
+    tracker.track({
+      step: 'INTENT_CREATED',
+      provider: intent.provider,
+      intentId: intent.id,
+      targetType: 'POS',
+    });
+
+    const qr = await provider.createPosQr({
+      amountMinor: toMinorUnits(intent.amount),
+      intentRef: String(intent.id),
+      notes: {
+        app: 'shopxy',
+        intentId: String(intent.id),
+        targetType: 'POS',
+        targetId: String(input.saleId),
+      },
+    });
+    // The QR id doubles as the order ref (webhook + reconcile resolve by it).
+    await this.repo.attachProviderRefs(intent.id, { providerOrderRef: qr.qrId });
+    tracker.track({
+      step: 'SESSION_CREATED',
+      provider: intent.provider,
+      intentId: intent.id,
+      providerOrderRef: qr.qrId,
+    });
+
+    return { intentId: intent.id, qrId: qr.qrId, imageUrl: qr.imageUrl, amount: intent.amount, currency };
+  }
+
   async getIntent(id: number): Promise<GatewayPaymentRecord | null> {
     return this.repo.findById(id);
+  }
+
+  /**
+   * Abandon an open intent: run the target's teardown (POS closes the QR +
+   * unlocks the cart) then mark it FAILED so the reconcile sweep stops scanning
+   * it. Idempotent + best-effort; a no-op on an already-settled/terminal intent.
+   * Used by the till's "cancel QR" and by the reconcile abandon path.
+   */
+  async abandonIntent(id: number): Promise<void> {
+    const intent = await this.repo.findById(id);
+    if (!intent) return;
+    if (intent.status === 'CAPTURED' || intent.status === 'REFUNDED') return;
+    await this.abandon(intent);
   }
 
   /**
@@ -348,6 +421,19 @@ export class PaymentGatewayService {
           // idempotent with the webhook. Reuses the authoritative path.
           await this.reconcilePaidOrder(intent, live);
           summary.captured++;
+        } else if (intent.target.type === 'POS') {
+          // In-store QR unpaid past the recheck window → abandon now (close the
+          // QR + unlock the cart). POS QRs are short-lived; they don't wait the
+          // 24h order abandon window. The till's own "cancel" is the fast path;
+          // this is the backstop for a QR the cashier walked away from.
+          await this.abandon(intent);
+          summary.abandoned++;
+          tracker.track({
+            step: 'RECONCILE_ABANDONED',
+            provider: intent.provider,
+            intentId: intent.id,
+            meta: { liveStatus: live.status, target: 'POS' },
+          });
         } else if (intent.createdAt < abandonBefore) {
           // Provider gave a definitive not-paid status AND we're past the hard
           // window → terminal FAILED so we stop re-scanning it.
@@ -665,6 +751,29 @@ export class PaymentGatewayService {
       targetType: intent.target.type,
       status: 'SUCCESS',
     });
+  }
+
+  /**
+   * Tear down an abandoned/cancelled intent: best-effort target teardown
+   * (handler.onAbandon — POS closes the QR + unlocks the cart) then FAILED.
+   * A teardown failure is logged, not fatal — the intent still fails so the
+   * sweep stops re-scanning it.
+   */
+  private async abandon(intent: GatewayPaymentRecord): Promise<void> {
+    const handler = settlementFor(intent.target.type);
+    if (handler.onAbandon) {
+      try {
+        await handler.onAbandon(intent);
+      } catch (err) {
+        tracker.track({
+          step: 'PAYMENT_FAILED',
+          provider: intent.provider,
+          intentId: intent.id,
+          meta: { phase: 'onAbandon', error: err instanceof Error ? err.message : 'unknown' },
+        });
+      }
+    }
+    await this.fail(intent);
   }
 
   private async fail(intent: GatewayPaymentRecord): Promise<void> {

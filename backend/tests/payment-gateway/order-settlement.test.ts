@@ -12,7 +12,7 @@ import { settlementFor } from '../../src/modules/payment-gateway/settlement/sett
 import type { SettlementTargetType } from '../../src/modules/payment-gateway/ports/types.js';
 
 describe('settlement registry', () => {
-  it.each<SettlementTargetType>(['WALLET', 'ORDER', 'INVOICE', 'CAUTION'])(
+  it.each<SettlementTargetType>(['WALLET', 'ORDER', 'INVOICE', 'CAUTION', 'POS'])(
     'resolves %s to a handler exposing onPaid',
     (type) => {
       const handler = settlementFor(type);

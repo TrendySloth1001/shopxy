@@ -12,6 +12,7 @@
  */
 import type {
   CreateLinkedAccountParams,
+  CreatePosQrParams,
   CreateSessionParams,
   ExistingTransfer,
   HandshakeParams,
@@ -19,6 +20,8 @@ import type {
   LinkedAccountResult,
   OnboardingCapablePort,
   PaymentGatewayPort,
+  PosQrResult,
+  QrCapablePort,
   RefundParams,
   SplitCapablePort,
   TransferRequest,
@@ -50,6 +53,9 @@ function mapEventType(event: string): GatewayEventType {
   switch (event) {
     case 'payment.captured':
     case 'order.paid':
+    // A UPI-QR payment lands as `qr_code.credited` (the QR's payment captured).
+    // The nested payment entity carries the amount/ref the intent path needs.
+    case 'qr_code.credited':
       return 'PAID';
     case 'payment.failed':
       return 'FAILED';
@@ -115,7 +121,7 @@ export interface RazorpayCallConfig {
 type CircuitState = 'CLOSED' | 'OPEN' | 'HALF_OPEN';
 
 export class RazorpayProvider
-  implements PaymentGatewayPort, SplitCapablePort, OnboardingCapablePort
+  implements PaymentGatewayPort, SplitCapablePort, OnboardingCapablePort, QrCapablePort
 {
   readonly name = 'RAZORPAY';
 
@@ -385,6 +391,7 @@ export class RazorpayProvider
         payment?: { entity?: { id?: string; order_id?: string; amount?: number; currency?: string } };
         order?: { entity?: { id?: string; amount?: number; currency?: string } };
         refund?: { entity?: { id?: string; payment_id?: string; amount?: number; currency?: string } };
+        qr_code?: { entity?: { id?: string } };
         transfer?: {
           entity?: { id?: string; status?: string; amount_reversed?: number; on_hold?: boolean };
         };
@@ -407,6 +414,7 @@ export class RazorpayProvider
     const payEntity = payload.payload?.payment?.entity;
     const orderEntity = payload.payload?.order?.entity;
     const refundEntity = payload.payload?.refund?.entity;
+    const qrEntity = payload.payload?.qr_code?.entity;
     const transferEntity = payload.payload?.transfer?.entity;
     const accountEntity = payload.payload?.account?.entity;
     const disputeEntity = payload.payload?.dispute?.entity;
@@ -422,12 +430,15 @@ export class RazorpayProvider
     const eventId =
       headerValue(headers, 'x-razorpay-event-id') ??
       // Fallback: an entity id + event name (still stable per delivery).
-      `${payEntity?.id ?? refundEntity?.id ?? orderEntity?.id ?? transferEntity?.id ?? accountEntity?.id ?? disputeEntity?.id ?? 'unknown'}:${event}`;
+      `${payEntity?.id ?? refundEntity?.id ?? orderEntity?.id ?? qrEntity?.id ?? transferEntity?.id ?? accountEntity?.id ?? disputeEntity?.id ?? 'unknown'}:${event}`;
 
     return {
       type,
       eventId,
-      providerOrderRef: payEntity?.order_id ?? orderEntity?.id ?? null,
+      // A UPI-QR payment has no order; the intent stores the QR id as its order
+      // ref, so resolve ownership by the QR id first (a regular payment still
+      // resolves by its order_id).
+      providerOrderRef: qrEntity?.id ?? payEntity?.order_id ?? orderEntity?.id ?? null,
       // dispute events carry the disputed payment id on the dispute entity.
       providerPaymentRef:
         payEntity?.id ?? refundEntity?.payment_id ?? disputeEntity?.payment_id ?? null,
@@ -459,6 +470,12 @@ export class RazorpayProvider
   }
 
   async fetchOrderStatus(providerOrderRef: string): Promise<NormalizedOrderStatus> {
+    // A POS UPI-QR intent stores the QR id (qr_XXXX) as its order ref — it has no
+    // Razorpay order. Route those through the QR payments endpoint so the generic
+    // reconciliation sweep heals a missed `qr_code.credited` with no special-casing.
+    if (providerOrderRef.startsWith('qr_')) {
+      return this.fetchQrOrderStatus(providerOrderRef);
+    }
     // GET /orders/:id → { status: 'created'|'attempted'|'paid', amount_paid }.
     const order = await this.call<{ status: string; amount_paid?: number }>(
       'GET',
@@ -789,5 +806,59 @@ export class RazorpayProvider
       contactName: res.contact_name ?? null,
       businessType: res.business_type ?? null,
     };
+  }
+
+  // ── QrCapablePort: dynamic UPI QR (Razorpay QR Codes API) ──────────────────
+  //
+  // A fixed-amount, single-use UPI QR. The customer scans it with any UPI app
+  // and pays; Razorpay fires `qr_code.credited` (carrying the captured payment)
+  // which the intent webhook path settles. The QR id is what the intent stores
+  // as its order ref, so the existing ownership lookup resolves it.
+
+  async createPosQr(p: CreatePosQrParams): Promise<PosQrResult> {
+    const qr = await this.call<{ id: string; image_url?: string }>('POST', '/payments/qr_codes', {
+      type: 'upi_qr',
+      // One sale, one QR: a single-use, fixed-amount QR closes itself after the
+      // first successful payment so it can't be paid twice.
+      usage: 'single_use',
+      fixed_amount: true,
+      payment_amount: p.amountMinor,
+      notes: p.notes ?? {},
+    });
+    return { qrId: qr.id, imageUrl: qr.image_url ?? '' };
+  }
+
+  async fetchQr(qrId: string): Promise<{ imageUrl: string; closed: boolean }> {
+    const qr = await this.call<{ image_url?: string; status?: string }>(
+      'GET',
+      `/payments/qr_codes/${qrId}`,
+    );
+    return { imageUrl: qr.image_url ?? '', closed: qr.status === 'closed' };
+  }
+
+  async closeQr(qrId: string): Promise<void> {
+    // Idempotent server-side: closing an already-closed QR is harmless. A 400
+    // ("already closed") is swallowed so cancel/abandon never wedges on a QR the
+    // first-payment auto-close already retired.
+    try {
+      await this.call('POST', `/payments/qr_codes/${qrId}/close`, {});
+    } catch (err) {
+      if ((err as { status?: number }).status === 400) return;
+      throw err;
+    }
+  }
+
+  /** QR-payment liveness for {@link fetchOrderStatus}: list the QR's payments and
+   *  report PAID with the captured ref/amount, else CREATED. */
+  private async fetchQrOrderStatus(qrId: string): Promise<NormalizedOrderStatus> {
+    const res = await this.call<{
+      items?: Array<{ id: string; status: string; amount: number }>;
+    }>('GET', `/payments/qr_codes/${qrId}/payments`);
+    const items = res.items ?? [];
+    const cap = items.find((p) => p.status === 'captured') ?? items.find((p) => p.status === 'authorized');
+    if (cap) {
+      return { status: 'PAID', amountPaidMinor: cap.amount, capturedPaymentRef: cap.id };
+    }
+    return { status: 'CREATED', amountPaidMinor: 0, capturedPaymentRef: null };
   }
 }
