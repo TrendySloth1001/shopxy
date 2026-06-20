@@ -20,6 +20,7 @@ import {
   Images,
   ScanLine,
   ScanBarcode,
+  Calculator,
   Network,
   Landmark,
   ShieldCheck,
@@ -78,6 +79,7 @@ export const NAV_GROUPS: NavGroup[] = [
     title: "Shop operations",
     items: [
       { key: "pos", label: "Point of sale", icon: ScanBarcode },
+      { key: "cashier", label: "Cashier", icon: Calculator },
       { key: "scan-console", label: "Scan console", icon: ScanLine },
       { key: "team", label: "Team", icon: UserCog },
       { key: "caution-requests", label: "Caution requests", icon: HandCoins },
