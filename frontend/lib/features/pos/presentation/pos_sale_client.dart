@@ -41,7 +41,18 @@ class PosSaleClient extends ChangeNotifier {
   String? _checkoutInvoiceNo;
   String? get checkoutInvoiceNo => _checkoutInvoiceNo;
 
-  bool get isClosed => _snapshot != null && _snapshot!.status != 'OPEN';
+  int? _checkoutInvoiceId;
+  int? get checkoutInvoiceId => _checkoutInvoiceId;
+
+  // Amount of an in-flight online payment (set while Razorpay Checkout is open).
+  double? _onlineAmount;
+
+  double? _onlinePaidAmount;
+  double? get onlinePaidAmount => _onlinePaidAmount;
+
+  /// Terminal states only — AWAITING_PAYMENT (a payment is outstanding) is NOT closed.
+  bool get isClosed =>
+      _snapshot != null && (_snapshot!.status == 'CHECKED_OUT' || _snapshot!.status == 'VOIDED');
 
   WebSocketChannel? _channel;
   StreamSubscription<dynamic>? _sub;
@@ -135,6 +146,12 @@ class PosSaleClient extends ChangeNotifier {
       return;
     }
     final type = msg['type'];
+    // An online payment settled (webhook → pos.checkout) → mark paid.
+    if (type == 'pos.checkout' && msg['saleId'] == _saleId && _onlineAmount != null) {
+      _onlinePaidAmount = _onlineAmount;
+      _onlineAmount = null;
+      notifyListeners();
+    }
     if ((type == 'pos.sale' || type == 'pos.checkout' || type == 'pos.void') && msg['saleId'] == _saleId) {
       unawaited(_refresh());
     }
@@ -167,6 +184,50 @@ class PosSaleClient extends ChangeNotifier {
     if (_saleId == null) return;
     final res = await _send('snapshot', {'saleId': _saleId});
     if (res['ok'] == true && !_disposed) _apply(res['data'] as Map<String, dynamic>);
+  }
+
+  /// Hold the current bill (it stays OPEN, recallable) and start a fresh cart.
+  Future<void> holdAndNew() async {
+    _appliedVersion = -1; // switching sales — accept the new lower-version snapshot
+    final res = await _send('open');
+    if (res['ok'] == true && !_disposed) _apply(res['data'] as Map<String, dynamic>);
+  }
+
+  /// Recall a parked bill by id (make it the active cart).
+  Future<void> recall(int saleId) async {
+    _appliedVersion = -1;
+    final res = await _send('snapshot', {'saleId': saleId});
+    if (res['ok'] == true && !_disposed) _apply(res['data'] as Map<String, dynamic>);
+  }
+
+  /// Catalogue search for the "add without a barcode" picker.
+  Future<List<Map<String, dynamic>>> searchProducts(String term) async {
+    final res = await _send('search', {'term': term});
+    if (res['ok'] != true) return const [];
+    final data = res['data'];
+    return data is List ? data.cast<Map<String, dynamic>>() : const [];
+  }
+
+  /// Add a product by id (from search), bumping its line quantity.
+  Future<void> addItem(int productId, {double quantity = 1}) async {
+    if (_saleId == null) return;
+    _error = null;
+    final res = await _send('addItem', {'saleId': _saleId, 'productId': productId, 'quantity': quantity});
+    if (_disposed) return;
+    if (res['ok'] == true) {
+      _apply(res['data'] as Map<String, dynamic>);
+    } else {
+      _error = _human(res['error']);
+      notifyListeners();
+    }
+  }
+
+  /// The parked (held) bills with items.
+  Future<List<Map<String, dynamic>>> listOpen() async {
+    final res = await _send('listOpen');
+    if (res['ok'] != true) return const [];
+    final data = res['data'];
+    return data is List ? data.cast<Map<String, dynamic>>() : const [];
   }
 
   // ── actions ──
@@ -253,20 +314,70 @@ class PosSaleClient extends ChangeNotifier {
     }
   }
 
-  Future<void> checkout(String mode) async {
+  Future<void> setLineDiscount(int productId, double discount) =>
+      _runSnap('setLineDiscount', {'productId': productId, 'discount': discount});
+  Future<void> setHeaderDiscount(double discount) =>
+      _runSnap('setHeaderDiscount', {'discount': discount});
+
+  Future<void> checkout(String mode, {String? customerName, String? customerPhone}) async {
     if (_saleId == null) return;
     _error = null;
+    final hasCustomer = (customerName != null && customerName.isNotEmpty) || (customerPhone != null && customerPhone.isNotEmpty);
     final res = await _send('checkout', {
       'saleId': _saleId,
       'tender': {'mode': mode},
+      if (hasCustomer) 'customer': {'name': ?customerName, 'phone': ?customerPhone},
     });
     if (_disposed) return;
     if (res['ok'] == true) {
-      _checkoutInvoiceNo = (res['data'] as Map<String, dynamic>)['invoiceNo'] as String? ?? '—';
+      final data = res['data'] as Map<String, dynamic>;
+      _checkoutInvoiceNo = data['invoiceNo'] as String? ?? '—';
+      _checkoutInvoiceId = data['invoiceId'] as int?;
       notifyListeners();
     } else {
       _error = _human(res['error']);
       notifyListeners();
+    }
+  }
+
+  /// Start an online payment: locks the cart + creates a Razorpay order. Returns
+  /// the pay session ({ clientParams, amount, … }) for the page to open Razorpay
+  /// Checkout, or null on error (with `error` set). The sale settles on the
+  /// payment.captured webhook (pos.checkout event) / a follow-up [syncOnline].
+  Future<Map<String, dynamic>?> startOnline() async {
+    if (_saleId == null) return null;
+    _error = null;
+    final res = await _send('payOnline', {'saleId': _saleId});
+    if (_disposed) return null;
+    if (res['ok'] == true) {
+      final d = res['data'] as Map<String, dynamic>;
+      _onlineAmount = (d['amount'] as num?)?.toDouble();
+      unawaited(_refresh()); // sale is now AWAITING_PAYMENT
+      return d;
+    }
+    _error = _human(res['error']);
+    notifyListeners();
+    return null;
+  }
+
+  /// Settle backstop after the Razorpay sheet succeeds (webhook may be delayed).
+  Future<void> syncOnline() async {
+    if (_saleId == null) return;
+    final res = await _send('syncOnline', {'saleId': _saleId});
+    if (_disposed) return;
+    if (res['ok'] == true) _apply(res['data'] as Map<String, dynamic>);
+  }
+
+  /// Cancel an outstanding online payment: unlock the cart back to OPEN.
+  Future<void> cancelOnline() async {
+    if (_saleId == null) return;
+    _onlineAmount = null;
+    final res = await _send('cancelOnline', {'saleId': _saleId});
+    if (_disposed) return;
+    if (res['ok'] == true) {
+      _apply(res['data'] as Map<String, dynamic>);
+    } else {
+      unawaited(_refresh());
     }
   }
 

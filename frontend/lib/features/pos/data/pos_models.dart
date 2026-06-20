@@ -5,6 +5,7 @@ class SaleSnapshot {
     required this.status,
     required this.version,
     required this.invoiceId,
+    required this.headerDiscount,
     required this.lines,
     required this.totals,
   });
@@ -13,6 +14,7 @@ class SaleSnapshot {
   final String status;
   final int version;
   final int? invoiceId;
+  final double headerDiscount;
   final List<SaleLine> lines;
   final SaleTotals totals;
 
@@ -23,6 +25,7 @@ class SaleSnapshot {
       status: sale['status'] as String,
       version: sale['version'] as int,
       invoiceId: sale['invoiceId'] as int?,
+      headerDiscount: _d(sale['headerDiscount']),
       lines: (json['lines'] as List)
           .map((e) => SaleLine.fromJson(e as Map<String, dynamic>))
           .toList(),

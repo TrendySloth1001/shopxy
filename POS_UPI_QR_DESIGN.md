@@ -1,5 +1,31 @@
 # POS UPI-QR payments (P5) — design
 
+> **STATUS — BUILT (2026-06-19).** Shipped as **Razorpay Checkout** (Orders +
+> checkout.js / razorpay_flutter), NOT the standalone QR Codes API — the QR Codes
+> API returns 404 on this account (not enabled), whereas Orders/Checkout is enabled
+> and Razorpay Checkout itself shows a UPI QR + cards. The "Online" tender:
+> `payOnline` creates a Razorpay **order** (`initiatePayment`, target `POS`) → the
+> till opens Razorpay Checkout with the returned `clientParams` → settles on the
+> `payment.captured`/`order.paid` webhook (or the `syncOnline` backstop) via the
+> `POS` settlement handler (`settlePaidSaleInTx`, single-sourced with manual
+> checkout) → `pos.checkout` broadcast flips both tills to paid.
+>
+> New/changed: `POS` settlement target + handler; `Sale.AWAITING_PAYMENT` +
+> `gateway_payment_id` (migration `20260620190000_add_pos_qr`); WS ops
+> `payOnline`/`syncOnline`/`cancelOnline` (`pos.payments.ts`); shared
+> `openRazorpayCheckout` ported into merchant-web; `razorpay_flutter` added to the
+> merchant Flutter app + `razorpay_checkout.dart` ported; reconcile abandons unpaid
+> POS intents. The Route transfer to the merchant's linked account (`pos-split.ts`)
+> is gated behind **`ROUTE_SPLIT_ENABLED`** (off by default) — until set, a paid
+> order collects to the platform account and the sale still completes.
+>
+> The standalone QR-Codes provider capability (`createPosQr`/`fetchQr`/`closeQr`
+> + `QrCapablePort`, `qr_code.credited` mapping, QR-aware `fetchOrderStatus`) is
+> left in place as a **latent** capability (tested in `razorpay-qr.test.ts`) for
+> if QR Codes is enabled later — it is NOT wired to the POS tender. Tests:
+> `pos-settlement.test.ts`, `razorpay-qr.test.ts`, registry. Original design below
+> is retained as rationale.
+
 Status: **planned, not started.** Goal: at POS checkout, the "UPI (online)"
 tender shows a **dynamic UPI QR** (on the phone OR the web till); the customer
 scans it with any UPI app and pays; the sale **auto-completes** when Razorpay

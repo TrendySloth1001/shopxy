@@ -12,9 +12,11 @@ import 'package:shopxy/features/parties/presentation/pages/parties_page.dart';
 import 'package:shopxy/features/products/presentation/pages/products_page.dart';
 import 'package:shopxy/features/pos/presentation/pages/pos_page.dart';
 import 'package:shopxy/features/scan_console/presentation/pages/scan_console_page.dart';
+import 'package:shopxy/features/cashier/presentation/pages/cashier_page.dart';
 import 'package:shopxy/features/profile/presentation/pages/profile_page.dart';
 import 'package:shopxy/features/reports/presentation/pages/reports_page.dart';
 import 'package:shopxy/features/shop/presentation/pages/shop_profile_page.dart';
+import 'package:shopxy/features/shop/presentation/pages/shop_team_page.dart';
 import 'package:shopxy/features/admin/presentation/pages/admin_bank_offers_page.dart';
 import 'package:shopxy/features/admin/presentation/pages/admin_banners_page.dart';
 import 'package:shopxy/features/admin/presentation/pages/admin_category_taxonomy_page.dart';
@@ -98,6 +100,14 @@ List<_Shortcut> get _manageShortcuts => [
         requires: (u) => u.canView('shop'),
       ),
       _Shortcut(
+        label: 'Team & roles',
+        icon: Icons.groups_2_outlined,
+        accent: AppColors.accentIndigo,
+        accentSoft: AppColors.accentIndigoSoft,
+        builder: (_) => const ShopTeamPage(),
+        requires: (u) => u.canView('team'),
+      ),
+      _Shortcut(
         label: 'Banners',
         icon: Icons.image_outlined,
         accent: AppColors.accentIndigo,
@@ -146,6 +156,14 @@ List<_Shortcut> get _operationShortcuts => [
         accent: AppColors.brand,
         accentSoft: AppColors.brandSoft,
         builder: (_) => const PosPage(),
+        requires: (u) => u.canView('invoices'),
+      ),
+      _Shortcut(
+        label: 'Cashier',
+        icon: Icons.calculate_outlined,
+        accent: AppColors.accentIndigo,
+        accentSoft: AppColors.accentIndigoSoft,
+        builder: (_) => const CashierPage(),
         requires: (u) => u.canView('invoices'),
       ),
       _Shortcut(
@@ -284,6 +302,13 @@ class AppShellState extends State<AppShell> {
 
   @override
   Widget build(BuildContext context) {
+    // Cashier kiosk lock: a plain Cashier gets the till only (with log-out),
+    // not the full shell — a locked-down register.
+    final user = context.watch<AuthProvider>().user;
+    if (user?.shopRole == 'CASHIER') {
+      return const PosPage(kiosk: true);
+    }
+
     final prefs = context.watch<NavigationPrefsProvider>();
     final pendingOrders = context.watch<OrdersProvider>().pendingCount;
     final pages = _destinations.map((d) => d.page).toList(growable: false);

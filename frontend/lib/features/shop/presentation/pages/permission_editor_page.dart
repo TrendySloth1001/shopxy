@@ -90,9 +90,17 @@ class _AreaRow extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: Text(info.label,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.black, fontWeight: FontWeight.w600)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(info.label,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.black, fontWeight: FontWeight.w600)),
+                if (info.hint.isNotEmpty)
+                  Text(info.hint,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.muted)),
+              ],
+            ),
           ),
           SizedBox(
             width: 52,
