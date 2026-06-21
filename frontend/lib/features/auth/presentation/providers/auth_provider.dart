@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:shopxy/core/auth/remembered_accounts.dart';
 import 'package:shopxy/core/auth/token_manager.dart';
 import 'package:shopxy/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:shopxy/features/auth/domain/entities/auth_user.dart';
@@ -15,6 +17,7 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   final AuthRemoteDataSource _dataSource;
   final TokenManager _tokenManager;
+  final RememberedAccountsStore _rememberStore = RememberedAccountsStore();
 
   /// Callbacks invoked by [clearAuth] / [logout] to drop user-scoped
   /// state held by other providers (products, orders, invoices, …).
@@ -70,6 +73,7 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
     // Re-fetch via /auth/me so the user carries shopRole/shopId (the
     // login response doesn't include them) — the auth gate routes on it.
     _user = await _dataSource.getMe();
+    await _rememberThisDevice();
     notifyListeners();
   }
 
@@ -90,6 +94,80 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
       refreshToken: result.refreshToken,
     );
     _user = await _dataSource.getMe();
+    await _rememberThisDevice();
+    notifyListeners();
+  }
+
+  // ── Device-remember: one-tap return sign-in ──────────────────────────
+
+  /// Best-effort: mint + store a device-remember credential for [_user] so
+  /// they can one-tap back in after a normal logout. Never blocks sign-in.
+  Future<void> _rememberThisDevice() async {
+    final u = _user;
+    if (u == null) return;
+    try {
+      final token = await _dataSource.issueRememberToken(
+        label: '${defaultTargetPlatform.name} merchant',
+      );
+      await _rememberStore.save(
+        RememberedAccount(id: u.id, name: u.name, email: u.email, avatarUrl: u.avatarUrl),
+        token,
+      );
+    } catch (_) {
+      // Remembering is a convenience — a failure must not affect sign-in.
+    }
+  }
+
+  /// Accounts to show on the login picker (profiles only; no tokens).
+  Future<List<RememberedAccount>> rememberedAccounts() => _rememberStore.list();
+
+  /// One-tap sign-in using a stored device-remember credential. On a dead
+  /// credential the card is dropped and the error surfaced for a password login.
+  Future<void> loginWithRemembered(int id) async {
+    final token = await _rememberStore.tokenFor(id);
+    if (token == null) {
+      await _rememberStore.remove(id);
+      throw Exception('This saved sign-in is no longer available');
+    }
+    final RememberLoginResult result;
+    try {
+      result = await _dataSource.rememberLogin(token);
+    } catch (e) {
+      await _rememberStore.remove(id);
+      rethrow;
+    }
+    if (!result.user.isOwner) {
+      await _tokenManager.clear();
+      await _rememberStore.remove(id);
+      throw Exception(AppStrings.customerAccountBlocked);
+    }
+    await _tokenManager.saveTokens(
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
+    );
+    // Persist the rotated credential + freshest profile.
+    await _rememberStore.save(
+      RememberedAccount(
+        id: result.user.id,
+        name: result.user.name,
+        email: result.user.email,
+        avatarUrl: result.user.avatarUrl,
+      ),
+      result.rememberToken,
+    );
+    _user = await _dataSource.getMe();
+    notifyListeners();
+  }
+
+  /// "Remove this account" — revoke server-side (best effort) + drop locally.
+  Future<void> forgetRemembered(int id) async {
+    final token = await _rememberStore.tokenFor(id);
+    if (token != null) {
+      try {
+        await _dataSource.forgetRemember(token);
+      } catch (_) {}
+    }
+    await _rememberStore.remove(id);
     notifyListeners();
   }
 

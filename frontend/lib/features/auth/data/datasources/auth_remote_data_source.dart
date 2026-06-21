@@ -3,6 +3,12 @@ import 'package:shopxy/core/network/api_client.dart';
 import 'package:shopxy/features/auth/domain/entities/auth_user.dart';
 
 typedef AuthResult = ({AuthUser user, String accessToken, String refreshToken});
+typedef RememberLoginResult = ({
+  AuthUser user,
+  String accessToken,
+  String refreshToken,
+  String rememberToken,
+});
 
 class AuthRemoteDataSource {
   const AuthRemoteDataSource(this._client);
@@ -66,6 +72,43 @@ class AuthRemoteDataSource {
 
   Future<void> logout(String refreshToken) async {
     await _client.post('/auth/logout', body: {'refreshToken': refreshToken});
+  }
+
+  // ── Device-remember (one-tap return sign-in) ──────────────────────────
+
+  /// Mint a device-remember credential for the signed-in user (authed).
+  Future<String> issueRememberToken({String? label}) async {
+    final reqBody = <String, dynamic>{};
+    if (label != null) reqBody['label'] = label;
+    final res = await _client.post('/auth/remember', body: reqBody);
+    final body = jsonDecode(res.body) as Map<String, dynamic>;
+    if (res.statusCode != 201) {
+      throw Exception(body['error'] ?? 'Could not remember this device');
+    }
+    return body['rememberToken'] as String;
+  }
+
+  /// Exchange a stored device-remember credential for a fresh session.
+  Future<RememberLoginResult> rememberLogin(String rememberToken) async {
+    final res = await _client.post(
+      '/auth/remember-login',
+      body: {'rememberToken': rememberToken},
+    );
+    final body = jsonDecode(res.body) as Map<String, dynamic>;
+    if (res.statusCode != 200) {
+      throw Exception(body['error'] ?? 'Sign in failed');
+    }
+    return (
+      user: AuthUser.fromJson(body['user'] as Map<String, dynamic>),
+      accessToken: body['accessToken'] as String,
+      refreshToken: body['refreshToken'] as String,
+      rememberToken: body['rememberToken'] as String,
+    );
+  }
+
+  /// Revoke a device-remember credential ("Remove this account").
+  Future<void> forgetRemember(String rememberToken) async {
+    await _client.post('/auth/remember/forget', body: {'rememberToken': rememberToken});
   }
 
   Future<AuthUser> updateProfile({

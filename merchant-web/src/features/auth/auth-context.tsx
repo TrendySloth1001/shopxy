@@ -11,6 +11,7 @@ import {
 } from "react";
 import type { AuthUser } from "./types";
 import type { UpdateProfileInput } from "./schema";
+import { rememberCurrentAccount } from "./desktop";
 
 /** Payload the register form sends to the provider (confirm is dropped).
  *  The shop is named later on the onboarding screen, not at signup. */
@@ -114,6 +115,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const body = (await res.json()) as { user: AuthUser };
     setUser(body.user);
     setStatus("authed");
+    // Desktop only: remember this account for one-tap return sign-in.
+    void rememberCurrentAccount();
   }, []);
 
   const register = useCallback(async (payload: RegisterPayload) => {
@@ -126,6 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const body = (await res.json()) as { user: AuthUser };
     setUser(body.user);
     setStatus("authed");
+    void rememberCurrentAccount();
   }, []);
 
   const acceptInvite = useCallback(async (payload: AcceptInvitePayload) => {

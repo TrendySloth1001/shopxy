@@ -5,6 +5,13 @@ import { readFileSync } from "node:fs";
 // "App version" row reflects the real release instead of a hard-coded string.
 const { version } = JSON.parse(readFileSync("./package.json", "utf8")) as { version: string };
 
+// Desktop (Electron) packaging: `DESKTOP_BUILD=1 next build` emits a
+// self-contained server under `<distDir>/standalone` that the Electron shell
+// boots locally, and skips the built-in image optimizer (which would pull in
+// the native `sharp` binary) — images already proxy through `/api/*`, so the
+// optimizer isn't needed. Gated so the normal web deploy is unaffected.
+const isDesktopBuild = process.env.DESKTOP_BUILD === "1";
+
 const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
@@ -14,6 +21,9 @@ const nextConfig: NextConfig = {
   // `.next/` — that overlap corrupts the dev cache (missing .sst files). Dev
   // stays on the default `.next`; build/start use `.next-build`.
   distDir: process.env.NEXT_DIST_DIR ?? ".next",
+  ...(isDesktopBuild
+    ? { output: "standalone" as const, images: { unoptimized: true } }
+    : {}),
 };
 
 export default nextConfig;

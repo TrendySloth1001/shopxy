@@ -14,6 +14,9 @@ import { seedDefaultRoles } from '../team/team.service.js';
 const ACCESS_SECRET = requireEnv('JWT_ACCESS_SECRET');
 const REFRESH_SECRET = requireEnv('JWT_REFRESH_SECRET');
 const REFRESH_EXPIRES_MS = 7 * 24 * 60 * 60 * 1000;
+// Device-remember credential lifetime (sliding — renewed on each use).
+const REMEMBER_EXPIRES_MS = 30 * 24 * 60 * 60 * 1000;
+const MAX_REMEMBER_TOKENS_PER_USER = 10;
 
 const safeUserSelect = {
   id: true,
@@ -550,12 +553,80 @@ export class AuthService {
     const stamp = new Date();
     await prisma.$transaction([
       prisma.refreshToken.deleteMany({ where: { userId } }),
+      // "Sign out everywhere" also forgets every remembered device — the
+      // whole point is to cut off all access, not just active sessions.
+      prisma.rememberToken.deleteMany({ where: { userId } }),
       prisma.user.update({
         where: { id: userId },
         data: { tokensValidFrom: stamp },
       }),
     ]);
     bumpTokensValidFromCache(userId, stamp);
+  }
+
+  /// Issue a device-remember credential for a returning one-tap sign-in on a
+  /// trusted native app (desktop / Flutter merchant). The raw secret is
+  /// returned ONCE and must be stored only in the device OS keychain; we keep
+  /// its hash. Old tokens beyond the per-user cap are pruned (FIFO).
+  async issueRememberToken(userId: number, label?: string | null) {
+    const raw = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + REMEMBER_EXPIRES_MS);
+    await prisma.rememberToken.create({
+      data: { userId, tokenHash: hashToken(raw), label: label?.slice(0, 80) ?? null, expiresAt },
+    });
+    const active = await prisma.rememberToken.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'asc' },
+      select: { id: true },
+    });
+    if (active.length > MAX_REMEMBER_TOKENS_PER_USER) {
+      const excess = active.slice(0, active.length - MAX_REMEMBER_TOKENS_PER_USER);
+      await prisma.rememberToken.deleteMany({ where: { id: { in: excess.map((t) => t.id) } } });
+    }
+    return { rememberToken: raw, expiresAt };
+  }
+
+  /// Exchange a device-remember credential for a fresh session — no password.
+  /// Rotates the credential (single-use) and mints a new access+refresh pair.
+  /// A bad/expired token, or a deactivated account, is rejected and cleaned up.
+  async rememberLogin(raw: string) {
+    const stored = await prisma.rememberToken.findUnique({
+      where: { tokenHash: hashToken(raw) },
+      select: { id: true, userId: true, label: true, expiresAt: true },
+    });
+    if (!stored) return { error: 'This saved sign-in is no longer valid' as const };
+    if (stored.expiresAt < new Date()) {
+      await prisma.rememberToken.delete({ where: { id: stored.id } });
+      return { error: 'This saved sign-in has expired' as const };
+    }
+    const user = await prisma.user.findUnique({
+      where: { id: stored.userId },
+      select: { ...safeUserSelect, isActive: true },
+    });
+    if (!user || !user.isActive) {
+      await prisma.rememberToken.delete({ where: { id: stored.id } });
+      return { error: 'This account is no longer available' as const };
+    }
+
+    // Rotate the remember credential (single-use) and mint a fresh session.
+    const newRaw = crypto.randomBytes(32).toString('hex');
+    const rememberExpiresAt = new Date(Date.now() + REMEMBER_EXPIRES_MS);
+    await prisma.$transaction([
+      prisma.rememberToken.delete({ where: { id: stored.id } }),
+      prisma.rememberToken.create({
+        data: { userId: user.id, tokenHash: hashToken(newRaw), label: stored.label, expiresAt: rememberExpiresAt },
+      }),
+    ]);
+    const { isActive: _isActive, ...safeUser } = user;
+    const accessToken = await signAccess(safeUser.id, safeUser.email, safeUser.role, safeUser.isPlatformAdmin);
+    const refreshToken = await createRefreshToken(safeUser.id);
+    return { user: safeUser, accessToken, refreshToken, rememberToken: newRaw, rememberExpiresAt };
+  }
+
+  /// Forget a single remembered device ("Remove this account" on the picker).
+  /// Idempotent — an already-gone token is a no-op.
+  async forgetRememberToken(raw: string) {
+    await prisma.rememberToken.deleteMany({ where: { tokenHash: hashToken(raw) } });
   }
 
   getMe(userId: number) {
@@ -673,6 +744,8 @@ export class AuthService {
         data: { passwordHash, tokensValidFrom: stamp },
       }),
       prisma.refreshToken.deleteMany({ where: { userId } }),
+      // A new password invalidates every remembered device too.
+      prisma.rememberToken.deleteMany({ where: { userId } }),
     ]);
     bumpTokensValidFromCache(userId, stamp);
 
