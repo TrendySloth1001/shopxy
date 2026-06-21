@@ -25,7 +25,6 @@ import {
   Landmark,
   ShieldCheck,
   UserCog,
-  HandCoins,
   type LucideIcon,
 } from "lucide-react";
 
@@ -82,7 +81,6 @@ export const NAV_GROUPS: NavGroup[] = [
       { key: "cashier", label: "Cashier", icon: Calculator },
       { key: "scan-console", label: "Scan console", icon: ScanLine },
       { key: "team", label: "Team", icon: UserCog },
-      { key: "caution-requests", label: "Caution requests", icon: HandCoins },
     ],
   },
   {

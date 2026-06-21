@@ -27,7 +27,6 @@ class PartyOverview {
     required this.recentChallans,
     this.lastActivityAt,
     this.balance = 0,
-    this.cautionBalance = 0,
   });
 
   final int id;
@@ -57,10 +56,6 @@ class PartyOverview {
   /// sum(SALE CONFIRMED invoices) − sum(RECEIPT payments). > 0 means the
   /// party owes the shop; < 0 means the shop owes them (advance/credit).
   final double balance;
-
-  /// Refundable caution / security deposit currently held against this
-  /// party (a liability, tracked separately from [balance]). Always ≥ 0.
-  final double cautionBalance;
 
   double get totalSales => totals
       .where((t) => t.type == 'SALE')

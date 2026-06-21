@@ -6,7 +6,6 @@ import {
   BadgeCheck,
   ClipboardList,
   Pencil,
-  PiggyBank,
   Plus,
   ReceiptText,
   RefreshCw,
@@ -17,7 +16,6 @@ import {
 import { PageHeader } from "@/shared/ui/page-header";
 import { Monogram } from "@/shared/ui/monogram";
 import { Modal, ModalActions } from "@/shared/ui/modal";
-import { formatINR } from "@/shared/money";
 import { deleteParty, listParties } from "@/features/parties/api";
 import { partyChallanCount, partyInvoiceCount, type Party } from "@/features/parties/schema";
 import { MaybeLocked } from "@/features/auth/components/maybe-locked";
@@ -82,7 +80,7 @@ export default function PartiesPage() {
         icon={Users}
         tone="indigo"
         title="Customers"
-        subtitle="The parties you sell to. Track invoices, challans, the running receivable and any caution deposit held."
+        subtitle="The parties you sell to. Track invoices, challans and the running receivable."
       >
         <button
           type="button"
@@ -196,11 +194,6 @@ function PartyRow({
             {party.linkedUserId ? (
               <span className="inline-flex items-center gap-xs rounded-full bg-success-soft px-sm py-px text-body-sm font-semibold text-success">
                 <BadgeCheck size={12} /> Linked
-              </span>
-            ) : null}
-            {party.cautionBalance > 0 ? (
-              <span className="inline-flex items-center gap-xs rounded-full bg-info-soft px-sm py-px text-body-sm font-semibold text-info">
-                <PiggyBank size={12} /> Caution {formatINR(party.cautionBalance)}
               </span>
             ) : null}
             {!party.isActive ? (

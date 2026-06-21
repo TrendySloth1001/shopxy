@@ -19,7 +19,6 @@ export const PAYMENT_MODE_LABELS: Record<string, string> = {
   CHEQUE: "Cheque",
   CARD: "Card",
   OTHER: "Other",
-  CAUTION: "Caution deposit",
 };
 
 export const paymentSchema = z

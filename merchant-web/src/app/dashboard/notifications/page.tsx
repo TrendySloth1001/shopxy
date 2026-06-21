@@ -12,7 +12,6 @@ import {
   IndianRupee,
   Mail,
   Package,
-  PiggyBank,
   ShieldCheck,
   Store,
   Undo2,
@@ -111,7 +110,6 @@ function accentFor(kind: string): { Icon: LucideIcon; cls: string } {
   if (kind === "INVITE_ACCEPTED") return { Icon: CheckCircle2, cls: "bg-success-soft text-success" };
   if (kind === "INVITE_DECLINED") return { Icon: XCircle, cls: "bg-warning-soft text-warning" };
   if (kind === "INVITE_CANCELLED") return { Icon: CalendarX2, cls: "bg-surface-tint text-muted" };
-  if (kind.startsWith("CAUTION_REQUEST")) return { Icon: PiggyBank, cls: "bg-brand-soft text-brand-strong" };
   if (kind.startsWith("ORDER")) return { Icon: Package, cls: "bg-accent-indigo-soft text-accent-indigo" };
   if (kind.startsWith("QUOTATION")) return { Icon: FileText, cls: "bg-accent-indigo-soft text-accent-indigo" };
   if (kind.startsWith("RETURN")) return { Icon: Undo2, cls: "bg-accent-amber-soft text-accent-amber" };
@@ -125,7 +123,6 @@ function hrefFor(kind: string): string | null {
   if (kind.startsWith("ORDER")) return "/dashboard/orders";
   if (kind.startsWith("QUOTATION")) return "/dashboard/quotations";
   if (kind.startsWith("RETURN")) return "/dashboard/returns";
-  if (kind.startsWith("CAUTION_REQUEST")) return "/dashboard/caution-requests";
   return null;
 }
 

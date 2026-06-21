@@ -58,22 +58,6 @@ class AppStrings {
       'When this shop confirms an invoice for you, it\'ll appear here.';
   static const String items = 'items';
 
-  // Caution / security deposits. The held balance + history are read-only;
-  // the customer can additionally *offer* to post a new deposit (a request
-  // the merchant approves before it counts).
-  static const String cautionTitle = 'Caution deposit';
-  static const String cautionHeldLabel = 'CAUTION HELD';
-  static const String cautionHeldRow = 'Caution held by shop';
-  static const String cautionEmpty =
-      'This shop isn\'t holding any caution deposit from you.';
-  static const String cautionPostCta = 'Post a caution deposit';
-  static const String cautionRequestsLabel = 'Your requests';
-  static const String cautionRequestPendingHint =
-      'Sent — waiting for the shop to confirm receipt.';
-  static const String cautionRequestSent =
-      'Request sent. The shop will confirm once the money is received.';
-  static const String cautionRequestCancelled = 'Request cancelled.';
-
   // Quotations
   static const String quoteRequestSent =
       'Request sent. The shop will price it and send back a quotation.';

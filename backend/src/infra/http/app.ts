@@ -11,7 +11,6 @@ import stockAdjustmentsRouter from '../../modules/stock-adjustments/stock-adjust
 import dashboardRouter from '../../modules/dashboard/dashboard.routes.js';
 import vendorsRouter from '../../modules/vendors/vendors.routes.js';
 import partiesRouter from '../../modules/parties/parties.routes.js';
-import cautionRequestsRouter from '../../modules/caution/caution-requests.routes.js';
 import quotationsRouter from '../../modules/quotations/quotations.routes.js';
 import invoicesRouter from '../../modules/invoices/invoices.routes.js';
 import challansRouter from '../../modules/challans/challans.routes.js';
@@ -326,7 +325,6 @@ export function buildApp(): express.Express {
   mountMerchant('/dashboard', dashboardRouter, [resolveShop]);
   mountMerchant('/vendors', vendorsRouter);
   mountMerchant('/parties', partiesRouter);
-  mountMerchant('/caution-requests', cautionRequestsRouter);
   mountMerchant('/quotations', quotationsRouter);
   mountMerchant('/invoices', invoicesRouter);
   mountMerchant('/challans', challansRouter);

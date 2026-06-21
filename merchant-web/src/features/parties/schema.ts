@@ -2,8 +2,8 @@ import { z } from "zod";
 
 /**
  * Party ("customer") shapes, mirroring the backend `parties` module
- * (`/parties`). Like vendors but receivable-side, with a `cautionBalance`
- * (security deposit held) and challans instead of stock-in.
+ * (`/parties`). Like vendors but receivable-side, with challans instead of
+ * stock-in.
  */
 
 export const partySchema = z
@@ -23,7 +23,6 @@ export const partySchema = z
     isActive: z.boolean().default(true),
     isSystem: z.boolean().default(false),
     linkedUserId: z.number().nullish(),
-    cautionBalance: z.coerce.number().default(0),
     createdAt: z.string().optional(),
     updatedAt: z.string().optional(),
     _count: z
@@ -121,7 +120,6 @@ export const partyOverviewSchema = z.object({
     .transform((v) => v ?? []),
   lastActivityAt: z.string().nullish(),
   balance: z.coerce.number().default(0),
-  cautionBalance: z.coerce.number().default(0),
 });
 export type PartyOverview = z.infer<typeof partyOverviewSchema>;
 

@@ -5,7 +5,7 @@ import { paymentGatewayService, listEnabledProviders } from './index.js';
 /**
  * First slice: wallet top-up. The customer principal (req.user.sub) tops up
  * their own wallet, so the settlement target is always WALLET → self. Other
- * targets (ORDER/INVOICE/CAUTION) plug in here later via the same service call.
+ * targets (ORDER/INVOICE) plug in here later via the same service call.
  */
 const topUpSchema = z.object({
   amount: z.number().positive().max(200000), // ₹2L sane cap; tune per policy

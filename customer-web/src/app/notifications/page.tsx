@@ -42,7 +42,6 @@ function accentFor(kind: string): { Icon: LucideIcon; cls: string } {
   if (kind.startsWith("BACK_IN_STOCK"))
     return { Icon: PackageCheck, cls: "bg-accent-rose-soft text-accent-rose" };
   if (kind.startsWith("INVITE")) return { Icon: Mail, cls: "bg-brand-soft text-brand-strong" };
-  if (kind.startsWith("CAUTION")) return { Icon: IndianRupee, cls: "bg-accent-amber-soft text-accent-amber" };
   if (kind.startsWith("QUOTATION")) return { Icon: ClipboardList, cls: "bg-accent-teal-soft text-accent-teal" };
   if (kind.startsWith("PAYMENT") || kind.startsWith("REFUND"))
     return { Icon: IndianRupee, cls: "bg-success-soft text-success" };
@@ -68,14 +67,6 @@ function hrefFor(kind: string, data: Record<string, unknown> | null | undefined)
     case "INVITE_DECLINED":
     case "INVITE_CANCELLED":
       return "/invitations";
-
-    // Caution requests ────────────────────────────────────────────────────────
-    case "CAUTION_REQUEST_RECEIVED":
-    case "CAUTION_REQUEST_APPROVED":
-    case "CAUTION_REQUEST_REJECTED": {
-      const partyId = str("partyId");
-      return partyId ? `/merchants/party/${partyId}/caution` : "/merchants";
-    }
 
     // Quotations ──────────────────────────────────────────────────────────────
     case "QUOTATION_RECEIVED":

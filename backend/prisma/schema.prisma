@@ -94,9 +94,6 @@ model User {
   returnEvents            ReturnRequestEvent[]   @relation("ReturnRequestEventActor")
   walletEntries           WalletEntry[]
   couponRedemptions       CouponRedemption[]
-  cautionTxnsCreated      CautionTxn[]           @relation("CautionTxnCreatedBy")
-  cautionRequestsMade     CautionRequest[]       @relation("CautionRequestRequestedBy")
-  cautionRequestsReviewed CautionRequest[]       @relation("CautionRequestReviewedBy")
   quotationsCreated       Quotation[]            @relation("QuotationCreatedBy")
   quotationsRequested     Quotation[]            @relation("QuotationRequestedBy")
   /// Staff membership in a shop's team (at most one — see ShopMember).
@@ -832,8 +829,6 @@ model Party {
   invitations      Invitation[]
   purchaseRequests PurchaseRequest[]
   payments         Payment[]
-  cautionTxns      CautionTxn[]
-  cautionRequests  CautionRequest[]
   quotations       Quotation[]
   posSales         Sale[]
 
@@ -1047,7 +1042,6 @@ model Invoice {
   challan                Challan?
   purchaseRequest        PurchaseRequest?
   payments               Payment[]
-  cautionTxns            CautionTxn[]
   quotation              Quotation?
   posSale                Sale?
 
@@ -1615,8 +1609,6 @@ model Payment {
   idempotencyKey String?      @map("idempotency_key")
   createdAt      DateTime     @default(now()) @map("created_at")
   updatedAt      DateTime     @updatedAt @map("updated_at")
-  /// Set when this Payment was created by a caution set-off (mode='CAUTION').
-  cautionTxns    CautionTxn[]
 
   @@unique([shopId, referenceNo])
   @@index([shopId, partyId, paymentDate])
@@ -1624,110 +1616,6 @@ model Payment {
   @@index([invoiceId])
   @@index([invoiceId, voidedAt])
   @@map("payments")
-}
-
-/// Refundable caution / security deposit held by a shop against a party.
-/// A liability — deliberately kept out of the sales/payments revenue tables.
-/// Balance per (shopId, partyId) = SUM(DEPOSIT) − SUM(REFUND) − SUM(ADJUSTMENT).
-model CautionTxn {
-  id            Int             @id @default(autoincrement())
-  shopId        Int             @map("shop_id")
-  shop          Shop            @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  partyId       Int             @map("party_id")
-  party         Party           @relation(fields: [partyId], references: [id], onDelete: Cascade)
-  /// 'DEPOSIT' (money in) | 'REFUND' (money back) | 'ADJUSTMENT' (set off
-  /// against an invoice) | 'FORFEIT' (deposit kept on default — taxable
-  /// business income, see gstTreatment). Balance subtracts everything but DEPOSIT.
-  type          String
-  amount        Decimal         @db.Decimal(12, 2)
-  /// CASH | UPI | NEFT | RTGS | CHEQUE | CARD | OTHER for DEPOSIT/REFUND; null for ADJUSTMENT/FORFEIT.
-  mode          String?
-  modeReference String?         @map("mode_reference")
-  /// Ordinary money-receipt number on DEPOSIT/REFUND (e.g. CAU/25-26/00001).
-  /// A refundable deposit for goods attracts no GST, so this is a plain
-  /// receipt — not a GST receipt voucher. Null for ADJUSTMENT/FORFEIT.
-  receiptNo     String?         @map("receipt_no")
-  /// FORFEIT only: 'NONE' = pure default penalty, no GST (Circular 178/2022
-  /// ¶7.1.5) | 'SUPPLY' = forfeiture of a cancelled supply, GST at the goods
-  /// rate (¶11.3). Null for every other type.
-  gstTreatment  String?         @map("gst_treatment")
-  /// SUPPLY forfeits only: the goods' GST rate, and the inclusive split of
-  /// `amount` into taxable consideration + output tax owed (¶11.3 treats
-  /// the retained advance as GST-INCLUSIVE consideration: taxable =
-  /// amount / (1 + rate/100)). Null for NONE forfeits and other types —
-  /// without this split the output GST on every forfeited supply was
-  /// silently uncollected and invisible to the GST summary.
-  taxRate       Decimal?        @map("tax_rate") @db.Decimal(5, 2)
-  taxableValue  Decimal?        @map("taxable_value") @db.Decimal(12, 2)
-  taxAmount     Decimal?        @map("tax_amount") @db.Decimal(12, 2)
-  /// Set when type='ADJUSTMENT' — the invoice the deposit was applied to.
-  invoiceId     Int?            @map("invoice_id")
-  invoice       Invoice?        @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
-  /// The mode='CAUTION' Payment created by the set-off so the invoice's
-  /// computed outstanding (total − SUM(payments)) drops automatically.
-  paymentId     Int?            @map("payment_id")
-  payment       Payment?        @relation(fields: [paymentId], references: [id], onDelete: SetNull)
-  note          String?
-  createdById   Int?            @map("created_by_id")
-  createdBy     User?           @relation("CautionTxnCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
-  createdAt     DateTime        @default(now()) @map("created_at")
-  /// Set when this DEPOSIT was produced by approving a party-initiated request.
-  request       CautionRequest?
-
-  @@index([shopId, partyId, createdAt])
-  @@map("caution_txns")
-}
-
-/// A party-initiated caution/security-deposit request, awaiting merchant
-/// approval. The customer declares the amount + how they'll pay; on approval
-/// the merchant turns it into a confirmed `CautionTxn(DEPOSIT)`. The balance
-/// never counts a request — only the resulting DEPOSIT. `channel`/`provider`/
-/// `providerRef` are the deferred payment-gateway seam (today channel='MANUAL':
-/// the money moves off-platform and the merchant confirms receipt manually;
-/// later a gateway webhook calls the same approval path).
-model CautionRequest {
-  id            Int         @id @default(autoincrement())
-  shopId        Int         @map("shop_id")
-  shop          Shop        @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  partyId       Int         @map("party_id")
-  party         Party       @relation(fields: [partyId], references: [id], onDelete: Cascade)
-  amount        Decimal     @db.Decimal(12, 2)
-  /// Declared by the customer: NEFT | RTGS | CHEQUE | UPI | CASH | OTHER.
-  mode          String?
-  /// Customer's transfer reference (bank UTR, cheque no, …).
-  modeReference String?     @map("mode_reference")
-  note          String?
-  /// Optional shopping basket the customer browsed when sizing the deposit —
-  /// read-only CONTEXT/justification only ("here's what I plan to buy on
-  /// credit"). It does NOT earmark the deposit to these goods: an approved
-  /// request still mints a plain relationship-level refundable DEPOSIT. Stored
-  /// as JSON line items [{ productId, name, sku?, qty, unitPrice, lineTotal }].
-  basket        Json?
-  /// Sum of the basket line totals (intended purchase value). Drives the
-  /// suggested deposit amount client-side; the customer can still override.
-  basketValue   Decimal?    @map("basket_value") @db.Decimal(14, 2)
-  /// PENDING | APPROVED | REJECTED | CANCELLED.
-  status        String      @default("PENDING")
-  // ── Payment-gateway seam (unused today; channel defaults MANUAL) ──
-  channel       String      @default("MANUAL")
-  provider      String?
-  providerRef   String?     @map("provider_ref")
-  // ── Lifecycle ──
-  requestedById Int?        @map("requested_by_id")
-  requestedBy   User?       @relation("CautionRequestRequestedBy", fields: [requestedById], references: [id], onDelete: SetNull)
-  reviewedById  Int?        @map("reviewed_by_id")
-  reviewedBy    User?       @relation("CautionRequestReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
-  reviewedAt    DateTime?   @map("reviewed_at")
-  reviewNote    String?     @map("review_note")
-  /// The DEPOSIT txn created when this request was approved.
-  cautionTxnId  Int?        @unique @map("caution_txn_id")
-  cautionTxn    CautionTxn? @relation(fields: [cautionTxnId], references: [id], onDelete: SetNull)
-  createdAt     DateTime    @default(now()) @map("created_at")
-  updatedAt     DateTime    @updatedAt @map("updated_at")
-
-  @@index([shopId, status, createdAt])
-  @@index([partyId, status])
-  @@map("caution_requests")
 }
 
 /// A merchant-built priced quotation sent to a LINKED customer for acceptance.
@@ -2026,8 +1914,6 @@ model Shop {
   counters               Counter[]
   returnRequests         ReturnRequest[]
   coupons                Coupon[]
-  cautionTxns            CautionTxn[]
-  cautionRequests        CautionRequest[]
   quotations             Quotation[]
   sales                  Sale[]
   /// Route payout destination (at most one). Null until KYC onboarding starts.
@@ -2429,7 +2315,7 @@ model GatewayPayment {
   status             String   @default("CREATED")
   amount             Decimal  @db.Decimal(12, 2)
   currency           String   @default("INR")
-  /// WALLET | ORDER | INVOICE | CAUTION — which domain the money settles into.
+  /// WALLET | ORDER | INVOICE | POS — which domain the money settles into.
   targetType         String   @map("target_type")
   /// Domain id for the target (WALLET → customerUserId, ORDER → CustomerOrder id…).
   targetId           Int      @map("target_id")

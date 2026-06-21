@@ -251,8 +251,6 @@ class _NotificationTile extends StatelessWidget {
         return (AppColors.warning, AppColors.warningSoft, Icons.cancel_outlined);
       case 'INVITE_CANCELLED':
         return (AppColors.muted, AppColors.heroPanel, Icons.cancel_schedule_send_outlined);
-      case 'CAUTION_REQUEST_RECEIVED':
-        return (AppColors.brandStrong, AppColors.brandSoft, Icons.savings_outlined);
       case 'QUOTATION_REQUESTED':
         return (AppColors.brandStrong, AppColors.brandSoft, Icons.request_quote_outlined);
       case 'QUOTATION_ACCEPTED':

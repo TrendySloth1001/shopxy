@@ -11,7 +11,6 @@ import prisma from '../../../infra/db/prisma.js';
 import type { GatewayPaymentRecord, SettlementTargetType } from '../ports/types.js';
 import { walletService, type WalletSource } from '../../wallet/wallet.service.js';
 import { ensureOrderInvoiceReceipts } from '../order-receipts.js';
-import { nextCautionRef } from '../../../shared/numbering/sequences.js';
 import {
   isRouteSplitEnabled,
   writeHeldTransferRows,
@@ -116,123 +115,6 @@ const orderPayment: SettlementHandler = {
   },
 };
 
-// CAUTION: a linked customer paid their own caution-deposit request online.
-// target.id IS the CautionRequest id. Capturing the payment is what approves
-// the request — no merchant review step (the merchant is RECEIVING money) —
-// so this mints the DEPOSIT CautionTxn exactly like the merchant approve path
-// (caution-requests.service.approveCautionRequest), but with channel GATEWAY
-// and the provider payment ref as the mode reference. The logic lives here
-// (raw prisma) rather than calling that service to keep the settlement module
-// free of an import cycle through paymentGatewayService.
-//
-// Edge the manual path doesn't have: the request can be REJECTED/CANCELLED
-// while the customer's checkout sheet is open. The capture is real money with
-// nowhere to land — refund it to the customer's wallet rather than silently
-// keeping it.
-const cautionDeposit: SettlementHandler = {
-  async onPaid(intent, tx) {
-    const db = tx ?? prisma;
-    const requestId = intent.target.id;
-    const refundCapturedToWallet = async (why: string) => {
-      if (intent.customerUserId == null) return; // no wallet to land in; reconciliation will surface it
-      await walletService.credit({
-        userId: intent.customerUserId,
-        amount: intent.amount,
-        source: 'REFUND',
-        sourceId: requestId,
-        description: why,
-        idempotencyKey: `gw:caution-fallback:${intent.id}`,
-        tx,
-      });
-    };
-
-    const req = await db.cautionRequest.findUnique({
-      where: { id: requestId },
-      select: {
-        id: true,
-        shopId: true,
-        partyId: true,
-        amount: true,
-        note: true,
-        status: true,
-        cautionTxnId: true,
-        requestedById: true,
-        shop: { select: { ownerUserId: true } },
-        party: { select: { name: true } },
-      },
-    });
-    if (!req) {
-      await refundCapturedToWallet(
-        'Caution payment captured for a deleted request — refunded to wallet',
-      );
-      return;
-    }
-
-    // Claim PENDING → APPROVED. Lost claim = redelivery (already settled →
-    // no-op) or the request closed underneath the checkout (→ wallet refund).
-    const claimed = await db.cautionRequest.updateMany({
-      where: { id: requestId, status: 'PENDING' },
-      data: {
-        status: 'APPROVED',
-        reviewedAt: new Date(),
-        channel: 'GATEWAY',
-        provider: intent.provider,
-        providerRef:
-          intent.providerPaymentRef ?? intent.providerOrderRef ?? `intent:${intent.id}`,
-      },
-    });
-    if (claimed.count === 0) {
-      if (req.status === 'APPROVED') return; // redelivered webhook — already minted
-      await refundCapturedToWallet(
-        'Caution payment captured after the request was closed — refunded to wallet',
-      );
-      return;
-    }
-
-    const receiptNo = await nextCautionRef(req.shopId, new Date(), tx);
-    const txn = await db.cautionTxn.create({
-      data: {
-        shopId: req.shopId,
-        partyId: req.partyId,
-        type: 'DEPOSIT',
-        amount: req.amount,
-        mode: 'GATEWAY',
-        modeReference: intent.providerPaymentRef ?? intent.providerOrderRef ?? null,
-        receiptNo,
-        note: req.note ?? 'Caution deposit paid online',
-        createdById: req.requestedById,
-      },
-    });
-    await db.cautionRequest.update({
-      where: { id: requestId },
-      data: { cautionTxnId: txn.id },
-    });
-
-    // Notify both sides. Inside the settlement tx so a crash can't mint the
-    // deposit silently.
-    if (req.requestedById != null) {
-      await db.notification.create({
-        data: {
-          userId: req.requestedById,
-          kind: 'CAUTION_REQUEST_APPROVED',
-          title: 'Your caution deposit is confirmed',
-          body: `₹${Number(req.amount).toFixed(2)} paid online (receipt ${receiptNo})`,
-          data: { cautionRequestId: requestId, partyId: req.partyId },
-        },
-      });
-    }
-    await db.notification.create({
-      data: {
-        userId: req.shop.ownerUserId,
-        kind: 'CAUTION_DEPOSIT_RECEIVED',
-        title: `${req.party.name} paid a caution deposit online`,
-        body: `₹${Number(req.amount).toFixed(2)} received via ${intent.provider} (receipt ${receiptNo})`,
-        data: { cautionRequestId: requestId, partyId: req.partyId },
-      },
-    });
-  },
-};
-
 // POS: an in-store customer paid a sale via a Razorpay UPI-QR. target.id IS the
 // Sale id. Capturing the QR is what turns the locked cart into a confirmed sale
 // — so onPaid runs the SAME money path manual checkout uses (invoice + stock +
@@ -306,7 +188,6 @@ const handlers: Record<SettlementTargetType, SettlementHandler> = {
   WALLET: walletTopUp,
   ORDER: orderPayment,
   INVOICE: notWired('INVOICE'),
-  CAUTION: cautionDeposit,
   POS: posSale,
 };
 

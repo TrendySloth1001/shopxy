@@ -17,7 +17,6 @@ class Party {
     required this.updatedAt,
     this.challanCount = 0,
     this.invoiceCount = 0,
-    this.cautionBalance = 0,
   });
 
   final int id;
@@ -37,8 +36,4 @@ class Party {
   final DateTime updatedAt;
   final int challanCount;
   final int invoiceCount;
-
-  /// Refundable caution deposit held against this party. > 0 surfaces a
-  /// badge in the list; 0 hides it.
-  final double cautionBalance;
 }
