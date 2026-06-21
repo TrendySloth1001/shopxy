@@ -4,7 +4,8 @@
   "private": true,
   "description": "ShopXY Merchant — cross-platform desktop shell (Electron) for the merchant-web app.",
   "main": "main.js",
-  "author": "ShopXY",
+  "author": "ShopXY <support@shopxy.app>",
+  "homepage": "https://shopxy.app",
   "scripts": {
     "dev": "cross-env SHOPXY_DESKTOP_DEV=1 electron .",
     "start": "electron .",
@@ -15,7 +16,8 @@
     "dist": "npm run prepack:web && electron-builder",
     "dist:mac": "npm run prepack:web && electron-builder --mac",
     "dist:win": "npm run prepack:web && electron-builder --win",
-    "dist:linux": "npm run prepack:web && electron-builder --linux"
+    "dist:linux": "npm run prepack:web && electron-builder --linux",
+    "dist:all": "npm run prepack:web && electron-builder -mwl"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",
@@ -26,7 +28,7 @@
     "appId": "com.shopxy.merchant",
     "productName": "ShopXY Merchant",
     "directories": {
-      "output": "dist",
+      "output": "../dist",
       "buildResources": "build"
     },
     "files": [
@@ -65,7 +67,8 @@
         "AppImage",
         "deb"
       ],
-      "category": "Office"
+      "category": "Office",
+      "maintainer": "ShopXY <support@shopxy.app>"
     }
   }
 }
