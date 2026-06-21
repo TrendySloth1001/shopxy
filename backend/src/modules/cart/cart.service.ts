@@ -91,6 +91,14 @@ export class CartService {
     const stock = Number(product.stockQuantity);
     if (stock <= 0) return { error: 'OUT_OF_STOCK' as const };
 
+    // CAT-H3 — this stock read is intentionally an ADVISORY cap, NOT a
+    // reservation. It is a plain read (no FOR UPDATE) so two concurrent carts
+    // can both pass it; we do NOT decrement or hold stock here. The single
+    // authority for availability is the confirm-time ledger decrement, which
+    // runs under SELECT … FOR UPDATE and rejects an over-draw atomically. The
+    // cap only trims an obviously-impossible line for nicer UX; client copy
+    // must not promise the units are held. The `capped` flag below tells the
+    // client we trimmed the request so it can show "only N available".
     const capped = Math.min(quantity, stock, MAX_LINE_QUANTITY);
 
     // Phase E v1 — variantId stays null on the cart line for now; the

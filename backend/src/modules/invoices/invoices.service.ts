@@ -30,6 +30,13 @@ type DocumentType =
 
 interface InvoiceItemInput {
   productId: number;
+  /// CAT-H1 — when the sold line is a specific product variant, the GST
+  /// source (HSN / taxPercent) is taken from THAT variant rather than the
+  /// product row, since two variants of one product can legitimately sit in
+  /// different HSN/GST slabs. A null hsnCode / 0% taxPercent on the variant
+  /// falls back to the product's slab (see resolveInvoiceFields). The variant
+  /// must belong to `productId` within the invoice's shop or it is ignored.
+  variantId?: number | null;
   quantity: number;
   unitPrice: number;
   taxPercent?: number;
@@ -318,12 +325,20 @@ export class InvoicesService {
       include: { items: true },
     });
 
-    // Stock IN — the returned goods come back to the shelf.
-    const posted = await ledgerService.post(
+    // Stock IN — the returned goods come back to the shelf. PR-H1: restock at
+    // the ORIGINAL sale's cost basis by restoring the layers the sale consumed,
+    // not by minting a fresh averaged layer at the sale price. `ledgerService
+    // .post(direction:'IN')` always creates a new cost layer, which inflates
+    // on-hand value and drifts the moving-average after every sale+return
+    // round-trip. `restockReturnAtCost` mirrors the OUT-reversal branch of
+    // `reverse()` and supports partial returns. For any legacy line whose
+    // original FIFO consumptions can't be located it returns
+    // 'No original consumption'; we then fall back to the averaged restock for
+    // just those lines (still creates a layer, but only where no history exists).
+    const restocked = await ledgerService.restockReturnAtCost(
       {
         shopId: data.shopId,
-        direction: 'IN',
-        reasonCode: 'RETURN_IN',
+        originalInvoiceId: data.originalInvoiceId,
         sourceType: 'INVOICE',
         sourceId: invoice.id,
         idempotencyKey: `INVOICE:${invoice.id}:RETURN`,
@@ -334,14 +349,43 @@ export class InvoicesService {
         lines: invoice.items.map((it) => ({
           productId: it.productId,
           quantity: Number(it.quantity),
-          unitPrice: Number(it.unitPrice),
           sourceLineId: it.id,
         })),
       },
       tx,
     );
-    if ('error' in posted) {
-      throw new PosInvoiceError(posted.error);
+    if ('error' in restocked) {
+      if (restocked.error === 'No original consumption') {
+        // Legacy sale with no cost-layer history — fall back to the averaged
+        // restock (creates a layer at the sale's unit price) so the goods still
+        // come back to the shelf. Same idempotency key namespace.
+        const fallback = await ledgerService.post(
+          {
+            shopId: data.shopId,
+            direction: 'IN',
+            reasonCode: 'RETURN_IN',
+            sourceType: 'INVOICE',
+            sourceId: invoice.id,
+            idempotencyKey: `INVOICE:${invoice.id}:RETURN`,
+            counterpartyName: header.customerName ?? undefined,
+            counterpartyGstin: header.customerGstin ?? undefined,
+            createdById,
+            note: `Credit note ${invoice.invoiceNo}`,
+            lines: invoice.items.map((it) => ({
+              productId: it.productId,
+              quantity: Number(it.quantity),
+              unitPrice: Number(it.unitPrice),
+              sourceLineId: it.id,
+            })),
+          },
+          tx,
+        );
+        if ('error' in fallback) {
+          throw new PosInvoiceError(fallback.error);
+        }
+        return invoice;
+      }
+      throw new PosInvoiceError(restocked.error);
     }
     return invoice;
   }
@@ -589,6 +633,30 @@ export class InvoicesService {
       }
     }
 
+    // CAT-H1 — variant-level GST source. When a line names a variantId, the
+    // line's HSN/taxPercent must come from that variant (variants of one
+    // product can differ in slab). Load only the variants referenced by the
+    // lines, scoped to this shop's products (the parent product is already
+    // shop-filtered above, so the productId IN guard inherits tenant scope).
+    const variantIds = [
+      ...new Set(
+        data.items
+          .map((i) => i.variantId)
+          .filter((v): v is number => typeof v === 'number'),
+      ),
+    ];
+    const variantMap = new Map<
+      number,
+      { id: number; productId: number; hsnCode: string | null; taxPercent: Prisma.Decimal }
+    >();
+    if (variantIds.length > 0) {
+      const variants = await db.productVariant.findMany({
+        where: { id: { in: variantIds }, productId: { in: productIds } },
+        select: { id: true, productId: true, hsnCode: true, taxPercent: true },
+      });
+      for (const v of variants) variantMap.set(v.id, v);
+    }
+
     // Banner-promo auto-fill: a line where the merchant didn't type a
     // discount inherits the best currently-active banner promo for that
     // product (own shop only). An explicit value (including 0) always wins.
@@ -684,7 +752,25 @@ export class InvoicesService {
       // rate rather than silently charging 0% — that omission was the C1
       // "every customer invoice carries ₹0 GST" bug. An explicit 0 from the
       // merchant create form still wins (exempt/nil-rated lines).
-      const productTaxPct = new D(product.taxPercent ?? 0);
+      // CAT-H1 — resolve the GST source for this line. A variant in a
+      // different HSN/GST slab overrides the product's rate; a variant whose
+      // taxPercent is 0 (the schema default = "not set, inherit") or whose
+      // hsnCode is null falls back to the product. The variant must belong to
+      // this line's product (else it's a stale/cross-product id → ignore it).
+      const lineVariant =
+        item.variantId != null ? variantMap.get(item.variantId) : undefined;
+      const lineVariantForProduct =
+        lineVariant && lineVariant.productId === item.productId ? lineVariant : undefined;
+      const variantTaxPct = lineVariantForProduct
+        ? new D(lineVariantForProduct.taxPercent ?? 0)
+        : new D(0);
+      const variantHsn = lineVariantForProduct?.hsnCode ?? null;
+
+      // Effective slab: variant's own rate when set (> 0), else the product's.
+      const effectiveTaxPct = variantTaxPct.gt(0) ? variantTaxPct : new D(product.taxPercent ?? 0);
+      const effectiveHsn = variantHsn ?? product.hsnCode ?? undefined;
+
+      const productTaxPct = effectiveTaxPct;
       const productCessRate = new D(product.cessRate ?? 0);
       const taxPct = chargesOutputGst
         ? (item.taxPercent !== undefined ? new D(item.taxPercent) : productTaxPct)
@@ -743,7 +829,7 @@ export class InvoicesService {
         productId: item.productId,
         productName: product.name,
         productSku: product.sku,
-        hsn: product.hsnCode ?? undefined,
+        hsn: effectiveHsn,
         unit: product.unit,
         quantity: item.quantity,
         unitPrice: item.unitPrice,

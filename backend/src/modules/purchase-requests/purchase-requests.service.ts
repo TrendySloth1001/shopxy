@@ -43,6 +43,10 @@ function derivePaymentSummary(
 import { couponsService } from '../coupons/coupons.service.js';
 import { walletService } from '../wallet/wallet.service.js';
 import { notificationsService } from '../notifications/notifications.service.js';
+// PR-H2 — walletService.credit throws HttpError(INSUFFICIENT_WALLET_BALANCE)
+// when the gated balance apply loses to a concurrent drain; the checkout
+// wallet-debit path narrows on it to fall back to gateway/COD.
+import { HttpError } from '../../shared/http/errorHandler.js';
 
 /// Thrown inside the order-create transaction when coupon redemption
 /// fails — caught above to surface a normal `{ error: 'COUPON_INVALID' }`
@@ -600,11 +604,8 @@ export class PurchaseRequestsService {
 
         // ── Wallet debit ──────────────────────────────────────────────
         // Pays from the user's wallet for up to (subtotal - coupon).
-        // Atomically clamped to the live balance via an updateMany gated
-        // on `wallet_balance >= debit` — that avoids the lost-update race
-        // where two parallel checkouts both read the same balance and
-        // both debit it. We claim the smaller of payable / current
-        // balance, then post the matching ledger row.
+        // We claim the smaller of payable / current balance and post the
+        // debit through walletService (gated + idempotent, see PR-H2).
         let walletPaid = 0;
         if (opts.useWallet) {
           const payable = Math.max(0, round2(parentTotal - couponDiscount));
@@ -615,40 +616,41 @@ export class PurchaseRequestsService {
             });
             const desired = Math.min(Number(balanceRow.walletBalance), payable);
             if (desired > 0) {
-              // Gated decrement — only succeeds when the column is still
-              // ≥ desired. If a sibling checkout drained the balance
-              // between our read and write, claim.count is 0 and we
-              // simply skip the wallet payment instead of overdrawing.
-              const claim = await tx.user.updateMany({
-                where: {
-                  id: opts.customerUserId,
-                  walletBalance: { gte: desired },
-                },
-                data: { walletBalance: { decrement: desired } },
-              });
-              if (claim.count === 1) {
-                // Post the ledger row with the post-decrement balance
-                // we just observed. Wallet service `credit` would
-                // double-decrement (it also bumps the column); pass
-                // the balanceAfter explicitly via a raw entry write.
-                const refreshed = await tx.user.findUniqueOrThrow({
-                  where: { id: opts.customerUserId },
-                  select: { walletBalance: true },
+              // PR-H2 — route the debit through walletService.credit so it
+              // shares the canonical insert-first idempotency + gated
+              // balance apply (updateMany gated on `walletBalance >=
+              // desired`, so a sibling draining the balance between our
+              // read and this write can't overdraw). The idempotency key
+              // is ALWAYS deterministic (the parent order id), so a
+              // retried checkout that lost its `Idempotency-Key` header
+              // still can't double-debit — the unique (userId,
+              // idempotencyKey) row is the dedup gate. On a drained
+              // balance `credit` throws INSUFFICIENT_WALLET_BALANCE; we
+              // treat that as "wallet couldn't pay" and fall back to
+              // gateway/COD for the remainder rather than aborting the
+              // whole checkout (preserves the prior gated-skip).
+              try {
+                await walletService.credit({
+                  userId: opts.customerUserId,
+                  amount: -desired,
+                  source: 'CHECKOUT',
+                  sourceId: parent.id,
+                  description: `Order #${parent.id} (wallet)`,
+                  idempotencyKey: `wallet:checkout:order:${parent.id}`,
+                  tx,
                 });
-                await tx.walletEntry.create({
-                  data: {
-                    userId: opts.customerUserId,
-                    amount: -desired,
-                    balanceAfter: Number(refreshed.walletBalance),
-                    source: 'CHECKOUT',
-                    sourceId: parent.id,
-                    description: `Order #${parent.id} (wallet)`,
-                    idempotencyKey: opts.idempotencyKey
-                      ? `wallet:checkout:${opts.idempotencyKey}`
-                      : null,
-                  },
-                });
+                // A deduplicated hit means this parent was already debited
+                // (idempotent retry) — still count it as paid.
                 walletPaid = desired;
+              } catch (err) {
+                if (
+                  err instanceof HttpError &&
+                  err.code === 'INSUFFICIENT_WALLET_BALANCE'
+                ) {
+                  walletPaid = 0;
+                } else {
+                  throw err;
+                }
               }
             }
           }
@@ -984,34 +986,24 @@ export class PurchaseRequestsService {
       // (estimatedTotal share of parent.estimatedTotal at order create).
       const parent = await tx.customerOrder.findUnique({
         where: { id: opts.parentId },
-        select: {
-          id: true,
-          walletPaid: true,
-          estimatedTotal: true,
-          couponDiscount: true,
-          paymentStatus: true,
-        },
+        select: { id: true, walletPaid: true, estimatedTotal: true },
       });
       if (parent) {
-        const childTotal = Number(child.estimatedTotal);
-        const parentTotal = Number(parent.estimatedTotal);
-        const paidTotal = this.totalPaidOnOrder(parent);
-        if (paidTotal > 0 && parentTotal > 0) {
-          const share = Math.min(childTotal / parentTotal, 1);
-          const refund = round2(paidTotal * share);
-          if (refund > 0) {
-            // Namespaced idempotency key so a cancel + return on the
-            // same childId can't collide.
-            await walletService.credit({
-              userId: child.customerUserId,
-              amount: refund,
-              source: 'CANCEL',
-              sourceId: child.id,
-              description: `Cancel refund for order #${parent.id} (slice #${child.id})`,
-              idempotencyKey: `wallet:cancel-${child.id}`,
-              tx,
-            });
-          }
+        // PR-H1 — refund off the actually-captured gateway amount, with
+        // the last terminal slice absorbing the residual paise.
+        const refund = await this.refundShareForChild(tx, parent, child);
+        if (refund > 0) {
+          // Namespaced idempotency key so a cancel + return on the
+          // same childId can't collide.
+          await walletService.credit({
+            userId: child.customerUserId,
+            amount: refund,
+            source: 'CANCEL',
+            sourceId: child.id,
+            description: `Cancel refund for order #${parent.id} (slice #${child.id})`,
+            idempotencyKey: `wallet:cancel-${child.id}`,
+            tx,
+          });
         }
       }
 
@@ -1090,27 +1082,85 @@ export class PurchaseRequestsService {
   }
 
   /// Everything the customer has actually paid on the parent order so
-  /// far: wallet debit (synchronous at checkout) + the captured gateway
-  /// remainder. COD / not-yet-captured orders have only the wallet part.
-  private totalPaidOnOrder(parent: {
-    walletPaid: unknown;
-    estimatedTotal: unknown;
-    couponDiscount: unknown;
-    paymentStatus: string;
-  }): number {
+  /// far: wallet debit (synchronous at checkout) + the gateway amount
+  /// ACTUALLY CAPTURED through the platform's Razorpay intent.
+  ///
+  /// PR-H1 — the gateway slice is read from the CAPTURED `GatewayPayment`
+  /// row (the real ledger), not inferred as `estimatedTotal − coupon −
+  /// wallet`. The derived figure drifts from the captured amount on any
+  /// partial capture / later wallet top-up / rounding, so a refund keyed
+  /// off it could over- or under-refund. We pin to the captured ledger.
+  private async totalPaidOnOrder(
+    tx: Prisma.TransactionClient,
+    parent: { id: number; walletPaid: unknown },
+  ): Promise<number> {
     const walletPaid = Number(parent.walletPaid);
-    const gatewayPaid =
-      parent.paymentStatus === 'PAID'
-        ? Math.max(
-            0,
-            round2(
-              Number(parent.estimatedTotal) -
-                Number(parent.couponDiscount) -
-                walletPaid,
-            ),
-          )
-        : 0;
+    // The platform collects the order through a single ORDER-target
+    // intent (shopId null). Mirror order-receipts.ts: the CAPTURED row
+    // is the source of truth that online money actually moved.
+    const gw = await tx.gatewayPayment.findFirst({
+      where: { targetType: 'ORDER', targetId: parent.id, status: 'CAPTURED' },
+      select: { amount: true },
+    });
+    const gatewayPaid = gw ? Number(gw.amount) : 0;
     return round2(walletPaid + gatewayPaid);
+  }
+
+  /// Sum of refunds already credited back to the wallet for OTHER
+  /// terminal siblings of this order (cancel + reject both write source
+  /// `CANCEL` with `sourceId = childId`). Used so the LAST slice to go
+  /// terminal absorbs the residual paise and `Σ refunds == captured +
+  /// wallet` exactly instead of each child independently `round2`-ing its
+  /// own derived share (PR-H1).
+  private async refundShareForChild(
+    tx: Prisma.TransactionClient,
+    parent: { id: number; walletPaid: unknown; estimatedTotal: unknown },
+    child: { id: number; estimatedTotal: unknown },
+  ): Promise<number> {
+    const paidTotal = await this.totalPaidOnOrder(tx, parent);
+    const parentTotal = Number(parent.estimatedTotal);
+    if (paidTotal <= 0 || parentTotal <= 0) return 0;
+
+    // Sibling ids already refunded (this child's claim has already
+    // flipped it to a terminal status, so it is NOT counted among live
+    // siblings below).
+    const liveSiblings = await tx.purchaseRequest.count({
+      where: {
+        customerOrderId: parent.id,
+        id: { not: child.id },
+        status: { notIn: ['CANCELLED', 'REJECTED'] },
+      },
+    });
+
+    if (liveSiblings === 0) {
+      // Last slice — refund whatever the customer paid minus what
+      // sibling refunds already returned, so the order nets to zero
+      // captured + wallet with no accumulated paise drift.
+      //
+      // Cancel + reject both write a wallet `CANCEL` entry with
+      // `sourceId = <terminal child id>`, so sum those over every OTHER
+      // child of this order (WalletEntry has no PR relation — match on
+      // sourceId IN siblingIds).
+      const siblingIds = (
+        await tx.purchaseRequest.findMany({
+          where: { customerOrderId: parent.id, id: { not: child.id } },
+          select: { id: true },
+        })
+      ).map((s) => s.id);
+      const already =
+        siblingIds.length > 0
+          ? await tx.walletEntry.aggregate({
+              where: { source: 'CANCEL', sourceId: { in: siblingIds } },
+              _sum: { amount: true },
+            })
+          : { _sum: { amount: null as Prisma.Decimal | null } };
+      const refunded = already._sum.amount ? Number(already._sum.amount) : 0;
+      return Math.max(0, round2(paidTotal - refunded));
+    }
+
+    // A live sibling remains — take this slice's proportional share.
+    const share = Math.min(Number(child.estimatedTotal) / parentTotal, 1);
+    return round2(paidTotal * share);
   }
 
   /// Cancel a CONFIRMED child (policy already verified by the caller).
@@ -1200,31 +1250,21 @@ export class PurchaseRequestsService {
       });
       const parent = await tx.customerOrder.findUnique({
         where: { id: opts.parentId },
-        select: {
-          id: true,
-          walletPaid: true,
-          estimatedTotal: true,
-          couponDiscount: true,
-          paymentStatus: true,
-        },
+        select: { id: true, walletPaid: true, estimatedTotal: true },
       });
       if (parent) {
-        const parentTotal = Number(parent.estimatedTotal);
-        const paidTotal = this.totalPaidOnOrder(parent);
-        if (paidTotal > 0 && parentTotal > 0) {
-          const share = Math.min(Number(child.estimatedTotal) / parentTotal, 1);
-          const refund = round2(paidTotal * share);
-          if (refund > 0) {
-            await walletService.credit({
-              userId: child.customerUserId,
-              amount: refund,
-              source: 'CANCEL',
-              sourceId: child.id,
-              description: `Cancel refund for order #${parent.id} (slice #${child.id})`,
-              idempotencyKey: `wallet:cancel-${child.id}`,
-              tx,
-            });
-          }
+        // PR-H1 — captured-amount refund with residual absorption.
+        const refund = await this.refundShareForChild(tx, parent, child);
+        if (refund > 0) {
+          await walletService.credit({
+            userId: child.customerUserId,
+            amount: refund,
+            source: 'CANCEL',
+            sourceId: child.id,
+            description: `Cancel refund for order #${parent.id} (slice #${child.id})`,
+            idempotencyKey: `wallet:cancel-${child.id}`,
+            tx,
+          });
         }
       }
 
@@ -1634,31 +1674,22 @@ export class PurchaseRequestsService {
       if (child.customerOrderId !== null) {
         const parent = await tx.customerOrder.findUnique({
           where: { id: child.customerOrderId },
-          select: {
-            walletPaid: true,
-            estimatedTotal: true,
-            couponDiscount: true,
-            paymentStatus: true,
-          },
+          select: { id: true, walletPaid: true, estimatedTotal: true },
         });
         if (parent) {
-          const parentTotal = Number(parent.estimatedTotal);
-          const childTotal = Number(child.estimatedTotal);
-          const paidTotal = this.totalPaidOnOrder(parent);
-          if (paidTotal > 0 && parentTotal > 0) {
-            const share = Math.min(childTotal / parentTotal, 1);
-            const refund = round2(paidTotal * share);
-            if (refund > 0) {
-              await walletService.credit({
-                userId: child.customerUserId,
-                amount: refund,
-                source: 'CANCEL',
-                sourceId: child.id,
-                description: `Merchant rejection refund for child #${child.id}`,
-                idempotencyKey: `wallet:reject-${child.id}`,
-                tx,
-              });
-            }
+          // PR-H1 — refund off the captured gateway amount; last slice
+          // absorbs the residual so Σ refunds == captured + wallet.
+          const refund = await this.refundShareForChild(tx, parent, child);
+          if (refund > 0) {
+            await walletService.credit({
+              userId: child.customerUserId,
+              amount: refund,
+              source: 'CANCEL',
+              sourceId: child.id,
+              description: `Merchant rejection refund for child #${child.id}`,
+              idempotencyKey: `wallet:reject-${child.id}`,
+              tx,
+            });
           }
         }
       }
@@ -1720,14 +1751,23 @@ export class PurchaseRequestsService {
   }
 
   /// Merchant-side — append a shipping milestone to the child's event
-  /// timeline. Restricted to the post-confirmation set (PACKED through
-  /// DELIVERED/RETURNED) since lifecycle events are emitted by the
-  /// service automatically; merchants can't fabricate a CREATED row.
+  /// timeline. Restricted to the post-confirmation forward set (PACKED
+  /// through DELIVERED) since lifecycle events are emitted by the service
+  /// automatically; merchants can't fabricate a CREATED row.
+  ///
+  /// PR-H3 — `RETURNED` is NOT a valid milestone here. This raw path has
+  /// no side effects (no status flip, no credit note / GST reversal, no
+  /// stock add-back, no refund, no Route transfer clawback), so allowing
+  /// RETURNED would let a merchant record a returned order that is still
+  /// CONFIRMED, still consuming stock, still settled to the seller, with
+  /// the buyer never refunded. Returns are handled exclusively by the
+  /// dedicated returns module. The type union below therefore omits it,
+  /// and the controller schema rejects it at the boundary.
   async addShippingEvent(opts: {
     shopId: number;
     requestId: number;
     actorId: number;
-    type: 'PACKED' | 'SHIPPED' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'RETURNED';
+    type: 'PACKED' | 'SHIPPED' | 'OUT_FOR_DELIVERY' | 'DELIVERED';
     courier?: string | null;
     awb?: string | null;
     eta?: Date | null;

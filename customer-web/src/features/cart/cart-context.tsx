@@ -64,6 +64,15 @@ export type CartContextValue = {
   savings: number;
   loading: boolean;
   /**
+   * True when the cart is a guest (localStorage) cart, whose prices/MRP are a
+   * snapshot taken at add-time rather than a live server figure. The UI must
+   * label these as "price when added" — they're re-fetched/validated only once
+   * the guest signs in and the cart is server-merged, and the backend blocks a
+   * stale price at place-order with PRICE_DRIFT. (CP E-Commerce Rules r.5;
+   * Legal Metrology — displayed MRP must be current.)
+   */
+  priceProvisional: boolean;
+  /**
    * Add `qty` units of `product` to the cart. If the line already exists the
    * quantities are summed (capped at MAX_LINE_QTY and available stock).
    */
@@ -421,9 +430,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const { count, subtotal, savings } = useMemo(() => deriveCart(lines), [lines]);
 
+  // Guest carts render snapshot prices; everything else is server-authoritative.
+  const priceProvisional = status === "guest";
+
   const value = useMemo<CartContextValue>(
-    () => ({ lines, count, subtotal, savings, loading, add, setQty, remove, clear }),
-    [lines, count, subtotal, savings, loading, add, setQty, remove, clear],
+    () => ({ lines, count, subtotal, savings, loading, priceProvisional, add, setQty, remove, clear }),
+    [lines, count, subtotal, savings, loading, priceProvisional, add, setQty, remove, clear],
   );
 
   // Suppress rendering guest-cart content during SSR to avoid hydration mismatch.

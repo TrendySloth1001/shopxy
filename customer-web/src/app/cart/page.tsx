@@ -22,7 +22,7 @@ interface UndoToast {
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function CartPage() {
-  const { lines, count, subtotal, savings, loading, setQty, remove, add } = useCart();
+  const { lines, count, subtotal, savings, loading, priceProvisional, setQty, remove, add } = useCart();
   const { status } = useAuth();
   const router = useRouter();
   const [toast, setToast] = useState<UndoToast | null>(null);
@@ -116,6 +116,20 @@ export default function CartPage() {
                 <div className="flex items-center gap-sm rounded-md bg-success-soft px-md py-sm">
                   <span className="text-body-sm font-bold text-success">
                     You are saving {formatINR(savings)} on this order
+                  </span>
+                </div>
+              )}
+
+              {/* Guest cart: prices are a snapshot taken when the item was
+                  added, not a live figure. Disclose so a stale price/MRP
+                  isn't shown as current. (CP E-Commerce Rules r.5; Legal
+                  Metrology.) Signing in refreshes against the live catalogue. */}
+              {priceProvisional && (
+                <div className="flex items-center gap-sm rounded-md bg-canvas px-md py-sm">
+                  <span className="text-body-sm text-muted">
+                    Prices shown are from when you added each item. Sign in to
+                    confirm the current price — it&apos;s re-checked before your
+                    order is placed.
                   </span>
                 </div>
               )}
@@ -272,7 +286,7 @@ export default function CartPage() {
                 <div className="mb-md border-t border-hairline pt-md">
                   <div className="flex items-center justify-between">
                     <span className="text-body-md font-extrabold text-ink">Total</span>
-                    <span className="text-title-md font-extrabold text-ink">{formatINR(subtotal)}</span>
+                    <span className="text-title-md font-extrabold text-ink">{formatINR(subtotal, { decimals: 2 })}</span>
                   </div>
                   {savings > 0 && (
                     <p className="mt-xs text-body-sm text-success">
@@ -385,7 +399,7 @@ function BillCard({
         <div className="my-xs border-t border-hairline" />
         <BillRow
           label="Cart total"
-          value={formatINR(subtotal)}
+          value={formatINR(subtotal, { decimals: 2 })}
           bold
         />
         {/* GST breakup — prices are inclusive of tax; this is the "of which"

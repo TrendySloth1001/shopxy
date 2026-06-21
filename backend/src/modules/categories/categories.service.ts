@@ -175,8 +175,34 @@ export class CategoriesService {
     return { category: updated };
   }
 
-  deleteCategory(id: number) {
-    return prisma.category.delete({ where: { id } });
+  /// CAT-H2 — the taxonomy is a single GLOBAL table every shop's products
+  /// hang off (`Product.categoryId → SetNull`). A hard delete silently nulls
+  /// the categoryId of EVERY shop's products in this category and orphans any
+  /// child categories — a catalog-wide, cross-tenant mis-categorisation. So we
+  /// refuse to delete a category that still has products (in any shop) or child
+  /// categories; the admin must re-home or deactivate (`isActive=false`) it
+  /// instead. (Write routes are already platform-admin gated in the routes.)
+  async deleteCategory(
+    id: number,
+  ): Promise<
+    | { error: 'NOT_FOUND' }
+    | { error: 'HAS_PRODUCTS'; products: number }
+    | { error: 'HAS_CHILDREN'; children: number }
+    | { ok: true }
+  > {
+    const category = await prisma.category.findUnique({
+      where: { id },
+      select: { id: true, _count: { select: { products: true, children: true } } },
+    });
+    if (!category) return { error: 'NOT_FOUND' };
+    if (category._count.products > 0) {
+      return { error: 'HAS_PRODUCTS', products: category._count.products };
+    }
+    if (category._count.children > 0) {
+      return { error: 'HAS_CHILDREN', children: category._count.children };
+    }
+    await prisma.category.delete({ where: { id } });
+    return { ok: true };
   }
 }
 

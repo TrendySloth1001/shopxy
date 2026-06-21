@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   MapPin,
@@ -304,17 +305,20 @@ function CheckoutInner() {
   }
 
   // ── Groups by shop ────────────────────────────────────────────────────────
-  const shopGroups = lines.reduce<Map<number, { name: string; lines: typeof lines }>>(
-    (map, line) => {
-      const shopId = line.product.shop.id;
-      if (!map.has(shopId)) {
-        map.set(shopId, { name: line.product.shop.name, lines: [] });
-      }
-      map.get(shopId)!.lines.push(line);
-      return map;
-    },
-    new Map(),
-  );
+  const shopGroups = lines.reduce<
+    Map<number, { name: string; slug: string; lines: typeof lines }>
+  >((map, line) => {
+    const shopId = line.product.shop.id;
+    if (!map.has(shopId)) {
+      map.set(shopId, {
+        name: line.product.shop.name,
+        slug: line.product.shop.slug,
+        lines: [],
+      });
+    }
+    map.get(shopId)!.lines.push(line);
+    return map;
+  }, new Map());
   const shopGroupArray = Array.from(shopGroups.entries());
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -456,7 +460,21 @@ function CheckoutInner() {
                         </span>
                       </div>
                     )}
-                    {group.lines.map((line, i) => (
+                    {/* Seller identity disclosure — the buyer contracts with the
+                    shop, not ShopXY (CP E-Commerce Rules r.5/r.6). Full legal
+                    name / address / GSTIN live on the shop page; surface the
+                    seller and a route to those details before payment. */}
+                <Link
+                  href={`/shop/${group.slug}`}
+                  className="flex items-center gap-sm border-b border-hairline px-md py-sm text-label-md text-muted hover:text-ink focus-visible:outline-none"
+                >
+                  <Store className="h-4 w-4 shrink-0 text-brand" />
+                  <span>
+                    Sold by <span className="font-bold text-ink">{group.name}</span> · seller
+                    details &amp; GSTIN
+                  </span>
+                </Link>
+                {group.lines.map((line, i) => (
                       <div
                         key={line.id}
                         className={`flex gap-md p-md ${i > 0 ? "border-t border-hairline" : ""}`}
@@ -610,12 +628,19 @@ function CheckoutInner() {
 
             {/* ── Trust footer ────────────────────────────────────── */}
             <div className="flex flex-wrap gap-sm">
+              {/* Qualified trust strip — cancellation depends on each shop's
+                  cancellation policy, so we describe the mechanic rather than
+                  promise blanket "easy cancel". (CP Act 2019; CCPA dark-pattern
+                  guidance.) */}
               {[
                 { icon: <Lock className="h-5 w-5 text-brand" />, label: "Secure checkout" },
-                { icon: <RotateCcw className="h-5 w-5 text-brand" />, label: "Easy cancel" },
+                {
+                  icon: <RotateCcw className="h-5 w-5 text-brand" />,
+                  label: "Cancel per shop policy",
+                },
                 {
                   icon: <HeadphonesIcon className="h-5 w-5 text-brand" />,
-                  label: "Real support",
+                  label: "In-app support",
                 },
               ].map(({ icon, label }) => (
                 <div
@@ -674,11 +699,18 @@ function CheckoutInner() {
                 <StickyBillRow label="Delivery" value="FREE" valueClass="text-success" />
               </div>
               <div className="my-md border-t border-hairline" />
-              {/* Bold total */}
+              {/* Bold total — estimate; the shop confirms the final charged
+                  amount at place-order (coupon/wallet are re-validated server
+                  side). CP E-Commerce Rules r.4(3). */}
               <div className="flex items-center justify-between">
                 <span className="text-body-md font-extrabold text-ink">Total payable</span>
-                <span className="text-title-md font-extrabold text-ink">{formatINR(grandTotal)}</span>
+                <span className="text-title-md font-extrabold text-ink">
+                  {formatINR(grandTotal, { decimals: 2 })}
+                </span>
               </div>
+              <p className="mt-xs text-label-md text-muted">
+                Estimated · confirmed when you place the order
+              </p>
               {totalSavings > 0 && (
                 <p className="mt-xs text-body-sm text-success">
                   You save {formatINR(totalSavings)}
@@ -783,7 +815,8 @@ function CheckoutInner() {
           <div className="w-full max-w-narrow rounded-dialog bg-white p-xl">
             <h2 className="text-title-md font-extrabold text-ink">Place this order?</h2>
             <p className="mt-sm text-body-sm text-muted">
-              Total payable {formatINR(grandTotal)}. We double-check larger orders so a stray
+              Estimated total {formatINR(grandTotal, { decimals: 2 })} — the shop confirms the
+              final amount when the order is placed. We double-check larger orders so a stray
               tap doesn&apos;t place one. You can still cancel a per-shop slice from the order
               detail page before the merchant confirms it.
             </p>
@@ -1040,7 +1073,19 @@ function PriceCard({
           />
         )}
         <div className="my-xs border-t border-hairline" />
-        <PriceRow label="Total payable" value={formatINR(grandTotal)} bold />
+        <PriceRow
+          label="Total payable (estimate)"
+          value={formatINR(grandTotal, { decimals: 2 })}
+          bold
+        />
+        {/* The coupon/wallet discount above is a client estimate; the shop
+            re-computes coupon eligibility, caps and wallet application when the
+            order is placed. The order confirmation shows the final charged
+            amount. (CP E-Commerce Rules r.4(3).) */}
+        <p className="text-label-md text-muted">
+          Estimated — the shop confirms the final amount when your order is
+          placed.
+        </p>
         {/* Statutory GST breakup — prices are inclusive of tax, so this is the
             "of which" split backed out of the item amounts, shown before order. */}
         {taxBreakup.taxTotal > 0 && (

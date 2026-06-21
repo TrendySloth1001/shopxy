@@ -30,6 +30,11 @@ import { Prisma } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
 import { nextPaymentRef } from '../../shared/numbering/sequences.js';
 import { toNumber, round2 } from '../../shared/numbering/decimal.js';
+import {
+  allocateProportional,
+  toMinorUnits,
+  fromMinorUnits,
+} from './helpers.js';
 
 type Db = Prisma.TransactionClient | typeof prisma;
 
@@ -165,8 +170,33 @@ export async function ensureOrderInvoiceReceipts(
       0,
     ),
   );
-  const shareOf = (total: number, childInvoiceTotal: number): number =>
-    invoiceTotalSum > 0 ? round2(total * (childInvoiceTotal / invoiceTotalSum)) : total;
+
+  // PR-H4 — allocate each source (wallet / gateway) across the children with the
+  // SAME largest-remainder allocator the Route split uses, in paise, so the
+  // per-child receipts sum EXACTLY to the source total (no paise drift). The old
+  // `round2(total * child/parent)` rounded each child independently, leaving the
+  // last invoice a paise or two short forever (the outstanding cap then prevents
+  // self-healing). Weights are each child's invoice total (minor units); the
+  // allocator floors every part then hands leftover paise to the largest
+  // fractional remainders, so Σ parts == the whole.
+  const childWeightsMinor = order.shopOrders.map((c) =>
+    c.invoice ? toMinorUnits(toNumber(c.invoice.total)) : 0,
+  );
+  const walletAllocMinor = allocateProportional(
+    childWeightsMinor,
+    toMinorUnits(walletPaid),
+  );
+  const gatewayAllocMinor = allocateProportional(
+    childWeightsMinor,
+    toMinorUnits(gatewayPaid),
+  );
+  // Map child id → its exact (sum-preserving) wallet/gateway share in rupees.
+  const walletShareById = new Map<number, number>();
+  const gatewayShareById = new Map<number, number>();
+  order.shopOrders.forEach((c, i) => {
+    walletShareById.set(c.id, fromMinorUnits(walletAllocMinor[i] ?? 0));
+    gatewayShareById.set(c.id, fromMinorUnits(gatewayAllocMinor[i] ?? 0));
+  });
 
   let created = 0;
   let postedTotal = 0; // Σ of every receipt actually written (capped at outstanding).
@@ -181,34 +211,36 @@ export async function ensureOrderInvoiceReceipts(
     //    correct even if a gateway receipt already landed (any ordering).
     if (walletPaid > 0) {
       const before = await invoiceOutstanding(db, invoice.id, invoiceTotal);
+      const desired = walletShareById.get(child.id) ?? 0;
       const n = await postReceiptOnce(db, {
         shopId: child.shopId,
         invoiceId: invoice.id,
         partyId,
-        desired: shareOf(walletPaid, invoiceTotal),
+        desired,
         cap: before,
         modeReference: null,
         note: 'Wallet payment',
         idempotencyKey: `wltrcpt:o${orderId}:i${invoice.id}`,
       });
-      if (n > 0) postedTotal += round2(Math.min(shareOf(walletPaid, invoiceTotal), before));
+      if (n > 0) postedTotal += round2(Math.min(desired, before));
       created += n;
     }
 
     // 2. GATEWAY slice — capped at whatever outstanding remains after wallet.
     if (gatewayPaid > 0 && gw) {
       const before = await invoiceOutstanding(db, invoice.id, invoiceTotal);
+      const desired = gatewayShareById.get(child.id) ?? 0;
       const n = await postReceiptOnce(db, {
         shopId: child.shopId,
         invoiceId: invoice.id,
         partyId,
-        desired: shareOf(gatewayPaid, invoiceTotal),
+        desired,
         cap: before,
         modeReference: gw.providerPaymentRef ?? null,
         note: `Online payment (${gw.provider})`,
         idempotencyKey: `gwrcpt:o${orderId}:i${invoice.id}`,
       });
-      if (n > 0) postedTotal += round2(Math.min(shareOf(gatewayPaid, invoiceTotal), before));
+      if (n > 0) postedTotal += round2(Math.min(desired, before));
       created += n;
     }
   }

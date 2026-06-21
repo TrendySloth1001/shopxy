@@ -99,12 +99,16 @@ export async function confirmOrder(
   });
 }
 
+// PR-H3 — RETURNED is NOT a postable milestone. The backend raw
+// shipping-event path has no side effects (no refund / stock add-back /
+// credit-note GST reversal / transfer clawback), so returns go through
+// the dedicated returns flow, not this picker. Offering it here would
+// just 400 at the boundary.
 export const SHIPPING_MILESTONES = [
   "PACKED",
   "SHIPPED",
   "OUT_FOR_DELIVERY",
   "DELIVERED",
-  "RETURNED",
 ] as const;
 export type ShippingMilestone = (typeof SHIPPING_MILESTONES)[number];
 
@@ -113,10 +117,9 @@ export const SHIPPING_MILESTONE_LABELS: Record<ShippingMilestone, string> = {
   SHIPPED: "Shipped",
   OUT_FOR_DELIVERY: "Out for delivery",
   DELIVERED: "Delivered",
-  RETURNED: "Returned",
 };
 
-/** Push a shipping milestone (PACKED…RETURNED) with optional courier/awb/eta. */
+/** Push a shipping milestone (PACKED…DELIVERED) with optional courier/awb/eta. */
 export async function addShippingEvent(
   id: number,
   input: { type: ShippingMilestone; courier?: string; awb?: string; eta?: string; note?: string },

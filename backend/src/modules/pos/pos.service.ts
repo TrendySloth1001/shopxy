@@ -640,11 +640,17 @@ export async function checkout(
 /// Lock an OPEN, non-empty sale for an online payment and return its frozen
 /// snapshot (totals.total is the amount the order is created for). Idempotent:
 /// re-locking an already-AWAITING_PAYMENT sale just returns its snapshot.
+///
+/// CASH-4 — stamp the ORIGINATING shift onto the sale here, at ring/lock time
+/// (when the cashier is present and their open shift is the correct one). The
+/// deferred webhook/sync settlement reuses this stored id instead of re-resolving
+/// `currentShiftId` later, so an online receipt always lands on the shift it was
+/// rung in — even if the cashier has since closed it / opened another / has none.
 export async function lockSaleForPayment(shopId: number, saleId: number): Promise<SaleSnapshot | PosError> {
   const res = await prisma.$transaction(async (tx) => {
     const sale = await tx.sale.findFirst({
       where: { id: saleId, shopId },
-      select: { id: true, status: true, invoiceId: true, _count: { select: { lines: true } } },
+      select: { id: true, status: true, invoiceId: true, openedById: true, _count: { select: { lines: true } } },
     });
     if (!sale) return { ok: false as const, error: 'Sale not found' };
     if (sale.invoiceId) return { ok: false as const, error: 'Sale is already checked out' };
@@ -653,7 +659,11 @@ export async function lockSaleForPayment(shopId: number, saleId: number): Promis
     if (sale._count.lines === 0) return { ok: false as const, error: 'Cannot charge an empty sale' };
     await tx.sale.update({
       where: { id: saleId },
-      data: { status: 'AWAITING_PAYMENT', version: { increment: 1 } },
+      data: {
+        status: 'AWAITING_PAYMENT',
+        shiftId: await currentShiftId(shopId, sale.openedById, tx),
+        version: { increment: 1 },
+      },
     });
     return { ok: true as const };
   });
@@ -709,9 +719,10 @@ export async function settlePaidSaleInTx(
       customer_name: string | null;
       customer_phone: string | null;
       opened_by_id: number | null;
+      shift_id: number | null;
     }>
   >`
-    SELECT invoice_id, status, party_id, header_discount, customer_name, customer_phone, opened_by_id
+    SELECT invoice_id, status, party_id, header_discount, customer_name, customer_phone, opened_by_id, shift_id
     FROM sales WHERE id = ${args.saleId} AND shop_id = ${args.shopId} FOR UPDATE
   `;
   const row = locked[0];
@@ -743,8 +754,12 @@ export async function settlePaidSaleInTx(
     items,
     tender: { mode: 'UPI', modeReference: args.modeReference },
     userId,
-    // Online sales tie to the cashier's open shift (the sale's opener).
-    shiftId: await currentShiftId(args.shopId, row.opened_by_id, tx),
+    // CASH-4 — bind to the ORIGINATING shift captured on the sale at ring/lock
+    // time (lockSaleForPayment), NOT the opener's current shift at webhook time.
+    // A deferred settlement (cashier since closed/reopened/no shift) must not move
+    // the receipt onto the wrong shift's Z-report. Falls back to a live resolve
+    // only for a legacy locked sale that predates the stamp.
+    shiftId: row.shift_id ?? (await currentShiftId(args.shopId, row.opened_by_id, tx)),
   });
   return { invoiceId: invoice.id, replayed: false };
 }

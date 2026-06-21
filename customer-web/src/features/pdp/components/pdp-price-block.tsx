@@ -10,24 +10,38 @@ interface Props {
 // ── Assurance block (delivery / returns / authentic) ──────────────────────────
 
 function AssuranceBlock() {
-  // Shop returns info is not on the PDP payload — show generic trust copy
+  // Per-shop returns/delivery/authenticity policy is NOT on the PDP payload, so
+  // we must NOT assert blanket guarantees ("Free delivery", "7-day returns",
+  // "100% authentic") that a given shop/SKU may not honour. Qualify the copy to
+  // describe the platform mechanics and point to the shop's policy.
+  // (CP Act 2019 s.2(28)/(47); CCPA Dark-Patterns Guidelines 2023.)
   const rows: { icon: React.ReactNode; text: React.ReactNode }[] = [
     {
       icon: <Truck size={14} className="text-brand" aria-hidden />,
       text: (
         <span>
-          Free delivery{" "}
-          <span className="font-normal text-muted">· 3–5 days · merchant confirms</span>
+          Delivery & charges{" "}
+          <span className="font-normal text-muted">· set by the shop · confirmed at order</span>
         </span>
       ),
     },
     {
       icon: <RotateCcw size={14} className="text-brand" aria-hidden />,
-      text: <span>7-day returns</span>,
+      text: (
+        <span>
+          Returns{" "}
+          <span className="font-normal text-muted">· per the shop&apos;s return policy</span>
+        </span>
+      ),
     },
     {
       icon: <ShieldCheck size={14} className="text-brand" aria-hidden />,
-      text: <span>100% authentic</span>,
+      text: (
+        <span>
+          Sold by the shop{" "}
+          <span className="font-normal text-muted">· seller details below</span>
+        </span>
+      ),
     },
   ];
 

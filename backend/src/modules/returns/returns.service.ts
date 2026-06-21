@@ -575,6 +575,11 @@ export class ReturnsService {
         cessRate: number;
         isPriceInclusive: boolean;
       }> = [];
+      // PR-H2 — the returned lines' GROSS list value (Σ qty × unitPrice, before
+      // any discount). This is the share of the order being returned and the
+      // basis for prorating what the BUYER actually paid (which, for a
+      // platform-funded coupon, is less than this list value — see below).
+      let returnedListValue = new Prisma.Decimal(0);
       for (const it of row.items) {
         const productId = it.purchaseRequestItem?.productId;
         const qty = Number(it.quantity);
@@ -595,6 +600,9 @@ export class ReturnsService {
           cessRate: toNumber(orig.cessRate),
           isPriceInclusive: orig.isPriceInclusive,
         });
+        returnedListValue = returnedListValue.add(
+          new Prisma.Decimal(orig.unitPrice).mul(qty),
+        );
       }
       if (creditItems.length === 0) {
         return { error: 'CREDIT_NOTE_FAILED' as const };
@@ -629,35 +637,59 @@ export class ReturnsService {
         throw e;
       }
 
-      // The refund the buyer is owed is the credit note's tax-inclusive total,
-      // so wallet/cash refunded == GST credit note == money returned.
-      const refundAmount = round2(Number(creditNote.total));
-
-      // Split the refund between wallet credit and off-platform refund.
+      // PR-H2 — compute the refund and its tender split from a SINGLE source of
+      // truth: the per-tender amounts the buyer actually paid, prorated by the
+      // returned share of the order. Previously the refund was the raw credit-
+      // note total while the wallet/cash split divided by a DIFFERENT base
+      // (gross − coupon), so any order with BOTH a coupon and wallet money
+      // over/under-refunded the cash vs wallet slices and could pay the buyer
+      // MORE than they parted with (a platform-funded coupon's value).
       //
-      // - WALLET mode: credit the full refundAmount back to the wallet.
-      // - ORIGINAL/CASH mode: the merchant cuts cash/cheque/UPI off
-      //   platform for the cash portion, BUT we still credit the
-      //   wallet-funded slice back to the wallet (wallet money is
-      //   reusable money — refusing to return it would be theft).
-      //   Cash portion: refundAmount × (1 − walletShare).
-      //   Wallet portion: refundAmount × walletShare.
+      // The credit note's tax-inclusive total is the GST document value (the
+      // supply reversed) — for a platform-funded coupon that is the FULL list
+      // (the seller was owed full value; the platform funded the gap), so it
+      // overstates what the buyer actually paid. We therefore cap the buyer's
+      // refund at the buyer's prorated outlay and split that single figure.
       const parent = row.request?.customerOrder;
-      const gross = parent ? Number(parent.estimatedTotal) : 0;
-      const coupon = parent ? Number(parent.couponDiscount) : 0;
-      const walletPaid = parent ? Number(parent.walletPaid) : 0;
-      // Denominator is the buyer's ACTUAL outlay (post-coupon). With a
-      // coupon-discounted order the wallet-funded slice of what they
-      // really paid is walletPaid / (gross - coupon), not / gross.
-      // Falling back to `gross` keeps the share defined when coupon
-      // is zero.
-      const denom = Math.max(gross - coupon, 1);
-      const walletShare =
-        walletPaid > 0 ? Math.min(walletPaid / denom, 1) : 0;
+      const gross = parent ? new Prisma.Decimal(parent.estimatedTotal) : new Prisma.Decimal(0);
+      const coupon = parent ? new Prisma.Decimal(parent.couponDiscount) : new Prisma.Decimal(0);
+      const walletPaid = parent ? new Prisma.Decimal(parent.walletPaid) : new Prisma.Decimal(0);
+      const creditNoteTotal = new Prisma.Decimal(creditNote.total);
+
+      // What the buyer actually parted with for the WHOLE order = gross − coupon
+      // (the coupon is a discount, never the buyer's money — regardless of who
+      // funded it). walletPaid was debited at checkout; the rest is cash/gateway.
+      const buyerOutlay = Prisma.Decimal.max(gross.sub(coupon), new Prisma.Decimal(0));
+
+      // Returned share of the order, by GROSS list value (never > 1).
+      const returnFraction = gross.gt(0)
+        ? Prisma.Decimal.min(returnedListValue.div(gross), new Prisma.Decimal(1))
+        : new Prisma.Decimal(1);
+
+      // Prorated buyer outlay for the returned lines, capped at the credit-note
+      // total so we never refund MORE money than the reversing document (a
+      // seller-funded coupon already nets into the credit note, so there the cap
+      // is a no-op; a platform-funded coupon makes the cap bind, and the
+      // platform absorbs the coupon's returned slice it originally funded).
+      const buyerRefund = Prisma.Decimal.min(
+        buyerOutlay.mul(returnFraction).toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP),
+        creditNoteTotal,
+      );
+      const refundAmount = round2(buyerRefund.toNumber());
+
+      // Wallet vs cash split of the SAME prorated figure, so the two reconcile
+      // to the tenders the buyer used. WALLET mode credits the whole refund to
+      // the wallet; otherwise only the wallet-funded slice goes back to the
+      // wallet and the merchant cuts the cash slice off-platform.
+      const walletPortion = buyerOutlay.gt(0)
+        ? buyerRefund.mul(walletPaid).div(buyerOutlay).toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP)
+        : new Prisma.Decimal(0);
       const walletCreditAmount =
         method === 'WALLET'
           ? refundAmount
-          : Math.round(refundAmount * walletShare * 100) / 100;
+          : round2(Prisma.Decimal.min(walletPortion, buyerRefund).toNumber());
+      // The cash slice the merchant settles off-platform is the remainder,
+      // buyerRefund − walletCreditAmount, so the two tenders sum to refundAmount.
 
       // Wallet credit. Idempotency keyed on the return id so a retry of
       // this RPC re-uses the original entry instead of double-crediting.
@@ -675,8 +707,9 @@ export class ReturnsService {
           })
         : null;
 
-      // Persist the credit-note total as the row's refund amount + link the
-      // wallet entry, so the stored figure ties to the issued document.
+      // Persist the buyer's actual refund (prorated outlay, capped at the credit
+      // note total) as the row's refund amount + link the wallet entry, so the
+      // stored figure equals the money actually returned across both tenders.
       await tx.returnRequest.update({
         where: { id: row.id },
         data: {
