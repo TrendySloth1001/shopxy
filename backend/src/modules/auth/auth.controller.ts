@@ -224,6 +224,47 @@ export async function logoutAll(req: Request, res: Response) {
   res.status(204).end();
 }
 
+// ── Device-remember (one-tap return sign-in for native apps) ──────────
+
+const rememberSchema = z.object({ label: z.string().trim().max(80).optional() });
+const rememberTokenSchema = z.object({ rememberToken: z.string().min(20).max(256) });
+
+/// POST /auth/remember — authenticated. Mint a device-remember credential
+/// for the signed-in user (called by desktop/Flutter right after login).
+export async function issueRemember(req: Request, res: Response) {
+  const parsed = rememberSchema.safeParse(req.body ?? {});
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Invalid input' });
+    return;
+  }
+  const result = await authService.issueRememberToken(req.user!.sub, parsed.data.label ?? null);
+  res.status(201).json(result);
+}
+
+/// POST /auth/remember-login — public. Exchange a stored device-remember
+/// credential for a fresh session (no password). Rotates the credential.
+export async function rememberLogin(req: Request, res: Response) {
+  const parsed = rememberTokenSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: 'rememberToken required' });
+    return;
+  }
+  const result = await authService.rememberLogin(parsed.data.rememberToken);
+  if ('error' in result) {
+    res.status(401).json({ error: result.error });
+    return;
+  }
+  res.json(result);
+}
+
+/// POST /auth/remember/forget — public. Revoke a single remembered device
+/// ("Remove this account"). Always 204 (idempotent; reveals nothing).
+export async function forgetRemember(req: Request, res: Response) {
+  const parsed = rememberTokenSchema.safeParse(req.body);
+  if (parsed.success) await authService.forgetRememberToken(parsed.data.rememberToken);
+  res.status(204).end();
+}
+
 export async function getMe(req: Request, res: Response) {
   const user = await authService.getMe(req.user!.sub);
   if (!user) {

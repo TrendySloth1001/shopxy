@@ -65,6 +65,7 @@ model User {
   createdAt          DateTime           @default(now()) @map("created_at")
   updatedAt          DateTime           @updatedAt @map("updated_at")
   refreshTokens      RefreshToken[]
+  rememberTokens     RememberToken[]
   stockTransactions  StockTransaction[]
   stockAdjustments   StockAdjustment[]
 
@@ -240,6 +241,29 @@ model RefreshToken {
   @@index([userId])
   @@index([family])
   @@map("refresh_tokens")
+}
+
+/// Device-bound "remember this account" credential for the native apps
+/// (desktop + Flutter merchant) — lets a returning user one-tap back in after
+/// a normal logout WITHOUT re-entering their password. Deliberately separate
+/// from RefreshToken (which logout revokes): this survives logout but is
+/// revocable on "forget account" / logout-all / password change. The raw
+/// secret only ever lives in the device OS keychain; we store its hash.
+model RememberToken {
+  id         Int       @id @default(autoincrement())
+  /// SHA-256 hex of the opaque secret — never the raw token (mirrors
+  /// RefreshToken; a DB leak can't be replayed).
+  tokenHash  String    @unique @map("token_hash")
+  userId     Int       @map("user_id")
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Free-text device/app label for a future "trusted devices" list.
+  label      String?
+  expiresAt  DateTime  @map("expires_at")
+  lastUsedAt DateTime? @map("last_used_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("remember_tokens")
 }
 
 model Category {

@@ -1,0 +1,71 @@
+{
+  "name": "shopxy-merchant-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ShopXY Merchant — cross-platform desktop shell (Electron) for the merchant-web app.",
+  "main": "main.js",
+  "author": "ShopXY",
+  "scripts": {
+    "dev": "cross-env SHOPXY_DESKTOP_DEV=1 electron .",
+    "start": "electron .",
+    "build:web": "cross-env DESKTOP_BUILD=1 npm --prefix ../merchant-web run build",
+    "stage:web": "node ./scripts/stage-web.js",
+    "prepack:web": "npm run build:web && npm run stage:web",
+    "pack": "npm run prepack:web && electron-builder --dir",
+    "dist": "npm run prepack:web && electron-builder",
+    "dist:mac": "npm run prepack:web && electron-builder --mac",
+    "dist:win": "npm run prepack:web && electron-builder --win",
+    "dist:linux": "npm run prepack:web && electron-builder --linux"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.shopxy.merchant",
+    "productName": "ShopXY Merchant",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "lib/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../merchant-web/.next-build/standalone",
+        "to": "web"
+      }
+    ],
+    "asar": true,
+    "npmRebuild": false,
+    "mac": {
+      "category": "public.app-category.business",
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "identity": null
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Office"
+    }
+  }
+}

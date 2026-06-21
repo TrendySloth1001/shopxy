@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { AuthShell } from "@/features/auth/components/auth-shell";
 import { LoginForm } from "@/features/auth/components/login-form";
+import { RememberedAccounts } from "@/features/auth/components/remembered-accounts";
 
 export const metadata: Metadata = {
   title: "Sign in · ShopXY Merchant",
@@ -29,6 +30,7 @@ export default async function LoginPage({
       footerCta="Create an account"
       notice={notice}
     >
+      <RememberedAccounts />
       <LoginForm />
     </AuthShell>
   );
