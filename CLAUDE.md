@@ -1,3 +1,13 @@
+<!-- Docs / READMEs -->
+## Docs & READMEs — write them in `readmes/`
+
+**Do NOT scatter `.md` docs across the repo.** Any README, design note, audit,
+plan, or working doc you create goes in the root **`readmes/`** folder, which is
+**gitignored** (local-only — never committed). The only tracked markdown that
+belongs elsewhere is: the `CLAUDE.md` files, `GEMINI.md`, and durable context
+files like `POS_PAYMENTS_CONTEXT.md` / `ACCOUNTING_AUDIT.md`. Before adding a new
+top-level or per-module `.md`, put it under `readmes/` instead.
+
 <!-- Project layout -->
 ## Project layout
 
