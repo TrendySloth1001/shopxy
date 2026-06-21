@@ -1,20 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy_customer/features/shops/domain/entities/linked_shop.dart';
-import 'package:shopxy_customer/features/shops/presentation/pages/shop_caution_page.dart';
 import 'package:shopxy_customer/features/shops/presentation/pages/shop_invoices_page.dart';
 import 'package:shopxy_customer/features/shops/presentation/pages/shop_quotations_page.dart';
 import 'package:shopxy_customer/features/shops/presentation/providers/shops_provider.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
-import 'package:shopxy_customer/shared/constants/app_strings.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_divider.dart';
-import 'package:shopxy_customer/shared/format/app_format.dart';
 
 /// The per-shop landing for a customer. Every record the shop keeps for them —
-/// invoices, caution deposit, quotations — is a first-class section here, so
-/// nothing is buried behind a conditional banner. Vendors see only invoices.
+/// invoices, quotations — is a first-class section here, so nothing is buried
+/// behind a conditional banner. Vendors see only invoices.
 class ShopSectionsPage extends StatefulWidget {
   const ShopSectionsPage({super.key, required this.shop});
   final LinkedShop shop;
@@ -36,13 +33,9 @@ class _ShopSectionsPageState extends State<ShopSectionsPage> {
     final p = context.read<ShopsProvider>();
     return Future.wait([
       p.loadInvoices(widget.shop),
-      if (_isParty) p.loadCaution(widget.shop),
       if (_isParty) p.loadQuotations(widget.shop),
     ]);
   }
-
-  String _moneyShort(double v) =>
-      AppFormat.rupeesSmart(v);
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +44,6 @@ class _ShopSectionsPageState extends State<ShopSectionsPage> {
     final invoices = p.invoicesFor(widget.shop);
     final invoiceCount = invoices?.length ?? widget.shop.invoiceCount;
 
-    final caution = _isParty ? p.cautionFor(widget.shop) : null;
     final quotes = _isParty
         ? (p.quotationsFor(widget.shop) ?? const <ShopQuotation>[])
         : const <ShopQuotation>[];
@@ -68,15 +60,6 @@ class _ShopSectionsPageState extends State<ShopSectionsPage> {
         onTap: () => _open(ShopInvoicesPage(shop: widget.shop)),
       ),
       if (_isParty) ...[
-        _SectionRow(
-          icon: Icons.savings_rounded,
-          accent: AppColors.success,
-          title: AppStrings.cautionTitle,
-          subtitle: caution == null
-              ? 'View deposit & history'
-              : '${_moneyShort(caution.balance)} held by shop',
-          onTap: () => _open(ShopCautionPage(shop: widget.shop)),
-        ),
         _SectionRow(
           icon: Icons.request_quote_rounded,
           accent: AppColors.accentIndigo,

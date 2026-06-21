@@ -27,15 +27,15 @@ export type GatewayPaymentStatus =
   | 'REFUNDED';
 
 /** Which domain object the money settles against. */
-export type SettlementTargetType = 'WALLET' | 'ORDER' | 'INVOICE' | 'CAUTION' | 'POS';
+export type SettlementTargetType = 'WALLET' | 'ORDER' | 'INVOICE' | 'POS';
 
 export interface SettlementTarget {
   type: SettlementTargetType;
   /**
    * Domain id the payment settles against. For WALLET this is the
    * customerUserId; for ORDER the CustomerOrder id; for INVOICE the Invoice
-   * id; for CAUTION the CautionRequest id; for POS the Sale id (an in-store
-   * UPI-QR tender — the capture is what turns the cart into a confirmed sale).
+   * id; for POS the Sale id (an in-store UPI-QR tender — the capture is what
+   * turns the cart into a confirmed sale).
    */
   id: number;
 }

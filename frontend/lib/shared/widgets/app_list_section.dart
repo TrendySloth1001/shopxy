@@ -6,7 +6,7 @@ import 'package:shopxy/shared/widgets/app_divider.dart';
 /// A flat list section: an optional uppercase [title] followed by [children]
 /// rows laid directly on the page and separated by [AppDivider]s — no bordered
 /// "card" container. This is the standard way to present grouped rows
-/// (invoices, caution ledger, quotation items …) so screens stay flat and
+/// (invoices, quotation items …) so screens stay flat and
 /// consistent. Rows should be full-width (e.g. a `Padding(Row(...))`).
 class AppListSection extends StatelessWidget {
   const AppListSection({

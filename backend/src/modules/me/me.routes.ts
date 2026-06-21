@@ -30,30 +30,6 @@ router.get(
   asyncHandler((req, res) => meController.partyInvoice(req, res)),
 );
 router.get(
-  '/parties/:partyId/caution',
-  asyncHandler((req, res) => meController.partyCaution(req, res)),
-);
-router.post(
-  '/parties/:partyId/caution-requests',
-  asyncHandler((req, res) => meController.createCautionRequest(req, res)),
-);
-router.get(
-  '/parties/:partyId/caution-requests',
-  asyncHandler((req, res) => meController.cautionRequests(req, res)),
-);
-router.post(
-  '/parties/:partyId/caution-requests/:reqId/cancel',
-  asyncHandler((req, res) => meController.cancelCautionRequest(req, res)),
-);
-router.post(
-  '/parties/:partyId/caution-requests/:reqId/pay',
-  asyncHandler((req, res) => meController.payCautionRequest(req, res)),
-);
-router.post(
-  '/parties/:partyId/caution-requests/:reqId/payment/sync',
-  asyncHandler((req, res) => meController.syncCautionRequestPayment(req, res)),
-);
-router.get(
   '/parties/:partyId/quotations',
   asyncHandler((req, res) => meController.quotations(req, res)),
 );

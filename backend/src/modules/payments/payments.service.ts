@@ -11,9 +11,7 @@ export type PaymentMode =
   | 'RTGS'
   | 'CHEQUE'
   | 'CARD'
-  | 'OTHER'
-  // System-only: set on the Payment created by a caution set-off.
-  | 'CAUTION';
+  | 'OTHER';
 
 export interface CreatePaymentInput {
   shopId: number;
@@ -351,21 +349,6 @@ export class PaymentsService {
       voidedById: voidedById ?? null,
       voidReason: reason ?? null,
     };
-
-    // A mode='CAUTION' payment is a caution set-off with a matching ADJUSTMENT
-    // CautionTxn that dropped the caution balance. Voiding the payment must
-    // restore that balance, so we remove the ADJUSTMENT (its only purpose was
-    // to record this set-off) in the same transaction. The Payment row itself
-    // is retained — just voided — so the money trail survives.
-    if (owned.mode === 'CAUTION') {
-      await prisma.$transaction(async (tx) => {
-        await tx.cautionTxn.deleteMany({
-          where: { shopId, paymentId: id, type: 'ADJUSTMENT' },
-        });
-        await tx.payment.update({ where: { id }, data: voidData });
-      });
-      return true;
-    }
 
     await prisma.payment.update({ where: { id }, data: voidData });
     return true;

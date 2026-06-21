@@ -1,26 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:shopxy_customer/core/network/api_client.dart';
-import 'package:shopxy_customer/features/orders/data/datasources/orders_remote_data_source.dart'
-    show GatewayCheckout;
 import 'package:shopxy_customer/features/shops/domain/entities/linked_shop.dart';
 import 'package:shopxy_customer/features/shops/domain/entities/linked_merchant.dart';
-
-/// Differentiated pay failure thrown by the data source so the UI can
-/// react to the request having moved under us (approved/cancelled by the
-/// shop while the page was open) instead of showing a generic error.
-class CautionPayException implements Exception {
-  CautionPayException(this.code, this.message);
-
-  /// One of: CAUTION_REQUEST_NOT_FOUND, CAUTION_REQUEST_NOT_PENDING, UNKNOWN.
-  final String code;
-  final String message;
-
-  bool get isNotPending => code == 'CAUTION_REQUEST_NOT_PENDING';
-
-  @override
-  String toString() => message;
-}
 
 class MeRemoteDataSource {
   const MeRemoteDataSource(this._client);
@@ -92,31 +74,6 @@ class MeRemoteDataSource {
     return ShopInvoiceDetail.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  /// Read-only caution ledger the shop holds against this customer. Only
-  /// meaningful for party links (vendors have no caution). Returns the held
-  /// balance + history.
-  Future<ShopCautionLedger> caution(LinkedShop shop,
-      {int page = 1, int limit = 50}) async {
-    final res = await _client.get(
-      '/me/parties/${shop.id}/caution',
-      queryParameters: {'page': '$page', 'limit': '$limit'},
-    );
-    if (res.statusCode != 200) {
-      throw Exception('Failed to load caution: ${res.statusCode}');
-    }
-    final json = jsonDecode(res.body) as Map<String, dynamic>;
-    final rawBalance = json['balance'];
-    final balance = rawBalance is num
-        ? rawBalance.toDouble()
-        : double.tryParse('${rawBalance ?? ''}') ?? 0;
-    return ShopCautionLedger(
-      balance: balance,
-      entries: (json['data'] as List)
-          .map((e) => ShopCautionTxn.fromJson(e as Map<String, dynamic>))
-          .toList(),
-    );
-  }
-
   String _err(String body, String fallback) {
     try {
       final m = jsonDecode(body) as Map<String, dynamic>;
@@ -124,111 +81,6 @@ class MeRemoteDataSource {
     } catch (_) {
       return fallback;
     }
-  }
-
-  /// Party-initiated caution requests the customer has raised on this shop.
-  Future<List<ShopCautionRequest>> cautionRequests(LinkedShop shop) async {
-    final res = await _client.get('/me/parties/${shop.id}/caution-requests');
-    if (res.statusCode != 200) {
-      throw Exception(_err(res.body, 'Failed to load requests: ${res.statusCode}'));
-    }
-    final json = jsonDecode(res.body) as Map<String, dynamic>;
-    return (json['data'] as List)
-        .map((e) => ShopCautionRequest.fromJson(e as Map<String, dynamic>))
-        .toList();
-  }
-
-  /// Offer to post a caution deposit; the merchant approves it later. The
-  /// optional [basket] is read-only context (products the customer browsed to
-  /// size the deposit) — it does not earmark the money.
-  Future<ShopCautionRequest> createCautionRequest(
-    LinkedShop shop, {
-    required double amount,
-    String? mode,
-    String? modeReference,
-    String? note,
-    List<Map<String, dynamic>>? basket,
-  }) async {
-    final res = await _client.post(
-      '/me/parties/${shop.id}/caution-requests',
-      body: {
-        'amount': amount,
-        'mode': ?mode,
-        if (modeReference != null && modeReference.isNotEmpty)
-          'modeReference': modeReference,
-        if (note != null && note.isNotEmpty) 'note': note,
-        if (basket != null && basket.isNotEmpty) 'basket': basket,
-      },
-    );
-    if (res.statusCode != 201 && res.statusCode != 200) {
-      throw Exception(_err(res.body, 'Failed to send request: ${res.statusCode}'));
-    }
-    return ShopCautionRequest.fromJson(
-      jsonDecode(res.body) as Map<String, dynamic>,
-    );
-  }
-
-  /// Cancel a still-pending request.
-  Future<ShopCautionRequest> cancelCautionRequest(
-    LinkedShop shop,
-    int requestId,
-  ) async {
-    final res = await _client.post(
-      '/me/parties/${shop.id}/caution-requests/$requestId/cancel',
-    );
-    if (res.statusCode != 200) {
-      throw Exception(_err(res.body, 'Failed to cancel: ${res.statusCode}'));
-    }
-    return ShopCautionRequest.fromJson(
-      jsonDecode(res.body) as Map<String, dynamic>,
-    );
-  }
-
-  /// Start an online gateway payment for a still-pending caution request.
-  /// Mirrors `POST /me/orders/:id/pay` — returns the same checkout session
-  /// shape the app feeds to the Razorpay sheet.
-  Future<GatewayCheckout> payCautionRequest(
-    LinkedShop shop,
-    int requestId,
-  ) async {
-    final res = await _client.post(
-      '/me/parties/${shop.id}/caution-requests/$requestId/pay',
-    );
-    if (res.statusCode != 201) {
-      String code = 'UNKNOWN';
-      try {
-        final m = jsonDecode(res.body) as Map<String, dynamic>;
-        code = (m['code'] ?? m['error'] ?? code) as String;
-      } catch (_) {/* keep default */}
-      throw CautionPayException(
-        code,
-        _err(res.body, 'Could not start payment: ${res.statusCode}'),
-      );
-    }
-    return GatewayCheckout.fromJson(
-      jsonDecode(res.body) as Map<String, dynamic>,
-    );
-  }
-
-  /// Client-confirm after the Razorpay sheet reports success. The server
-  /// re-checks the live provider order and settles if paid (a backstop for
-  /// the webhook, which can't reach a localhost dev server and may lag in
-  /// prod). The request flips to APPROVED when [settled] is true.
-  Future<({ShopCautionRequest request, bool settled})>
-      syncCautionRequestPayment(LinkedShop shop, int requestId) async {
-    final res = await _client.post(
-      '/me/parties/${shop.id}/caution-requests/$requestId/payment/sync',
-    );
-    if (res.statusCode != 200) {
-      throw Exception(_err(res.body, 'Could not sync payment: ${res.statusCode}'));
-    }
-    final json = jsonDecode(res.body) as Map<String, dynamic>;
-    return (
-      request: ShopCautionRequest.fromJson(
-        json['request'] as Map<String, dynamic>,
-      ),
-      settled: (json['settled'] as bool?) ?? false,
-    );
   }
 
   /// Quotations the shop sent this customer.

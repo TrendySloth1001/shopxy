@@ -144,8 +144,7 @@ async function hydrateRates(
 
 /// Merchant-built quotations sent to a linked customer for acceptance. The
 /// accept path is the single point that turns a quotation into a real invoice
-/// (via invoicesService.createInvoice with confirm) — mirrors the caution
-/// request→approve flow, just merchant→customer instead of customer→merchant.
+/// (via invoicesService.createInvoice with confirm).
 export class QuotationsService {
   /// Merchant creates + sends a quotation to a LINKED party. Returns
   /// `{ error }` when the party isn't in this shop or isn't app-linked.
@@ -473,8 +472,7 @@ export class QuotationsService {
 
   /// A LINKED customer builds a basket and asks the shop for a quote. Lands as
   /// status REQUESTED (no `createdById` yet); prices are advisory — the merchant
-  /// re-prices on `respondToRequest`. Notifies the shop owner. Mirror of the
-  /// caution request→approve flow, customer→merchant.
+  /// re-prices on `respondToRequest`. Notifies the shop owner.
   async requestByCustomer(
     shopId: number,
     partyId: number,

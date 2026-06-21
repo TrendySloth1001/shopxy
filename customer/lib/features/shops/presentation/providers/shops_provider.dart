@@ -1,7 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:shopxy_customer/features/orders/data/datasources/orders_remote_data_source.dart'
-    show GatewayCheckout;
 import 'package:shopxy_customer/features/shops/data/datasources/me_remote_data_source.dart';
 import 'package:shopxy_customer/features/shops/domain/entities/linked_shop.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
@@ -121,99 +119,6 @@ class ShopsProvider extends ChangeNotifier {
     return _ds.invoiceDetail(s, id);
   }
 
-  /// Per-shop caution ledger cache (party links only). Same keying as
-  /// invoices so party + vendor at separate shops never collide.
-  final Map<String, ShopCautionLedger> _cautionCache = {};
-  final Map<String, bool> _cautionLoading = {};
-  final Map<String, String?> _cautionError = {};
-
-  ShopCautionLedger? cautionFor(LinkedShop s) => _cautionCache[_key(s)];
-  bool isLoadingCaution(LinkedShop s) => _cautionLoading[_key(s)] ?? false;
-  String? cautionErrorFor(LinkedShop s) => _cautionError[_key(s)];
-
-  Future<void> loadCaution(LinkedShop s) async {
-    // Vendors have no caution ledger — skip the round-trip.
-    if (s.role != ShopRole.party) return;
-    final key = _key(s);
-    _cautionLoading[key] = true;
-    _cautionError[key] = null;
-    notifyListeners();
-    try {
-      _cautionCache[key] = await _ds.caution(s);
-    } catch (e) {
-      _cautionError[key] = friendlyError(e);
-    } finally {
-      _cautionLoading[key] = false;
-      notifyListeners();
-    }
-  }
-
-  /// Per-shop cache of the customer's own caution *requests* (party links
-  /// only). Same keying as the ledger so party + vendor never collide.
-  final Map<String, List<ShopCautionRequest>> _cautionReqCache = {};
-  final Map<String, bool> _cautionReqLoading = {};
-
-  List<ShopCautionRequest>? cautionRequestsFor(LinkedShop s) =>
-      _cautionReqCache[_key(s)];
-  bool isLoadingCautionRequests(LinkedShop s) =>
-      _cautionReqLoading[_key(s)] ?? false;
-
-  Future<void> loadCautionRequests(LinkedShop s) async {
-    if (s.role != ShopRole.party) return;
-    final key = _key(s);
-    _cautionReqLoading[key] = true;
-    notifyListeners();
-    try {
-      _cautionReqCache[key] = await _ds.cautionRequests(s);
-    } catch (_) {
-      // Non-fatal — the requests strip just stays empty.
-    } finally {
-      _cautionReqLoading[key] = false;
-      notifyListeners();
-    }
-  }
-
-  /// Offer to post a caution deposit. Throws on failure (the sheet surfaces
-  /// the message); on success refreshes the requests strip.
-  Future<void> submitCautionRequest(
-    LinkedShop s, {
-    required double amount,
-    String? mode,
-    String? modeReference,
-    String? note,
-    List<Map<String, dynamic>>? basket,
-  }) async {
-    await _ds.createCautionRequest(
-      s,
-      amount: amount,
-      mode: mode,
-      modeReference: modeReference,
-      note: note,
-      basket: basket,
-    );
-    await loadCautionRequests(s);
-  }
-
-  /// Cancel a pending request, then refresh the strip.
-  Future<void> cancelCautionRequest(LinkedShop s, int requestId) async {
-    await _ds.cancelCautionRequest(s, requestId);
-    await loadCautionRequests(s);
-  }
-
-  /// Start an online gateway payment for a still-pending caution request.
-  /// Returns the checkout session the page opens the Razorpay sheet with.
-  /// Throws [CautionPayException] (e.g. NOT_PENDING if the shop settled it
-  /// meanwhile) — the page decides whether to refresh.
-  Future<GatewayCheckout> payCautionRequest(LinkedShop s, int requestId) =>
-      _ds.payCautionRequest(s, requestId);
-
-  /// Confirm with the server after the Razorpay sheet succeeds — the request
-  /// flips to APPROVED when [settled] comes back true. The page refreshes the
-  /// ledger + strip afterwards, so no cache update here.
-  Future<({ShopCautionRequest request, bool settled})>
-      syncCautionRequestPayment(LinkedShop s, int requestId) =>
-          _ds.syncCautionRequestPayment(s, requestId);
-
   /// Per-shop cache of quotations the shop sent this customer.
   final Map<String, List<ShopQuotation>> _quotationCache = {};
   final Map<String, bool> _quotationLoading = {};
@@ -288,11 +193,6 @@ class ShopsProvider extends ChangeNotifier {
     _invoiceCache.clear();
     _invoiceLoading.clear();
     _invoiceError.clear();
-    _cautionCache.clear();
-    _cautionLoading.clear();
-    _cautionError.clear();
-    _cautionReqCache.clear();
-    _cautionReqLoading.clear();
     _quotationCache.clear();
     _quotationLoading.clear();
     _quotationError.clear();

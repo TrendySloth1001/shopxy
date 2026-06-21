@@ -47,7 +47,6 @@ const PATH_AREAS: readonly [string, Area][] = [
   ["/dashboard/invoices", "invoices"],
   ["/dashboard/quotations", "quotations"],
   ["/dashboard/challans", "challans"],
-  ["/dashboard/caution-requests", "invoices"],
   ["/dashboard/payments", "payments"],
   ["/dashboard/parties", "parties"],
   ["/dashboard/stock-adjustments", "stock"],

@@ -19,7 +19,7 @@ import {
   type CatalogCategory,
   type CatalogProduct,
 } from "@/features/merchants/types";
-import { Search, Package, ReceiptText, ShieldCheck, FileText, X } from "lucide-react";
+import { Search, Package, ReceiptText, FileText, X } from "lucide-react";
 import { Divider } from "@/shared/ui/divider";
 
 // ─── Nav strip ──────────────────────────────────────────────────────────────
@@ -36,7 +36,6 @@ function MerchantNavStrip({
     { href: `${base}/invoices`, label: "Invoices", icon: <ReceiptText size={15} /> },
     ...(isParty
       ? [
-          { href: `${base}/caution`, label: "Caution", icon: <ShieldCheck size={15} /> },
           { href: `${base}/quotations`, label: "Quotations", icon: <FileText size={15} /> },
         ]
       : []),

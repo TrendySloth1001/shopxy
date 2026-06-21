@@ -345,7 +345,7 @@ export class ReportsService {
         ORDER BY ii.tax_percent ASC
       `;
 
-    const [output, input, totalsRow, returnsByRate, forfeitRow] = await Promise.all([
+    const [output, input, totalsRow, returnsByRate] = await Promise.all([
       byRate('SALE'),
       byRate('PURCHASE'),
       prisma.$queryRaw<
@@ -387,18 +387,6 @@ export class ReportsService {
           AND i.invoice_date >= ${range.from} AND i.invoice_date < ${range.to}
         GROUP BY ii.tax_percent
       `,
-      // SUPPLY forfeits of caution deposits accrue output GST on the
-      // inclusive split persisted at forfeit time (Circular 178/2022
-      // ¶11.3). They sit outside the invoice tables, so they're summed
-      // here and added to the headline output figures.
-      prisma.$queryRaw<{ taxable: string; tax: string }[]>`
-        SELECT
-          COALESCE(SUM(taxable_value), 0)::text AS taxable,
-          COALESCE(SUM(tax_amount), 0)::text    AS tax
-        FROM caution_txns
-        WHERE shop_id = ${shopId} AND type = 'FORFEIT' AND gst_treatment = 'SUPPLY'
-          AND created_at >= ${range.from} AND created_at < ${range.to}
-      `,
     ]);
 
     const returnedGst = returnsByRate.reduce((s, r) => s + n(r.tax), 0);
@@ -406,11 +394,9 @@ export class ReportsService {
     const returnedByRate = new Map(
       returnsByRate.map((r) => [n(r.tax_rate), r]),
     );
-    const forfeitTaxable = n(forfeitRow[0]?.taxable ?? 0);
-    const forfeitGst = n(forfeitRow[0]?.tax ?? 0);
 
     const outputGst = r2(
-      n(totalsRow[0]?.output_gst ?? 0) - returnedGst + forfeitGst,
+      n(totalsRow[0]?.output_gst ?? 0) - returnedGst,
     );
     const inputGst = n(totalsRow[0]?.input_gst ?? 0);
     const outputCess = r2(n(totalsRow[0]?.output_cess ?? 0) - returnedCess);
@@ -432,13 +418,6 @@ export class ReportsService {
       returns: {
         gst: r2(returnedGst),
         cess: r2(returnedCess),
-      },
-      /// Output tax accrued on SUPPLY forfeits of caution deposits in this
-      /// period (already added to outputTax; not part of any by-rate bucket
-      /// because forfeits aren't invoice lines).
-      forfeits: {
-        taxable: r2(forfeitTaxable),
-        gst: r2(forfeitGst),
       },
       outputByRate: output.map((r) => {
         const ret = returnedByRate.get(n(r.tax_rate));
@@ -465,7 +444,7 @@ export class ReportsService {
   // to gross subtotal + distributed line discounts.
   // ─────────────────────────────────────────────────────────────────
   async pnl(shopId: number, range: DateRange) {
-    const [revenueRow, cogsRow, expenseRow, refundRow, returnedCogsRow, forfeitIncomeRow] = await Promise.all([
+    const [revenueRow, cogsRow, expenseRow, refundRow, returnedCogsRow] = await Promise.all([
       prisma.$queryRaw<{ revenue: string }[]>`
         SELECT COALESCE(SUM((CASE WHEN document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * taxable_value), 0)::text AS revenue
         FROM invoices
@@ -526,21 +505,6 @@ export class ReportsService {
         WHERE st.shop_id = ${shopId} AND st.direction = 'IN' AND st.reason_code = 'RETURN_IN'
           AND i.invoice_date >= ${range.from} AND i.invoice_date < ${range.to}
       `,
-      // Forfeited caution deposits are taxable business income (IT Act
-      // Sec 28/41) — the liability drop needs a matching income leg or
-      // the money vanishes from the P&L. SUPPLY forfeits book the EX-GST
-      // taxable slice (the output-tax slice is owed to the government,
-      // not income); NONE forfeits (pure penalty, no GST) book the full
-      // amount.
-      prisma.$queryRaw<{ income: string }[]>`
-        SELECT COALESCE(SUM(
-          CASE WHEN gst_treatment = 'SUPPLY' THEN COALESCE(taxable_value, amount)
-               ELSE amount END
-        ), 0)::text AS income
-        FROM caution_txns
-        WHERE shop_id = ${shopId} AND type = 'FORFEIT'
-          AND created_at >= ${range.from} AND created_at < ${range.to}
-      `,
     ]);
 
     const grossRevenue = n(revenueRow[0]?.revenue ?? 0);
@@ -549,9 +513,8 @@ export class ReportsService {
     const returnedCogs = n(returnedCogsRow[0]?.returned_cogs ?? 0);
     const cogs = r2(n(cogsRow[0]?.cogs ?? 0) - returnedCogs);
     const writeoffs = n(expenseRow[0]?.writeoffs ?? 0);
-    const otherIncome = n(forfeitIncomeRow[0]?.income ?? 0);
     const grossProfit = r2(revenue - cogs);
-    const netProfit = r2(grossProfit - writeoffs + otherIncome);
+    const netProfit = r2(grossProfit - writeoffs);
     const grossMargin = revenue > 0 ? grossProfit / revenue : 0;
 
     return {
@@ -561,8 +524,6 @@ export class ReportsService {
       cogs,
       returnedCogs,
       writeoffs,
-      /// Forfeited caution deposits booked as income (ex-GST for SUPPLY).
-      otherIncome,
       grossProfit,
       netProfit,
       grossMargin,

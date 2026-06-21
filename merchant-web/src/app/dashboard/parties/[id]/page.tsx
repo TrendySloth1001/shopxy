@@ -28,7 +28,6 @@ import { ContactChangesSection } from "@/shared/ui/contact-changes-section";
 import { formatDateTime } from "@/shared/datetime";
 import { formatINR } from "@/shared/money";
 import type { Ledger } from "@/shared/ledger";
-import { CautionCard } from "@/features/caution/caution-card";
 import { RecordPaymentModal } from "@/features/payments/record-payment-modal";
 import { InviteControl } from "@/features/invitations/invite-control";
 import { getPartyLedger, getPartyOverview } from "@/features/parties/api";
@@ -107,9 +106,6 @@ export default function PartyDetailPage() {
 
   const p = overview.party;
   const balanceView = partyBalanceView(overview.balance);
-  const setoffInvoices = overview.recentInvoices
-    .filter((inv) => inv.status === "CONFIRMED" && inv.type === "SALE")
-    .map((inv) => ({ id: inv.id, invoiceNo: inv.invoiceNo, total: inv.total }));
 
   return (
     <div className="w-full px-lg py-xxl pb-massive md:px-xxl">
@@ -191,18 +187,6 @@ export default function PartyDetailPage() {
           </div>
         </div>
       </div>
-
-      {/* Caution deposit — actionable for non-system parties */}
-      {!p.isSystem ? (
-        <div className="mt-lg">
-          <CautionCard
-            partyId={id}
-            balance={overview.cautionBalance}
-            invoices={setoffInvoices}
-            onChanged={reload}
-          />
-        </div>
-      ) : null}
 
       {/* Stats */}
       <div className="mt-lg grid grid-cols-1 gap-lg sm:grid-cols-3">

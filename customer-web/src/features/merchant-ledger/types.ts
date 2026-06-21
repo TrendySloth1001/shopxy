@@ -1,7 +1,6 @@
 /**
  * Zod schemas + TypeScript types for the merchant-ledger feature.
- * Covers invoices, caution deposits, and quotations for both linked
- * parties and vendors.
+ * Covers invoices and quotations for both linked parties and vendors.
  */
 import { z } from "zod";
 import { zNum } from "@/shared/zod";
@@ -84,80 +83,6 @@ export const invoiceDetailSchema = z.object({
   items: z.array(invoiceItemSchema),
 });
 export type InvoiceDetail = z.infer<typeof invoiceDetailSchema>;
-
-// ─── Caution ─────────────────────────────────────────────────────────────────
-
-export const cautionTxnSchema = z.object({
-  id: z.number(),
-  partyId: z.number().optional(),
-  type: z.string(), // DEPOSIT | REFUND | ADJUSTMENT | FORFEIT
-  amount: z.coerce.number(),
-  mode: z.string().nullable().optional(),
-  receiptNo: z.string().nullable().optional(),
-  invoiceId: z.number().nullable().optional(),
-  invoiceNo: z.string().nullable().optional(),
-  note: z.string().nullable().optional(),
-  createdAt: z.string(),
-});
-export type CautionTxn = z.infer<typeof cautionTxnSchema>;
-
-export const cautionLedgerSchema = z.object({
-  balance: z.coerce.number(),
-  data: z.array(cautionTxnSchema),
-  total: z.coerce.number().optional(),
-  page: z.number().optional(),
-  limit: z.number().optional(),
-  skip: z.number().optional(),
-});
-export type CautionLedger = z.infer<typeof cautionLedgerSchema>;
-
-export const cautionRequestSchema = z.object({
-  id: z.number(),
-  shopId: z.number(),
-  partyId: z.number(),
-  amount: z.coerce.number(),
-  mode: z.string().nullable().optional(),
-  modeReference: z.string().nullable().optional(),
-  note: z.string().nullable().optional(),
-  basket: z.array(z.unknown()).nullable().optional(),
-  basketValue: z.coerce.number().nullable().optional(),
-  status: z.string(), // PENDING | APPROVED | REJECTED | CANCELLED
-  channel: z.string().nullable().optional(),
-  reviewNote: z.string().nullable().optional(),
-  reviewedAt: z.string().nullable().optional(),
-  cautionTxnId: z.number().nullable().optional(),
-  createdAt: z.string(),
-  updatedAt: z.string().optional(),
-  party: z.object({ id: z.number(), name: z.string() }).optional(),
-});
-export type CautionRequest = z.infer<typeof cautionRequestSchema>;
-
-export const cautionRequestsPageSchema = pageMetaSchema.extend({
-  data: z.array(cautionRequestSchema),
-});
-export type CautionRequestsPage = z.infer<typeof cautionRequestsPageSchema>;
-
-export const paySessionSchema = z.object({
-  intentId: z.number(),
-  provider: z.string(),
-  providerOrderRef: z.string(),
-  amount: z.coerce.number(),
-  currency: z.string(),
-  clientParams: z.object({
-    key: z.string(),
-    order_id: z.string(),
-    amount: z.coerce.number(),
-    currency: z.string().optional(),
-  }),
-  reused: z.boolean(),
-});
-export type CautionPaySession = z.infer<typeof paySessionSchema>;
-
-export const syncResultSchema = z.object({
-  request: cautionRequestSchema,
-  settled: z.boolean(),
-});
-export type CautionSyncResult = z.infer<typeof syncResultSchema>;
 
 // ─── Quotations ──────────────────────────────────────────────────────────────
 

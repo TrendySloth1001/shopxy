@@ -5,21 +5,11 @@
 import {
   invoicesPageSchema,
   invoiceDetailSchema,
-  cautionLedgerSchema,
-  cautionRequestsPageSchema,
-  cautionRequestSchema,
-  paySessionSchema,
-  syncResultSchema,
   quotationsPageSchema,
   quotationSchema,
   catalogPageSchema,
   type InvoicesPage,
   type InvoiceDetail,
-  type CautionLedger,
-  type CautionRequestsPage,
-  type CautionRequest,
-  type CautionPaySession,
-  type CautionSyncResult,
   type QuotationsPage,
   type Quotation,
   type CatalogPage,
@@ -82,91 +72,6 @@ export async function fetchInvoiceDetail(
 /** Returns a BFF URL safe for <a href> / window.open */
 export function invoicePdfUrl(role: MerchantRole, id: string, invoiceId: string): string {
   return `${basePath(role, id)}/invoices/${encodeURIComponent(invoiceId)}/pdf`;
-}
-
-// ─── Caution ─────────────────────────────────────────────────────────────────
-
-export async function fetchCautionLedger(
-  partyId: string,
-  opts?: { page?: number; limit?: number },
-): Promise<CautionLedger> {
-  const qs = new URLSearchParams({
-    page: String(opts?.page ?? 1),
-    limit: String(opts?.limit ?? 50),
-  });
-  const res = await fetch(`/api/me/parties/${encodeURIComponent(partyId)}/caution?${qs}`, {
-    cache: "no-store",
-  });
-  return jsonOrThrow(res, (raw) => cautionLedgerSchema.parse(raw), "Could not load caution ledger.");
-}
-
-export async function fetchCautionRequests(
-  partyId: string,
-  opts?: { page?: number; limit?: number },
-): Promise<CautionRequestsPage> {
-  const qs = new URLSearchParams({
-    page: String(opts?.page ?? 1),
-    limit: String(opts?.limit ?? 50),
-  });
-  const res = await fetch(
-    `/api/me/parties/${encodeURIComponent(partyId)}/caution-requests?${qs}`,
-    { cache: "no-store" },
-  );
-  return jsonOrThrow(
-    res,
-    (raw) => cautionRequestsPageSchema.parse(raw),
-    "Could not load caution requests.",
-  );
-}
-
-export async function postCautionRequest(
-  partyId: string,
-  payload: {
-    amount: number;
-    mode?: string;
-    modeReference?: string;
-    note?: string;
-  },
-): Promise<CautionRequest> {
-  const res = await fetch(`/api/me/parties/${encodeURIComponent(partyId)}/caution-requests`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  return jsonOrThrow(res, (raw) => cautionRequestSchema.parse(raw), "Could not submit request.");
-}
-
-export async function cancelCautionRequest(
-  partyId: string,
-  reqId: number,
-): Promise<CautionRequest> {
-  const res = await fetch(
-    `/api/me/parties/${encodeURIComponent(partyId)}/caution-requests/${encodeURIComponent(String(reqId))}/cancel`,
-    { method: "POST" },
-  );
-  return jsonOrThrow(res, (raw) => cautionRequestSchema.parse(raw), "Could not cancel request.");
-}
-
-export async function payCautionRequest(
-  partyId: string,
-  reqId: number,
-): Promise<CautionPaySession> {
-  const res = await fetch(
-    `/api/me/parties/${encodeURIComponent(partyId)}/caution-requests/${encodeURIComponent(String(reqId))}/pay`,
-    { method: "POST" },
-  );
-  return jsonOrThrow(res, (raw) => paySessionSchema.parse(raw), "Could not initiate payment.");
-}
-
-export async function syncCautionRequestPayment(
-  partyId: string,
-  reqId: number,
-): Promise<CautionSyncResult> {
-  const res = await fetch(
-    `/api/me/parties/${encodeURIComponent(partyId)}/caution-requests/${encodeURIComponent(String(reqId))}/payment/sync`,
-    { method: "POST" },
-  );
-  return jsonOrThrow(res, (raw) => syncResultSchema.parse(raw), "Could not confirm payment.");
 }
 
 // ─── Quotations ──────────────────────────────────────────────────────────────

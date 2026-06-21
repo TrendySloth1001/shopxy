@@ -5,7 +5,6 @@ import Image from "next/image";
 import {
   Store,
   ReceiptText,
-  ShieldCheck,
   FileText,
   ArrowRight,
 } from "lucide-react";
@@ -120,11 +119,6 @@ export function MerchantCard({ item, role }: MerchantCardProps) {
     },
     ...(isParty
       ? [
-          {
-            href: `${base}/caution`,
-            icon: <ShieldCheck size={16} />,
-            label: "Caution",
-          },
           {
             href: `${base}/quotations`,
             icon: <FileText size={16} />,
