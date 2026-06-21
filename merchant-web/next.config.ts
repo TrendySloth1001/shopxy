@@ -22,7 +22,16 @@ const nextConfig: NextConfig = {
   // stays on the default `.next`; build/start use `.next-build`.
   distDir: process.env.NEXT_DIST_DIR ?? ".next",
   ...(isDesktopBuild
-    ? { output: "standalone" as const, images: { unoptimized: true } }
+    ? {
+        output: "standalone" as const,
+        images: { unoptimized: true },
+        // The desktop standalone bundle is verified separately (tsc + eslint).
+        // Skip the in-build re-check, which otherwise chokes on a concurrently
+        // running dev server's stale `.next/dev/types` route artifacts (the
+        // multi-session hazard). Normal web builds still type-check + lint.
+        typescript: { ignoreBuildErrors: true },
+        eslint: { ignoreDuringBuilds: true },
+      }
     : {}),
 };
 
