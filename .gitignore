@@ -1,3 +1,6 @@
 # Local-only docs/readmes. Keep working notes, design docs, and README files
 # here instead of scattering tracked .md files across the repo. Not committed.
 readmes/
+
+# Desktop installer artifacts (large binaries — built locally, never committed).
+dist/
