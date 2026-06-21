@@ -48,6 +48,22 @@ export async function renderInvoicePdf(
     });
     const owner = shopRow?.owner ?? null;
 
+    // GST-2 (Rule 53) — a credit/debit note MUST carry the serial number and
+    // date of the original tax invoice it adjusts. Look it up (scoped to the
+    // same shop) so it can be printed in the meta strip. Null when the link
+    // is missing (legacy rows) — the strip then simply omits the reference.
+    let originalRef: { invoiceNo: string; invoiceDate: Date } | null = null;
+    if (
+      (invoice.documentType === 'CREDIT_NOTE' || invoice.documentType === 'DEBIT_NOTE') &&
+      invoice.originalInvoiceId
+    ) {
+      const orig = await prisma.invoice.findFirst({
+        where: { id: invoice.originalInvoiceId, shopId },
+        select: { invoiceNo: true, invoiceDate: true },
+      });
+      if (orig) originalRef = orig;
+    }
+
     // Generate the UPI QR up-front so the awaitable lives outside the
     // PDFKit promise. Only applicable to SALE invoices with a non-zero
     // total and a configured VPA.
@@ -263,6 +279,21 @@ export async function renderInvoicePdf(
       drawMeta('Place of Supply', placeOfSupply, 2);
       drawMeta('FY', invoice.financialYear, 3);
       y = metaRowY + 28;
+
+      // GST-2 (Rule 53) — second meta row carrying the original tax invoice's
+      // number + date that this credit/debit note adjusts.
+      if (originalRef) {
+        const origRowY = y;
+        const drawMeta2 = (label: string, value: string, idx: number) => {
+          const x = LEFT + idx * metaW;
+          doc.font('Helvetica').fontSize(7).fillColor('#6B7280').text(label.toUpperCase(), x, origRowY, { width: metaW - 6 });
+          doc.font('Helvetica-Bold').fontSize(9).fillColor('#111827').text(value, x, origRowY + 9, { width: metaW - 6 });
+        };
+        drawMeta2('Original Invoice No', originalRef.invoiceNo, 0);
+        drawMeta2('Original Invoice Date', formatDDMMYYYY(originalRef.invoiceDate), 1);
+        y = origRowY + 28;
+      }
+
       doc.moveTo(LEFT, y).lineTo(RIGHT, y).strokeColor('#E5E7EB').lineWidth(0.7).stroke();
       y += 10;
 
@@ -465,19 +496,66 @@ export async function renderInvoicePdf(
         }
       }
 
-      // ---------- UPI QR (if applicable) ----------
+      // ---------- Payment QR + Supplier signature band ----------
+      // GST-3 — the supplier signature block and the UPI *payment* QR share a
+      // horizontal band but are visually and semantically separate: the QR on
+      // the LEFT is a UPI pay-link (explicitly labelled "Scan to pay"), and the
+      // signature block on the RIGHT is the Rule 46(q) authorised-signatory
+      // attestation. The UPI QR is NEVER presented as an e-invoice IRN/QR — IRP
+      // e-invoice (IRN + signed QR) integration is a separate, documented TODO.
+      const bandTop = y;
       if (upiQr) {
         if (y + 140 > 770) { doc.addPage(); y = 40; }
-        doc.image(upiQr.buffer, LEFT, y, { width: 110 });
+        const qY = y;
+        doc.image(upiQr.buffer, LEFT, qY, { width: 110 });
         doc
           .font('Helvetica')
           .fontSize(8)
           .fillColor('#374151')
-          .text('Scan to pay with any UPI app', LEFT, y + 114, { width: 140 });
+          .text('Scan to pay with any UPI app', LEFT, qY + 114, { width: 140 });
         if (owner?.upiVpa) {
-          doc.fontSize(8).fillColor('#6B7280').text(`UPI: ${owner.upiVpa}`, LEFT, y + 126, { width: 200 });
+          doc.fontSize(8).fillColor('#6B7280').text(`UPI: ${owner.upiVpa}`, LEFT, qY + 126, { width: 200 });
         }
-        y += 140;
+        y = qY + 140;
+      }
+
+      // Supplier signature block — right-aligned, on the same band as the QR
+      // when one is present, otherwise starting fresh. "For <Shop>" + a signing
+      // line + "Authorised Signatory". An uploaded signature image is rendered
+      // above the line when the owner has one configured (hook below); until
+      // that field exists the block degrades to the line + label only.
+      {
+        const sigW = 200;
+        const sigX = RIGHT - sigW;
+        let sigY = upiQr ? bandTop : y;
+        if (sigY + 90 > 790) { doc.addPage(); sigY = 40; y = 40; }
+        const supplierName = owner?.shopName ?? owner?.name ?? 'Supplier';
+        doc
+          .font('Helvetica-Bold')
+          .fontSize(9)
+          .fillColor('#111827')
+          .text(`For ${supplierName}`, sigX, sigY, { width: sigW, align: 'right' });
+
+        // Optional uploaded signature image hook. `signatureUrl` is not yet a
+        // column on the owner row; when added (a Buffer/data-URI fetched into
+        // `signatureImage`) it can be drawn here. Left intentionally inert so
+        // the block renders cleanly today.
+        const signatureImage: Buffer | null = null;
+        const lineY = sigY + 46;
+        if (signatureImage) {
+          try {
+            doc.image(signatureImage, sigX + sigW - 120, sigY + 12, { width: 120, height: 32 });
+          } catch {
+            // never let a bad signature image break the document
+          }
+        }
+        doc.moveTo(sigX, lineY).lineTo(RIGHT, lineY).strokeColor('#9CA3AF').lineWidth(0.7).stroke();
+        doc
+          .font('Helvetica')
+          .fontSize(8)
+          .fillColor('#374151')
+          .text('Authorised Signatory', sigX, lineY + 4, { width: sigW, align: 'right' });
+        y = Math.max(y, lineY + 18);
       }
 
       if (invoice.note) {

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { LegalDoc, LegalSection } from "@/features/legal/legal-doc";
+import { GrievanceOfficerSection } from "@/features/legal/grievance-officer";
 
 export const metadata: Metadata = { title: "Terms of Service · ShopXY" };
 
@@ -54,6 +55,7 @@ export default function TermsPage() {
       <LegalSection heading="Governing law">
         <p>These terms are governed by the laws of India. Questions? Email support@shopxy.app.</p>
       </LegalSection>
+      <GrievanceOfficerSection />
     </LegalDoc>
   );
 }

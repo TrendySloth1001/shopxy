@@ -330,19 +330,81 @@ export class PaymentsService {
   /// aggregate excludes it. Replaces the old hard delete, which silently
   /// reopened an invoice's outstanding with no trace and enabled
   /// undetectable tampering. Idempotent — voiding an already-voided payment
-  /// is a no-op. Returns false only when the payment doesn't exist.
+  /// is a no-op.
+  ///
+  /// Returns:
+  ///   - `false`           — the payment doesn't exist (404).
+  ///   - `'PLATFORM_COLLECTED'` — the receipt backs real money the PLATFORM
+  ///     collected (customer wallet/gateway, or a POS QR/online settlement).
+  ///     Silently voiding it would reopen the invoice's outstanding while the
+  ///     money still sits at the platform — the merchant ledger would then show
+  ///     UNPAID against cash already taken. Such a receipt may only be unwound
+  ///     through a refund / credit-note flow, never a bare void (PR-C2).
+  ///   - `true`            — voided (or already void).
+  ///
+  /// `allowPlatformCollected` lets a TRUSTED internal refund flow (e.g. order
+  /// cancellation, which hands the money straight back to the customer's wallet
+  /// in the same operation) void a platform-collected receipt — that IS the
+  /// required refund flow, so the guard would otherwise wrongly block it. The
+  /// public DELETE /payments endpoint never sets it, so a bare merchant void of
+  /// a platform receipt is still refused.
   async voidPayment(
     shopId: number,
     id: number,
     voidedById?: number | null,
     reason?: string | null,
-  ) {
+    opts?: { allowPlatformCollected?: boolean },
+  ): Promise<boolean | 'PLATFORM_COLLECTED'> {
     const owned = await prisma.payment.findFirst({
       where: { id, shopId },
-      select: { id: true, mode: true, voidedAt: true },
+      select: {
+        id: true,
+        type: true,
+        mode: true,
+        modeReference: true,
+        idempotencyKey: true,
+        voidedAt: true,
+      },
     });
     if (!owned) return false;
     if (owned.voidedAt) return true; // already voided
+
+    // PR-C2 — refuse to silently void a platform-collected receipt. Two signals:
+    //
+    //   1. The order reconciler (order-receipts.ts) posts wallet/gateway receipts
+    //      with mode='OTHER' and an idempotencyKey prefixed `wltrcpt:` / `gwrcpt:`.
+    //      That money was collected by the platform off the customer's order, not
+    //      handed across a counter — a void here desyncs the merchant ledger from
+    //      real, already-captured funds.
+    //
+    //   2. A POS QR / POS online settlement records a UPI receipt whose
+    //      `modeReference` is the gateway's payment ref. If a CAPTURED
+    //      GatewayPayment for THIS shop carries that same ref, the receipt is
+    //      backed by a real gateway capture and must be refunded, not voided.
+    if (owned.type === 'RECEIPT' && !opts?.allowPlatformCollected) {
+      const key = owned.idempotencyKey ?? '';
+      const isOrderReconciled =
+        owned.mode === 'OTHER' &&
+        (key.startsWith('wltrcpt:') || key.startsWith('gwrcpt:'));
+
+      let backedByCapture = false;
+      if (!isOrderReconciled && owned.modeReference) {
+        // Scope by shopId so we never read another tenant's gateway row.
+        const capture = await prisma.gatewayPayment.findFirst({
+          where: {
+            shopId,
+            status: 'CAPTURED',
+            providerPaymentRef: owned.modeReference,
+          },
+          select: { id: true },
+        });
+        backedByCapture = capture != null;
+      }
+
+      if (isOrderReconciled || backedByCapture) {
+        return 'PLATFORM_COLLECTED';
+      }
+    }
 
     const voidData = {
       voidedAt: new Date(),

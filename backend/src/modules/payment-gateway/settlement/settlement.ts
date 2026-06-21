@@ -16,6 +16,7 @@ import {
   writeHeldTransferRows,
   executeHeldTransfers,
 } from './order-split.js';
+import { recordOperatorWithholding } from './operator-withholding.js';
 import { settlePosTransfer } from './pos-split.js';
 import * as posService from '../../pos/pos.service.js';
 import { saleBus } from '../../pos/pos.bus.js';
@@ -97,6 +98,16 @@ const orderPayment: SettlementHandler = {
     // ledger reflects the payment. Idempotent; a no-op when no invoice exists
     // yet (pay-then-confirm — confirmRequest reconciles at confirm time).
     await ensureOrderInvoiceReceipts(intent.target.id, db);
+    // PR-C3 — operator (e-commerce-operator) TCS Sec 52 + TDS Sec 194-O. The
+    // compute + persist path ALWAYS runs (the GSTR-8/26Q ledger must exist),
+    // but the row's `applied` flag — and any future Route settlement reduction
+    // — is gated by OPERATOR_TCS_ENABLED (default OFF). Needs a tx so the
+    // withholding rows commit atomically with the paymentStatus flip; when the
+    // core didn't pass one (defensive fallback path) we skip and let
+    // reconciliation backfill rather than write outside the settlement tx.
+    if (tx) {
+      await recordOperatorWithholding(intent, tx);
+    }
     // Route on-hold split (OFF by default). Phase 1 only: write the per-shop
     // HELD/KYC_GATED transfer rows in this tx. The provider calls run in
     // afterCommit. Until ROUTE_SPLIT_ENABLED is set (post sandbox + sign-off),

@@ -21,6 +21,7 @@ import { useAuth } from "@/features/auth/auth-context";
 import { RequireAuth } from "@/features/auth/components/require-auth";
 import { AppHeader } from "@/features/auth/components/app-header";
 import { formatINR } from "@/shared/format";
+import { deriveInclusiveTaxBreakup, type TaxBreakup } from "@/shared/tax";
 import {
   fetchAddresses,
   createAddress,
@@ -108,6 +109,19 @@ function CheckoutInner() {
   const walletApply = useWallet ? Math.min(walletBalance, afterCoupon) : 0;
   const grandTotal = Math.max(0, afterCoupon - walletApply);
   const totalSavings = productSavings + (deliveryStrike - deliveryCharge) + couponDiscount;
+
+  // GST breakup — prices are inclusive of tax, so we back the tax out of the
+  // line amounts (qty × inclusive selling price) grouped by rate. This shows
+  // the consumer the statutory "of which taxes" split before placing the order
+  // (CP E-Commerce Rules r.4(3)). Derived client-side from cart line tax rates;
+  // the backend invoice remains authoritative. See findings_deferred for the
+  // server-breakup follow-up.
+  const taxBreakup = deriveInclusiveTaxBreakup(
+    lines.map((l) => ({
+      inclusiveAmount: l.product.sellingPrice * l.quantity,
+      taxPercent: l.product.taxPercent,
+    })),
+  );
 
   const selectedAddress = addresses.find((a) => a.id === selectedAddressId) ?? null;
 
@@ -583,6 +597,7 @@ function CheckoutInner() {
                 grandTotal={grandTotal}
                 couponDiscount={couponDiscount}
                 walletApplied={walletApply}
+                taxBreakup={taxBreakup}
               />
               {totalSavings > 0 && (
                 <div className="mt-sm flex items-center gap-sm rounded-md bg-success-soft px-md py-sm">
@@ -613,7 +628,15 @@ function CheckoutInner() {
               ))}
             </div>
             <p className="text-center text-label-md text-muted">
-              By placing your order, you agree to our terms. Pricing and availability may be
+              By placing your order, you agree to our{" "}
+              <a href="/legal/terms" className="text-ink underline hover:text-brand">
+                terms
+              </a>{" "}
+              and{" "}
+              <a href="/legal/policies" className="text-ink underline hover:text-brand">
+                consumer policies
+              </a>{" "}
+              (cancellation, returns, refunds, shipping). Pricing and availability may be
               re-confirmed by the shop.
             </p>
           </div>
@@ -967,6 +990,7 @@ function PriceCard({
   grandTotal,
   couponDiscount,
   walletApplied,
+  taxBreakup,
 }: {
   itemsTotal: number;
   mrpTotal: number;
@@ -975,6 +999,7 @@ function PriceCard({
   grandTotal: number;
   couponDiscount: number;
   walletApplied: number;
+  taxBreakup: TaxBreakup;
 }) {
   return (
     <div className="rounded-md bg-white p-md">
@@ -1016,6 +1041,28 @@ function PriceCard({
         )}
         <div className="my-xs border-t border-hairline" />
         <PriceRow label="Total payable" value={formatINR(grandTotal)} bold />
+        {/* Statutory GST breakup — prices are inclusive of tax, so this is the
+            "of which" split backed out of the item amounts, shown before order. */}
+        {taxBreakup.taxTotal > 0 && (
+          <div className="mt-xs flex flex-col gap-xs border-t border-hairline pt-xs">
+            <PriceRow
+              label="Taxable value"
+              value={formatINR(taxBreakup.taxableValue, { decimals: 2 })}
+              valueClass="text-muted"
+            />
+            {taxBreakup.perRate.map((r) => (
+              <PriceRow
+                key={r.rate}
+                label={`GST @ ${r.rate}% (incl.)`}
+                value={formatINR(r.tax, { decimals: 2 })}
+                valueClass="text-muted"
+              />
+            ))}
+            <p className="text-label-md text-muted">
+              Prices are inclusive of all taxes.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

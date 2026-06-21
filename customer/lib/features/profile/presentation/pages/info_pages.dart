@@ -43,22 +43,49 @@ class PrivacyPolicyPage extends StatelessWidget {
         _Section(
           title: 'What we collect',
           body:
-              'Your name, email, phone, and delivery addresses you add — used to fulfil the orders you place and to keep your account secure.',
+              'Your name, email, phone, and delivery addresses you add — used to fulfil the orders you place and to keep your account secure. We also log basic technical data (device, app version, error logs) to keep the service working.',
         ),
         _Section(
           title: 'How we use it',
           body:
-              'Only to operate the app: order routing, invoice ledgers, support, and fraud prevention. We do not sell personal data.',
+              'Only to operate the app: order routing, invoice ledgers, support, and fraud prevention. We do not sell personal data, and we do not use it for targeted advertising to children.',
         ),
         _Section(
-          title: 'Who sees your data',
+          title: 'Who we share it with',
           body:
-              'The shops you order from see the order itself, the snapshotted name/phone/address on that order, and the items you bought.',
+              'The shops you order from see the order itself, the snapshotted name/phone/address on that order, and the items you bought. Beyond that we share data only with the processors that run ShopXY:\n\n'
+              '• Razorpay — payment collection, refunds and payouts. Payment/KYC details you submit are handled by Razorpay and not stored by us.\n'
+              '• Cloud hosting & infrastructure — app hosting, database, storage and backups. [TO FILL: name the hosting provider]',
         ),
         _Section(
-          title: 'Your controls',
+          title: 'Retention schedule',
           body:
-              'Edit or delete delivery addresses from Profile → Addresses. Account deletion: contact support@shopxy.app.',
+              'Invoices, orders and payment records: 8 years (Indian tax/company law). Account profile and addresses: while your account is active, then deleted or anonymised within 90 days of account deletion except records we must legally keep. Support/grievance records: up to 3 years. Technical/security logs: up to 180 days.',
+        ),
+        _Section(
+          title: 'Your rights (DPDP Act, 2023)',
+          body:
+              'You can access, correct, export or delete your personal data, withdraw consent, and nominate someone to act for you. Export and deletion are honoured by our systems. Edit or delete delivery addresses from Profile → Addresses; for an account export or deletion, use Profile → Data & privacy or contact our Grievance Officer below.',
+        ),
+        _Section(
+          title: 'Children\'s data',
+          body:
+              'ShopXY is intended for users aged 18 and over. We do not knowingly process a child\'s personal data without verifiable parental or guardian consent, and we do not track, monitor, or target advertising at children. If we learn we hold a child\'s data without the required consent, we delete it.',
+        ),
+        _Section(
+          title: 'Cross-border transfers',
+          body:
+              'Your data is primarily stored and processed on infrastructure in India. Where a processor (such as a payment provider) operates outside India, any transfer is limited to that purpose and made only to countries not restricted by the Government of India, with contractual safeguards.',
+        ),
+        _Section(
+          title: 'Security & breach notification',
+          body:
+              'We protect data with encryption in transit and access controls, and forward payment data to our payment provider rather than storing it. In the event of a personal-data breach we will notify the Data Protection Board of India and affected users without undue delay, within the timelines prescribed under the DPDP Act and its rules.',
+        ),
+        _grievanceSection,
+        _Section(
+          title: 'Contact',
+          body: 'For privacy questions, email privacy@shopxy.app.',
         ),
       ],
     );
@@ -93,10 +120,28 @@ class TermsOfServicePage extends StatelessWidget {
           body:
               'Shopxy is provided "as is". We aim for high availability but don\'t guarantee uninterrupted service.',
         ),
+        _grievanceSection,
       ],
     );
   }
 }
+
+/// Grievance Officer block — mandated for Indian intermediaries (IT Rules 2021)
+/// and the contact point for consumer / DPDP grievances. The named officer's
+/// identity, phone and postal address are pending the company's appointment —
+/// marked with [TO FILL: ...] for the legal team. The acknowledgement and
+/// resolution timelines are the committed SLAs.
+const _Section _grievanceSection = _Section(
+  title: 'Grievance Officer',
+  body:
+      'Under the Consumer Protection (E-Commerce) Rules 2020, the IT (Intermediary Guidelines) Rules 2021, and the DPDP Act 2023, you may contact our Grievance Officer:\n\n'
+      'Name: [TO FILL: Grievance Officer name]\n'
+      'Designation: [TO FILL: designation]\n'
+      'Email: grievance@shopxy.app\n'
+      'Phone: [TO FILL: phone number]\n'
+      'Postal address: [TO FILL: registered postal address]\n\n'
+      'We acknowledge every grievance within 48 hours and aim to resolve consumer grievances within one month. Grievances about your personal data under the DPDP Act are addressed within 15 days.',
+);
 
 class _InfoScaffold extends StatelessWidget {
   const _InfoScaffold({required this.title, required this.sections});

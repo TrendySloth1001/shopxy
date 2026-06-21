@@ -44,28 +44,52 @@ export type InvoiceTotals = {
 
 /**
  * Preview of the invoice totals as the merchant builds it. Mirrors the Flutter
- * editor: the header discount is clamped to the subtotal and apportioned across
- * lines before per-line tax, then the grand total is rounded to the nearest
- * rupee. The backend recomputes authoritatively on save — this is a live
- * preview only.
+ * editor and the backend engine: the header discount is clamped to the subtotal
+ * and apportioned across lines before per-line tax, then the grand total is
+ * rounded to the nearest rupee. The backend recomputes authoritatively on save
+ * — this is a live preview only.
+ *
+ * `priceInclusive` (default `false`) selects the tax convention, matching the
+ * backend's `isPriceInclusive` flag:
+ *   - exclusive (default, existing merchant manual invoice): `unitPrice` is the
+ *     pre-tax amount; tax is added on top → total = taxable + tax.
+ *   - inclusive (marketplace / customer-order path): `unitPrice` ALREADY
+ *     contains tax; the engine BACKS the tax out of the discounted line amount
+ *     so it is NOT double-added. taxable = amount × 100 / (100 + rate).
+ *
+ * The default preserves the existing exclusive behaviour — never silently
+ * change merchant-invoice maths.
  */
 export function computeInvoiceTotals(
   lines: InvoiceLineDraft[],
   headerDiscount: number,
   interstate: boolean,
+  priceInclusive = false,
 ): InvoiceTotals {
   const subtotal = lines.reduce((sum, l) => sum + l.quantity * l.unitPrice, 0);
   const discount = Math.min(Math.max(headerDiscount, 0), subtotal);
-  const taxable = subtotal - discount;
 
   let tax = 0;
+  let taxable = 0;
   for (const l of lines) {
     const lineBase = l.quantity * l.unitPrice;
     const share = subtotal > 0 ? lineBase / subtotal : 0;
-    const lineTaxable = lineBase - share * discount;
-    tax += (lineTaxable * l.taxPercent) / 100;
+    const lineAmount = lineBase - share * discount;
+    if (priceInclusive) {
+      // Inclusive: the discounted line amount already contains tax — back it
+      // out so the displayed tax matches the backend and isn't double-added.
+      const lineTaxable = (lineAmount * 100) / (100 + l.taxPercent);
+      taxable += lineTaxable;
+      tax += lineAmount - lineTaxable;
+    } else {
+      // Exclusive: tax is charged on top of the discounted line amount.
+      taxable += lineAmount;
+      tax += (lineAmount * l.taxPercent) / 100;
+    }
   }
 
+  // Inclusive total = sum of inclusive line amounts (taxable + tax already);
+  // exclusive total = taxable + tax. Both reduce to taxable + tax here.
   const rawTotal = taxable + tax;
   const total = Math.round(rawTotal);
   const roundOff = total - rawTotal;

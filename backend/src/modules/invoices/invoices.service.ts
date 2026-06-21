@@ -3,7 +3,7 @@ import prisma from '../../infra/db/prisma.js';
 import { Writable } from 'stream';
 import { ledgerService } from '../ledger/ledger.service.js';
 import { nextInvoiceNo } from '../../shared/numbering/sequences.js';
-import { isInterstateSupply } from '../../shared/validation/indian.js';
+import { isInterstateSupply, GSTIN_REGEX } from '../../shared/validation/indian.js';
 import { amountInWords } from '../../shared/numbering/amount_in_words.js';
 import { renderInvoicePdf } from './invoice-pdf-renderer.js';
 import {
@@ -35,6 +35,12 @@ interface InvoiceItemInput {
   taxPercent?: number;
   cessRate?: number;
   discount?: number;
+  /// GST-5 — when true `unitPrice` already includes GST + cess (MRP /
+  /// marketplace "inclusive of all taxes" path). The engine then BACKS the
+  /// tax out of the price (taxable = price * 100 / (100 + rate)) instead of
+  /// adding it on top. Default false preserves the legacy exclusive merchant
+  /// manual-invoice behaviour. Recorded per line on InvoiceItem.
+  isPriceInclusive?: boolean;
 }
 
 interface ResolveInvoiceInput {
@@ -53,6 +59,23 @@ interface ResolveInvoiceInput {
   note?: string;
   invoiceDate?: string;
   items: InvoiceItemInput[];
+  /// GST-5 — invoice-wide default for `isPriceInclusive` when a line omits
+  /// its own flag. The customer-order / checkout path sets this true so MRP
+  /// prices have tax backed out; the merchant manual invoice leaves it false.
+  isPriceInclusive?: boolean;
+  /// GST-7 — when set, forces the interstate/IGST-vs-CGST/SGST split instead
+  /// of re-deriving it from the (current) customer/shop state. Credit notes
+  /// pass the ORIGINAL invoice's stored `isInterstate` so the reversal mirrors
+  /// the original document's place-of-supply, not today's shop state.
+  isInterstateOverride?: boolean;
+  /// GST-6 — skip the ≥₹50k / GSTIN recipient-name+address hard block. Set by
+  /// the live preview (display must never fail on recipient completeness) and by
+  /// the POS counter-sale commit (an anonymous walk-in B2C consolidated bill is
+  /// exempt from the named-recipient block). The merchant manual-invoice path
+  /// leaves it unset so a high-value/B2B manual invoice still requires recipient
+  /// details. NOTE: POS should still capture customer name+address for ≥₹50k
+  /// sales per Rule 46(f) — deferred UI work, see FIX_REVIEW_AND_PLAN.md.
+  skipRecipientDetailGuard?: boolean;
 }
 
 /// Thrown by `createConfirmedSaleInTx` so a failed POS checkout rolls the whole
@@ -82,6 +105,10 @@ export class InvoicesService {
     note?: string;
     invoiceDate?: string;
     items: InvoiceItemInput[];
+    /// GST-5 — invoice-wide default tax-inclusive flag (see ResolveInvoiceInput).
+    /// The checkout / customer-order unit passes true so MRP-style prices have
+    /// GST backed out; omitted (false) keeps the merchant manual exclusive path.
+    isPriceInclusive?: boolean;
     /// When true, the freshly-created draft is immediately confirmed
     /// (stock posted via the ledger) in a follow-up transaction. Lets
     /// the create form offer a "Save & Confirm" CTA so the merchant
@@ -147,7 +174,10 @@ export class InvoicesService {
   /// using the exact same math the bill will use. Returns the same
   /// `{ header, itemsData }` shape as the internal resolver, or `{ error }`.
   async previewSaleTotals(data: ResolveInvoiceInput) {
-    return this.resolveInvoiceFields(data);
+    // Preview is display-only — never fail it on recipient completeness (the POS
+    // bill / live invoice preview must render a ≥₹50k cart total). The hard block
+    // applies only when the document is actually persisted (merchant manual path).
+    return this.resolveInvoiceFields({ ...data, skipRecipientDetailGuard: true });
   }
 
   /// POS support: create an already-CONFIRMED sale invoice (with stock posted
@@ -163,7 +193,10 @@ export class InvoicesService {
     data: ResolveInvoiceInput,
     createdById?: number,
   ) {
-    const resolved = await this.resolveInvoiceFields(data, tx);
+    // POS counter sale: an anonymous walk-in B2C consolidated bill is exempt from
+    // the GST-6 named-recipient hard block (the 269ST cash ceiling + other guards
+    // still apply upstream). High-value POS recipient capture is deferred UI work.
+    const resolved = await this.resolveInvoiceFields({ ...data, skipRecipientDetailGuard: true }, tx);
     if ('error' in resolved) {
       throw new PosInvoiceError(resolved.error);
     }
@@ -231,8 +264,32 @@ export class InvoicesService {
     tx: Prisma.TransactionClient,
     data: ResolveInvoiceInput & { originalInvoiceId: number },
     createdById?: number,
+    /// CASH-1 — the cashier till session this credit note is issued from, so a
+    /// cash refund reconciles against the right shift's Z-report drawer.
+    shiftId?: number,
   ) {
-    const resolved = await this.resolveInvoiceFields({ ...data, documentType: 'CREDIT_NOTE' }, tx);
+    // GST-7 — derive the IGST-vs-CGST/SGST split from the ORIGINAL invoice's
+    // STORED place-of-supply, not the shop's current state. A shop that
+    // re-registered in another state since the sale must still reverse tax on
+    // the same side the original invoice charged it. We read the original's
+    // cached `isInterstate` + place-of-supply within the same tx and force them.
+    const original = await tx.invoice.findFirst({
+      where: { id: data.originalInvoiceId, shopId: data.shopId },
+      select: { isInterstate: true, placeOfSupplyStateCode: true },
+    });
+    if (!original) {
+      throw new PosInvoiceError('Original invoice not found');
+    }
+    const resolved = await this.resolveInvoiceFields(
+      {
+        ...data,
+        documentType: 'CREDIT_NOTE',
+        placeOfSupplyStateCode:
+          data.placeOfSupplyStateCode ?? original.placeOfSupplyStateCode ?? undefined,
+        isInterstateOverride: original.isInterstate,
+      },
+      tx,
+    );
     if ('error' in resolved) {
       throw new PosInvoiceError(resolved.error);
     }
@@ -252,6 +309,10 @@ export class InvoicesService {
         financialYear,
         status: 'CONFIRMED',
         originalInvoiceId: data.originalInvoiceId,
+        // CASH-1 — tie the credit note to the issuing cashier + shift so the
+        // Z-report's returns aggregation can scope by shiftId, not a window.
+        createdById: createdById ?? null,
+        shiftId: shiftId ?? null,
         items: { create: itemsData },
       },
       include: { items: true },
@@ -350,6 +411,7 @@ export class InvoicesService {
           cessRate: number;
           cessAmount: number;
           total: number;
+          isPriceInclusive: boolean;
         }>;
       }
   > {
@@ -492,7 +554,27 @@ export class InvoicesService {
       data.placeOfSupplyStateCode ??
       (data.type === 'SALE' ? (customerStateCode ?? shopStateCode) : shopStateCode) ??
       null;
-    const isInterstate = isInterstateSupply(shopStateCode, placeOfSupplyStateCode);
+    // GST-7 — a credit note must reverse tax on the SAME side (IGST vs
+    // CGST/SGST) as the original invoice, regardless of where the shop is
+    // registered today. The caller (sales-return flow) passes the original's
+    // stored `isInterstate` here so a shop that re-registered in another state
+    // can't flip an old interstate sale's reversal to CGST/SGST. Falls back to
+    // re-deriving from place-of-supply for all the non-credit-note paths.
+    const isInterstate =
+      data.isInterstateOverride ??
+      isInterstateSupply(shopStateCode, placeOfSupplyStateCode);
+
+    // GST-6 (Rule 46) — recipient identity validation. Only meaningful on a
+    // SALE (the customer fields). Normalise a typed GSTIN to upper-case so the
+    // regex (which expects A-Z) matches lower-cased input, then reject a
+    // malformed value outright rather than printing an invalid GSTIN on a tax
+    // invoice. A blank/absent GSTIN is allowed (B2C / unregistered recipient).
+    if (data.type === 'SALE' && customerGstin) {
+      customerGstin = customerGstin.trim().toUpperCase();
+      if (!GSTIN_REGEX.test(customerGstin)) {
+        return { error: 'Invalid recipient GSTIN' as const };
+      }
+    }
 
     // One findMany regardless of item count — no per-line lookups.
     const productIds = [...new Set(data.items.map((i) => i.productId))];
@@ -512,6 +594,20 @@ export class InvoicesService {
     // product (own shop only). An explicit value (including 0) always wins.
     const promos = await resolveActiveProductPromos(data.shopId, productIds, tx);
 
+    // ── GST-4 — all per-line money math is Prisma.Decimal end-to-end ──
+    // Float64 + Math.round drifts at the paisa on long invoices and on
+    // tax-inclusive back-out; Decimal keeps every intermediate exact. We
+    // round (HALF_UP, to 2dp) only at the points the law fixes a printed
+    // figure: each line's discount, taxable value and per-component tax.
+    const D = Prisma.Decimal;
+    const HUNDRED = new D(100);
+    const TWO = new D(2);
+    const dround2 = (v: Prisma.Decimal): Prisma.Decimal =>
+      v.toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP);
+
+    // GST-5 — invoice-wide inclusive default; a per-line flag still wins.
+    const inclusiveDefault = data.isPriceInclusive ?? false;
+
     // First pass: each line's gross value (qty * unitPrice) and its own
     // discount, clamped so a single line can never exceed its gross value.
     // An unbounded line discount would otherwise mint a negative taxable
@@ -519,19 +615,19 @@ export class InvoicesService {
     // promo branch is already clamped via lineDiscount(); we clamp the
     // explicit branch the same way (defense in depth).
     const lines = data.items.map((item) => {
-      const gross = this.round2(item.quantity * item.unitPrice);
-      let rawItemDiscount: number;
+      const gross = dround2(new D(item.quantity).mul(new D(item.unitPrice)));
+      let rawItemDiscount: Prisma.Decimal;
       if (item.discount !== undefined) {
-        rawItemDiscount = item.discount;
+        rawItemDiscount = new D(item.discount);
       } else {
         const promo = promos.get(item.productId);
-        rawItemDiscount = promo
-          ? lineDiscount(promo.type, promo.value, item.unitPrice, item.quantity)
-          : 0;
+        rawItemDiscount = new D(
+          promo ? lineDiscount(promo.type, promo.value, item.unitPrice, item.quantity) : 0,
+        );
       }
       // 0..gross inclusive — a 100% "free" line is legitimate; negative is not.
-      const itemDiscount = Math.min(Math.max(0, this.round2(rawItemDiscount)), gross);
-      return { item, gross, itemDiscount };
+      const clamped = dround2(rawItemDiscount).clamp(new D(0), gross);
+      return { item, gross, itemDiscount: clamped };
     });
 
     // Invoice-level (header) discount, clamped so the document total can
@@ -540,45 +636,44 @@ export class InvoicesService {
     // taxable value, so tax must be charged on the post-discount net — not
     // subtracted after tax (which would over-collect GST and leave the
     // stored taxable/tax irreconcilable with the billed amount).
-    const baseTaxableTotal = this.round2(
-      lines.reduce((s, l) => s + (l.gross - l.itemDiscount), 0),
+    const baseTaxableTotal = dround2(
+      lines.reduce((s, l) => s.add(l.gross.sub(l.itemDiscount)), new D(0)),
     );
-    const headerDiscount = Math.min(
-      Math.max(0, this.round2(data.discount ?? 0)),
+    const headerDiscount = dround2(new D(data.discount ?? 0)).clamp(
+      new D(0),
       baseTaxableTotal,
     );
 
-    let subtotal = 0; // gross of all discounts (sum of qty * unitPrice)
-    let taxableValueTotal = 0; // net taxable after every discount
-    let igstTotal = 0;
-    let cgstTotal = 0;
-    let sgstTotal = 0;
-    let cessTotal = 0;
-    let headerAllocated = 0; // running sum so the last line absorbs drift
+    let subtotal = new D(0); // gross of all discounts (sum of qty * unitPrice)
+    let taxableValueTotal = new D(0); // net taxable after every discount
+    let igstTotal = new D(0);
+    let cgstTotal = new D(0);
+    let sgstTotal = new D(0);
+    let cessTotal = new D(0);
+    let headerAllocated = new D(0); // running sum so the last line absorbs drift
 
     const itemsData = lines.map((l, idx) => {
       const { item, gross, itemDiscount } = l;
       const product = productMap.get(item.productId)!;
-      const lineBase = this.round2(gross - itemDiscount);
+      const lineBase = dround2(gross.sub(itemDiscount));
 
       // Proportional share of the header discount. The last line takes the
       // remainder so the apportioned shares re-sum to headerDiscount
       // exactly — no paisa lost or created.
-      let headerShare: number;
-      if (headerDiscount <= 0 || baseTaxableTotal <= 0) {
-        headerShare = 0;
+      let headerShare: Prisma.Decimal;
+      if (headerDiscount.lte(0) || baseTaxableTotal.lte(0)) {
+        headerShare = new D(0);
       } else if (idx === lines.length - 1) {
-        headerShare = this.round2(headerDiscount - headerAllocated);
+        headerShare = dround2(headerDiscount.sub(headerAllocated));
       } else {
-        headerShare = this.round2((headerDiscount * lineBase) / baseTaxableTotal);
+        headerShare = dround2(headerDiscount.mul(lineBase).div(baseTaxableTotal));
       }
-      headerAllocated = this.round2(headerAllocated + headerShare);
+      headerAllocated = dround2(headerAllocated.add(headerShare));
 
       // Full discount on this line = its own + its share of the header
       // discount, folded in so the per-line invariant holds:
       // taxableValue = qty * unitPrice - discount.
-      const lineDiscountTotal = this.round2(itemDiscount + headerShare);
-      const taxableValue = this.round2(gross - lineDiscountTotal);
+      const lineDiscountTotal = dround2(itemDiscount.add(headerShare));
 
       // GST registration gate: an unregistered seller charges no output
       // tax, so the effective rate is forced to 0 (the line then stores 0%,
@@ -589,38 +684,60 @@ export class InvoicesService {
       // rate rather than silently charging 0% — that omission was the C1
       // "every customer invoice carries ₹0 GST" bug. An explicit 0 from the
       // merchant create form still wins (exempt/nil-rated lines).
-      const productTaxPct = Number(product.taxPercent) || 0;
-      const productCessRate = Number(product.cessRate) || 0;
-      const taxPct = chargesOutputGst ? (item.taxPercent ?? productTaxPct) : 0;
+      const productTaxPct = new D(product.taxPercent ?? 0);
+      const productCessRate = new D(product.cessRate ?? 0);
+      const taxPct = chargesOutputGst
+        ? (item.taxPercent !== undefined ? new D(item.taxPercent) : productTaxPct)
+        : new D(0);
       // Same fallback for compensation cess: omitting cessRate means "use
       // the product's statutory rate", not "cess-free" — an explicit 0
       // still wins (exempt categories).
-      const cessRate = chargesOutputGst ? (item.cessRate ?? productCessRate) : 0;
+      const cessRate = chargesOutputGst
+        ? (item.cessRate !== undefined ? new D(item.cessRate) : productCessRate)
+        : new D(0);
 
-      let igstAmount = 0;
-      let cgstAmount = 0;
-      let sgstAmount = 0;
+      // GST-5 — inclusive vs exclusive taxable value.
+      //   exclusive (default): taxable = gross - discount, tax added on top.
+      //   inclusive (MRP path): the discounted line amount ALREADY contains
+      //     GST + cess, so back it out — taxable = amount * 100 / (100+rate+cess)
+      //     and tax = amount - taxable. The combined divisor uses BOTH the GST
+      //     rate and the cess rate because both are embedded in the MRP.
+      const isInclusive = item.isPriceInclusive ?? inclusiveDefault;
+      const lineAmount = dround2(gross.sub(lineDiscountTotal)); // discounted line money
+      let taxableValue: Prisma.Decimal;
+      if (isInclusive) {
+        const divisor = HUNDRED.add(taxPct).add(cessRate);
+        taxableValue = divisor.gt(0)
+          ? dround2(lineAmount.mul(HUNDRED).div(divisor))
+          : lineAmount;
+      } else {
+        taxableValue = lineAmount;
+      }
+
+      let igstAmount = new D(0);
+      let cgstAmount = new D(0);
+      let sgstAmount = new D(0);
       if (isInterstate) {
-        igstAmount = this.round2((taxableValue * taxPct) / 100);
+        igstAmount = dround2(taxableValue.mul(taxPct).div(HUNDRED));
       } else {
         // Compute the GST total first, then split, so CGST+SGST always
         // re-sum to that total (avoids one-paisa drift from independent
         // rounding of each half).
-        const gstTotal = this.round2((taxableValue * taxPct) / 100);
-        cgstAmount = this.round2(gstTotal / 2);
-        sgstAmount = this.round2(gstTotal - cgstAmount);
+        const gstTotal = dround2(taxableValue.mul(taxPct).div(HUNDRED));
+        cgstAmount = dround2(gstTotal.div(TWO));
+        sgstAmount = dround2(gstTotal.sub(cgstAmount));
       }
-      const cessAmount = this.round2((taxableValue * cessRate) / 100);
-      const lineTotal = this.round2(
-        taxableValue + igstAmount + cgstAmount + sgstAmount + cessAmount,
+      const cessAmount = dround2(taxableValue.mul(cessRate).div(HUNDRED));
+      const lineTotal = dround2(
+        taxableValue.add(igstAmount).add(cgstAmount).add(sgstAmount).add(cessAmount),
       );
 
-      subtotal += gross;
-      taxableValueTotal += taxableValue;
-      igstTotal += igstAmount;
-      cgstTotal += cgstAmount;
-      sgstTotal += sgstAmount;
-      cessTotal += cessAmount;
+      subtotal = subtotal.add(gross);
+      taxableValueTotal = taxableValueTotal.add(taxableValue);
+      igstTotal = igstTotal.add(igstAmount);
+      cgstTotal = cgstTotal.add(cgstAmount);
+      sgstTotal = sgstTotal.add(sgstAmount);
+      cessTotal = cessTotal.add(cessAmount);
 
       return {
         productId: item.productId,
@@ -630,26 +747,63 @@ export class InvoicesService {
         unit: product.unit,
         quantity: item.quantity,
         unitPrice: item.unitPrice,
-        taxPercent: taxPct,
-        discount: lineDiscountTotal,
-        taxableValue,
-        igstAmount,
-        cgstAmount,
-        sgstAmount,
-        cessRate,
-        cessAmount,
-        total: lineTotal,
+        taxPercent: taxPct.toNumber(),
+        discount: lineDiscountTotal.toNumber(),
+        taxableValue: taxableValue.toNumber(),
+        igstAmount: igstAmount.toNumber(),
+        cgstAmount: cgstAmount.toNumber(),
+        sgstAmount: sgstAmount.toNumber(),
+        cessRate: cessRate.toNumber(),
+        cessAmount: cessAmount.toNumber(),
+        total: lineTotal.toNumber(),
+        isPriceInclusive: isInclusive,
       };
     });
 
-    const taxAmount = this.round2(igstTotal + cgstTotal + sgstTotal + cessTotal);
+    const taxAmount = dround2(igstTotal.add(cgstTotal).add(sgstTotal).add(cessTotal));
     // The header discount is already baked into each line's taxable value,
     // so the grand total is simply net taxable + tax — never a post-tax
     // subtraction (which is what broke Sec 15(3) before).
-    const grandTotalRaw = this.round2(taxableValueTotal + taxAmount);
-    const roundOff = this.round2(Math.round(grandTotalRaw) - grandTotalRaw);
-    const total = this.round2(grandTotalRaw + roundOff);
-    const words = amountInWords(total);
+    const grandTotalRaw = dround2(taxableValueTotal.add(taxAmount));
+    // Round-off to the nearest whole rupee (CGST Sec 170) on Decimal.
+    const roundedTotal = grandTotalRaw.toDecimalPlaces(0, Prisma.Decimal.ROUND_HALF_UP);
+    const roundOff = dround2(roundedTotal.sub(grandTotalRaw));
+    const total = dround2(grandTotalRaw.add(roundOff));
+    const words = amountInWords(total.toNumber());
+
+    // GST-6 (Rule 46(e)/(f)) — for a SALE tax invoice / bill of supply, the
+    // recipient's name AND address are mandatory once the document is a B2B
+    // invoice (a GSTIN is present) or the value reaches the ₹50,000
+    // named-recipient threshold. Below that, a B2C consolidated/walk-in bill
+    // may omit them. The customer-order path always carries a linked party so
+    // this never blocks legitimate checkout; it guards the merchant
+    // manual-invoice path against issuing a high-value or B2B invoice with an
+    // unnamed/addressless recipient.
+    //
+    // Scoped to primary supply documents: CREDIT/DEBIT notes derive their
+    // recipient from an already-validated original invoice (the returns flow
+    // may not re-supply the address), and ESTIMATE/PROFORMA are pre-supply
+    // offers not governed by Rule 46(e)/(f).
+    const isPrimarySupplyDoc =
+      documentType === 'TAX_INVOICE' || documentType === 'BILL_OF_SUPPLY';
+    if (data.type === 'SALE' && isPrimarySupplyDoc && !data.skipRecipientDetailGuard) {
+      const FIFTY_K = new D(50000);
+      const needsRecipientDetails = !!customerGstin || total.gte(FIFTY_K);
+      if (needsRecipientDetails) {
+        if (!customerName || customerName.trim().length === 0) {
+          return { error: 'Recipient name is required for this invoice' as const };
+        }
+        const hasAddress =
+          (customerAddress && customerAddress.trim().length > 0) ||
+          (customerCity && customerCity.trim().length > 0) ||
+          (customerStateCode && customerStateCode.trim().length > 0) ||
+          (customerPinCode && customerPinCode.trim().length > 0);
+        if (!hasAddress) {
+          return { error: 'Recipient address is required for this invoice' as const };
+        }
+      }
+    }
+
     const invoiceDate = data.invoiceDate ? new Date(data.invoiceDate) : new Date();
 
     return {
@@ -678,19 +832,19 @@ export class InvoicesService {
         vendorPanNumber,
         placeOfSupplyStateCode,
         isInterstate,
-        subtotal: this.round2(subtotal),
-        taxableValue: this.round2(taxableValueTotal),
-        taxAmount,
-        igstAmount: this.round2(igstTotal),
-        cgstAmount: this.round2(cgstTotal),
-        sgstAmount: this.round2(sgstTotal),
-        cessAmount: this.round2(cessTotal),
+        subtotal: dround2(subtotal).toNumber(),
+        taxableValue: dround2(taxableValueTotal).toNumber(),
+        taxAmount: taxAmount.toNumber(),
+        igstAmount: dround2(igstTotal).toNumber(),
+        cgstAmount: dround2(cgstTotal).toNumber(),
+        sgstAmount: dround2(sgstTotal).toNumber(),
+        cessAmount: dround2(cessTotal).toNumber(),
         // Header discount is distributed into the line-level `discount`
         // fields above, so the invoice-level field is 0 to avoid the PDF
         // (which sums header + line discounts) double-counting it.
         discount: 0,
-        roundOff,
-        total,
+        roundOff: roundOff.toNumber(),
+        total: total.toNumber(),
         amountInWords: words,
         note: data.note ?? null,
         invoiceDate,
@@ -1140,20 +1294,21 @@ export class InvoicesService {
       select: { status: true },
     });
     if (!invoice) return { error: 'Invoice not found' as const };
-    // Retention (GST §36 / Companies Act §128): a CONFIRMED invoice number,
-    // once issued, must be retained even after cancellation — deleting a
-    // CANCELLED invoice would leave a gap in the issued sequence and erase
-    // the audit record. Only a never-confirmed DRAFT may be hard-deleted
-    // (INV-3).
-    if (invoice.status !== 'DRAFT') {
-      return {
-        error: invoice.status === 'CONFIRMED'
+    // GST-1 / Rule 46(b): the legal invoice serial is allocated at create time
+    // (the per-shop FY counter is bumped in `nextInvoiceNo`), so even a DRAFT
+    // already owns a consecutive number. Hard-deleting it would leave a
+    // permanent hole in the issued sequence — which Rule 46(b) (consecutive
+    // serial numbers, not exceeding 16 chars) forbids. We therefore never
+    // hard-delete: a DRAFT the merchant wants to discard must be CANCELLED
+    // instead (the number is retained against the cancelled row, keeping the
+    // run consecutive). Supersedes the earlier INV-3 "DRAFT may be deleted".
+    return {
+      error: invoice.status === 'DRAFT'
+        ? ('Cannot delete a draft — its invoice number is already allocated. Cancel it instead so the serial stays consecutive.' as const)
+        : invoice.status === 'CONFIRMED'
           ? ('Cannot delete a confirmed invoice. Cancel it first.' as const)
           : ('Cannot delete an issued invoice — cancelled invoice numbers must be retained.' as const),
-      };
-    }
-    await prisma.invoice.delete({ where: { id } });
-    return { ok: true };
+    };
   }
 
   /// Stream the rendered PDF directly to an arbitrary writable (the

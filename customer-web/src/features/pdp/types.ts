@@ -100,6 +100,9 @@ export const productDetailSchema = z.object({
   mrp: z.coerce.number(),
   sellingPrice: z.coerce.number(),
   taxPercent: z.coerce.number().default(0),
+  // Legal Metrology — country of origin (mandatory for imported goods) shown
+  // on the PDP. Nullable: domestic items may leave it unset.
+  countryOfOrigin: z.string().nullable().optional(),
   stockQuantity: z.coerce.number(),
   ratingAvg: z.coerce.number().nullable().optional(),
   ratingCount: z.number().default(0),

@@ -81,19 +81,69 @@ class PdpPriceBlock extends StatelessWidget {
                 ),
             ],
           ),
-          if (p.taxPercent > 0)
-            Padding(
-              padding: const EdgeInsets.only(top: AppSizes.xs),
-              child: Text(
-                'Inclusive of all taxes',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: AppColors.muted,
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
+          // MRP is ALWAYS shown and labelled inclusive of all taxes (Legal
+          // Metrology). When discounted the struck-through M.R.P. above already
+          // carries it; otherwise show an explicit MRP line.
+          Padding(
+            padding: const EdgeInsets.only(top: AppSizes.xs),
+            child: Text(
+              isDiscounted
+                  ? 'Inclusive of all taxes'
+                  : 'M.R.P. ${AppFormat.rupees(mrp)} · inclusive of all taxes',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: AppColors.muted,
+                    fontWeight: FontWeight.w600,
+                  ),
             ),
+          ),
+          // Legal Metrology disclosures — country of origin + net quantity +
+          // marketed-by, shown before add-to-cart where available.
+          ..._complianceRows(context, p),
         ],
       ),
     );
+  }
+
+  List<Widget> _complianceRows(BuildContext context, MarketplaceProduct p) {
+    final rows = <List<String>>[];
+    final coo = p.countryOfOrigin;
+    if (coo != null && coo.isNotEmpty) rows.add(['Country of origin', coo]);
+    if (p.unit.isNotEmpty) rows.add(['Net quantity', p.unit]);
+    final brand = p.brand;
+    if (brand != null && brand.isNotEmpty) rows.add(['Marketed by', brand]);
+    if (rows.isEmpty) return const [];
+
+    final labelStyle = Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: AppColors.muted,
+          fontWeight: FontWeight.w600,
+        );
+    final valueStyle = Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: AppColors.black,
+          fontWeight: FontWeight.w700,
+        );
+    return [
+      Padding(
+        padding: const EdgeInsets.only(top: AppSizes.sm),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (final r in rows)
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSizes.xs),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      width: 120,
+                      child: Text(r[0], style: labelStyle),
+                    ),
+                    Expanded(child: Text(r[1], style: valueStyle)),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    ];
   }
 }

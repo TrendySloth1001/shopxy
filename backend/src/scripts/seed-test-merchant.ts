@@ -914,7 +914,7 @@ async function seedProducts(shopId: number): Promise<void> {
 
   for (const seed of PRODUCTS) {
     const exists = await prisma.product.findUnique({
-      where: { sku: seed.sku },
+      where: { shopId_sku: { shopId, sku: seed.sku } },
       select: { id: true, shopId: true },
     });
     if (exists) {

@@ -87,19 +87,26 @@ const variantAxesSchema = z
   )
   .max(3);
 
-const variantSchema = z.object({
-  id: z.number().int().positive().optional(),
-  sku: z.string().min(1).max(60),
-  barcode: z.string().max(60).nullable().optional(),
-  attributes: z.record(z.string(), z.string()),
-  mrp: z.number().positive(),
-  sellingPrice: z.number().positive(),
-  purchasePrice: z.number().nonnegative(),
-  stockQuantity: z.number().nonnegative().default(0),
-  imageUrls: z.array(z.string().min(1).max(2048)).max(8).optional(),
-  isActive: z.boolean().optional(),
-  sortOrder: z.number().int().nonnegative().optional(),
-});
+const variantSchema = z
+  .object({
+    id: z.number().int().positive().optional(),
+    sku: z.string().min(1).max(60),
+    barcode: z.string().max(60).nullable().optional(),
+    attributes: z.record(z.string(), z.string()),
+    mrp: z.number().positive(),
+    sellingPrice: z.number().positive(),
+    purchasePrice: z.number().nonnegative(),
+    stockQuantity: z.number().nonnegative().default(0),
+    imageUrls: z.array(z.string().min(1).max(2048)).max(8).optional(),
+    isActive: z.boolean().optional(),
+    sortOrder: z.number().int().nonnegative().optional(),
+  })
+  // CAT-C3 — Legal Metrology s.18/s.36: a variant must never be sold above
+  // its declared MRP. Cross-field so the message points at sellingPrice.
+  .refine((v) => v.sellingPrice <= v.mrp, {
+    message: 'Selling price cannot exceed MRP',
+    path: ['sellingPrice'],
+  });
 const variantsSchema = z.array(variantSchema).max(50);
 
 const specGroupSchema = z.object({
@@ -122,6 +129,10 @@ const createProductSchema = z.object({
   sku: z.string().min(1).max(50),
   barcode: z.string().max(50).optional(),
   hsnCode: z.string().max(20).optional(),
+  // CAT-C2 — country of manufacture/origin. Required on the printed
+  // invoice/label for imported goods (Legal Metrology); optional here so
+  // domestic goods without a declared origin stay valid.
+  countryOfOrigin: z.string().min(1).max(60).optional(),
   // Phase B — free-text brand surfaced under the PDP title.
   brand: z.string().min(1).max(80).optional(),
   imageUrls: z.array(productImageRef).max(10).optional(),
@@ -160,7 +171,13 @@ const createProductSchema = z.object({
   contentBlocks: contentBlocksSchema.nullable().optional(),
   variantAxes: variantAxesSchema.nullable().optional(),
   variants: variantsSchema.optional(),
-});
+})
+  // CAT-C3 — Legal Metrology s.18/s.36: product-level selling price must
+  // never exceed MRP. Variant-level prices are validated on variantSchema.
+  .refine((d) => d.sellingPrice <= d.mrp, {
+    message: 'Selling price cannot exceed MRP',
+    path: ['sellingPrice'],
+  });
 
 const updateProductSchema = z
   .object({
@@ -169,6 +186,8 @@ const updateProductSchema = z
     sku: z.string().min(1).max(50).optional(),
     barcode: z.string().max(50).nullable().optional(),
     hsnCode: z.string().max(20).nullable().optional(),
+    // CAT-C2 — nullable so the merchant can clear a previously-set origin.
+    countryOfOrigin: z.string().min(1).max(60).nullable().optional(),
     brand: z.string().min(1).max(80).nullable().optional(),
     mrp: z.number().positive().optional(),
     sellingPrice: z.number().positive().optional(),
@@ -203,7 +222,14 @@ const updateProductSchema = z
     variantAxes: variantAxesSchema.nullable().optional(),
     variants: variantsSchema.optional(),
   })
-  .refine((d) => Object.keys(d).length > 0, { message: 'At least one field is required' });
+  .refine((d) => Object.keys(d).length > 0, { message: 'At least one field is required' })
+  // CAT-C3 — when both mrp and sellingPrice are supplied in the same patch
+  // we can enforce the invariant up front. A patch touching only ONE of the
+  // pair is re-checked against the persisted row in the service layer.
+  .refine(
+    (d) => d.mrp === undefined || d.sellingPrice === undefined || d.sellingPrice <= d.mrp,
+    { message: 'Selling price cannot exceed MRP', path: ['sellingPrice'] },
+  );
 
 const setPublishedSchema = z.object({ isPublished: z.boolean() });
 

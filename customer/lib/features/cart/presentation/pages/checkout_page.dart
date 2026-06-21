@@ -545,6 +545,13 @@ class _CheckoutPageState extends State<CheckoutPage> {
     final totalSavings = productSavings + deliverySavings + couponDiscount;
     final grandTotal = (afterCoupon - walletApply).clamp(0, double.infinity).toDouble();
 
+    // GST breakup — selling prices are tax-inclusive, so back the tax out of
+    // the line amounts grouped by rate to show the statutory "of which taxes"
+    // split before placing the order (CP E-Commerce Rules r.4(3)). Derived
+    // client-side from cart line tax rates; the backend invoice is
+    // authoritative.
+    final taxBreakup = _GstBreakup.fromLines(cart.lines);
+
     return Scaffold(
       backgroundColor: AppColors.canvas,
       body: SafeArea(
@@ -633,6 +640,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     grandTotal: grandTotal,
                     couponDiscount: couponDiscount,
                     walletApplied: walletApply,
+                    taxBreakup: taxBreakup,
                   ),
                   if (totalSavings > 0) ...[
                     const SizedBox(height: AppSizes.sm),
@@ -1393,6 +1401,44 @@ class _ItemRow extends StatelessWidget {
 
 // ─── Price ──────────────────────────────────────────────────────────
 
+/// GST breakup derived from tax-INCLUSIVE cart line amounts grouped by rate.
+/// taxable = inclusive × 100 / (100 + rate); tax = inclusive − taxable.
+class _GstBreakup {
+  const _GstBreakup({
+    required this.taxableValue,
+    required this.taxTotal,
+    required this.perRate,
+  });
+
+  final double taxableValue;
+  final double taxTotal;
+
+  /// Per-rate rows ascending by rate: (rate, tax). Only rate > 0 entries.
+  final List<({double rate, double tax})> perRate;
+
+  factory _GstBreakup.fromLines(List<CartItem> lines) {
+    final byRate = <double, double>{};
+    for (final l in lines) {
+      final inclusive = l.lineTotal;
+      if (inclusive <= 0) continue;
+      final rate = l.product.taxPercent > 0 ? l.product.taxPercent : 0.0;
+      byRate[rate] = (byRate[rate] ?? 0) + inclusive;
+    }
+    var taxable = 0.0;
+    var tax = 0.0;
+    final rows = <({double rate, double tax})>[];
+    byRate.forEach((rate, inclusive) {
+      final lineTaxable = rate > 0 ? inclusive * 100 / (100 + rate) : inclusive;
+      final lineTax = inclusive - lineTaxable;
+      taxable += lineTaxable;
+      tax += lineTax;
+      if (rate > 0) rows.add((rate: rate, tax: lineTax));
+    });
+    rows.sort((a, b) => a.rate.compareTo(b.rate));
+    return _GstBreakup(taxableValue: taxable, taxTotal: tax, perRate: rows);
+  }
+}
+
 class _PriceCard extends StatelessWidget {
   const _PriceCard({
     required this.itemsTotal,
@@ -1401,6 +1447,7 @@ class _PriceCard extends StatelessWidget {
     required this.deliveryStandard,
     required this.deliveryStrike,
     required this.grandTotal,
+    required this.taxBreakup,
     this.couponDiscount = 0,
     this.walletApplied = 0,
   });
@@ -1410,6 +1457,7 @@ class _PriceCard extends StatelessWidget {
   final double deliveryStandard;
   final double deliveryStrike;
   final double grandTotal;
+  final _GstBreakup taxBreakup;
   final double couponDiscount;
   final double walletApplied;
 
@@ -1464,10 +1512,39 @@ class _PriceCard extends StatelessWidget {
             value: grandTotal,
             bold: true,
           ),
+          // Statutory GST breakup — prices are inclusive of tax, so this is the
+          // "of which" split backed out of the item amounts.
+          if (taxBreakup.taxTotal > 0) ...[
+            const Divider(height: AppSizes.lg, color: AppColors.hairline),
+            _PriceRow(
+              label: 'Taxable value',
+              value: taxBreakup.taxableValue,
+              valueColor: AppColors.muted,
+            ),
+            for (final r in taxBreakup.perRate)
+              _PriceRow(
+                label: 'GST @ ${_fmtRate(r.rate)}% (incl.)',
+                value: r.tax,
+                valueColor: AppColors.muted,
+              ),
+            Padding(
+              padding: const EdgeInsets.only(top: AppSizes.xs),
+              child: Text(
+                'Prices are inclusive of all taxes.',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: AppColors.muted,
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
+
+  static String _fmtRate(double rate) =>
+      rate == rate.roundToDouble() ? rate.toStringAsFixed(0) : rate.toString();
 }
 
 class _CouponCard extends StatefulWidget {

@@ -258,13 +258,14 @@ export async function report(
   });
   const invoiceIds = sales.map((s) => s.invoiceId).filter((id): id is number => id != null);
 
-  // Credit notes (sales returns) issued during this shift's window.
-  const windowEnd = shift.closedAt ?? new Date();
+  // Credit notes (sales returns) issued ON this shift. CASH-1 — scope by the
+  // note's shiftId (stamped at issue time), not a shop-wide createdAt window,
+  // so concurrent shifts on different tills can't claim each other's returns.
   const returnsAgg = await prisma.invoice.aggregate({
     where: {
       shopId,
       documentType: 'CREDIT_NOTE',
-      createdAt: { gte: shift.openedAt, lte: windowEnd },
+      shiftId,
     },
     _sum: { total: true },
     _count: { _all: true },
