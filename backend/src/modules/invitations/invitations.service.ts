@@ -6,6 +6,7 @@ import {
   invalidateMembershipCache,
 } from '../../shared/http/requireAuth.js';
 import { normalizeRights } from '../../shared/http/permissions.js';
+import { rightsBeyondActor } from '../team/team.service.js';
 
 const INVITE_TTL_DAYS = 14;
 
@@ -92,6 +93,10 @@ export class InvitationsService {
     vendorId?: number | null;
     displayName?: string | null;
     message?: string | null;
+    // Acting member's role + held rights, used to clamp TEAM grants to the
+    // inviter's own rights (OWNER bypasses). Other link types ignore these.
+    actingShopRole?: ShopRole;
+    actingPermissions?: string[];
   }) {
     const toEmail = input.toEmail.toLowerCase().trim();
     const { linkType } = input;
@@ -106,6 +111,8 @@ export class InvitationsService {
         teamRoleName: input.teamRoleName ?? null,
         teamPermissions: input.teamPermissions ?? null,
         message: input.message ?? null,
+        actingShopRole: input.actingShopRole,
+        actingPermissions: input.actingPermissions,
       });
     }
     const hasEntity =
@@ -233,6 +240,8 @@ export class InvitationsService {
     teamRoleName: string | null;
     teamPermissions: string[] | null;
     message: string | null;
+    actingShopRole?: ShopRole;
+    actingPermissions?: string[];
   }) {
     const { toEmail } = input;
     const teamRoleName = input.teamRoleName?.trim();
@@ -241,6 +250,17 @@ export class InvitationsService {
     }
     // The exact grant to apply on accept — normalised so manage⇒view.
     const teamPermissions = normalizeRights(input.teamPermissions ?? []);
+
+    // Delegation cap (AUTH-TR-H1): a non-OWNER staffer with team:manage
+    // must not mint a colleague holding rights they themselves lack. The
+    // invite path was the one grant path missing this guard — setPermissions/
+    // createRole/updateRole all enforce it. OWNER bypasses (returns []).
+    if (
+      rightsBeyondActor(input.actingShopRole, input.actingPermissions, teamPermissions)
+        .length > 0
+    ) {
+      return { error: 'CANNOT_GRANT_BEYOND_OWN_RIGHTS' as const };
+    }
 
     const [fromUser, toUser, existing] = await Promise.all([
       prisma.user.findUnique({

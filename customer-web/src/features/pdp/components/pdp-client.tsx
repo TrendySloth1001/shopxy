@@ -9,6 +9,7 @@ import { parseSpecGroups, parseOffers } from "../types";
 import { PdpGallery } from "./pdp-gallery";
 import { PdpVariantPicker } from "./pdp-variant-picker";
 import { PdpPriceBlock } from "./pdp-price-block";
+import { PdpSellerInfo } from "./pdp-seller-info";
 import { PdpOffersStrip } from "./pdp-offers-strip";
 import { PdpFbtRail } from "./pdp-fbt-rail";
 import { PdpActionBar } from "./pdp-action-bar";
@@ -346,6 +347,9 @@ function PdpBody({ product }: BodyProps) {
           <span className="text-muted">›</span>
         </Link>
       ) : null}
+
+      {/* Seller identity disclosure (CP E-Commerce Rules r.5/r.6) */}
+      {product.shop ? <PdpSellerInfo shop={product.shop} /> : null}
     </>
   );
 

@@ -100,7 +100,24 @@ export class CategoriesController {
       return;
     }
 
-    await categoriesService.deleteCategory(id);
+    const result = await categoriesService.deleteCategory(id);
+    if ('error' in result) {
+      if (result.error === 'NOT_FOUND') {
+        res.status(404).json({ error: 'Category not found' });
+        return;
+      }
+      if (result.error === 'HAS_PRODUCTS') {
+        res.status(409).json({
+          error: `Category has ${result.products} product(s) across shops; re-home or deactivate it instead of deleting`,
+        });
+        return;
+      }
+      // HAS_CHILDREN
+      res.status(409).json({
+        error: `Category has ${result.children} child category(ies); delete or re-home them first`,
+      });
+      return;
+    }
     res.status(204).send();
   }
 }

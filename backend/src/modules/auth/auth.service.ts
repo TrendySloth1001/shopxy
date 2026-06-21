@@ -923,6 +923,37 @@ export class AuthService {
     }
 
     await prisma.$transaction(async (tx) => {
+      // DPDP §12 erasure must be complete AND consistent. ProductReview.user
+      // is onDelete: Cascade, so `user.delete` removes this customer's reviews
+      // at the DB level — which bypasses recomputeRatingDenorm and leaves
+      // Product.ratingAvg/ratingCount (and Shop.rating denorm) inflated/stale
+      // forever (CP E-Commerce Rules: no misleading ratings). So: capture the
+      // affected productIds first, delete the reviews via this tx, then
+      // recompute each product's denorm in the same transaction.
+      const reviewedProducts = await tx.productReview.findMany({
+        where: { userId },
+        select: { productId: true },
+        distinct: ['productId'],
+      });
+      const affectedProductIds = reviewedProducts.map((r) => r.productId);
+      if (affectedProductIds.length > 0) {
+        await tx.productReview.deleteMany({ where: { userId } });
+        for (const productId of affectedProductIds) {
+          const agg = await tx.productReview.aggregate({
+            where: { productId },
+            _avg: { rating: true },
+            _count: { _all: true },
+          });
+          await tx.product.update({
+            where: { id: productId },
+            data: {
+              ratingAvg: agg._avg.rating,
+              ratingCount: agg._count._all,
+            },
+          });
+        }
+      }
+
       // Cascade should handle refresh tokens but be explicit — keeps
       // the intent obvious and survives any future onDelete change.
       await tx.refreshToken.deleteMany({ where: { userId } });

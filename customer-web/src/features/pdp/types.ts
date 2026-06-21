@@ -78,6 +78,21 @@ export const shopSummarySchema = z.object({
   logoUrl: z.string().nullable().optional(),
   rating: z.coerce.number().nullable().optional(),
   ratingCount: z.number().nullable().optional(),
+  // ── Seller identity (CP E-Commerce Rules r.5(3)/r.6(5)) ─────────────────
+  // A marketplace must disclose each seller's legal name, principal
+  // geographic address, GSTIN and a customer-care contact before purchase.
+  // These come from the shop owner (User.shopName/shopAddress/shopGstin) +
+  // Shop.locationCity/locationState. They are OPTIONAL here: the storefront
+  // PDP/shop payload does not yet surface them — extending that backend
+  // select is tracked as a follow-up (findings_deferred LDC-7). Until then
+  // these render as "not provided" so the disclosure block degrades safely.
+  legalName: z.string().nullable().optional(),
+  address: z.string().nullable().optional(),
+  gstin: z.string().nullable().optional(),
+  supportEmail: z.string().nullable().optional(),
+  supportPhone: z.string().nullable().optional(),
+  locationCity: z.string().nullable().optional(),
+  locationState: z.string().nullable().optional(),
 });
 export type ShopSummary = z.infer<typeof shopSummarySchema>;
 

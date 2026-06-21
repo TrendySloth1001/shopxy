@@ -5,11 +5,16 @@ import { Store, Truck, RotateCcw, ShieldCheck, BadgePercent } from "lucide-react
 
 // ── Trust promise row ─────────────────────────────────────────────────────────
 
+// Storefront promises — qualified, not blanket guarantees. Delivery, returns
+// and authenticity are set per shop/SKU (a shop's returns can be disabled, an
+// item may not be returnable, delivery isn't always free), so we describe the
+// platform mechanics here rather than asserting an unconditional guarantee.
+// (CP Act 2019 s.2(28)/(47); CCPA Dark-Patterns Guidelines 2023.)
 const PROMISES = [
-  { icon: Truck,        label: "Free delivery" },
-  { icon: RotateCcw,   label: "7-day returns" },
-  { icon: ShieldCheck, label: "100% authentic" },
-  { icon: BadgePercent, label: "Best prices" },
+  { icon: ShieldCheck, label: "Secure checkout" },
+  { icon: RotateCcw,   label: "Returns per shop policy" },
+  { icon: Truck,        label: "Delivery set by each shop" },
+  { icon: BadgePercent, label: "Compare prices across shops" },
 ] as const;
 
 // ── Link columns ──────────────────────────────────────────────────────────────

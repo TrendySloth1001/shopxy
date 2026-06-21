@@ -71,6 +71,31 @@ export type PostError =
 const ROUND_COST = (v: number) => Math.round((v + Number.EPSILON) * 10000) / 10000;
 const ROUND_VALUE = (v: number) => Math.round((v + Number.EPSILON) * 100) / 100;
 
+/// Map a persisted stock_transactions row to the public PostedEntry shape.
+function mapEntry(e: {
+  id: number;
+  productId: number;
+  direction: string;
+  reasonCode: string;
+  quantity: Prisma.Decimal | number;
+  unitCost: Prisma.Decimal | number | null;
+  totalValue: Prisma.Decimal | number | null;
+  stockBefore: Prisma.Decimal | number | null;
+  stockAfter: Prisma.Decimal | number | null;
+}): PostedEntry {
+  return {
+    id: e.id,
+    productId: e.productId,
+    direction: e.direction as LedgerDirection,
+    reasonCode: e.reasonCode as LedgerReasonCode,
+    quantity: Number(e.quantity),
+    unitCost: e.unitCost === null ? null : Number(e.unitCost),
+    totalValue: e.totalValue === null ? null : Number(e.totalValue),
+    stockBefore: Number(e.stockBefore ?? 0),
+    stockAfter: Number(e.stockAfter ?? 0),
+  };
+}
+
 export class LedgerService {
   /// Post a ledger entry (one row per line). Wraps everything in a
   /// serializable transaction and locks each product row before touching
@@ -285,6 +310,212 @@ export class LedgerService {
     } catch (err) {
       if (err && typeof err === 'object' && 'error' in err)
         return err as PostError | { error: 'Entry not found' } | { error: 'Already reversed' };
+      throw err;
+    }
+  }
+
+  /// PR-H1 — restock a customer return at the ORIGINAL sale's cost basis,
+  /// restoring `qtyRemaining` on the layers the sale consumed instead of
+  /// minting a fresh averaged layer. `ledgerService.post(direction:'IN')`
+  /// always `costLayer.create(...)`, so restocking a return through it
+  /// appends a brand-new layer at whatever `unitPrice` was passed and
+  /// recomputes the moving-average `purchasePrice` — the goods came out of
+  /// older layers, so after every sale+return round-trip FIFO COGS and the
+  /// moving-average drift from reality. This method mirrors the OUT-reversal
+  /// branch of `reverse()` but supports PARTIAL returns: for each line it
+  /// walks the matching SALE STOCK_OUT's `costConsumptions` newest-first
+  /// (the last-depleted layer is restored first) and increments
+  /// `qtyRemaining` up to the returned quantity, posting a RETURN_IN row at
+  /// the weighted-average cost of exactly those restored consumptions — and
+  /// it creates NO new cost layer. `product.purchasePrice` is then
+  /// recomputed as the weighted average of the product's remaining layers,
+  /// so on-hand value is restored rather than inflated.
+  ///
+  /// Falls back to a plain averaged restock (legacy `post`) only for lines
+  /// whose original consumptions can't be located (legacy data with no FIFO
+  /// history) — callers handle that by passing such lines to `post`.
+  async restockReturnAtCost(
+    input: {
+      shopId: number;
+      /// The original SALE invoice whose STOCK_OUT consumptions we restore.
+      originalInvoiceId: number;
+      /// Source document for the RETURN_IN rows (the credit note invoice).
+      sourceType: LedgerSourceType;
+      sourceId: number;
+      idempotencyKey?: string;
+      createdById?: number;
+      counterpartyName?: string;
+      counterpartyGstin?: string;
+      note?: string;
+      lines: Array<{ productId: number; quantity: number; sourceLineId?: number }>;
+    },
+    tx?: Prisma.TransactionClient,
+  ): Promise<PostResult | PostError | { error: 'No original consumption'; productId: number }> {
+    if (input.lines.length === 0) return { entries: [] };
+    const db: Prisma.TransactionClient | typeof prisma = tx ?? prisma;
+
+    // Idempotency: same-key replays return the already-posted rows.
+    if (input.idempotencyKey) {
+      const existing = await db.stockTransaction.findMany({
+        where: { idempotencyKey: input.idempotencyKey },
+      });
+      if (existing.length > 0) {
+        return { entries: existing.map(mapEntry) };
+      }
+    }
+
+    const work = async (t: Prisma.TransactionClient): Promise<PostResult | PostError | { error: 'No original consumption'; productId: number }> => {
+      const entries: PostedEntry[] = [];
+      const sorted = [...input.lines].sort((a, b) => a.productId - b.productId);
+
+      for (const line of sorted) {
+        const product = await this.lockProduct(t, line.productId, input.shopId);
+        if (!product) return { error: 'Product not found', productId: line.productId };
+        const qty = line.quantity;
+        if (!(qty > 0)) continue;
+
+        // Locate the original SALE STOCK_OUT for this product, with its
+        // cost consumptions. Newest STOCK_OUT first so a re-sold-then-
+        // returned line maps to the most recent sale of that product on
+        // this invoice. (An invoice carries at most one line per product.)
+        const saleOut = await t.stockTransaction.findFirst({
+          where: {
+            shopId: input.shopId,
+            productId: line.productId,
+            sourceType: 'INVOICE',
+            sourceId: input.originalInvoiceId,
+            direction: 'OUT',
+            reversesId: null,
+          },
+          include: {
+            costConsumptions: { orderBy: { id: 'desc' } },
+          },
+          orderBy: { id: 'desc' },
+        });
+        if (!saleOut || saleOut.costConsumptions.length === 0) {
+          // Legacy sale with no FIFO history — signal the caller to fall
+          // back to an averaged restock for this product.
+          return { error: 'No original consumption', productId: line.productId };
+        }
+
+        // Walk consumptions newest-first, restoring up to `qty` units. The
+        // returned quantity may be a fraction of the original sale, so we
+        // cap the total restored at `qty` and may touch only some layers.
+        let remaining = qty;
+        let restoredValue = 0; // Σ restored_qty × layer_unitCost (cost basis)
+        for (const c of saleOut.costConsumptions) {
+          if (remaining <= 0) break;
+          const consumed = Number(c.qtyConsumed);
+          const take = Math.min(consumed, remaining);
+          if (!(take > 0)) continue;
+          await t.costLayer.update({
+            where: { id: c.layerId },
+            data: { qtyRemaining: { increment: take } },
+          });
+          restoredValue += take * Number(c.unitCost);
+          remaining -= take;
+        }
+        const restoredQty = qty - remaining;
+        if (!(restoredQty > 0)) {
+          return { error: 'No original consumption', productId: line.productId };
+        }
+
+        const stockBefore = Number(product.stockQuantity);
+        const stockAfter = stockBefore + restoredQty;
+        const unitCost = ROUND_COST(restoredValue / restoredQty);
+        const totalValue = ROUND_VALUE(restoredValue);
+
+        // Recompute moving-average purchasePrice from the product's layers
+        // AFTER restoration: weighted average of every layer's remaining
+        // value over remaining qty. This undoes the sale's averaging drift
+        // rather than blending in a fresh layer.
+        const layerAgg = await t.costLayer.aggregate({
+          where: { productId: line.productId, qtyRemaining: { gt: 0 } },
+          _sum: { qtyRemaining: true },
+        });
+        const layers = await t.costLayer.findMany({
+          where: { productId: line.productId, qtyRemaining: { gt: 0 } },
+          select: { qtyRemaining: true, unitCost: true },
+        });
+        const totalRemainingQty = Number(layerAgg._sum.qtyRemaining ?? 0);
+        let purchasePriceAfter: number | undefined;
+        if (totalRemainingQty > 0) {
+          const totalRemainingValue = layers.reduce(
+            (s, l) => s + Number(l.qtyRemaining) * Number(l.unitCost),
+            0,
+          );
+          purchasePriceAfter = ROUND_VALUE(totalRemainingValue / totalRemainingQty);
+        }
+
+        const entry = await t.stockTransaction.create({
+          data: {
+            shopId: input.shopId,
+            productId: line.productId,
+            direction: 'IN',
+            reasonCode: 'RETURN_IN',
+            sourceType: input.sourceType,
+            sourceId: input.sourceId,
+            sourceLineId: line.sourceLineId,
+            quantity: restoredQty,
+            unitCost,
+            totalValue,
+            stockBefore,
+            stockAfter,
+            type: 'STOCK_IN',
+            unitPrice: unitCost,
+            // Restocking a return restores the layers the sale depleted;
+            // it does NOT create a new layer (no costLayer.create here).
+            purchasePriceBefore: ROUND_VALUE(Number(product.purchasePrice)),
+            purchasePriceAfter,
+            counterpartyName: input.counterpartyName,
+            counterpartyGstin: input.counterpartyGstin,
+            note: input.note,
+            createdById: input.createdById,
+            idempotencyKey:
+              input.idempotencyKey !== undefined
+                ? `${input.idempotencyKey}:${line.productId}:${line.sourceLineId ?? '_'}`
+                : undefined,
+          },
+        });
+
+        await t.product.update({
+          where: { id: line.productId },
+          data: {
+            stockQuantity: stockAfter,
+            ...(purchasePriceAfter !== undefined ? { purchasePrice: purchasePriceAfter } : {}),
+          },
+        });
+
+        entries.push({
+          id: entry.id,
+          productId: line.productId,
+          direction: 'IN',
+          reasonCode: 'RETURN_IN',
+          quantity: restoredQty,
+          unitCost,
+          totalValue,
+          stockBefore,
+          stockAfter,
+        });
+      }
+      return { entries };
+    };
+
+    try {
+      if (tx) return await work(tx);
+      return await prisma.$transaction(work);
+    } catch (err) {
+      if (
+        input.idempotencyKey &&
+        err && typeof err === 'object' && 'code' in err &&
+        (err as { code?: string }).code === 'P2002'
+      ) {
+        const existing = await db.stockTransaction.findMany({
+          where: { idempotencyKey: input.idempotencyKey },
+        });
+        if (existing.length > 0) return { entries: existing.map(mapEntry) };
+      }
+      if (err && typeof err === 'object' && 'error' in err) return err as PostError;
       throw err;
     }
   }

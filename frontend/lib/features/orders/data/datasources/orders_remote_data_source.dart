@@ -93,8 +93,9 @@ class OrdersRemoteDataSource {
   }
 
   /// Record a shipping milestone (PACKED / SHIPPED / OUT_FOR_DELIVERY /
-  /// DELIVERED / RETURNED) against a confirmed order. Same route +
-  /// payload merchant-web uses: POST /orders/:id/events.
+  /// DELIVERED) against a confirmed order. Same route + payload
+  /// merchant-web uses: POST /orders/:id/events. RETURNED is not a
+  /// postable milestone (PR-H3) — returns run through the returns flow.
   Future<void> addShippingEvent(
     int id, {
     required String type,

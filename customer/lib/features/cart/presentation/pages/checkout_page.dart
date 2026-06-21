@@ -280,7 +280,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
         context,
         title: 'Place this order?',
         message:
-            'Total payable ${AppFormat.rupeesPrecise(grandTotal)}. '
+            'Estimated total ${AppFormat.rupeesPrecise(grandTotal)} — the shop '
+            'confirms the final amount when the order is placed. '
             'We double-check larger orders so a stray tap doesn\'t place one. '
             'You can still cancel a per-shop slice from the order detail page '
             'before the merchant confirms it.',
@@ -1227,6 +1228,32 @@ class _ShopGroupCard extends StatelessWidget {
                 ],
               ),
             ),
+          // Seller identity disclosure — the buyer contracts with the shop, not
+          // ShopXY (CP E-Commerce Rules r.5/r.6). The cart payload carries only
+          // the seller name; full legal name / address / GSTIN are surfaced on
+          // the shop page (and tracked for the order/checkout payload — LDC-7).
+          if (showHeader && shopName != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSizes.md, AppSizes.xs, AppSizes.md, 0,
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.storefront_outlined,
+                      size: 14, color: AppColors.brand),
+                  const SizedBox(width: AppSizes.xs),
+                  Expanded(
+                    child: Text(
+                      'Sold by $shopName · seller details & GSTIN on the shop page',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: AppColors.muted,
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           if (showHeader)
             const Padding(
               padding: EdgeInsets.symmetric(
@@ -1508,9 +1535,22 @@ class _PriceCard extends StatelessWidget {
             ),
           const Divider(height: AppSizes.lg, color: AppColors.hairline),
           _PriceRow(
-            label: 'Total payable',
+            label: 'Total payable (estimate)',
             value: grandTotal,
             bold: true,
+          ),
+          // The coupon/wallet discount is a client estimate; the shop
+          // re-computes eligibility/caps/wallet when the order is placed, and
+          // the order confirmation shows the final charged amount.
+          Padding(
+            padding: const EdgeInsets.only(top: AppSizes.xs),
+            child: Text(
+              'Estimated — the shop confirms the final amount when your order is placed.',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: AppColors.muted,
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
           ),
           // Statutory GST breakup — prices are inclusive of tax, so this is the
           // "of which" split backed out of the item amounts.
@@ -1928,6 +1968,9 @@ class _TrustFooter extends StatelessWidget {
           horizontal: AppSizes.lg, vertical: AppSizes.sm),
       child: Column(
         children: [
+          // Qualified trust strip — cancellation depends on each shop's
+          // cancellation policy, so describe the mechanic rather than promise
+          // a blanket "easy cancel" (CP Act 2019; CCPA dark-pattern guidance).
           Row(
             children: const [
               Expanded(
@@ -1937,12 +1980,13 @@ class _TrustFooter extends StatelessWidget {
               SizedBox(width: AppSizes.sm),
               Expanded(
                   child: _TrustPill(
-                      icon: Icons.replay_rounded, label: 'Easy cancel')),
+                      icon: Icons.replay_rounded,
+                      label: 'Cancel per shop policy')),
               SizedBox(width: AppSizes.sm),
               Expanded(
                   child: _TrustPill(
                       icon: Icons.support_agent_rounded,
-                      label: 'Real support')),
+                      label: 'In-app support')),
             ],
           ),
           const SizedBox(height: AppSizes.sm),
@@ -2046,7 +2090,10 @@ class _Footer extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Total payable',
+                  // "Estimate" — coupon/wallet are re-validated server-side at
+                  // place-order; the order confirmation shows the final charged
+                  // amount (CP E-Commerce Rules r.4(3)).
+                  Text('Total payable (est.)',
                       style: Theme.of(context).textTheme.labelSmall
                           ?.copyWith(color: AppColors.muted)),
                   AppPriceText.precise(

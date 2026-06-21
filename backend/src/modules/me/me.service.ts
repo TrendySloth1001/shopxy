@@ -289,8 +289,9 @@ export class MeService {
     const shops = await prisma.shop.findMany({
       where: { id: { in: allIds } },
       select: {
+        // DPDP §8 data-minimisation: never expose the merchant owner's
+        // internal User.id to the linked customer. Shop identity only.
         id: true,
-        ownerUserId: true,
         name: true,
         slug: true,
         tagline: true,

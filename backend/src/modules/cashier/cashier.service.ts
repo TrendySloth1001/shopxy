@@ -199,8 +199,15 @@ export async function addCashMovement(
 }
 
 /// Close a shift: snapshot the reconciliation (expected cash + variance vs the
-/// counted figure) onto the row and return the final Z-report. Status-guarded so
-/// two close attempts can't both win.
+/// counted figure) onto the row and return the final Z-report.
+///
+/// CASH-5 — the whole reconciliation runs in ONE transaction that first locks
+/// the shift row `FOR UPDATE`, then aggregates receipts/movements (via `report`
+/// on the same tx client) and writes the snapshot. A concurrent checkout cash
+/// receipt / cash movement / cash REFUND on this shift can no longer land between
+/// the read and the write, so the snapshotted `expectedCash`/`variance` always
+/// reflect drawer state at close. The lock also serialises two close attempts
+/// (the second sees status='CLOSED' and bails), replacing the old status guard.
 export async function closeShift(
   shopId: number,
   userId: number,
@@ -210,24 +217,43 @@ export async function closeShift(
   const shift = await getOpenShift(shopId, userId);
   if (!shift) return { error: 'No open shift to close' };
 
-  const rep = await report(shopId, shift.id);
-  if (isErr(rep)) return rep;
+  const outcome = await prisma.$transaction(async (tx) => {
+    // Lock the shift row: blocks any concurrent close and pins the row for the
+    // aggregation. Scope to this cashier + OPEN so a stale id reads as not-found.
+    const locked = await tx.$queryRaw<Array<{ id: number; status: string }>>`
+      SELECT id, status FROM cashier_shifts
+      WHERE id = ${shift.id} AND shop_id = ${shopId} AND opened_by_id = ${userId}
+      FOR UPDATE
+    `;
+    const row = locked[0];
+    if (!row) return { ok: false as const, error: 'No open shift to close' };
+    if (row.status !== 'OPEN') return { ok: false as const, error: 'Shift is already closed' };
 
-  const expected = rep.cash.expected;
-  const variance = input.countedCash - expected;
-  const res = await prisma.cashierShift.updateMany({
-    where: { id: shift.id, status: 'OPEN' },
-    data: {
-      status: 'CLOSED',
-      closingCounted: new Prisma.Decimal(input.countedCash),
-      expectedCash: new Prisma.Decimal(expected),
-      variance: new Prisma.Decimal(variance),
-      closingNote: input.note ?? null,
-      closedAt: new Date(),
-      closedById: userId,
-    },
+    // Aggregate INSIDE the tx (and under the lock) so expected reflects drawer
+    // state at close — no receipt/movement can slip in between read and write.
+    const rep = await report(shopId, shift.id, { db: tx });
+    if (isErr(rep)) return { ok: false as const, error: rep.error };
+
+    // Money math in Decimal end-to-end: variance = counted − expected.
+    const counted = new Prisma.Decimal(input.countedCash);
+    const expected = new Prisma.Decimal(rep.cash.expected);
+    const variance = counted.minus(expected);
+    await tx.cashierShift.update({
+      where: { id: shift.id },
+      data: {
+        status: 'CLOSED',
+        closingCounted: counted,
+        expectedCash: expected,
+        variance,
+        closingNote: input.note ?? null,
+        closedAt: new Date(),
+        closedById: userId,
+      },
+    });
+    return { ok: true as const };
   });
-  if (res.count === 0) return { error: 'Shift is already closed' };
+
+  if (!outcome.ok) return { error: outcome.error };
   return report(shopId, shift.id);
 }
 
@@ -242,9 +268,14 @@ export async function closeShift(
 export async function report(
   shopId: number,
   shiftId: number,
-  opts: { openedById?: number } = {},
+  opts: { openedById?: number; db?: Prisma.TransactionClient | typeof prisma } = {},
 ): Promise<ShiftReport | CashierError> {
-  const row = await prisma.cashierShift.findFirst({
+  // CASH-5 — `db` lets closeShift run this aggregation INSIDE its close tx (after
+  // locking the shift row FOR UPDATE) so the expected-cash snapshot reflects
+  // drawer state at close, with no receipt/movement slipping in between read and
+  // write. Defaults to the global client for plain X/Z report reads.
+  const db = opts.db ?? prisma;
+  const row = await db.cashierShift.findFirst({
     where: { id: shiftId, shopId, ...(opts.openedById != null ? { openedById: opts.openedById } : {}) },
     select: SHIFT_SELECT,
   });
@@ -252,7 +283,7 @@ export async function report(
   const shift = await attachOpener(shiftView(row));
 
   // Completed sales in this shift → their invoices.
-  const sales = await prisma.sale.findMany({
+  const sales = await db.sale.findMany({
     where: { shopId, shiftId, invoiceId: { not: null } },
     select: { invoiceId: true },
   });
@@ -261,7 +292,7 @@ export async function report(
   // Credit notes (sales returns) issued ON this shift. CASH-1 — scope by the
   // note's shiftId (stamped at issue time), not a shop-wide createdAt window,
   // so concurrent shifts on different tills can't claim each other's returns.
-  const returnsAgg = await prisma.invoice.aggregate({
+  const returnsAgg = await db.invoice.aggregate({
     where: {
       shopId,
       documentType: 'CREDIT_NOTE',
@@ -274,7 +305,7 @@ export async function report(
   // Receipts by tender mode (live receipts only) + GST totals from the invoices.
   const [tenderRows, gst, rateRows, movementRows, movementSums] = await Promise.all([
     invoiceIds.length
-      ? prisma.payment.groupBy({
+      ? db.payment.groupBy({
           by: ['mode'],
           where: { invoiceId: { in: invoiceIds }, type: 'RECEIPT', voidedAt: null },
           _sum: { amount: true },
@@ -282,7 +313,7 @@ export async function report(
         })
       : Promise.resolve([] as Array<{ mode: string; _sum: { amount: Prisma.Decimal | null }; _count: { _all: number } }>),
     invoiceIds.length
-      ? prisma.invoice.aggregate({
+      ? db.invoice.aggregate({
           where: { id: { in: invoiceIds } },
           _sum: {
             total: true,
@@ -296,7 +327,7 @@ export async function report(
         })
       : Promise.resolve(null),
     invoiceIds.length
-      ? prisma.invoiceItem.groupBy({
+      ? db.invoiceItem.groupBy({
           by: ['taxPercent'],
           where: { invoiceId: { in: invoiceIds } },
           _sum: {
@@ -317,12 +348,12 @@ export async function report(
             cessAmount: Prisma.Decimal | null;
           };
         }>),
-    prisma.cashMovement.findMany({
+    db.cashMovement.findMany({
       where: { shiftId },
       orderBy: { id: 'asc' },
       select: { id: true, type: true, amount: true, reason: true, createdAt: true },
     }),
-    prisma.cashMovement.groupBy({ by: ['type'], where: { shiftId }, _sum: { amount: true } }),
+    db.cashMovement.groupBy({ by: ['type'], where: { shiftId }, _sum: { amount: true } }),
   ]);
 
   const tenders: TenderBreakdownDto[] = tenderRows.map((t) => ({

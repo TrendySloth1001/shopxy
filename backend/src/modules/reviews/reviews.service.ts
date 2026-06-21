@@ -122,13 +122,11 @@ export class ReviewsService {
   /// total count, per-star histogram (always 1..5 keyed and
   /// zero-filled so the client doesn't need to guard for missing
   /// keys), how many of those came from CONFIRMED-invoice buyers
-  /// (today every review is purchase-gated, so verifiedCount equals
-  /// ratingCount — but we surface the field so a future "anonymous
-  /// review" feature wouldn't break the wire shape), and the three
+  /// (measured, not assumed — see verifiedCount below), and the three
   /// most recent reviews so the section can render without a
   /// follow-up list call.
   async getSummary(productId: number) {
-    const [agg, buckets, recent] = await Promise.all([
+    const [agg, buckets, recent, verifiedCount] = await Promise.all([
       prisma.productReview.aggregate({
         where: { productId },
         _avg: { rating: true },
@@ -145,6 +143,14 @@ export class ReviewsService {
         take: 3,
         select: reviewSelect,
       }),
+      // CP (E-Commerce) Rules 2020 r.4 / IS 19000 — "verified buyer" must
+      // be a measured purchase signal, NOT assumed equal to ratingCount.
+      // A review is verified iff its author has a CONFIRMED-invoice line
+      // for this product whose party is linked to that author (the same
+      // condition canReview enforces at write time). Count distinct
+      // reviewers who satisfy it so a seeded/imported/ungated review is
+      // never mislabeled.
+      this.countVerifiedReviews(productId),
     ]);
 
     const histogram: Record<string, number> = {
@@ -159,14 +165,43 @@ export class ReviewsService {
     return {
       ratingAvg: agg._avg.rating,
       ratingCount,
-      // Today reviews are gated to CONFIRMED-invoice buyers via
-      // canReview, so verifiedCount mirrors ratingCount. We still
-      // surface the field so a future "anonymous review" surface can
-      // diverge the two without a wire-shape change.
-      verifiedCount: ratingCount,
+      // Measured from actual verified-purchase rows (see above), capped
+      // at ratingCount defensively. Never assumed equal to ratingCount.
+      verifiedCount: Math.min(verifiedCount, ratingCount),
       histogram,
       recent,
     };
+  }
+
+  /// Counts how many reviewers of this product are verified buyers — i.e.
+  /// have at least one CONFIRMED-invoice line for the product whose party
+  /// is linked to them (the canReview condition). One review per user is
+  /// enforced by the (productId, userId) unique index, so a distinct
+  /// reviewer count equals a distinct verified-review count.
+  private async countVerifiedReviews(productId: number): Promise<number> {
+    const reviewers = await prisma.productReview.findMany({
+      where: { productId },
+      select: { userId: true },
+    });
+    if (reviewers.length === 0) return 0;
+    const reviewerIds = reviewers.map((r) => r.userId);
+
+    const verified = await prisma.invoiceItem.findMany({
+      where: {
+        productId,
+        invoice: {
+          status: 'CONFIRMED',
+          party: { linkedUserId: { in: reviewerIds } },
+        },
+      },
+      select: { invoice: { select: { party: { select: { linkedUserId: true } } } } },
+    });
+    const verifiedUserIds = new Set<number>();
+    for (const row of verified) {
+      const uid = row.invoice.party?.linkedUserId;
+      if (uid != null) verifiedUserIds.add(uid);
+    }
+    return verifiedUserIds.size;
   }
 
   /// Cursor-paginated public listing — id-based cursor for stable

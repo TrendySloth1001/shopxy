@@ -48,9 +48,13 @@ export async function invite(req: Request, res: Response) {
     teamRoleName: parsed.data.roleName,
     teamPermissions: parsed.data.permissions,
     message: parsed.data.message ?? null,
+    // Delegation cap (AUTH-TR-H1): the invite path must clamp the granted
+    // rights to the inviter's own, exactly like setPermissions/createRole.
+    actingShopRole: req.user!.shopRole,
+    actingPermissions: req.user!.shopPermissions,
   });
-  if ('error' in result) {
-    res.status(400).json({ error: result.error });
+  if ('error' in result && result.error) {
+    fail(res, result.error);
     return;
   }
   res.status(201).json({ invitation: result.invitation });

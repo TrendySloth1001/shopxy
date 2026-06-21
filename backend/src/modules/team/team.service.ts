@@ -11,7 +11,7 @@ import { normalizeRights, presetFor } from '../../shared/http/permissions.js';
 /// limited staffer escalate a colleague — or, by cross-granting, bypass
 /// the own-role guard). OWNER bypasses every gate, so it can grant
 /// anything. Returns the requested rights the actor lacks (empty = ok).
-function rightsBeyondActor(
+export function rightsBeyondActor(
   actorRole: ShopRole | undefined,
   actorPermissions: string[] | undefined,
   requested: string[],

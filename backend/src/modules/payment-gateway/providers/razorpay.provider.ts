@@ -389,7 +389,18 @@ export class RazorpayProvider
       event?: string;
       payload?: {
         payment?: { entity?: { id?: string; order_id?: string; amount?: number; currency?: string } };
-        order?: { entity?: { id?: string; amount?: number; currency?: string } };
+        order?: {
+          entity?: {
+            id?: string;
+            amount?: number;
+            // PR-H3 — `amount` is the order's NOMINAL total; `amount_paid` is what
+            // the customer actually settled. A partial-payment order has
+            // amount_paid < amount, so confirming against the nominal `amount`
+            // would settle an under-paid order as fully PAID. Bind to amount_paid.
+            amount_paid?: number;
+            currency?: string;
+          };
+        };
         refund?: { entity?: { id?: string; payment_id?: string; amount?: number; currency?: string } };
         qr_code?: { entity?: { id?: string } };
         transfer?: {
@@ -442,7 +453,17 @@ export class RazorpayProvider
       // dispute events carry the disputed payment id on the dispute entity.
       providerPaymentRef:
         payEntity?.id ?? refundEntity?.payment_id ?? disputeEntity?.payment_id ?? null,
-      amountMinor: payEntity?.amount ?? orderEntity?.amount ?? refundEntity?.amount ?? null,
+      // PR-H3 — bind the confirmed amount to money ACTUALLY captured, never the
+      // order's nominal total. Prefer the payment entity's captured `amount`;
+      // for an `order.paid` event with no payment entity fall back to the order's
+      // `amount_paid` (what was actually settled), NOT its nominal `amount`. A
+      // partial-payment order then reports amount_paid < intent.amount and the
+      // confirm() amount-equality guard rejects it instead of settling it PAID.
+      amountMinor:
+        payEntity?.amount ??
+        orderEntity?.amount_paid ??
+        refundEntity?.amount ??
+        null,
       currency: payEntity?.currency ?? orderEntity?.currency ?? refundEntity?.currency ?? null,
       ...(transferEntity?.id
         ? {

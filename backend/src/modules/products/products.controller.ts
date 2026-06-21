@@ -96,6 +96,12 @@ const variantSchema = z
     mrp: z.number().positive(),
     sellingPrice: z.number().positive(),
     purchasePrice: z.number().nonnegative(),
+    // CAT-H1 — optional per-variant GST source. When two variants of a
+    // product sit in different HSN/GST slabs the merchant declares each
+    // variant's own hsnCode / taxPercent; null/omitted inherits the
+    // product-level slab at invoice time. Bounds mirror the product fields.
+    hsnCode: z.string().max(20).nullable().optional(),
+    taxPercent: z.number().min(0).max(100).optional(),
     stockQuantity: z.number().nonnegative().default(0),
     imageUrls: z.array(z.string().min(1).max(2048)).max(8).optional(),
     isActive: z.boolean().optional(),

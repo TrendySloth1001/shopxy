@@ -2039,12 +2039,16 @@ class _ShippingUpdateSheet extends StatefulWidget {
 }
 
 class _ShippingUpdateSheetState extends State<_ShippingUpdateSheet> {
+  // PR-H3 — RETURNED is deliberately not a postable milestone. The raw
+  // shipping-event endpoint has no side effects (no refund / stock
+  // add-back / credit-note GST reversal / transfer clawback), so returns
+  // run through the dedicated returns flow. The backend rejects RETURNED
+  // here, and historical RETURNED events still render in the timeline.
   static const _milestones = <(String, String)>[
     ('PACKED', 'Packed'),
     ('SHIPPED', 'Shipped'),
     ('OUT_FOR_DELIVERY', 'Out for delivery'),
     ('DELIVERED', 'Delivered'),
-    ('RETURNED', 'Returned'),
   ];
   static final _etaFmt = DateFormat('d MMM · h:mm a');
 

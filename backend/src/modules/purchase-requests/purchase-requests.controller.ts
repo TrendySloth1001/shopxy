@@ -70,8 +70,17 @@ async function requireOwnedShop(
 /// Merchant-recorded shipping milestone. CONFIRMED is set by the
 /// service when an invoice is issued; merchants only push milestones
 /// from packing onward.
+///
+/// PR-H3 — `RETURNED` is intentionally NOT accepted here. The raw
+/// shipping-event path has no side effects, so posting RETURNED would
+/// record a returned order that is still CONFIRMED, still consuming
+/// stock, still settled to the seller, with no customer refund and no
+/// credit-note GST reversal. Returns must run through the dedicated
+/// returns module (which mints the credit note, adds stock back,
+/// refunds the buyer and claws back the Route transfer), never this
+/// timeline shortcut.
 const shippingEventSchema = z.object({
-  type: z.enum(['PACKED', 'SHIPPED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'RETURNED']),
+  type: z.enum(['PACKED', 'SHIPPED', 'OUT_FOR_DELIVERY', 'DELIVERED']),
   courier: z.string().max(80).optional(),
   awb: z.string().max(80).optional(),
   eta: z.string().datetime().optional(),
@@ -407,8 +416,9 @@ export class PurchaseRequestsController {
   }
 
   /// Merchant-side — record a shipping milestone (PACKED, SHIPPED,
-  /// OUT_FOR_DELIVERY, DELIVERED, RETURNED). Drives the customer-facing
-  /// tracking timeline.
+  /// OUT_FOR_DELIVERY, DELIVERED). Drives the customer-facing tracking
+  /// timeline. RETURNED is deliberately excluded — see shippingEventSchema
+  /// (PR-H3); returns go through the dedicated returns module.
   async addShippingEvent(req: Request, res: Response): Promise<void> {
     const shopId = await requireOwnedShop(req, res);
     if (shopId == null) return;
@@ -437,7 +447,6 @@ export class PurchaseRequestsController {
       SHIPPED: 'Your order is on the way.',
       OUT_FOR_DELIVERY: 'Out for delivery today.',
       DELIVERED: 'Your order was delivered.',
-      RETURNED: 'Your order was marked as returned.',
     };
     const request = await purchaseRequestsService.getForMerchant(shopId, id);
     if (request) {

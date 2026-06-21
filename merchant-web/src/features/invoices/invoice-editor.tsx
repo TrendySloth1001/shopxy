@@ -490,7 +490,13 @@ function LineRow({
   onTax: (v: number) => void;
   onRemove: () => void;
 }) {
-  const lineTotal = line.quantity * line.unitPrice * (1 + line.taxPercent / 100);
+  // Pre-tax line amount (qty × rate), matching the "Subtotal" total and the
+  // Flutter editor. We deliberately do NOT add tax or fold in the header
+  // discount here: the header discount is apportioned across lines at the
+  // totals level (computeInvoiceTotals), so showing a gross tax-on-top figure
+  // per line wouldn't reconcile to the displayed Total. With this basis,
+  // Σ(line amounts) = Subtotal, then − Discount + GST = Total. (FMD-5.)
+  const lineAmount = line.quantity * line.unitPrice;
   return (
     <div className="flex flex-wrap items-end gap-md border-b border-hairline py-md">
       <div className="min-w-0 flex-1">
@@ -528,8 +534,8 @@ function LineRow({
         />
       </label>
       <div className="flex flex-col items-end gap-xs">
-        <span className="text-label-md text-subtle">Amount</span>
-        <span className="text-body-md font-semibold text-ink">{formatINR2(lineTotal)}</span>
+        <span className="text-label-md text-subtle">Amount (pre-tax)</span>
+        <span className="text-body-md font-semibold text-ink">{formatINR2(lineAmount)}</span>
       </div>
       <button
         type="button"

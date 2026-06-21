@@ -185,6 +185,12 @@ export class MeController {
       { items: payload.items, note: payload.note },
     );
     if ('error' in result) {
+      if (result.error === 'NO_VALID_ITEMS') {
+        res
+          .status(400)
+          .json({ error: 'None of the requested items are available in this shop' });
+        return;
+      }
       res.status(404).json({ error: 'Shop not found' });
       return;
     }

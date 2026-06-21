@@ -225,6 +225,24 @@ export class ChallansService {
     });
     const priceMap = new Map(products.map((p) => [p.id, p]));
 
+    // CWQ-2: a delivered challan line whose product was deleted/archived or
+    // moved to another shop between challan creation and conversion is absent
+    // from priceMap. Defaulting its unitPrice to 0 would silently under-bill
+    // goods that have already left the building and emit a ₹0 taxable GST line.
+    // Reject instead so the merchant resolves the catalogue gap before billing.
+    const missingPrice = challan.items.find((item) => {
+      const price = priceMap.get(item.productId)?.sellingPrice;
+      return price == null;
+    });
+    if (missingPrice) {
+      return {
+        error:
+          `Cannot bill "${missingPrice.productName}" — the product is no longer ` +
+          `available in this shop, so its price can't be resolved. Restore the ` +
+          `product or edit the invoice manually.`,
+      };
+    }
+
     // Route through the shared invoice engine instead of hand-building the
     // invoice — that hand-built path never set the IGST/CGST/SGST split,
     // ignored the GST-registration gate (always a TAX_INVOICE) and applied
@@ -244,7 +262,7 @@ export class ChallansService {
       items: challan.items.map((item) => ({
         productId: item.productId,
         quantity: Number(item.quantity),
-        unitPrice: Number(priceMap.get(item.productId)?.sellingPrice ?? 0),
+        unitPrice: Number(priceMap.get(item.productId)!.sellingPrice),
         // taxPercent omitted → engine fills it from the product's GST rate.
       })),
     });

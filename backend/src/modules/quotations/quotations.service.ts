@@ -98,18 +98,69 @@ function priceItems(items: QuotationItemInput[]) {
       lineTotal: round2(taxable + tax + cess),
     };
   });
+  const netSubtotal = round2(subtotal);
   const netTax = round2(taxAmount);
-  const rawTotal = round2(round2(subtotal) + netTax);
-  // Round the preview total to the nearest whole rupee — the invoice engine
-  // rounds its grand total the same way, so the quote the customer accepts
-  // matches the invoice they're billed (M1: no silent sub-rupee up-charge).
-  const total = Math.round(rawTotal);
+  // CWQ-3: keep total === subtotal + taxAmount so the stored quotation row (and
+  // every PDF/DTO derived from it) reconciles with its own breakup. The quote
+  // has no roundOff field, so rounding the grand total to the nearest rupee
+  // (the old `Math.round`) left `subtotal + taxAmount !== total` by up to ₹0.49.
+  // The invoice engine reconciles via an explicit roundOff line; without that
+  // column here we must not rupee-round, or the breakup stops adding up. accept()
+  // re-prices through invoicesService anyway, so this stays a faithful estimate.
+  const total = round2(netSubtotal + netTax);
   return {
     lines,
-    subtotal: round2(subtotal),
+    subtotal: netSubtotal,
     taxAmount: netTax,
     total,
   };
+}
+
+/// CWQ-4: re-source unitPrice/discount (and rates) from the product master for
+/// a CUSTOMER-originated request. A linked customer's basket carries advisory
+/// prices the client typed; those must NEVER be persisted as the quotation
+/// figures (defense-in-depth — if any future path lets a REQUESTED quote be
+/// accepted without a merchant re-price, customer-controlled prices would flow
+/// to the invoice). We overwrite unitPrice with the product's current
+/// sellingPrice, zero the discount (a customer can't grant themselves one), and
+/// drop any unknown product line. The merchant still re-prices on
+/// respondToRequest before the quote becomes acceptable.
+async function repriceFromMaster(
+  shopId: number,
+  items: QuotationItemInput[],
+): Promise<QuotationItemInput[]> {
+  const ids = [...new Set(items.map((i) => i.productId))];
+  const products = await prisma.product.findMany({
+    where: { id: { in: ids }, shopId },
+    select: {
+      id: true,
+      name: true,
+      sku: true,
+      sellingPrice: true,
+      taxPercent: true,
+      cessRate: true,
+    },
+  });
+  const byId = new Map(products.map((p) => [p.id, p]));
+  const out: QuotationItemInput[] = [];
+  for (const it of items) {
+    const p = byId.get(it.productId);
+    // Silently skip a line whose product isn't in this shop — a customer
+    // request must not seed an invoice line at a client-chosen price.
+    if (!p) continue;
+    out.push({
+      productId: it.productId,
+      name: p.name,
+      sku: p.sku,
+      quantity: it.quantity,
+      unitPrice: toNumber(p.sellingPrice),
+      taxPercent: toNumber(p.taxPercent),
+      cessRate: toNumber(p.cessRate),
+      discount: 0,
+      imageUrl: it.imageUrl ?? null,
+    });
+  }
+  return out;
 }
 
 /// Fill missing GST / cess rates from the product master before pricing.
@@ -485,7 +536,13 @@ export class QuotationsService {
     });
     if (!shop) return { error: 'PARTY_NOT_FOUND' as const };
 
-    const priced = priceItems(await hydrateRates(shopId, input.items));
+    // CWQ-4: re-source prices/discounts server-side from the product master —
+    // never persist the customer-supplied unitPrice/discount as the figures.
+    const repriced = await repriceFromMaster(shopId, input.items);
+    if (repriced.length === 0) {
+      return { error: 'NO_VALID_ITEMS' as const };
+    }
+    const priced = priceItems(repriced);
 
     const created = await prisma.$transaction(async (tx) => {
       // Allocate inside the txn so a rollback doesn't burn the QUO counter.

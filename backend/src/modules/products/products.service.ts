@@ -101,6 +101,12 @@ const productSelect = {
       mrp: true,
       sellingPrice: true,
       purchasePrice: true,
+      // CAT-H1 — variant-level GST source. Null means "inherit the
+      // product's hsnCode / taxPercent"; the invoice resolver applies
+      // that fallback. Surfaced here so the merchant editor and any
+      // line-pricing caller can see the variant's own slab.
+      hsnCode: true,
+      taxPercent: true,
       stockQuantity: true,
       imageUrls: true,
       isDefault: true,
@@ -147,6 +153,10 @@ export class ProductsService {
         mrp: number;
         sellingPrice: number;
         purchasePrice: number;
+        // CAT-H1 — optional per-variant GST source; null/omitted inherits
+        // the product's hsnCode / taxPercent at invoice time.
+        hsnCode?: string | null;
+        taxPercent?: number;
         stockQuantity?: number;
         imageUrls?: string[];
         isActive?: boolean;
@@ -229,6 +239,10 @@ export class ProductsService {
                 mrp: v.mrp,
                 sellingPrice: v.sellingPrice,
                 purchasePrice: v.purchasePrice,
+                // CAT-H1 — variant-level GST source. Null hsnCode/omitted
+                // taxPercent ⇒ inherit the product's slab at invoice time.
+                hsnCode: v.hsnCode ?? null,
+                ...(v.taxPercent !== undefined && { taxPercent: v.taxPercent }),
                 // CAT-C1 — clamp display stock to the funded product total.
                 stockQuantity: Math.min(v.stockQuantity ?? 0, fundedTotal),
                 imageUrls: v.imageUrls ?? [],
@@ -559,9 +573,23 @@ export class ProductsService {
     });
   }
 
-  lookupProduct(shopId: number, code: string) {
+  /// Barcode/SKU scan resolver for the POS and scan-console. CAT-H4 — by
+  /// default this EXCLUDES only soft-deleted (isActive=false) products: a scan
+  /// of an archived SKU used to hand the cashier a sellable line for a product
+  /// the merchant had deactivated, which the ledger then rejects at OUT-time
+  /// (confusing, and any ledger-bypassing path would oversell a dead SKU).
+  /// NOTE: `isPublished` is marketplace (storefront) visibility, NOT a
+  /// sellability gate — counter inventory is routinely unpublished, so POS must
+  /// still ring it up. Pass `includeInactive` on a merchant path that wants to
+  /// surface an archived SKU; the returned `isActive`/`isPublished` flags let a
+  /// caller decide. Excluding unpublished here breaks every counter sale.
+  lookupProduct(shopId: number, code: string, includeInactive = false) {
     return prisma.product.findFirst({
-      where: { shopId, OR: [{ barcode: code }, { sku: code }] },
+      where: {
+        shopId,
+        ...(includeInactive ? {} : { isActive: true }),
+        OR: [{ barcode: code }, { sku: code }],
+      },
       select: productSelect,
     });
   }
@@ -585,6 +613,10 @@ export class ProductsService {
             mrp: true,
             sellingPrice: true,
             purchasePrice: true,
+            // CAT-H1 — mirror the list projection so the edit form round-trips
+            // each variant's own GST slab (null hsnCode / 0% inherits product).
+            hsnCode: true,
+            taxPercent: true,
             stockQuantity: true,
             imageUrls: true,
             isDefault: true,
@@ -636,6 +668,10 @@ export class ProductsService {
         mrp: number;
         sellingPrice: number;
         purchasePrice: number;
+        // CAT-H1 — optional per-variant GST source; null/omitted inherits
+        // the product's hsnCode / taxPercent at invoice time.
+        hsnCode?: string | null;
+        taxPercent?: number;
         stockQuantity?: number;
         imageUrls?: string[];
         isActive?: boolean;
@@ -770,6 +806,12 @@ export class ProductsService {
               mrp: v.mrp,
               sellingPrice: v.sellingPrice,
               purchasePrice: v.purchasePrice,
+              // CAT-H1 — keep the variant's GST source in sync with the
+              // edit form. hsnCode is always written (null ⇒ inherit);
+              // taxPercent only when supplied so we don't clobber an
+              // existing slab with the column default.
+              hsnCode: v.hsnCode ?? null,
+              ...(v.taxPercent !== undefined && { taxPercent: v.taxPercent }),
               stockQuantity: clampStock(v.stockQuantity),
               imageUrls: v.imageUrls ?? [],
               isActive: v.isActive ?? true,
@@ -791,6 +833,9 @@ export class ProductsService {
               mrp: v.mrp,
               sellingPrice: v.sellingPrice,
               purchasePrice: v.purchasePrice,
+              // CAT-H1 — null hsnCode ⇒ inherit the product's slab.
+              hsnCode: v.hsnCode ?? null,
+              ...(v.taxPercent !== undefined && { taxPercent: v.taxPercent }),
               stockQuantity: clampStock(v.stockQuantity),
               imageUrls: v.imageUrls ?? [],
               isActive: v.isActive ?? true,
