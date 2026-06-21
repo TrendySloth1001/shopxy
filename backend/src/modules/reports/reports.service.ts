@@ -369,23 +369,45 @@ export class ReportsService {
       // Output-tax reversal for refunded returns, pro-rated from the
       // source invoice line by returned quantity and grouped by rate so
       // the headline and by-rate figures stay consistent.
+      //
+      // AUTH-TR-C1: resolve the reversed invoice line via a LATERAL that
+      // returns EXACTLY ONE invoice_items row per return item, so a product
+      // billed on several lines of the same invoice can't fan the reversal
+      // out N×. Preference order inside the LATERAL:
+      //   1. the exact billed line (rri.invoice_item_id) when set;
+      //   2. legacy null rows fall back to the matching (invoice, product)
+      //      line, deterministically pinned to the lowest ii.id so multiple
+      //      same-product lines pick one — never multiply.
+      // This keys off the same per-line resolution the P&L refund leg uses,
+      // so the GST and sales/P&L reports reconcile on identical returns.
       prisma.$queryRaw<
         { tax_rate: string; taxable: string; tax: string; cess: string }[]
       >`
         SELECT
-          ii.tax_percent::text AS tax_rate,
-          COALESCE(SUM(ii.taxable_value * rri.quantity / NULLIF(ii.quantity, 0)), 0)::text AS taxable,
-          COALESCE(SUM((ii.igst_amount + ii.cgst_amount + ii.sgst_amount) * rri.quantity / NULLIF(ii.quantity, 0)), 0)::text AS tax,
-          COALESCE(SUM(ii.cess_amount * rri.quantity / NULLIF(ii.quantity, 0)), 0)::text AS cess
+          line.tax_percent::text AS tax_rate,
+          COALESCE(SUM(line.taxable_value * rri.quantity / NULLIF(line.quantity, 0)), 0)::text AS taxable,
+          COALESCE(SUM((line.igst_amount + line.cgst_amount + line.sgst_amount) * rri.quantity / NULLIF(line.quantity, 0)), 0)::text AS tax,
+          COALESCE(SUM(line.cess_amount * rri.quantity / NULLIF(line.quantity, 0)), 0)::text AS cess
         FROM return_request_items rri
         JOIN return_requests rr ON rr.id = rri.return_id
         JOIN purchase_requests pr ON pr.id = rr.request_id
         JOIN purchase_request_items pri ON pri.id = rri.purchase_request_item_id
         JOIN invoices i ON i.id = pr.invoice_id
-        JOIN invoice_items ii ON ii.invoice_id = i.id AND ii.product_id = pri.product_id
+        JOIN LATERAL (
+          SELECT ii.tax_percent, ii.taxable_value, ii.quantity,
+                 ii.igst_amount, ii.cgst_amount, ii.sgst_amount, ii.cess_amount
+          FROM invoice_items ii
+          WHERE ii.invoice_id = i.id
+            AND (
+              ii.id = rri.invoice_item_id
+              OR (rri.invoice_item_id IS NULL AND ii.product_id = pri.product_id)
+            )
+          ORDER BY (ii.id = rri.invoice_item_id) DESC, ii.id ASC
+          LIMIT 1
+        ) line ON TRUE
         WHERE rr.shop_id = ${shopId} AND rr.status = 'REFUNDED'
           AND i.invoice_date >= ${range.from} AND i.invoice_date < ${range.to}
-        GROUP BY ii.tax_percent
+        GROUP BY line.tax_percent
       `,
     ]);
 
@@ -482,14 +504,32 @@ export class ReportsService {
       // quantity). Subtracting the gross refund here over-stated the hit:
       // revenue is ex-tax, and the GST slice of the refund is reversed in
       // gstSummary, not in the P&L.
+      //
+      // AUTH-TR-C1: same single-line LATERAL resolution as gstSummary's
+      // reversal leg — exactly one invoice_items row per return item
+      // (exact rri.invoice_item_id when set, else the lowest-id matching
+      // (invoice, product) line for legacy nulls). Prevents the old
+      // product_id join from fanning the ex-tax reversal out N× when a
+      // product was billed on several lines of the same invoice, and keeps
+      // the P&L reconciling with the GST report on identical returns.
       prisma.$queryRaw<{ refunds: string }[]>`
-        SELECT COALESCE(SUM(ii.taxable_value * rri.quantity / NULLIF(ii.quantity, 0)), 0)::text AS refunds
+        SELECT COALESCE(SUM(line.taxable_value * rri.quantity / NULLIF(line.quantity, 0)), 0)::text AS refunds
         FROM return_request_items rri
         JOIN return_requests rr ON rr.id = rri.return_id
         JOIN purchase_requests pr ON pr.id = rr.request_id
         JOIN purchase_request_items pri ON pri.id = rri.purchase_request_item_id
         JOIN invoices i ON i.id = pr.invoice_id
-        JOIN invoice_items ii ON ii.invoice_id = i.id AND ii.product_id = pri.product_id
+        JOIN LATERAL (
+          SELECT ii.taxable_value, ii.quantity
+          FROM invoice_items ii
+          WHERE ii.invoice_id = i.id
+            AND (
+              ii.id = rri.invoice_item_id
+              OR (rri.invoice_item_id IS NULL AND ii.product_id = pri.product_id)
+            )
+          ORDER BY (ii.id = rri.invoice_item_id) DESC, ii.id ASC
+          LIMIT 1
+        ) line ON TRUE
         WHERE rr.shop_id = ${shopId} AND rr.status = 'REFUNDED'
           AND i.invoice_date >= ${range.from} AND i.invoice_date < ${range.to}
       `,

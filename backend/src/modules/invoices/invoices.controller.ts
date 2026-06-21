@@ -13,6 +13,10 @@ const itemSchema = z
     /// luxury goods / aerated drinks attract it.
     cessRate: z.number().min(0).max(100).optional(),
     discount: z.number().nonnegative().optional(),
+    /// GST-5 — per-line tax convention. Omitted ⇒ inherit the invoice-wide
+    /// default (which itself defaults to EXCLUSIVE). When true the unit price
+    /// is treated as tax-INCLUSIVE and the engine backs the tax out.
+    isPriceInclusive: z.boolean().optional(),
   })
   // A line discount can never exceed the line's gross value — otherwise it
   // would mint a negative taxable value and negative output GST (H2/H6).
@@ -63,6 +67,10 @@ const createInvoiceSchema = z.object({
   discount: z.number().nonnegative().optional(),
   note: z.string().max(1000).optional(),
   invoiceDate: z.string().datetime().optional(),
+  /// GST-5 — invoice-wide tax convention. Defaults to EXCLUSIVE in the engine
+  /// when omitted, preserving existing merchant manual-invoice behaviour; a
+  /// per-line `isPriceInclusive` still wins over this default.
+  isPriceInclusive: z.boolean().optional(),
   items: z.array(itemSchema).min(1),
   confirm: z.boolean().optional(),
 }).superRefine(refineHeaderDiscount);
@@ -82,6 +90,7 @@ const updateInvoiceSchema = z.object({
   customerGstin: z.string().max(20).optional(),
   discount: z.number().nonnegative().optional(),
   note: z.string().max(1000).optional(),
+  isPriceInclusive: z.boolean().optional(),
   items: z.array(itemSchema).min(1),
 }).superRefine(refineHeaderDiscount);
 

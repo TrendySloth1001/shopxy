@@ -39,6 +39,14 @@ const COLUMNS = [
       { label: "Invitations",   href: "/invitations" },
     ],
   },
+  {
+    heading: "Legal",
+    links: [
+      { label: "Privacy Policy",     href: "/legal/privacy" },
+      { label: "Terms of Service",   href: "/legal/terms" },
+      { label: "Consumer Policies",  href: "/legal/policies" },
+    ],
+  },
 ] as const;
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -63,10 +71,10 @@ export function SiteFooter() {
       <div className="mx-auto max-w-shell px-lg py-xxxl">
 
         {/* ── Column grid ──────────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 gap-xxxl tablet:grid-cols-4">
+        <div className="grid grid-cols-2 gap-xxxl tablet:grid-cols-3 desktop:grid-cols-5">
 
           {/* Brand block */}
-          <div className="col-span-2 tablet:col-span-1">
+          <div className="col-span-2 tablet:col-span-3 desktop:col-span-1">
             <Link
               href="/"
               aria-label="ShopXY home"

@@ -124,6 +124,8 @@ export async function ensureOrderInvoiceReceipts(
       id: true,
       estimatedTotal: true,
       walletPaid: true,
+      couponDiscount: true,
+      couponShopId: true,
       shopOrders: {
         where: { status: 'CONFIRMED', invoiceId: { not: null } },
         select: {
@@ -145,52 +147,105 @@ export async function ensureOrderInvoiceReceipts(
     select: { amount: true, provider: true, providerPaymentRef: true },
   });
 
-  const parentEst = toNumber(order.estimatedTotal);
   const walletPaid = toNumber(order.walletPaid);
   const gatewayPaid = gw ? toNumber(gw.amount) : 0;
   if (!(walletPaid > 0) && !(gatewayPaid > 0)) return { created: 0 };
 
-  // A child's slice of an order-level amount, keyed on its share of the order.
-  // Single-shop orders get the whole amount; multi-shop split proportionally.
-  const shareOf = (total: number, childEst: number): number =>
-    parentEst > 0 ? round2(total * (childEst / parentEst)) : total;
+  // PR-C1 — apportion the collected money by each child's INVOICE TOTAL, not by
+  // the pre-coupon estimatedTotal. Because the customer-order invoice is minted
+  // GST-INCLUSIVE, invoice.total already equals the inclusive amount that child
+  // is owed (with any seller-funded coupon discount baked in). Summing invoice
+  // totals therefore equals the amount actually collected for a fully-paid order
+  // (a platform-funded coupon is the only intentional gap — see the guard
+  // below), so a per-shop slice keyed on invoice total reconciles exactly:
+  // Σ receipts == Σ invoiceTotal == amount collected.
+  const invoiceTotalSum = round2(
+    order.shopOrders.reduce(
+      (s, c) => s + (c.invoice ? toNumber(c.invoice.total) : 0),
+      0,
+    ),
+  );
+  const shareOf = (total: number, childInvoiceTotal: number): number =>
+    invoiceTotalSum > 0 ? round2(total * (childInvoiceTotal / invoiceTotalSum)) : total;
 
   let created = 0;
+  let postedTotal = 0; // Σ of every receipt actually written (capped at outstanding).
   for (const child of order.shopOrders) {
     const invoice = child.invoice;
     if (!invoice || invoice.status !== 'CONFIRMED') continue;
 
     const invoiceTotal = toNumber(invoice.total);
-    const childEst = toNumber(child.estimatedTotal);
     const partyId = invoice.partyId ?? child.partyId ?? null;
 
     // 1. WALLET slice — recompute outstanding right before posting so the cap is
     //    correct even if a gateway receipt already landed (any ordering).
     if (walletPaid > 0) {
-      created += await postReceiptOnce(db, {
+      const before = await invoiceOutstanding(db, invoice.id, invoiceTotal);
+      const n = await postReceiptOnce(db, {
         shopId: child.shopId,
         invoiceId: invoice.id,
         partyId,
-        desired: shareOf(walletPaid, childEst),
-        cap: await invoiceOutstanding(db, invoice.id, invoiceTotal),
+        desired: shareOf(walletPaid, invoiceTotal),
+        cap: before,
         modeReference: null,
         note: 'Wallet payment',
         idempotencyKey: `wltrcpt:o${orderId}:i${invoice.id}`,
       });
+      if (n > 0) postedTotal += round2(Math.min(shareOf(walletPaid, invoiceTotal), before));
+      created += n;
     }
 
     // 2. GATEWAY slice — capped at whatever outstanding remains after wallet.
     if (gatewayPaid > 0 && gw) {
-      created += await postReceiptOnce(db, {
+      const before = await invoiceOutstanding(db, invoice.id, invoiceTotal);
+      const n = await postReceiptOnce(db, {
         shopId: child.shopId,
         invoiceId: invoice.id,
         partyId,
-        desired: shareOf(gatewayPaid, childEst),
-        cap: await invoiceOutstanding(db, invoice.id, invoiceTotal),
+        desired: shareOf(gatewayPaid, invoiceTotal),
+        cap: before,
         modeReference: gw.providerPaymentRef ?? null,
         note: `Online payment (${gw.provider})`,
         idempotencyKey: `gwrcpt:o${orderId}:i${invoice.id}`,
       });
+      if (n > 0) postedTotal += round2(Math.min(shareOf(gatewayPaid, invoiceTotal), before));
+      created += n;
+    }
+  }
+
+  // PR-C1 reconciliation guard — for a fully-paid order, Σ receipts (across every
+  // run, not just this one) must equal Σ invoiceTotal. The only legitimate
+  // shortfall is a PLATFORM-funded coupon (couponShopId == null), which the
+  // platform bears and never posts to a seller invoice. Anything else means the
+  // collected money and the tax invoices have drifted apart — log loudly so it
+  // surfaces in reconciliation instead of silently under/over-paying a seller.
+  const collected = round2(walletPaid + gatewayPaid);
+  const platformCoupon =
+    order.couponShopId == null ? toNumber(order.couponDiscount) : 0;
+  const fullyPaid = collected >= round2(invoiceTotalSum - platformCoupon - 0.01);
+  if (fullyPaid) {
+    const receiptsSum = toNumber(
+      (
+        await db.payment.aggregate({
+          where: {
+            voidedAt: null,
+            type: 'RECEIPT',
+            invoice: { purchaseRequest: { customerOrderId: orderId } },
+          },
+          _sum: { amount: true },
+        })
+      )._sum.amount,
+    );
+    // Expected receipts == invoice totals minus the platform-funded coupon gap.
+    const expected = round2(invoiceTotalSum - platformCoupon);
+    if (Math.abs(receiptsSum - expected) > 0.01) {
+      // eslint-disable-next-line no-console
+      console.error(
+        `[order-receipts] RECONCILE MISMATCH order ${orderId}: ` +
+          `Σreceipts=${receiptsSum} expected=${expected} ` +
+          `(ΣinvoiceTotal=${invoiceTotalSum}, platformCoupon=${platformCoupon}, ` +
+          `collected=${collected}, postedThisRun=${round2(postedTotal)})`,
+      );
     }
   }
 

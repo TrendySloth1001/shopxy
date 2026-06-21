@@ -152,9 +152,20 @@ export class PaymentsController {
       (typeof req.body?.reason === 'string' && req.body.reason) ||
       (typeof req.query?.reason === 'string' && req.query.reason) ||
       null;
-    const ok = await paymentsService.voidPayment(shopId, id, req.user?.sub ?? null, reason);
-    if (!ok) {
+    const result = await paymentsService.voidPayment(shopId, id, req.user?.sub ?? null, reason);
+    if (result === false) {
       res.status(404).json({ error: 'Payment not found' });
+      return;
+    }
+    // PR-C2 — a platform-collected receipt (customer wallet/gateway or a POS
+    // QR/online settlement) can't be silently voided: the funds are already
+    // captured at the platform. Voiding would falsely reopen the invoice's
+    // outstanding. Require a refund / credit-note flow instead.
+    if (result === 'PLATFORM_COLLECTED') {
+      res.status(409).json({
+        error:
+          'This receipt backs a payment the platform already collected (customer wallet/online or a POS QR settlement). Issue a refund or credit note instead of voiding it.',
+      });
       return;
     }
     res.status(204).send();

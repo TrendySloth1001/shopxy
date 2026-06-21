@@ -374,7 +374,7 @@ export class CouponsService {
     customerOrderId: number;
   }): Promise<
     | { error: ValidateError }
-    | { discount: number; couponId: number }
+    | { discount: number; couponId: number; couponShopId: number | null }
   > {
     const code = canon(opts.code);
     if (code.length === 0) return { error: 'NOT_FOUND' };
@@ -460,7 +460,12 @@ export class CouponsService {
         discountAmount: discount,
       },
     });
-    return { discount, couponId: row.id };
+    // CWQ-1 — surface the coupon's owning shop (NULL = platform-wide). The
+    // checkout flow uses this to decide whether the discount is seller-funded
+    // (push onto that shop's invoice as a pre-tax discount, Sec 15(3)(a)) or
+    // platform-funded (kept off the invoice; the seller is still owed full
+    // value and the platform bears the discount).
+    return { discount, couponId: row.id, couponShopId: row.shopId ?? null };
   }
 
   // ── Merchant (shop-scoped) admin surface ─────────────────────────

@@ -12,6 +12,9 @@ const detailSelect = {
   description: true,
   sku: true,
   unit: true,
+  // CAT-C2 — country of origin shown on the PDP; mandatory for imported
+  // goods under Legal Metrology.
+  countryOfOrigin: true,
   mrp: true,
   sellingPrice: true,
   taxPercent: true,

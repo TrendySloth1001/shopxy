@@ -22,6 +22,7 @@ class MarketplaceProduct {
     required this.offers,
     required this.totalSold,
     this.description,
+    this.countryOfOrigin,
     this.ratingAvg,
     this.ratingCount = 0,
     this.shop,
@@ -60,6 +61,11 @@ class MarketplaceProduct {
   final List<ProductOffer> offers;
   final int totalSold;
   final String? description;
+
+  /// Legal Metrology — country of origin (mandatory for imported goods),
+  /// shown on the PDP before add-to-cart. Null for domestic items that
+  /// leave it unset.
+  final String? countryOfOrigin;
   final double? ratingAvg;
   final int ratingCount;
   final MarketplaceShop? shop;
@@ -155,6 +161,9 @@ class MarketplaceProduct {
           : const [],
       totalSold: j['totalSold'] as int? ?? 0,
       description: j['description'] as String?,
+      countryOfOrigin: (j['countryOfOrigin'] as String?)?.trim().isEmpty == false
+          ? (j['countryOfOrigin'] as String).trim()
+          : null,
       ratingAvg: j['ratingAvg'] == null ? null : _asDouble(j['ratingAvg']),
       ratingCount: j['ratingCount'] as int? ?? 0,
       shop: j['shop'] is Map<String, dynamic>

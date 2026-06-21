@@ -78,12 +78,51 @@ export function PdpPriceBlock({ product, selectedVariant }: Props) {
           </span>
         </div>
       ) : null}
-      {product.taxPercent > 0 ? (
+      {/* MRP is ALWAYS shown and labelled inclusive of all taxes (Legal
+          Metrology). When discounted the struck-through M.R.P. above already
+          carries it; otherwise show an explicit MRP line so the consumer
+          always sees the maximum retail price. */}
+      {!isDiscounted ? (
+        <p className="mt-xs text-label-md text-muted">
+          M.R.P. {formatINR(baseMrp)} · inclusive of all taxes
+        </p>
+      ) : (
         <p className="mt-xs text-label-md text-muted">Inclusive of all taxes</p>
-      ) : null}
+      )}
+
+      {/* Legal Metrology / consumer disclosures — country of origin + net
+          quantity where available, shown before add-to-cart. */}
+      <ComplianceBlock product={product} />
 
       {/* Assurance rows: free delivery · returns · authentic */}
       <AssuranceBlock />
     </div>
+  );
+}
+
+// ── Compliance disclosures (country of origin, net quantity) ──────────────────
+
+function ComplianceBlock({ product }: { product: ProductDetail }) {
+  const rows: { label: string; value: string }[] = [];
+  if (product.countryOfOrigin) {
+    rows.push({ label: "Country of origin", value: product.countryOfOrigin });
+  }
+  if (product.unit) {
+    rows.push({ label: "Net quantity", value: product.unit });
+  }
+  if (product.brand) {
+    rows.push({ label: "Marketed by", value: product.brand });
+  }
+  if (rows.length === 0) return null;
+
+  return (
+    <dl className="mt-sm grid grid-cols-[auto_1fr] gap-x-md gap-y-xs">
+      {rows.map((r) => (
+        <div key={r.label} className="contents">
+          <dt className="text-label-md text-muted">{r.label}</dt>
+          <dd className="text-label-md font-semibold text-ink">{r.value}</dd>
+        </div>
+      ))}
+    </dl>
   );
 }

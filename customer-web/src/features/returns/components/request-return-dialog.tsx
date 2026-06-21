@@ -28,6 +28,9 @@ export function RequestReturnDialog({ parentOrderId, shopOrder, onClose, onSubmi
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Rough estimate only — the backend reconciles taxes, line/header discounts
+  // and any partial-quantity proration at processing time, so this is shown as
+  // an estimate, never a guaranteed final refund.
   const refundEstimate = Array.from(picks.values()).reduce(
     (sum, p) => sum + p.quantity * p.unitPrice,
     0,
@@ -149,9 +152,8 @@ export function RequestReturnDialog({ parentOrderId, shopOrder, onClose, onSubmi
                         </p>
                         {selected && (
                           <p className="mt-[2px] text-[11px] font-bold text-success">
-                            Refund: {formatQty(pick!.quantity)} ×{" "}
-                            {formatINR(item.unitPrice, { decimals: 2 })} ={" "}
-                            {formatINR(pick!.quantity * item.unitPrice, { decimals: 2 })}
+                            Returning {formatQty(pick!.quantity)} ×{" "}
+                            {formatINR(item.unitPrice, { decimals: 2 })}
                           </p>
                         )}
                       </div>
@@ -231,11 +233,12 @@ export function RequestReturnDialog({ parentOrderId, shopOrder, onClose, onSubmi
         <div className="flex items-center justify-between border-t border-hairline px-lg py-md flex-shrink-0">
           <div>
             <p className="text-[11px] font-extrabold tracking-[0.4px] text-muted uppercase">
-              Refund to wallet
+              Estimated refund
             </p>
             <p className="text-title-sm font-extrabold text-ink">
               {formatINR(refundEstimate, { decimals: 2 })}
             </p>
+            <p className="text-[10px] text-muted">Taxes & discounts adjusted at processing</p>
           </div>
           <button
             onClick={handleSubmit}

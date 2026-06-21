@@ -1,6 +1,7 @@
 import prisma from '../../infra/db/prisma.js';
 import type { Prisma } from '@prisma/client';
 import { round2 } from '../../shared/numbering/decimal.js';
+import { stateCodeFromName } from '../../shared/validation/indian.js';
 import { resolveActiveProductPromos } from '../banners/promo-pricing.js';
 import { invoicesService } from '../invoices/invoices.service.js';
 import { paymentGatewayService } from '../payment-gateway/index.js';
@@ -460,6 +461,15 @@ export class PurchaseRequestsService {
     let snapshotName: string | null = null;
     let snapshotPhone: string | null = null;
     let snapshotAddress: string | null = null;
+    // PR-C2 — structured place-of-supply snapshot from the SHIPPING address.
+    // `shipStateCode` is the 2-digit GST state code derived from the address's
+    // state name; it is what drives IGST-vs-CGST/SGST on the invoice, not the
+    // party default. Frozen at submit time so a later address edit can't
+    // retro-change the tax on an already-placed order.
+    let shipCity: string | null = null;
+    let shipState: string | null = null;
+    let shipStateCode: string | null = null;
+    let shipPincode: string | null = null;
     if (opts.addressId) {
       const addr = await prisma.userAddress.findFirst({
         where: { id: opts.addressId, userId: opts.customerUserId },
@@ -484,6 +494,13 @@ export class PurchaseRequestsService {
         addr.landmark ? `Landmark: ${addr.landmark}` : null,
       ].filter((s): s is string => !!s && s.trim().length > 0);
       snapshotAddress = lines.join('\n');
+      shipCity = addr.city;
+      shipState = addr.state;
+      shipPincode = addr.pincode;
+      // Map "Maharashtra" → "27". Null when the saved state name doesn't match
+      // a GST state (free-text address); confirmRequest then falls back to the
+      // party/shop default so it never mis-charges IGST on an unknown code.
+      shipStateCode = stateCodeFromName(addr.state);
     }
 
     // ── Build per-shop child payloads + parent total ────────────────
@@ -546,6 +563,11 @@ export class PurchaseRequestsService {
             customerPhone: snapshotPhone,
             customerEmail: user.email,
             customerAddress: snapshotAddress,
+            // PR-C2 — structured place-of-supply snapshot (drives invoice GST).
+            shipCity,
+            shipState,
+            shipStateCode,
+            shipPincode,
             note: opts.note ?? null,
             estimatedTotal: round2(parentTotal),
             idempotencyKey: opts.idempotencyKey ?? null,
@@ -559,6 +581,8 @@ export class PurchaseRequestsService {
         // entirely. The discount lands on parent.couponDiscount and is
         // surfaced back to the controller in the response payload.
         let couponDiscount = 0;
+        // CWQ-1 — owning shop of a seller-funded coupon (NULL = platform-funded).
+        let couponShopId: number | null = null;
         if (opts.couponCode && opts.couponCode.trim().length > 0) {
           const result = await couponsService.redeem({
             tx,
@@ -571,6 +595,7 @@ export class PurchaseRequestsService {
             throw new CouponRedeemError(result.error);
           }
           couponDiscount = result.discount;
+          couponShopId = result.couponShopId;
         }
 
         // ── Wallet debit ──────────────────────────────────────────────
@@ -635,6 +660,10 @@ export class PurchaseRequestsService {
             data: {
               couponDiscount: round2(couponDiscount),
               walletPaid: round2(walletPaid),
+              // CWQ-1 — record the seller-funded coupon's shop so confirmRequest
+              // pushes the discount onto only THAT shop's invoice (pre-tax).
+              // NULL for a platform-funded coupon → stays off every invoice.
+              couponShopId,
             },
           });
         }
@@ -655,6 +684,12 @@ export class PurchaseRequestsService {
               customerPhone: child.customerPhone,
               customerEmail: user.email,
               customerAddress: child.customerAddress,
+              // PR-C2 — mirror the structured place-of-supply snapshot onto the
+              // child so confirmRequest reads it without a parent join.
+              shipCity,
+              shipState,
+              shipStateCode,
+              shipPincode,
               note: opts.note ?? null,
               estimatedTotal: child.estimatedTotal,
               items: { create: child.items },
@@ -1139,11 +1174,15 @@ export class PurchaseRequestsService {
         select: { id: true },
       });
       for (const r of receipts) {
+        // This IS the refund flow (the money is handed back to the wallet
+        // below), so bypass the PR-C2 platform-collected void guard — that
+        // guard only exists to stop a bare, unaccompanied merchant void.
         await paymentsService.voidPayment(
           shopId,
           r.id,
           opts.userId,
           'Order cancelled by customer — refunded to wallet',
+          { allowPlatformCollected: true },
         );
       }
     }
@@ -1352,11 +1391,15 @@ export class PurchaseRequestsService {
         where: { id: opts.requestId },
         include: {
           items: true,
-          // Needed to apportion the order-level coupon discount onto this
-          // shop's invoice (H4). The coupon was applied across the whole
-          // CustomerOrder; this child shop earns its proportional slice.
+          // Coupon apportionment (CWQ-1) needs the order-level coupon + the
+          // owning shop of a seller-funded coupon. couponShopId NULL means a
+          // platform-funded coupon → it stays off every invoice.
           customerOrder: {
-            select: { couponDiscount: true, estimatedTotal: true },
+            select: {
+              couponDiscount: true,
+              estimatedTotal: true,
+              couponShopId: true,
+            },
           },
         },
       });
@@ -1388,6 +1431,13 @@ export class PurchaseRequestsService {
               phone: request.customerPhone,
               email: request.customerEmail,
               address: request.customerAddress,
+              // PR-C2 — snapshot the structured delivery state onto the party
+              // so the merchant's party ledger carries the place-of-supply the
+              // invoice was taxed against.
+              city: request.shipCity,
+              state: request.shipState,
+              stateCode: request.shipStateCode,
+              pinCode: request.shipPincode,
               linkedUserId: request.customerUserId,
             },
             select: { id: true },
@@ -1401,19 +1451,35 @@ export class PurchaseRequestsService {
       // both the invoice rows and the ledger entries either both
       // succeed or both roll back. We surface failures back to the
       // caller and revert our PROCESSING claim.
-      // This shop's slice of the order-level coupon (H4). The coupon was
-      // applied across the whole CustomerOrder at submit time; each child
-      // shop earns its proportional share so the invoice bills — and
-      // charges GST on (Sec 15(3)) — the post-coupon net the customer
-      // actually owes, instead of the full pre-coupon amount.
+      //
+      // CWQ-1 — coupon → invoice discount, only when SELLER-FUNDED.
+      //   A seller-scoped coupon (customerOrder.couponShopId != null) is the
+      //   seller's own discount: it reduces the consideration THIS seller
+      //   receives, so it belongs on this shop's tax invoice as a pre-tax
+      //   header discount and GST is charged on the net (Sec 15(3)(a)).
+      //   Because a seller coupon is bound to exactly one shop, the whole
+      //   discount lands on that shop's invoice (capped at this shop's
+      //   subtotal) — NOT apportioned across siblings.
+      //   A platform-funded coupon (couponShopId == null) is borne by the
+      //   platform: the seller is owed full value, so it stays OFF every
+      //   invoice and out of the GST base. The customer still paid less, and
+      //   the gap is the platform's marketing cost (settled out-of-band).
       const order = request.customerOrder;
       const orderCoupon = Number(order.couponDiscount) || 0;
-      const parentTotal = Number(order.estimatedTotal) || 0;
       const thisShopTotal = Number(request.estimatedTotal) || 0;
+      const isSellerFundedForThisShop =
+        order.couponShopId != null && order.couponShopId === request.shopId;
+      // Cap at this shop's subtotal so the invoice can't go negative; the
+      // engine also clamps, this is defence-in-depth + a correct charged total.
       const couponShare =
-        orderCoupon > 0 && parentTotal > 0
-          ? round2(orderCoupon * (thisShopTotal / parentTotal))
+        isSellerFundedForThisShop && orderCoupon > 0
+          ? round2(Math.min(orderCoupon, thisShopTotal))
           : 0;
+
+      // PR-C2 — place of supply = the SHIPPING address's GST state code, with
+      // the party default as the fallback when the address had no resolvable
+      // state. The invoice engine decides IGST vs CGST/SGST from this (Sec 10).
+      const placeOfSupplyStateCode = request.shipStateCode ?? undefined;
 
       const result = await invoicesService.createInvoice({
         shopId: request.shopId,
@@ -1421,8 +1487,18 @@ export class PurchaseRequestsService {
         partyId,
         customerName: request.customerName,
         customerPhone: request.customerPhone ?? undefined,
+        placeOfSupplyStateCode,
         note: opts.note ?? request.note ?? undefined,
-        // Header discount = this shop's coupon share (H4).
+        // PR-C1 — the snapshot unitPrice is the marketplace sellingPrice, which
+        // is GST-INCLUSIVE (Legal Metrology MRP convention; the storefront
+        // labels prices "inclusive of all taxes"). Tell the invoice engine to
+        // back the tax out of each line so taxable + GST == the inclusive
+        // amount the customer is actually charged — making the tax-invoice
+        // total equal the amount collected (and the receipts that reconcile
+        // against it).
+        isPriceInclusive: true,
+        // Header discount = this shop's seller-funded coupon share (CWQ-1),
+        // applied BEFORE tax inside the engine (Sec 15(3)(a)).
         discount: couponShare > 0 ? couponShare : undefined,
         items: request.items.map((i) => ({
           productId: i.productId,

@@ -172,6 +172,19 @@ export async function returnSale(
         });
       }
 
+      // Resolve the caller's open shift BEFORE issuing the note. A cash refund
+      // MUST book a REFUND drawer movement, so a cash refund without an open
+      // shift would silently skip the drawer entry and corrupt reconciliation
+      // (CASH-3). Reject it up front rather than complete an unbooked refund.
+      const shift = await tx.cashierShift.findFirst({
+        where: { shopId, openedById: userId, status: 'OPEN' },
+        orderBy: { id: 'desc' },
+        select: { id: true },
+      });
+      if (input.refundMode === 'CASH' && !shift) {
+        throw new PosInvoiceError('Open a shift to issue a cash refund');
+      }
+
       const creditNote = await invoicesService.createSalesReturnInTx(
         tx,
         {
@@ -185,29 +198,25 @@ export async function returnSale(
           items,
         },
         userId,
+        // CASH-1 — tie the credit note to the issuing shift (null when none open,
+        // which only happens for non-cash refunds; cash was rejected above).
+        shift?.id,
       );
 
       // Cash refund → reduce the drawer via a REFUND movement on the open shift.
       let cashDrawerAdjusted = false;
-      if (input.refundMode === 'CASH') {
-        const shift = await tx.cashierShift.findFirst({
-          where: { shopId, openedById: userId, status: 'OPEN' },
-          orderBy: { id: 'desc' },
-          select: { id: true },
+      if (input.refundMode === 'CASH' && shift) {
+        await tx.cashMovement.create({
+          data: {
+            shopId,
+            shiftId: shift.id,
+            type: 'REFUND',
+            amount: creditNote.total,
+            reason: `Refund · credit note ${creditNote.invoiceNo}`,
+            createdById: userId,
+          },
         });
-        if (shift) {
-          await tx.cashMovement.create({
-            data: {
-              shopId,
-              shiftId: shift.id,
-              type: 'REFUND',
-              amount: creditNote.total,
-              reason: `Refund · credit note ${creditNote.invoiceNo}`,
-              createdById: userId,
-            },
-          });
-          cashDrawerAdjusted = true;
-        }
+        cashDrawerAdjusted = true;
       }
 
       return {

@@ -3,7 +3,7 @@ import { z } from 'zod';
 import * as pos from './pos.service.js';
 import * as posPay from './pos.payments.js';
 import { openShiftIdFor } from '../cashier/cashier.service.js';
-import { verifyOverride } from '../cashier/override.js';
+import { verifyOverride, type OverrideOp } from '../cashier/override.js';
 import type { WsAuthCtx } from '../scan-console/scan-console.service.js';
 import { hasRight, manageRight, POS_OVERRIDE_RIGHT } from '../../shared/http/permissions.js';
 import { logger } from '../../shared/logging/logger.js';
@@ -98,12 +98,18 @@ export function handlePosCommand(ws: WebSocket, ctx: WsAuthCtx, msg: Record<stri
   // Privileged-action gate: discounts, price overrides, and voids require the
   // `invoices:override` right OR a fresh manager-authorisation grant replayed by
   // the client. Without either, reply OVERRIDE_REQUIRED so the till prompts.
+  //
+  // CASH-2 — the replayed grant is single-use and bound to THIS sale + op, so it
+  // can't be replayed twice or aimed at a different action. We resolve saleId
+  // here from the parsed command (the same id the op runs against).
   const requireOverride = async <T>(
+    overrideOp: OverrideOp,
     run: () => Promise<T>,
   ): Promise<T | { error: string; detail: { code: string } }> => {
     if (hasRight(ctx.shopRole as never, ctx.permissions, POS_OVERRIDE_RIGHT)) return run();
     const grant = typeof msg.override === 'string' ? msg.override : undefined;
-    if (verifyOverride(grant, shopId)) return run();
+    const targetSaleId = a.saleId;
+    if (await verifyOverride(grant, shopId, targetSaleId, overrideOp)) return run();
     return { error: 'Manager authorisation required for this action.', detail: { code: 'OVERRIDE_REQUIRED' } };
   };
 
@@ -130,16 +136,16 @@ export function handlePosCommand(ws: WebSocket, ctx: WsAuthCtx, msg: Record<stri
       void reply(ws, reqId, () => requireShift(() => pos.setQty(shopId, a.saleId, a.productId, a.quantity)));
       return;
     case 'setLineDiscount':
-      void reply(ws, reqId, () => requireShift(() => requireOverride(() => pos.setLineDiscount(shopId, a.saleId, a.productId, a.discount))));
+      void reply(ws, reqId, () => requireShift(() => requireOverride('setLineDiscount', () => pos.setLineDiscount(shopId, a.saleId, a.productId, a.discount))));
       return;
     case 'setUnitPrice':
-      void reply(ws, reqId, () => requireShift(() => requireOverride(() => pos.setUnitPrice(shopId, a.saleId, a.productId, a.unitPrice))));
+      void reply(ws, reqId, () => requireShift(() => requireOverride('setUnitPrice', () => pos.setUnitPrice(shopId, a.saleId, a.productId, a.unitPrice))));
       return;
     case 'removeLine':
       void reply(ws, reqId, () => requireShift(() => pos.removeLine(shopId, a.saleId, a.productId)));
       return;
     case 'setHeaderDiscount':
-      void reply(ws, reqId, () => requireShift(() => requireOverride(() => pos.setHeaderDiscount(shopId, a.saleId, a.discount))));
+      void reply(ws, reqId, () => requireShift(() => requireOverride('setHeaderDiscount', () => pos.setHeaderDiscount(shopId, a.saleId, a.discount))));
       return;
     case 'quickAdd':
       // Creating catalogue is products:manage — beyond the POS area's invoices gate.
@@ -157,7 +163,7 @@ export function handlePosCommand(ws: WebSocket, ctx: WsAuthCtx, msg: Record<stri
       );
       return;
     case 'void':
-      void reply(ws, reqId, () => requireShift(() => requireOverride(() => pos.voidSale(shopId, a.saleId))));
+      void reply(ws, reqId, () => requireShift(() => requireOverride('void', () => pos.voidSale(shopId, a.saleId))));
       return;
     case 'payOnline':
       // Online tender: lock the cart + create a Razorpay order; the till opens

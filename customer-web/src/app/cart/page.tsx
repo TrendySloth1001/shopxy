@@ -8,6 +8,7 @@ import { useAuth } from "@/features/auth/auth-context";
 import { AppHeader } from "@/features/auth/components/app-header";
 import { BackButton } from "@/shared/ui/back-button";
 import { formatINR } from "@/shared/format";
+import { deriveInclusiveTaxBreakup, type TaxBreakup } from "@/shared/tax";
 import { useState } from "react";
 import { mediaSrc } from "@/shared/media";
 
@@ -28,6 +29,15 @@ export default function CartPage() {
   const [cappedIds, setCappedIds] = useState<Set<number>>(new Set());
 
   const mrpTotal = lines.reduce((s, l) => s + l.product.mrp * l.quantity, 0);
+
+  // GST breakup — selling prices are tax-inclusive, so back the tax out of the
+  // line amounts grouped by rate to show the "of which taxes" split.
+  const taxBreakup = deriveInclusiveTaxBreakup(
+    lines.map((l) => ({
+      inclusiveAmount: l.product.sellingPrice * l.quantity,
+      taxPercent: l.product.taxPercent,
+    })),
+  );
 
   function showCapped(productId: number) {
     setCappedIds((prev) => new Set(prev).add(productId));
@@ -209,7 +219,12 @@ export default function CartPage() {
               </div>
 
               {/* Bill summary */}
-              <BillCard subtotal={subtotal} mrpTotal={mrpTotal} savings={savings} />
+              <BillCard
+                subtotal={subtotal}
+                mrpTotal={mrpTotal}
+                savings={savings}
+                taxBreakup={taxBreakup}
+              />
 
               {/* Safe and secure strip */}
               <div className="flex items-center gap-md rounded-lg bg-brand-soft px-md py-sm">
@@ -338,10 +353,12 @@ function BillCard({
   subtotal,
   mrpTotal,
   savings,
+  taxBreakup,
 }: {
   subtotal: number;
   mrpTotal: number;
   savings: number;
+  taxBreakup: TaxBreakup;
 }) {
   return (
     <div className="rounded-md bg-white p-md">
@@ -371,6 +388,28 @@ function BillCard({
           value={formatINR(subtotal)}
           bold
         />
+        {/* GST breakup — prices are inclusive of tax; this is the "of which"
+            split backed out of the item amounts. */}
+        {taxBreakup.taxTotal > 0 && (
+          <div className="mt-xs flex flex-col gap-xs border-t border-hairline pt-xs">
+            <BillRow
+              label="Taxable value"
+              value={formatINR(taxBreakup.taxableValue, { decimals: 2 })}
+              valueClass="text-muted"
+            />
+            {taxBreakup.perRate.map((r) => (
+              <BillRow
+                key={r.rate}
+                label={`GST @ ${r.rate}% (incl.)`}
+                value={formatINR(r.tax, { decimals: 2 })}
+                valueClass="text-muted"
+              />
+            ))}
+            <p className="text-label-md text-muted">
+              Prices are inclusive of all taxes.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

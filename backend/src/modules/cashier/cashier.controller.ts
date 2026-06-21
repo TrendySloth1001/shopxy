@@ -137,10 +137,12 @@ export const cashierController = {
       res.status(400).json({ error: 'Invalid return payload' });
       return;
     }
-    // Returns are a privileged action: require the override right or a manager grant.
+    // Returns are a privileged action: require the override right or a manager
+    // grant. CASH-2 — the grant is single-use and bound to THIS original sale +
+    // the 'return' op, so it can't be replayed or reused for another action.
     const allowed =
       hasRight(req.user!.shopRole, req.user!.shopPermissions, POS_OVERRIDE_RIGHT) ||
-      verifyOverride(parsed.data.override, req.shopId!) != null;
+      (await verifyOverride(parsed.data.override, req.shopId!, parsed.data.originalInvoiceId, 'return')) != null;
     if (!allowed) {
       res.status(403).json({ error: 'Manager authorisation required to process a return.', code: 'OVERRIDE_REQUIRED' });
       return;
@@ -161,7 +163,13 @@ export const cashierController = {
       res.status(400).json({ error: 'Enter the manager email and password' });
       return;
     }
-    const r = await authorizeOverride(req.shopId!, parsed.data.email, parsed.data.password);
+    const r = await authorizeOverride(
+      req.shopId!,
+      parsed.data.email,
+      parsed.data.password,
+      parsed.data.saleId,
+      parsed.data.op,
+    );
     if (isErr(r)) {
       res.status(403).json(r);
       return;
@@ -184,4 +192,9 @@ const returnSchema = z.object({
 const authorizeSchema = z.object({
   email: z.string().trim().email().max(200),
   password: z.string().min(1).max(200),
+  /// CASH-2 — the grant is bound to one sale (the POS saleId, or the original
+  /// invoice id for a return) + one privileged op, so it is single-use and
+  /// can't be replayed against a different action.
+  saleId: z.number().int().positive(),
+  op: z.enum(['setLineDiscount', 'setUnitPrice', 'setHeaderDiscount', 'void', 'return']),
 });

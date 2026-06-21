@@ -58,6 +58,9 @@ const productSelect = {
   sku: true,
   barcode: true,
   hsnCode: true,
+  // CAT-C2 — surfaced on the PDP and required on labels/invoices for
+  // imported goods.
+  countryOfOrigin: true,
   mrp: true,
   sellingPrice: true,
   purchasePrice: true,
@@ -119,6 +122,7 @@ export class ProductsService {
       sku: string;
       barcode?: string;
       hsnCode?: string;
+      countryOfOrigin?: string;
       brand?: string;
       mrp: number;
       sellingPrice: number;
@@ -167,6 +171,15 @@ export class ProductsService {
     if (!options.shopId) {
       throw new Error('createProduct requires options.shopId');
     }
+
+    // CAT-C1 — variant stockQuantity is a DISPLAY-ONLY breakdown of the
+    // ledgered product total (the single source of truth read by the cart
+    // and order-confirm decrement). A variant must never advertise more
+    // units than the product is actually funded for, or the PDP swatch would
+    // show "in stock" for inventory that doesn't exist (oversell). We clamp
+    // each variant's stock to the funded product total here at write time.
+    // The product total at create is whatever the OPENING ledger post funds.
+    const fundedTotal = stockQuantity && stockQuantity > 0 ? stockQuantity : 0;
     const product = await prisma.product.create({
       data: {
         ...rest,
@@ -216,7 +229,8 @@ export class ProductsService {
                 mrp: v.mrp,
                 sellingPrice: v.sellingPrice,
                 purchasePrice: v.purchasePrice,
-                stockQuantity: v.stockQuantity ?? 0,
+                // CAT-C1 — clamp display stock to the funded product total.
+                stockQuantity: Math.min(v.stockQuantity ?? 0, fundedTotal),
                 imageUrls: v.imageUrls ?? [],
                 isActive: v.isActive ?? true,
                 sortOrder: v.sortOrder ?? i,
@@ -596,6 +610,7 @@ export class ProductsService {
       sku?: string;
       barcode?: string | null;
       hsnCode?: string | null;
+      countryOfOrigin?: string | null;
       brand?: string | null;
       mrp?: number;
       sellingPrice?: number;
@@ -633,6 +648,43 @@ export class ProductsService {
     // a separate guard query. count=0 → either id doesn't exist OR
     // belongs to another shop. Either way: 404 from the controller.
     const { specs, offers, contentBlocks, variantAxes, variants, ...rest } = data;
+
+    // CAT-C3 — Legal Metrology s.18/s.36: selling price can never exceed MRP.
+    // The controller refine already rejects a patch that supplies BOTH and
+    // violates it; here we also catch a partial patch (only one of the pair)
+    // by resolving the effective values against the persisted, shop-scoped row.
+    if (data.mrp !== undefined || data.sellingPrice !== undefined) {
+      const current = await prisma.product.findFirst({
+        where: { id, shopId },
+        select: { mrp: true, sellingPrice: true },
+      });
+      if (!current) return null;
+      const effectiveMrp = new Prisma.Decimal(data.mrp ?? current.mrp);
+      const effectiveSelling = new Prisma.Decimal(
+        data.sellingPrice ?? current.sellingPrice,
+      );
+      if (effectiveSelling.greaterThan(effectiveMrp)) {
+        throw new HttpError(
+          400,
+          'SELLING_ABOVE_MRP',
+          'Selling price cannot exceed MRP.',
+        );
+      }
+    }
+
+    // CAT-C3 — same invariant for every supplied variant row.
+    if (variants !== undefined) {
+      for (const v of variants) {
+        if (new Prisma.Decimal(v.sellingPrice).greaterThan(new Prisma.Decimal(v.mrp))) {
+          throw new HttpError(
+            400,
+            'SELLING_ABOVE_MRP',
+            'Variant selling price cannot exceed its MRP.',
+          );
+        }
+      }
+    }
+
     const result = await prisma.product.updateMany({
       where: { id, shopId },
       data: {
@@ -671,6 +723,19 @@ export class ProductsService {
     // the create path. The ledgered product total is authoritative; this
     // write does not (and must not) post to the inventory ledger.
     if (variants !== undefined) {
+      // CAT-C1 — variant stockQuantity is a display-only breakdown of the
+      // ledgered product total (the single source of truth used by the cart
+      // and order-confirm decrement). This edit path never touches the
+      // ledger, so it must never let a variant advertise more than the
+      // product is funded for. Clamp every write to the persisted, ledgered
+      // product total. (Stock changes go through the ledger, not here.)
+      const fundedRow = await prisma.product.findFirst({
+        where: { id, shopId },
+        select: { stockQuantity: true },
+      });
+      const fundedTotal = Number(fundedRow?.stockQuantity ?? 0);
+      const clampStock = (q?: number) => Math.min(q ?? 0, fundedTotal);
+
       const existing = await prisma.productVariant.findMany({
         where: { productId: id },
         select: { id: true },
@@ -705,7 +770,7 @@ export class ProductsService {
               mrp: v.mrp,
               sellingPrice: v.sellingPrice,
               purchasePrice: v.purchasePrice,
-              stockQuantity: v.stockQuantity ?? 0,
+              stockQuantity: clampStock(v.stockQuantity),
               imageUrls: v.imageUrls ?? [],
               isActive: v.isActive ?? true,
               sortOrder: v.sortOrder ?? i,
@@ -726,7 +791,7 @@ export class ProductsService {
               mrp: v.mrp,
               sellingPrice: v.sellingPrice,
               purchasePrice: v.purchasePrice,
-              stockQuantity: v.stockQuantity ?? 0,
+              stockQuantity: clampStock(v.stockQuantity),
               imageUrls: v.imageUrls ?? [],
               isActive: v.isActive ?? true,
               sortOrder: v.sortOrder ?? i,
@@ -766,7 +831,12 @@ export class ProductsService {
     if (isPublished) {
       const target = await prisma.product.findFirst({
         where: { id, shopId },
-        select: { taxPercent: true },
+        select: {
+          taxPercent: true,
+          mrp: true,
+          sellingPrice: true,
+          variants: { select: { mrp: true, sellingPrice: true } },
+        },
       });
       if (!target) return null;
       if (target.taxPercent === null || target.taxPercent === undefined) {
@@ -774,6 +844,31 @@ export class ProductsService {
           400,
           'TAX_RATE_REQUIRED',
           'Set a GST tax rate on this product before publishing it.',
+        );
+      }
+      // CAT-C3 — never let a product whose selling price exceeds its MRP go
+      // live on the storefront (Legal Metrology s.18/s.36). Re-checked here
+      // (not only at write time) so a row created before this guard, or via
+      // any non-controller path, can't reach customers above MRP.
+      if (
+        new Prisma.Decimal(target.sellingPrice).greaterThan(
+          new Prisma.Decimal(target.mrp),
+        )
+      ) {
+        throw new HttpError(
+          400,
+          'SELLING_ABOVE_MRP',
+          'Selling price cannot exceed MRP; fix it before publishing.',
+        );
+      }
+      const offendingVariant = target.variants.find((v) =>
+        new Prisma.Decimal(v.sellingPrice).greaterThan(new Prisma.Decimal(v.mrp)),
+      );
+      if (offendingVariant) {
+        throw new HttpError(
+          400,
+          'SELLING_ABOVE_MRP',
+          'A variant selling price exceeds its MRP; fix it before publishing.',
         );
       }
     }

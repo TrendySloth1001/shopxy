@@ -60,6 +60,14 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
   // PURCHASE always falls back to TAX_INVOICE on the wire.
   String _documentType = 'TAX_INVOICE';
 
+  // GST tax convention. Default false = EXCLUSIVE: unit prices are pre-tax and
+  // GST is added on top (the existing merchant manual-invoice behaviour — never
+  // change this silently). When true = INCLUSIVE (matches the backend
+  // `isPriceInclusive` flag and the marketplace "inclusive of all taxes" path):
+  // the entered unit price ALREADY contains tax and the engine backs it out, so
+  // the displayed tax isn't double-added.
+  bool _isPriceInclusive = false;
+
   // Walk-in place-of-supply (used when no party is selected on a SALE).
   // Defaults to the shop's own state code once auth has loaded, which
   // gives the intrastate split out of the box.
@@ -208,14 +216,24 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
     for (final i in _items) {
       final lineBase = i.subtotal; // qty*price − line discount
       final net = lineBase - hd * (lineBase / base);
-      tax += net * i.taxPercent / 100;
+      if (_isPriceInclusive) {
+        // Inclusive: the net amount already contains tax — back it out so the
+        // preview matches the backend and tax isn't double-added.
+        final lineTaxable = net * 100 / (100 + i.taxPercent);
+        tax += net - lineTaxable;
+      } else {
+        tax += net * i.taxPercent / 100;
+      }
     }
     return tax;
   }
-  // Net taxable after every discount.
-  double get _taxableValue => _subtotal - _headerDiscount;
-  // Header discount is now applied BEFORE tax, so the pre-roundoff total is
-  // simply net taxable + tax (no post-tax subtraction).
+  // Net taxable after every discount. For inclusive pricing the tax already
+  // sits inside the line amount, so taxable = net amount − tax.
+  double get _taxableValue =>
+      _isPriceInclusive ? _subtotal - _headerDiscount - _totalTax : _subtotal - _headerDiscount;
+  // Exclusive: total = net taxable + tax. Inclusive: the net amount already
+  // includes tax, so total = (subtotal − header discount) directly; written as
+  // taxable + tax it reduces to the same number.
   double get _rawTotal => _taxableValue + _totalTax;
   // Indian invoices commonly round to the nearest rupee. We compute the
   // diff the same way the backend does so the UI matches the saved row.
@@ -369,6 +387,10 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
               'unitPrice': i.unitPrice,
               'taxPercent': i.taxPercent,
               'discount': i.discount,
+              // GST-5 — send the tax convention per line so the backend engine
+              // computes the same total the preview shows. Defaults to false
+              // (exclusive) so existing merchant manual invoices are unchanged.
+              'isPriceInclusive': _isPriceInclusive,
             },
           )
           .toList();
@@ -823,6 +845,27 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                 ),
                 const SizedBox(height: AppSizes.md),
               ],
+              // GST-5 — tax convention toggle. OFF (default) = unit prices are
+              // pre-tax and GST is added on top (existing behaviour). ON = the
+              // entered unit prices already include GST and the engine backs it
+              // out, matching the marketplace "inclusive of all taxes" path.
+              SwitchListTile.adaptive(
+                contentPadding: EdgeInsets.zero,
+                dense: true,
+                value: _isPriceInclusive,
+                onChanged: (v) => setState(() => _isPriceInclusive = v),
+                title: Text(
+                  'Prices include GST',
+                  style: theme.textTheme.bodyMedium,
+                ),
+                subtitle: Text(
+                  _isPriceInclusive
+                      ? 'Tax is backed out of the entered prices'
+                      : 'GST is added on top of the entered prices',
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: AppColors.muted),
+                ),
+              ),
               _TotalRow(label: AppStrings.subtotal, value: _subtotal),
               // GST split: same formula as the backend — line.taxableValue =
               // qty*price − discount, line tax = taxableValue * rate / 100.

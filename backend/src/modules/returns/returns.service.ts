@@ -1,8 +1,8 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
-import { round2 } from '../../shared/numbering/decimal.js';
+import { round2, toNumber } from '../../shared/numbering/decimal.js';
 import { walletService } from '../wallet/wallet.service.js';
-import { ledgerService } from '../ledger/ledger.service.js';
+import { invoicesService, PosInvoiceError } from '../invoices/invoices.service.js';
 import { reverseTransferForReturn } from '../payment-gateway/settlement/transfer-actions.js';
 
 /// Canonical return reasons. Kept loose (string) on the DB so adding
@@ -427,9 +427,23 @@ export class ReturnsService {
     });
   }
 
-  /// REFUND — terminal transition. Credits the wallet inside the same
-  /// transaction as the status flip so a partial failure can't leave
-  /// the row REFUNDED without a ledger entry.
+  /// REFUND — terminal transition. Mints a GST **credit note** for the
+  /// returned lines, credits the wallet, and (via the credit note) restocks
+  /// the goods — all inside the same transaction as the status flip so a
+  /// partial failure can't leave the row REFUNDED without its accounting
+  /// document, wallet entry, or stock movement.
+  ///
+  /// PR-C1 — the online customer-order return previously credited the wallet
+  /// and restocked but minted NO credit note, so the output GST charged on the
+  /// original sale was never reversed (the shop kept tax on goods that came
+  /// back) and the merchant ledger showed no offsetting document. We now route
+  /// this path through the SAME `createSalesReturnInTx` machinery the POS /
+  /// merchant return uses: it issues a CONFIRMED CREDIT_NOTE linked to the
+  /// original SALE invoice, reverses CGST/SGST/IGST proportionally on the
+  /// ORIGINAL invoice's stored place-of-supply (GST-7), restocks the goods
+  /// (RETURN_IN), and sets the credit note's createdById/shiftId. The wallet /
+  /// cash refund amount is then the credit note's tax-inclusive total, so the
+  /// money returned equals the document.
   async refund(opts: {
     shopId: number;
     id: number;
@@ -438,19 +452,11 @@ export class ReturnsService {
     note?: string | null;
   }): Promise<
     | { ok: true; walletEntryId: number | null; refundAmount: number }
-    | { error: 'NOT_FOUND' | 'BAD_STATE' }
+    | { error: 'NOT_FOUND' | 'BAD_STATE' | 'NO_ORIGINAL_INVOICE' | 'CREDIT_NOTE_FAILED' }
   > {
     // Captured inside the tx for the post-commit Route reversal (below).
     let reverseChildId: number | null = null;
     let reverseAmount = 0;
-    // Captured inside the tx for the post-commit inventory restock (RET-1).
-    let restockLines: Array<{
-      productId: number;
-      quantity: number;
-      sourceLineId: number;
-      unitPrice: number;
-    }> = [];
-    let restockReturnId: number | null = null;
     const result = await prisma.$transaction(async (tx) => {
       // Claim the row from a refund-eligible state.
       const claim = await tx.returnRequest.updateMany({
@@ -480,7 +486,8 @@ export class ReturnsService {
           customerUserId: true,
           refundAmount: true,
           requestId: true,
-          // Returned line items — used to restock inventory (RET-1).
+          // Returned line items — feed the credit note (which both reverses
+          // GST and restocks the goods).
           items: {
             select: {
               id: true,
@@ -491,9 +498,8 @@ export class ReturnsService {
           // Reach into the parent order so we know how much of the
           // original payment came from wallet credit. We must credit
           // wallet money BACK to the wallet regardless of refund method.
-          // invoiceId locates the original sale's STOCK_OUT rows so the
-          // restock below re-enters the goods at the cost they were
-          // consumed at.
+          // invoiceId locates the original SALE invoice the credit note is
+          // raised against (links the reversal + sources the line tax fields).
           request: {
             select: {
               invoiceId: true,
@@ -508,8 +514,124 @@ export class ReturnsService {
           },
         },
       });
-      const refundAmount = Number(row.refundAmount);
       const method = (opts.method ?? 'WALLET').toUpperCase();
+
+      // PR-C1 — mint the GST credit note for the returned lines BEFORE settling
+      // the cash, so the refund amount is the document's tax-inclusive total
+      // (not the wallet-proportional `refundAmount` stored at request time).
+      const originalInvoiceId = row.request?.invoiceId ?? null;
+      if (originalInvoiceId == null) {
+        // No SALE invoice means there is no document to reverse GST against —
+        // refuse rather than silently fall back to a no-credit-note refund.
+        return { error: 'NO_ORIGINAL_INVOICE' as const };
+      }
+
+      // Load the ORIGINAL invoice's lines (shop-scoped) so the credit note
+      // mirrors each returned line's frozen unitPrice / discount / tax / cess
+      // and — critically — its `isPriceInclusive` flag. Customer-order sales
+      // are GST-inclusive (MRP), so the credit note must back tax out the same
+      // way; copying the flag keeps the reversal exact. We also inherit the
+      // original invoice's shiftId (a POS-online sale carries one; a pure
+      // online order does not) so a cash-drawer-funded sale's reversal scopes
+      // to the right Z-report.
+      const originalInvoice = await tx.invoice.findFirst({
+        where: { id: originalInvoiceId, shopId: opts.shopId, type: 'SALE' },
+        select: {
+          id: true,
+          shiftId: true,
+          partyId: true,
+          customerName: true,
+          customerPhone: true,
+          placeOfSupplyStateCode: true,
+          items: {
+            select: {
+              productId: true,
+              quantity: true,
+              unitPrice: true,
+              discount: true,
+              taxPercent: true,
+              cessRate: true,
+              isPriceInclusive: true,
+            },
+          },
+        },
+      });
+      if (!originalInvoice) {
+        return { error: 'NO_ORIGINAL_INVOICE' as const };
+      }
+      const origByProduct = new Map(
+        originalInvoice.items.map((it) => [it.productId, it]),
+      );
+
+      // Build the credit-note lines from the returned quantities, scaling the
+      // original line discount by the returned proportion so a partial return
+      // reverses a proportional slice of tax (mirrors the POS returnSale path).
+      const creditItems: Array<{
+        productId: number;
+        quantity: number;
+        unitPrice: number;
+        discount: number;
+        taxPercent: number;
+        cessRate: number;
+        isPriceInclusive: boolean;
+      }> = [];
+      for (const it of row.items) {
+        const productId = it.purchaseRequestItem?.productId;
+        const qty = Number(it.quantity);
+        if (productId == null || !(qty > 0)) continue;
+        const orig = origByProduct.get(productId);
+        // A returned product that isn't on the original invoice can't have its
+        // tax reversed against that document — skip it (the qty guard at submit
+        // time should already prevent this).
+        if (!orig) continue;
+        const soldQty = toNumber(orig.quantity);
+        const proportion = soldQty > 0 ? qty / soldQty : 0;
+        creditItems.push({
+          productId,
+          quantity: qty,
+          unitPrice: toNumber(orig.unitPrice),
+          discount: toNumber(orig.discount) * proportion,
+          taxPercent: toNumber(orig.taxPercent),
+          cessRate: toNumber(orig.cessRate),
+          isPriceInclusive: orig.isPriceInclusive,
+        });
+      }
+      if (creditItems.length === 0) {
+        return { error: 'CREDIT_NOTE_FAILED' as const };
+      }
+
+      let creditNote: { id: number; total: Prisma.Decimal };
+      try {
+        creditNote = await invoicesService.createSalesReturnInTx(
+          tx,
+          {
+            shopId: opts.shopId,
+            type: 'SALE',
+            originalInvoiceId,
+            partyId: originalInvoice.partyId ?? undefined,
+            customerName: originalInvoice.customerName ?? undefined,
+            customerPhone: originalInvoice.customerPhone ?? undefined,
+            placeOfSupplyStateCode:
+              originalInvoice.placeOfSupplyStateCode ?? undefined,
+            items: creditItems,
+          },
+          // createdById = the merchant actor issuing the refund; shiftId
+          // inherited from the original sale (null for pure online orders).
+          opts.actorId,
+          originalInvoice.shiftId ?? undefined,
+        );
+      } catch (e) {
+        if (e instanceof PosInvoiceError) {
+          // Surface as a structured failure so the whole tx rolls back — a
+          // return must never settle cash without its reversing document.
+          return { error: 'CREDIT_NOTE_FAILED' as const };
+        }
+        throw e;
+      }
+
+      // The refund the buyer is owed is the credit note's tax-inclusive total,
+      // so wallet/cash refunded == GST credit note == money returned.
+      const refundAmount = round2(Number(creditNote.total));
 
       // Split the refund between wallet credit and off-platform refund.
       //
@@ -553,12 +675,15 @@ export class ReturnsService {
           })
         : null;
 
-      if (entry) {
-        await tx.returnRequest.update({
-          where: { id: row.id },
-          data: { walletEntryId: entry.id },
-        });
-      }
+      // Persist the credit-note total as the row's refund amount + link the
+      // wallet entry, so the stored figure ties to the issued document.
+      await tx.returnRequest.update({
+        where: { id: row.id },
+        data: {
+          refundAmount: new Prisma.Decimal(refundAmount),
+          ...(entry ? { walletEntryId: entry.id } : {}),
+        },
+      });
       await tx.returnRequestEvent.create({
         data: {
           returnId: row.id,
@@ -569,40 +694,10 @@ export class ReturnsService {
       });
       reverseChildId = row.requestId;
       reverseAmount = refundAmount;
-      // Collect the returned quantities for the post-commit restock.
-      // The ledger REQUIRES a unit price on every stock-IN (it funds a
-      // cost layer) — the original restock call omitted it, so every
-      // RETURN_IN post failed with 'Unit price required for stock-in'
-      // and the error object was silently dropped: returns never
-      // actually restocked. Re-enter the goods at the cost the sale
-      // consumed them at (the original STOCK_OUT's FIFO-weighted
-      // unitCost), so inventory value and future COGS are unchanged by
-      // the round-trip.
-      const sourceInvoiceId = row.request?.invoiceId ?? null;
-      const costByProduct = new Map<number, number>();
-      if (sourceInvoiceId != null) {
-        const outRows = await tx.stockTransaction.findMany({
-          where: {
-            shopId: opts.shopId,
-            sourceType: 'INVOICE',
-            sourceId: sourceInvoiceId,
-            direction: 'OUT',
-          },
-          select: { productId: true, unitCost: true },
-        });
-        for (const r of outRows) {
-          costByProduct.set(r.productId, Number(r.unitCost ?? 0));
-        }
-      }
-      restockReturnId = row.id;
-      restockLines = row.items
-        .filter((it) => it.purchaseRequestItem?.productId != null && Number(it.quantity) > 0)
-        .map((it) => ({
-          productId: it.purchaseRequestItem!.productId,
-          quantity: Number(it.quantity),
-          sourceLineId: it.id,
-          unitPrice: costByProduct.get(it.purchaseRequestItem!.productId) ?? 0,
-        }));
+      // NOTE: the goods are restocked by `createSalesReturnInTx` above (it posts
+      // the RETURN_IN ledger movement off the credit note, INVOICE:<cn>:RETURN).
+      // The previous standalone post-commit restock here is therefore removed —
+      // keeping it would double-count the returned stock.
       return {
         ok: true as const,
         walletEntryId: entry?.id ?? null,
@@ -626,58 +721,9 @@ export class ReturnsService {
       }
     }
 
-    // Post-commit: restock the returned goods via a RETURN_IN ledger
-    // movement (RET-1). The original sale posted a STOCK_OUT, so without
-    // this the on-hand permanently understates after a sale+return. Kept
-    // out of the refund tx and best-effort so a vanished/inactive product
-    // (e.g. the SKU was deleted) can't roll back a committed refund; the
-    // idempotency key makes a retry a no-op. A failure leaves the goods
-    // to be re-added via a manual stock adjustment.
-    if ('ok' in result && result.ok && restockReturnId != null && restockLines.length > 0) {
-      try {
-        // Lines whose sale OUT row carried no cost (legacy rows, or the
-        // product was sold before costing landed) fall back to the
-        // product's current purchase price so the IN still posts.
-        const missingCost = restockLines.filter((l) => l.unitPrice <= 0);
-        if (missingCost.length > 0) {
-          const fallback = await prisma.product.findMany({
-            where: { id: { in: missingCost.map((l) => l.productId) } },
-            select: { id: true, purchasePrice: true },
-          });
-          const priceById = new Map(
-            fallback.map((p) => [p.id, Number(p.purchasePrice)]),
-          );
-          for (const l of missingCost) {
-            l.unitPrice = priceById.get(l.productId) ?? 0;
-          }
-        }
-        const posted = await ledgerService.post({
-          shopId: opts.shopId,
-          direction: 'IN',
-          reasonCode: 'RETURN_IN',
-          sourceType: 'RETURN',
-          sourceId: restockReturnId,
-          idempotencyKey: `RETURN:${restockReturnId}:RESTOCK`,
-          createdById: opts.actorId,
-          note: `Restock from return #${restockReturnId}`,
-          lines: restockLines,
-        });
-        // post() reports domain failures as a return value, not a throw —
-        // surface it so a dead restock is visible in the logs instead of
-        // silently understating stock forever.
-        if ('error' in posted) {
-          console.error(
-            `[returns] RETURN_IN restock failed for return #${restockReturnId}: ${posted.error}`,
-          );
-        }
-      } catch (err) {
-        /* manual stock adjustment can re-add; refund stands. */
-        console.error(
-          `[returns] RETURN_IN restock threw for return #${restockReturnId}:`,
-          err,
-        );
-      }
-    }
+    // Restock is now handled inside the transaction by the credit note
+    // (`createSalesReturnInTx` → RETURN_IN, INVOICE:<creditNote>:RETURN), so the
+    // goods, the GST reversal, and the wallet credit all commit atomically.
     return result;
   }
 }
