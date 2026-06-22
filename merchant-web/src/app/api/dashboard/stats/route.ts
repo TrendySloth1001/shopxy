@@ -1,12 +1,17 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { authedFetch } from "@/server/auth/session";
-import { dashboardStatsSchema } from "@/features/dashboard/stats";
+import { dashboardStatsSchema, PERIODS, type DashboardPeriod } from "@/features/dashboard/stats";
 
-// GET /api/dashboard/stats — proxy the backend dashboard overview with the
-// caller's bearer token. Surfaces the backend's 403 (role lacks dashboard:view)
-// so the screen can explain it.
-export async function GET() {
-  const res = await authedFetch("/dashboard/stats");
+// GET /api/dashboard/stats?period=today|week|month — proxy the backend dashboard
+// overview with the caller's bearer token. Surfaces the backend's 403 (role lacks
+// dashboard:view) so the screen can explain it.
+export async function GET(req: NextRequest) {
+  const raw = req.nextUrl.searchParams.get("period");
+  const period: DashboardPeriod = (PERIODS as readonly string[]).includes(raw ?? "")
+    ? (raw as DashboardPeriod)
+    : "today";
+
+  const res = await authedFetch(`/dashboard/stats?period=${period}`);
   if (!res) {
     return NextResponse.json({ error: "Session expired." }, { status: 401 });
   }
@@ -17,10 +22,7 @@ export async function GET() {
     );
   }
   if (!res.ok) {
-    return NextResponse.json(
-      { error: "Could not load the dashboard." },
-      { status: 502 },
-    );
+    return NextResponse.json({ error: "Could not load the dashboard." }, { status: 502 });
   }
 
   const parsed = dashboardStatsSchema.safeParse(await res.json());

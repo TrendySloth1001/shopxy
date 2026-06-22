@@ -9,6 +9,7 @@
     "start": "node dist/infra/http/server.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
+    "rollup:backfill": "tsx scripts/rollup-backfill.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },

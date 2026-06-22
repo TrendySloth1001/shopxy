@@ -689,6 +689,8 @@ model StockAdjustment {
   @@unique([shopId, adjustmentNo])
   @@index([shopId, reasonCode])
   @@index([shopId, createdAt])
+  /// Analytics changefeed scan (adjustments are immutable → bucket by created_at).
+  @@index([createdAt])
   @@map("stock_adjustments")
 }
 
@@ -1117,6 +1119,8 @@ model Invoice {
   @@index([placeOfSupplyStateCode])
   @@index([shiftId])
   @@index([createdById])
+  /// Analytics changefeed scan (rows changed since the roll-up cursor).
+  @@index([updatedAt])
   @@map("invoices")
 }
 
@@ -1544,6 +1548,8 @@ model ReturnRequest {
   @@index([customerUserId, createdAt])
   @@index([shopId, status, createdAt])
   @@index([requestId])
+  /// Analytics changefeed scan (rows changed since the roll-up cursor).
+  @@index([updatedAt])
   @@map("return_requests")
 }
 
@@ -1723,6 +1729,8 @@ model Payment {
   @@index([shopId, vendorId, paymentDate])
   @@index([invoiceId])
   @@index([invoiceId, voidedAt])
+  /// Analytics changefeed scan (rows changed since the roll-up cursor).
+  @@index([updatedAt])
   @@map("payments")
 }
 
@@ -2597,4 +2605,108 @@ model OperatorWithholding {
   @@unique([gatewayPaymentId, purchaseRequestId], name: "operator_withholding_payment_request")
   @@index([shopId, createdAt])
   @@map("operator_withholdings")
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Analytics roll-ups (Phase 2). Per-shop, per-day pre-aggregates that the
+// dashboard / reports / analytics read instead of scanning raw invoices &
+// line items. Maintained by the changefeed cron, which recomputes each dirty
+// (shop, day) FROM RAW using the audited reports.service math (single source
+// of truth), so roll-ups always reconcile with the Reports screen.
+//
+// `day` is the IST calendar day (computed with istDayStart). These tables hold
+// loose shopId (no relation) to avoid back-relations on Shop, matching the
+// CashierShift / CashMovement pattern.
+// ─────────────────────────────────────────────────────────────────────────
+
+/// One row per shop per day: confirmed-sale aggregates (credit-note-signed) +
+/// the P&L legs (COGS, returned COGS, write-offs) for that day.
+model AggDailySales {
+  shopId       Int      @map("shop_id")
+  day          DateTime @db.Date
+  docCount     Int      @default(0) @map("doc_count")
+  taxable      Decimal  @default(0) @db.Decimal(14, 2)
+  tax          Decimal  @default(0) @db.Decimal(14, 2)
+  total        Decimal  @default(0) @db.Decimal(14, 2)
+  refunds      Decimal  @default(0) @db.Decimal(14, 2)
+  cogs         Decimal  @default(0) @db.Decimal(14, 2)
+  returnedCogs Decimal  @default(0) @map("returned_cogs") @db.Decimal(14, 2)
+  writeoffs    Decimal  @default(0) @db.Decimal(14, 2)
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@id([shopId, day])
+  @@map("agg_daily_sales")
+}
+
+/// One row per shop per day: confirmed-purchase aggregates (credit-note-signed).
+model AggDailyPurchases {
+  shopId    Int      @map("shop_id")
+  day       DateTime @db.Date
+  docCount  Int      @default(0) @map("doc_count")
+  taxable   Decimal  @default(0) @db.Decimal(14, 2)
+  tax       Decimal  @default(0) @db.Decimal(14, 2)
+  total     Decimal  @default(0) @db.Decimal(14, 2)
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@id([shopId, day])
+  @@map("agg_daily_purchases")
+}
+
+/// Receipts/payments by mode per shop per day (collections-by-mode, tender mix).
+model AggDailyPayment {
+  shopId    Int      @map("shop_id")
+  day       DateTime @db.Date
+  /// 'RECEIPT' (in) | 'PAYMENT' (out to vendor).
+  type      String
+  /// CASH | UPI | NEFT | RTGS | CHEQUE | CARD | OTHER.
+  mode      String
+  amount    Decimal  @default(0) @db.Decimal(14, 2)
+  cnt       Int      @default(0)
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@id([shopId, day, type, mode])
+  @@index([shopId, day])
+  @@map("agg_daily_payments")
+}
+
+/// Output/input GST per shop per day, bucketed by tax rate.
+model AggDailyGst {
+  shopId     Int      @map("shop_id")
+  day        DateTime @db.Date
+  taxRate    Decimal  @map("tax_rate") @db.Decimal(5, 2)
+  outputTax  Decimal  @default(0) @map("output_tax") @db.Decimal(14, 2)
+  inputTax   Decimal  @default(0) @map("input_tax") @db.Decimal(14, 2)
+  outputCess Decimal  @default(0) @map("output_cess") @db.Decimal(14, 2)
+  inputCess  Decimal  @default(0) @map("input_cess") @db.Decimal(14, 2)
+  taxable    Decimal  @default(0) @db.Decimal(14, 2)
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@id([shopId, day, taxRate])
+  @@index([shopId, day])
+  @@map("agg_daily_gst")
+}
+
+/// Per-product confirmed-sale aggregates per shop per day (top products /
+/// categories / slow-mover sales). categoryId is denormalised for category rollups.
+model AggDailyProduct {
+  shopId     Int      @map("shop_id")
+  day        DateTime @db.Date
+  productId  Int      @map("product_id")
+  categoryId Int?     @map("category_id")
+  qty        Decimal  @default(0) @db.Decimal(14, 3)
+  revenue    Decimal  @default(0) @db.Decimal(14, 2)
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@id([shopId, day, productId])
+  @@index([shopId, day])
+  @@map("agg_daily_product")
+}
+
+/// Changefeed watermark — last-processed cursor for the roll-up worker.
+model AggChangefeedCursor {
+  name      String   @id
+  cursorAt  DateTime @map("cursor_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("agg_changefeed_cursor")
 }
