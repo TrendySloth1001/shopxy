@@ -10,6 +10,7 @@ import { reconcileStaleTransfers } from '../modules/payment-gateway/settlement/t
 import { isRouteSplitEnabled } from '../modules/payment-gateway/settlement/order-split.js';
 import { linkedAccountsService } from '../modules/linked-accounts/linked-accounts.service.js';
 import { sweepStaleSales } from '../modules/pos/pos.service.js';
+import { runChangefeed, reconcileRecent } from '../modules/analytics-rollup/changefeed.service.js';
 import { tryAcquireJobLock } from './redis.js';
 
 /// Lightweight in-process cron registry. We deliberately stay on
@@ -43,6 +44,29 @@ export function startScheduler(): void {
     logger.info('scheduler disabled by env');
     return;
   }
+
+  // Every minute — analytics roll-up changefeed: recompute (shop, day) for any
+  // source rows changed since the cursor. Job-locked so only one instance runs;
+  // idempotent (recomputeDay delete-then-inserts).
+  jobs.push(
+    cron.schedule('* * * * *', () =>
+      runSafely('rollup:changefeed', async () => {
+        if (!(await tryAcquireJobLock('rollup:changefeed', 55_000))) return { skipped: 'locked' };
+        return runChangefeed();
+      }),
+    ),
+  );
+
+  // Nightly (02:20 IST ≈ 20:50 UTC) — reconcile the trailing 35 days from raw to
+  // heal any missed changefeed tick. Job-locked; idempotent.
+  jobs.push(
+    cron.schedule('50 20 * * *', () =>
+      runSafely('rollup:reconcile', async () => {
+        if (!(await tryAcquireJobLock('rollup:reconcile', 10 * 60_000))) return { skipped: 'locked' };
+        return reconcileRecent(35);
+      }),
+    ),
+  );
 
   // Hourly — cap each user's recently_viewed list at 20 rows.
   // Cheap window-function DELETE; safe to skip a tick.
