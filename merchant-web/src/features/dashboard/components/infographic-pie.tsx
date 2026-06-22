@@ -44,16 +44,16 @@ export const PIE_PALETTE_C: PieSwatch[] = [
 
 // Geometry (SVG user units). Tighter viewBox + larger radii so the pie fills
 // more of the frame (callouts still sit inside it).
-const W = 760;
-const H = 470;
+const W = 800;
+const H = 520;
 const CX = W / 2;
 const CY = H / 2;
-const HUB = 70;
-const R_MIN = 150;
-const R_MAX = 188;
+const HUB = 86;
+const R_MIN = 184;
+const R_MAX = 228;
 const GAP_DEG = 3;
-const STUB = 28;
-const EXPLODE = 12; // how far the hovered slice lifts out (smoothly, via CSS transform)
+const STUB = 24;
+const EXPLODE = 14; // how far the hovered slice lifts out (smoothly, via CSS transform)
 
 function polar(r: number, angleDeg: number): [number, number] {
   const a = ((angleDeg - 90) * Math.PI) / 180;
@@ -128,7 +128,8 @@ export function InfographicPie({
             {segs.map((s, i) => {
               const a0 = single ? s.start : s.start + GAP_DEG / 2;
               const a1 = single ? s.end : s.end - GAP_DEG / 2;
-              const [lx, ly] = polar((HUB + s.rOut) / 2, s.mid);
+              // A lone 100% slice renders as a full ring; put its % at the top.
+              const [lx, ly] = polar((HUB + s.rOut) / 2, single ? 0 : s.mid);
               const [tipX, tipY] = polar(s.rOut + 4, s.mid);
               const [kneeX, kneeY] = polar(s.rOut + 18, s.mid);
               const right = kneeX >= CX;
@@ -153,12 +154,25 @@ export function InfographicPie({
                     // CSS transform (not the SVG attr) so the lift + fade animate
                     // smoothly. The hub is drawn on top, so the lift reads as the
                     // slice pulling out, not a gap bug.
-                    transform: sel ? `translate(${(ux * EXPLODE).toFixed(2)}px, ${(uy * EXPLODE).toFixed(2)}px)` : "translate(0px, 0px)",
+                    // A lone full ring has nothing to lift away from, so skip the explode.
+                    transform: sel && !single ? `translate(${(ux * EXPLODE).toFixed(2)}px, ${(uy * EXPLODE).toFixed(2)}px)` : "translate(0px, 0px)",
                     opacity: dimmed ? 0.4 : 1,
                     transition: "transform 260ms cubic-bezier(0.22, 0.61, 0.36, 1), opacity 200ms ease",
                   }}
                 >
-                  <path d={sector(HUB, s.rOut, a0, a1)} fill="currentColor" className={s.color.text} stroke="currentColor" strokeWidth={sel ? 4 : 0} paintOrder="stroke" />
+                  {single ? (
+                    <circle
+                      cx={CX}
+                      cy={CY}
+                      r={(HUB + s.rOut) / 2}
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={s.rOut - HUB}
+                      className={s.color.text}
+                    />
+                  ) : (
+                    <path d={sector(HUB, s.rOut, a0, a1)} fill="currentColor" className={s.color.text} stroke="currentColor" strokeWidth={sel ? 4 : 0} paintOrder="stroke" />
+                  )}
                   <text x={lx} y={ly} textAnchor="middle" dominantBaseline="central" className="fill-white" fontSize={s.pct >= 8 ? 22 : 14} fontWeight={700} pointerEvents="none">
                     {s.pct}%
                   </text>
@@ -180,7 +194,7 @@ export function InfographicPie({
         </div>
 
         {/* whole-chart written summary + full ranked breakdown */}
-        <aside className="lg:w-72 lg:shrink-0">
+        <aside className="lg:w-64 lg:shrink-0">
           <p className="text-label-md uppercase tracking-wide text-muted">About this chart</p>
           <p className="mt-sm text-body-md leading-relaxed text-ink">
             <strong className="tabular-nums">{formatValue(total)}</strong> across{" "}
