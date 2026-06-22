@@ -1,9 +1,9 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { PanelLeft, PanelLeftClose, LogOut, Lock } from "lucide-react";
+import { ChevronLeft, ChevronRight, LogOut, Lock } from "lucide-react";
 import { useAuth } from "@/features/auth/auth-context";
 import { Avatar } from "@/features/auth/components/avatar";
 import { useNotifications } from "@/features/notifications/notifications-context";
@@ -49,6 +49,9 @@ export function Sidebar() {
   const pathname = usePathname();
   const [collapsed, toggle] = useCollapsed();
   const { unread } = useNotifications();
+  // Styled hover tooltip for the collapsed rail. Rendered `fixed` (outside the
+  // scrolling nav) so it isn't clipped by the rail's overflow.
+  const [tip, setTip] = useState<{ label: string; y: number } | null>(null);
 
   async function onSignOut() {
     await logout();
@@ -76,14 +79,23 @@ export function Sidebar() {
 
   return (
     <aside
-      className={`sticky top-0 flex h-dvh shrink-0 flex-col border-r border-hairline bg-canvas transition-[width] duration-medium ${
+      className={`sticky top-0 z-20 flex h-dvh shrink-0 flex-col border-r border-hairline bg-canvas transition-[width] duration-medium ${
         collapsed ? "w-16" : "w-64"
       }`}
     >
-      {/* Brand + collapse toggle */}
-      <div
-        className={`flex h-14 items-center gap-md px-md ${collapsed ? "justify-center" : ""}`}
+      {/* Edge collapse/expand toggle — floats on the right border. */}
+      <button
+        type="button"
+        onClick={toggle}
+        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        aria-expanded={!collapsed}
+        className="absolute -right-3 top-14 z-30 flex size-7 -translate-y-1/2 items-center justify-center rounded-full border border-hairline bg-canvas text-muted shadow-snackbar transition-colors hover:border-brand-soft hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
       >
+        {collapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
+      </button>
+
+      {/* Brand */}
+      <div className={`flex h-14 items-center gap-md px-md ${collapsed ? "justify-center" : ""}`}>
         <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-ink text-label-lg text-white">
           S
         </span>
@@ -92,30 +104,7 @@ export function Sidebar() {
             ShopXY <span className="text-subtle">· Merchant</span>
           </span>
         ) : null}
-        {!collapsed ? (
-          <button
-            type="button"
-            onClick={toggle}
-            aria-label="Collapse sidebar"
-            className="rounded-md p-xs text-muted transition-colors hover:bg-surface-tint hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
-          >
-            <PanelLeftClose size={18} />
-          </button>
-        ) : null}
       </div>
-
-      {collapsed ? (
-        <div className="flex justify-center pb-sm">
-          <button
-            type="button"
-            onClick={toggle}
-            aria-label="Expand sidebar"
-            className="rounded-md p-xs text-muted transition-colors hover:bg-surface-tint hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
-          >
-            <PanelLeft size={18} />
-          </button>
-        </div>
-      ) : null}
 
       <Divider />
 
@@ -141,6 +130,7 @@ export function Sidebar() {
                     collapsed={collapsed}
                     locked={isLocked(item.key)}
                     badge={item.key === "notifications" ? unread : 0}
+                    onHover={setTip}
                   />
                 </li>
               ))}
@@ -180,9 +170,22 @@ export function Sidebar() {
           </button>
         ) : null}
       </div>
+
+      {/* Collapsed-rail hover tooltip (fixed, so it escapes the nav's overflow). */}
+      {collapsed && tip ? (
+        <div
+          role="tooltip"
+          className="pointer-events-none fixed left-16 z-50 ml-sm -translate-y-1/2 whitespace-nowrap rounded-md bg-ink px-sm py-xs text-label-md text-white shadow-floating"
+          style={{ top: tip.y }}
+        >
+          {tip.label}
+        </div>
+      ) : null}
     </aside>
   );
 }
+
+type HoverTip = { label: string; y: number } | null;
 
 function NavLink({
   item,
@@ -190,12 +193,14 @@ function NavLink({
   collapsed,
   locked,
   badge = 0,
+  onHover,
 }: {
   item: NavItem;
   active: boolean;
   collapsed: boolean;
   locked: boolean;
   badge?: number;
+  onHover: (tip: HoverTip) => void;
 }) {
   const Icon = item.icon;
   const badgeText = badge > 99 ? "99+" : String(badge);
@@ -227,14 +232,30 @@ function NavLink({
     );
   }
 
+  const hoverProps = collapsed
+    ? {
+        onMouseEnter: (e: React.MouseEvent<HTMLElement>) => {
+          const r = e.currentTarget.getBoundingClientRect();
+          onHover({ label: item.label, y: r.top + r.height / 2 });
+        },
+        onMouseLeave: () => onHover(null),
+        onFocus: (e: React.FocusEvent<HTMLElement>) => {
+          const r = e.currentTarget.getBoundingClientRect();
+          onHover({ label: item.label, y: r.top + r.height / 2 });
+        },
+        onBlur: () => onHover(null),
+      }
+    : {};
+
   return (
     <Link
       href={hrefForNav(item.key)}
-      title={collapsed ? item.label : undefined}
+      aria-label={collapsed ? item.label : undefined}
       aria-current={active ? "page" : undefined}
-      className={`relative flex w-full items-center gap-md rounded-md px-sm py-sm text-left text-body-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft ${
+      {...hoverProps}
+      className={`relative flex w-full items-center gap-md rounded-md border px-sm py-sm text-left text-body-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft ${
         collapsed ? "justify-center" : ""
-      } ${active ? "bg-ink text-white" : "text-ink hover:bg-surface-tint"}`}
+      } ${active ? "border-ink bg-brand-soft font-medium text-brand-strong" : "border-transparent text-ink hover:bg-surface-tint"}`}
     >
       <span className="relative shrink-0">
         <Icon size={18} />
