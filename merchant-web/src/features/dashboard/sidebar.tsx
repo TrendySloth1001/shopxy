@@ -3,7 +3,7 @@
 import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, LogOut, Lock } from "lucide-react";
+import { ChevronLeft, ChevronRight, LogOut, Lock, Menu, X } from "lucide-react";
 import { useAuth } from "@/features/auth/auth-context";
 import { Avatar } from "@/features/auth/components/avatar";
 import { useNotifications } from "@/features/notifications/notifications-context";
@@ -52,6 +52,10 @@ export function Sidebar() {
   // Styled hover tooltip for the collapsed rail. Rendered `fixed` (outside the
   // scrolling nav) so it isn't clipped by the rail's overflow.
   const [tip, setTip] = useState<{ label: string; y: number } | null>(null);
+  // Mobile off-canvas drawer (the side rail is hidden < lg; nav moves to a top
+  // bar + slide-in drawer).
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const closeMobile = () => setMobileOpen(false);
 
   async function onSignOut() {
     await logout();
@@ -77,111 +81,183 @@ export function Sidebar() {
     return area ? !canView(user, area) : false;
   }
 
-  return (
-    <aside
-      className={`sticky top-0 z-20 flex h-dvh shrink-0 flex-col border-r border-hairline bg-canvas transition-[width] duration-medium ${
-        collapsed ? "w-16" : "w-64"
-      }`}
-    >
-      {/* Edge collapse/expand toggle — floats on the right border. */}
-      <button
-        type="button"
-        onClick={toggle}
-        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        aria-expanded={!collapsed}
-        className="absolute -right-3 top-14 z-30 flex size-7 -translate-y-1/2 items-center justify-center rounded-full border border-hairline bg-canvas text-muted shadow-snackbar transition-colors hover:border-brand-soft hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
-      >
-        {collapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
-      </button>
+  // Nav tree, reused by the desktop rail and the mobile drawer. `compact` is the
+  // collapsed icon-rail mode; `onNavigate` closes the mobile drawer on click.
+  const navTree = (compact: boolean, onNavigate?: () => void) => (
+    <nav className="flex-1 overflow-y-auto px-sm py-md">
+      {groups.map((group, gi) => (
+        <div key={group.title ?? "primary"} className="mb-md">
+          {group.title ? (
+            compact ? (
+              gi > 0 ? <Divider className="mx-auto my-sm w-6" /> : null
+            ) : (
+              <p className="px-sm pb-xs pt-sm text-label-md uppercase tracking-wide text-subtle">
+                {group.title}
+              </p>
+            )
+          ) : null}
+          <ul className="flex flex-col gap-px">
+            {group.items.map((item) => (
+              <li key={item.key}>
+                <NavLink
+                  item={item}
+                  active={isActive(hrefForNav(item.key))}
+                  collapsed={compact}
+                  locked={isLocked(item.key)}
+                  badge={item.key === "notifications" ? unread : 0}
+                  onHover={setTip}
+                  onNavigate={onNavigate}
+                />
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </nav>
+  );
 
-      {/* Brand */}
-      <div className={`flex h-14 items-center gap-md px-md ${collapsed ? "justify-center" : ""}`}>
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-ink text-label-lg text-white">
-          S
-        </span>
-        {!collapsed ? (
-          <span className="flex-1 truncate text-label-lg text-ink">
-            ShopXY <span className="text-subtle">· Merchant</span>
+  const footer = (compact: boolean, onNavigate?: () => void) => (
+    <div className={`flex items-center gap-sm p-md ${compact ? "justify-center" : ""}`}>
+      <Link
+        href={hrefForNav("profile")}
+        onClick={onNavigate}
+        className={`flex min-w-0 items-center gap-sm rounded-md transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft ${
+          compact ? "" : "flex-1 p-xs"
+        }`}
+      >
+        <Avatar url={user?.avatarUrl} name={user?.name ?? ""} size={32} />
+        {!compact ? (
+          <span className="flex min-w-0 flex-1 flex-col">
+            <span className="truncate text-body-md text-ink">{user?.name}</span>
+            <span className="truncate text-body-sm text-subtle">{user?.email}</span>
           </span>
         ) : null}
-      </div>
-
-      <Divider />
-
-      {/* Scrollable nav */}
-      <nav className="flex-1 overflow-y-auto px-sm py-md">
-        {groups.map((group, gi) => (
-          <div key={group.title ?? "primary"} className="mb-md">
-            {group.title ? (
-              collapsed ? (
-                gi > 0 ? <Divider className="mx-auto my-sm w-6" /> : null
-              ) : (
-                <p className="px-sm pb-xs pt-sm text-label-md uppercase tracking-wide text-subtle">
-                  {group.title}
-                </p>
-              )
-            ) : null}
-            <ul className="flex flex-col gap-px">
-              {group.items.map((item) => (
-                <li key={item.key}>
-                  <NavLink
-                    item={item}
-                    active={isActive(hrefForNav(item.key))}
-                    collapsed={collapsed}
-                    locked={isLocked(item.key)}
-                    badge={item.key === "notifications" ? unread : 0}
-                    onHover={setTip}
-                  />
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </nav>
-
-      <Divider />
-
-      {/* Footer: identity + sign out */}
-      <div className={`flex items-center gap-sm p-md ${collapsed ? "justify-center" : ""}`}>
-        <Link
-          href={hrefForNav("profile")}
-          title={collapsed ? user?.name ?? "Profile" : undefined}
-          className={`flex min-w-0 items-center gap-sm rounded-md transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft ${
-            collapsed ? "" : "flex-1 p-xs"
-          }`}
+      </Link>
+      {!compact ? (
+        <button
+          type="button"
+          onClick={onSignOut}
+          aria-label="Sign out"
+          title="Sign out"
+          className="rounded-md p-xs text-muted transition-colors hover:bg-surface-tint hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
         >
-          <Avatar url={user?.avatarUrl} name={user?.name ?? ""} size={32} />
-          {!collapsed ? (
-            <span className="flex min-w-0 flex-1 flex-col">
-              <span className="truncate text-body-md text-ink">{user?.name}</span>
-              <span className="truncate text-body-sm text-subtle">{user?.email}</span>
-            </span>
+          <LogOut size={18} />
+        </button>
+      ) : null}
+    </div>
+  );
+
+  const brand = (
+    <span className="flex items-center gap-md">
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-ink text-label-lg text-white">
+        S
+      </span>
+      <span className="truncate text-label-lg text-ink">
+        ShopXY <span className="text-subtle">· Merchant</span>
+      </span>
+    </span>
+  );
+
+  return (
+    <>
+      {/* ── Desktop rail (lg+) ───────────────────────────────────────── */}
+      <aside
+        className={`sticky top-0 z-20 hidden h-dvh shrink-0 flex-col border-r border-hairline bg-canvas transition-[width] duration-medium lg:flex ${
+          collapsed ? "w-16" : "w-64"
+        }`}
+      >
+        <button
+          type="button"
+          onClick={toggle}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-expanded={!collapsed}
+          className="absolute -right-3 top-14 z-30 flex size-7 -translate-y-1/2 items-center justify-center rounded-full border border-hairline bg-canvas text-muted shadow-snackbar transition-colors hover:border-brand-soft hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+        >
+          {collapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
+        </button>
+
+        <div className={`flex h-14 items-center px-md ${collapsed ? "justify-center" : ""}`}>
+          {collapsed ? (
+            <span className="flex size-8 items-center justify-center rounded-md bg-ink text-label-lg text-white">S</span>
+          ) : (
+            brand
+          )}
+        </div>
+        <Divider />
+        {navTree(collapsed)}
+        <Divider />
+        {footer(collapsed)}
+
+        {collapsed && tip ? (
+          <div
+            role="tooltip"
+            className="pointer-events-none fixed left-16 z-50 ml-sm -translate-y-1/2 whitespace-nowrap rounded-md bg-ink px-sm py-xs text-label-md text-white shadow-floating"
+            style={{ top: tip.y }}
+          >
+            {tip.label}
+          </div>
+        ) : null}
+      </aside>
+
+      {/* ── Mobile top bar (< lg) ────────────────────────────────────── */}
+      <header className="sticky top-0 z-20 flex h-14 items-center gap-md border-b border-hairline bg-canvas px-md lg:hidden">
+        <button
+          type="button"
+          onClick={() => setMobileOpen(true)}
+          aria-label="Open menu"
+          aria-expanded={mobileOpen}
+          className="rounded-md p-xs text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+        >
+          <Menu size={20} />
+        </button>
+        <span className="min-w-0 flex-1">{brand}</span>
+        <Link
+          href={hrefForNav("notifications")}
+          aria-label="Notifications"
+          className="relative rounded-md p-xs text-muted transition-colors hover:bg-surface-tint hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+        >
+          <Avatar url={user?.avatarUrl} name={user?.name ?? ""} size={28} />
+          {unread > 0 ? (
+            <span className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full bg-error ring-2 ring-canvas" />
           ) : null}
         </Link>
-        {!collapsed ? (
-          <button
-            type="button"
-            onClick={onSignOut}
-            aria-label="Sign out"
-            title="Sign out"
-            className="rounded-md p-xs text-muted transition-colors hover:bg-surface-tint hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
-          >
-            <LogOut size={18} />
-          </button>
-        ) : null}
-      </div>
+      </header>
 
-      {/* Collapsed-rail hover tooltip (fixed, so it escapes the nav's overflow). */}
-      {collapsed && tip ? (
+      {/* ── Mobile drawer (< lg) ─────────────────────────────────────── */}
+      <div
+        className={`fixed inset-0 z-50 lg:hidden ${mobileOpen ? "" : "pointer-events-none"}`}
+        aria-hidden={!mobileOpen}
+      >
+        <button
+          type="button"
+          aria-label="Close menu"
+          tabIndex={mobileOpen ? 0 : -1}
+          onClick={closeMobile}
+          className={`absolute inset-0 bg-ink/40 transition-opacity duration-medium ${mobileOpen ? "opacity-100" : "opacity-0"}`}
+        />
         <div
-          role="tooltip"
-          className="pointer-events-none fixed left-16 z-50 ml-sm -translate-y-1/2 whitespace-nowrap rounded-md bg-ink px-sm py-xs text-label-md text-white shadow-floating"
-          style={{ top: tip.y }}
+          className={`absolute inset-y-0 left-0 flex w-72 max-w-[82%] flex-col bg-canvas shadow-floating transition-transform duration-medium ${
+            mobileOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
         >
-          {tip.label}
+          <div className="flex h-14 items-center justify-between px-md">
+            {brand}
+            <button
+              type="button"
+              onClick={closeMobile}
+              aria-label="Close menu"
+              className="rounded-md p-xs text-muted transition-colors hover:bg-surface-tint hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+            >
+              <X size={18} />
+            </button>
+          </div>
+          <Divider />
+          {navTree(false, closeMobile)}
+          <Divider />
+          {footer(false, closeMobile)}
         </div>
-      ) : null}
-    </aside>
+      </div>
+    </>
   );
 }
 
@@ -194,6 +270,7 @@ function NavLink({
   locked,
   badge = 0,
   onHover,
+  onNavigate,
 }: {
   item: NavItem;
   active: boolean;
@@ -201,6 +278,7 @@ function NavLink({
   locked: boolean;
   badge?: number;
   onHover: (tip: HoverTip) => void;
+  onNavigate?: () => void;
 }) {
   const Icon = item.icon;
   const badgeText = badge > 99 ? "99+" : String(badge);
@@ -252,6 +330,7 @@ function NavLink({
       href={hrefForNav(item.key)}
       aria-label={collapsed ? item.label : undefined}
       aria-current={active ? "page" : undefined}
+      onClick={onNavigate}
       {...hoverProps}
       className={`relative flex w-full items-center gap-md rounded-md border px-sm py-sm text-left text-body-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft ${
         collapsed ? "justify-center" : ""
