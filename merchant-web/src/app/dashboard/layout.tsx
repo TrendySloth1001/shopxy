@@ -13,7 +13,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <RequireAuth>
       <NotificationsProvider>
-        <div className="flex min-h-dvh">
+        <div className="flex min-h-dvh flex-col lg:flex-row">
           <Sidebar />
           <main className="min-w-0 flex-1 overflow-x-hidden">
             <SectionGuard>{children}</SectionGuard>
