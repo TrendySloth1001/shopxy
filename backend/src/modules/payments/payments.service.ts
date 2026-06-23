@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
+import { enqueueOutbox } from '../../infra/outbox/outbox.js';
 import { nextPaymentRef } from '../../shared/numbering/sequences.js';
 import { toNumber } from '../../shared/numbering/decimal.js';
 
@@ -212,7 +213,7 @@ export class PaymentsService {
           paymentDate ?? new Date(),
           tx,
         );
-        return tx.payment.create({
+        const payment = await tx.payment.create({
           data: {
             shopId,
             type,
@@ -236,6 +237,19 @@ export class PaymentsService {
             },
           },
         });
+        // Outbox (same tx): a receipt/payment shifts the day's cash position, so
+        // the roll-up rebuilds for the payment's own date.
+        await enqueueOutbox(
+          {
+            aggregateType: 'payment',
+            aggregateId: payment.id,
+            eventType: 'payment.recorded',
+            shopId,
+            payload: { paymentId: payment.id, occurredAt: payment.paymentDate.toISOString() },
+          },
+          tx,
+        );
+        return payment;
       },
       { isolationLevel: 'Serializable' },
     );
@@ -260,7 +274,7 @@ export class PaymentsService {
     },
   ) {
     const { referenceNo } = await nextPaymentRef(input.shopId, 'RECEIPT', new Date(), tx);
-    return tx.payment.create({
+    const payment = await tx.payment.create({
       data: {
         shopId: input.shopId,
         type: 'RECEIPT',
@@ -276,6 +290,18 @@ export class PaymentsService {
         idempotencyKey: input.idempotencyKey ?? null,
       },
     });
+    // Outbox (same tx): the POS receipt is part of the all-or-nothing checkout.
+    await enqueueOutbox(
+      {
+        aggregateType: 'payment',
+        aggregateId: payment.id,
+        eventType: 'payment.recorded',
+        shopId: input.shopId,
+        payload: { paymentId: payment.id, occurredAt: payment.paymentDate.toISOString() },
+      },
+      tx,
+    );
+    return payment;
   }
 
   async listPayments(
@@ -364,6 +390,7 @@ export class PaymentsService {
         modeReference: true,
         idempotencyKey: true,
         voidedAt: true,
+        paymentDate: true,
       },
     });
     if (!owned) return false;
@@ -412,7 +439,23 @@ export class PaymentsService {
       voidReason: reason ?? null,
     };
 
-    await prisma.payment.update({ where: { id }, data: voidData });
+    // Void + its outbox event go in one transaction (the bare update was
+    // promoted to a tx for exactly this) so the roll-up can never miss that the
+    // payment left the day's cash position. occurredAt = the payment's ORIGINAL
+    // date — that is the day whose bucket changes when the row is voided out.
+    await prisma.$transaction(async (tx) => {
+      await tx.payment.update({ where: { id }, data: voidData });
+      await enqueueOutbox(
+        {
+          aggregateType: 'payment',
+          aggregateId: id,
+          eventType: 'payment.voided',
+          shopId,
+          payload: { paymentId: id, occurredAt: owned.paymentDate.toISOString() },
+        },
+        tx,
+      );
+    });
     return true;
   }
 

@@ -2710,3 +2710,52 @@ model AggChangefeedCursor {
 
   @@map("agg_changefeed_cursor")
 }
+
+/// Transactional outbox — the spine of the event-driven architecture.
+///
+/// A domain write (e.g. confirming an invoice) inserts one row here in the
+/// SAME transaction as the business change (`enqueueOutbox(event, tx)`), so an
+/// event can never exist without its write, nor a write without its event. A
+/// relay (`src/infra/outbox/relay.ts`) then claims PENDING rows with
+/// `FOR UPDATE SKIP LOCKED` — which lets any number of app instances drain the
+/// log cooperatively without double-dispatching — fans each event out to its
+/// registered handlers (today: analytics roll-ups), and marks it PUBLISHED.
+///
+/// This replaces the lossy `updated_at > cursor` polling changefeed as the way
+/// derived read models learn about changes. The changefeed + nightly reconcile
+/// stay on as a safety net while we build confidence, so a dropped or failed
+/// event self-heals rather than silently corrupting a roll-up.
+///
+/// BIGSERIAL because this is an append-heavy table; ids are never shown to a
+/// client, only used internally by the relay. Retention/partitioning of
+/// PUBLISHED rows is a follow-up (see readmes/ outbox notes).
+model OutboxEvent {
+  id            BigInt    @id @default(autoincrement())
+  /// Domain aggregate this event concerns, e.g. "invoice", "payment".
+  aggregateType String    @map("aggregate_type")
+  /// The aggregate's id as text — keeps the log polymorphic across aggregates.
+  aggregateId   String    @map("aggregate_id")
+  /// Dotted event name, e.g. "invoice.confirmed", "invoice.cancelled".
+  eventType     String    @map("event_type")
+  /// Owning shop — the tenant key the whole schema already shards on. Nullable
+  /// for the rare platform-level event with no single shop.
+  shopId        Int?      @map("shop_id")
+  /// Self-contained event body (jsonb). A handler must never have to read back
+  /// the source row, which may have changed by the time the event is handled.
+  payload       Json
+  /// PENDING → PROCESSING → PUBLISHED, or terminal FAILED after maxAttempts.
+  status        String    @default("PENDING")
+  attempts      Int       @default(0)
+  lastError     String?   @map("last_error")
+  /// Earliest time the relay may (re)claim this row — drives retry backoff.
+  availableAt   DateTime  @default(now()) @map("available_at")
+  /// Set when the relay claims the row; a reaper resets rows stuck PROCESSING.
+  claimedAt     DateTime? @map("claimed_at")
+  publishedAt   DateTime? @map("published_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  /// The relay's hot path: PENDING rows due now, oldest first.
+  @@index([status, availableAt, id])
+  @@index([aggregateType, aggregateId])
+  @@map("outbox_events")
+}

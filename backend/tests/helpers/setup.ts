@@ -93,6 +93,12 @@ export async function cleanupTestUser(ctx: TestUserCtx): Promise<void> {
     await prisma.product
       .deleteMany({ where: { shopId: ctx.shopId } })
       .catch(() => undefined);
+    // Outbox rows carry shopId as a plain column (no FK → no cascade from the
+    // shop delete below), so confirming an invoice in a test would otherwise
+    // leave orphan event rows in the shared dev DB. Clear them explicitly.
+    await prisma.outboxEvent
+      .deleteMany({ where: { shopId: ctx.shopId } })
+      .catch(() => undefined);
   }
 
   // 3. The user row itself — cascades Shop, ProductReview, etc.
