@@ -586,7 +586,10 @@ function QtyInput({ value, onCommit }: { value: number; onCommit: (q: number) =>
 function TenderModal({ total, paying, onClose, onCash, onTender, onOnline }: { total: number; paying: boolean; onClose: () => void; onCash: (received: number) => void; onTender: (m: TenderMode) => void; onOnline: () => void }) {
   const [received, setReceived] = useState("");
   const recv = Number(received);
-  const change = recv > 0 ? recv - total : 0;
+  // Round the change-due to paise so float subtraction (e.g. 100 - 33.33)
+  // can't surface a ₹0.0000001 artefact. Display-only — the sale total is
+  // server-authoritative.
+  const change = recv > 0 ? Math.round((recv - total) * 100) / 100 : 0;
   const quick = [total, Math.ceil(total / 100) * 100, Math.ceil(total / 500) * 500].filter((v, i, a) => a.indexOf(v) === i);
   return (
     <Modal onClose={onClose}>

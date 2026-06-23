@@ -71,7 +71,9 @@ export async function PATCH(req: Request) {
 }
 
 // DELETE /api/auth/me — DPDP erasure. OWNER accounts holding retained invoices
-// are blocked by the backend (409); a wrong password returns 400.
+// are not hard-deleted: the backend runs a controlled wipe (pseudonymises the
+// identity, keeps statutory invoices) and returns 200 with mode:'pseudonymised'.
+// Customers (and clean owners) get mode:'deleted'. A wrong password returns 400.
 export async function DELETE(req: Request) {
   const json = await req.json().catch(() => null);
   const parsed = deleteAccountSchema.safeParse(json);
@@ -111,6 +113,10 @@ export async function DELETE(req: Request) {
     );
   }
 
+  const body = (await res.json().catch(() => ({}))) as { mode?: string };
   await clearSessionCookies();
-  return NextResponse.json({ ok: true });
+  // mode is 'deleted' or 'pseudonymised' — let the client tailor the
+  // confirmation copy (e.g. "your account data was removed; invoices we
+  // must keep for 8 years were anonymised").
+  return NextResponse.json({ ok: true, mode: body.mode ?? "deleted" });
 }

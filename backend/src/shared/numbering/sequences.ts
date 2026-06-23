@@ -77,8 +77,11 @@ export async function nextInvoiceNo(
   return { invoiceNo: ref, financialYear };
 }
 
-export async function nextChallanNo(shopId: number): Promise<string> {
-  return (await fyScopedRef(shopId, 'CH', new Date())).ref;
+export async function nextChallanNo(
+  shopId: number,
+  tx?: Prisma.TransactionClient,
+): Promise<string> {
+  return (await fyScopedRef(shopId, 'CH', new Date(), tx)).ref;
 }
 
 /// Payment reference number per FY per shop. Mirrors `nextInvoiceNo`:

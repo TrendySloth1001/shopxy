@@ -58,7 +58,7 @@ class CartPage extends StatelessWidget {
     final cart = context.watch<CartProvider>();
     final subtotal = cart.totalPrice;
     final mrpTotal = cart.mrpTotal;
-    final savings = (mrpTotal - subtotal).clamp(0, double.infinity).toDouble();
+    final savings = cart.savings;
 
     return Scaffold(
       backgroundColor: AppColors.canvas,

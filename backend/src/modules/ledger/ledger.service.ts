@@ -757,10 +757,20 @@ export class LedgerService {
   // Read APIs
   // ─────────────────────────────────────────────────────────────────
 
-  async listForProduct(productId: number, options: { limit: number; skip: number }) {
+  // PR-L1 — shop-scoped: every read of a product's stock ledger MUST pass the
+  // caller's shopId so it can only ever see its own tenant's movements/costs.
+  // The (shopId, productId, createdAt) composite index keeps this an index
+  // range scan. Don't drop the shopId param even if a caller "knows" the
+  // product is theirs — defence in depth against a cross-tenant productId.
+  async listForProduct(
+    shopId: number,
+    productId: number,
+    options: { limit: number; skip: number },
+  ) {
+    const where = { shopId, productId };
     const [entries, total] = await Promise.all([
       prisma.stockTransaction.findMany({
-        where: { productId },
+        where,
         orderBy: { createdAt: 'desc' },
         skip: options.skip,
         take: options.limit,
@@ -769,7 +779,7 @@ export class LedgerService {
           createdBy: { select: { id: true, name: true } },
         },
       }),
-      prisma.stockTransaction.count({ where: { productId } }),
+      prisma.stockTransaction.count({ where }),
     ]);
     return { entries, total };
   }

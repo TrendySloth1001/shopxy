@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
 import { HttpError } from '../../shared/http/errorHandler.js';
 import { round2 } from '../../shared/numbering/decimal.js';
+import { logger } from '../../shared/logging/logger.js';
 
 export type WalletSource =
   | 'REFUND'
@@ -217,13 +218,23 @@ export class WalletService {
     ]);
     const ledgerBalance = round2(Number(ledgerSum._sum.amount ?? 0));
     const denorm = round2(Number(user.walletBalance));
-    if (denorm !== ledgerBalance) {
-      console.error(
-        `[wallet] balance drift for user ${userId}: denorm ${denorm.toFixed(2)} vs ledger ${ledgerBalance.toFixed(2)} — run walletService.reconcile(${userId}, { heal: true })`,
+    const drifted = denorm !== ledgerBalance;
+    if (drifted) {
+      // CWQ-9 — a money-column divergence between the denormalised balance and
+      // the append-only ledger SUM means a credit/debit escaped its txn. Emit
+      // a STRUCTURED error event (not a bare stderr string) so log-based
+      // alerting can fire on `event: 'wallet_balance_drift'`, and serve the
+      // ledger SUM as the authoritative balance so the customer never sees a
+      // wrong (denorm) figure while the heal is pending. The append-only,
+      // idempotency-keyed entries are the source of truth.
+      logger.error(
+        { event: 'wallet_balance_drift', userId, denorm, ledgerBalance, drift: round2(denorm - ledgerBalance) },
+        'wallet balance drift detected — serving ledger SUM; run walletService.reconcile(userId, { heal: true })',
       );
     }
     return {
-      balance: Number(user.walletBalance),
+      // On drift, trust the ledger SUM over the denorm column.
+      balance: drifted ? ledgerBalance : Number(user.walletBalance),
       /// SUM of every ledger entry — equals `balance` unless drifted.
       ledgerBalance,
       entries: entries.map((e) => ({

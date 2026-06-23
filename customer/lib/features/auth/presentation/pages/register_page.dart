@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy_customer/features/auth/presentation/providers/auth_provider.dart';
@@ -11,6 +12,7 @@ import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/validation/auth_validators.dart';
 import 'package:shopxy_customer/shared/widgets/app_pill_button.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
+import 'package:shopxy_customer/features/profile/presentation/pages/info_pages.dart';
 
 /// Multi-step, onboarding-style registration. One question per screen
 /// (name → email → password) with a progress bar, so signing up feels
@@ -37,6 +39,11 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _obscureConfirm = true;
   bool _isLoading = false;
   String? _error;
+
+  /// Explicit, affirmative DPDP consent — false until the user ticks the box
+  /// on the final step. Submit is gated on this; it is never assumed.
+  /// (DPDP Act 2023 s.6 — consent must be specific, informed, unambiguous.)
+  bool _consentAccepted = false;
 
   late final AuthProvider _auth;
 
@@ -85,6 +92,11 @@ class _RegisterPageState extends State<RegisterPage> {
       });
       return;
     }
+    if (!_consentAccepted) {
+      setState(() => _error =
+          'Please accept the Terms of Service and Privacy Policy to continue.');
+      return;
+    }
     await _submit();
   }
 
@@ -95,9 +107,13 @@ class _RegisterPageState extends State<RegisterPage> {
       _error = null;
     });
     try {
-      await context
-          .read<AuthProvider>()
-          .register(_name.text.trim(), _email.text.trim(), _password.text);
+      await context.read<AuthProvider>().register(
+            _name.text.trim(),
+            _email.text.trim(),
+            _password.text,
+            acceptedTerms: _consentAccepted,
+            acceptedPrivacy: _consentAccepted,
+          );
     } catch (e) {
       if (mounted) {
         setState(() => _error = friendlyError(e));
@@ -286,9 +302,94 @@ class _RegisterPageState extends State<RegisterPage> {
                 return null;
               },
             ),
+            const SizedBox(height: AppSizes.lg),
+            _ConsentCheckbox(
+              value: _consentAccepted,
+              onChanged: (v) => setState(() {
+                _consentAccepted = v;
+                if (v) _error = null;
+              }),
+              onOpenTerms: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const TermsOfServicePage()),
+              ),
+              onOpenPrivacy: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const PrivacyPolicyPage()),
+              ),
+            ),
           ],
         );
     }
+  }
+}
+
+/// Affirmative, opt-in consent control shown on the final register step.
+/// Off by default; the tappable links open the actual Terms / Privacy notice
+/// so the consent is informed. (DPDP Act 2023 s.6.)
+class _ConsentCheckbox extends StatelessWidget {
+  const _ConsentCheckbox({
+    required this.value,
+    required this.onChanged,
+    required this.onOpenTerms,
+    required this.onOpenPrivacy,
+  });
+
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  final VoidCallback onOpenTerms;
+  final VoidCallback onOpenPrivacy;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final linkStyle = theme.textTheme.bodyMedium?.copyWith(
+      color: AppColors.brandStrong,
+      fontWeight: FontWeight.w800,
+    );
+    final baseStyle = theme.textTheme.bodyMedium?.copyWith(
+      color: AppColors.muted,
+      height: 1.4,
+    );
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: AppSizes.iconLg,
+          height: AppSizes.iconLg,
+          child: Checkbox(
+            value: value,
+            onChanged: (v) => onChanged(v ?? false),
+            activeColor: AppColors.brand,
+            shape: AppShapes.squircle(AppSizes.radiusSm),
+          ),
+        ),
+        const SizedBox(width: AppSizes.sm),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(top: AppSizes.xs),
+            child: Text.rich(
+              TextSpan(
+                style: baseStyle,
+                children: [
+                  const TextSpan(text: 'I agree to the '),
+                  TextSpan(
+                    text: 'Terms of Service',
+                    style: linkStyle,
+                    recognizer: TapGestureRecognizer()..onTap = onOpenTerms,
+                  ),
+                  const TextSpan(text: ' and '),
+                  TextSpan(
+                    text: 'Privacy Policy',
+                    style: linkStyle,
+                    recognizer: TapGestureRecognizer()..onTap = onOpenPrivacy,
+                  ),
+                  const TextSpan(text: '.'),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
 

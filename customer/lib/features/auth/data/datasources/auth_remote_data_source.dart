@@ -24,7 +24,18 @@ class AuthRemoteDataSource {
     );
   }
 
-  Future<AuthResult> register(String name, String email, String password) async {
+  /// Register a new customer. [acceptedTerms]/[acceptedPrivacy] carry the
+  /// user's explicit, affirmative consent captured on the register screen
+  /// (an opt-in checkbox linking the Terms + Privacy notice) — never assumed.
+  /// The backend rejects the signup if either is not true. (DPDP Act 2023 s.6
+  /// — consent must be free, specific, informed and unambiguous.)
+  Future<AuthResult> register(
+    String name,
+    String email,
+    String password, {
+    required bool acceptedTerms,
+    required bool acceptedPrivacy,
+  }) async {
     final res = await _client.post(
       '/auth/register',
       body: {
@@ -34,10 +45,9 @@ class AuthRemoteDataSource {
         // Customer app — explicitly tag the signup so the backend never
         // defaults a merchant-app submission to CUSTOMER by accident.
         'role': 'CUSTOMER',
-        // DPDP consent gate — the register page disables submit until
-        // both boxes are ticked, so reaching this line implies consent.
-        'acceptedTerms': true,
-        'acceptedPrivacy': true,
+        // Affirmative DPDP consent captured on the register screen.
+        'acceptedTerms': acceptedTerms,
+        'acceptedPrivacy': acceptedPrivacy,
       },
     );
     final body = jsonDecode(res.body) as Map<String, dynamic>;

@@ -100,7 +100,7 @@ export interface RetentionResponse {
 interface RetentionRow {
   name: string | null;
   orders_in_range: number;
-  revenue_in_range: number;
+  revenue_in_range: string;
   returning: boolean;
 }
 
@@ -335,25 +335,45 @@ export class AnalyticsService {
   /// New-vs-returning customer split from confirmed SALE invoices.
   /// "Returning" = the customer had a confirmed sale before the window
   /// opened; "new" = their first purchase falls inside the window.
-  /// Customers are keyed by party id, falling back to a name key for
-  /// walk-ins. Revenue/orders are within the window.
+  /// Customers are keyed by party id, falling back to a PER-INVOICE key for
+  /// anonymous (null-party) rows so two distinct walk-ins sharing a name
+  /// (or all blank-name walk-ins) don't collapse into one "customer"
+  /// (AUTH-TR-L2). Revenue/orders are within the window.
+  ///
+  /// DOCUMENT SEMANTICS (AUTH-TR-M2): mirror reports.service — exclude
+  /// ESTIMATE/PROFORMA (offers, not transactions) and sign CREDIT_NOTE
+  /// negative (Sec 34: a credit note reduces turnover) so a confirmed
+  /// estimate or a credit note can't inflate "top customers / repeat
+  /// revenue." Revenue is summed in numeric (not ::float) and round-tripped
+  /// as text to avoid double-precision drift.
+  ///
+  /// The shop's system "Walk-in Customer" party is excluded entirely: it is
+  /// an anonymous-sales bucket, not a real customer, and would otherwise
+  /// dominate every retention figure as a single huge "returning" customer.
   async getCustomerRetention(shopId: number, from: Date, to: Date): Promise<RetentionResponse> {
     const rows = await prisma.$queryRaw<RetentionRow[]>`
       WITH range_customers AS (
         SELECT
-          COALESCE(party_id::text, 'name:' || COALESCE(customer_name, '')) AS cust,
+          COALESCE(party_id::text, 'inv:' || id::text) AS cust,
           MAX(customer_name) AS name,
           COUNT(*)::int      AS orders_in_range,
-          COALESCE(SUM(total), 0)::float AS revenue_in_range
+          COALESCE(SUM((CASE WHEN document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * total), 0)::text AS revenue_in_range
         FROM invoices
         WHERE shop_id = ${shopId} AND type = 'SALE' AND status = 'CONFIRMED'
+          AND document_type NOT IN ('ESTIMATE', 'PROFORMA')
+          AND (party_id IS NULL OR party_id NOT IN (
+            SELECT id FROM parties
+            WHERE shop_id = ${shopId} AND is_system = true AND name = 'Walk-in Customer'
+          ))
           AND invoice_date >= ${from} AND invoice_date < ${to}
         GROUP BY cust
       ),
       prior AS (
-        SELECT DISTINCT COALESCE(party_id::text, 'name:' || COALESCE(customer_name, '')) AS cust
+        SELECT DISTINCT party_id::text AS cust
         FROM invoices
         WHERE shop_id = ${shopId} AND type = 'SALE' AND status = 'CONFIRMED'
+          AND document_type NOT IN ('ESTIMATE', 'PROFORMA')
+          AND party_id IS NOT NULL
           AND invoice_date < ${from}
       )
       SELECT rc.name AS name, rc.orders_in_range, rc.revenue_in_range,
@@ -367,12 +387,16 @@ export class AnalyticsService {
     const repeatInPeriod = rows.filter((r) => r.orders_in_range >= 2).length;
     const top = rows
       .slice()
-      .sort((a, b) => b.orders_in_range - a.orders_in_range || b.revenue_in_range - a.revenue_in_range)
+      .sort(
+        (a, b) =>
+          b.orders_in_range - a.orders_in_range ||
+          Number(b.revenue_in_range) - Number(a.revenue_in_range),
+      )
       .slice(0, 10)
       .map((r) => ({
         name: r.name ?? 'Walk-in',
         orders: r.orders_in_range,
-        revenue: roundTo(r.revenue_in_range, 2),
+        revenue: roundTo(Number(r.revenue_in_range), 2),
       }));
 
     return {

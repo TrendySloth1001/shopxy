@@ -17,6 +17,8 @@ const {
   returnRequest,
   gatewayPayment,
   executeHeldTransfers,
+  isRouteSplitEnabled,
+  settlePosTransfer,
   releaseTransfer,
   listTransfers,
   provider,
@@ -28,8 +30,10 @@ const {
     count: vi.fn(),
   };
   const returnRequest = { findFirst: vi.fn() };
-  const gatewayPayment = { findUnique: vi.fn() };
+  const gatewayPayment = { findUnique: vi.fn(), findMany: vi.fn() };
   const executeHeldTransfers = vi.fn();
+  const isRouteSplitEnabled = vi.fn();
+  const settlePosTransfer = vi.fn();
   const releaseTransfer = vi.fn();
   const listTransfers = vi.fn();
   const provider = {
@@ -44,6 +48,8 @@ const {
     returnRequest,
     gatewayPayment,
     executeHeldTransfers,
+    isRouteSplitEnabled,
+    settlePosTransfer,
     releaseTransfer,
     listTransfers,
     provider,
@@ -58,6 +64,10 @@ vi.mock('../../src/modules/payment-gateway/providers/registry.js', () => ({
 }));
 vi.mock('../../src/modules/payment-gateway/settlement/order-split.js', () => ({
   executeHeldTransfers,
+  isRouteSplitEnabled,
+}));
+vi.mock('../../src/modules/payment-gateway/settlement/pos-split.js', () => ({
+  settlePosTransfer,
 }));
 
 import { reconcileStaleTransfers } from '../../src/modules/payment-gateway/settlement/transfer-reconcile.js';
@@ -81,6 +91,10 @@ beforeEach(() => {
   });
   returnRequest.findFirst.mockResolvedValue(null);
   gatewayPayment.findUnique.mockResolvedValue({ provider: 'RAZORPAY', providerPaymentRef: 'pay_X' });
+  // PR-M3: the POS re-drive step is a no-op unless a test opts in.
+  isRouteSplitEnabled.mockReturnValue(false);
+  gatewayPayment.findMany.mockResolvedValue([]);
+  settlePosTransfer.mockResolvedValue(undefined);
   gatewayTransfer.updateMany.mockResolvedValue({ count: 1 });
   gatewayTransfer.count.mockResolvedValue(0);
   listTransfers.mockResolvedValue([]);
@@ -334,5 +348,63 @@ describe('reconcileStaleTransfers — P7 KYC retry', () => {
     expect(s.kycRetried).toBe(0);
     expect(gatewayTransfer.updateMany).not.toHaveBeenCalled();
     expect(executeHeldTransfers).not.toHaveBeenCalled();
+  });
+});
+
+describe('reconcileStaleTransfers — PR-M3 POS transfer re-drive', () => {
+  const posIntent = (over: Record<string, unknown> = {}) => ({
+    id: 900,
+    provider: 'RAZORPAY',
+    status: 'CAPTURED',
+    amount: 250,
+    currency: 'INR',
+    targetType: 'POS',
+    targetId: 42,
+    shopId: 7,
+    customerUserId: null,
+    providerOrderRef: 'order_X',
+    providerPaymentRef: 'pay_X',
+    idempotencyKey: null,
+    createdAt: new Date('2026-06-01T10:00:00Z'),
+    updatedAt: new Date('2026-06-01T10:00:00Z'),
+    ...over,
+  });
+
+  it('re-drives the idempotent settlePosTransfer for each captured POS intent when the flag is on', async () => {
+    isRouteSplitEnabled.mockReturnValue(true);
+    gatewayPayment.findMany.mockResolvedValue([posIntent()]);
+
+    const s = await reconcileStaleTransfers({ now: NOW });
+
+    expect(s.posReDriven).toBe(1);
+    expect(settlePosTransfer).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 900,
+        target: { type: 'POS', id: 42 },
+        shopId: 7,
+        providerPaymentRef: 'pay_X',
+      }),
+    );
+  });
+
+  it('is a no-op when the split feature is off', async () => {
+    isRouteSplitEnabled.mockReturnValue(false);
+
+    const s = await reconcileStaleTransfers({ now: NOW });
+
+    expect(s.posReDriven).toBe(0);
+    expect(gatewayPayment.findMany).not.toHaveBeenCalled();
+    expect(settlePosTransfer).not.toHaveBeenCalled();
+  });
+
+  it('counts an errored re-drive without aborting the sweep', async () => {
+    isRouteSplitEnabled.mockReturnValue(true);
+    gatewayPayment.findMany.mockResolvedValue([posIntent()]);
+    settlePosTransfer.mockRejectedValueOnce(new Error('rzp 503'));
+
+    const s = await reconcileStaleTransfers({ now: NOW });
+
+    expect(s.posReDriven).toBe(0);
+    expect(s.errors).toBe(1);
   });
 });
