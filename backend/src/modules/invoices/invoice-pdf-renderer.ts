@@ -487,11 +487,25 @@ export async function renderInvoicePdf(
             );
           y = doc.y + 4;
         } else if (invoice.documentType === 'TAX_INVOICE') {
+          // GST-8 / Rule 46(p): a tax invoice MUST state whether tax is payable
+          // on reverse charge — a wrong "No" on an actual RCM supply is a false
+          // statutory declaration. Source it from the invoice's `reverseCharge`
+          // flag rather than hard-coding "No". The column is read defensively
+          // (it is added by a follow-up migration; until then it is undefined
+          // and we render the safe default "No" for the forward-charge case,
+          // which is correct for every invoice this engine currently mints).
+          const reverseCharge =
+            (invoice as { reverseCharge?: boolean | null }).reverseCharge === true;
           doc
             .font('Helvetica')
             .fontSize(8)
             .fillColor('#6B7280')
-            .text('Tax payable on reverse charge: No', LEFT, y, { width: W });
+            .text(
+              `Tax payable on reverse charge: ${reverseCharge ? 'Yes' : 'No'}`,
+              LEFT,
+              y,
+              { width: W },
+            );
           y = doc.y + 4;
         }
       }

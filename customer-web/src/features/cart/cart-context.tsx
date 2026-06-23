@@ -64,6 +64,14 @@ export type CartContextValue = {
   savings: number;
   loading: boolean;
   /**
+   * True while a server cart mutation (add/setQty/remove/clear) is in flight.
+   * During this window the displayed subtotal/total is optimistic and the
+   * server hasn't reconciled it yet, so the checkout CTA should be gated on
+   * this to avoid carrying an unconfirmed total into checkout. (CP E-Commerce
+   * Rules r.4(3) — price shown should be the price reconciled before order.)
+   */
+  mutating: boolean;
+  /**
    * True when the cart is a guest (localStorage) cart, whose prices/MRP are a
    * snapshot taken at add-time rather than a live server figure. The UI must
    * label these as "price when added" — they're re-fetched/validated only once
@@ -154,13 +162,20 @@ function deriveCart(lines: CartItem[]): {
 } {
   let count = 0;
   let subtotal = 0;
-  let mrpTotal = 0;
+  let savings = 0;
   for (const line of lines) {
+    const { mrp, sellingPrice } = line.product;
     count += line.quantity;
-    subtotal += line.product.sellingPrice * line.quantity;
-    mrpTotal += line.product.mrp * line.quantity;
+    subtotal += sellingPrice * line.quantity;
+    // Only count a saving when the MRP is a genuine higher reference price.
+    // A bad catalog row (mrp missing / ≤ sellingPrice) contributes zero rather
+    // than a negative or fabricated saving. (Legal Metrology / CP — no false
+    // "% off"/savings claim.)
+    if (mrp > sellingPrice) {
+      savings += (mrp - sellingPrice) * line.quantity;
+    }
   }
-  return { count, subtotal, savings: Math.max(0, mrpTotal - subtotal) };
+  return { count, subtotal, savings };
 }
 
 // ── Provider ──────────────────────────────────────────────────────────────────
@@ -179,6 +194,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
   const [lines, setLines] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
+  // Count of in-flight server cart mutations. A counter (not a boolean) so
+  // concurrent mutations don't clear the flag early.
+  const [pendingMutations, setPendingMutations] = useState(0);
 
   // Track whether we've already merged the guest cart into the server for this
   // sign-in session so we don't do it twice on fast re-renders.
@@ -277,6 +295,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           setLines((prev) => [...prev, optimisticLine]);
         }
 
+        setPendingMutations((n) => n + 1);
         try {
           const result = await setCartQty(product.id, newQty);
           if (result === null) {
@@ -298,6 +317,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 )
               : prev.filter((l) => l.productId !== product.id),
           );
+        } finally {
+          setPendingMutations((n) => n - 1);
         }
       } else {
         // Guest cart — localStorage.
@@ -349,6 +370,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           );
         }
 
+        setPendingMutations((n) => n + 1);
         try {
           const result = await setCartQty(productId, qty);
           if (result === null) {
@@ -369,6 +391,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 : [...ls, prev],
             );
           }
+        } finally {
+          setPendingMutations((n) => n - 1);
         }
       } else {
         if (!mounted) return;
@@ -395,10 +419,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
       if (status === "authed") {
         const prev = lines.find((l) => l.productId === productId);
         setLines((ls) => ls.filter((l) => l.productId !== productId));
+        setPendingMutations((n) => n + 1);
         try {
           await removeCartLine(productId);
         } catch {
           if (prev) setLines((ls) => [...ls, prev]);
+        } finally {
+          setPendingMutations((n) => n - 1);
         }
       } else {
         if (!mounted) return;
@@ -414,10 +441,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (status === "authed") {
       const prev = lines;
       setLines([]);
+      setPendingMutations((n) => n + 1);
       try {
         await clearServerCart();
       } catch {
         setLines(prev);
+      } finally {
+        setPendingMutations((n) => n - 1);
       }
     } else {
       if (!mounted) return;
@@ -432,10 +462,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   // Guest carts render snapshot prices; everything else is server-authoritative.
   const priceProvisional = status === "guest";
+  const mutating = pendingMutations > 0;
 
   const value = useMemo<CartContextValue>(
-    () => ({ lines, count, subtotal, savings, loading, priceProvisional, add, setQty, remove, clear }),
-    [lines, count, subtotal, savings, loading, priceProvisional, add, setQty, remove, clear],
+    () => ({ lines, count, subtotal, savings, loading, mutating, priceProvisional, add, setQty, remove, clear }),
+    [lines, count, subtotal, savings, loading, mutating, priceProvisional, add, setQty, remove, clear],
   );
 
   // Suppress rendering guest-cart content during SSR to avoid hydration mismatch.

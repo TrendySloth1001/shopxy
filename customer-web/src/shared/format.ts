@@ -42,6 +42,12 @@ export function formatINR(
  * Compact rupee label for tight spaces: badge overlays, chart tick labels, etc.
  * Rounds to the nearest integer and abbreviates large numbers.
  *
+ * ⚠️ APPROXIMATE BY DESIGN — rounds and abbreviates (K/L/Cr). This is for
+ * non-transactional labels ONLY (chart axes, summary badges). NEVER use it for
+ * a money figure of record — a payable, charged amount, refund, invoice or
+ * order total. For any exact amount use `formatINR(value, { decimals: 2 })`.
+ * (CP E-Commerce Rules r.4(3) — the price shown must be the price charged.)
+ *
  * Examples:
  *   999       → "₹999"
  *   1_000     → "₹1K"

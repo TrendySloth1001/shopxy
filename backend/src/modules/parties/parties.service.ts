@@ -123,7 +123,12 @@ export class PartiesService {
         createdAt: true,
         updatedAt: true,
         linkedUserId: true,
-        linkedUser: { select: { id: true, name: true, email: true } },
+        // DPDP §6/§8 — do NOT disclose the linked customer's registered
+        // login email to the merchant. The merchant already holds the
+        // contact `email` they typed on the party row; the account email
+        // is a separate data principal's PII shared with no specific
+        // consent at link time. Name only.
+        linkedUser: { select: { id: true, name: true } },
       },
     });
     if (!party) return null;

@@ -324,13 +324,12 @@ export async function deleteAccount(req: Request, res: Response) {
       res.status(400).json({ error: result.error });
       return;
     }
-    if (result.error === 'cannot_delete_with_active_records') {
-      res.status(409).json({ error: result.error });
-      return;
-    }
     res.status(404).json({ error: result.error });
     return;
   }
+  // result.mode is 'deleted' (account row removed) or 'pseudonymised'
+  // (PII-4 controlled wipe — identity tombstoned, statutory invoices
+  // retained). The client surfaces a different confirmation per mode.
   res.json(result);
 }
 

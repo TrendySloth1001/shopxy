@@ -22,13 +22,16 @@ interface UndoToast {
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function CartPage() {
-  const { lines, count, subtotal, savings, loading, priceProvisional, setQty, remove, add } = useCart();
+  const { lines, count, subtotal, savings, loading, mutating, priceProvisional, setQty, remove, add } = useCart();
   const { status } = useAuth();
   const router = useRouter();
   const [toast, setToast] = useState<UndoToast | null>(null);
   const [cappedIds, setCappedIds] = useState<Set<number>>(new Set());
 
-  const mrpTotal = lines.reduce((s, l) => s + l.product.mrp * l.quantity, 0);
+  // Reference (MRP) total shown struck-through. Derived from subtotal + savings
+  // so it stays consistent with the per-line savings guard (a bad catalog row
+  // where mrp ≤ sellingPrice contributes no saving and no inflated strike).
+  const mrpTotal = subtotal + savings;
 
   // GST breakup — selling prices are tax-inclusive, so back the tax out of the
   // line amounts grouped by rate to show the "of which taxes" split.
@@ -296,9 +299,10 @@ export default function CartPage() {
                 </div>
                 <button
                   onClick={goToCheckout}
-                  className="inline-flex h-11 w-full items-center justify-center rounded-button bg-brand px-lg text-label-md font-bold text-white transition-colors duration-200 hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                  disabled={mutating}
+                  className="inline-flex h-11 w-full items-center justify-center rounded-button bg-brand px-lg text-label-md font-bold text-white transition-colors duration-200 hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  Proceed to checkout
+                  {mutating ? "Updating cart…" : "Proceed to checkout"}
                 </button>
               </div>
             </div>

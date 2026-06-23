@@ -1,6 +1,5 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
-import { round2 } from '../../shared/numbering/decimal.js';
 
 /// Customer-facing coupon module. Owns the validation + redemption
 /// flow; coupon creation (merchant + platform admin tooling) lives in
@@ -64,20 +63,24 @@ function computeDiscount(
   },
   subtotal: number,
 ): number {
-  const value = Number(coupon.discountValue);
-  let discount = 0;
+  // CWQ-10 — keep every money intermediate in Prisma.Decimal so the
+  // `(subtotal * value) / 100` step never goes through a JS float. The
+  // codebase bills in two-decimal rupees (not integer paise), so we round
+  // the final figure to 2 dp HALF_UP and hand back a plain number to match
+  // the existing contract (`discount` is a number across this module).
+  const sub = new Prisma.Decimal(subtotal);
+  let discount: Prisma.Decimal;
   if (coupon.discountType === 'PERCENT') {
-    discount = (subtotal * value) / 100;
-    if (coupon.maxDiscount != null) {
-      const cap = Number(coupon.maxDiscount);
-      if (discount > cap) discount = cap;
+    discount = sub.mul(coupon.discountValue).div(100);
+    if (coupon.maxDiscount != null && discount.greaterThan(coupon.maxDiscount)) {
+      discount = coupon.maxDiscount;
     }
   } else {
-    discount = value;
+    discount = coupon.discountValue;
   }
   // Never refund more than the cart itself.
-  if (discount > subtotal) discount = subtotal;
-  return round2(discount);
+  if (discount.greaterThan(sub)) discount = sub;
+  return Number(discount.toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP).toString());
 }
 
 export interface CouponWriteInput {
@@ -422,13 +425,18 @@ export class CouponsService {
     if (row.shopId != null && !opts.context.shopIds.includes(row.shopId)) {
       return { error: 'SHOP_NOT_IN_CART' };
     }
-    if (row.perUserLimit > 0) {
-      // CPN-1: serialize concurrent redemptions by the SAME user for this
-      // coupon so the count-then-create below can't be split by a racing
-      // self-checkout (which would let the user exceed perUserLimit by one).
-      // Transaction-scoped advisory lock on (couponId, userId); auto-released
-      // at commit. The global totalCap already uses a gated atomic increment.
+    // CPN-1 / CWQ-8: serialize concurrent redemptions by the SAME user for
+    // this coupon so the per-user-count and first-order-count gates below
+    // can't be split by a racing self-checkout. Transaction-scoped advisory
+    // lock on (couponId, userId); auto-released at commit. The global totalCap
+    // already uses a gated atomic increment. We must take the lock whenever
+    // EITHER per-user-limited OR firstOrderOnly applies — previously the lock
+    // sat inside the `perUserLimit > 0` branch, so a firstOrderOnly coupon
+    // with perUserLimit = 0 ran its priorOrders count unserialized.
+    if (row.perUserLimit > 0 || row.firstOrderOnly) {
       await opts.tx.$executeRaw`SELECT pg_advisory_xact_lock(${row.id}, ${opts.userId})`;
+    }
+    if (row.perUserLimit > 0) {
       const used = await opts.tx.couponRedemption.count({
         where: { couponId: row.id, userId: opts.userId },
       });

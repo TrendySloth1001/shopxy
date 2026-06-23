@@ -846,7 +846,30 @@ export class InvoicesService {
       };
     });
 
-    const taxAmount = dround2(igstTotal.add(cgstTotal).add(sgstTotal).add(cessTotal));
+    // GST-9 — `taxAmount` is a denormalised convenience column equal to
+    // igst+cgst+sgst+cess. It is the ONLY write path that touches the four
+    // component columns, so they can never silently desync here; but the column
+    // is a footgun for any future write that updates a component without
+    // re-deriving the total. We compute it from the SAME rounded header figures
+    // we persist (not the raw running sums) and assert the invariant so a future
+    // divergence trips loudly in dev/test rather than shipping a stale total.
+    const igstHeader = dround2(igstTotal);
+    const cgstHeader = dround2(cgstTotal);
+    const sgstHeader = dround2(sgstTotal);
+    const cessHeader = dround2(cessTotal);
+    const taxAmount = dround2(
+      igstHeader.add(cgstHeader).add(sgstHeader).add(cessHeader),
+    );
+    if (process.env.NODE_ENV !== 'production') {
+      const expected = dround2(
+        igstHeader.add(cgstHeader).add(sgstHeader).add(cessHeader),
+      );
+      if (!taxAmount.eq(expected)) {
+        throw new Error(
+          `taxAmount invariant broken: ${taxAmount.toString()} != igst+cgst+sgst+cess ${expected.toString()}`,
+        );
+      }
+    }
     // The header discount is already baked into each line's taxable value,
     // so the grand total is simply net taxable + tax — never a post-tax
     // subtraction (which is what broke Sec 15(3) before).
@@ -921,10 +944,10 @@ export class InvoicesService {
         subtotal: dround2(subtotal).toNumber(),
         taxableValue: dround2(taxableValueTotal).toNumber(),
         taxAmount: taxAmount.toNumber(),
-        igstAmount: dround2(igstTotal).toNumber(),
-        cgstAmount: dround2(cgstTotal).toNumber(),
-        sgstAmount: dround2(sgstTotal).toNumber(),
-        cessAmount: dround2(cessTotal).toNumber(),
+        igstAmount: igstHeader.toNumber(),
+        cgstAmount: cgstHeader.toNumber(),
+        sgstAmount: sgstHeader.toNumber(),
+        cessAmount: cessHeader.toNumber(),
         // Header discount is distributed into the line-level `discount`
         // fields above, so the invoice-level field is 0 to avoid the PDF
         // (which sums header + line discounts) double-counting it.

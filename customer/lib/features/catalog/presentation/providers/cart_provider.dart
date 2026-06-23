@@ -120,11 +120,21 @@ class CartProvider extends ChangeNotifier {
   /// market-standard name so checkout helpers (coupon validate, wallet
   /// preview) don't have to recompute the fold.
   double get itemsTotal => totalPrice;
-  /// Sum of MRP × qty across the cart — the strike-through baseline the
-  /// cart and checkout bill cards both render. Centralised so the two
-  /// pages can't drift.
-  double get mrpTotal =>
-      _lines.values.fold(0.0, (sum, l) => sum + l.product.mrp * l.quantity);
+  /// Total product savings = Σ (mrp − sellingPrice) × qty, counted ONLY on
+  /// lines where mrp > sellingPrice. A bad catalog row (mrp missing / ≤ selling
+  /// price) contributes zero rather than a negative or fabricated saving.
+  /// (Legal Metrology / CP — no false "% off"/savings claim.)
+  double get savings => _lines.values.fold(0.0, (sum, l) {
+        final mrp = l.product.mrp;
+        final selling = l.product.sellingPrice;
+        return mrp > selling ? sum + (mrp - selling) * l.quantity : sum;
+      });
+
+  /// MRP strike-through baseline the cart and checkout bill cards both render.
+  /// Derived as subtotal + savings so it stays consistent with the per-line
+  /// savings guard above (no inflated strike from a bad catalog row).
+  /// Centralised so the two pages can't drift.
+  double get mrpTotal => totalPrice + savings;
   /// Distinct shop ids the cart spans. Used by coupon validation to
   /// enforce shop-scoped redemption rules.
   List<int> get shopIds {

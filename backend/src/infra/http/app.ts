@@ -134,16 +134,10 @@ export function buildApp(): express.Express {
     }),
   );
 
-  // Payment-gateway webhooks + meta. MOUNTED BEFORE express.json so the
-  // webhook handler sees the raw bytes (it carries its own express.raw) — HMAC
-  // signature verification fails if the body is reparsed. Unauthenticated:
-  // trust comes from the provider signature, so it's also before requireAuth.
-  app.use('/payment-gateway', paymentGatewayPublicRouter);
-
-  app.use(express.json({ limit: '2mb' }));
-
   // All rate limiters live in ./limiters so this file stays focused on
-  // middleware order + route mounting. Tune limits there, not here.
+  // middleware order + route mounting. Tune limits there, not here. Built
+  // here (before the webhook mount) so the unauthenticated webhook can carry
+  // its own per-IP limiter (PR-L2).
   const {
     auth: authLimiter,
     public: publicLimiter,
@@ -151,7 +145,19 @@ export function buildApp(): express.Express {
     upload: uploadLimiter,
     events: eventsLimiter,
     carouselWrite: carouselWriteLimiter,
+    webhook: webhookLimiter,
   } = buildLimiters();
+
+  // Payment-gateway webhooks + meta. MOUNTED BEFORE express.json so the
+  // webhook handler sees the raw bytes (it carries its own express.raw) — HMAC
+  // signature verification fails if the body is reparsed. Unauthenticated:
+  // trust comes from the provider signature, so it's also before requireAuth.
+  // PR-L2 — a per-IP rate limiter caps the unsigned-flood CPU sink (each
+  // request runs an HMAC verify before fail-closed) without dropping the
+  // sparse legit provider deliveries.
+  app.use('/payment-gateway', webhookLimiter, paymentGatewayPublicRouter);
+
+  app.use(express.json({ limit: '2mb' }));
 
   app.get('/health', async (_req, res) => {
     try {

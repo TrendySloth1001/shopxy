@@ -81,6 +81,14 @@ export interface CashierError {
 const num = (d: Prisma.Decimal | number | null | undefined): number =>
   d == null ? 0 : typeof d === 'number' ? d : Number(d);
 
+/// CASH-7 — money at the boundary. A float amount (opening float, counted cash,
+/// a cash movement) is wrapped in Decimal and rounded to 2dp HALF_UP before it
+/// touches a Decimal(12,2)/(15,2) column, so a 3rd-decimal input or a binary
+/// float artefact (0.1+0.2) is rounded deterministically here rather than left
+/// to the DB's silent store-time coercion.
+const money2dp = (n: number): Prisma.Decimal =>
+  new Prisma.Decimal(n).toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP);
+
 const isErr = (r: unknown): r is CashierError =>
   typeof r === 'object' && r !== null && 'error' in r;
 
@@ -170,7 +178,7 @@ export async function openShift(
   const existing = await getOpenShift(shopId, userId);
   if (existing) return existing;
   const row = await prisma.cashierShift.create({
-    data: { shopId, openedById: userId, openingFloat: new Prisma.Decimal(openingFloat) },
+    data: { shopId, openedById: userId, openingFloat: money2dp(openingFloat) },
     select: SHIFT_SELECT,
   });
   return attachOpener(shiftView(row));
@@ -190,7 +198,7 @@ export async function addCashMovement(
       shopId,
       shiftId: shift.id,
       type: input.type,
-      amount: new Prisma.Decimal(input.amount),
+      amount: money2dp(input.amount),
       reason: input.reason ?? null,
       createdById: userId,
     },
@@ -234,9 +242,12 @@ export async function closeShift(
     const rep = await report(shopId, shift.id, { db: tx });
     if (isErr(rep)) return { ok: false as const, error: rep.error };
 
-    // Money math in Decimal end-to-end: variance = counted − expected.
-    const counted = new Prisma.Decimal(input.countedCash);
-    const expected = new Prisma.Decimal(rep.cash.expected);
+    // Money math in Decimal end-to-end: variance = counted − expected. Both
+    // operands are rounded to 2dp HALF_UP first (CASH-7) so a 3rd-decimal
+    // counted-cash input or a float-summed `expected` can't leave sub-paise
+    // residue in the snapshotted variance.
+    const counted = money2dp(input.countedCash);
+    const expected = money2dp(rep.cash.expected);
     const variance = counted.minus(expected);
     await tx.cashierShift.update({
       where: { id: shift.id },
@@ -292,18 +303,31 @@ export async function report(
   // Credit notes (sales returns) issued ON this shift. CASH-1 — scope by the
   // note's shiftId (stamped at issue time), not a shop-wide createdAt window,
   // so concurrent shifts on different tills can't claim each other's returns.
+  // CASH-8 — also sum the credit notes' output-tax fields so the shift's GST
+  // summary can NET returns (Sec 34 / GSTR-1 credit-note adjustment) instead of
+  // reporting gross-of-returns output tax.
+  const returnNotes = await db.invoice.findMany({
+    where: { shopId, documentType: 'CREDIT_NOTE', shiftId },
+    select: { id: true },
+  });
+  const returnInvoiceIds = returnNotes.map((n) => n.id);
   const returnsAgg = await db.invoice.aggregate({
-    where: {
-      shopId,
-      documentType: 'CREDIT_NOTE',
-      shiftId,
+    where: { id: { in: returnInvoiceIds } },
+    _sum: {
+      total: true,
+      taxableValue: true,
+      cgstAmount: true,
+      sgstAmount: true,
+      igstAmount: true,
+      cessAmount: true,
     },
-    _sum: { total: true },
     _count: { _all: true },
   });
 
   // Receipts by tender mode (live receipts only) + GST totals from the invoices.
-  const [tenderRows, gst, rateRows, movementRows, movementSums] = await Promise.all([
+  // CASH-8 — `returnRateRows` is the rate-wise output-tax on the shift's credit
+  // notes, netted out of `gstByRate` below.
+  const [tenderRows, gst, rateRows, returnRateRows, movementRows, movementSums] = await Promise.all([
     invoiceIds.length
       ? db.payment.groupBy({
           by: ['mode'],
@@ -348,6 +372,30 @@ export async function report(
             cessAmount: Prisma.Decimal | null;
           };
         }>),
+    // CASH-8 — rate-wise output tax on the shift's credit notes (returns), to
+    // net against the sale rate rows so `gstByRate` shows tax net of returns.
+    returnInvoiceIds.length
+      ? db.invoiceItem.groupBy({
+          by: ['taxPercent'],
+          where: { invoiceId: { in: returnInvoiceIds } },
+          _sum: {
+            taxableValue: true,
+            cgstAmount: true,
+            sgstAmount: true,
+            igstAmount: true,
+            cessAmount: true,
+          },
+        })
+      : Promise.resolve([] as Array<{
+          taxPercent: Prisma.Decimal;
+          _sum: {
+            taxableValue: Prisma.Decimal | null;
+            cgstAmount: Prisma.Decimal | null;
+            sgstAmount: Prisma.Decimal | null;
+            igstAmount: Prisma.Decimal | null;
+            cessAmount: Prisma.Decimal | null;
+          };
+        }>),
     db.cashMovement.findMany({
       where: { shiftId },
       orderBy: { id: 'asc' },
@@ -369,6 +417,36 @@ export async function report(
   const refunds = sumOf('REFUND');
   const expected = shift.openingFloat + cashSales + payIns - payOuts - drops - refunds;
 
+  // CASH-8 — net the shift's credit-note output tax out of the GST summary so
+  // the Z-report's rate-wise + total figures are GSTR-ready (net of returns,
+  // per Sec 34) rather than gross-of-returns. Netting is done in Decimal to
+  // avoid float residue, then surfaced as numbers like the rest of the report.
+  const D = (d: Prisma.Decimal | null | undefined) => new Prisma.Decimal(d ?? 0);
+  const netGst = {
+    taxable: D(gst?._sum.taxableValue).minus(D(returnsAgg._sum.taxableValue)),
+    cgst: D(gst?._sum.cgstAmount).minus(D(returnsAgg._sum.cgstAmount)),
+    sgst: D(gst?._sum.sgstAmount).minus(D(returnsAgg._sum.sgstAmount)),
+    igst: D(gst?._sum.igstAmount).minus(D(returnsAgg._sum.igstAmount)),
+    cess: D(gst?._sum.cessAmount).minus(D(returnsAgg._sum.cessAmount)),
+    total: D(gst?._sum.total).minus(D(returnsAgg._sum.total)),
+  };
+
+  // Rate-wise: subtract credit-note taxable + tax per rate, then drop rows that
+  // net to zero (a fully-returned rate).
+  const rateMap = new Map<number, { taxable: Prisma.Decimal; tax: Prisma.Decimal }>();
+  const tax = (s: { cgstAmount: Prisma.Decimal | null; sgstAmount: Prisma.Decimal | null; igstAmount: Prisma.Decimal | null; cessAmount: Prisma.Decimal | null }) =>
+    D(s.cgstAmount).plus(D(s.sgstAmount)).plus(D(s.igstAmount)).plus(D(s.cessAmount));
+  for (const r of rateRows) {
+    const rate = num(r.taxPercent);
+    const cur = rateMap.get(rate) ?? { taxable: new Prisma.Decimal(0), tax: new Prisma.Decimal(0) };
+    rateMap.set(rate, { taxable: cur.taxable.plus(D(r._sum.taxableValue)), tax: cur.tax.plus(tax(r._sum)) });
+  }
+  for (const r of returnRateRows) {
+    const rate = num(r.taxPercent);
+    const cur = rateMap.get(rate) ?? { taxable: new Prisma.Decimal(0), tax: new Prisma.Decimal(0) };
+    rateMap.set(rate, { taxable: cur.taxable.minus(D(r._sum.taxableValue)), tax: cur.tax.minus(tax(r._sum)) });
+  }
+
   return {
     shift,
     sales: { count: gst?._count._all ?? 0, gross: num(gst?._sum.total) },
@@ -385,20 +463,19 @@ export async function report(
       variance: shift.variance,
     },
     returns: { count: returnsAgg._count._all, amount: num(returnsAgg._sum.total) },
+    // CASH-8 — net of credit notes (returns) issued on this shift.
     gst: {
-      taxable: num(gst?._sum.taxableValue),
-      cgst: num(gst?._sum.cgstAmount),
-      sgst: num(gst?._sum.sgstAmount),
-      igst: num(gst?._sum.igstAmount),
-      cess: num(gst?._sum.cessAmount),
-      total: num(gst?._sum.total),
+      taxable: netGst.taxable.toNumber(),
+      cgst: netGst.cgst.toNumber(),
+      sgst: netGst.sgst.toNumber(),
+      igst: netGst.igst.toNumber(),
+      cess: netGst.cess.toNumber(),
+      total: netGst.total.toNumber(),
     },
-    gstByRate: rateRows
-      .map((r) => ({
-        rate: num(r.taxPercent),
-        taxable: num(r._sum.taxableValue),
-        tax: num(r._sum.cgstAmount) + num(r._sum.sgstAmount) + num(r._sum.igstAmount) + num(r._sum.cessAmount),
-      }))
+    gstByRate: [...rateMap.entries()]
+      .map(([rate, v]) => ({ rate, taxable: v.taxable.toNumber(), tax: v.tax.toNumber() }))
+      // Drop rows that fully netted to zero (a rate entirely returned).
+      .filter((r) => r.taxable !== 0 || r.tax !== 0)
       .sort((a, b) => a.rate - b.rate),
     movements: movementRows.map((m) => ({
       id: m.id,

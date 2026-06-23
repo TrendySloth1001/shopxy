@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import asyncHandler from '../../shared/http/asyncHandler.js';
+import { requireRight, POS_OVERRIDE_RIGHT } from '../../shared/http/permissions.js';
 import { returnsController } from './returns.controller.js';
 
 // Customer-side. Mounted at `/me/returns` + a parent-scoped submit at
@@ -53,8 +54,14 @@ merchantReturnsRouter.post(
   '/:id/received',
   asyncHandler((req, res) => returnsController.received(req, res)),
 );
+// Issuing the refund moves real money (wallet credit + Route claw-back),
+// so it's gated on the sensitive `invoices:override` right in addition to
+// the `orders:manage` the rest of the returns workflow needs — a plain
+// order-manager can advance the workflow but not release funds. Owner and
+// Manager hold the override; a custom `orders:manage`-only grant does not.
 merchantReturnsRouter.post(
   '/:id/refund',
+  requireRight(POS_OVERRIDE_RIGHT),
   asyncHandler((req, res) => returnsController.refund(req, res)),
 );
 
