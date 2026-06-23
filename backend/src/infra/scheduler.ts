@@ -11,6 +11,7 @@ import { isRouteSplitEnabled } from '../modules/payment-gateway/settlement/order
 import { linkedAccountsService } from '../modules/linked-accounts/linked-accounts.service.js';
 import { sweepStaleSales } from '../modules/pos/pos.service.js';
 import { runChangefeed, reconcileRecent } from '../modules/analytics-rollup/changefeed.service.js';
+import { runOutboxRelay } from './outbox/relay.js';
 import { tryAcquireJobLock } from './redis.js';
 
 /// Lightweight in-process cron registry. We deliberately stay on
@@ -54,6 +55,18 @@ export function startScheduler(): void {
         if (!(await tryAcquireJobLock('rollup:changefeed', 55_000))) return { skipped: 'locked' };
         return runChangefeed();
       }),
+    ),
+  );
+
+  // Every minute — drain the transactional outbox: fan PENDING domain events
+  // out to their derived-store handlers (today: analytics roll-ups). Deliberately
+  // NOT job-locked — the relay claims with FOR UPDATE SKIP LOCKED, so every
+  // instance can drain in parallel without double-dispatching. This is the
+  // durable, event-driven path that supersedes the polling changefeed above; the
+  // changefeed + nightly reconcile stay on as a safety net while we build trust.
+  jobs.push(
+    cron.schedule('* * * * *', () =>
+      runSafely('outbox:relay', () => runOutboxRelay()),
     ),
   );
 

@@ -4,6 +4,7 @@ import { round2, toNumber } from '../../shared/numbering/decimal.js';
 import { walletService } from '../wallet/wallet.service.js';
 import { invoicesService, PosInvoiceError } from '../invoices/invoices.service.js';
 import { reverseTransferForReturn } from '../payment-gateway/settlement/transfer-actions.js';
+import { enqueueOutbox } from '../../infra/outbox/outbox.js';
 
 /// Canonical return reasons. Kept loose (string) on the DB so adding
 /// a new category later doesn't require a migration; the enum below
@@ -543,6 +544,9 @@ export class ReturnsService {
           customerName: true,
           customerPhone: true,
           placeOfSupplyStateCode: true,
+          // Returned COGS is attributed to the day the goods were SOLD, so the
+          // outbox event (below) buckets the roll-up by the original sale date.
+          invoiceDate: true,
           items: {
             select: {
               productId: true,
@@ -636,6 +640,25 @@ export class ReturnsService {
         }
         throw e;
       }
+
+      // Outbox (same tx): the credit note already emitted its own
+      // `invoice.confirmed` (for the credit-note day); this second event rebuilds
+      // the ORIGINAL sale day's bucket, where returned COGS is booked — matching
+      // the changefeed's return_requests→invoice_date join.
+      await enqueueOutbox(
+        {
+          aggregateType: 'return_request',
+          aggregateId: opts.id,
+          eventType: 'return.refunded',
+          shopId: opts.shopId,
+          payload: {
+            returnRequestId: opts.id,
+            originalInvoiceId,
+            occurredAt: originalInvoice.invoiceDate.toISOString(),
+          },
+        },
+        tx,
+      );
 
       // PR-H2 — compute the refund and its tender split from a SINGLE source of
       // truth: the per-tender amounts the buyer actually paid, prorated by the

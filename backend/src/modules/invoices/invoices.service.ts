@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
+import { enqueueOutbox } from '../../infra/outbox/outbox.js';
 import { Writable } from 'stream';
 import { ledgerService } from '../ledger/ledger.service.js';
 import { nextInvoiceNo } from '../../shared/numbering/sequences.js';
@@ -259,6 +260,20 @@ export class InvoicesService {
       }
       throw new PosInvoiceError(posted.error);
     }
+
+    // Outbox (same tx): a POS sale is born CONFIRMED, so its roll-up event fires
+    // the moment the checkout commits. occurredAt = invoiceDate so the handler
+    // buckets into the same IST day the changefeed would.
+    await enqueueOutbox(
+      {
+        aggregateType: 'invoice',
+        aggregateId: invoice.id,
+        eventType: 'invoice.confirmed',
+        shopId: data.shopId,
+        payload: { invoiceId: invoice.id, occurredAt: invoice.invoiceDate.toISOString() },
+      },
+      tx,
+    );
     return invoice;
   }
 
@@ -324,6 +339,21 @@ export class InvoicesService {
       },
       include: { items: true },
     });
+
+    // Outbox (same tx): a credit note is a CONFIRMED sale document that reduces
+    // the day's net sales / reverses GST, so it feeds the roll-up exactly like a
+    // sale confirm. Emitting right after creation means a later stock-restock
+    // failure rolls the event back with the whole transaction.
+    await enqueueOutbox(
+      {
+        aggregateType: 'invoice',
+        aggregateId: invoice.id,
+        eventType: 'invoice.confirmed',
+        shopId: data.shopId,
+        payload: { invoiceId: invoice.id, occurredAt: invoice.invoiceDate.toISOString() },
+      },
+      tx,
+    );
 
     // Stock IN — the returned goods come back to the shelf. PR-H1: restock at
     // the ORIGINAL sale's cost basis by restoring the layers the sale consumed,
@@ -1317,6 +1347,30 @@ export class InvoicesService {
         data: { status, ...snapshotRefresh },
         include: { vendor: true, party: true, items: true },
       });
+
+      // Outbox (same tx): emit on the money-affecting transitions so derived
+      // read models (roll-ups today) update reactively. occurredAt = the
+      // invoice's date so the handler buckets into the right IST day. We only
+      // emit on DRAFT→CONFIRMED and CONFIRMED→CANCELLED — a DRAFT cancel never
+      // hit the books, so there is nothing to recompute.
+      const eventType =
+        invoice.status === 'DRAFT' && status === 'CONFIRMED'
+          ? 'invoice.confirmed'
+          : invoice.status === 'CONFIRMED' && status === 'CANCELLED'
+            ? 'invoice.cancelled'
+            : null;
+      if (eventType) {
+        await enqueueOutbox(
+          {
+            aggregateType: 'invoice',
+            aggregateId: updated.id,
+            eventType,
+            shopId,
+            payload: { invoiceId: updated.id, occurredAt: updated.invoiceDate.toISOString() },
+          },
+          tx,
+        );
+      }
       return { invoice: updated };
     });
   }
