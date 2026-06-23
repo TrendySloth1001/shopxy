@@ -227,7 +227,7 @@ export class SearchService {
       FROM scored sc
       JOIN products p ON p.id = sc.id
       JOIN shops    s ON s.id = p.shop_id
-      WHERE p.is_published = true AND p.is_active = true
+      WHERE p.is_published = true AND p.is_active = true AND s.is_published = true
       ORDER BY sc.combined_rank DESC, p.rating_count DESC, p.id ASC
       LIMIT 50
       `,
@@ -266,6 +266,7 @@ export class SearchService {
       JOIN shops s ON s.id = p.shop_id
       WHERE p.is_published = true
         AND p.is_active    = true
+        AND s.is_published = true
         AND p.search_vector @@ plainto_tsquery('english', ${query})
         AND (${filters.categoryId ?? null}::int IS NULL OR p.category_id = ${filters.categoryId ?? null})
         AND (${filters.shopId ?? null}::int     IS NULL OR p.shop_id     = ${filters.shopId ?? null})
@@ -286,8 +287,10 @@ export class SearchService {
       prisma.$queryRaw<Array<{ id: number; name: string }>>`
         SELECT p.id, p.name
         FROM products p
+        JOIN shops s ON s.id = p.shop_id
         WHERE p.is_published = true
           AND p.is_active    = true
+          AND s.is_published = true
           AND p.search_vector @@ plainto_tsquery('english', ${query})
         ORDER BY ts_rank(p.search_vector, plainto_tsquery('english', ${query})) DESC
         LIMIT 8

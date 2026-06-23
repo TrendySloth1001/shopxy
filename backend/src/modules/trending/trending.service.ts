@@ -38,7 +38,7 @@ const productPublicSelect = {
   ratingAvg: true,
   ratingCount: true,
   isPublished: true,
-  shop: { select: { id: true, name: true, slug: true } },
+  shop: { select: { id: true, name: true, slug: true, isPublished: true } },
   images: {
     select: { url: true, sortOrder: true },
     orderBy: { sortOrder: 'asc' as const },
@@ -236,9 +236,9 @@ export class TrendingService {
       },
     });
 
-    // Marketplace surface should never expose unpublished products,
-    // even if they trended internally (review pre-publish, etc).
-    return rows.filter((r) => r.product.isPublished);
+    // Marketplace surface should never expose unpublished products or products
+    // from unpublished shops, even if they trended internally.
+    return rows.filter((r) => r.product.isPublished && r.product.shop?.isPublished);
   }
 
   // ── Recommendations ────────────────────────────────────────────
@@ -312,7 +312,7 @@ export class TrendingService {
       select: {
         score: true,
         product: {
-          select: { id: true, isPublished: true, shopId: true },
+          select: { id: true, isPublished: true, shopId: true, shop: { select: { isPublished: true } } },
         },
       },
     });
@@ -321,7 +321,7 @@ export class TrendingService {
     const aggregate = new Map<number, Scored>();
     for (const row of candidateRows) {
       const p = row.product;
-      if (!p.isPublished) continue;
+      if (!p.isPublished || !p.shop?.isPublished) continue;
       const base = Number(row.score);
       let score = base;
       if (visitedShops.has(p.shopId)) score *= 1.2;

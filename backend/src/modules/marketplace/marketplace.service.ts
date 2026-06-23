@@ -99,7 +99,8 @@ export class MarketplaceService {
         id,
         isActive: true,
         isPublished: true,
-        ...(viewerUserId ? { shop: { ownerUserId: { not: viewerUserId } } } : {}),
+        // The owning shop must itself be published (hide unpublished shops).
+        shop: { isPublished: true, ...(viewerUserId ? { ownerUserId: { not: viewerUserId } } : {}) },
       },
       select: detailSelect,
     });
@@ -219,9 +220,8 @@ export class MarketplaceService {
       categoryId: { in: ids },
       isActive: true,
       isPublished: true,
-      ...(opts.viewerUserId
-        ? { shop: { ownerUserId: { not: opts.viewerUserId } } }
-        : {}),
+      // Only products from published shops.
+      shop: { isPublished: true, ...(opts.viewerUserId ? { ownerUserId: { not: opts.viewerUserId } } : {}) },
     };
     const filterWhere: Prisma.ProductWhereInput = {
       ...baseWhere,
