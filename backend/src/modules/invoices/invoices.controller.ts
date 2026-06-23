@@ -2,13 +2,33 @@ import { Request, Response } from 'express';
 import { z } from 'zod';
 import { parsePagination, paginatedResponse } from '../../shared/http/pagination.js';
 import { invoicesService } from './invoices.service.js';
+import { isValidStateCode } from '../../shared/validation/indian.js';
+
+/// GST-10 — the legal GST rate slabs an output tax invoice may carry. A client
+/// may legitimately override the product's configured rate to mark a line
+/// exempt/nil-rated, but it can only ever be one of the notified slabs — never
+/// an arbitrary percentage (e.g. 7% on an 18% HSN, which would short-collect
+/// output GST). 0 covers exempt/nil; 0.1/0.25/1/1.5/3 are the special-rate
+/// slabs (rough diamonds, precious stones, gold, etc.); 5/12/18/28 are the
+/// standard slabs. Cess is open-ended (ad-valorem rates vary by HSN) so it is
+/// NOT slab-checked.
+const GST_SLABS = new Set([0, 0.1, 0.25, 1, 1.5, 3, 5, 12, 18, 28]);
 
 const itemSchema = z
   .object({
     productId: z.number().int().positive(),
     quantity: z.number().positive(),
     unitPrice: z.number().nonnegative(),
-    taxPercent: z.number().min(0).max(100).optional(),
+    /// GST-10 — when supplied, must be one of the notified GST slabs. Omitting
+    /// it inherits the product/variant statutory rate (the C1 fallback).
+    taxPercent: z
+      .number()
+      .min(0)
+      .max(100)
+      .refine((r) => GST_SLABS.has(r), {
+        message: 'taxPercent must be a valid GST slab (0, 0.1, 0.25, 1, 1.5, 3, 5, 12, 18, 28)',
+      })
+      .optional(),
     /// GST compensation cess. Most line items leave this at 0; tobacco /
     /// luxury goods / aerated drinks attract it.
     cessRate: z.number().min(0).max(100).optional(),
@@ -46,6 +66,44 @@ function refineHeaderDiscount<T extends { discount?: number; items: Array<{ quan
   }
 }
 
+/// GST-11 — place-of-supply integrity. The `\d{2}` regex only proves the field
+/// is two digits; it does not prove it is a REAL GST state code, nor that it
+/// agrees with a B2B recipient's GSTIN. Both matter for IGST-vs-CGST/SGST:
+///   1. An unknown code (e.g. "99") would silently be treated as interstate.
+///   2. A registered recipient's place of supply is its GSTIN state — if the
+///      explicit POS disagrees with the GSTIN's first two digits, the tax head
+///      is wrong (CGST/SGST charged where IGST is due, or vice versa).
+/// We reject an out-of-table code outright, and reject a POS that contradicts
+/// the recipient GSTIN. (When POS is omitted the engine derives it from the
+/// customer/shop state, so the GSTIN-based default still applies downstream.)
+function refinePlaceOfSupply<
+  T extends { placeOfSupplyStateCode?: string; customerGstin?: string },
+>(data: T, ctx: z.RefinementCtx): void {
+  const pos = data.placeOfSupplyStateCode;
+  if (pos !== undefined && !isValidStateCode(pos)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'placeOfSupplyStateCode is not a valid GST state code',
+      path: ['placeOfSupplyStateCode'],
+    });
+    return;
+  }
+  const gstin = data.customerGstin?.trim().toUpperCase();
+  if (pos !== undefined && gstin && gstin.length >= 2) {
+    const gstinState = gstin.slice(0, 2);
+    // Only cross-check when the GSTIN's state prefix is itself a real code —
+    // a malformed GSTIN is rejected separately in the service (GST-6).
+    if (isValidStateCode(gstinState) && gstinState !== pos) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          'placeOfSupplyStateCode does not match the recipient GSTIN state',
+        path: ['placeOfSupplyStateCode'],
+      });
+    }
+  }
+}
+
 const documentTypeEnum = z.enum([
   'TAX_INVOICE',
   'BILL_OF_SUPPLY',
@@ -73,7 +131,9 @@ const createInvoiceSchema = z.object({
   isPriceInclusive: z.boolean().optional(),
   items: z.array(itemSchema).min(1),
   confirm: z.boolean().optional(),
-}).superRefine(refineHeaderDiscount);
+})
+  .superRefine(refineHeaderDiscount)
+  .superRefine(refinePlaceOfSupply);
 
 const updateStatusSchema = z.object({
   status: z.enum(['DRAFT', 'CONFIRMED', 'CANCELLED']),
@@ -92,7 +152,9 @@ const updateInvoiceSchema = z.object({
   note: z.string().max(1000).optional(),
   isPriceInclusive: z.boolean().optional(),
   items: z.array(itemSchema).min(1),
-}).superRefine(refineHeaderDiscount);
+})
+  .superRefine(refineHeaderDiscount)
+  .superRefine(refinePlaceOfSupply);
 
 const listQuerySchema = z.object({
   type: z.enum(['SALE', 'PURCHASE']).optional(),

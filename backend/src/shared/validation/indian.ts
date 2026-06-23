@@ -88,6 +88,14 @@ export function stateNameFromCode(code: string | null | undefined): string | nul
   return STATE_NAME_BY_CODE.get(code) ?? null;
 }
 
+/// True when `code` is a real 2-digit GST state code from the notification
+/// table. Used to validate a place-of-supply / GSTIN-prefix state code beyond
+/// the `\d{2}` shape (GST-11) — a code like "99" is two digits but not a state.
+export function isValidStateCode(code: string | null | undefined): boolean {
+  if (!code) return false;
+  return STATE_NAME_BY_CODE.has(code);
+}
+
 /// Predicate: do we cross a state boundary (IGST) or stay inside one (CGST+SGST)?
 /// Defaults to intrastate when either side is unknown — safer than mis-charging IGST.
 export function isInterstateSupply(

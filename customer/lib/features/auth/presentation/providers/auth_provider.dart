@@ -83,8 +83,20 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> register(String name, String email, String password) async {
-    final result = await _dataSource.register(name, email, password);
+  Future<void> register(
+    String name,
+    String email,
+    String password, {
+    required bool acceptedTerms,
+    required bool acceptedPrivacy,
+  }) async {
+    final result = await _dataSource.register(
+      name,
+      email,
+      password,
+      acceptedTerms: acceptedTerms,
+      acceptedPrivacy: acceptedPrivacy,
+    );
     await _tokenManager.saveTokens(
       accessToken: result.accessToken,
       refreshToken: result.refreshToken,

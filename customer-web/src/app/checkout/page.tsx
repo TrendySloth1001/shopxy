@@ -57,7 +57,7 @@ type PayAttemptOutcome = "paid" | "pendingConfirmation" | "dismissed" | "failed"
 function CheckoutInner() {
   const router = useRouter();
   const { user } = useAuth();
-  const { lines, subtotal, clear } = useCart();
+  const { lines, subtotal, savings, clear } = useCart();
 
   // ── Address state ────────────────────────────────────────────────────────
   const [addresses, setAddresses] = useState<UserAddress[]>([]);
@@ -97,10 +97,12 @@ function CheckoutInner() {
   const idempotencyKey = { current: idempotencyKeyValue };
 
   // ── Derived totals ────────────────────────────────────────────────────────
-  const mrpTotal = lines.reduce((s, l) => s + l.product.mrp * l.quantity, 0);
-  const productSavings = Math.max(0, mrpTotal - subtotal);
-  const deliveryStrike = 49;
-  const deliveryCharge = 0;
+  // Product savings come from the cart context, which counts a saving only
+  // where mrp > sellingPrice per line (no negative/fabricated savings from a
+  // bad catalog row). The struck "Items (MRP)" reference is derived from
+  // subtotal + savings so it stays consistent with that guard.
+  const productSavings = savings;
+  const mrpTotal = subtotal + productSavings;
 
   const couponDiscount = appliedCoupon
     ? computeCouponDiscount(appliedCoupon, subtotal)
@@ -109,7 +111,12 @@ function CheckoutInner() {
   const walletBalance = wallet?.balance ?? 0;
   const walletApply = useWallet ? Math.min(walletBalance, afterCoupon) : 0;
   const grandTotal = Math.max(0, afterCoupon - walletApply);
-  const totalSavings = productSavings + (deliveryStrike - deliveryCharge) + couponDiscount;
+  // Savings reflect only real price reductions — product (MRP − selling) and
+  // coupon. Delivery is genuinely free (deliveryCharge = 0), so there is no
+  // waived fee to strike: do NOT fabricate a ₹49 reference price. (CP
+  // E-Commerce Rules r.4 / CCPA dark-pattern guidance — no fictitious
+  // reference prices.)
+  const totalSavings = productSavings + couponDiscount;
 
   // GST breakup — prices are inclusive of tax, so we back the tax out of the
   // line amounts (qty × inclusive selling price) grouped by rate. This shows
@@ -611,7 +618,6 @@ function CheckoutInner() {
                 itemsTotal={subtotal}
                 mrpTotal={mrpTotal}
                 productSavings={productSavings}
-                deliveryStrike={deliveryStrike}
                 grandTotal={grandTotal}
                 couponDiscount={couponDiscount}
                 walletApplied={walletApply}
@@ -1019,7 +1025,6 @@ function PriceCard({
   itemsTotal,
   mrpTotal,
   productSavings,
-  deliveryStrike,
   grandTotal,
   couponDiscount,
   walletApplied,
@@ -1028,7 +1033,6 @@ function PriceCard({
   itemsTotal: number;
   mrpTotal: number;
   productSavings: number;
-  deliveryStrike: number;
   grandTotal: number;
   couponDiscount: number;
   walletApplied: number;
@@ -1055,7 +1059,6 @@ function PriceCard({
         <PriceRow
           label="Delivery"
           value={`FREE`}
-          extraValue={formatINR(deliveryStrike)}
           valueClass="text-success font-bold"
         />
         {couponDiscount > 0 && (

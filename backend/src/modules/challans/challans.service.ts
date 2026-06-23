@@ -50,66 +50,100 @@ export class ChallansService {
       }
     }
 
-    const challanNo = await nextChallanNo(shopId);
+    // CWQ-5 — allocate the challan number, create the challan, and post the
+    // OUT movement to the ledger inside ONE transaction. The quotation path
+    // already does this "so a rollback doesn't burn the counter"; challans
+    // previously allocated on the global client and `delete`-d on a ledger
+    // failure, leaving a permanent gap in CH/FY/NNNNN. With the allocation
+    // enrolled in the txn, a ledger failure rolls back the counter bump too,
+    // keeping the sequence contiguous. We surface a typed sentinel for the
+    // insufficient-stock case so the controller can echo the line details.
+    type InsufficientStock = {
+      kind: 'INSUFFICIENT_STOCK';
+      productId?: number;
+      available?: number;
+      requested?: number;
+    };
+    try {
+      const challan = await prisma.$transaction(async (tx) => {
+        const challanNo = await nextChallanNo(shopId, tx);
 
-    const challan = await prisma.challan.create({
-      data: {
-        shopId,
-        challanNo,
-        partyId,
-        partyName,
-        partyPhone,
-        note: data.note ?? null,
-        items: {
-          create: data.items.map((item) => {
-            const product = productMap.get(item.productId)!;
-            return {
-              productId: item.productId,
-              productName: product.name,
-              productSku: product.sku,
-              unit: product.unit,
-              quantity: item.quantity,
-            };
-          }),
-        },
-      },
-      include: { items: true, party: true },
-    });
+        const created = await tx.challan.create({
+          data: {
+            shopId,
+            challanNo,
+            partyId,
+            partyName,
+            partyPhone,
+            note: data.note ?? null,
+            items: {
+              create: data.items.map((item) => {
+                const product = productMap.get(item.productId)!;
+                return {
+                  productId: item.productId,
+                  productName: product.name,
+                  productSku: product.sku,
+                  unit: product.unit,
+                  quantity: item.quantity,
+                };
+              }),
+            },
+          },
+          include: { items: true, party: true },
+        });
 
-    // Post stock movement to the ledger — goods have physically left
-    // the building. If posting fails (e.g. insufficient stock), unwind
-    // the challan so the database stays consistent.
-    const result = await ledgerService.post({
-      shopId: shopId,
-      direction: 'OUT',
-      reasonCode: 'SALE',
-      sourceType: 'CHALLAN',
-      sourceId: challan.id,
-      createdById: data.createdById,
-      counterpartyName: challan.partyName,
-      counterpartyGstin: challan.party?.gstin ?? undefined,
-      note: `Challan ${challan.challanNo}`,
-      lines: challan.items.map((it) => ({
-        productId: it.productId,
-        quantity: Number(it.quantity),
-        sourceLineId: it.id,
-      })),
-    });
+        // Post stock movement to the ledger — goods have physically left
+        // the building. A failure (e.g. insufficient stock) throws, which
+        // rolls back the whole transaction: challan, items, AND the counter
+        // bump, so no number is burned.
+        const result = await ledgerService.post(
+          {
+            shopId,
+            direction: 'OUT',
+            reasonCode: 'SALE',
+            sourceType: 'CHALLAN',
+            sourceId: created.id,
+            createdById: data.createdById,
+            counterpartyName: created.partyName,
+            counterpartyGstin: created.party?.gstin ?? undefined,
+            note: `Challan ${created.challanNo}`,
+            lines: created.items.map((it) => ({
+              productId: it.productId,
+              quantity: Number(it.quantity),
+              sourceLineId: it.id,
+            })),
+          },
+          tx,
+        );
 
-    if ('error' in result) {
-      await prisma.challan.delete({ where: { id: challan.id } });
-      if (result.error === 'Insufficient stock') {
+        if ('error' in result) {
+          if (result.error === 'Insufficient stock') {
+            throw {
+              kind: 'INSUFFICIENT_STOCK',
+              productId: result.productId,
+              available: result.available,
+              requested: result.requested,
+            } satisfies InsufficientStock;
+          }
+          throw new Error(result.error as string);
+        }
+
+        return created;
+      });
+
+      return { challan };
+    } catch (err) {
+      if (err && typeof err === 'object' && (err as InsufficientStock).kind === 'INSUFFICIENT_STOCK') {
+        const e = err as InsufficientStock;
         return {
           error: 'Insufficient stock for one or more items' as const,
-          productId: result.productId,
-          available: result.available,
-          requested: result.requested,
+          productId: e.productId,
+          available: e.available,
+          requested: e.requested,
         };
       }
-      return { error: result.error as string };
+      throw err;
     }
-
-    return { challan };
   }
 
   async listChallans(

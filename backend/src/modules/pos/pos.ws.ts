@@ -6,6 +6,7 @@ import { openShiftIdFor } from '../cashier/cashier.service.js';
 import { verifyOverride, type OverrideOp } from '../cashier/override.js';
 import type { WsAuthCtx } from '../scan-console/scan-console.service.js';
 import { hasRight, manageRight, POS_OVERRIDE_RIGHT } from '../../shared/http/permissions.js';
+import { resolveMembershipForUser } from '../../shared/http/requireAuth.js';
 import { logger } from '../../shared/logging/logger.js';
 
 /// POS over WebSocket — the till sends `{ t:'cmd', reqId, op, saleId?, … }` and
@@ -14,6 +15,11 @@ import { logger } from '../../shared/logging/logger.js';
 /// tills are emitted by pos.service via the SaleBus. Functional, no classes.
 
 const TENDER_MODES = ['CASH', 'UPI', 'CARD', 'NEFT', 'RTGS', 'CHEQUE', 'OTHER'] as const;
+
+/// CASH-10 — how long an open-shift-id resolution is trusted on a socket before
+/// re-querying. Short so a shift closed over REST is noticed promptly; the real
+/// money path (checkout/close) re-resolves the shift under its own transaction.
+const SHIFT_CACHE_TTL_MS = 10_000;
 
 // ── command arg schemas ──────────────────────────────────────────────────────
 const qty = z.number().positive().max(100_000);
@@ -89,10 +95,44 @@ export function handlePosCommand(ws: WebSocket, ctx: WsAuthCtx, msg: Record<stri
 
   // Shift gate: no scanning or selling until the cashier has opened a till shift.
   // POS runs entirely over this socket, so enforcing it here is authoritative.
+  //
+  // CASH-10 — cache the resolved open-shift id on the socket ctx for a short TTL
+  // so we don't run `cashierShift.findFirst` on every scan/setQty/etc. command.
+  // A negative result (no open shift) is NOT cached so a just-opened shift is
+  // picked up on the next command; a positive result is cached briefly (shifts
+  // close over REST, so a TTL bounds staleness — and checkout/close already
+  // re-resolve the shift id under their own tx).
   const requireShift = async <T>(run: () => Promise<T>): Promise<T | { error: string }> => {
+    const now = Date.now();
+    if (ctx._shiftId != null && ctx._shiftCheckedAt != null && now - ctx._shiftCheckedAt < SHIFT_CACHE_TTL_MS) {
+      return run();
+    }
     const sid = await openShiftIdFor(shopId, userId);
-    if (sid == null) return { error: 'Open a shift before you can scan or sell.' };
+    if (sid == null) {
+      ctx._shiftId = null;
+      ctx._shiftCheckedAt = undefined;
+      return { error: 'Open a shift before you can scan or sell.' };
+    }
+    ctx._shiftId = sid;
+    ctx._shiftCheckedAt = now;
     return run();
+  };
+
+  // CASH-9 — the ticket froze shopRole+permissions at connect time and the
+  // socket can stay open all day, so a permission revocation (manager demotes a
+  // cashier, revokes the override right) would never reach an open till. Before
+  // a sensitive op we re-resolve the caller's LIVE membership for THIS shop via
+  // `resolveMembershipForUser` (own 60s cache → cheap, but reflects revocations
+  // within the TTL) instead of trusting the frozen snapshot. Falls back to the
+  // ticket snapshot only if the live lookup yields nothing (membership gone →
+  // no rights anyway). Returns the role+permissions to gate against.
+  const liveRights = async (): Promise<{ shopRole?: string; permissions: string[] }> => {
+    const m = await resolveMembershipForUser(userId);
+    // A membership for a different shop than the ticket's must not grant rights
+    // on this till; only honour it when it matches the socket's shop.
+    if (m && m.shopId === shopId) return { shopRole: m.shopRole, permissions: m.permissions };
+    if (m) return { shopRole: undefined, permissions: [] };
+    return { shopRole: ctx.shopRole, permissions: ctx.permissions ?? [] };
   };
 
   // Privileged-action gate: discounts, price overrides, and voids require the
@@ -102,11 +142,13 @@ export function handlePosCommand(ws: WebSocket, ctx: WsAuthCtx, msg: Record<stri
   // CASH-2 — the replayed grant is single-use and bound to THIS sale + op, so it
   // can't be replayed twice or aimed at a different action. We resolve saleId
   // here from the parsed command (the same id the op runs against).
+  // CASH-9 — gate on LIVE rights, not the frozen ticket snapshot.
   const requireOverride = async <T>(
     overrideOp: OverrideOp,
     run: () => Promise<T>,
   ): Promise<T | { error: string; detail: { code: string } }> => {
-    if (hasRight(ctx.shopRole as never, ctx.permissions, POS_OVERRIDE_RIGHT)) return run();
+    const rights = await liveRights();
+    if (hasRight(rights.shopRole as never, rights.permissions, POS_OVERRIDE_RIGHT)) return run();
     const grant = typeof msg.override === 'string' ? msg.override : undefined;
     const targetSaleId = a.saleId;
     if (await verifyOverride(grant, shopId, targetSaleId, overrideOp)) return run();
@@ -148,14 +190,16 @@ export function handlePosCommand(ws: WebSocket, ctx: WsAuthCtx, msg: Record<stri
       void reply(ws, reqId, () => requireShift(() => requireOverride('setHeaderDiscount', () => pos.setHeaderDiscount(shopId, a.saleId, a.discount))));
       return;
     case 'quickAdd':
-      // Creating catalogue is products:manage — beyond the POS area's invoices gate.
-      if (!hasRight(ctx.shopRole as never, ctx.permissions, manageRight('products'))) {
-        send(ws, { t: 'res', reqId, ok: false, error: 'You need product management access to add new products' });
-        return;
-      }
-      void reply(ws, reqId, () =>
-        requireShift(() => pos.quickAddProduct(shopId, a.saleId, parsed.data as Parameters<typeof pos.quickAddProduct>[2], userId)),
-      );
+      // Creating catalogue is products:manage — beyond the POS area's invoices
+      // gate. CASH-9 — re-check LIVE rights (not the frozen ticket) so a revoked
+      // products:manage takes effect on an already-open till within the TTL.
+      void reply(ws, reqId, async () => {
+        const rights = await liveRights();
+        if (!hasRight(rights.shopRole as never, rights.permissions, manageRight('products'))) {
+          return { error: 'You need product management access to add new products' };
+        }
+        return requireShift(() => pos.quickAddProduct(shopId, a.saleId, parsed.data as Parameters<typeof pos.quickAddProduct>[2], userId));
+      });
       return;
     case 'checkout':
       void reply(ws, reqId, () =>

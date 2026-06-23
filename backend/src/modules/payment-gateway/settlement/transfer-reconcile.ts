@@ -27,9 +27,11 @@ import {
   type PaymentGatewayPort,
   type SplitCapablePort,
 } from '../ports/payment-provider.port.js';
-import { executeHeldTransfers } from './order-split.js';
+import { executeHeldTransfers, isRouteSplitEnabled } from './order-split.js';
+import { settlePosTransfer } from './pos-split.js';
 import { toMinorUnits, fromMinorUnits } from '../helpers.js';
 import { tracker } from '../tracker.js';
+import type { GatewayPaymentRecord, SettlementTargetType } from '../ports/types.js';
 
 /** Return states that mean a return is still in flight — hold the money. */
 const OPEN_RETURN_STATUSES = ['REQUESTED', 'APPROVED', 'PICKED_UP', 'RECEIVED'];
@@ -55,6 +57,15 @@ export interface TransferReconcileSummary {
   reversalMismatchFlagged: number;
   /** P7: KYC_GATED rows re-driven once their LinkedAccount activated. */
   kycRetried: number;
+  /**
+   * PR-M3: CAPTURED POS sales whose post-commit Route transfer is re-driven.
+   * The POS split (pos-split.ts) writes NO DB transfer row — it calls Razorpay
+   * directly in afterCommit — so a failed afterCommit leaves nothing for the
+   * null-ref-HELD heal above to re-drive. This step re-runs the idempotent
+   * settlePosTransfer for captured POS intents so a single post-commit hiccup
+   * can't strand a merchant's in-store payout.
+   */
+  posReDriven: number;
   /** Transfers stuck FAILED right now (dead-letter signal — seller unpaid). */
   failedTransfers: number;
   errors: number;
@@ -86,6 +97,7 @@ export async function reconcileStaleTransfers(opts?: {
     reversalSynced: 0,
     reversalMismatchFlagged: 0,
     kycRetried: 0,
+    posReDriven: 0,
     failedTransfers: 0,
     errors: 0,
   };
@@ -192,6 +204,9 @@ export async function reconcileStaleTransfers(opts?: {
 
   // ── P7: retry KYC_GATED rows whose linked account has since activated ──
   await retryKycGatedTransfers(summary, batchSize);
+
+  // ── PR-M3: re-drive CAPTURED POS Route transfers (no DB row to heal) ──
+  await reDrivePosTransfers(summary, batchSize, healBefore);
 
   // Dead-letter signal: transfers stuck FAILED (KYC mismatch, Razorpay rejection)
   // mean a seller is silently unpaid. Surface the count every sweep so it's
@@ -506,6 +521,85 @@ async function retryKycGatedTransfers(
         step: 'ROUTE_SPLIT_FAILED',
         intentId: paymentId,
         meta: { phase: 'reconcile-kyc-execute', error: errMsg(err) },
+      });
+    }
+  }
+}
+
+/**
+ * PR-M3 — re-drive the Route transfer for CAPTURED POS sales.
+ *
+ * Unlike the ORDER split, the POS path writes no GatewayTransfer DB row: it
+ * calls Razorpay directly in `afterCommit`. So a post-commit failure (process
+ * died, provider blip) leaves a captured-but-unrouted sale with NOTHING for the
+ * null-ref-HELD heal (P1) to pick up — the merchant's in-store payout would
+ * stall indefinitely. We re-run `settlePosTransfer`, which is fetch-before-
+ * create idempotent (matches the deterministic `pos:<saleId>` note), so a sale
+ * that DID reach Razorpay is adopted, never paid twice. No-op while the flag is
+ * off. We only look at intents older than `healBefore` so an in-flight
+ * afterCommit from the live webhook is never raced.
+ */
+async function reDrivePosTransfers(
+  summary: TransferReconcileSummary,
+  batchSize: number,
+  healBefore: Date,
+): Promise<void> {
+  if (!isRouteSplitEnabled()) return; // captured POS funds stay platform-side
+
+  const rows = await prisma.gatewayPayment.findMany({
+    where: {
+      status: 'CAPTURED',
+      targetType: 'POS',
+      providerPaymentRef: { not: null },
+      shopId: { not: null },
+      updatedAt: { lt: healBefore },
+    },
+    select: {
+      id: true,
+      provider: true,
+      status: true,
+      amount: true,
+      currency: true,
+      targetType: true,
+      targetId: true,
+      shopId: true,
+      customerUserId: true,
+      providerOrderRef: true,
+      providerPaymentRef: true,
+      idempotencyKey: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+    orderBy: { updatedAt: 'asc' },
+    take: batchSize,
+  });
+
+  for (const row of rows) {
+    const intent: GatewayPaymentRecord = {
+      id: row.id,
+      provider: row.provider,
+      status: row.status as GatewayPaymentRecord['status'],
+      amount: Number(row.amount),
+      currency: row.currency,
+      target: { type: row.targetType as SettlementTargetType, id: row.targetId },
+      shopId: row.shopId,
+      customerUserId: row.customerUserId,
+      providerOrderRef: row.providerOrderRef,
+      providerPaymentRef: row.providerPaymentRef,
+      idempotencyKey: row.idempotencyKey,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    };
+    try {
+      // Idempotent: a transfer that already exists is detected and skipped.
+      await settlePosTransfer(intent);
+      summary.posReDriven++;
+    } catch (err) {
+      summary.errors++;
+      tracker.track({
+        step: 'ROUTE_SPLIT_FAILED',
+        intentId: row.id,
+        meta: { phase: 'reconcile-pos-redrive', error: errMsg(err) },
       });
     }
   }

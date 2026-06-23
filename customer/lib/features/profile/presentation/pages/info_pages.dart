@@ -4,10 +4,14 @@ import 'package:shopxy_customer/shared/constants/app_strings.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/widgets/app_bar.dart';
 
-/// Three near-identical static pages — About, Privacy, Terms — that
-/// used to be `coming soon` snackbar stubs on the profile screen.
-/// Content is intentionally short and editable in one place; the legal
-/// team will tighten it before any real launch.
+/// Three static pages — About, Privacy, Terms — surfaced from the profile
+/// screen. The Privacy page carries the DPDP-mandated notice content (what we
+/// collect, retention schedule, children's data, cross-border posture, breach
+/// notification, Grievance Officer) to match the web app's /legal pages; Terms
+/// carries the consumer/intermediary terms + the same Grievance Officer block.
+/// Remaining placeholders are marked inline with [TO FILL: ...] for the items
+/// pending the company's formal appointment (named Grievance Officer, hosting
+/// provider) and the in-app self-service export/delete wiring.
 class AboutPage extends StatelessWidget {
   const AboutPage({super.key});
 
@@ -65,7 +69,7 @@ class PrivacyPolicyPage extends StatelessWidget {
         _Section(
           title: 'Your rights (DPDP Act, 2023)',
           body:
-              'You can access, correct, export or delete your personal data, withdraw consent, and nominate someone to act for you. Export and deletion are honoured by our systems. Edit or delete delivery addresses from Profile → Addresses; for an account export or deletion, use Profile → Data & privacy or contact our Grievance Officer below.',
+              'You can access, correct, export or delete your personal data, withdraw consent, and nominate someone to act for you. Export and deletion are honoured by our systems. Edit your profile from Profile → Edit profile and delivery addresses from Profile → Addresses; for an account export or deletion from this app, email support@shopxy.app from the address on file (see Help → Account & privacy) or contact our Grievance Officer below. [TO FILL: wire in-app self-service export/delete (DELETE /auth/me, export endpoint) and point here once shipped]',
         ),
         _Section(
           title: 'Children\'s data',

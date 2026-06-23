@@ -207,6 +207,13 @@ export interface WsAuthCtx {
   userId: number;
   shopRole?: string;
   permissions?: string[];
+  /// CASH-10 — short-lived cache of the caller's open-shift id, so the POS
+  /// shift gate doesn't re-query `cashierShift.findFirst` on every keystroke.
+  /// `_shiftId` is the last resolved id (null = no open shift); `_shiftCheckedAt`
+  /// is when it was resolved. Shifts open/close over REST (not this socket), so
+  /// a TTL bounds staleness rather than an explicit invalidation event.
+  _shiftId?: number | null;
+  _shiftCheckedAt?: number;
 }
 
 /// POS (and any future feature) registers a command handler invoked when a

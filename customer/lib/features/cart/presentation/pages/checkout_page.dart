@@ -47,7 +47,6 @@ enum _PayAttemptOutcome { paid, pendingConfirmation, dismissed, failed }
 class _CheckoutPageState extends State<CheckoutPage> {
   int? _selectedAddressId;
   static const double _deliveryStandard = 0;
-  static const double _deliveryStrike = 49;
 
   /// Validated coupon currently applied — null when no code has been
   /// entered. The preview lives in state so the price card can show
@@ -530,7 +529,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
     final mrpTotal = cart.mrpTotal;
     final productSavings =
         (mrpTotal - subtotal).clamp(0, double.infinity).toDouble();
-    final deliverySavings = _deliveryStrike - _deliveryStandard;
     // Coupon discount preview — drives the price card row + the bottom
     // bar total. If the user has typed a code but it's no longer
     // applicable (subtotal dropped below min, etc) we drop it from the
@@ -543,7 +541,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
     final walletApply = _useWallet
         ? _walletBalance.clamp(0, afterCoupon).toDouble()
         : 0.0;
-    final totalSavings = productSavings + deliverySavings + couponDiscount;
+    // Savings reflect only real reductions — product (MRP − selling) and
+    // coupon. Delivery is genuinely free, so there is no waived fee to strike:
+    // do NOT fabricate a ₹49 reference price. (CP E-Commerce Rules r.4 / CCPA
+    // dark-pattern guidance — no fictitious reference prices.)
+    final totalSavings = productSavings + couponDiscount;
     final grandTotal = (afterCoupon - walletApply).clamp(0, double.infinity).toDouble();
 
     // GST breakup — selling prices are tax-inclusive, so back the tax out of
@@ -637,7 +639,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     mrpTotal: mrpTotal,
                     productSavings: productSavings,
                     deliveryStandard: _deliveryStandard,
-                    deliveryStrike: _deliveryStrike,
                     grandTotal: grandTotal,
                     couponDiscount: couponDiscount,
                     walletApplied: walletApply,
@@ -1472,7 +1473,6 @@ class _PriceCard extends StatelessWidget {
     required this.mrpTotal,
     required this.productSavings,
     required this.deliveryStandard,
-    required this.deliveryStrike,
     required this.grandTotal,
     required this.taxBreakup,
     this.couponDiscount = 0,
@@ -1482,7 +1482,6 @@ class _PriceCard extends StatelessWidget {
   final double mrpTotal;
   final double productSavings;
   final double deliveryStandard;
-  final double deliveryStrike;
   final double grandTotal;
   final _GstBreakup taxBreakup;
   final double couponDiscount;
@@ -1518,8 +1517,6 @@ class _PriceCard extends StatelessWidget {
             valueLabel: deliveryStandard == 0 ? 'FREE' : null,
             value: deliveryStandard == 0 ? null : deliveryStandard,
             valueColor: AppColors.success,
-            strikeBefore:
-                deliveryStrike > deliveryStandard ? deliveryStrike : null,
           ),
           if (couponDiscount > 0)
             _PriceRow(
@@ -1829,7 +1826,6 @@ class _PriceRow extends StatelessWidget {
     this.bold = false,
     this.valueStrike = false,
     this.negative,
-    this.strikeBefore,
   });
   final String label;
   final double? value;
@@ -1838,7 +1834,6 @@ class _PriceRow extends StatelessWidget {
   final bool bold;
   final bool valueStrike;
   final double? negative;
-  final double? strikeBefore;
 
   @override
   Widget build(BuildContext context) {
@@ -1891,15 +1886,6 @@ class _PriceRow extends StatelessWidget {
               ),
             ),
           ),
-          if (strikeBefore != null) ...[
-            AppPriceText.precise(
-              strikeBefore!,
-              color: AppColors.muted,
-              strikethrough: true,
-              style: theme.textTheme.labelMedium,
-            ),
-            const SizedBox(width: AppSizes.sm),
-          ],
           val,
         ],
       ),
