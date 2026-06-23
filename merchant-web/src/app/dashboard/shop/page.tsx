@@ -3,8 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { BadgeCheck, Check, ChevronRight, ImagePlus, Trash2, Users, Wallet } from "lucide-react";
-import { Divider } from "@/shared/ui/divider";
+import { BadgeCheck, Check, ChevronRight, ImagePlus, Plane, Star, Trash2, Users, Wallet } from "lucide-react";
 import { mediaSrc } from "@/features/products/components/product-thumb";
 import {
   getShop,
@@ -71,6 +70,7 @@ export default function ShopPage() {
   const [saved, setSaved] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
+  const [tab, setTab] = useState<TabKey>("storefront");
 
   const reload = useCallback(() => setNonce((n) => n + 1), []);
 
@@ -116,6 +116,19 @@ export default function ShopPage() {
   function patch(p: Partial<NonNullable<typeof form>>) {
     setForm((f) => (f ? { ...f, ...p } : f));
     setSaved(false);
+  }
+
+  // Logo/banner persist immediately (a single-field save) so an uploaded image
+  // survives a reload without depending on the main Save bar or other fields.
+  async function saveImage(field: "logoUrl" | "bannerUrl", url: string | null) {
+    patch({ [field]: url });
+    setActionError(null);
+    try {
+      const updated = await updateShop({ [field]: url });
+      setShop(updated);
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "Could not save the image.");
+    }
   }
 
   async function onTogglePublish() {
@@ -207,235 +220,319 @@ export default function ShopPage() {
 
   return (
     <div className="w-full px-lg py-xxl pb-massive md:px-xxl">
-      <div className="flex flex-wrap items-start justify-between gap-md">
-        <div>
-          <div className="flex flex-wrap items-center gap-sm">
-            <h1 className="text-headline-md text-ink">My shop</h1>
-            {shop.isVerified ? (
-              <span className="inline-flex items-center gap-xs rounded-full border border-success bg-white px-sm py-px text-body-sm font-bold text-success">
-                <BadgeCheck size={14} /> Verified
-              </span>
-            ) : null}
-          </div>
-          <p className="mt-xs text-body-md text-muted">
-            Your public storefront, hours and policies.
-            {shop.slug ? ` Customers find you at /shops/${shop.slug}.` : ""}
-          </p>
+      {/* Storefront preview hero — how customers see you, live as you edit. */}
+      <ShopHero
+        shop={shop}
+        name={form.name}
+        tagline={form.tagline}
+        city={form.locationCity}
+        state={form.locationState}
+        logoUrl={form.logoUrl}
+        bannerUrl={form.bannerUrl}
+        vacationMode={form.vacationMode}
+        vacationMessage={form.vacationMessage}
+        publishing={publishing}
+        onTogglePublish={onTogglePublish}
+      />
+
+      {/* Section tabs */}
+      <div className="mt-xl overflow-x-auto">
+        <div role="tablist" aria-label="Shop settings" className="inline-flex gap-xs border-b border-hairline">
+          {TABS.map((t) => {
+            const selected = tab === t.key;
+            return (
+              <button
+                key={t.key}
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                onClick={() => setTab(t.key)}
+                className={`-mb-px whitespace-nowrap border-b-2 px-md py-sm text-label-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft ${
+                  selected
+                    ? "border-brand text-brand-strong"
+                    : "border-transparent text-muted hover:text-ink"
+                }`}
+              >
+                {t.label}
+              </button>
+            );
+          })}
         </div>
-        <button
-          type="button"
-          onClick={onTogglePublish}
-          disabled={publishing}
-          className={`inline-flex h-10 items-center gap-sm rounded-button px-md text-label-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:text-disabled ${
-            shop.isPublished
-              ? "bg-brand-soft text-brand-strong"
-              : "border border-hairline text-ink hover:bg-surface-tint"
-          }`}
-        >
-          {shop.isPublished ? "Published" : "Publish shop"}
-        </button>
       </div>
 
       {actionError ? (
-        <p className="mt-md rounded-md bg-error-soft px-md py-sm text-body-sm text-error">
-          {actionError}
-        </p>
+        <p className="mt-lg rounded-md bg-error-soft px-md py-sm text-body-sm text-error">{actionError}</p>
       ) : null}
       {saved ? (
-        <p className="mt-md flex items-center gap-sm rounded-md bg-success-soft px-md py-sm text-body-sm text-success">
+        <p className="mt-lg flex items-center gap-sm rounded-md bg-success-soft px-md py-sm text-body-sm text-success">
           <Check size={16} /> Shop saved.
         </p>
       ) : null}
 
-      {/* Storefront */}
-      <SectionTitle title="Storefront" desc="Logo, banner and how you appear to customers." />
-      <div className="max-w-content">
-        <ImageField
-          label="Banner"
-          aspect="aspect-[3/1]"
-          url={form.bannerUrl}
-          onChange={(url) => patch({ bannerUrl: url })}
-        />
-        <div className="mt-lg">
-          <ImageField
-            label="Logo"
-            aspect="size-24"
-            rounded
-            url={form.logoUrl}
-            onChange={(url) => patch({ logoUrl: url })}
-          />
-        </div>
-        <div className="mt-lg flex flex-col gap-lg">
-          <TextInput label="Shop name" value={form.name} onChange={(v) => patch({ name: v })} />
-          <TextInput
-            label="Tagline"
-            value={form.tagline}
-            onChange={(v) => patch({ tagline: v })}
-            placeholder="A short line shown under your name"
-          />
-          <div className="grid grid-cols-2 gap-lg">
-            <TextInput
-              label="City"
-              value={form.locationCity}
-              onChange={(v) => patch({ locationCity: v })}
-            />
-            <TextInput
-              label="State"
-              value={form.locationState}
-              onChange={(v) => patch({ locationState: v })}
-            />
-          </div>
-        </div>
-      </div>
+      <div className="mt-xl max-w-content">
+        {tab === "storefront" ? (
+          <div className="flex flex-col gap-xl">
+            <Card title="Branding" desc="Logo, banner and the basics customers see first.">
+              <ImageField label="Banner" aspect="aspect-[3/1]" url={form.bannerUrl} onChange={(url) => saveImage("bannerUrl", url)} />
+              <div className="mt-lg">
+                <ImageField label="Logo" aspect="size-24" rounded url={form.logoUrl} onChange={(url) => saveImage("logoUrl", url)} />
+              </div>
+              <div className="mt-lg flex flex-col gap-lg">
+                <TextInput label="Shop name" value={form.name} onChange={(v) => patch({ name: v })} />
+                <TextInput label="Tagline" value={form.tagline} onChange={(v) => patch({ tagline: v })} placeholder="A short line shown under your name" />
+                <div className="grid grid-cols-2 gap-lg">
+                  <TextInput label="City" value={form.locationCity} onChange={(v) => patch({ locationCity: v })} />
+                  <TextInput label="State" value={form.locationState} onChange={(v) => patch({ locationState: v })} />
+                </div>
+              </div>
+            </Card>
 
-      {/* Vacation mode */}
-      <SectionTitle title="Vacation mode" desc="Pause new orders and show customers a note." />
-      <div className="max-w-content">
-        <ToggleRow
-          label="Vacation mode"
-          desc="When on, your storefront shows you're away."
-          checked={form.vacationMode}
-          onChange={() => patch({ vacationMode: !form.vacationMode })}
-        />
-        {form.vacationMode ? (
-          <div className="mt-md">
-            <TextInput
-              label="Away message"
-              value={form.vacationMessage}
-              onChange={(v) => patch({ vacationMessage: v })}
-              placeholder="Back on Monday — orders paused until then."
-            />
+            <Card title="Vacation mode" desc="Pause new orders and show customers a note.">
+              <ToggleRow
+                label="Vacation mode"
+                desc="When on, your storefront shows you're away and new orders are paused."
+                checked={form.vacationMode}
+                onChange={() => patch({ vacationMode: !form.vacationMode })}
+              />
+              {form.vacationMode ? (
+                <div className="mt-md">
+                  <TextInput
+                    label="Away message"
+                    value={form.vacationMessage}
+                    onChange={(v) => patch({ vacationMessage: v })}
+                    placeholder="Back on Monday — orders paused until then."
+                  />
+                </div>
+              ) : null}
+            </Card>
           </div>
         ) : null}
-      </div>
 
-      {/* Operating hours */}
-      <SectionTitle title="Operating hours" desc="Days you're open and your trading times." />
-      <div className="max-w-content">
-        {DAYS.map((d) => (
-          <HoursRow
-            key={d}
-            label={DAY_LABELS[d]}
-            value={form.hours[d]}
-            onChange={(h) => patch({ hours: { ...form.hours, [d]: h } })}
-          />
-        ))}
-      </div>
-
-      {/* Policies */}
-      <SectionTitle title="Policies" desc="Shown on your storefront and order pages." />
-      <div className="max-w-content flex flex-col gap-lg">
-        <TextArea
-          label="Return policy"
-          value={form.returnPolicy}
-          onChange={(v) => patch({ returnPolicy: v })}
-        />
-        <TextArea
-          label="Shipping policy"
-          value={form.shippingPolicy}
-          onChange={(v) => patch({ shippingPolicy: v })}
-        />
-        <TextArea
-          label="Refund policy"
-          value={form.refundPolicy}
-          onChange={(v) => patch({ refundPolicy: v })}
-        />
-      </div>
-
-      {/* Returns & cancellation */}
-      <SectionTitle
-        title="Returns & cancellation"
-        desc="Whether you accept returns, how refunds are issued, and how late customers can cancel."
-      />
-      <div className="max-w-content flex flex-col gap-lg">
-        <ToggleRow
-          label="Accept returns"
-          desc="When off, customers can't request post-delivery returns."
-          checked={form.returnsEnabled}
-          onChange={() => patch({ returnsEnabled: !form.returnsEnabled })}
-        />
-        {form.returnsEnabled ? (
-          <>
-            <div className="grid grid-cols-1 gap-lg sm:grid-cols-2">
-              <label className="flex flex-col gap-xs">
-                <span className="text-label-md text-muted">Return window (days)</span>
-                <input
-                  type="number"
-                  min={0}
-                  max={365}
-                  step={1}
-                  inputMode="numeric"
-                  value={form.returnWindowDays}
-                  onChange={(e) => patch({ returnWindowDays: e.target.value })}
-                  className="h-10 rounded-input border border-hairline bg-white px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
-                />
-                <span className="text-body-sm text-subtle">0 means no time limit.</span>
-              </label>
-              <SelectField
-                label="Refund method"
-                value={form.refundMode}
-                options={REFUND_MODES.map((m) => ({ value: m, label: REFUND_MODE_LABELS[m] }))}
-                onChange={(v) => patch({ refundMode: v })}
-              />
+        {tab === "hours" ? (
+          <Card title="Operating hours" desc="Days you're open and your trading times.">
+            <div className="flex flex-col">
+              {DAYS.map((d) => (
+                <HoursRow key={d} label={DAY_LABELS[d]} value={form.hours[d]} onChange={(h) => patch({ hours: { ...form.hours, [d]: h } })} />
+              ))}
             </div>
-            <label className="flex flex-col gap-xs">
-              <span className="text-label-md text-muted">Return policy note</span>
-              <textarea
-                value={form.returnPolicyNote}
-                onChange={(e) => patch({ returnPolicyNote: e.target.value })}
-                rows={3}
-                maxLength={2048}
-                placeholder="Anything customers should know — condition requirements, who pays return shipping…"
-                className="rounded-input border border-hairline bg-white px-md py-sm text-body-md text-ink outline-none placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
-              />
-            </label>
-          </>
+          </Card>
         ) : null}
-        <div className="grid grid-cols-1 gap-lg sm:grid-cols-2">
-          <SelectField
-            label="Customers can cancel"
-            value={form.cancellationPolicy}
-            options={CANCELLATION_POLICIES.map((p) => ({
-              value: p,
-              label: CANCELLATION_POLICY_LABELS[p],
-            }))}
-            onChange={(v) => patch({ cancellationPolicy: v })}
-            hint="After this stage, customers must use a post-delivery return instead."
-          />
+
+        {tab === "policies" ? (
+          <Card title="Policies" desc="Shown on your storefront and order pages.">
+            <div className="flex flex-col gap-lg">
+              <TextArea label="Return policy" value={form.returnPolicy} onChange={(v) => patch({ returnPolicy: v })} />
+              <TextArea label="Shipping policy" value={form.shippingPolicy} onChange={(v) => patch({ shippingPolicy: v })} />
+              <TextArea label="Refund policy" value={form.refundPolicy} onChange={(v) => patch({ refundPolicy: v })} />
+            </div>
+          </Card>
+        ) : null}
+
+        {tab === "returns" ? (
+          <Card
+            title="Returns & cancellation"
+            desc="Whether you accept returns, how refunds are issued, and how late customers can cancel."
+          >
+            <div className="flex flex-col gap-lg">
+              <ToggleRow
+                label="Accept returns"
+                desc="When off, customers can't request post-delivery returns."
+                checked={form.returnsEnabled}
+                onChange={() => patch({ returnsEnabled: !form.returnsEnabled })}
+              />
+              {form.returnsEnabled ? (
+                <>
+                  <div className="grid grid-cols-1 gap-lg sm:grid-cols-2">
+                    <label className="flex flex-col gap-xs">
+                      <span className="text-label-md text-muted">Return window (days)</span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={365}
+                        step={1}
+                        inputMode="numeric"
+                        value={form.returnWindowDays}
+                        onChange={(e) => patch({ returnWindowDays: e.target.value })}
+                        className="h-10 rounded-input border border-hairline bg-white px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+                      />
+                      <span className="text-body-sm text-subtle">0 means no time limit.</span>
+                    </label>
+                    <SelectField
+                      label="Refund method"
+                      value={form.refundMode}
+                      options={REFUND_MODES.map((m) => ({ value: m, label: REFUND_MODE_LABELS[m] }))}
+                      onChange={(v) => patch({ refundMode: v })}
+                    />
+                  </div>
+                  <label className="flex flex-col gap-xs">
+                    <span className="text-label-md text-muted">Return policy note</span>
+                    <textarea
+                      value={form.returnPolicyNote}
+                      onChange={(e) => patch({ returnPolicyNote: e.target.value })}
+                      rows={3}
+                      maxLength={2048}
+                      placeholder="Anything customers should know — condition requirements, who pays return shipping…"
+                      className="rounded-input border border-hairline bg-white px-md py-sm text-body-md text-ink outline-none placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+                    />
+                  </label>
+                </>
+              ) : null}
+              <div className="grid grid-cols-1 gap-lg sm:grid-cols-2">
+                <SelectField
+                  label="Customers can cancel"
+                  value={form.cancellationPolicy}
+                  options={CANCELLATION_POLICIES.map((p) => ({ value: p, label: CANCELLATION_POLICY_LABELS[p] }))}
+                  onChange={(v) => patch({ cancellationPolicy: v })}
+                  hint="After this stage, customers must use a post-delivery return instead."
+                />
+              </div>
+            </div>
+          </Card>
+        ) : null}
+
+        {tab === "more" ? (
+          <Card title="More" desc="Team access and payouts.">
+            <LinkRow icon={Users} title="Team" subtitle="Invite staff and set permissions" href="/dashboard/team" />
+            <LinkRow icon={Wallet} title="Payouts" subtitle="Bank settlement & KYC" href="/dashboard/payouts" />
+          </Card>
+        ) : null}
+      </div>
+
+      {/* Sticky save — hidden on the link-only "More" tab. */}
+      {tab !== "more" ? (
+        <div className="sticky bottom-0 mt-xxl -mx-lg border-t border-hairline bg-canvas px-lg py-md md:-mx-xxl md:px-xxl">
+          <button
+            type="button"
+            onClick={onSave}
+            disabled={saving}
+            className="inline-flex h-11 items-center gap-sm rounded-button bg-brand px-xl text-label-lg text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:bg-disabled"
+          >
+            {saving ? "Saving…" : "Save changes"}
+          </button>
         </div>
-      </div>
-
-      {/* More */}
-      <SectionTitle title="More" desc="Team access and payouts." />
-      <div className="max-w-content">
-        <LinkRow icon={Users} title="Team" subtitle="Invite staff and set permissions" href="/dashboard/team" />
-        <LinkRow icon={Wallet} title="Payouts" subtitle="Bank settlement & KYC" href="/dashboard/payouts" />
-      </div>
-
-      {/* Sticky save */}
-      <div className="sticky bottom-0 mt-xxl -mx-lg border-t border-hairline bg-canvas px-lg py-md md:-mx-xxl md:px-xxl">
-        <button
-          type="button"
-          onClick={onSave}
-          disabled={saving}
-          className="inline-flex h-11 items-center gap-sm rounded-button bg-brand px-xl text-label-lg text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:bg-disabled"
-        >
-          {saving ? "Saving…" : "Save changes"}
-        </button>
-      </div>
+      ) : null}
     </div>
   );
 }
 
-function SectionTitle({ title, desc }: { title: string; desc: string }) {
+type TabKey = "storefront" | "hours" | "policies" | "returns" | "more";
+const TABS: { key: TabKey; label: string }[] = [
+  { key: "storefront", label: "Storefront" },
+  { key: "hours", label: "Hours" },
+  { key: "policies", label: "Policies" },
+  { key: "returns", label: "Returns" },
+  { key: "more", label: "More" },
+];
+
+/** Card shell for a settings section. */
+function Card({ title, desc, children }: { title: string; desc: string; children: React.ReactNode }) {
   return (
-    <>
-      <Divider className="my-xl" />
-      <div className="mb-md">
-        <h2 className="text-title-md text-ink">{title}</h2>
-        <p className="mt-xs text-body-sm text-muted">{desc}</p>
+    <section className="rounded-xl border border-hairline bg-canvas p-lg">
+      <h2 className="text-title-md text-ink">{title}</h2>
+      <p className="mt-xs text-body-sm text-muted">{desc}</p>
+      <div className="mt-lg">{children}</div>
+    </section>
+  );
+}
+
+/** Live storefront-preview hero: banner + logo + identity + publish control. */
+function ShopHero({
+  shop,
+  name,
+  tagline,
+  city,
+  state,
+  logoUrl,
+  bannerUrl,
+  vacationMode,
+  vacationMessage,
+  publishing,
+  onTogglePublish,
+}: {
+  shop: Shop;
+  name: string;
+  tagline: string;
+  city: string;
+  state: string;
+  logoUrl: string | null;
+  bannerUrl: string | null;
+  vacationMode: boolean;
+  vacationMessage: string;
+  publishing: boolean;
+  onTogglePublish: () => void;
+}) {
+  const location = [city, state].filter(Boolean).join(", ");
+  const rating = shop.rating != null ? Number(shop.rating) : null;
+  const banner = bannerUrl ? mediaSrc(bannerUrl) : null;
+  const logo = logoUrl ? mediaSrc(logoUrl) : null;
+  return (
+    <section className="overflow-hidden rounded-xl border border-hairline bg-canvas">
+      <div className="relative aspect-[5/1] w-full bg-surface-tint">
+        {banner ? <Image src={banner} alt="" fill className="object-cover" sizes="100vw" unoptimized /> : null}
       </div>
-    </>
+      <div className="px-lg pb-lg">
+        {/* Logo overlaps the banner; identity sits below it, left-aligned.
+            relative z-10 keeps it above the `relative` banner (which would
+            otherwise paint over the overlapping top of the logo). */}
+        <div className="relative z-10 -mt-10 size-20 overflow-hidden rounded-xl border-4 border-canvas bg-surface-tint shadow-snackbar">
+          {logo ? (
+            <Image src={logo} alt="" width={80} height={80} className="size-full object-cover" unoptimized />
+          ) : (
+            <span className="flex size-full items-center justify-center text-headline-sm text-subtle">
+              {(name || "S").charAt(0).toUpperCase()}
+            </span>
+          )}
+        </div>
+
+        <div className="mt-md flex flex-wrap items-start justify-between gap-md">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-sm">
+              <h1 className="truncate text-headline-sm text-ink">{name || "Your shop"}</h1>
+              {shop.isVerified ? (
+                <span className="inline-flex items-center gap-xs rounded-full bg-success-soft px-sm py-px text-label-md text-success">
+                  <BadgeCheck size={13} /> Verified
+                </span>
+              ) : null}
+              <span
+                className={`inline-flex items-center rounded-full px-sm py-px text-label-md ${
+                  shop.isPublished ? "bg-brand-soft text-brand-strong" : "bg-surface-tint text-muted"
+                }`}
+              >
+                {shop.isPublished ? "Live" : "Draft"}
+              </span>
+            </div>
+            {tagline ? <p className="mt-xs truncate text-body-sm text-muted">{tagline}</p> : null}
+            <p className="mt-xs flex flex-wrap items-center gap-x-md gap-y-xs text-body-sm text-subtle">
+              {location ? <span>{location}</span> : null}
+              {rating != null && shop.ratingCount > 0 ? (
+                <span className="inline-flex items-center gap-xs">
+                  <Star size={12} className="text-accent-amber" /> {rating.toFixed(1)} ({shop.ratingCount})
+                </span>
+              ) : null}
+              {shop.slug ? <span className="truncate">/shops/{shop.slug}</span> : null}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onTogglePublish}
+            disabled={publishing}
+            className={`inline-flex h-10 shrink-0 items-center gap-sm rounded-button px-md text-label-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:opacity-60 ${
+              shop.isPublished
+                ? "border border-hairline text-ink hover:bg-surface-tint"
+                : "bg-brand text-white hover:bg-brand-strong"
+            }`}
+          >
+            {publishing ? "…" : shop.isPublished ? "Unpublish" : "Publish shop"}
+          </button>
+        </div>
+
+        {vacationMode ? (
+          <p className="mt-md flex items-center gap-sm rounded-md bg-accent-amber-soft px-md py-sm text-body-sm text-accent-amber">
+            <Plane size={15} /> On vacation{vacationMessage ? ` — ${vacationMessage}` : ". New orders are paused."}
+          </p>
+        ) : null}
+      </div>
+    </section>
   );
 }
 
