@@ -77,7 +77,7 @@ export function ProfileForm() {
         }}
         error={fieldErrors.phoneNumber}
       />
-      <label className="flex cursor-pointer items-center gap-sm text-body-md text-muted">
+      <label className="flex cursor-pointer items-start gap-sm border-t border-hairline pt-md">
         <input
           type="checkbox"
           checked={emailNotifications}
@@ -85,13 +85,20 @@ export function ProfileForm() {
             setEmailNotifications(e.target.checked);
             setSaved(false);
           }}
-          className="size-4 accent-brand"
+          className="mt-[2px] size-4 shrink-0 accent-brand"
         />
-        Email me account notifications
+        <span className="flex flex-col">
+          <span className="text-body-md text-ink">Email notifications</span>
+          <span className="text-body-sm text-muted">
+            Order updates, security alerts and account activity.
+          </span>
+        </span>
       </label>
 
       <div className="pt-sm">
-        <SubmitButton loading={submitting}>Save changes</SubmitButton>
+        <SubmitButton loading={submitting} block={false}>
+          Save changes
+        </SubmitButton>
       </div>
     </form>
   );

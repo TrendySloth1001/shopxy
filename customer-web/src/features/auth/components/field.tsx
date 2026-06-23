@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState, type InputHTMLAttributes } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 type FieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, "id" | "type"> & {
   label: string;
@@ -53,10 +54,11 @@ export function Field({
           <button
             type="button"
             onClick={() => setRevealed((v) => !v)}
-            className="absolute inset-y-0 right-0 px-md text-label-md text-muted transition-colors hover:text-ink focus-visible:text-ink focus-visible:outline-none"
+            className="absolute inset-y-0 right-0 flex items-center px-md text-muted transition-colors hover:text-ink focus-visible:text-ink focus-visible:outline-none"
             aria-label={revealed ? "Hide password" : "Show password"}
+            aria-pressed={revealed}
           >
-            {revealed ? "Hide" : "Show"}
+            {revealed ? <EyeOff size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
           </button>
         ) : null}
       </div>
