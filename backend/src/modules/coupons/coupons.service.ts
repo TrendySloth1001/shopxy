@@ -32,6 +32,13 @@ export interface ValidatedCoupon {
   /// math). May be less than `coupon.discountValue` for PERCENT
   /// coupons hitting the maxDiscount ceiling.
   discount: number;
+  /// Raw coupon parameters echoed back so the customer client can render
+  /// the offer and recompute the discount if the cart subtotal shifts.
+  /// Field names mirror the checkout client's `couponSchema` contract.
+  discountValue: number;
+  maxDiscountAmount: number | null;
+  minOrderAmount: number;
+  expiresAt: string;
 }
 
 export type ValidateError =
@@ -273,6 +280,10 @@ export class CouponsService {
         description: best.description,
         discountType: best.discountType as DiscountType,
         discount: best.discount,
+        discountValue: Number(best.discountValue),
+        maxDiscountAmount: best.maxDiscount != null ? Number(best.maxDiscount) : null,
+        minOrderAmount: Number(best.minOrderAmount),
+        expiresAt: best.validUntil.toISOString(),
         firstOrderOnly: best.firstOrderOnly,
       },
     };
@@ -352,6 +363,10 @@ export class CouponsService {
         description: row.description,
         discountType: row.discountType as DiscountType,
         discount,
+        discountValue: Number(row.discountValue),
+        maxDiscountAmount: row.maxDiscount != null ? Number(row.maxDiscount) : null,
+        minOrderAmount: Number(row.minOrderAmount),
+        expiresAt: row.validUntil.toISOString(),
       },
     };
   }

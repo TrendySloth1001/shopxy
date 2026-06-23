@@ -75,6 +75,13 @@ describe('coupons — validate + redeem + wallet checkout', () => {
       expect(preview.body.ok).toBe(true);
       // 10% of 500 = 50, below the ₹100 cap.
       expect(preview.body.coupon.discount).toBe(50);
+      // Contract: the validate response must echo the raw coupon params the
+      // customer client's `couponSchema` requires — `discountValue` is
+      // mandatory there, so omitting it makes every coupon fail to validate.
+      expect(preview.body.coupon.discountValue).toBe(10);
+      expect(preview.body.coupon.maxDiscountAmount).toBe(100);
+      expect(preview.body.coupon.minOrderAmount).toBe(100);
+      expect(typeof preview.body.coupon.expiresAt).toBe('string');
 
       // Place order with coupon
       const place = await request(app)
