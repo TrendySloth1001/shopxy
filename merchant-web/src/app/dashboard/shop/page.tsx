@@ -753,55 +753,81 @@ function ImageField({
     }
   }
 
-  return (
-    <div className="flex flex-col gap-xs">
-      <span className="text-label-md text-muted">{label}</span>
-      <div className="flex items-center gap-md">
-        <div
-          className={`relative overflow-hidden border border-hairline bg-surface-tint ${aspect} ${
-            rounded ? "rounded-full" : "w-full max-w-md rounded-lg"
-          }`}
+  const buttons = (
+    <>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) void onPick(f);
+          e.target.value = "";
+        }}
+      />
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        disabled={uploading}
+        className="inline-flex h-9 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint disabled:text-disabled"
+      >
+        <ImagePlus size={16} /> {uploading ? "Uploading…" : url ? "Replace" : "Upload"}
+      </button>
+      {url ? (
+        <button
+          type="button"
+          onClick={() => onChange(null)}
+          className="inline-flex h-9 items-center gap-sm rounded-button px-md text-label-md text-muted transition-colors hover:text-error"
         >
-          {src ? (
-            <Image src={src} alt={label} fill unoptimized className="object-cover" sizes="384px" />
-          ) : (
-            <span className="flex size-full items-center justify-center text-subtle">
-              <ImagePlus size={20} />
-            </span>
-          )}
+          <Trash2 size={16} /> Remove
+        </button>
+      ) : null}
+      {err ? <span className="text-body-sm text-error">{err}</span> : null}
+    </>
+  );
+
+  // Plain block root (not flex) so the banner's width can't collapse via a
+  // flex cross-axis / percentage-in-shrink-to-fit quirk.
+  return (
+    <div>
+      <p className="mb-xs text-label-md text-muted">{label}</p>
+      {rounded ? (
+        // Square logo: fixed-size preview beside its buttons.
+        <div className="flex items-center gap-md">
+          <div className={`relative shrink-0 overflow-hidden rounded-full border border-hairline bg-surface-tint ${aspect}`}>
+            {src ? (
+              <Image src={src} alt={label} fill unoptimized className="object-cover" sizes="96px" />
+            ) : (
+              <span className="flex size-full items-center justify-center text-subtle">
+                <ImagePlus size={20} />
+              </span>
+            )}
+          </div>
+          <div className="flex flex-col gap-sm">{buttons}</div>
         </div>
-        <div className="flex flex-col gap-sm">
-          <input
-            ref={inputRef}
-            type="file"
-            accept="image/*"
-            hidden
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) void onPick(f);
-              e.target.value = "";
+      ) : (
+        // Wide banner: dimensions via inline styles (immune to JIT/flex issues);
+        // background-image covers the fixed box. A full-width block, so it fills.
+        <div>
+          <div
+            role={src ? "img" : undefined}
+            aria-label={src ? label : undefined}
+            className="flex items-center justify-center rounded-lg border border-hairline bg-surface-tint text-subtle"
+            style={{
+              width: "100%",
+              maxWidth: "36rem",
+              height: "10rem",
+              backgroundImage: src ? `url("${src}")` : undefined,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
             }}
-          />
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            disabled={uploading}
-            className="inline-flex h-9 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint disabled:text-disabled"
           >
-            <ImagePlus size={16} /> {uploading ? "Uploading…" : url ? "Replace" : "Upload"}
-          </button>
-          {url ? (
-            <button
-              type="button"
-              onClick={() => onChange(null)}
-              className="inline-flex h-9 items-center gap-sm rounded-button px-md text-label-md text-muted transition-colors hover:text-error"
-            >
-              <Trash2 size={16} /> Remove
-            </button>
-          ) : null}
-          {err ? <span className="text-body-sm text-error">{err}</span> : null}
+            {src ? null : <ImagePlus size={20} />}
+          </div>
+          <div className="mt-sm flex flex-wrap items-center gap-sm">{buttons}</div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
