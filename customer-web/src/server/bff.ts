@@ -59,6 +59,29 @@ export async function proxyAuthed(
 }
 
 /**
+ * Proxy a protected endpoint, forwarding the upstream JSON body and status
+ * VERBATIM — including non-2xx responses whose body is itself the contract.
+ *
+ * Use this (not `proxyAuthed`) when a 4xx carries a structured payload the
+ * client consumes directly. `POST /me/coupons/validate` is the canonical
+ * case: a failed validation is a 400 with `{ ok: false, code, message }`, and
+ * collapsing it into the generic `{ error }` envelope is exactly what made the
+ * checkout show "Could not validate coupon." for every rejected coupon instead
+ * of the real reason (expired, min-order, first-order-only, …). Only a missing
+ * session is mapped to a 401 envelope.
+ */
+export async function proxyAuthedPassthrough(
+  backendPath: string,
+  init?: Init,
+): Promise<NextResponse> {
+  const res = await authedFetch(backendPath, init);
+  if (!res)
+    return NextResponse.json({ error: "Session expired." }, { status: 401 });
+  const body = await res.json().catch(() => null);
+  return NextResponse.json(body, { status: res.status });
+}
+
+/**
  * Like proxyAuthed but returns 204 (no body) on success. Use for mutations
  * whose backend also responds 204.
  */
