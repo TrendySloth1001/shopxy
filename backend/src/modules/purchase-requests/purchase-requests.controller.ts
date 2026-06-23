@@ -169,6 +169,7 @@ export class PurchaseRequestsController {
         result.error === 'ADDRESS_NOT_OWNED' ? 422 :
         result.error === 'OWN_SHOP_ITEM' ? 422 :
         result.error === 'SHOP_NOT_FOUND' ? 404 :
+        result.error === 'SHOP_ON_VACATION' ? 409 :
         result.error === 'CROSS_SHOP_ITEM' ? 422 :
         result.error === 'COUPON_INVALID' ? 400 :
         result.error === 'PRICE_DRIFT' ? 409 :

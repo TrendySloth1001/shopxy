@@ -331,6 +331,7 @@ export class PurchaseRequestsService {
           | 'ADDRESS_NOT_OWNED'
           | 'OWN_SHOP_ITEM'
           | 'SHOP_NOT_FOUND'
+          | 'SHOP_ON_VACATION'
           | 'CROSS_SHOP_ITEM'
           | 'COUPON_INVALID'
           | 'PRICE_DRIFT';
@@ -394,13 +395,18 @@ export class PurchaseRequestsService {
     const shopIds = [...linesByShop.keys()];
     const shops = await prisma.shop.findMany({
       where: { id: { in: shopIds } },
-      select: { id: true, ownerUserId: true },
+      select: { id: true, ownerUserId: true, isPublished: true, vacationMode: true },
     });
     if (shops.length !== shopIds.length) return { error: 'SHOP_NOT_FOUND' };
     for (const shop of shops) {
       if (shop.ownerUserId === opts.customerUserId) {
         return { error: 'OWN_SHOP_ITEM' };
       }
+      // An unpublished shop is invisible to customers — treat its items as not
+      // found rather than leaking that the shop exists.
+      if (!shop.isPublished) return { error: 'SHOP_NOT_FOUND' };
+      // A published shop can still pause orders via vacation mode.
+      if (shop.vacationMode) return { error: 'SHOP_ON_VACATION' };
     }
 
     // ── Effective unit price ─────────────────────────────────────────

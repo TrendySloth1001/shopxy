@@ -83,7 +83,7 @@ export class CartService {
     }
 
     const product = await prisma.product.findFirst({
-      where: { id: productId, isActive: true, isPublished: true },
+      where: { id: productId, isActive: true, isPublished: true, shop: { isPublished: true } },
       select: { id: true, stockQuantity: true },
     });
     if (!product) return { error: 'PRODUCT_NOT_FOUND' as const };
@@ -166,7 +166,7 @@ export class CartService {
 
     const ids = Array.from(new Set(items.map((i) => i.productId)));
     const products = await prisma.product.findMany({
-      where: { id: { in: ids }, isActive: true, isPublished: true },
+      where: { id: { in: ids }, isActive: true, isPublished: true, shop: { isPublished: true } },
       select: { id: true, stockQuantity: true },
     });
     const stockById = new Map(

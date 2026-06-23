@@ -50,9 +50,10 @@ export async function getShuffledIds(bucket: number): Promise<number[]> {
   // Cache miss → compute the shuffle. md5(id||seed) is a uniform hash
   // so the sort is statistically uniform and stable per bucket.
   const rows = await prisma.$queryRaw<Array<{ id: number }>>`
-    SELECT id FROM products
-    WHERE is_active = true AND is_published = true
-    ORDER BY md5(id::text || ${String(bucket)})
+    SELECT p.id FROM products p
+    JOIN shops s ON s.id = p.shop_id
+    WHERE p.is_active = true AND p.is_published = true AND s.is_published = true
+    ORDER BY md5(p.id::text || ${String(bucket)})
   `;
   const ids = rows.map((r) => r.id);
 
