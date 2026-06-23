@@ -148,6 +148,25 @@ export function presetFor(role: ShopRole): string[] {
   return ROLE_PRESETS[role];
 }
 
+/// Express middleware: gate a single route on a specific named right
+/// (beyond the route group's area), e.g. `invoices:override` on the
+/// money-moving return-refund endpoint so it can't ride a plain
+/// `orders:manage` grant. OWNER bypasses (via hasRight); fails closed.
+/// Must run AFTER requireAuth + the area gate.
+export function requireRight(right: string) {
+  return function (req: Request, res: Response, next: NextFunction): void {
+    if (hasRight(req.user?.shopRole, req.user?.shopPermissions, right)) {
+      next();
+      return;
+    }
+    res.status(403).json({
+      error: 'Forbidden',
+      code: 'INSUFFICIENT_PERMISSION',
+      required: right,
+    });
+  };
+}
+
 /// Express middleware: gate a merchant route group by `area`. Reads
 /// require `<area>:view`, writes require `<area>:manage`. Must run AFTER
 /// requireAuth (which attaches req.user.shopRole + shopPermissions).

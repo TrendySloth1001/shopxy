@@ -359,10 +359,12 @@ export class PaymentGatewayService {
    * amount mismatch) is logged and counted; the batch continues.
    *
    * NOTE: this reconciles the ONLINE-COLLECTION intent only. Transfer-level
-   * reconciliation (null-ref HELD `GatewayTransfer`s, KYC-not-activated retries,
-   * reversal-balance failures) hooks in here once Route split lands — see
-   * ROUTE_SPLIT_DESIGN.md §2/§7. Those tables do not exist yet, so there is
-   * nothing to sweep for them today.
+   * reconciliation (null-ref HELD `GatewayTransfer`s, overdue releases, out-of-
+   * band reversals, KYC retries, and — PR-M3 — CAPTURED POS sales whose
+   * afterCommit Route transfer failed) lives in its own sweep:
+   * `reconcileStaleTransfers` (settlement/transfer-reconcile.ts), which the
+   * scheduler runs alongside this one. Both are idempotent and gated by
+   * ROUTE_SPLIT_ENABLED.
    */
   async reconcileStaleIntents(opts?: {
     now?: Date;

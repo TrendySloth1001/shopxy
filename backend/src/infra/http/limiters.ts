@@ -25,6 +25,11 @@ export interface AppLimiters {
   /// /me/banners shim). 60/min is far above an editor session and trips
   /// scripted abuse.
   carouselWrite: ReturnType<typeof rateLimit>;
+  /// Per-IP limiter for the UNAUTHENTICATED payment webhook. Each request
+  /// runs an HMAC verify before fail-closed, so an unsigned flood is a CPU
+  /// sink (PR-L2). 300/min/IP is well above any real provider delivery rate
+  /// (Razorpay retries are sparse) but caps a single-source flood.
+  webhook: ReturnType<typeof rateLimit>;
 }
 
 const perUserKeyGen = (
@@ -74,6 +79,14 @@ export function buildLimiters(): AppLimiters {
       standardHeaders: true,
       legacyHeaders: false,
       keyGenerator: perUserKeyGen as never,
+    }),
+    webhook: rateLimit({
+      windowMs: 60_000,
+      max: 300,
+      // Don't 429 a legit provider with a banner the gateway won't read; the
+      // limiter still drops the excess. Per-IP (no user on this surface).
+      standardHeaders: true,
+      legacyHeaders: false,
     }),
   };
 }

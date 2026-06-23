@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../auth-context";
 import { loginSchema } from "../schema";
@@ -70,6 +71,21 @@ export function LoginForm() {
         error={fieldErrors.password}
       />
       <SubmitButton loading={submitting}>Sign in</SubmitButton>
+      {/* Pre-signin discoverability of the published policies — the DPDP notice
+          and the user agreement must be accessible before/around collection,
+          not only behind auth. (DPDP Act 2023 s.5; IT Intermediary Rules 2021
+          r.3(1)(b)/(f).) */}
+      <p className="text-center text-body-sm text-muted">
+        By continuing you agree to our{" "}
+        <Link href="/legal/terms" className="text-ink underline hover:text-brand">
+          Terms
+        </Link>{" "}
+        and{" "}
+        <Link href="/legal/privacy" className="text-ink underline hover:text-brand">
+          Privacy Policy
+        </Link>
+        .
+      </p>
     </form>
   );
 }

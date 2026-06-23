@@ -2,9 +2,20 @@ import { Request, Response } from 'express';
 import { z } from 'zod';
 import { challansService } from './challans.service.js';
 
+// CWQ-11 — bound the per-line quantity. The column is Decimal(12,3), so a
+// value at or above 1e9 (or with finer than milli-unit precision) cannot be
+// stored faithfully; an absurd quantity is also a typo guard before the line
+// hits the stock ledger. Fractional quantities stay allowed (some units are
+// sold by weight/length), but capped to the column's 3-decimal resolution.
 const challanItemSchema = z.object({
   productId: z.number().int().positive(),
-  quantity: z.number().positive(),
+  quantity: z
+    .number()
+    .positive()
+    .lt(1_000_000_000)
+    .refine((q) => Number.isFinite(q) && Math.round(q * 1000) === q * 1000, {
+      message: 'Quantity supports at most 3 decimal places',
+    }),
 });
 
 const createChallanSchema = z

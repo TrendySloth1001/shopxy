@@ -9,14 +9,19 @@ import { hasRight, POS_OVERRIDE_RIGHT } from '../../shared/http/permissions.js';
 /// The shift lifecycle is low-frequency and stateful, so it's plain REST rather
 /// than riding the POS WebSocket.
 
-const openSchema = z.object({ openingFloat: z.number().min(0).max(10_000_000).default(0) });
+// CASH-7 — cash inputs are money: constrain to whole paise (2dp) at the
+// boundary so a 3rd-decimal value is rejected here rather than silently
+// rounded by the Decimal(12,2)/(15,2) column on store. multipleOf(0.01)
+// rejects e.g. 100.999; the service still rounds defensively in Decimal.
+const paise = (n: z.ZodNumber) => n.multipleOf(0.01);
+const openSchema = z.object({ openingFloat: paise(z.number().min(0).max(10_000_000)).default(0) });
 const movementSchema = z.object({
   type: z.enum(['PAY_IN', 'PAY_OUT', 'DROP']),
-  amount: z.number().positive().max(10_000_000),
+  amount: paise(z.number().positive().max(10_000_000)),
   reason: z.string().trim().max(200).optional(),
 });
 const closeSchema = z.object({
-  countedCash: z.number().min(0).max(100_000_000),
+  countedCash: paise(z.number().min(0).max(100_000_000)),
   note: z.string().trim().max(500).optional(),
 });
 

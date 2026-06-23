@@ -790,6 +790,15 @@ export class AuthService {
         linkedParties: { select: { id: true, name: true } },
         linkedVendors: { select: { id: true, name: true } },
         purchaseRequests: { include: { items: true } },
+        // DPDP §11 right-to-access: these are unambiguously the data
+        // principal's own personal data and must appear in the export.
+        // All are user-scoped relations on User (no cross-tenant leak).
+        addresses: true,
+        productReviews: true,
+        wishlistItems: { include: { product: { select: { id: true, name: true } } } },
+        cartItems: { include: { product: { select: { id: true, name: true } } } },
+        customerOrders: { include: { shopOrders: { include: { items: true } } } },
+        returnsRequested: { include: { items: true } },
       },
     });
     if (!user) return { error: 'user_not_found' };
@@ -812,6 +821,14 @@ export class AuthService {
       linkedParties: user.linkedParties,
       linkedVendors: user.linkedVendors,
       purchaseRequests: user.purchaseRequests,
+      // DPDP §11 — the customer's own activity. Present for every role;
+      // an OWNER who never shopped simply gets empty arrays.
+      addresses: user.addresses,
+      productReviews: user.productReviews,
+      wishlistItems: user.wishlistItems,
+      cartItems: user.cartItems,
+      customerOrders: user.customerOrders,
+      returnRequests: user.returnsRequested,
     };
 
     if (user.role === 'OWNER') {
@@ -887,9 +904,14 @@ export class AuthService {
 
   /// DPDP §12 right-to-erasure. OWNER accounts that still hold legally
   /// retained records (CONFIRMED invoices within the 8-year Companies
-  /// Act window) cannot be deleted — the user is told to contact
-  /// support so we can do a controlled wipe. CUSTOMER accounts cascade
-  /// freely because the schema's onDelete rules cover their footprint.
+  /// Act window) can NOT be hard-deleted — but the DPDP right is still
+  /// honoured via a *controlled wipe*: we hard-delete all non-retained
+  /// PII (notifications, addresses, wishlist/cart, sessions) and
+  /// pseudonymise the user identity that the retained invoices reference
+  /// (name/email/phone/avatar replaced with a tombstone), keeping only
+  /// the statutory invoice rows. CUSTOMER accounts (and OWNERs with no
+  /// retained records) cascade-delete freely because the schema's
+  /// onDelete rules cover their footprint.
   async deleteAccount(userId: number, currentPassword: string) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) return { error: 'user_not_found' as const };
@@ -917,7 +939,8 @@ export class AuthService {
           },
         });
         if (protectedInvoices > 0) {
-          return { error: 'cannot_delete_with_active_records' as const };
+          // PII-4 — can't hard-delete (legal retention), so pseudonymise.
+          return this.pseudonymiseAccount(userId);
         }
       }
     }
@@ -960,7 +983,81 @@ export class AuthService {
       await tx.user.delete({ where: { id: userId } });
     });
 
-    return { ok: true as const };
+    return { ok: true as const, mode: 'deleted' as const };
+  }
+
+  /// PII-4 controlled wipe for OWNERs whose CONFIRMED invoices are still
+  /// inside the 8-year statutory retention window. We CANNOT delete the
+  /// User row — invoices and the owned Shop reference it and must be kept
+  /// for tax/company law — so we hard-delete the non-retained PII and
+  /// overwrite the identity fields with a tombstone. The account is left
+  /// deactivated (isActive = false) and login is blocked: the email is
+  /// rotated to an unusable address, the password hash is scrambled, and
+  /// tokensValidFrom is bumped so any live access token is rejected.
+  private async pseudonymiseAccount(userId: number) {
+    await prisma.$transaction(async (tx) => {
+      // Reviews still need the rating denorm reconciled (same reasoning as
+      // the hard-delete path): drop this user's reviews, then recompute.
+      const reviewedProducts = await tx.productReview.findMany({
+        where: { userId },
+        select: { productId: true },
+        distinct: ['productId'],
+      });
+      const affectedProductIds = reviewedProducts.map((r) => r.productId);
+      if (affectedProductIds.length > 0) {
+        await tx.productReview.deleteMany({ where: { userId } });
+        for (const productId of affectedProductIds) {
+          const agg = await tx.productReview.aggregate({
+            where: { productId },
+            _avg: { rating: true },
+            _count: { _all: true },
+          });
+          await tx.product.update({
+            where: { id: productId },
+            data: {
+              ratingAvg: agg._avg.rating,
+              ratingCount: agg._count._all,
+            },
+          });
+        }
+      }
+
+      // Hard-delete the non-retained PII footprint. None of these are
+      // books-of-account; they carry no statutory retention obligation.
+      await tx.notification.deleteMany({ where: { userId } });
+      await tx.userAddress.deleteMany({ where: { userId } });
+      await tx.wishlistItem.deleteMany({ where: { userId } });
+      await tx.cartItem.deleteMany({ where: { userId } });
+      await tx.refreshToken.deleteMany({ where: { userId } });
+      await tx.rememberToken.deleteMany({ where: { userId } });
+
+      // Pseudonymise the identity referenced by the retained invoices.
+      // Email is @unique, so the tombstone must be unique per user. The
+      // scrambled password hash + bumped tokensValidFrom make the account
+      // permanently unusable for login while keeping the row intact.
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          name: 'Deleted user',
+          email: `deleted+${userId}@deleted.shopxy.invalid`,
+          passwordHash: await bcrypt.hash(crypto.randomUUID(), 12),
+          phoneNumber: null,
+          avatarUrl: null,
+          isActive: false,
+          tokensValidFrom: new Date(),
+          // Silence any future dispatch; the principal is gone.
+          emailNotifications: false,
+          notifyOrders: false,
+          notifyDeals: false,
+          notifyAccount: false,
+          notifyMessages: false,
+          pushEnabled: false,
+          smsEnabled: false,
+        },
+      });
+    });
+
+    return { ok: true as const, mode: 'pseudonymised' as const };
   }
 }
 
