@@ -98,7 +98,9 @@ export function SecuritySection() {
           Changing your password signs you out of every device.
         </p>
         <div>
-          <SubmitButton loading={submitting}>Change password</SubmitButton>
+          <SubmitButton loading={submitting} block={false}>
+            Change password
+          </SubmitButton>
         </div>
       </form>
 
