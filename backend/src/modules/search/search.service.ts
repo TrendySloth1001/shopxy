@@ -360,6 +360,12 @@ export class SearchService {
   private readonly _recentSearches = new Map<string, number>();
   private static readonly _SEARCH_DEDUPE_MS = 2_000;
   private static readonly _SEARCH_DEDUPE_MAX = 10_000;
+  /// CAT-L1 — fraction of ANONYMOUS searches we persist to SearchEvent /
+  /// SearchTerm. Anonymous traffic can't be per-actor deduped, so we sample
+  /// it to keep an unauthenticated flood from inflating analytics row-for-row
+  /// while still surfacing trending terms. Authenticated traffic is recorded
+  /// in full (deduped). 0..1.
+  private static readonly _ANON_SAMPLE_RATE = 0.1;
 
   private _shouldRecordSearch(key: string): boolean {
     const now = Date.now();
@@ -389,15 +395,24 @@ export class SearchService {
     sessionId: string | null;
   }): Promise<void> {
     // Per-(user/session) dedupe — bot loops + double-fire UI bugs no
-    // longer cost us an upsert + insert per call. We DON'T dedupe
-    // anonymous calls because there's no stable actor to key on (every
-    // anonymous request would collapse onto the same bucket, masking
-    // distinct visitors).
+    // longer cost us an upsert + insert per call.
+    //
+    // CAT-L1 — the public /search, /autocomplete, /hints routes are mounted
+    // behind the per-IP edge rate-limiter (`publicLimiter`, 200/min/IP — see
+    // infra/http/app.ts), which is the real anonymous-flood guard. This
+    // function adds the SECOND line: anonymous calls have no stable actor to
+    // key the dedupe map on (every anonymous request would collapse onto one
+    // bucket, masking distinct visitors), so instead of a full insert per
+    // anonymous request we SAMPLE them — write ~1 in N — so an anonymous
+    // burst can't inflate SearchEvent/SearchTerm row-for-row. Authenticated /
+    // session traffic keeps the exact per-actor dedupe (no sampling).
     if (opts.userId !== null || opts.sessionId !== null) {
       const actorKey =
         opts.userId !== null ? `u:${opts.userId}` : `s:${opts.sessionId}`;
       const dedupeKey = `${actorKey}|${opts.query}`;
       if (!this._shouldRecordSearch(dedupeKey)) return;
+    } else if (Math.random() >= SearchService._ANON_SAMPLE_RATE) {
+      return;
     }
 
     await Promise.all([
