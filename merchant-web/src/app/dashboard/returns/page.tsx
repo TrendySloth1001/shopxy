@@ -56,7 +56,7 @@ export default function ReturnsPage() {
         icon={Undo2}
         tone="amber"
         title="Returns"
-        subtitle="Customer return requests. Approve or reject, mark picked-up and received, then refund — the wallet is credited and stock restocked."
+        subtitle="Customer return requests. Approve or reject, mark picked-up and received, then refund — the buyer's original payment method is credited and stock restocked."
       >
         <button
           type="button"

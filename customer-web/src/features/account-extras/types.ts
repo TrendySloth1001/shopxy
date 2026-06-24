@@ -1,7 +1,7 @@
 /**
- * Account extras — types for wishlist, reviews, coupons, wallet, recently-viewed.
+ * Account extras — types for wishlist, reviews, coupons, recently-viewed.
  * Ported from the Flutter customer app (features/wishlist, features/reviews,
- * features/coupons, features/wallet, features/recently_viewed).
+ * features/coupons, features/recently_viewed).
  */
 
 // ── Wishlist ────────────────────────────────────────────────────────────────
@@ -86,39 +86,6 @@ export function couponHeadline(c: Coupon, formatINR: (v: number) => string): str
 /** "Min order ₹500" or empty. */
 export function couponMinOrderLabel(c: Coupon, formatINR: (v: number) => string): string {
   return c.minOrderValue ? `Min order ${formatINR(c.minOrderValue)}` : "";
-}
-
-// ── Wallet ───────────────────────────────────────────────────────────────────
-
-export type WalletSource =
-  | "REFUND"
-  | "COUPON"
-  | "REFERRAL"
-  | "LOYALTY"
-  | "CHECKOUT"
-  | "TOPUP"
-  | "CANCEL"
-  | "MANUAL";
-
-export interface WalletEntry {
-  id: number;
-  amount: number;
-  balanceAfter: number;
-  source: WalletSource;
-  sourceId?: number | null;
-  description: string;
-  createdAt: string;
-}
-
-export interface WalletSnapshot {
-  balance: number;
-  ledgerBalance: number;
-  entries: WalletEntry[];
-}
-
-/** Positive amounts are credits; CHECKOUT is a debit (funds used). */
-export function isWalletCredit(entry: WalletEntry): boolean {
-  return entry.amount > 0;
 }
 
 // ── Recently viewed ──────────────────────────────────────────────────────────

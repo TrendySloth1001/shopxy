@@ -3,8 +3,9 @@ import { z } from "zod";
 /**
  * Merchant-side return shapes, mirroring the backend returns module served at
  * `/orders/returns`. Returns are initiated by customers; the merchant works the
- * inbox: approve / reject → mark picked-up → mark received → refund (credits the
- * buyer's wallet and restocks). Money is rupees (Decimal serialised as number).
+ * inbox: approve / reject → mark picked-up → mark received → refund (refunds the
+ * buyer's original payment method and restocks). Money is rupees (Decimal
+ * serialised as number).
  */
 
 export const RETURN_STATUSES = [
@@ -116,6 +117,39 @@ export const returnListSchema = z.object({
     .transform((v) => v ?? []),
   total: z.coerce.number().default(0),
 });
+
+/**
+ * Result of POST /orders/returns/:id/refund. The refund goes to the buyer's
+ * original payment instrument via the gateway. `refundStatus`:
+ *   REFUNDED            — money sent back to the original payment method
+ *   NO_PAYMENT          — nothing was paid online (COD); settle offline
+ *   FAILED              — gateway rejected the refund
+ *   NOTHING_TO_REFUND   — zero refundable amount
+ */
+export const REFUND_STATUSES = ["REFUNDED", "NO_PAYMENT", "FAILED", "NOTHING_TO_REFUND"] as const;
+export type RefundStatus = (typeof REFUND_STATUSES)[number];
+
+export const refundResultSchema = z.object({
+  ok: z.boolean().default(true),
+  refundAmount: z.coerce.number().default(0),
+  refundStatus: z.string().default("NO_PAYMENT"),
+});
+export type RefundResult = z.infer<typeof refundResultSchema>;
+
+export function refundStatusMessage(r: RefundResult): string {
+  switch (r.refundStatus) {
+    case "REFUNDED":
+      return `Refund of ${r.refundAmount} issued to the customer's original payment method.`;
+    case "NO_PAYMENT":
+      return "No online payment to refund — settle with the customer offline.";
+    case "FAILED":
+      return "The refund could not be processed by the payment gateway. Try again.";
+    case "NOTHING_TO_REFUND":
+      return "There was nothing to refund.";
+    default:
+      return "Refund processed.";
+  }
+}
 
 export function customerName(r: MerchantReturn): string {
   return r.request?.customerName ?? `Customer #${r.id}`;

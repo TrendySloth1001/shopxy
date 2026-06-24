@@ -59,7 +59,35 @@ export interface GatewayPaymentRecord {
   customerUserId: number | null;
   providerOrderRef: string | null;
   providerPaymentRef: string | null;
+  /** Cumulative real money already refunded to source against this capture
+   *  (rupees). A new refund is capped at (amount − amountRefunded). */
+  amountRefunded: number;
   idempotencyKey: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/** Refund lifecycle: PENDING (provider accepted) → PROCESSED (settled to the
+ *  instrument) | FAILED (provider rejected). FAILED never holds float. */
+export type GatewayRefundStatus = 'PENDING' | 'PROCESSED' | 'FAILED';
+
+/**
+ * Provider-neutral record of one real-money refund-to-source against a captured
+ * payment. Mirrors the `GatewayRefund` table. `amount` is rupees; paise live
+ * only at the provider edge.
+ */
+export interface GatewayRefundRecord {
+  id: number;
+  gatewayPaymentId: number;
+  provider: ProviderName;
+  status: GatewayRefundStatus;
+  amount: number;
+  currency: string;
+  providerRefundRef: string | null;
+  sourceType: string;
+  sourceId: number;
+  reason: string | null;
+  idempotencyKey: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -111,6 +139,9 @@ export interface NormalizedEvent {
   eventId: string;
   providerOrderRef: string | null;
   providerPaymentRef: string | null;
+  /** The refund entity id (Razorpay rfnd_XXXX) on a refund.* event — lets the
+   *  core resolve OUR GatewayRefund row and transition it. Null otherwise. */
+  providerRefundRef?: string | null;
   /** Minor units (paise) as the provider reported them; null if absent. */
   amountMinor: number | null;
   currency: string | null;

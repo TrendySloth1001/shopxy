@@ -370,9 +370,6 @@ function OrderDetailContent({
         {(order.couponDiscount ?? 0) > 0 && (
           <BillRow label="Coupon discount" value={-(order.couponDiscount ?? 0)} />
         )}
-        {(order.walletPaid ?? 0) > 0 && (
-          <BillRow label="Wallet applied" value={-(order.walletPaid ?? 0)} />
-        )}
         <div className="my-md h-px bg-hairline" />
         {(() => {
           // When invoices are used, orderTotal is already net (coupon baked in by backend).

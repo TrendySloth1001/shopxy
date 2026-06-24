@@ -152,7 +152,9 @@ function ReturnDetailContent({ returnId }: { returnId: number }) {
             {formatINR(data.refundAmount, { decimals: 2 })}
           </p>
           {isRefunded && (
-            <p className="mt-xs text-body-sm font-bold text-success">Credited to your wallet</p>
+            <p className="mt-xs text-body-sm font-bold text-success">
+              Refunded to your original payment method
+            </p>
           )}
         </div>
       </div>

@@ -11,7 +11,6 @@ import 'package:shopxy_customer/features/catalog/domain/entities/cart_item.dart'
 import 'package:shopxy_customer/features/catalog/presentation/providers/cart_provider.dart';
 import 'package:shopxy_customer/features/coupons/data/datasources/coupons_remote_data_source.dart';
 import 'package:shopxy_customer/features/coupons/domain/entities/coupon.dart';
-import 'package:shopxy_customer/features/wallet/data/datasources/wallet_remote_data_source.dart';
 import 'package:shopxy_customer/features/payments/razorpay_checkout.dart';
 import 'package:shopxy_customer/features/home/presentation/widgets/network_image_box.dart';
 import 'package:shopxy_customer/features/orders/presentation/pages/order_detail_page.dart';
@@ -52,16 +51,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
   /// entered. The preview lives in state so the price card can show
   /// "− ₹X coupon" before the actual place-order RPC fires.
   CouponPreview? _appliedCoupon;
-  bool _useWallet = false;
   /// false = Cash on Delivery (default); true = pay now via Razorpay.
   bool _payOnline = false;
-  double _walletBalance = 0;
-  bool _walletLoaded = false;
 
   @override
   void initState() {
     super.initState();
-    _primeWallet();
     // Public coupons should auto-apply without a code entry — the
     // "your coupon code doesn't work" complaint was almost always
     // about a store-wide coupon the customer expected to be applied
@@ -90,20 +85,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
     } catch (_) {
       // Best-effort — a failure here just means the customer falls
       // back to typing a code, same as before.
-    }
-  }
-
-  Future<void> _primeWallet() async {
-    try {
-      final snap = await context.read<WalletRemoteDataSource>().snapshot();
-      if (!mounted) return;
-      setState(() {
-        _walletBalance = snap.balance;
-        _walletLoaded = true;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _walletLoaded = true);
     }
   }
 
@@ -244,19 +225,16 @@ class _CheckoutPageState extends State<CheckoutPage> {
   bool _submitting = false;
 
   /// The same "Total payable" number the price card and footer render —
-  /// items − coupon − wallet, never negative. Kept in one place so the
-  /// ≥₹500 confirm sheet can't quote a different figure than the bill.
+  /// items − coupon, never negative. Kept in one place so the ≥₹500
+  /// confirm sheet can't quote a different figure than the bill.
   double _currentGrandTotal(CartProvider cart) {
     final subtotal = cart.totalPrice;
     final couponDiscount = _appliedCoupon?.ok == true
         ? (_appliedCoupon!.discount ?? 0).clamp(0, subtotal).toDouble()
         : 0.0;
-    final afterCoupon = (subtotal + _deliveryStandard - couponDiscount)
+    return (subtotal + _deliveryStandard - couponDiscount)
         .clamp(0, double.infinity)
         .toDouble();
-    final walletApply =
-        _useWallet ? _walletBalance.clamp(0, afterCoupon).toDouble() : 0.0;
-    return (afterCoupon - walletApply).clamp(0, double.infinity).toDouble();
   }
 
   Future<void> _placeOrder() async {
@@ -294,7 +272,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
     final result = await cart.placeOrder(
       addressId: _selectedAddressId,
       couponCode: _appliedCoupon?.code,
-      useWallet: _useWallet,
     );
     if (!mounted) {
       _submitting = false;
@@ -538,15 +515,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
         : 0.0;
     final afterCoupon =
         (subtotal + _deliveryStandard - couponDiscount).clamp(0, double.infinity).toDouble();
-    final walletApply = _useWallet
-        ? _walletBalance.clamp(0, afterCoupon).toDouble()
-        : 0.0;
     // Savings reflect only real reductions — product (MRP − selling) and
     // coupon. Delivery is genuinely free, so there is no waived fee to strike:
     // do NOT fabricate a ₹49 reference price. (CP E-Commerce Rules r.4 / CCPA
     // dark-pattern guidance — no fictitious reference prices.)
     final totalSavings = productSavings + couponDiscount;
-    final grandTotal = (afterCoupon - walletApply).clamp(0, double.infinity).toDouble();
+    final grandTotal = afterCoupon;
 
     // GST breakup — selling prices are tax-inclusive, so back the tax out of
     // the line amounts grouped by rate to show the statutory "of which taxes"
@@ -620,15 +594,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     onApply: _applyCoupon,
                     onRemove: _removeCoupon,
                   ),
-                  if (_walletLoaded && _walletBalance > 0) ...[
-                    const SizedBox(height: AppSizes.sm),
-                    _WalletToggleCard(
-                      balance: _walletBalance,
-                      applied: walletApply,
-                      enabled: _useWallet,
-                      onChanged: (v) => setState(() => _useWallet = v),
-                    ),
-                  ],
                   const SizedBox(height: AppSizes.lg),
                   const _SectionLabel(label: 'PAYMENT METHOD'),
                   _buildPaymentMethod(),
@@ -641,7 +606,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     deliveryStandard: _deliveryStandard,
                     grandTotal: grandTotal,
                     couponDiscount: couponDiscount,
-                    walletApplied: walletApply,
                     taxBreakup: taxBreakup,
                   ),
                   if (totalSavings > 0) ...[
@@ -1476,7 +1440,6 @@ class _PriceCard extends StatelessWidget {
     required this.grandTotal,
     required this.taxBreakup,
     this.couponDiscount = 0,
-    this.walletApplied = 0,
   });
   final double itemsTotal;
   final double mrpTotal;
@@ -1485,7 +1448,6 @@ class _PriceCard extends StatelessWidget {
   final double grandTotal;
   final _GstBreakup taxBreakup;
   final double couponDiscount;
-  final double walletApplied;
 
   @override
   Widget build(BuildContext context) {
@@ -1524,20 +1486,14 @@ class _PriceCard extends StatelessWidget {
               negative: couponDiscount,
               valueColor: AppColors.success,
             ),
-          if (walletApplied > 0)
-            _PriceRow(
-              label: 'Wallet',
-              negative: walletApplied,
-              valueColor: AppColors.success,
-            ),
           const Divider(height: AppSizes.lg, color: AppColors.hairline),
           _PriceRow(
             label: 'Total payable (estimate)',
             value: grandTotal,
             bold: true,
           ),
-          // The coupon/wallet discount is a client estimate; the shop
-          // re-computes eligibility/caps/wallet when the order is placed, and
+          // The coupon discount is a client estimate; the shop
+          // re-computes eligibility/caps when the order is placed, and
           // the order confirmation shows the final charged amount.
           Padding(
             padding: const EdgeInsets.only(top: AppSizes.xs),
@@ -1745,72 +1701,6 @@ class _CouponCardState extends State<_CouponCard> {
                           style: Theme.of(context).textTheme.labelLarge
                               ?.copyWith(fontWeight: FontWeight.w800)),
                 ),
-        ],
-      ),
-    );
-  }
-}
-
-class _WalletToggleCard extends StatelessWidget {
-  const _WalletToggleCard({
-    required this.balance,
-    required this.applied,
-    required this.enabled,
-    required this.onChanged,
-  });
-  final double balance;
-  final double applied;
-  final bool enabled;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSizes.md,
-        vertical: AppSizes.sm,
-      ),
-      decoration: ShapeDecoration(
-        color: AppColors.white,
-        shape: AppShapes.squircle(
-          AppSizes.radiusMd,
-          side: const BorderSide(color: AppColors.hairline),
-        ),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.account_balance_wallet_rounded,
-              color: AppColors.brand, size: AppSizes.iconMd),
-          const SizedBox(width: AppSizes.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  enabled && applied > 0
-                      ? 'Using ${AppFormat.rupees(applied)} from wallet'
-                      : 'Use wallet balance',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.black,
-                        fontWeight: FontWeight.w800,
-                      ),
-                ),
-                Text(
-                  'Available · ${AppFormat.rupees(balance)}',
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: AppColors.muted,
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-              ],
-            ),
-          ),
-          Switch.adaptive(
-            value: enabled,
-            activeThumbColor: AppColors.brand,
-            onChanged: onChanged,
-          ),
         ],
       ),
     );
@@ -2076,7 +1966,7 @@ class _Footer extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // "Estimate" — coupon/wallet are re-validated server-side at
+                  // "Estimate" — the coupon is re-validated server-side at
                   // place-order; the order confirmation shows the final charged
                   // amount (CP E-Commerce Rules r.4(3)).
                   Text('Total payable (est.)',

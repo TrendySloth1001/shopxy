@@ -80,11 +80,10 @@ class HelpAndFaqPage extends StatelessWidget {
           const _FaqTile(
             question: 'When will I get my refund?',
             answer:
-                'Most refunds land in your wallet as soon as the seller '
-                'marks the return REFUNDED. From the wallet you can use '
-                'the balance on your next order. Refunds to the original '
-                'payment method (when offered by the seller) take 3–7 '
-                'business days.',
+                'Once the seller marks the return REFUNDED, the amount is '
+                'sent back to your original payment method. Refunds '
+                'typically take 3–7 business days to reflect, depending on '
+                'your bank or payment provider.',
           ),
           const SizedBox(height: AppSizes.lg),
           const _SectionTitle(label: 'Account & privacy'),

@@ -72,7 +72,9 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
     _refundPolicy.text = shop.refundPolicy ?? '';
     _returnsEnabled = shop.returnsEnabled;
     _returnWindowDays.text = shop.returnWindowDays.toString();
-    _refundMode = shop.refundMode;
+    // WALLET refunds are deprecated; coerce any legacy stored value so the
+    // dropdown (which no longer offers WALLET) has a matching selection.
+    _refundMode = shop.refundMode == 'WALLET' ? 'ORIGINAL' : shop.refundMode;
     _returnPolicyNote.text = shop.returnPolicyNote ?? '';
     _cancellationPolicy = shop.cancellationPolicy;
     _logoUrl = shop.logoUrl;
@@ -557,10 +559,6 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
                       labelText: 'Refund method',
                     ),
                     items: const [
-                      DropdownMenuItem(
-                        value: 'WALLET',
-                        child: Text('Store wallet credit'),
-                      ),
                       DropdownMenuItem(
                         value: 'ORIGINAL',
                         child: Text('Original payment method'),

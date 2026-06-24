@@ -223,7 +223,7 @@ class _SheetState extends State<_Sheet> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Refund to wallet',
+                        'Estimated refund',
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: AppColors.muted,
                           fontWeight: FontWeight.w800,

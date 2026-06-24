@@ -234,7 +234,7 @@ class _HeroCard extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(top: AppSizes.xs),
                 child: Text(
-                  'Credited to your wallet',
+                  'Refunded to your original payment method',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: AppColors.success,
                         fontWeight: FontWeight.w700,

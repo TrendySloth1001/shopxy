@@ -24,13 +24,17 @@ function merchantToken(ctx: { userId: number; shopId: number; email: string }): 
 }
 
 /// Spins up a full submit→confirm→approve→refund chain so we know the
-/// wallet credit + idempotency + state machine all line up.
+/// refund-to-source result + idempotency + state machine all line up. These
+/// orders are placed COD (no online capture), so the refund engine reports
+/// NO_PAYMENT (nothing to reverse to source — the merchant settles offline);
+/// the GST credit note is still issued. Wallet/store-credit refunds were
+/// removed (illegal for an online payment — RBI refund-to-source).
 describe('returns — lifecycle', () => {
   afterAll(async () => {
     await prisma.$disconnect();
   });
 
-  it('submit → approve → received → refund credits the wallet', async () => {
+  it('submit → approve → received → refund (COD → NO_PAYMENT, credit note issued)', async () => {
     const merchant = await createTestUser();
     const buyer = await createTestUser({ role: Role.CUSTOMER });
     // Pre-link the buyer as a Party at the merchant's shop. Production
@@ -116,16 +120,20 @@ describe('returns — lifecycle', () => {
         .send({});
       expect(refund.status).toBe(200);
       expect(refund.body.refundAmount).toBe(500);
-
-      // Wallet snapshot should show the credit.
-      const wallet = await request(app)
-        .get('/me/wallet')
-        .set('Authorization', `Bearer ${buyer.accessToken}`);
-      expect(wallet.status).toBe(200);
-      expect(wallet.body.balance).toBe(500);
-      expect(wallet.body.entries.length).toBeGreaterThan(0);
-      expect(wallet.body.entries[0].source).toBe('REFUND');
-      expect(wallet.body.entries[0].amount).toBe(500);
+      // COD order → no captured online payment → nothing to refund to source.
+      expect(refund.body.refundStatus).toBe('NO_PAYMENT');
+      // No real money moved and no GatewayRefund was recorded.
+      const refundRows = await prisma.gatewayRefund.findMany({
+        where: { sourceType: 'RETURN', sourceId: returnId },
+      });
+      expect(refundRows).toHaveLength(0);
+      // The GST credit note (a SALE return against the original invoice) is
+      // still minted regardless of the money path.
+      const creditNote = await prisma.invoice.findFirst({
+        where: { shopId: merchant.shopId, type: 'SALE', originalInvoiceId: { not: null } },
+        orderBy: { id: 'desc' },
+      });
+      expect(creditNote).not.toBeNull();
     } finally {
       await cleanupTestUser(merchant);
       await cleanupTestUser(buyer);
@@ -190,25 +198,22 @@ describe('returns — lifecycle', () => {
           .send({});
       }
 
-      // First refund — credits the wallet.
+      // First refund — settles the return (COD here, so refund-to-source is a
+      // NO_PAYMENT no-op, but the row goes REFUNDED).
       const r1 = await request(app)
         .post(`/orders/returns/${returnId}/refund`)
         .set('Authorization', `Bearer ${merchantToken(merchant)}`)
         .send({});
       expect(r1.status).toBe(200);
 
-      // Second refund attempt — must conflict (BAD_STATE) since the row
-      // is already REFUNDED. The wallet must NOT receive a second credit.
+      // Second refund attempt — must conflict (BAD_STATE) since the row is
+      // already REFUNDED. The state-machine claim is what makes the refund
+      // exactly-once; no second money movement can be triggered.
       const r2 = await request(app)
         .post(`/orders/returns/${returnId}/refund`)
         .set('Authorization', `Bearer ${merchantToken(merchant)}`)
         .send({});
       expect(r2.status).toBe(409);
-
-      const wallet = await request(app)
-        .get('/me/wallet')
-        .set('Authorization', `Bearer ${buyer.accessToken}`);
-      expect(wallet.body.balance).toBe(100);
     } finally {
       await cleanupTestUser(merchant);
       await cleanupTestUser(buyer);

@@ -240,10 +240,13 @@ export class RazorpayProvider
     method: 'GET' | 'POST' | 'PATCH',
     path: string,
     body?: unknown,
-    opts?: { idempotent?: boolean },
+    opts?: { idempotent?: boolean; idempotencyKey?: string },
   ): Promise<T> {
-    // GET/PATCH are idempotent; POST is not, unless a caller overrides.
-    const idempotent = opts?.idempotent ?? (method === 'GET' || method === 'PATCH');
+    // GET/PATCH are idempotent; POST is not, unless a caller overrides OR a
+    // provider-side Idempotency-Key is supplied (then a retried POST is deduped
+    // by Razorpay, so it's safe to retry like an idempotent call).
+    const idempotent =
+      opts?.idempotent ?? (method === 'GET' || method === 'PATCH' || !!opts?.idempotencyKey);
 
     let lastErr: unknown;
     for (let attempt = 0; attempt < this.cfg.maxRetries; attempt++) {
@@ -254,7 +257,7 @@ export class RazorpayProvider
         );
       }
       try {
-        const result = await this.rawCall<T>(method, path, body);
+        const result = await this.rawCall<T>(method, path, body, opts?.idempotencyKey);
         this.recordUpstreamResponsive();
         return result;
       } catch (err) {
@@ -292,6 +295,7 @@ export class RazorpayProvider
     method: 'GET' | 'POST' | 'PATCH',
     path: string,
     body?: unknown,
+    idempotencyKey?: string,
   ): Promise<T> {
     // Absolute paths (e.g. the /v2 Accounts API) pass through; relative paths
     // are resolved against the /v1 base.
@@ -301,6 +305,12 @@ export class RazorpayProvider
       headers: {
         Authorization: this.authHeader(),
         ...(body ? { 'Content-Type': 'application/json' } : {}),
+        // Razorpay dedupes a POST that carries a repeated Idempotency-Key,
+        // returning the original resource instead of creating a second one.
+        // Critical for refunds: a retried/redriven refund (network blip, a
+        // crash between the provider call and our DB write) must not move the
+        // customer's money twice.
+        ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),
       },
       ...(body ? { body: JSON.stringify(body) } : {}),
     });
@@ -453,6 +463,9 @@ export class RazorpayProvider
       // dispute events carry the disputed payment id on the dispute entity.
       providerPaymentRef:
         payEntity?.id ?? refundEntity?.payment_id ?? disputeEntity?.payment_id ?? null,
+      // refund.* events carry the refund entity id (rfnd_XXXX) — the key the
+      // core uses to flip our GatewayRefund row PENDING → PROCESSED.
+      providerRefundRef: refundEntity?.id ?? null,
       // PR-H3 — bind the confirmed amount to money ACTUALLY captured, never the
       // order's nominal total. Prefer the payment entity's captured `amount`;
       // for an `order.paid` event with no payment entity fall back to the order's
@@ -534,14 +547,21 @@ export class RazorpayProvider
   }
 
   async refund(p: RefundParams): Promise<NormalizedRefund> {
+    // Refund to the ORIGINAL payment instrument (card/UPI/netbanking). Indian
+    // law requires online payments to be reversed to source — never converted
+    // to store credit (RBI "refund to source"; Consumer Protection (E-Commerce)
+    // Rules 2020, Rule 4(7)). Razorpay's default `speed` already credits the
+    // source instrument. The idempotency key rides the HTTP header (Razorpay's
+    // real dedupe mechanism) so a retry can't issue a second refund — `receipt`
+    // is NOT a refund field and never deduped anything.
     const refund = await this.call<{ id: string; amount: number; status: string }>(
       'POST',
       `/payments/${p.providerPaymentRef}/refund`,
       {
         amount: p.amountMinor,
-        ...(p.idempotencyKey ? { receipt: p.idempotencyKey } : {}),
         ...(p.notes ? { notes: p.notes } : {}),
       },
+      p.idempotencyKey ? { idempotencyKey: p.idempotencyKey } : undefined,
     );
     const status =
       refund.status === 'processed'

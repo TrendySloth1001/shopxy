@@ -282,6 +282,14 @@ export class InvoicesService {
   /// RETURN_IN) and links the original SALE invoice. The returned items carry
   /// the original unit price + frozen tax so the credit note reverses GST
   /// proportionally. Idempotency key namespaced per credit-note invoice.
+  ///
+  /// LAW: CGST Act 2017, Sec 34 — a registered supplier must issue a CREDIT
+  /// NOTE for goods returned (or a downward revision), reversing the output tax
+  /// originally charged. We reverse on the SAME side the sale charged it (IGST
+  /// vs CGST+SGST) using the original invoice's frozen place-of-supply, and the
+  /// note is a sequentially-numbered, retained document (CGST Sec 36 / Rule 56),
+  /// never a silent edit of the original. The MONEY leg (returning what the
+  /// buyer paid) is separate — see returns.service → refundToSource.
   async createSalesReturnInTx(
     tx: Prisma.TransactionClient,
     data: ResolveInvoiceInput & { originalInvoiceId: number },

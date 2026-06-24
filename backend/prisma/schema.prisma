@@ -2441,6 +2441,11 @@ model GatewayPayment {
   /// progresses; used by webhooks + reconciliation to resolve the intent.
   providerOrderRef   String?  @map("provider_order_ref")
   providerPaymentRef String?  @map("provider_payment_ref")
+  /// Cumulative real-money refunded to source against this captured payment
+  /// (Σ of PROCESSED/PENDING GatewayRefund.amount). Denormalised so the refund
+  /// engine can cap a new refund at (amount − amountRefunded) without summing
+  /// the children every time. status flips to REFUNDED once this reaches amount.
+  amountRefunded     Decimal  @default(0) @map("amount_refunded") @db.Decimal(12, 2)
   /// Client-supplied retry key. Partial-unique with customerUserId so a flaky
   /// mobile retry reuses the original intent instead of minting a duplicate.
   idempotencyKey     String?  @map("idempotency_key")
@@ -2451,7 +2456,56 @@ model GatewayPayment {
   @@index([provider, providerOrderRef])
   @@index([provider, providerPaymentRef])
   @@index([status, targetType])
+  /// Refund engine: resolve "the captured online payment for this order/sale"
+  /// from (targetType, targetId) without scanning. Partial index-shaped lookup
+  /// done in the repo (status = CAPTURED).
+  @@index([targetType, targetId])
   @@map("gateway_payments")
+}
+
+/// One real-money refund-to-source against a captured [GatewayPayment]. This is
+/// the legally-required path: an online (card/UPI/netbanking) payment must be
+/// reversed to the ORIGINAL instrument — never silently converted to store
+/// credit (RBI "refund to source"; Consumer Protection (E-Commerce) Rules 2020,
+/// Rule 4(7)). One row per refund attempt; partial refunds (a single returned
+/// line of a multi-line order) produce several rows against the same payment.
+///
+/// `sourceType` / `sourceId` tie the refund back to the domain event that
+/// triggered it (RETURN → ReturnRequest.id, CANCEL → PurchaseRequest.id) and,
+/// combined with `idempotencyKey`, make the engine idempotent: a retried return
+/// or a redelivered request re-uses this row instead of issuing a second refund.
+model GatewayRefund {
+  id                 Int      @id @default(autoincrement())
+  /// Parent captured intent (GatewayPayment.id). Loose Int FK to match how
+  /// GatewayPayment is referenced elsewhere in this module.
+  gatewayPaymentId   Int      @map("gateway_payment_id")
+  provider           String
+  /// PENDING (provider accepted, money in flight) | PROCESSED (settled to the
+  /// instrument) | FAILED (provider rejected — never reduced amountRefunded).
+  status             String   @default("PENDING")
+  amount             Decimal  @db.Decimal(12, 2)
+  currency           String   @default("INR")
+  /// Provider refund id (Razorpay rfnd_XXXX). Set once the provider accepts;
+  /// the refund.processed/failed webhook resolves the row back through it.
+  providerRefundRef  String?  @map("provider_refund_ref")
+  /// What triggered the refund: RETURN | CANCEL (free-form so a new trigger
+  /// needs no migration). sourceId is the domain row id (ReturnRequest /
+  /// PurchaseRequest).
+  sourceType         String   @map("source_type")
+  sourceId           Int      @map("source_id")
+  /// Human-readable reason carried into the provider's notes + any ledger UI.
+  reason             String?
+  /// Deterministic dedupe key (e.g. "return-refund-<id>" / "cancel-<id>"). A
+  /// retried trigger re-uses the existing row instead of double-refunding.
+  idempotencyKey     String   @map("idempotency_key")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  @@unique([idempotencyKey], name: "gateway_refunds_idempotency")
+  @@index([gatewayPaymentId])
+  @@index([provider, providerRefundRef])
+  @@index([sourceType, sourceId])
+  @@map("gateway_refunds")
 }
 
 /// Append-only webhook ledger + exactly-once dedupe gate. The unique

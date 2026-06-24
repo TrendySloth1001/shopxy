@@ -3,13 +3,13 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import {
+  BadgeIndianRupee,
   CheckCircle2,
   CircleDot,
   MapPin,
   MessageSquare,
   PackageCheck,
   Truck,
-  Wallet,
 } from "lucide-react";
 import { BackLink } from "@/shared/ui/page-header";
 import { Divider } from "@/shared/ui/divider";
@@ -34,6 +34,7 @@ import {
   canMarkReceived,
   canRefund,
   customerName,
+  refundStatusMessage,
   type MerchantReturn,
   type ReturnEvent,
   type ReturnItem,
@@ -54,6 +55,7 @@ export default function ReturnDetailPage() {
 
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [refundNotice, setRefundNotice] = useState<string | null>(null);
   const [modal, setModal] = useState<"approve" | "reject" | "refund" | null>(null);
   const [note, setNote] = useState("");
 
@@ -87,6 +89,22 @@ export default function ReturnDetailPage() {
       reload();
     } catch (e) {
       setActionError(e instanceof Error ? e.message : "Could not update the return.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function runRefund() {
+    setBusy(true);
+    setActionError(null);
+    try {
+      const result = await refundReturn(id, note.trim() || undefined);
+      setRefundNotice(refundStatusMessage(result));
+      setModal(null);
+      setNote("");
+      reload();
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "Could not refund the return.");
     } finally {
       setBusy(false);
     }
@@ -145,9 +163,14 @@ export default function ReturnDetailPage() {
         <p className="mt-md rounded-md bg-error-soft px-md py-sm text-body-sm text-error">{actionError}</p>
       ) : null}
 
-      {ret.refundMethod ? (
+      {refundNotice ? (
         <p className="mt-lg flex items-center gap-sm rounded-md bg-success-soft px-md py-sm text-body-sm text-success">
-          <Wallet size={15} /> Refunded {formatINR2(ret.refundAmount)} to {name}&rsquo;s wallet.
+          <BadgeIndianRupee size={15} /> {refundNotice}
+        </p>
+      ) : ret.refundMethod ? (
+        <p className="mt-lg flex items-center gap-sm rounded-md bg-success-soft px-md py-sm text-body-sm text-success">
+          <BadgeIndianRupee size={15} /> Refunded {formatINR2(ret.refundAmount)} to {name}&rsquo;s original payment
+          method.
         </p>
       ) : null}
 
@@ -245,7 +268,7 @@ export default function ReturnDetailPage() {
             disabled={busy}
             className="inline-flex h-11 items-center gap-sm rounded-button bg-brand px-lg text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:bg-disabled"
           >
-            <Wallet size={16} /> Refund {formatINR2(ret.refundAmount)}
+            <BadgeIndianRupee size={16} /> Refund {formatINR2(ret.refundAmount)}
           </button>
         ) : null}
       </div>
@@ -282,7 +305,7 @@ export default function ReturnDetailPage() {
       {modal === "refund" ? (
         <Modal title={`Refund ${formatINR2(ret.refundAmount)}?`} onClose={() => setModal(null)}>
           <p className="text-body-md text-muted">
-            This credits the buyer&rsquo;s wallet immediately and restocks the returned items. It can&rsquo;t be
+            This refunds the buyer to their original payment method and restocks the returned items. It can&rsquo;t be
             undone.
           </p>
           <TextAreaField label="Note (optional)" value={note} onChange={setNote} rows={2} />
@@ -290,7 +313,7 @@ export default function ReturnDetailPage() {
             busy={busy}
             confirmLabel="Refund"
             onCancel={() => setModal(null)}
-            onConfirm={() => run(() => refundReturn(id, note.trim() || undefined))}
+            onConfirm={() => void runRefund()}
           />
         </Modal>
       ) : null}

@@ -66,24 +66,26 @@ class MerchantReturnsRemoteDataSource {
   Future<void> markReceived(int id, {String? note}) =>
       _transition(id, 'received', note: note);
 
-  /// Refund returns a payload `{ ok, walletEntryId, refundAmount }` so
-  /// the merchant UI can confirm the amount that was credited.
-  Future<({int walletEntryId, double refundAmount})> refund(
+  /// Refund returns `{ ok, refundAmount, refundStatus }`. The money goes back
+  /// to the buyer's ORIGINAL payment instrument (card/UPI/netbanking) via the
+  /// gateway — never wallet/store credit. `refundStatus` is REFUNDED |
+  /// NO_PAYMENT (COD/never captured — merchant settles offline) | FAILED |
+  /// NOTHING_TO_REFUND.
+  Future<({double refundAmount, String refundStatus})> refund(
     int id, {
     String? note,
   }) async {
     final res = await _client.post(
       '/orders/returns/$id/refund',
       body: {
-        'method': 'WALLET',
         if (note != null && note.isNotEmpty) 'note': note,
       },
     );
     if (res.statusCode != 200) throw Exception(_decodeError(res.body));
     final m = jsonDecode(res.body) as Map<String, dynamic>;
     return (
-      walletEntryId: (m['walletEntryId'] as num).toInt(),
       refundAmount: (m['refundAmount'] as num).toDouble(),
+      refundStatus: (m['refundStatus'] as String?) ?? 'NO_PAYMENT',
     );
   }
 

@@ -40,12 +40,12 @@ export default function PoliciesPage() {
       <LegalSection heading="Refunds">
         <p>
           Once a return is received and approved, or an order is cancelled, your refund is
-          initiated within <span className="text-ink">2 business days</span>. Refunds to an
-          online payment method (UPI, card, netbanking) are processed via Razorpay and typically
-          reach your account within <span className="text-ink">5–7 business days</span>, depending
-          on your bank. For cash-on-delivery orders, refunds are credited to your ShopXY wallet or
-          to a bank account you provide. You are refunded the full amount you paid for the returned
-          items, including taxes.
+          initiated within <span className="text-ink">2 business days</span>. Refunds are
+          credited to your original payment method (UPI, card, netbanking) via Razorpay and
+          typically reach your account within <span className="text-ink">5–7 business days</span>,
+          depending on your bank. For cash-on-delivery orders, refunds are credited to a bank
+          account you provide. You are refunded the full amount you paid for the returned items,
+          including taxes.
         </p>
       </LegalSection>
 

@@ -6,7 +6,7 @@ import {
   XCircle,
   Package,
   PackageCheck,
-  Wallet,
+  BadgeIndianRupee,
 } from "lucide-react";
 import { formatDateTime } from "@/shared/datetime";
 import type { ReturnEvent } from "../types";
@@ -118,7 +118,7 @@ export function ReturnTimeline({
       { label: "Item received", Icon: PackageCheck, event: byType.get("RECEIVED") },
       {
         label: "Refunded",
-        Icon: Wallet,
+        Icon: BadgeIndianRupee,
         event: byType.get("REFUNDED"),
         tone: "success",
       },

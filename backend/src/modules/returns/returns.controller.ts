@@ -24,8 +24,12 @@ const submitSchema = z.object({
 });
 
 const decisionSchema = z.object({ note: z.string().max(500).optional() });
+// Refunds always go back to the customer's original payment instrument now —
+// there is no method choice (wallet/store-credit was removed as it's illegal
+// for an online payment). `method` is accepted-but-ignored for back-compat with
+// older clients that still send it.
 const refundSchema = z.object({
-  method: z.enum(['WALLET']).optional(),
+  method: z.string().optional(),
   note: z.string().max(500).optional(),
 });
 
@@ -241,7 +245,6 @@ export class ReturnsController {
       shopId,
       id,
       actorId: req.user!.sub,
-      method: payload.method,
       note: payload.note ?? null,
     });
     if ('error' in result) {
@@ -250,13 +253,19 @@ export class ReturnsController {
     }
     const row = await returnsService.getForMerchant({ shopId, id });
     if (row) {
+      // A COD/never-captured order has no online payment to reverse — the
+      // merchant settles that offline, so don't promise the customer a gateway
+      // refund that isn't coming. Online orders get the refund-to-source notice.
+      const refunded = result.refundStatus === 'REFUNDED';
       void notificationsService
         .create({
           userId: row.customerUserId,
           kind: 'RETURN_REFUNDED',
-          title: 'Refund credited',
-          body: `₹${result.refundAmount.toFixed(0)} added to your wallet.`,
-          data: { returnId: id, walletEntryId: result.walletEntryId },
+          title: refunded ? 'Refund on its way' : 'Return completed',
+          body: refunded
+            ? `₹${result.refundAmount.toFixed(0)} is being refunded to your original payment method.`
+            : `Your return for #${id} has been processed.`,
+          data: { returnId: id, refundStatus: result.refundStatus },
         })
         .catch(() => {});
     }

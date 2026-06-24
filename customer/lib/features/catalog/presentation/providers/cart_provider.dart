@@ -117,8 +117,8 @@ class CartProvider extends ChangeNotifier {
       _lines.values.fold(0.0, (sum, l) => sum + l.lineTotal);
   /// Subtotal of all line items at their current selling price — same
   /// number the checkout's "Items total" row renders. Exposed under a
-  /// market-standard name so checkout helpers (coupon validate, wallet
-  /// preview) don't have to recompute the fold.
+  /// market-standard name so checkout helpers (coupon validate) don't
+  /// have to recompute the fold.
   double get itemsTotal => totalPrice;
   /// Total product savings = Σ (mrp − sellingPrice) × qty, counted ONLY on
   /// lines where mrp > sellingPrice. A bad catalog row (mrp missing / ≤ selling
@@ -255,7 +255,6 @@ class CartProvider extends ChangeNotifier {
   Future<PlaceOrderResult> placeOrder({
     int? addressId,
     String? couponCode,
-    bool useWallet = false,
   }) async {
     if (_lines.isEmpty) {
       return const PlaceOrderResult.failure('EMPTY_CART');
@@ -284,7 +283,6 @@ class CartProvider extends ChangeNotifier {
         idempotencyKey: _idempotencyKey,
         addressId: addressId,
         couponCode: couponCode,
-        useWallet: useWallet,
       );
       // Whole cart placed — clear local state and persist the empty
       // snapshot so a cold-boot doesn't restore the just-submitted

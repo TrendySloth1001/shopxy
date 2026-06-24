@@ -14,7 +14,6 @@ export const placeOrderRequestSchema = z.object({
   note: z.string().max(500).optional(),
   addressId: z.number().optional(),
   couponCode: z.string().max(40).optional(),
-  useWallet: z.boolean().optional(),
 });
 
 export type PlaceOrderRequest = z.infer<typeof placeOrderRequestSchema>;
@@ -73,15 +72,6 @@ export function computeCouponDiscount(coupon: Coupon, subtotal: number): number 
   }
   return Math.min(discount, subtotal);
 }
-
-// ── Wallet snapshot ───────────────────────────────────────────────────────────
-
-export const walletSnapshotSchema = z.object({
-  balance: zNum,
-  ledgerBalance: zNum,
-});
-
-export type WalletSnapshot = z.infer<typeof walletSnapshotSchema>;
 
 // ── Pay session ───────────────────────────────────────────────────────────────
 

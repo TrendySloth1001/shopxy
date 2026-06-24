@@ -32,7 +32,6 @@ const COLUMNS = [
     links: [
       { label: "Orders",    href: "/orders" },
       { label: "Wishlist",  href: "/wishlist" },
-      { label: "Wallet",    href: "/account/wallet" },
       { label: "Addresses", href: "/account/addresses" },
     ],
   },

@@ -14,10 +14,14 @@ export const DAY_LABELS: Record<Day, string> = {
   sun: "Sunday",
 };
 
+// WALLET is deprecated (refunds always go to the original payment method), but
+// kept in REFUND_MODES so legacy stored values still parse. It is NOT offered as
+// a selectable option — see REFUND_MODES_SELECTABLE.
 export const REFUND_MODES = ["WALLET", "ORIGINAL", "REPLACEMENT"] as const;
 export type RefundMode = (typeof REFUND_MODES)[number];
+export const REFUND_MODES_SELECTABLE = ["ORIGINAL", "REPLACEMENT"] as const;
 export const REFUND_MODE_LABELS: Record<RefundMode, string> = {
-  WALLET: "Store wallet credit",
+  WALLET: "Original payment method",
   ORIGINAL: "Original payment method",
   REPLACEMENT: "Replacement only",
 };
@@ -65,7 +69,10 @@ export const shopSchema = z
     vacationMessage: z.string().nullish(),
     returnsEnabled: z.boolean().default(false),
     returnWindowDays: returnWindowDaysSchema.default(0),
-    refundMode: z.enum(REFUND_MODES).default("ORIGINAL"),
+    refundMode: z
+      .enum(REFUND_MODES)
+      .default("ORIGINAL")
+      .transform((m) => (m === "WALLET" ? "ORIGINAL" : m)),
     returnPolicyNote: z.string().max(2048).nullish(),
     cancellationPolicy: z.enum(CANCELLATION_POLICIES).default("UNTIL_SHIPPED"),
     operatingHours: hours.nullish(),
