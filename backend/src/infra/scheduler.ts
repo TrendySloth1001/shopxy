@@ -191,6 +191,25 @@ export function startScheduler(): void {
     ),
   );
 
+  // Every 15 min — refund reconciliation. Heals refunds that didn't settle on
+  // the happy path: a PENDING refund whose `refund.processed` webhook was missed
+  // (re-fetch + confirm), and a FAILED refund (re-issue; the provider
+  // Idempotency-Key makes the retry safe — no double refund). This is what makes
+  // the legally-required refund ALWAYS eventually reach the buyer's original
+  // instrument even after a transient failure (Consumer Protection (E-Commerce)
+  // Rules 2020, Rule 4(7)). Same best-effort single-instance lock as the intent
+  // sweep so only one node polls Razorpay per tick.
+  jobs.push(
+    cron.schedule('*/15 * * * *', () =>
+      runSafely('gateway:reconcile-refunds', async () => {
+        if (!(await tryAcquireJobLock('gateway:reconcile-refunds', 14 * 60_000))) {
+          return { skipped: 'lock held by another instance' };
+        }
+        return paymentGatewayService.reconcileStaleRefunds();
+      }),
+    ),
+  );
+
   // Every 15 min — transfer-level reconciliation for the Route on-hold split:
   // heal HELD rows whose provider transfer never landed (P1) and release holds
   // past their window whose child has no open return (P2). Only runs when the

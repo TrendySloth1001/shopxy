@@ -30,7 +30,9 @@ export type GatewayStep =
   | 'REFUND_REPLAYED'
   | 'REFUND_SKIPPED'
   | 'REFUND_FAILED'
-  | 'REFUND_PROCESSED';
+  | 'REFUND_PROCESSED'
+  | 'REFUND_REDRIVEN'
+  | 'REFUND_RECONCILE_SWEEP';
 
 export interface GatewayTrackEvent {
   step: GatewayStep;

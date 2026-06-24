@@ -180,6 +180,14 @@ class FakeRepo implements GatewayPaymentRepository {
       if (markFullyRefunded) row.status = 'REFUNDED';
     }
   }
+
+  async releaseRefundedAmount(id: number, amount: number, stillFullyRefunded: boolean) {
+    const row = this.rows.find((r) => r.id === id);
+    if (row) {
+      row.amountRefunded = Math.round((row.amountRefunded - amount) * 100) / 100;
+      row.status = stillFullyRefunded ? 'REFUNDED' : 'CAPTURED';
+    }
+  }
 }
 
 class FakeRefundRepo {
@@ -210,6 +218,17 @@ class FakeRefundRepo {
         (r) => r.provider === provider && r.providerRefundRef === providerRefundRef,
       ) ?? null
     );
+  }
+
+  async findStaleForReconcile(input: { updatedBefore: Date; limit: number }) {
+    return this.rows
+      .filter(
+        (r) =>
+          (r.status === 'PENDING' || r.status === 'FAILED') &&
+          r.updatedAt < input.updatedBefore,
+      )
+      .sort((a, b) => a.updatedAt.getTime() - b.updatedAt.getTime())
+      .slice(0, input.limit);
   }
 
   async create(input: Omit<FakeRefundRepo['rows'][number], 'id' | 'createdAt' | 'updatedAt'>) {
@@ -270,6 +289,7 @@ function makeProvider(over: Partial<PaymentGatewayPort> = {}): PaymentGatewayPor
       capturedPaymentRef: null,
     })),
     refund: vi.fn(),
+    fetchRefundStatus: vi.fn(),
     ...over,
   } as PaymentGatewayPort;
 }
@@ -918,6 +938,143 @@ describe('PaymentGatewayService', () => {
       await svc.handleWebhook('razorpay', BODY, HEADERS);
 
       expect(refunds.rows[0].status).toBe('PROCESSED');
+    });
+  });
+
+  // ── reconcileStaleRefunds (the liveness net for un-settled refunds) ────────
+  describe('reconcileStaleRefunds', () => {
+    const NOW = new Date('2026-06-24T12:00:00Z');
+    const STALE = new Date(NOW.getTime() - 30 * 60_000); // 30 min ago → past recheck
+    const FRESH = new Date(NOW.getTime() - 60_000); // 1 min ago → within recheck
+
+    function cap(over: Partial<GatewayPaymentRecord> = {}) {
+      return repo.seed(
+        makeRecord({
+          id: 50,
+          status: 'CAPTURED',
+          amount: 1000,
+          target: { type: 'ORDER', id: 99 },
+          providerOrderRef: 'order_CAP',
+          providerPaymentRef: 'pay_CAP',
+          ...over,
+        }),
+      );
+    }
+    let rseq = 0;
+    function refundRow(over: Partial<FakeRefundRepo['rows'][number]> = {}) {
+      rseq += 1;
+      const row = {
+        id: rseq + 500,
+        gatewayPaymentId: 50,
+        provider: 'RAZORPAY',
+        status: 'PENDING' as const,
+        amount: 400,
+        currency: 'INR',
+        providerRefundRef: 'rfnd_x' as string | null,
+        sourceType: 'RETURN',
+        sourceId: 1,
+        reason: null,
+        idempotencyKey: `return-refund-${rseq}`,
+        createdAt: STALE,
+        updatedAt: STALE,
+        ...over,
+      };
+      refunds.rows.push(row);
+      return row;
+    }
+
+    it('heals a PENDING refund whose webhook was missed (provider → PROCESSED)', async () => {
+      cap({ amountRefunded: 400 }); // PENDING reserved the cap at create
+      const row = refundRow({ status: 'PENDING', providerRefundRef: 'rfnd_p' });
+      provider.fetchRefundStatus = vi.fn(async () => ({
+        providerRefundRef: 'rfnd_p',
+        amountMinor: 40000,
+        status: 'PROCESSED' as const,
+      }));
+
+      const res = await svc.reconcileStaleRefunds({ now: NOW });
+
+      expect(res).toMatchObject({ scanned: 1, processed: 1 });
+      expect(row.status).toBe('PROCESSED');
+      expect(repo.rows[0].amountRefunded).toBe(400); // unchanged (already reserved)
+      expect(provider.refund).not.toHaveBeenCalled();
+    });
+
+    it('releases the cap + fails a PENDING refund the provider reports FAILED', async () => {
+      cap({ amountRefunded: 400, status: 'REFUNDED' });
+      const row = refundRow({ status: 'PENDING', providerRefundRef: 'rfnd_f' });
+      provider.fetchRefundStatus = vi.fn(async () => ({
+        providerRefundRef: 'rfnd_f',
+        amountMinor: 40000,
+        status: 'FAILED' as const,
+      }));
+
+      const res = await svc.reconcileStaleRefunds({ now: NOW });
+
+      expect(res.errors).toBe(1);
+      expect(row.status).toBe('FAILED');
+      expect(repo.rows[0].amountRefunded).toBe(0); // reservation released
+      expect(repo.rows[0].status).toBe('CAPTURED'); // no longer fully refunded
+    });
+
+    it('re-drives a FAILED refund and reserves the cap on success (idempotent)', async () => {
+      cap({ amountRefunded: 0 }); // FAILED never reserved
+      const row = refundRow({ status: 'FAILED', providerRefundRef: null });
+      provider.refund = vi.fn(async () => ({
+        providerRefundRef: 'rfnd_new',
+        amountMinor: 40000,
+        status: 'PROCESSED' as const,
+      }));
+
+      const res = await svc.reconcileStaleRefunds({ now: NOW });
+
+      expect(res.redriven).toBe(1);
+      expect(row.status).toBe('PROCESSED');
+      expect(row.providerRefundRef).toBe('rfnd_new');
+      expect(repo.rows[0].amountRefunded).toBe(400); // reserved now
+      // Re-issue reuses the SAME idempotency key → Razorpay dedupes (no double pay).
+      expect(provider.refund).toHaveBeenCalledWith(
+        expect.objectContaining({ idempotencyKey: row.idempotencyKey }),
+      );
+    });
+
+    it('leaves a still-failing re-drive as FAILED, cap untouched', async () => {
+      cap({ amountRefunded: 0 });
+      const row = refundRow({ status: 'FAILED', providerRefundRef: null });
+      provider.refund = vi.fn(async () => ({
+        providerRefundRef: null as unknown as string,
+        amountMinor: 40000,
+        status: 'FAILED' as const,
+      }));
+
+      const res = await svc.reconcileStaleRefunds({ now: NOW });
+
+      expect(res.errors).toBe(1);
+      expect(row.status).toBe('FAILED');
+      expect(repo.rows[0].amountRefunded).toBe(0);
+    });
+
+    it('gives up on a FAILED refund past the give-up window (no provider call)', async () => {
+      cap({ amountRefunded: 0 });
+      refundRow({
+        status: 'FAILED',
+        providerRefundRef: null,
+        createdAt: new Date(NOW.getTime() - 8 * 24 * 60 * 60_000), // 8 days old
+      });
+
+      const res = await svc.reconcileStaleRefunds({ now: NOW });
+
+      expect(res.gaveUp).toBe(1);
+      expect(provider.refund).not.toHaveBeenCalled();
+    });
+
+    it('ignores a refund updated within the recheck window', async () => {
+      cap();
+      refundRow({ status: 'FAILED', updatedAt: FRESH });
+
+      const res = await svc.reconcileStaleRefunds({ now: NOW });
+
+      expect(res.scanned).toBe(0);
     });
   });
 });

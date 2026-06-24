@@ -77,6 +77,11 @@ export interface PaymentGatewayPort {
 
   /** Issue a refund. */
   refund(p: RefundParams): Promise<NormalizedRefund>;
+
+  /** Server-side status of a previously-issued refund, for the reconciliation
+   *  sweep: heal a PENDING refund whose `refund.processed` webhook was missed,
+   *  and confirm whether a re-driven refund settled. */
+  fetchRefundStatus(providerRefundRef: string): Promise<NormalizedRefund>;
 }
 
 // ── Optional capability: marketplace split + on-hold settlement (Razorpay Route etc.) ──

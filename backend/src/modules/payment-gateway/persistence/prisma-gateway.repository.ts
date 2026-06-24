@@ -224,6 +224,22 @@ class PrismaGatewayPaymentRepository implements GatewayPaymentRepository {
       },
     });
   }
+
+  async releaseRefundedAmount(
+    id: number,
+    amount: number,
+    stillFullyRefunded: boolean,
+    tx?: Prisma.TransactionClient,
+  ): Promise<void> {
+    const db = tx ?? prisma;
+    await db.gatewayPayment.update({
+      where: { id },
+      data: {
+        amountRefunded: { decrement: new Prisma.Decimal(amount) },
+        status: stillFullyRefunded ? 'REFUNDED' : 'CAPTURED',
+      },
+    });
+  }
 }
 
 class PrismaGatewayRefundRepository implements GatewayRefundRepository {
@@ -243,6 +259,21 @@ class PrismaGatewayRefundRepository implements GatewayRefundRepository {
       orderBy: { id: 'desc' },
     });
     return row ? toRefundRecord(row) : null;
+  }
+
+  async findStaleForReconcile(input: {
+    updatedBefore: Date;
+    limit: number;
+  }): Promise<GatewayRefundRecord[]> {
+    const rows = await prisma.gatewayRefund.findMany({
+      where: {
+        status: { in: ['PENDING', 'FAILED'] },
+        updatedAt: { lt: input.updatedBefore },
+      },
+      orderBy: { updatedAt: 'asc' },
+      take: input.limit,
+    });
+    return rows.map(toRefundRecord);
   }
 
   async create(

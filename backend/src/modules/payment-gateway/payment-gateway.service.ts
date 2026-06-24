@@ -111,6 +111,22 @@ export type RefundToSourceResult =
   | { status: 'NO_PAYMENT' }
   | { status: 'NOTHING_TO_REFUND' };
 
+/** Per-tick outcome of the refund-reconciliation sweep. */
+export interface RefundReconcileSummary {
+  /** Non-terminal refunds fetched this tick (≤ batchSize). */
+  scanned: number;
+  /** PENDING refunds the provider confirmed PROCESSED (missed-webhook heal). */
+  processed: number;
+  /** FAILED refunds successfully re-issued (now PENDING/PROCESSED). */
+  redriven: number;
+  /** Still in flight at the provider — left for a later tick. */
+  stillPending: number;
+  /** FAILED past the give-up window — left for manual handling. */
+  gaveUp: number;
+  /** Per-refund failures (provider down, still rejecting); left for next tick. */
+  errors: number;
+}
+
 export class PaymentGatewayService {
   constructor(
     private readonly repo: GatewayPaymentRepository,
@@ -253,6 +269,189 @@ export class PaymentGatewayService {
       },
     });
     return failed ? { status: 'FAILED', refund } : { status: 'REFUNDED', refund };
+  }
+
+  /**
+   * Refund-reconciliation sweep — the liveness net that makes a legally-required
+   * refund ALWAYS eventually settle, even when the happy path stalls:
+   *   • a PENDING refund whose `refund.processed` webhook was missed (localhost
+   *     dev; a dropped/delayed delivery in prod) → re-fetch from the provider
+   *     and confirm PROCESSED, or release + fail it if the provider rejected it.
+   *   • a FAILED refund (provider rejected, or our process crashed between the
+   *     provider call and the DB write) → re-issue it. The provider Idempotency-
+   *     Key makes the re-issue safe: a refund that actually went through returns
+   *     the SAME refund instead of paying the customer twice.
+   *
+   * Without this, a return whose refund failed once would never be retried (the
+   * return's state machine blocks re-triggering), leaving the buyer un-refunded
+   * — a breach of the auto-refund obligation (Consumer Protection (E-Commerce)
+   * Rules 2020, Rule 4(7)). Idempotent, lock-guarded by the scheduler, never
+   * throws: a per-row failure is counted and the batch continues.
+   */
+  async reconcileStaleRefunds(opts?: {
+    now?: Date;
+    /** Only touch refunds untouched for this long — give the webhook a chance. */
+    recheckAfterMs?: number;
+    /** Stop re-driving a FAILED refund older than this; leave it for manual. */
+    giveUpAfterMs?: number;
+    batchSize?: number;
+  }): Promise<RefundReconcileSummary> {
+    const now = opts?.now ?? new Date();
+    const recheckAfterMs = opts?.recheckAfterMs ?? 10 * 60_000; // 10 min
+    const giveUpAfterMs = opts?.giveUpAfterMs ?? 7 * 24 * 60 * 60_000; // 7 days
+    const batchSize = opts?.batchSize ?? 50;
+
+    const recheckBefore = new Date(now.getTime() - recheckAfterMs);
+    const giveUpBefore = new Date(now.getTime() - giveUpAfterMs);
+
+    const stale = await this.refunds.findStaleForReconcile({
+      updatedBefore: recheckBefore,
+      limit: batchSize,
+    });
+    const summary: RefundReconcileSummary = {
+      scanned: stale.length,
+      processed: 0,
+      redriven: 0,
+      stillPending: 0,
+      gaveUp: 0,
+      errors: 0,
+    };
+
+    for (const row of stale) {
+      try {
+        const capture = await this.repo.findById(row.gatewayPaymentId);
+        if (!capture || !capture.providerPaymentRef) {
+          // Orphaned refund (capture vanished) — can't act; surface and skip.
+          summary.errors++;
+          continue;
+        }
+        const provider = getProvider(row.provider);
+
+        if (row.status === 'PENDING' && row.providerRefundRef) {
+          // Heal a missed webhook: ask the provider for the live refund status.
+          const live = await provider.fetchRefundStatus(row.providerRefundRef);
+          if (live.status === 'PROCESSED') {
+            await this.refunds.update(row.id, { status: 'PROCESSED' });
+            summary.processed++;
+          } else if (live.status === 'FAILED') {
+            // A PENDING row had RESERVED the cap at create. The provider now
+            // says it failed → release the reservation and mark FAILED so a
+            // later tick re-drives it (re-reserving only on success).
+            await this.releaseAndFail(row, capture);
+            summary.errors++;
+          } else {
+            summary.stillPending++;
+          }
+          continue;
+        }
+
+        // FAILED (or a stuck PENDING with no provider ref) → re-issue. Bounded:
+        // past the give-up window we stop auto-retrying and leave it for ops.
+        if (row.createdAt < giveUpBefore) {
+          summary.gaveUp++;
+          continue;
+        }
+        const ok = await this.redriveRefund(row, capture);
+        if (ok) summary.redriven++;
+        else summary.errors++;
+      } catch (err) {
+        summary.errors++;
+        tracker.track({
+          step: 'REFUND_FAILED',
+          provider: row.provider,
+          meta: {
+            phase: 'reconcile-sweep',
+            refundId: row.id,
+            error: err instanceof Error ? err.message : 'unknown',
+          },
+        });
+      }
+    }
+
+    tracker.track({ step: 'REFUND_RECONCILE_SWEEP', meta: { ...summary } });
+    return summary;
+  }
+
+  /**
+   * Re-issue a refund that has not settled (a FAILED row that never reserved the
+   * cap, or a stuck PENDING with no provider ref that DID reserve it). The
+   * provider Idempotency-Key dedupes, so re-calling cannot double-pay. On success
+   * we reserve the cap ONLY if this row hadn't already (FAILED hadn't; PENDING
+   * had). Returns true when the refund is now in flight / settled.
+   */
+  private async redriveRefund(
+    row: GatewayRefundRecord,
+    capture: GatewayPaymentRecord,
+  ): Promise<boolean> {
+    const alreadyReserved = row.status !== 'FAILED'; // PENDING reserved at create
+    const provider = getProvider(row.provider);
+    const res = await provider.refund({
+      providerPaymentRef: capture.providerPaymentRef!,
+      amountMinor: toMinorUnits(row.amount),
+      idempotencyKey: row.idempotencyKey,
+      notes: {
+        app: 'shopxy',
+        sourceType: row.sourceType,
+        sourceId: String(row.sourceId),
+        redrive: 'true',
+      },
+    });
+
+    if (res.status === 'FAILED') {
+      // Still failing. If it had reserved the cap (PENDING), release it.
+      if (alreadyReserved) {
+        await this.releaseAndFail(row, capture);
+      } else {
+        await this.refunds.update(row.id, {
+          status: 'FAILED',
+          ...(res.providerRefundRef ? { providerRefundRef: res.providerRefundRef } : {}),
+        });
+      }
+      return false;
+    }
+
+    // Accepted (PENDING) or settled (PROCESSED). Record the ref + status, and
+    // reserve the cap iff this row hadn't reserved it yet.
+    const fullyRefunded =
+      !alreadyReserved && round2(capture.amountRefunded + row.amount) >= capture.amount;
+    await prisma.$transaction(async (tx) => {
+      await this.refunds.update(
+        row.id,
+        {
+          status: res.status,
+          ...(res.providerRefundRef ? { providerRefundRef: res.providerRefundRef } : {}),
+        },
+        tx,
+      );
+      if (!alreadyReserved) {
+        await this.repo.addRefundedAmount(capture.id, row.amount, fullyRefunded, tx);
+      }
+    });
+    tracker.track({
+      step: 'REFUND_REDRIVEN',
+      provider: row.provider,
+      intentId: capture.id,
+      meta: { refundId: row.id, status: res.status, providerRefundRef: res.providerRefundRef },
+    });
+    return true;
+  }
+
+  /** Mark a reserved (PENDING) refund FAILED and release the cap it held. */
+  private async releaseAndFail(
+    row: GatewayRefundRecord,
+    capture: GatewayPaymentRecord,
+  ): Promise<void> {
+    const stillFully = round2(capture.amountRefunded - row.amount) >= capture.amount;
+    await prisma.$transaction(async (tx) => {
+      await this.refunds.update(row.id, { status: 'FAILED' }, tx);
+      await this.repo.releaseRefundedAmount(capture.id, row.amount, stillFully, tx);
+    });
+    tracker.track({
+      step: 'REFUND_FAILED',
+      provider: row.provider,
+      intentId: capture.id,
+      meta: { refundId: row.id, phase: 'pending-turned-failed; reservation released' },
+    });
   }
 
   /** Create (or replay) an intent and return checkout params for the client. */
