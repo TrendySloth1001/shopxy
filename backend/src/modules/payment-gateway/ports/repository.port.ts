@@ -90,6 +90,19 @@ export interface GatewayPaymentRepository {
     markFullyRefunded: boolean,
     tx?: Prisma.TransactionClient,
   ): Promise<void>;
+  /**
+   * Release a reservation: subtract `amount` from amount_refunded and set the
+   * capture's status (REFUNDED if still fully reversed by other refunds, else
+   * CAPTURED). Used when a refund that had reserved the cap (a PENDING row)
+   * later turns out to have FAILED at the provider, so the reserved amount must
+   * not stay consumed (which would under-refund a future return on the order).
+   */
+  releaseRefundedAmount(
+    id: number,
+    amount: number,
+    stillFullyRefunded: boolean,
+    tx?: Prisma.TransactionClient,
+  ): Promise<void>;
 }
 
 /** Persistence for real-money refunds-to-source (the `GatewayRefund` table). */
@@ -101,6 +114,16 @@ export interface GatewayRefundRepository {
     provider: string,
     providerRefundRef: string,
   ): Promise<GatewayRefundRecord | null>;
+  /**
+   * Reconciliation sweep source: non-terminal refunds (PENDING — webhook may
+   * have been missed; FAILED — needs a re-drive) last touched before
+   * `updatedBefore`, oldest first, capped at `limit`. The scheduled refund
+   * sweep heals these so a refund the law requires always eventually settles.
+   */
+  findStaleForReconcile(input: {
+    updatedBefore: Date;
+    limit: number;
+  }): Promise<GatewayRefundRecord[]>;
   create(
     input: {
       gatewayPaymentId: number;

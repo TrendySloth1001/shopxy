@@ -108,6 +108,11 @@ function mapPaymentStatus(status: string): GatewayEventType {
   }
 }
 
+/** Razorpay refund.status → our normalised refund status. */
+function mapRefundStatus(status: string): NormalizedRefund['status'] {
+  return status === 'processed' ? 'PROCESSED' : status === 'failed' ? 'FAILED' : 'PENDING';
+}
+
 /** Retry + circuit-breaker config (ported from tutorix infra/razorpay.ts). */
 export interface RazorpayCallConfig {
   maxRetries?: number; // total attempts
@@ -563,13 +568,21 @@ export class RazorpayProvider
       },
       p.idempotencyKey ? { idempotencyKey: p.idempotencyKey } : undefined,
     );
-    const status =
-      refund.status === 'processed'
-        ? 'PROCESSED'
-        : refund.status === 'failed'
-          ? 'FAILED'
-          : 'PENDING';
-    return { providerRefundRef: refund.id, amountMinor: refund.amount, status };
+    return {
+      providerRefundRef: refund.id,
+      amountMinor: refund.amount,
+      status: mapRefundStatus(refund.status),
+    };
+  }
+
+  async fetchRefundStatus(providerRefundRef: string): Promise<NormalizedRefund> {
+    // GET /refunds/{id} — the source of truth used by the reconciliation sweep
+    // to heal a PENDING refund whose webhook was missed.
+    const r = await this.call<{ id: string; amount: number; status: string }>(
+      'GET',
+      `/refunds/${providerRefundRef}`,
+    );
+    return { providerRefundRef: r.id, amountMinor: r.amount, status: mapRefundStatus(r.status) };
   }
 
   // ── SplitCapablePort: marketplace split + on-hold settlement (Razorpay Route) ─
