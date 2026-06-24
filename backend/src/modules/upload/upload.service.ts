@@ -80,12 +80,18 @@ export async function ensureBucket(): Promise<void> {
 // `evil.svg` (with a JS payload) under a uuid `.svg` key served from
 // our origin. Force-derive the extension from the (already-validated
 // upstream) mime type, and refuse anything we don't recognise.
+//
+// CAT-L2 — restricted to the SAME three image types the mounted
+// `uploadImageWithVariants` path accepts (JPEG/PNG/WebP). The previous map
+// also permitted `image/gif` and `application/pdf`; the mounted route sniffs
+// magic bytes and rejects those, but this helper trusts the caller-supplied
+// `mimeType` and did not, so a future caller could have stored a `.pdf`/`.gif`
+// under our origin. NOTE: this helper still trusts `mimeType` — any caller
+// MUST byte-sniff before calling it (the mounted route does); see the route.
 const ALLOWED_UPLOAD_EXTENSIONS: Record<string, string> = {
   'image/jpeg': '.jpg',
   'image/png': '.png',
   'image/webp': '.webp',
-  'image/gif': '.gif',
-  'application/pdf': '.pdf',
 };
 
 export async function uploadFile(
