@@ -4,6 +4,15 @@ import { UNITS } from '../../shared/constants/index.js';
 import { parsePagination, paginatedResponse } from '../../shared/http/pagination.js';
 import { productsService } from './products.service.js';
 
+// CAT-M5 — stock columns are Decimal(12,3): nine integer digits + three
+// fractional. Anything at/above 1e9 overflows the precision (DB throws
+// inconsistently), and >3 decimals is silently truncated by Postgres. Bound
+// both the product- and variant-level stock at the schema so the API rejects
+// these cleanly instead of leaking a DB error or storing a truncated number.
+const STOCK_MAX = 999_999_999;
+const hasMax3Decimals = (n: number): boolean =>
+  Number.isFinite(n) && Math.round(n * 1000) === n * 1000;
+
 // Accepts either an absolute URL (legacy rows, externally-hosted images)
 // or a server-relative path like `/images/<key>` (the format our own
 // /upload endpoint returns — relative on purpose so the same row works
@@ -102,7 +111,18 @@ const variantSchema = z
     // product-level slab at invoice time. Bounds mirror the product fields.
     hsnCode: z.string().max(20).nullable().optional(),
     taxPercent: z.number().min(0).max(100).optional(),
-    stockQuantity: z.number().nonnegative().default(0),
+    // CAT-M5 — bound the variant display stock at write. The column is
+    // Decimal(12,3): values above the funded product total are already
+    // clamped in the service (CAT-C1), but the schema must also refuse
+    // absurd magnitudes (>1e9 overflows the precision and throws
+    // inconsistently at the DB layer) and >3 decimal places (silently
+    // truncated by Postgres). Keep the same bound on the product field.
+    stockQuantity: z
+      .number()
+      .nonnegative()
+      .max(STOCK_MAX, `Stock cannot exceed ${STOCK_MAX}`)
+      .refine(hasMax3Decimals, 'Stock supports at most 3 decimal places')
+      .default(0),
     imageUrls: z.array(z.string().min(1).max(2048)).max(8).optional(),
     isActive: z.boolean().optional(),
     sortOrder: z.number().int().nonnegative().optional(),
@@ -149,7 +169,13 @@ const createProductSchema = z.object({
   // Compensation cess is ad valorem up to 290% (tobacco) — wider bound
   // than GST on purpose.
   cessRate: z.number().min(0).max(300).optional(),
-  stockQuantity: z.number().nonnegative().optional(),
+  // CAT-M5 — same Decimal(12,3) bound as the variant field.
+  stockQuantity: z
+    .number()
+    .nonnegative()
+    .max(STOCK_MAX, `Stock cannot exceed ${STOCK_MAX}`)
+    .refine(hasMax3Decimals, 'Stock supports at most 3 decimal places')
+    .optional(),
   lowStockThreshold: z.number().nonnegative().optional(),
   unit: z.enum(UNITS).optional(),
   categoryId: z.number().int().positive().optional(),

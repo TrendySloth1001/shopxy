@@ -1,5 +1,5 @@
 import prisma from '../../infra/db/prisma.js';
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { round2 } from '../../shared/numbering/decimal.js';
 import { stateCodeFromName } from '../../shared/validation/indian.js';
 import { resolveActiveProductPromos } from '../banners/promo-pricing.js';
@@ -22,23 +22,33 @@ const REVERSE_ALL = Number.MAX_SAFE_INTEGER / 100;
 /// the purchase-request response derives the shape inline. Mirrors the
 /// fields the customer/merchant apps already destructure off the invoice
 /// blob: paidAmount, balanceDue, paymentStatus.
+// PR-M2 — paid-vs-total badge is money-comparison, so it runs in
+// Prisma.Decimal rather than float `Number(decimal)`: summing many
+// payments as JS numbers accrues binary-fp drift that can flip a fully
+// settled invoice to "PARTIAL" (or vice versa) by a paise. We compare
+// with a 1-paise tolerance so legitimate rounding jitter between the
+// invoice total and the sum of receipts doesn't mis-badge the card.
+const PAISE_TOLERANCE = new Prisma.Decimal('0.01');
+
 function derivePaymentSummary(
-  total: number,
-  paid: number,
+  total: Prisma.Decimal,
+  paid: Prisma.Decimal,
   status: string,
 ): { paidAmount: number; balanceDue: number; paymentStatus: 'PAID' | 'PARTIAL' | 'UNPAID' } {
-  const balanceDue = Math.max(0, total - paid);
+  const balanceDecimal = total.minus(paid);
+  const balanceDue = balanceDecimal.greaterThan(0) ? balanceDecimal.toNumber() : 0;
   let paymentStatus: 'PAID' | 'PARTIAL' | 'UNPAID';
   if (status === 'CANCELLED' || status === 'DRAFT') {
     paymentStatus = 'UNPAID';
-  } else if (total > 0 && paid >= total) {
+  } else if (total.greaterThan(0) && paid.greaterThanOrEqualTo(total.minus(PAISE_TOLERANCE))) {
+    // Within a paise of the total counts as fully paid.
     paymentStatus = 'PAID';
-  } else if (paid > 0) {
+  } else if (paid.greaterThan(PAISE_TOLERANCE)) {
     paymentStatus = 'PARTIAL';
   } else {
     paymentStatus = 'UNPAID';
   }
-  return { paidAmount: paid, balanceDue, paymentStatus };
+  return { paidAmount: paid.toNumber(), balanceDue, paymentStatus };
 }
 import { couponsService } from '../coupons/coupons.service.js';
 import { walletService } from '../wallet/wallet.service.js';
@@ -107,6 +117,15 @@ function withItemsPreview<T extends { items: unknown }>(row: T) {
   return { ...rest, itemsPreview: items };
 }
 
+// PR-M3 — caps on the nested arrays in the order-detail projection so a
+// single pathological multi-line / many-event / many-receipt order can't
+// produce an unbounded payload and a wide query. Generous enough that a
+// real order is never truncated; the `_count` on the row still reports
+// the true totals for any "+N more" affordance.
+const DETAIL_ITEMS_CAP = 200;
+const DETAIL_EVENTS_CAP = 100;
+const DETAIL_PAYMENTS_CAP = 100;
+
 const detailSelect = {
   id: true,
   shopId: true,
@@ -148,9 +167,11 @@ const detailSelect = {
       invoiceDate: true,
       /// Pull payment amounts so the per-vendor card on the customer's
       /// order detail can show "Paid" / "Partially paid (₹A of ₹B)"
-      /// without a follow-up fetch. Bounded by the per-invoice
-      /// payments count (small).
-      payments: { select: { amount: true } },
+      /// without a follow-up fetch. PR-M3 — bounded so a pathological
+      /// invoice with hundreds of receipts can't blow up the nested
+      /// payload; a sale invoice settles in a handful of receipts in
+      /// practice, well under the cap.
+      payments: { select: { amount: true }, take: DETAIL_PAYMENTS_CAP },
     },
   },
   items: {
@@ -176,10 +197,17 @@ const detailSelect = {
       },
     },
     orderBy: { id: 'asc' as const },
+    // PR-M3 — bound the per-child item materialisation. A normal order is
+    // a handful of lines; this only fences off a pathological many-line
+    // child from producing an unbounded nested payload + wide query. The
+    // _count above still reports the true total so the client can show
+    // "+N more" and fetch the rest if ever needed.
+    take: DETAIL_ITEMS_CAP,
   },
   // Inline the event timeline so the customer detail page can render
-  // the tracking strip without a second roundtrip. Bounded by the
-  // per-order event count (single-digit in practice).
+  // the tracking strip without a second roundtrip. PR-M3 — capped; the
+  // per-order milestone count is single-digit in practice, the bound
+  // just prevents an adversarial event spam from widening the query.
   events: {
     select: {
       id: true,
@@ -191,6 +219,7 @@ const detailSelect = {
       note: true,
     },
     orderBy: { occurredAt: 'asc' as const },
+    take: DETAIL_EVENTS_CAP,
   },
 } satisfies Prisma.PurchaseRequestSelect;
 
@@ -242,13 +271,19 @@ function shopAsDto(
 function attachInvoicePaymentSummary<
   T extends { total: Prisma.Decimal | number; status: string; payments: { amount: Prisma.Decimal | number }[] },
 >(invoice: T) {
-  const totalNum =
-    typeof invoice.total === 'number' ? invoice.total : Number(invoice.total.toString());
-  const paid = invoice.payments.reduce((sum, p) => {
-    const v = typeof p.amount === 'number' ? p.amount : Number(p.amount.toString());
-    return sum + v;
-  }, 0);
-  const summary = derivePaymentSummary(totalNum, paid, invoice.status);
+  // PR-M2 — sum the receipts in Decimal (no float accumulation). Both the
+  // invoice total and each payment amount are Prisma.Decimal off the DB;
+  // accept the `number` fallback only for hand-built test fixtures.
+  const totalDec =
+    invoice.total instanceof Prisma.Decimal
+      ? invoice.total
+      : new Prisma.Decimal(invoice.total);
+  const paidDec = invoice.payments.reduce(
+    (sum, p) =>
+      sum.plus(p.amount instanceof Prisma.Decimal ? p.amount : new Prisma.Decimal(p.amount)),
+    new Prisma.Decimal(0),
+  );
+  const summary = derivePaymentSummary(totalDec, paidDec, invoice.status);
   const { payments: _drop, ...rest } = invoice;
   return { ...rest, ...summary };
 }
@@ -1827,6 +1862,13 @@ export class PurchaseRequestsService {
         items: Array<{
           productId: number;
           quantity: number;
+          /// PR-L2 — server-resolved effective unit price (current
+          /// sellingPrice minus any active banner promo). The client
+          /// must add THIS to the cart, not the raw catalog
+          /// `sellingPrice`, so "buy again" re-prices through the same
+          /// promo logic the storefront/checkout applies instead of
+          /// trusting a stale snapshot.
+          effectiveUnitPrice: number;
           product: unknown;
         }>;
         skipped: Array<{ productId: number; productName: string; reason: 'UNAVAILABLE' | 'OWN_SHOP' }>;
@@ -1892,9 +1934,23 @@ export class PurchaseRequestsService {
     });
     const productMap = new Map(products.map((p) => [p.id, p]));
 
+    // PR-L2 — re-source the CURRENT effective price the same way the cart
+    // does: best active banner promo per product (cross-shop, shopId
+    // null), sellingPrice minus its per-unit discount. The reorder no
+    // longer hands back a price that ignores live promos; checkout still
+    // re-prices server-side, but the "buy again" payload now matches what
+    // the customer will actually be charged.
+    const reorderPromos = await resolveActiveProductPromos(null, [...want.keys()]);
+    const effectiveUnitPrice = (p: typeof products[number]): number => {
+      const selling = Number(p.sellingPrice);
+      const promo = reorderPromos.get(p.id);
+      return promo ? Math.max(0, round2(selling - promo.perUnit)) : selling;
+    };
+
     const items: Array<{
       productId: number;
       quantity: number;
+      effectiveUnitPrice: number;
       product: typeof products[number];
     }> = [];
     const skipped: Array<{
@@ -1912,7 +1968,12 @@ export class PurchaseRequestsService {
         skipped.push({ productId, productName: info.productName, reason: 'OWN_SHOP' });
         continue;
       }
-      items.push({ productId, quantity: info.quantity, product: p });
+      items.push({
+        productId,
+        quantity: info.quantity,
+        effectiveUnitPrice: effectiveUnitPrice(p),
+        product: p,
+      });
     }
     return { items, skipped };
   }
@@ -2074,9 +2135,14 @@ export class PurchaseRequestsService {
       where: { id: order.id },
       select: { paymentStatus: true },
     });
+    // PR-L1 — the order existed at the top of this call (scoped to the
+    // user); a null re-read means it vanished mid-call (concurrent
+    // delete). Surface that gap as an explicit UNKNOWN rather than
+    // fabricating a 'COD' status the client would render as a real
+    // payment mode.
     return {
       ok: true,
-      paymentStatus: fresh?.paymentStatus ?? 'COD',
+      paymentStatus: fresh?.paymentStatus ?? 'UNKNOWN',
       settled: sync.settled,
     };
   }
