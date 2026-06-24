@@ -35,7 +35,7 @@ class ReturnTimeline extends StatelessWidget {
         _Stop('Approved', Icons.check_circle_outline, byType['APPROVED']),
         _Stop('Picked up', Icons.local_shipping_outlined, byType['PICKED_UP']),
         _Stop('Received', Icons.inventory_2_outlined, byType['RECEIVED']),
-        _Stop('Refunded', Icons.account_balance_wallet_outlined,
+        _Stop('Refunded', Icons.payments_outlined,
             byType['REFUNDED']),
       ],
     ];

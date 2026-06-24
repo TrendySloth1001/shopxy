@@ -9,6 +9,7 @@
  */
 import type {
   GatewayPaymentRepository,
+  GatewayRefundRepository,
   WebhookEventRepository,
 } from './ports/repository.port.js';
 import type { HeaderBag } from './ports/payment-provider.port.js';
@@ -16,9 +17,11 @@ import { isQrCapable } from './ports/payment-provider.port.js';
 import type {
   GatewayPaymentRecord,
   GatewayPaymentStatus,
+  GatewayRefundRecord,
   NormalizedEvent,
   NormalizedOrderStatus,
   SettlementTarget,
+  SettlementTargetType,
 } from './ports/types.js';
 import { getProvider } from './providers/registry.js';
 import { settlementFor } from './settlement/settlement.js';
@@ -30,6 +33,7 @@ import {
 import { toMinorUnits } from './helpers.js';
 import { tracker } from './tracker.js';
 import prisma from '../../infra/db/prisma.js';
+import { round2 } from '../../shared/numbering/decimal.js';
 
 /**
  * Signals that the target is already paid — the caller must NOT reopen the
@@ -76,11 +80,180 @@ export interface ReconcileSummary {
   errors: number;
 }
 
+/** What the caller asks the engine to refund to source. */
+export interface RefundToSourceInput {
+  /** Which captured payment to reverse against (ORDER → CustomerOrder id…). */
+  targetType: SettlementTargetType;
+  targetId: number;
+  /** Rupees to return to the original instrument. Capped at what's left of the
+   *  capture (amount − already-refunded); a value above that is clamped, never
+   *  rejected, so a rounding overshoot can't strand a legitimate refund. */
+  amount: number;
+  /** Domain trigger, for the audit trail + idempotency namespace. */
+  sourceType: 'RETURN' | 'CANCEL';
+  sourceId: number;
+  /** Deterministic dedupe key. A retried trigger re-uses the same refund. */
+  idempotencyKey: string;
+  reason?: string;
+  /** Carried into the provider's notes (filterable in the dashboard). */
+  notes?: Record<string, string>;
+}
+
+/**
+ * Outcome of a refund-to-source attempt. Discriminated so a caller can tell a
+ * real money movement (`REFUNDED`) from the legitimate "nothing online to
+ * refund" cases (`NO_PAYMENT` = COD/never-captured; `NOTHING_TO_REFUND` =
+ * already fully reversed) without treating them as errors.
+ */
+export type RefundToSourceResult =
+  | { status: 'REFUNDED'; refund: GatewayRefundRecord }
+  | { status: 'FAILED'; refund: GatewayRefundRecord }
+  | { status: 'NO_PAYMENT' }
+  | { status: 'NOTHING_TO_REFUND' };
+
 export class PaymentGatewayService {
   constructor(
     private readonly repo: GatewayPaymentRepository,
     private readonly events: WebhookEventRepository,
+    private readonly refunds: GatewayRefundRepository,
   ) {}
+
+  /**
+   * Refund real money back to the customer's original payment instrument.
+   *
+   * This is the LEGALLY-REQUIRED settlement for a return/cancellation of an
+   * online (card/UPI/netbanking) payment: the money goes back to source, never
+   * into wallet/store credit (RBI "refund to source"; Consumer Protection
+   * (E-Commerce) Rules 2020, Rule 4(7)). Wallet credit as a refund vehicle has
+   * been removed — this method is the only refund path.
+   *
+   * Flow (idempotent + crash-safe):
+   *   1. Replay: a GatewayRefund already exists for this idempotency key →
+   *      return it (no second provider call).
+   *   2. Resolve the CAPTURED payment for (targetType, targetId). None → the
+   *      order was COD / never captured online → NO_PAYMENT (caller skips).
+   *   3. Cap the amount at (capture.amount − capture.amountRefunded). ≤0 →
+   *      NOTHING_TO_REFUND (already fully reversed).
+   *   4. Call the provider's refund API (external — NOT inside a DB tx).
+   *   5. In one tx: write the GatewayRefund row and bump the capture's
+   *      amount_refunded (flipping it to REFUNDED once fully reversed).
+   *
+   * Never silently swallows: a provider rejection is persisted as a FAILED
+   * refund row and returned as `{ status: 'FAILED' }` so the caller/ops can act.
+   */
+  async refundToSource(input: RefundToSourceInput): Promise<RefundToSourceResult> {
+    // (1) Idempotent replay — a retried return/cancel must not double-refund.
+    const prior = await this.refunds.findByIdempotencyKey(input.idempotencyKey);
+    if (prior) {
+      tracker.track({
+        step: 'REFUND_REPLAYED',
+        provider: prior.provider,
+        meta: { idempotencyKey: input.idempotencyKey, status: prior.status },
+      });
+      return prior.status === 'FAILED'
+        ? { status: 'FAILED', refund: prior }
+        : { status: 'REFUNDED', refund: prior };
+    }
+
+    // (2) The captured online payment to reverse against.
+    const capture = await this.repo.findCapturedByTarget(input.targetType, input.targetId);
+    if (!capture || !capture.providerPaymentRef) {
+      tracker.track({
+        step: 'REFUND_SKIPPED',
+        meta: {
+          targetType: input.targetType,
+          targetId: input.targetId,
+          reason: 'no captured online payment (COD / wallet / never captured)',
+        },
+      });
+      return { status: 'NO_PAYMENT' };
+    }
+
+    // (3) Cap at what's left of the capture. Clamp (don't reject) an overshoot.
+    const refundable = round2(capture.amount - capture.amountRefunded);
+    const amount = round2(Math.min(input.amount, refundable));
+    if (!(amount > 0)) {
+      tracker.track({
+        step: 'REFUND_SKIPPED',
+        provider: capture.provider,
+        intentId: capture.id,
+        meta: { reason: 'nothing left to refund', refundable, requested: input.amount },
+      });
+      return { status: 'NOTHING_TO_REFUND' };
+    }
+
+    // (4) External provider call — outside any DB tx so a crash can't hold the
+    // tx open or leave money moved against an uncommitted row.
+    const provider = getProvider(capture.provider);
+    let providerRefundRef: string | null = null;
+    let providerStatus: GatewayRefundRecord['status'] = 'PENDING';
+    let failed = false;
+    try {
+      const res = await provider.refund({
+        providerPaymentRef: capture.providerPaymentRef,
+        amountMinor: toMinorUnits(amount),
+        idempotencyKey: input.idempotencyKey,
+        notes: {
+          app: 'shopxy',
+          sourceType: input.sourceType,
+          sourceId: String(input.sourceId),
+          ...(input.notes ?? {}),
+        },
+      });
+      providerRefundRef = res.providerRefundRef;
+      providerStatus = res.status; // PENDING | PROCESSED (FAILED handled below)
+      failed = res.status === 'FAILED';
+    } catch (err) {
+      // Provider rejected (e.g. payment already fully refunded on their side,
+      // network, validation). Persist a FAILED row for the audit trail + ops.
+      failed = true;
+      tracker.track({
+        step: 'REFUND_FAILED',
+        provider: capture.provider,
+        intentId: capture.id,
+        meta: { error: err instanceof Error ? err.message : 'unknown', amount },
+      });
+    }
+
+    // (5) Record the refund + advance the capture's cap, atomically. A FAILED
+    // refund records the row (audit) but does NOT consume any refundable amount.
+    const fullyRefunded = !failed && round2(capture.amountRefunded + amount) >= capture.amount;
+    const refund = await prisma.$transaction(async (tx) => {
+      const row = await this.refunds.create(
+        {
+          gatewayPaymentId: capture.id,
+          provider: capture.provider,
+          amount,
+          currency: capture.currency,
+          status: failed ? 'FAILED' : providerStatus,
+          providerRefundRef,
+          sourceType: input.sourceType,
+          sourceId: input.sourceId,
+          reason: input.reason ?? null,
+          idempotencyKey: input.idempotencyKey,
+        },
+        tx,
+      );
+      if (!failed) {
+        await this.repo.addRefundedAmount(capture.id, amount, fullyRefunded, tx);
+      }
+      return row;
+    });
+
+    tracker.track({
+      step: failed ? 'REFUND_FAILED' : 'REFUND_ISSUED',
+      provider: capture.provider,
+      intentId: capture.id,
+      meta: {
+        refundId: refund.id,
+        providerRefundRef,
+        amount,
+        status: refund.status,
+        fullyRefunded,
+      },
+    });
+    return failed ? { status: 'FAILED', refund } : { status: 'REFUNDED', refund };
+  }
 
   /** Create (or replay) an intent and return checkout params for the client. */
   async initiatePayment(input: InitiateInput): Promise<InitiateResult> {
@@ -600,8 +773,10 @@ export class PaymentGatewayService {
         await this.confirm(intent, event);
       } else if (event.type === 'FAILED') {
         await this.fail(intent);
+      } else if (event.type === 'REFUNDED') {
+        await this.onRefundEvent(provider.name, event);
       }
-      // REFUNDED / PENDING / UNKNOWN: recorded for audit, no state change yet.
+      // PENDING / UNKNOWN: recorded for audit, no state change.
     } catch (err) {
       // Don't mark processed — leave processedAt null for the audit trail.
       throw err;
@@ -776,6 +951,32 @@ export class PaymentGatewayService {
       }
     }
     await this.fail(intent);
+  }
+
+  /**
+   * Settle a refund.* webhook against OUR refund row. The synchronous
+   * provider.refund call usually already recorded the row (PENDING for a normal
+   * refund, PROCESSED for an instant one); this confirms a PENDING → PROCESSED
+   * once the money actually settled to the instrument. Idempotent: an already-
+   * PROCESSED row, or a refund we didn't originate (e.g. issued from the
+   * provider dashboard) with no matching row, is a no-op ack.
+   */
+  private async onRefundEvent(
+    providerName: string,
+    event: NormalizedEvent,
+  ): Promise<void> {
+    if (!event.providerRefundRef) return;
+    const row = await this.refunds.findByProviderRef(
+      providerName,
+      event.providerRefundRef,
+    );
+    if (!row || row.status === 'PROCESSED') return;
+    await this.refunds.update(row.id, { status: 'PROCESSED' });
+    tracker.track({
+      step: 'REFUND_PROCESSED',
+      provider: row.provider,
+      meta: { refundId: row.id, providerRefundRef: event.providerRefundRef },
+    });
   }
 
   private async fail(intent: GatewayPaymentRecord): Promise<void> {

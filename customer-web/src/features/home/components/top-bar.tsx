@@ -14,10 +14,9 @@ import { SEARCH_HINTS, useRotatingHint } from "./search-bar";
  * avatar pinned right. When collapsed, a compact inline search appears beside
  * the brand mark (mirroring the mobile collapse behaviour).
  *
- * Note: the mobile bar also shows a delivery address and a pending-payment
- * wallet badge — both depend on the addresses/orders features which this web
- * app does not have yet (tracked in PENDING.md), so the location row links to
- * the account page and the wallet badge is omitted.
+ * Note: the mobile bar also shows a delivery address, which depends on the
+ * addresses feature this web app does not surface here yet (tracked in
+ * PENDING.md), so the location row links to the account page instead.
  */
 export function TopBar({ collapsed }: { collapsed: boolean }) {
   const { user, status } = useAuth();

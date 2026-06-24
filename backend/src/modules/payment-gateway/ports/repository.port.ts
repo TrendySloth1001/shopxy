@@ -9,7 +9,10 @@ import type { Prisma } from '@prisma/client';
 import type {
   GatewayPaymentRecord,
   GatewayPaymentStatus,
+  GatewayRefundRecord,
+  GatewayRefundStatus,
   SettlementTarget,
+  SettlementTargetType,
 } from './types.js';
 
 export interface CreateIntentInput {
@@ -63,6 +66,59 @@ export interface GatewayPaymentRepository {
   updateStatus(
     id: number,
     status: GatewayPaymentStatus,
+    tx?: Prisma.TransactionClient,
+  ): Promise<void>;
+  /**
+   * Refund engine: the CAPTURED online payment that settles a given domain
+   * target (ORDER → CustomerOrder id, POS → Sale id…). This is what we reverse
+   * money against. Returns null when the target was paid by COD / wallet /
+   * never captured online — the caller then knows there is nothing to refund to
+   * source. Most-recent CAPTURED row wins if (impossibly) more than one exists.
+   */
+  findCapturedByTarget(
+    targetType: SettlementTargetType,
+    targetId: number,
+  ): Promise<GatewayPaymentRecord | null>;
+  /**
+   * Atomically add `amount` (rupees) to the capture's amount_refunded and, when
+   * the capture is now fully reversed, flip its status to REFUNDED. Runs inside
+   * the refund-recording tx so the cap and the child refund row commit together.
+   */
+  addRefundedAmount(
+    id: number,
+    amount: number,
+    markFullyRefunded: boolean,
+    tx?: Prisma.TransactionClient,
+  ): Promise<void>;
+}
+
+/** Persistence for real-money refunds-to-source (the `GatewayRefund` table). */
+export interface GatewayRefundRepository {
+  /** Idempotent replay lookup — the refund already issued for this trigger. */
+  findByIdempotencyKey(key: string): Promise<GatewayRefundRecord | null>;
+  /** webhook (refund.processed/failed) → resolve the row to transition. */
+  findByProviderRef(
+    provider: string,
+    providerRefundRef: string,
+  ): Promise<GatewayRefundRecord | null>;
+  create(
+    input: {
+      gatewayPaymentId: number;
+      provider: string;
+      amount: number;
+      currency: string;
+      status: GatewayRefundStatus;
+      providerRefundRef: string | null;
+      sourceType: string;
+      sourceId: number;
+      reason: string | null;
+      idempotencyKey: string;
+    },
+    tx?: Prisma.TransactionClient,
+  ): Promise<GatewayRefundRecord>;
+  update(
+    id: number,
+    data: { status?: GatewayRefundStatus; providerRefundRef?: string },
     tx?: Prisma.TransactionClient,
   ): Promise<void>;
 }

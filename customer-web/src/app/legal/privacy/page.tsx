@@ -20,7 +20,7 @@ export default function PrivacyPage() {
       <LegalSection heading="What we collect">
         <p>
           Account details (name, email, phone), delivery addresses you add, your orders,
-          returns, payments, wallet activity, reviews, and the messages you exchange with a
+          returns, payments, reviews, and the messages you exchange with a
           shop. We also log basic technical data (device, app version, IP, error logs) to keep
           the service secure and working.
         </p>

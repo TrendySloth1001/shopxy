@@ -51,12 +51,7 @@ function derivePaymentSummary(
   return { paidAmount: paid.toNumber(), balanceDue, paymentStatus };
 }
 import { couponsService } from '../coupons/coupons.service.js';
-import { walletService } from '../wallet/wallet.service.js';
 import { notificationsService } from '../notifications/notifications.service.js';
-// PR-H2 — walletService.credit throws HttpError(INSUFFICIENT_WALLET_BALANCE)
-// when the gated balance apply loses to a concurrent drain; the checkout
-// wallet-debit path narrows on it to fall back to gateway/COD.
-import { HttpError } from '../../shared/http/errorHandler.js';
 
 /// Thrown inside the order-create transaction when coupon redemption
 /// fails — caught above to surface a normal `{ error: 'COUPON_INVALID' }`
@@ -643,61 +638,17 @@ export class PurchaseRequestsService {
           couponShopId = result.couponShopId;
         }
 
-        // ── Wallet debit ──────────────────────────────────────────────
-        // Pays from the user's wallet for up to (subtotal - coupon).
-        // We claim the smaller of payable / current balance and post the
-        // debit through walletService (gated + idempotent, see PR-H2).
-        let walletPaid = 0;
-        if (opts.useWallet) {
-          const payable = Math.max(0, round2(parentTotal - couponDiscount));
-          if (payable > 0) {
-            const balanceRow = await tx.user.findUniqueOrThrow({
-              where: { id: opts.customerUserId },
-              select: { walletBalance: true },
-            });
-            const desired = Math.min(Number(balanceRow.walletBalance), payable);
-            if (desired > 0) {
-              // PR-H2 — route the debit through walletService.credit so it
-              // shares the canonical insert-first idempotency + gated
-              // balance apply (updateMany gated on `walletBalance >=
-              // desired`, so a sibling draining the balance between our
-              // read and this write can't overdraw). The idempotency key
-              // is ALWAYS deterministic (the parent order id), so a
-              // retried checkout that lost its `Idempotency-Key` header
-              // still can't double-debit — the unique (userId,
-              // idempotencyKey) row is the dedup gate. On a drained
-              // balance `credit` throws INSUFFICIENT_WALLET_BALANCE; we
-              // treat that as "wallet couldn't pay" and fall back to
-              // gateway/COD for the remainder rather than aborting the
-              // whole checkout (preserves the prior gated-skip).
-              try {
-                await walletService.credit({
-                  userId: opts.customerUserId,
-                  amount: -desired,
-                  source: 'CHECKOUT',
-                  sourceId: parent.id,
-                  description: `Order #${parent.id} (wallet)`,
-                  idempotencyKey: `wallet:checkout:order:${parent.id}`,
-                  tx,
-                });
-                // A deduplicated hit means this parent was already debited
-                // (idempotent retry) — still count it as paid.
-                walletPaid = desired;
-              } catch (err) {
-                if (
-                  err instanceof HttpError &&
-                  err.code === 'INSUFFICIENT_WALLET_BALANCE'
-                ) {
-                  walletPaid = 0;
-                } else {
-                  throw err;
-                }
-              }
-            }
-          }
-        }
+        // ── Wallet debit (REMOVED — wallet deprecation) ───────────────
+        // The wallet is no longer a tender. A spendable, loadable in-app
+        // wallet is a semi-closed Prepaid Payment Instrument (PSS Act 2007 /
+        // RBI PPI Master Direction) and is being withdrawn. `opts.useWallet`
+        // from older clients is ignored: the full payable amount goes to the
+        // gateway/COD, and refunds go back to source (never to a wallet).
+        // walletPaid stays 0 for every new order; the column is retained only
+        // so historical orders still render.
+        const walletPaid = 0;
 
-        if (couponDiscount > 0 || walletPaid > 0) {
+        if (couponDiscount > 0) {
           await tx.customerOrder.update({
             where: { id: parent.id },
             data: {
@@ -985,10 +936,10 @@ export class PurchaseRequestsService {
     if (snap.status !== 'PENDING') return { error: 'NOT_PENDING' };
 
     // ── PENDING path: nothing issued yet, single atomic transaction ──
-    // Release reserved inventory + refund paid money + back out the
-    // coupon usage, all atomically with the status flip, so a partial
-    // failure can't leave a CANCELLED row with the customer still
-    // debited.
+    // Release reserved inventory + back out the coupon usage atomically
+    // with the status flip. The customer's money goes back to source via the
+    // gateway AFTER the tx commits (external call) — see refundCancelledChild.
+    let cancelRefund = 0;
     const result = await prisma.$transaction(async (tx) => {
       const claim = await tx.purchaseRequest.updateMany({
         where: {
@@ -1030,22 +981,10 @@ export class PurchaseRequestsService {
         select: { id: true, walletPaid: true, estimatedTotal: true },
       });
       if (parent) {
-        // PR-H1 — refund off the actually-captured gateway amount, with
-        // the last terminal slice absorbing the residual paise.
-        const refund = await this.refundShareForChild(tx, parent, child);
-        if (refund > 0) {
-          // Namespaced idempotency key so a cancel + return on the
-          // same childId can't collide.
-          await walletService.credit({
-            userId: child.customerUserId,
-            amount: refund,
-            source: 'CANCEL',
-            sourceId: child.id,
-            description: `Cancel refund for order #${parent.id} (slice #${child.id})`,
-            idempotencyKey: `wallet:cancel-${child.id}`,
-            tx,
-          });
-        }
+        // PR-H1 — refund off the actually-captured gateway amount, with the
+        // last terminal slice absorbing the residual. Computed in-tx; the money
+        // is sent back to source post-commit (refundCancelledChildToSource).
+        cancelRefund = await this.refundShareForChild(tx, parent, child);
       }
 
       // If THIS cancellation was the last live child, decrement the
@@ -1085,11 +1024,19 @@ export class PurchaseRequestsService {
     if ('ok' in result) {
       // Best-effort Route clawback: if the captured order already split
       // a HELD transfer to this child's seller, pull it back (no-op when
-      // splits are disabled / nothing was transferred).
+      // splits are disabled / nothing was transferred). Reverse BEFORE the
+      // refund — Razorpay forbids transfers on a refunded payment, and the
+      // reversal returns the seller's slice to the balance we refund from.
       await reverseTransferForReturn({
         purchaseRequestId: opts.childId,
         reverseAmount: REVERSE_ALL,
       }).catch(() => undefined);
+      await this.refundCancelledChildToSource({
+        parentId: opts.parentId,
+        childId: opts.childId,
+        amount: cancelRefund,
+        kind: 'cancel',
+      });
       return { ok: true };
     }
 
@@ -1174,34 +1121,56 @@ export class PurchaseRequestsService {
     });
 
     if (liveSiblings === 0) {
-      // Last slice — refund whatever the customer paid minus what
-      // sibling refunds already returned, so the order nets to zero
-      // captured + wallet with no accumulated paise drift.
-      //
-      // Cancel + reject both write a wallet `CANCEL` entry with
-      // `sourceId = <terminal child id>`, so sum those over every OTHER
-      // child of this order (WalletEntry has no PR relation — match on
-      // sourceId IN siblingIds).
-      const siblingIds = (
-        await tx.purchaseRequest.findMany({
-          where: { customerOrderId: parent.id, id: { not: child.id } },
-          select: { id: true },
-        })
-      ).map((s) => s.id);
-      const already =
-        siblingIds.length > 0
-          ? await tx.walletEntry.aggregate({
-              where: { source: 'CANCEL', sourceId: { in: siblingIds } },
-              _sum: { amount: true },
-            })
-          : { _sum: { amount: null as Prisma.Decimal | null } };
-      const refunded = already._sum.amount ? Number(already._sum.amount) : 0;
-      return Math.max(0, round2(paidTotal - refunded));
+      // Last slice — request the FULL paid total. The refund-to-source engine
+      // caps every refund at the captured payment's un-refunded remainder
+      // (GatewayPayment.amountRefunded is the single source of truth), so this
+      // sweeps exactly the residual that earlier slices' proportional shares
+      // left behind — Σ source-refunds == captured — with no per-sibling
+      // re-summing and no race window (the old wallet-entry sum is gone with
+      // the wallet). The wallet slice of a legacy order is naturally excluded:
+      // the engine refunds only what was actually captured online.
+      return paidTotal;
     }
 
-    // A live sibling remains — take this slice's proportional share.
+    // A live sibling remains — take this slice's proportional share. The engine
+    // cap guarantees the running total never exceeds the captured amount.
     const share = Math.min(Number(child.estimatedTotal) / parentTotal, 1);
     return round2(paidTotal * share);
+  }
+
+  /// Post-commit real-money refund-to-source for a cancelled/rejected child.
+  /// Runs AFTER the cancel tx commits (it's an external gateway call) and is
+  /// best-effort: a COD/never-captured order returns NO_PAYMENT (the merchant
+  /// settles offline), a provider rejection records a FAILED refund row, and
+  /// neither unwinds the (already-committed) cancellation. Idempotent on the
+  /// `kind`+childId key, so a retry re-uses the existing refund. Replaces the
+  /// old in-tx wallet credit — wallet/store-credit refunds were removed as
+  /// illegal for an online payment (RBI refund-to-source).
+  private async refundCancelledChildToSource(input: {
+    parentId: number;
+    childId: number;
+    amount: number;
+    kind: 'cancel' | 'reject';
+  }): Promise<void> {
+    if (!(input.amount > 0)) return;
+    try {
+      await paymentGatewayService.refundToSource({
+        targetType: 'ORDER',
+        targetId: input.parentId,
+        amount: input.amount,
+        sourceType: 'CANCEL',
+        sourceId: input.childId,
+        idempotencyKey: `${input.kind}-${input.childId}`,
+        reason:
+          input.kind === 'reject'
+            ? `Merchant rejection refund for child #${input.childId}`
+            : `Cancel refund for order #${input.parentId} (slice #${input.childId})`,
+        notes: { orderId: String(input.parentId), childId: String(input.childId) },
+      });
+    } catch {
+      /* refundToSource records a FAILED row for provider errors; an infra throw
+         here leaves the cancellation committed for ops to re-drive. */
+    }
   }
 
   /// Cancel a CONFIRMED child (policy already verified by the caller).
@@ -1265,20 +1234,23 @@ export class PurchaseRequestsService {
         select: { id: true },
       });
       for (const r of receipts) {
-        // This IS the refund flow (the money is handed back to the wallet
-        // below), so bypass the PR-C2 platform-collected void guard — that
-        // guard only exists to stop a bare, unaccompanied merchant void.
+        // This IS the refund flow (the money is refunded to the customer's
+        // original payment instrument post-commit), so bypass the PR-C2
+        // platform-collected void guard — that guard only exists to stop a
+        // bare, unaccompanied merchant void.
         await paymentsService.voidPayment(
           shopId,
           r.id,
           opts.userId,
-          'Order cancelled by customer — refunded to wallet',
+          'Order cancelled by customer — refunded to original payment method',
           { allowPlatformCollected: true },
         );
       }
     }
 
-    // 2) Refund + releases, atomically.
+    // 2) Releases + coupon back-out, atomically. The customer's money goes back
+    //    to source via the gateway AFTER the tx (step 4) — never wallet credit.
+    let cancelRefund = 0;
     await prisma.$transaction(async (tx) => {
       const child = await tx.purchaseRequest.findUniqueOrThrow({
         where: { id: opts.childId },
@@ -1294,19 +1266,9 @@ export class PurchaseRequestsService {
         select: { id: true, walletPaid: true, estimatedTotal: true },
       });
       if (parent) {
-        // PR-H1 — captured-amount refund with residual absorption.
-        const refund = await this.refundShareForChild(tx, parent, child);
-        if (refund > 0) {
-          await walletService.credit({
-            userId: child.customerUserId,
-            amount: refund,
-            source: 'CANCEL',
-            sourceId: child.id,
-            description: `Cancel refund for order #${parent.id} (slice #${child.id})`,
-            idempotencyKey: `wallet:cancel-${child.id}`,
-            tx,
-          });
-        }
+        // PR-H1 — captured-amount refund with residual absorption (computed
+        // in-tx; issued to source post-commit).
+        cancelRefund = await this.refundShareForChild(tx, parent, child);
       }
 
       const liveSiblings = await tx.purchaseRequest.count({
@@ -1338,11 +1300,20 @@ export class PurchaseRequestsService {
       });
     });
 
-    // 3) Best-effort Route clawback of this child's HELD transfer.
+    // 3) Best-effort Route clawback of this child's HELD transfer (before the
+    //    refund — see the customer-cancel path for the ordering rationale).
     await reverseTransferForReturn({
       purchaseRequestId: opts.childId,
       reverseAmount: REVERSE_ALL,
     }).catch(() => undefined);
+
+    // 4) Refund the customer's online payment back to source.
+    await this.refundCancelledChildToSource({
+      parentId: opts.parentId,
+      childId: opts.childId,
+      amount: cancelRefund,
+      kind: 'cancel',
+    });
 
     return { ok: true };
   }
@@ -1679,11 +1650,13 @@ export class PurchaseRequestsService {
     | { error: 'NOT_FOUND' | 'NOT_PENDING' }
     | { ok: true }
   > {
-    // Atomic claim + side-effects (event, wallet refund proportional to
-    // this child's share, coupon decrement when the last sibling goes
-    // terminal). All inside a single transaction so a downstream
-    // failure can't leave a REJECTED row with the customer still
-    // debited or the coupon counter still consumed.
+    // Atomic claim + side-effects (event, coupon decrement when the last
+    // sibling goes terminal). The refund proportional to this child's share is
+    // computed in-tx but sent back to source AFTER the tx (external gateway
+    // call). All DB work is one transaction so a downstream failure can't leave
+    // a REJECTED row with the coupon counter still consumed.
+    let rejectRefund = 0;
+    let rejectParentId: number | null = null;
     const result = await prisma.$transaction(async (tx) => {
       const update = await tx.purchaseRequest.updateMany({
         where: { id: opts.requestId, shopId: opts.shopId, status: 'PENDING' },
@@ -1709,29 +1682,19 @@ export class PurchaseRequestsService {
         },
       });
 
-      // Refund proportional to this child's share, mirroring the cancel
-      // path — wallet debit plus, when the order was captured online,
-      // the gateway slice (previously silently kept on rejection).
+      // Refund proportional to this child's share, mirroring the cancel path:
+      // the customer's online payment goes back to source post-commit (the
+      // gateway slice was previously silently kept on rejection).
       if (child.customerOrderId !== null) {
         const parent = await tx.customerOrder.findUnique({
           where: { id: child.customerOrderId },
           select: { id: true, walletPaid: true, estimatedTotal: true },
         });
         if (parent) {
-          // PR-H1 — refund off the captured gateway amount; last slice
-          // absorbs the residual so Σ refunds == captured + wallet.
-          const refund = await this.refundShareForChild(tx, parent, child);
-          if (refund > 0) {
-            await walletService.credit({
-              userId: child.customerUserId,
-              amount: refund,
-              source: 'CANCEL',
-              sourceId: child.id,
-              description: `Merchant rejection refund for child #${child.id}`,
-              idempotencyKey: `wallet:reject-${child.id}`,
-              tx,
-            });
-          }
+          // PR-H1 — refund off the captured gateway amount; last slice absorbs
+          // the residual. Computed in-tx; issued to source after commit.
+          rejectRefund = await this.refundShareForChild(tx, parent, child);
+          rejectParentId = parent.id;
         }
       }
 
@@ -1771,11 +1734,20 @@ export class PurchaseRequestsService {
     });
 
     if ('ok' in result) {
-      // Best-effort Route clawback, mirroring the customer-cancel path.
+      // Best-effort Route clawback, mirroring the customer-cancel path (before
+      // the refund — Razorpay forbids transfers on a refunded payment).
       await reverseTransferForReturn({
         purchaseRequestId: opts.requestId,
         reverseAmount: REVERSE_ALL,
       }).catch(() => undefined);
+      if (rejectParentId != null) {
+        await this.refundCancelledChildToSource({
+          parentId: rejectParentId,
+          childId: opts.requestId,
+          amount: rejectRefund,
+          kind: 'reject',
+        });
+      }
       return { ok: true };
     }
 

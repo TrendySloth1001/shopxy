@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import {
   MapPin,
   Tag,
-  Wallet,
   Truck,
   Store,
   Lock,
@@ -30,7 +29,6 @@ import {
 import {
   validateCoupon,
   autoApplyCoupon,
-  fetchWallet,
   placeOrder,
   initiatePayment,
   syncPayment,
@@ -39,7 +37,6 @@ import { AddressForm } from "@/features/addresses/components/address-form";
 import {
   computeCouponDiscount,
   type Coupon,
-  type WalletSnapshot,
 } from "@/features/checkout/types";
 import type { UserAddress, AddressFormValues } from "@/features/addresses/types";
 import { addressOneLine } from "@/features/addresses/types";
@@ -74,11 +71,6 @@ function CheckoutInner() {
   const [couponError, setCouponError] = useState<string | null>(null);
   const [autoApplied, setAutoApplied] = useState(false);
 
-  // ── Wallet state ─────────────────────────────────────────────────────────
-  const [wallet, setWallet] = useState<WalletSnapshot | null>(null);
-  const [walletLoaded, setWalletLoaded] = useState(false);
-  const [useWallet, setUseWallet] = useState(false);
-
   // ── Payment method ────────────────────────────────────────────────────────
   const [payOnline, setPayOnline] = useState(false);
 
@@ -107,10 +99,7 @@ function CheckoutInner() {
   const couponDiscount = appliedCoupon
     ? computeCouponDiscount(appliedCoupon, subtotal)
     : 0;
-  const afterCoupon = Math.max(0, subtotal - couponDiscount);
-  const walletBalance = wallet?.balance ?? 0;
-  const walletApply = useWallet ? Math.min(walletBalance, afterCoupon) : 0;
-  const grandTotal = Math.max(0, afterCoupon - walletApply);
+  const grandTotal = Math.max(0, subtotal - couponDiscount);
   // Savings reflect only real price reductions — product (MRP − selling) and
   // coupon. Delivery is genuinely free (deliveryCharge = 0), so there is no
   // waived fee to strike: do NOT fabricate a ₹49 reference price. (CP
@@ -149,20 +138,6 @@ function CheckoutInner() {
         setAddressesError(err instanceof Error ? err.message : "Could not load addresses.");
       } finally {
         setAddressesLoading(false);
-      }
-    })();
-  }, []);
-
-  // ── Load wallet ────────────────────────────────────────────────────────────
-  useEffect(() => {
-    void (async () => {
-      try {
-        const data = await fetchWallet();
-        setWallet(data);
-      } catch {
-        /* non-fatal */
-      } finally {
-        setWalletLoaded(true);
       }
     })();
   }, []);
@@ -255,7 +230,6 @@ function CheckoutInner() {
         })),
         addressId: selectedAddressId,
         couponCode: appliedCoupon?.code,
-        useWallet,
       };
 
       const order = await placeOrder(orderBody, idempotencyKey.current);
@@ -558,38 +532,6 @@ function CheckoutInner() {
                 onApply={() => void handleApplyCoupon()}
                 onRemove={removeCoupon}
               />
-
-              {walletLoaded && (wallet?.balance ?? 0) > 0 && (
-                <div className="mt-sm flex items-center gap-md rounded-md border border-hairline bg-white px-md py-sm">
-                  <Wallet className="h-5 w-5 text-brand" />
-                  <div className="flex-1">
-                    <p className="text-body-md font-extrabold text-ink">
-                      {useWallet && walletApply > 0
-                        ? `Using ${formatINR(walletApply)} from wallet`
-                        : "Use wallet balance"}
-                    </p>
-                    <p className="text-label-md text-muted">
-                      Available · {formatINR(wallet!.balance)}
-                    </p>
-                  </div>
-                  <button
-                    role="switch"
-                    aria-checked={useWallet}
-                    onClick={() => setUseWallet((v) => !v)}
-                    className={[
-                      "relative h-6 w-10 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
-                      useWallet ? "bg-brand" : "bg-disabled",
-                    ].join(" ")}
-                  >
-                    <span
-                      className={[
-                        "absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform",
-                        useWallet ? "translate-x-4" : "translate-x-0",
-                      ].join(" ")}
-                    />
-                  </button>
-                </div>
-              )}
             </section>
 
             {/* ── Payment method ────────────────────────────────── */}
@@ -620,7 +562,6 @@ function CheckoutInner() {
                 productSavings={productSavings}
                 grandTotal={grandTotal}
                 couponDiscount={couponDiscount}
-                walletApplied={walletApply}
                 taxBreakup={taxBreakup}
               />
               {totalSavings > 0 && (
@@ -695,18 +636,11 @@ function CheckoutInner() {
                     valueClass="text-success"
                   />
                 )}
-                {walletApply > 0 && (
-                  <StickyBillRow
-                    label="Wallet"
-                    value={`− ${formatINR(walletApply)}`}
-                    valueClass="text-success"
-                  />
-                )}
                 <StickyBillRow label="Delivery" value="FREE" valueClass="text-success" />
               </div>
               <div className="my-md border-t border-hairline" />
               {/* Bold total — estimate; the shop confirms the final charged
-                  amount at place-order (coupon/wallet are re-validated server
+                  amount at place-order (the coupon is re-validated server
                   side). CP E-Commerce Rules r.4(3). */}
               <div className="flex items-center justify-between">
                 <span className="text-body-md font-extrabold text-ink">Total payable</span>
@@ -1027,7 +961,6 @@ function PriceCard({
   productSavings,
   grandTotal,
   couponDiscount,
-  walletApplied,
   taxBreakup,
 }: {
   itemsTotal: number;
@@ -1035,7 +968,6 @@ function PriceCard({
   productSavings: number;
   grandTotal: number;
   couponDiscount: number;
-  walletApplied: number;
   taxBreakup: TaxBreakup;
 }) {
   return (
@@ -1068,23 +1000,16 @@ function PriceCard({
             valueClass="text-success font-bold"
           />
         )}
-        {walletApplied > 0 && (
-          <PriceRow
-            label="Wallet"
-            value={`− ${formatINR(walletApplied)}`}
-            valueClass="text-success font-bold"
-          />
-        )}
         <div className="my-xs border-t border-hairline" />
         <PriceRow
           label="Total payable (estimate)"
           value={formatINR(grandTotal, { decimals: 2 })}
           bold
         />
-        {/* The coupon/wallet discount above is a client estimate; the shop
-            re-computes coupon eligibility, caps and wallet application when the
-            order is placed. The order confirmation shows the final charged
-            amount. (CP E-Commerce Rules r.4(3).) */}
+        {/* The coupon discount above is a client estimate; the shop
+            re-computes coupon eligibility and caps when the order is placed.
+            The order confirmation shows the final charged amount.
+            (CP E-Commerce Rules r.4(3).) */}
         <p className="text-label-md text-muted">
           Estimated — the shop confirms the final amount when your order is
           placed.

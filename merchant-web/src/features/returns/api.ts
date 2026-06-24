@@ -1,4 +1,4 @@
-import { returnListSchema, returnSchema, type MerchantReturn } from "./schema";
+import { refundResultSchema, returnListSchema, returnSchema, type MerchantReturn, type RefundResult } from "./schema";
 
 async function jsonOrThrow<T>(res: Response, parse: (raw: unknown) => T, fallback: string): Promise<T> {
   if (!res.ok) {
@@ -54,6 +54,16 @@ export function markPickedUp(id: number): Promise<void> {
 export function markReceived(id: number): Promise<void> {
   return postAction(id, "received", {}, "Could not update the return.");
 }
-export function refundReturn(id: number, note?: string): Promise<void> {
-  return postAction(id, "refund", { method: "WALLET", note }, "Could not refund the return.");
+/**
+ * Refund a received return. The backend refunds to the buyer's ORIGINAL payment
+ * method (gateway refund-to-source) — never a wallet — and replies with
+ * `{ ok, refundAmount, refundStatus }`.
+ */
+export async function refundReturn(id: number, note?: string): Promise<RefundResult> {
+  const res = await fetch(`/api/returns/${id}/refund`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ note }),
+  });
+  return jsonOrThrow(res, (raw) => refundResultSchema.parse(raw), "Could not refund the return.");
 }

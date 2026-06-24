@@ -22,7 +22,6 @@ import {
   Store,
   Ticket,
   User,
-  Wallet,
 } from "lucide-react";
 import { RequireAuth } from "@/features/auth/components/require-auth";
 import { AppHeader } from "@/features/auth/components/app-header";
@@ -83,12 +82,6 @@ const HUB_GROUPS: { heading: string; links: HubLink[] }[] = [
         icon: <MapPin size={18} />,
         label: "Addresses",
         description: "Delivery addresses",
-      },
-      {
-        href: "/account/wallet",
-        icon: <Wallet size={18} />,
-        label: "Wallet",
-        description: "Balance and transaction history",
       },
       {
         href: "/account/coupons",

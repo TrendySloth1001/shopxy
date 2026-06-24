@@ -25,7 +25,12 @@ export type GatewayStep =
   | 'ROUTE_SPLIT_ROWS'
   | 'ROUTE_SPLIT_EXECUTED'
   | 'ROUTE_SPLIT_RECONCILED'
-  | 'ROUTE_SPLIT_FAILED';
+  | 'ROUTE_SPLIT_FAILED'
+  | 'REFUND_ISSUED'
+  | 'REFUND_REPLAYED'
+  | 'REFUND_SKIPPED'
+  | 'REFUND_FAILED'
+  | 'REFUND_PROCESSED';
 
 export interface GatewayTrackEvent {
   step: GatewayStep;

@@ -69,7 +69,6 @@ class OrdersRemoteDataSource {
     String? idempotencyKey,
     int? addressId,
     String? couponCode,
-    bool useWallet = false,
   }) async {
     final key = idempotencyKey ?? _newIdempotencyKey();
     final res = await _client.post(
@@ -87,7 +86,6 @@ class OrdersRemoteDataSource {
         if (note != null && note.isNotEmpty) 'note': note,
         'addressId': ?addressId,
         if (couponCode != null && couponCode.isNotEmpty) 'couponCode': couponCode,
-        if (useWallet) 'useWallet': true,
       },
     );
     if (res.statusCode != 200 && res.statusCode != 201) {

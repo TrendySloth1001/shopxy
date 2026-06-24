@@ -15,7 +15,7 @@ class OrderShop {
   final String? ownerName;
   /// Buyer-facing return policy summary — populated on the per-slice
   /// detail payload so the order detail page can show "Returns within
-  /// 7 days · wallet refund" without a second fetch.
+  /// 7 days" without a second fetch.
   final bool returnsEnabled;
   final int returnWindowDays;
   /// WALLET / ORIGINAL / REPLACEMENT.
@@ -32,9 +32,8 @@ class OrderShop {
         return 'original payment';
       case 'REPLACEMENT':
         return 'replacement only';
-      case 'WALLET':
       default:
-        return 'wallet refund';
+        return 'original payment';
     }
   }
 

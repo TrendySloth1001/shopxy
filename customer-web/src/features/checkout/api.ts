@@ -6,14 +6,12 @@ import {
   placeOrderResponseSchema,
   couponValidateResponseSchema,
   autoApplyResponseSchema,
-  walletSnapshotSchema,
   paySessionSchema,
   paySyncResponseSchema,
   type PlaceOrderRequest,
   type PlaceOrderResponse,
   type CouponValidateResponse,
   type AutoApplyResponse,
-  type WalletSnapshot,
   type PaySessionResponse,
   type PaySyncResponse,
 } from "./types";
@@ -107,16 +105,6 @@ export async function autoApplyCoupon(
     res,
     (raw) => autoApplyResponseSchema.parse(raw),
     "Could not check for coupons.",
-  );
-}
-
-/** GET /api/me/wallet — load wallet balance. */
-export async function fetchWallet(): Promise<WalletSnapshot> {
-  const res = await fetch("/api/me/wallet", { cache: "no-store" });
-  return jsonOrThrow(
-    res,
-    (raw) => walletSnapshotSchema.parse(raw),
-    "Could not load wallet.",
   );
 }
 

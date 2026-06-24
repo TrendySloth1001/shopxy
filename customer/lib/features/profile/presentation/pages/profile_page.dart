@@ -16,7 +16,6 @@ import 'package:shopxy_customer/features/coupons/presentation/pages/my_coupons_p
 import 'package:shopxy_customer/features/shops/presentation/pages/linked_merchants_page.dart';
 import 'package:shopxy_customer/features/shops/presentation/pages/my_shops_page.dart';
 import 'package:shopxy_customer/features/profile/presentation/widgets/profile_avatar.dart';
-import 'package:shopxy_customer/features/wallet/presentation/pages/wallet_page.dart';
 import 'package:shopxy_customer/features/wishlist/presentation/pages/wishlist_page.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/constants/app_strings.dart';
@@ -186,14 +185,6 @@ class CustomerProfilePage extends StatelessWidget {
             subtitle: 'Pick up where you left off',
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const RecentlyViewedPage()),
-            ),
-          ),
-          _Row(
-            icon: Icons.account_balance_wallet_outlined,
-            title: 'Wallet',
-            subtitle: 'Refunds, rewards and credits',
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const WalletPage()),
             ),
           ),
           const _SectionLabel(label: 'Settings'),

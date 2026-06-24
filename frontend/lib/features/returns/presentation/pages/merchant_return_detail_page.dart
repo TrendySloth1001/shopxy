@@ -219,8 +219,7 @@ class _MerchantReturnDetailPageState extends State<MerchantReturnDetailPage> {
                           Expanded(
                             child: Text(
                               'Refunded ${_currency.format(row.refundAmount)} '
-                              'to ${row.customerName}\'s wallet '
-                              '(${row.refundMethod})',
+                              'to ${row.customerName}\'s original payment method',
                               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
@@ -277,8 +276,8 @@ class _MerchantReturnDetailPageState extends State<MerchantReturnDetailPage> {
                       'Refund ${_currency.format(row.refundAmount)}?',
                     ),
                     content: Text(
-                      'This will credit the buyer\'s wallet immediately. '
-                      'The action can\'t be undone.',
+                      'This refunds the buyer to their original payment '
+                      'method. The action can\'t be undone.',
                     ),
                     actions: [
                       TextButton(
@@ -297,7 +296,7 @@ class _MerchantReturnDetailPageState extends State<MerchantReturnDetailPage> {
                   (ds) async {
                     await ds.refund(row.id);
                   },
-                  'Refund credited',
+                  'Refund issued to original payment method',
                 );
               },
             ),

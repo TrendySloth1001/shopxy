@@ -102,26 +102,6 @@ export const couponsResponseSchema = z.object({
 
 export type CouponsResponseRaw = z.infer<typeof couponsResponseSchema>;
 
-// ── Wallet ────────────────────────────────────────────────────────────────────
-
-export const walletEntrySchema = z.object({
-  id: z.number(),
-  amount: z.coerce.number(),
-  balanceAfter: z.coerce.number(),
-  source: z.enum(["REFUND", "COUPON", "REFERRAL", "LOYALTY", "CHECKOUT", "TOPUP", "CANCEL", "MANUAL"]),
-  sourceId: z.number().nullable().optional(),
-  description: z.string(),
-  createdAt: z.string(),
-});
-
-export const walletSnapshotSchema = z.object({
-  balance: z.coerce.number(),
-  ledgerBalance: z.number(),
-  entries: z.array(walletEntrySchema).default([]),
-});
-
-export type WalletSnapshotRaw = z.infer<typeof walletSnapshotSchema>;
-
 // ── Recently viewed ───────────────────────────────────────────────────────────
 
 const recentlyViewedProductSchema = z.object({

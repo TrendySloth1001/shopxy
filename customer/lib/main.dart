@@ -35,7 +35,6 @@ import 'package:shopxy_customer/features/categories/data/datasources/categories_
 import 'package:shopxy_customer/features/categories/presentation/providers/categories_provider.dart';
 import 'package:shopxy_customer/features/recently_viewed/data/datasources/recently_viewed_remote_data_source.dart';
 import 'package:shopxy_customer/features/returns/data/datasources/returns_remote_data_source.dart';
-import 'package:shopxy_customer/features/wallet/data/datasources/wallet_remote_data_source.dart';
 import 'package:shopxy_customer/features/coupons/data/datasources/coupons_remote_data_source.dart';
 import 'package:shopxy_customer/features/profile/data/datasources/avatar_remote_data_source.dart';
 
@@ -66,7 +65,6 @@ void main() async {
   final reviewsDs = ReviewsRemoteDataSource(apiClient);
   final recentlyViewedDs = RecentlyViewedRemoteDataSource(apiClient);
   final returnsDs = ReturnsRemoteDataSource(apiClient);
-  final walletDs = WalletRemoteDataSource(apiClient);
   final couponsDs = CouponsRemoteDataSource(apiClient);
   final avatarDs = AvatarRemoteDataSource(apiClient);
   final trackingService = TrackingService(apiClient);
@@ -211,10 +209,9 @@ void main() async {
         // Recently-viewed list. Page is route-scoped (opened from Profile)
         // so it reads the DS directly instead of through a parent provider.
         Provider<RecentlyViewedRemoteDataSource>.value(value: recentlyViewedDs),
-        // Returns + wallet — both used by route-scoped pages, so no
-        // parent ChangeNotifier provider; the pages read the DS directly.
+        // Returns — used by a route-scoped page, so no parent
+        // ChangeNotifier provider; the page reads the DS directly.
         Provider<ReturnsRemoteDataSource>.value(value: returnsDs),
-        Provider<WalletRemoteDataSource>.value(value: walletDs),
         Provider<CouponsRemoteDataSource>.value(value: couponsDs),
         Provider<AvatarRemoteDataSource>.value(value: avatarDs),
         ChangeNotifierProvider<CategoriesProvider>.value(

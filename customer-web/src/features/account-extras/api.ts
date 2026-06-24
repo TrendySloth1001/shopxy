@@ -7,11 +7,10 @@ import {
   wishlistResponseSchema,
   myReviewsResponseSchema,
   couponsResponseSchema,
-  walletSnapshotSchema,
   recentlyViewedResponseSchema,
   type MyReviewsResponseRaw,
 } from "./schema";
-import type { WishlistItem, MyReview, Coupon, WalletSnapshot, RecentlyViewedItem } from "./types";
+import type { WishlistItem, MyReview, Coupon, RecentlyViewedItem } from "./types";
 
 async function jsonOrThrow<T>(
   res: Response,
@@ -133,13 +132,6 @@ export async function fetchMyCoupons(): Promise<Coupon[]> {
     "Could not load coupons.",
   );
   return data.data;
-}
-
-// ── Wallet ────────────────────────────────────────────────────────────────────
-
-export async function fetchWallet(): Promise<WalletSnapshot> {
-  const res = await fetch("/api/me/wallet", { cache: "no-store" });
-  return jsonOrThrow(res, (raw) => walletSnapshotSchema.parse(raw), "Could not load wallet.");
 }
 
 // ── Recently viewed ───────────────────────────────────────────────────────────

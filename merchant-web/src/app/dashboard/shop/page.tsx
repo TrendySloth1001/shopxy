@@ -17,7 +17,7 @@ import {
   CANCELLATION_POLICY_LABELS,
   DAYS,
   DAY_LABELS,
-  REFUND_MODES,
+  REFUND_MODES_SELECTABLE,
   REFUND_MODE_LABELS,
   returnWindowDaysSchema,
   type CancellationPolicy,
@@ -360,7 +360,7 @@ export default function ShopPage() {
                     <SelectField
                       label="Refund method"
                       value={form.refundMode}
-                      options={REFUND_MODES.map((m) => ({ value: m, label: REFUND_MODE_LABELS[m] }))}
+                      options={REFUND_MODES_SELECTABLE.map((m) => ({ value: m, label: REFUND_MODE_LABELS[m] }))}
                       onChange={(v) => patch({ refundMode: v })}
                     />
                   </div>
@@ -831,3 +831,4 @@ function ImageField({
     </div>
   );
 }
+ 
