@@ -150,7 +150,7 @@ export function RegisterForm() {
         ) : null}
       </fieldset>
 
-      <SubmitButton loading={submitting}>Create account</SubmitButton>
+      <SubmitButton loading={submitting} pill>Create account</SubmitButton>
     </form>
   );
 }
