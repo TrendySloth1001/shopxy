@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import { AuthProvider } from "@/features/auth/auth-context";
 import "./globals.css";
 
@@ -8,6 +8,15 @@ import "./globals.css";
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
+  display: "swap",
+});
+
+// Plus Jakarta Sans — display face for auth-screen headings (`--font-display`
+// → `font-display` utility). Body text stays on Inter.
+const jakarta = Plus_Jakarta_Sans({
+  variable: "--font-jakarta",
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
   display: "swap",
 });
 
@@ -25,7 +34,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} h-full`}>
+    <html lang="en" className={`${inter.variable} ${jakarta.variable} h-full`}>
       <body className="min-h-full bg-canvas text-ink antialiased">
         <AuthProvider>{children}</AuthProvider>
       </body>

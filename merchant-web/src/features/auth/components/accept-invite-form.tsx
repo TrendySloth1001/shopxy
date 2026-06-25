@@ -157,7 +157,7 @@ export function AcceptInviteForm({ token }: { token: string }) {
               onChange={(e) => setConfirmPassword(e.target.value)}
               error={fieldErrors.confirmPassword}
             />
-            <SubmitButton loading={submitting}>Accept & create account</SubmitButton>
+            <SubmitButton loading={submitting} pill>Accept &amp; create account</SubmitButton>
           </form>
 
           <Divider className="mt-xxl" />

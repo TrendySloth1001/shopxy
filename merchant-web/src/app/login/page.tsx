@@ -11,6 +11,7 @@ const NOTICES: Record<string, string> = {
   "password-changed": "Password changed. Please sign in again.",
   "signed-out-everywhere": "Signed out of all devices.",
   "account-deleted": "Your account has been deleted.",
+  "google-soon": "Google sign-in is coming soon — please use your email for now.",
 };
 
 export default async function LoginPage({

@@ -35,3 +35,12 @@ Deferred / simplified:
 - [ ] **Profit delta cost.** `kpis.profit` calls `reportsService.pnl` twice
   (current + previous window) for its delta — the heaviest part of the load.
   Replace with a lean prior-window query if needed.
+
+- [ ] **Google SSO ("Continue with Google").** The button is live on the sign-in
+  form (`features/auth/components/google-button.tsx`) and points at the BFF route
+  `app/api/auth/google/route.ts`, which currently redirects back to
+  `/login?reason=google-soon` with a "coming soon" notice. To make it real:
+  add backend Google OAuth (authorise + callback, user provisioning for
+  password-less accounts, JWT issuance), set `GOOGLE_CLIENT_ID`/`SECRET`, then
+  replace the BFF stub with a 302 to the backend authorise URL. Also consider
+  adding the button to the register form.

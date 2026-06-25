@@ -8,6 +8,7 @@ import { loginSchema } from "../schema";
 import { Field } from "./field";
 import { SubmitButton } from "./submit-button";
 import { AuthErrorBanner } from "./auth-shell";
+import { GoogleButton } from "./google-button";
 
 export function LoginForm() {
   const { login, status } = useAuth();
@@ -49,6 +50,12 @@ export function LoginForm() {
 
   return (
     <form onSubmit={onSubmit} noValidate className="flex flex-col gap-lg">
+      <GoogleButton />
+      <div className="flex items-center gap-md text-label-sm text-subtle">
+        <span className="h-px flex-1 bg-hairline" />
+        or continue with email
+        <span className="h-px flex-1 bg-hairline" />
+      </div>
       {error ? <AuthErrorBanner message={error} /> : null}
       <Field
         label="Email"
@@ -70,21 +77,30 @@ export function LoginForm() {
         onChange={(e) => setPassword(e.target.value)}
         error={fieldErrors.password}
       />
-      <SubmitButton loading={submitting}>Sign in</SubmitButton>
+      <SubmitButton loading={submitting} pill>Sign in</SubmitButton>
       {/* Pre-signin discoverability of the published policies — the DPDP notice
           and the user agreement must be accessible before/around collection,
           not only behind auth. (DPDP Act 2023 s.5; IT Intermediary Rules 2021
           r.3(1)(b)/(f).) */}
       <p className="text-center text-body-sm text-muted">
-        By continuing you agree to our{" "}
+        By signing in you agree to our{" "}
         <Link href="/legal/terms" className="text-ink underline hover:text-brand">
           Terms
         </Link>{" "}
-        and{" "}
+        and acknowledge our{" "}
         <Link href="/legal/privacy" className="text-ink underline hover:text-brand">
           Privacy Policy
         </Link>
-        .
+        . We use a strictly-necessary session cookie to keep you signed in.
+      </p>
+      <p className="text-center text-body-sm text-subtle">
+        Trouble signing in?{" "}
+        <a
+          href="mailto:support@shopxy.app"
+          className="text-muted underline hover:text-brand"
+        >
+          Contact support
+        </a>
       </p>
     </form>
   );
