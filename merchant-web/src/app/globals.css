@@ -171,6 +171,26 @@
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
 }
 
+/* Route-change entrance: the incoming page is a solid sheet that slides UP
+   from below the fold to fully cover the outlet — like grabbing a page from
+   the bottom and pulling it up. No fade (a fade reads as a "pop"); the parent
+   clips so it reveals from the bottom edge. Replayed by remounting on pathname
+   change (see PageTransition). Short-circuited by the reduce-motion block. */
+@keyframes sx-page-in {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.sx-page-slide {
+  /* gentle ease-out: quick to start moving, long graceful deceleration */
+  animation: sx-page-in 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform;
+}
+
 /* Global page defaults: warm canvas, primary ink, Inter. */
 html {
   background-color: var(--color-canvas);

@@ -3,6 +3,7 @@ import { RequireAuth } from "@/features/auth/components/require-auth";
 import { SectionGuard } from "@/features/auth/components/section-guard";
 import { NotificationsProvider } from "@/features/notifications/notifications-context";
 import { Sidebar } from "@/features/dashboard/sidebar";
+import { PageTransition } from "@/features/dashboard/page-transition";
 
 /**
  * Authenticated shell for the whole dashboard area. Persistent collapsible
@@ -16,7 +17,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         <div className="flex min-h-dvh flex-col lg:flex-row">
           <Sidebar />
           <main className="min-w-0 flex-1 overflow-x-hidden">
-            <SectionGuard>{children}</SectionGuard>
+            <PageTransition>
+              <SectionGuard>{children}</SectionGuard>
+            </PageTransition>
           </main>
         </div>
       </NotificationsProvider>
