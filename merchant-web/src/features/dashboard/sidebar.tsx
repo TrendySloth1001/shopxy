@@ -226,7 +226,7 @@ export function Sidebar() {
       {/* ── Mobile drawer (< lg) ─────────────────────────────────────── */}
       <div
         className={`fixed inset-0 z-50 lg:hidden ${mobileOpen ? "" : "pointer-events-none"}`}
-        aria-hidden={!mobileOpen}
+        inert={!mobileOpen}
       >
         <button
           type="button"
