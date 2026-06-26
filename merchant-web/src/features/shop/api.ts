@@ -76,6 +76,10 @@ export async function getPayoutStatus(opts?: { refresh?: boolean }): Promise<Pay
   // refresh=1 makes the backend re-poll Razorpay live (picks up an activation
   // that happened after we last stored the status).
   const res = await fetch(`/api/payouts${opts?.refresh ? "?refresh=1" : ""}`, { cache: "no-store" });
-  if (res.status === 404) return null;
-  return okJson(res, (raw) => payoutAccountSchema.parse(raw), "Could not load payout status.");
+  if (res.status === 404) return null; // safety: the route now returns 200/null instead
+  return okJson(
+    res,
+    (raw) => (raw == null ? null : payoutAccountSchema.parse(raw)),
+    "Could not load payout status.",
+  );
 }
