@@ -102,6 +102,14 @@ export function LoginForm() {
           Contact support
         </a>
       </p>
+      <p className="text-center text-body-sm text-subtle">
+        <Link
+          href="/legal/compliance"
+          className="text-muted underline hover:text-brand"
+        >
+          Compliance, laws &amp; formulas
+        </Link>
+      </p>
     </form>
   );
 }
