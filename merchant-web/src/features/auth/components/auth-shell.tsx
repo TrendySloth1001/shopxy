@@ -52,7 +52,7 @@ export function AuthShell({
             fill
             priority
             sizes="(min-width: 1024px) 50vw, 0px"
-            className="object-contain object-center"
+            className="object-cover object-center"
           />
           {/* Gradient shade — dense artwork on the left, fading to solid canvas
               on the right so the panel merges into the form column. */}
