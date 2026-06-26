@@ -46,6 +46,9 @@
   --color-error-soft: #fce9e7;
   --color-info: #1d4ed8;
   --color-info-soft: #e3eafe;
+  /* Highlighter yellow — used by <mark> to highlight key points on the
+     compliance / legal pages. */
+  --color-highlight: #fde68a;
 
   /* ── Editorial accents ───────────────────────────────────────────────── */
   --color-accent-teal: #0e7c8a;
@@ -78,6 +81,7 @@
   --container-content: 720px;
   --container-form: 520px;
   --container-auth: 400px;
+  --container-docs: 980px;
 
   /* ── Radii ───────────────────────────────────────────────────────────── */
   --radius-xs: 2px;
