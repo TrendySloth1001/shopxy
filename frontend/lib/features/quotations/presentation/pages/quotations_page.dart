@@ -74,7 +74,7 @@ class _QuotationsPageState extends State<QuotationsPage> {
                       ? ListView(
                           children: [
                             const SizedBox(height: AppSizes.productImageSize),
-                            const Icon(Icons.request_quote_outlined,
+                            Icon(Icons.request_quote_outlined,
                                 size: AppSizes.iconHuge, color: AppColors.muted),
                             const SizedBox(height: AppSizes.md),
                             Center(
@@ -258,7 +258,7 @@ class _QuotationRow extends StatelessWidget {
                 style: theme.textTheme.titleMedium
                     ?.copyWith(fontWeight: FontWeight.w800)),
             const SizedBox(width: AppSizes.xs),
-            const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
+            Icon(Icons.chevron_right_rounded, color: AppColors.muted),
           ],
         ),
       ),

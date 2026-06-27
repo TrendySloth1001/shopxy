@@ -113,17 +113,17 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
             FilledButton(
               onPressed: _busy ? null : _submit,
               style: FilledButton.styleFrom(
-                backgroundColor: AppColors.black,
-                foregroundColor: AppColors.white,
+                backgroundColor: AppColors.inverseSurface,
+                foregroundColor: AppColors.onInverse,
                 padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
               ),
               child: _busy
-                  ? const SizedBox(
+                  ? SizedBox(
                       height: AppSizes.xl,
                       width: AppSizes.xl,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: AppColors.white,
+                        color: AppColors.onInverse,
                       ),
                     )
                   : const Text(AppStrings.changePassword),

@@ -15,7 +15,7 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 Future<bool> showPayoutSetupSheet(BuildContext context, {bool hasDraft = false}) async {
   final result = await showModalBottomSheet<bool>(
     context: context,
-    backgroundColor: AppColors.white,
+    backgroundColor: AppColors.surface,
     isScrollControlled: true,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(AppSizes.radiusLg)),
@@ -54,12 +54,12 @@ class _PayoutSetupSheet extends StatelessWidget {
             Container(
               width: 48,
               height: 48,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: AppColors.infoSoft,
                 shape: BoxShape.circle,
               ),
               alignment: Alignment.center,
-              child: const Icon(Icons.account_balance_outlined,
+              child: Icon(Icons.account_balance_outlined,
                   color: AppColors.info, size: AppSizes.iconLg),
             ),
             const SizedBox(height: AppSizes.md),
@@ -83,7 +83,8 @@ class _PayoutSetupSheet extends StatelessWidget {
             const SizedBox(height: AppSizes.xl),
             FilledButton(
               style: FilledButton.styleFrom(
-                backgroundColor: AppColors.black,
+                backgroundColor: AppColors.inverseSurface,
+                foregroundColor: AppColors.onInverse,
                 padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
               ),
               onPressed: () {

@@ -39,7 +39,7 @@ class CustomFieldEditorSheet extends StatefulWidget {
     return showModalBottomSheet<CustomFieldDefinition>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.surface,
       shape: AppShapes.squircleTop(AppSizes.bottomSheetRadius),
       builder: (_) => CustomFieldEditorSheet(
         existing: existing,
@@ -326,7 +326,7 @@ class _IconChip extends StatelessWidget {
       color: AppColors.surfaceTint,
       shape: AppShapes.squircle(
         AppSizes.radiusSm,
-        side: const BorderSide(color: AppColors.hairline, width: 1),
+        side: BorderSide(color: AppColors.hairline, width: 1),
       ),
       child: InkWell(
         onTap: onTap,

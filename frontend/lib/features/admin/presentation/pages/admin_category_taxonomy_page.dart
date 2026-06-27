@@ -244,10 +244,10 @@ class _CategoryTileSkeleton extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSizes.sm),
       child: Material(
-        color: AppColors.white,
+        color: AppColors.surface,
         shape: AppShapes.squircle(
           AppSizes.radiusMd,
-          side: const BorderSide(color: AppColors.hairline),
+          side: BorderSide(color: AppColors.hairline),
         ),
         child: Padding(
           padding: const EdgeInsets.all(AppSizes.sm),
@@ -354,10 +354,10 @@ class _CategoryTreeTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Material(
-            color: AppColors.white,
+            color: AppColors.surface,
             shape: AppShapes.squircle(
               AppSizes.radiusMd,
-              side: const BorderSide(color: AppColors.hairline),
+              side: BorderSide(color: AppColors.hairline),
             ),
             child: InkWell(
               onTap: () => onEdit(c),

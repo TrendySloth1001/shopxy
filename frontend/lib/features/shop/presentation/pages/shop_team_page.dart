@@ -519,10 +519,10 @@ class _MemberRow extends StatelessWidget {
           _RolePill(label: member.label, owner: member.isOwner),
           if (canManage)
             PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert, color: AppColors.subtle),
+              icon: Icon(Icons.more_vert, color: AppColors.subtle),
               onSelected: (v) => v == 'edit' ? onEdit() : onRemove(),
-              itemBuilder: (_) => const [
-                PopupMenuItem(value: 'edit', child: Text('Edit access')),
+              itemBuilder: (_) => [
+                const PopupMenuItem(value: 'edit', child: Text('Edit access')),
                 PopupMenuItem(
                     value: 'remove',
                     child: Text('Remove from team',
@@ -560,7 +560,7 @@ class _InviteRow extends StatelessWidget {
             horizontal: AppSizes.lg, vertical: AppSizes.md),
         child: Row(
           children: [
-            const Icon(Icons.mail_outline_rounded, color: AppColors.muted),
+            Icon(Icons.mail_outline_rounded, color: AppColors.muted),
             const SizedBox(width: AppSizes.md),
             Expanded(
               child: Column(
@@ -614,7 +614,7 @@ class _RoleRow extends StatelessWidget {
           horizontal: AppSizes.lg, vertical: AppSizes.md),
       child: Row(
         children: [
-          const Icon(Icons.badge_outlined, color: AppColors.subtle),
+          Icon(Icons.badge_outlined, color: AppColors.subtle),
           const SizedBox(width: AppSizes.md),
           Expanded(
             child: Column(
@@ -648,10 +648,10 @@ class _RoleRow extends StatelessWidget {
           ),
           if (canManage)
             PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert, color: AppColors.subtle),
+              icon: Icon(Icons.more_vert, color: AppColors.subtle),
               onSelected: (v) => v == 'edit' ? onEdit() : onDelete(),
-              itemBuilder: (_) => const [
-                PopupMenuItem(value: 'edit', child: Text('Edit role')),
+              itemBuilder: (_) => [
+                const PopupMenuItem(value: 'edit', child: Text('Edit role')),
                 PopupMenuItem(
                     value: 'delete',
                     child: Text('Delete role',
@@ -776,8 +776,8 @@ class _Avatar extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         width: AppSizes.avatarSm,
         height: AppSizes.avatarSm,
-        decoration: const BoxDecoration(
-            color: AppColors.brandSoft, shape: BoxShape.circle),
+        decoration: BoxDecoration(
+            color: AppColors.tileBg(AppColors.brandSoft), shape: BoxShape.circle),
         alignment: Alignment.center,
         child: Text(name.isNotEmpty ? name[0].toUpperCase() : '?',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -797,7 +797,7 @@ class _InfoBanner extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.info_outline, color: AppColors.info, size: 18),
+              Icon(Icons.info_outline, color: AppColors.info, size: 18),
               const SizedBox(width: AppSizes.sm),
               Expanded(
                 child: Text(text,
@@ -823,7 +823,7 @@ class _ErrorState extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline, color: AppColors.muted, size: 40),
+              Icon(Icons.error_outline, color: AppColors.muted, size: 40),
               const SizedBox(height: AppSizes.md),
               Text(message, textAlign: TextAlign.center),
               const SizedBox(height: AppSizes.md),
@@ -842,7 +842,7 @@ class _InviteSheet extends StatefulWidget {
   static Future<String?> show(BuildContext context) => showModalBottomSheet<String>(
         context: context,
         isScrollControlled: true,
-        backgroundColor: AppColors.white,
+        backgroundColor: AppColors.surface,
         shape: AppShapes.squircleTop(AppSizes.radiusLg),
         builder: (_) => const _InviteSheet(),
       );

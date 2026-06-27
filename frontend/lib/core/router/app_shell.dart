@@ -334,7 +334,7 @@ class AppShellState extends State<AppShell> {
               drawer: const _NavDrawer(),
               body: body,
               bottomNavigationBar: Container(
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   border: Border(
                     top: BorderSide(color: AppColors.hairline, width: 1),
                   ),
@@ -423,14 +423,14 @@ class _NavDrawer extends StatelessWidget {
                     width: 36,
                     height: 36,
                     decoration: ShapeDecoration(
-                      color: AppColors.black,
+                      color: AppColors.inverseSurface,
                       shape: AppShapes.squircle(12),
                     ),
                     alignment: Alignment.center,
-                    child: const Text(
+                    child: Text(
                       'S',
                       style: TextStyle(
-                        color: AppColors.white,
+                        color: AppColors.onInverse,
                         fontWeight: FontWeight.w800,
                         fontSize: 18,
                       ),
@@ -579,7 +579,7 @@ class _DrawerTile extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
       child: Material(
-        color: selected ? AppColors.black : Colors.transparent,
+        color: selected ? AppColors.inverseSurface : Colors.transparent,
         shape: AppShapes.squircle(14),
         child: InkWell(
           customBorder: AppShapes.squircle(14),
@@ -591,14 +591,14 @@ class _DrawerTile extends StatelessWidget {
                 Icon(
                   selected ? destination.selectedIcon : destination.icon,
                   size: 20,
-                  color: selected ? AppColors.white : AppColors.black,
+                  color: selected ? AppColors.onInverse : AppColors.black,
                 ),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Text(
                     destination.label,
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: selected ? AppColors.white : AppColors.black,
+                      color: selected ? AppColors.onInverse : AppColors.black,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -610,7 +610,7 @@ class _DrawerTile extends StatelessWidget {
                       vertical: 2,
                     ),
                     decoration: BoxDecoration(
-                      color: selected ? AppColors.white : AppColors.warning,
+                      color: selected ? AppColors.surface : AppColors.warning,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
@@ -699,7 +699,7 @@ class _DrawerShortcutTile extends StatelessWidget {
                     ),
                   ),
                 ),
-                const Icon(
+                Icon(
                   Icons.chevron_right_rounded,
                   size: 18,
                   color: AppColors.subtle,

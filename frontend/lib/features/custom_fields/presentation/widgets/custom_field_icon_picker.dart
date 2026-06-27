@@ -55,11 +55,11 @@ class _IconTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected ? AppColors.black : AppColors.surfaceTint,
+      color: selected ? AppColors.inverseSurface : AppColors.surfaceTint,
       shape: AppShapes.squircle(
         AppSizes.radiusSm,
         side: BorderSide(
-          color: selected ? AppColors.black : AppColors.hairline,
+          color: selected ? AppColors.inverseSurface : AppColors.hairline,
           width: 1,
         ),
       ),
@@ -71,7 +71,7 @@ class _IconTile extends StatelessWidget {
           height: AppSizes.huge,
           child: Icon(
             icon,
-            color: selected ? AppColors.white : AppColors.black,
+            color: selected ? AppColors.onInverse : AppColors.black,
             size: AppSizes.iconLg,
           ),
         ),

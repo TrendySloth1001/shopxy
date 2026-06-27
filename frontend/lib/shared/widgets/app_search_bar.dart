@@ -57,7 +57,7 @@ class _AppSearchBarState extends State<AppSearchBar> {
     return Container(
       height: AppSizes.huge,
       decoration: ShapeDecoration(
-        color: AppColors.white,
+        color: AppColors.surface,
         shape: AppShapes.squircle(
           AppSizes.radiusMd,
           side: BorderSide(color: AppColors.hairline, width: 1),
@@ -66,7 +66,7 @@ class _AppSearchBarState extends State<AppSearchBar> {
       child: Row(
         children: [
           const SizedBox(width: AppSizes.md),
-          const Icon(
+          Icon(
             Icons.search_rounded,
             size: AppSizes.iconMd,
             color: AppColors.muted,

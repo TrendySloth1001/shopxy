@@ -129,7 +129,7 @@ class _ChangeRow extends StatelessWidget {
           Container(
             width: 28,
             height: 28,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: AppColors.surfaceTint,
               shape: BoxShape.circle,
             ),

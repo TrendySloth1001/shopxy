@@ -205,7 +205,7 @@ class _PosPageState extends State<PosPage> {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        icon: const Icon(Icons.check_circle_rounded, color: AppColors.success, size: AppSizes.iconHuge),
+        icon: Icon(Icons.check_circle_rounded, color: AppColors.success, size: AppSizes.iconHuge),
         title: const Text('Sale complete'),
         content: Text('Invoice $invoiceNo'),
         actions: [
@@ -298,7 +298,7 @@ class _PosPageState extends State<PosPage> {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.surface,
       shape: AppShapes.squircleTop(AppSizes.bottomSheetRadius),
       builder: (ctx) => Padding(
         padding: EdgeInsets.only(
@@ -393,7 +393,7 @@ class _PosPageState extends State<PosPage> {
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.surface,
       builder: (ctx) => Padding(
         padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
         child: _ProductSearchSheet(client: _client),
@@ -406,7 +406,7 @@ class _PosPageState extends State<PosPage> {
     if (!mounted) return;
     await showModalBottomSheet<void>(
       context: context,
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.surface,
       shape: AppShapes.squircleTop(AppSizes.bottomSheetRadius),
       builder: (ctx) => SafeArea(
         child: bills.isEmpty
@@ -488,11 +488,11 @@ class _PosPageState extends State<PosPage> {
           if (_shiftOpen)
             Container(
               width: double.infinity,
-              color: AppColors.brandSoft,
+              color: AppColors.tileBg(AppColors.brandSoft),
               padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg, vertical: AppSizes.sm),
               child: Row(
                 children: [
-                  const Icon(Icons.account_circle_outlined, size: AppSizes.iconSm, color: AppColors.brand),
+                  Icon(Icons.account_circle_outlined, size: AppSizes.iconSm, color: AppColors.brand),
                   const SizedBox(width: AppSizes.xs),
                   Expanded(
                     child: Text(
@@ -503,7 +503,7 @@ class _PosPageState extends State<PosPage> {
                       style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
                     ),
                   ),
-                  const Icon(Icons.timer_outlined, size: AppSizes.iconSm, color: AppColors.muted),
+                  Icon(Icons.timer_outlined, size: AppSizes.iconSm, color: AppColors.muted),
                   const SizedBox(width: AppSizes.xs),
                   Text(_elapsedSince(_shift!['openedAt']), style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700)),
                 ],
@@ -516,7 +516,7 @@ class _PosPageState extends State<PosPage> {
               padding: const EdgeInsets.all(AppSizes.md),
               child: Row(
                 children: [
-                  const Icon(Icons.lock_outline_rounded, size: AppSizes.iconSm, color: AppColors.warning),
+                  Icon(Icons.lock_outline_rounded, size: AppSizes.iconSm, color: AppColors.warning),
                   const SizedBox(width: AppSizes.sm),
                   Expanded(child: Text('Open a shift to start billing', style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.warning))),
                   FilledButton(
@@ -531,14 +531,14 @@ class _PosPageState extends State<PosPage> {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                const ColoredBox(color: AppColors.black),
+                ColoredBox(color: AppColors.canvas),
                 MobileScanner(controller: _controller, onDetect: _onDetect),
                 Center(
                   child: Container(
                     width: 150,
                     height: 150,
                     decoration: ShapeDecoration(
-                      shape: AppShapes.squircle(AppSizes.radiusLg, side: const BorderSide(color: AppColors.white, width: 3)),
+                      shape: AppShapes.squircle(AppSizes.radiusLg, side: BorderSide(color: AppColors.black, width: 3)),
                     ),
                   ),
                 ),
@@ -558,7 +558,7 @@ class _PosPageState extends State<PosPage> {
                 : ListView.separated(
                     padding: const EdgeInsets.all(AppSizes.lg),
                     itemCount: lines.length,
-                    separatorBuilder: (_, _) => const Divider(height: 1, color: AppColors.hairline),
+                    separatorBuilder: (_, _) => Divider(height: 1, color: AppColors.hairline),
                     itemBuilder: (_, i) => _CartTile(
                       line: lines[i],
                       onInc: () => _client.setQty(lines[i].productId, lines[i].quantity + 1),

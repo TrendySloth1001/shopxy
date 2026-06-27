@@ -29,7 +29,7 @@ class CategoryPickerSheet extends StatefulWidget {
     return showModalBottomSheet<CategoryPickerResult>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.surface,
       shape: AppShapes.squircleTop(AppSizes.bottomSheetRadius),
       builder: (_) =>
           CategoryPickerSheet(currentSelectionId: currentSelectionId),
@@ -132,7 +132,7 @@ class _CategoryPickerSheetState extends State<CategoryPickerSheet> {
               const SizedBox(height: AppSizes.sm),
               Flexible(child: _buildBody(theme)),
               if (widget.currentSelectionId != null) ...[
-                const Divider(color: AppColors.hairline, height: 1),
+                Divider(color: AppColors.hairline, height: 1),
                 TextButton.icon(
                   onPressed: () => _pick(null),
                   icon: const Icon(Icons.close_rounded, size: AppSizes.iconSm),
@@ -300,7 +300,7 @@ class _ParentRow extends StatelessWidget {
               ],
             ),
           ),
-        const Divider(height: 1, color: AppColors.hairline),
+        Divider(height: 1, color: AppColors.hairline),
       ],
     );
   }
@@ -328,7 +328,7 @@ class _ChildChip extends StatelessWidget {
           vertical: AppSizes.xs,
         ),
         decoration: ShapeDecoration(
-          color: isSelected ? AppColors.black : AppColors.surfaceTint,
+          color: isSelected ? AppColors.inverseSurface : AppColors.surfaceTint,
           shape: AppShapes.squircle(AppSizes.radiusXl),
         ),
         child: Row(
@@ -339,16 +339,16 @@ class _ChildChip extends StatelessWidget {
             Text(
               category.name,
               style: theme.textTheme.bodySmall?.copyWith(
-                color: isSelected ? AppColors.white : AppColors.black,
+                color: isSelected ? AppColors.onInverse : AppColors.black,
                 fontWeight: FontWeight.w600,
               ),
             ),
             if (isSelected) ...[
               const SizedBox(width: AppSizes.xs),
-              const Icon(
+              Icon(
                 Icons.check_rounded,
                 size: AppSizes.iconSm,
-                color: AppColors.white,
+                color: AppColors.onInverse,
               ),
             ],
           ],
@@ -378,7 +378,7 @@ class _CategoryThumb extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: AppColors.surfaceTint,
+        color: AppColors.heroPanel,
         borderRadius:
             BorderRadius.circular(rounded ? size / 2 : AppSizes.radiusSm),
       ),

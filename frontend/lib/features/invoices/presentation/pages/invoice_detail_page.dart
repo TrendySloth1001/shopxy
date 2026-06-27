@@ -676,7 +676,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
           const AppDivider.flush(),
           ListTile(
             contentPadding: EdgeInsets.zero,
-            leading: const Icon(
+            leading: Icon(
               Icons.chat_rounded,
               color: AppColors.whatsapp,
             ),
@@ -702,7 +702,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
             const AppDivider.flush(),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(
+              leading: Icon(
                 Icons.swap_horiz_rounded,
                 color: AppColors.brand,
               ),
@@ -723,7 +723,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
             const AppDivider.flush(),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(
+              leading: Icon(
                 Icons.check_circle_outline_rounded,
                 color: AppColors.success,
               ),
@@ -792,8 +792,8 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
     return SafeArea(
       top: false,
       child: Container(
-        decoration: const BoxDecoration(
-          color: AppColors.white,
+        decoration: BoxDecoration(
+          color: AppColors.surface,
           border: Border(top: BorderSide(color: AppColors.hairline, width: 1)),
         ),
         padding: const EdgeInsets.symmetric(

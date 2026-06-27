@@ -123,7 +123,7 @@ class _VendorsPageState extends State<VendorsPage> {
                                 .read<VendorsProvider>()
                                 .loadVendors(refresh: true),
                             color: AppColors.black,
-                            backgroundColor: AppColors.white,
+                            backgroundColor: AppColors.surface,
                             child: ListView.separated(
                               padding: const EdgeInsets.symmetric(
                                 vertical: AppSizes.sm,
@@ -168,7 +168,7 @@ class _VendorsPageState extends State<VendorsPage> {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.surface,
       builder: (_) => VendorFormSheet(vendor: vendor),
     );
   }
@@ -258,7 +258,7 @@ class _VendorTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Material(
-      color: AppColors.white,
+      color: AppColors.surface,
       child: InkWell(
         onTap: onTap,
         splashColor: AppColors.surfaceTint,
@@ -318,7 +318,7 @@ class _VendorTile extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.more_vert_rounded, color: AppColors.muted),
+                icon: Icon(Icons.more_vert_rounded, color: AppColors.muted),
                 onPressed: () => _showMenu(context),
               ),
             ],
@@ -334,7 +334,7 @@ class _VendorTile extends StatelessWidget {
     final theme = Theme.of(context);
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.surface,
       builder: (_) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -352,11 +352,11 @@ class _VendorTile extends StatelessWidget {
             // wouldn't change anything.
             if (invite?.isAccepted == true)
               ListTile(
-                leading: const Icon(
+                leading: Icon(
                   Icons.verified_rounded,
                   color: AppColors.success,
                 ),
-                title: const Text(
+                title: Text(
                   'Already linked',
                   style: TextStyle(color: AppColors.success),
                 ),
@@ -369,12 +369,12 @@ class _VendorTile extends StatelessWidget {
               )
             else if (invite == null || !invite!.isPending) ...[
               ListTile(
-                leading: const Icon(
+                leading: Icon(
                   Icons.person_add_alt_1_outlined,
                   color: AppColors.brandStrong,
                 ),
                 enabled: _canInvite,
-                title: const Text(
+                title: Text(
                   'Invite to Shopxy',
                   style: TextStyle(color: AppColors.brandStrong),
                 ),
@@ -392,9 +392,9 @@ class _VendorTile extends StatelessWidget {
               ),
             ] else
               ListTile(
-                leading: const Icon(Icons.cancel_schedule_send_outlined,
+                leading: Icon(Icons.cancel_schedule_send_outlined,
                     color: AppColors.warning),
-                title: const Text(
+                title: Text(
                   'Cancel invitation',
                   style: TextStyle(color: AppColors.warning),
                 ),
@@ -407,11 +407,11 @@ class _VendorTile extends StatelessWidget {
                 },
               ),
             ListTile(
-              leading: const Icon(
+              leading: Icon(
                 Icons.delete_outline_rounded,
                 color: AppColors.error,
               ),
-              title: const Text(
+              title: Text(
                 AppStrings.delete,
                 style: TextStyle(color: AppColors.error),
               ),

@@ -36,7 +36,7 @@ class NotificationBell extends StatelessWidget {
                     minHeight: AppSizes.iconSm,
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: AppSizes.xs),
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     color: AppColors.error,
                     shape: BoxShape.circle,
                   ),

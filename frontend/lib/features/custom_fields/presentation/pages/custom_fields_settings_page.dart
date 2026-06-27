@@ -113,7 +113,7 @@ class _CustomFieldsSettingsPageState extends State<CustomFieldsSettingsPage> {
               : RefreshIndicator(
                   onRefresh: () => provider.load(),
                   color: AppColors.black,
-                  backgroundColor: AppColors.white,
+                  backgroundColor: AppColors.surface,
                   child: ListView(
                     padding: const EdgeInsets.fromLTRB(
                       AppSizes.lg,
@@ -194,10 +194,10 @@ class _TemplatesCallout extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Material(
-      color: AppColors.brandSoft,
+      color: AppColors.tileBg(AppColors.brandSoft),
       shape: AppShapes.squircle(
         AppSizes.radiusMd,
-        side: const BorderSide(color: AppColors.brand, width: 1),
+        side: BorderSide(color: AppColors.brand, width: 1),
       ),
       child: InkWell(
         onTap: onTap,
@@ -206,7 +206,7 @@ class _TemplatesCallout extends StatelessWidget {
           padding: const EdgeInsets.all(AppSizes.md),
           child: Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.auto_awesome_rounded,
                 color: AppColors.brandStrong,
               ),
@@ -231,7 +231,7 @@ class _TemplatesCallout extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(
+              Icon(
                 Icons.chevron_right_rounded,
                 color: AppColors.brandStrong,
               ),
@@ -266,10 +266,10 @@ class _SectionCard extends StatelessWidget {
     final fields = section.fields.where((d) => d.isActive).toList();
 
     return Material(
-      color: AppColors.white,
+      color: AppColors.surface,
       shape: AppShapes.squircle(
         AppSizes.radiusMd,
-        side: const BorderSide(color: AppColors.hairline, width: 1),
+        side: BorderSide(color: AppColors.hairline, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -313,7 +313,7 @@ class _SectionCard extends StatelessWidget {
                   ),
                   IconButton(
                     onPressed: onArchiveSection,
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.archive_outlined,
                       color: AppColors.muted,
                     ),
@@ -324,7 +324,7 @@ class _SectionCard extends StatelessWidget {
             ),
           ),
           if (fields.isNotEmpty)
-            const Divider(height: 1, color: AppColors.hairline),
+            Divider(height: 1, color: AppColors.hairline),
           for (int i = 0; i < fields.length; i++) ...[
             _FieldRow(
               field: fields[i],
@@ -332,13 +332,13 @@ class _SectionCard extends StatelessWidget {
               onArchive: () => onArchiveField(fields[i]),
             ),
             if (i < fields.length - 1)
-              const Divider(
+              Divider(
                 height: 1,
                 color: AppColors.hairline,
                 indent: AppSizes.lg,
               ),
           ],
-          const Divider(height: 1, color: AppColors.hairline),
+          Divider(height: 1, color: AppColors.hairline),
           InkWell(
             onTap: onAddField,
             customBorder: AppShapes.squircle(AppSizes.radiusMd),
@@ -349,7 +349,7 @@ class _SectionCard extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.add_rounded, color: AppColors.muted),
+                  Icon(Icons.add_rounded, color: AppColors.muted),
                   const SizedBox(width: AppSizes.sm),
                   Text(
                     AppStrings.addCustomField,
@@ -387,10 +387,10 @@ class _UngroupedSectionCard extends StatelessWidget {
     final active = fields.where((d) => d.isActive).toList();
 
     return Material(
-      color: AppColors.white,
+      color: AppColors.surface,
       shape: AppShapes.squircle(
         AppSizes.radiusMd,
-        side: const BorderSide(color: AppColors.hairline, width: 1),
+        side: BorderSide(color: AppColors.hairline, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -399,7 +399,7 @@ class _UngroupedSectionCard extends StatelessWidget {
             padding: const EdgeInsets.all(AppSizes.md),
             child: Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.label_outline_rounded,
                   color: AppColors.black,
                   size: AppSizes.iconLg,
@@ -428,7 +428,7 @@ class _UngroupedSectionCard extends StatelessWidget {
             ),
           ),
           if (active.isNotEmpty)
-            const Divider(height: 1, color: AppColors.hairline),
+            Divider(height: 1, color: AppColors.hairline),
           for (int i = 0; i < active.length; i++) ...[
             _FieldRow(
               field: active[i],
@@ -436,13 +436,13 @@ class _UngroupedSectionCard extends StatelessWidget {
               onArchive: () => onArchiveField(active[i]),
             ),
             if (i < active.length - 1)
-              const Divider(
+              Divider(
                 height: 1,
                 color: AppColors.hairline,
                 indent: AppSizes.lg,
               ),
           ],
-          const Divider(height: 1, color: AppColors.hairline),
+          Divider(height: 1, color: AppColors.hairline),
           InkWell(
             onTap: onAddField,
             customBorder: AppShapes.squircle(AppSizes.radiusMd),
@@ -453,7 +453,7 @@ class _UngroupedSectionCard extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.add_rounded, color: AppColors.muted),
+                  Icon(Icons.add_rounded, color: AppColors.muted),
                   const SizedBox(width: AppSizes.sm),
                   Text(
                     AppStrings.addCustomField,
@@ -528,10 +528,10 @@ class _SectionCardSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: ShapeDecoration(
-        color: AppColors.white,
+        color: AppColors.surface,
         shape: AppShapes.squircle(
           AppSizes.radiusMd,
-          side: const BorderSide(color: AppColors.hairline, width: 1),
+          side: BorderSide(color: AppColors.hairline, width: 1),
         ),
       ),
       child: Padding(
@@ -667,7 +667,7 @@ class _FieldRow extends StatelessWidget {
               ),
             ),
             IconButton(
-              icon: const Icon(
+              icon: Icon(
                 Icons.archive_outlined,
                 color: AppColors.muted,
                 size: AppSizes.iconMd,

@@ -211,7 +211,7 @@ class _MerchantReturnDetailPageState extends State<MerchantReturnDetailPage> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.account_balance_wallet_outlined,
                             color: AppColors.success,
                           ),
@@ -349,7 +349,7 @@ class _HeaderCardSkeleton extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSizes.lg),
       decoration: ShapeDecoration(
-        color: AppColors.white,
+        color: AppColors.surface,
         shape: AppShapes.squircle(AppSizes.radiusMd),
       ),
       child: Column(
@@ -398,7 +398,7 @@ class _ItemsCardSkeleton extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSizes.md),
       decoration: ShapeDecoration(
-        color: AppColors.white,
+        color: AppColors.surface,
         shape: AppShapes.squircle(AppSizes.radiusMd),
       ),
       child: Column(
@@ -446,7 +446,7 @@ class _TimelineCardSkeleton extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSizes.md),
       decoration: ShapeDecoration(
-        color: AppColors.white,
+        color: AppColors.surface,
         shape: AppShapes.squircle(AppSizes.radiusMd),
       ),
       child: Column(
@@ -488,8 +488,8 @@ class _ActionBarSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.white,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
         border: Border(top: BorderSide(color: AppColors.hairline)),
       ),
       padding: const EdgeInsets.fromLTRB(
@@ -530,7 +530,7 @@ class _HeaderCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSizes.lg),
       decoration: ShapeDecoration(
-        color: AppColors.white,
+        color: AppColors.surface,
         shape: AppShapes.squircle(AppSizes.radiusMd),
       ),
       child: Column(
@@ -574,7 +574,7 @@ class _HeaderCard extends StatelessWidget {
           const SizedBox(height: AppSizes.md),
           Row(
             children: [
-              const Icon(Icons.account_balance_wallet_outlined,
+              Icon(Icons.account_balance_wallet_outlined,
                   size: AppSizes.iconSm, color: AppColors.muted),
               const SizedBox(width: AppSizes.xs),
               Text(
@@ -607,7 +607,7 @@ class _ItemsCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSizes.md),
       decoration: ShapeDecoration(
-        color: AppColors.white,
+        color: AppColors.surface,
         shape: AppShapes.squircle(AppSizes.radiusMd),
       ),
       child: Column(
@@ -664,7 +664,7 @@ class _ItemsCard extends StatelessWidget {
                             horizontal: AppSizes.sm, vertical: AppSizes.xs,
                           ),
                           decoration: ShapeDecoration(
-                            color: AppColors.brandSoft,
+                            color: AppColors.tileBg(AppColors.brandSoft),
                             shape: AppShapes.squircle(AppSizes.radiusSm),
                           ),
                           child: Text(
@@ -699,7 +699,7 @@ class _TimelineCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSizes.md),
       decoration: ShapeDecoration(
-        color: AppColors.white,
+        color: AppColors.surface,
         shape: AppShapes.squircle(AppSizes.radiusMd),
       ),
       child: Column(
@@ -785,7 +785,7 @@ class _NoteCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSizes.md),
       decoration: ShapeDecoration(
-        color: AppColors.white,
+        color: AppColors.surface,
         shape: AppShapes.squircle(AppSizes.radiusMd),
       ),
       child: Row(
@@ -835,8 +835,8 @@ class _ActionBar extends StatelessWidget {
       return const SizedBox.shrink();
     }
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.white,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
         border: Border(top: BorderSide(color: AppColors.hairline)),
       ),
       padding: const EdgeInsets.fromLTRB(
@@ -849,7 +849,7 @@ class _ActionBar extends StatelessWidget {
                 onPressed: busy ? null : onReject,
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.error,
-                  side: const BorderSide(color: AppColors.error),
+                  side: BorderSide(color: AppColors.error),
                 ),
                 child: const Text('Reject'),
               ),

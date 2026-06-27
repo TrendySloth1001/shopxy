@@ -1048,7 +1048,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
             Icon(iconData, size: 18, color: AppColors.muted),
             const SizedBox(width: AppSizes.sm),
             Expanded(child: Text(label, overflow: TextOverflow.ellipsis)),
-            const Icon(Icons.unfold_more_rounded,
+            Icon(Icons.unfold_more_rounded,
                 size: 18, color: AppColors.muted),
           ],
         ),
@@ -1082,13 +1082,13 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                       width: 96,
                       height: 96,
                       decoration: ShapeDecoration(
-                        color: AppColors.white,
+                        color: AppColors.surface,
                         shape: AppShapes.squircle(
                           AppSizes.radiusMd,
                           side: BorderSide(color: AppColors.hairline, width: 1),
                         ),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.broken_image_rounded,
                         color: AppColors.muted,
                       ),
@@ -1108,14 +1108,14 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                     }),
                     child: Container(
                       padding: const EdgeInsets.all(2),
-                      decoration: const BoxDecoration(
-                        color: AppColors.black,
+                      decoration: BoxDecoration(
+                        color: AppColors.inverseSurface,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.close_rounded,
                         size: 14,
-                        color: AppColors.white,
+                        color: AppColors.onInverse,
                       ),
                     ),
                   ),
@@ -1399,10 +1399,10 @@ class _DetailTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(AppSizes.md),
         decoration: ShapeDecoration(
-          color: AppColors.white,
+          color: AppColors.surface,
           shape: AppShapes.squircle(
             AppSizes.radiusMd,
-            side: const BorderSide(color: AppColors.hairline, width: 1),
+            side: BorderSide(color: AppColors.hairline, width: 1),
           ),
         ),
         child: Row(
@@ -1452,7 +1452,7 @@ class _DetailTile extends StatelessWidget {
               ),
               const SizedBox(width: AppSizes.sm),
             ],
-            const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
+            Icon(Icons.chevron_right_rounded, color: AppColors.muted),
           ],
         ),
       ),
@@ -1939,7 +1939,7 @@ class _OffersEditorState extends State<_OffersEditor> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.account_balance_outlined,
+              Icon(Icons.account_balance_outlined,
                   size: AppSizes.iconSm, color: AppColors.info),
               const SizedBox(width: AppSizes.sm),
               Expanded(
