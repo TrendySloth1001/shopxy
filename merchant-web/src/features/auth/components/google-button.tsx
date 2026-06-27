@@ -12,7 +12,7 @@ export function GoogleButton() {
   return (
     <a
       href="/api/auth/google"
-      className="inline-flex h-12 w-full items-center justify-center gap-sm rounded-full border border-hairline bg-white text-label-lg text-ink transition-colors hover:border-brand hover:text-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+      className="inline-flex h-12 w-full items-center justify-center gap-sm rounded-full border border-hairline bg-surface text-label-lg text-ink transition-colors hover:border-brand hover:text-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
     >
       <GoogleLogo />
       Continue with Google

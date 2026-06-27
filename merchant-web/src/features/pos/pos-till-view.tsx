@@ -8,7 +8,7 @@ import {
   Calculator, Undo2, LockOpen, Lock, Search, Printer, Percent, Clock, UserRound, ShieldCheck,
 } from "lucide-react";
 import { mediaSrc } from "@/features/products/components/product-thumb";
-import { formatINR2 } from "@/shared/money";
+import { formatINR2, parseAmount } from "@/shared/money";
 import { usePosSale } from "./use-pos-sale";
 import type { ConnStatus, OpenSaleSummary, SaleLine, TenderMode } from "./types";
 import {
@@ -384,7 +384,8 @@ function ShiftModal({ onClose }: { onClose: () => void }) {
   };
 
   const expected = report?.cash.expected ?? 0;
-  const variance = counted === "" ? null : Number(counted) - expected;
+  const countedNum = parseAmount(counted);
+  const variance = countedNum === null ? null : countedNum - expected;
 
   return (
     <Modal onClose={onClose}>
@@ -401,7 +402,7 @@ function ShiftModal({ onClose }: { onClose: () => void }) {
           <div className="mt-lg">
             <label className="block text-label-md text-muted">Opening float (₹)</label>
             <input value={float} onChange={(e) => setFloat(e.target.value)} inputMode="decimal" placeholder="0.00" autoFocus className="mt-xs h-11 w-full rounded-input border border-hairline bg-canvas px-md text-body-md text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
-            <button type="button" disabled={busy} onClick={() => run(async () => { await openShift(Number(float) || 0); await load(); })} className="mt-md inline-flex h-11 items-center gap-sm rounded-button bg-brand px-lg text-label-md text-white hover:bg-brand-strong disabled:bg-disabled"><LockOpen size={16} /> Open shift</button>
+            <button type="button" disabled={busy} onClick={() => run(async () => { await openShift(parseAmount(float) ?? 0); await load(); })} className="mt-md inline-flex h-11 items-center gap-sm rounded-button bg-brand px-lg text-label-md text-white hover:bg-brand-strong disabled:bg-disabled"><LockOpen size={16} /> Open shift</button>
           </div>
         ) : (
           <div className="mt-lg flex flex-col gap-md">
@@ -430,7 +431,7 @@ function ShiftModal({ onClose }: { onClose: () => void }) {
               <div className="mt-sm flex gap-sm">
                 <input value={mvAmount} onChange={(e) => setMvAmount(e.target.value)} inputMode="decimal" placeholder="Amount ₹" className="h-10 w-28 rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
                 <input value={mvReason} onChange={(e) => setMvReason(e.target.value)} placeholder="Reason" className="h-10 flex-1 rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
-                <button type="button" disabled={busy || !(Number(mvAmount) > 0)} onClick={() => run(async () => { const r = await addCashMovement({ type: mvType, amount: Number(mvAmount), reason: mvReason.trim() || undefined }); setReport(r); setMvAmount(""); setMvReason(""); })} className="inline-flex h-10 items-center rounded-button bg-brand px-md text-label-md text-white hover:bg-brand-strong disabled:bg-disabled">Record</button>
+                <button type="button" disabled={busy || !((parseAmount(mvAmount) ?? 0) > 0)} onClick={() => run(async () => { const r = await addCashMovement({ type: mvType, amount: parseAmount(mvAmount) ?? 0, reason: mvReason.trim() || undefined }); setReport(r); setMvAmount(""); setMvReason(""); })} className="inline-flex h-10 items-center rounded-button bg-brand px-md text-label-md text-white hover:bg-brand-strong disabled:bg-disabled">Record</button>
               </div>
             </div>
 
@@ -438,7 +439,7 @@ function ShiftModal({ onClose }: { onClose: () => void }) {
               <p className="flex items-center gap-xs text-label-md text-muted"><Lock size={14} /> Close shift</p>
               <div className="mt-xs flex gap-sm">
                 <input value={counted} onChange={(e) => setCounted(e.target.value)} inputMode="decimal" placeholder="Counted cash ₹" className="h-10 flex-1 rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
-                <button type="button" disabled={busy || counted === ""} onClick={() => run(async () => { await closeShift({ countedCash: Number(counted) || 0 }); onClose(); })} className="inline-flex h-10 items-center rounded-button bg-ink px-md text-label-md text-white hover:opacity-90 disabled:bg-disabled">Close</button>
+                <button type="button" disabled={busy || countedNum === null} onClick={() => run(async () => { await closeShift({ countedCash: countedNum ?? 0 }); onClose(); })} className="inline-flex h-10 items-center rounded-button bg-inverse-surface px-md text-label-md text-on-inverse hover:opacity-90 disabled:bg-disabled">Close</button>
               </div>
               {variance !== null ? <p className={`mt-xs text-body-sm ${variance === 0 ? "text-success" : "text-warning"}`}>Variance {variance > 0 ? "+" : ""}{formatINR2(variance)} {variance === 0 ? "(balanced)" : variance > 0 ? "(over)" : "(short)"}</p> : null}
             </div>
@@ -677,7 +678,7 @@ function HeldBillsModal({ listOpen, onRecall, onClose }: { listOpen: () => Promi
 
 function Modal({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 px-lg" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim/50 px-lg" onClick={onClose}>
       <div className="rounded-lg border border-hairline bg-canvas p-xl" onClick={(e) => e.stopPropagation()}>{children}</div>
     </div>
   );

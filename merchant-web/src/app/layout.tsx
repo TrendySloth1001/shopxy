@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import { AuthProvider } from "@/features/auth/auth-context";
+import { ThemeProvider } from "@/features/theme/theme-context";
+import { THEME_INIT_SCRIPT } from "@/features/theme/theme";
 import "./globals.css";
 
 // Inter — same typeface as the Flutter merchant app. Exposed as the
@@ -34,9 +36,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${jakarta.variable} h-full`}>
+    <html
+      lang="en"
+      className={`${inter.variable} ${jakarta.variable} h-full`}
+      suppressHydrationWarning
+    >
+      <head>
+        {/* Apply the stored theme to <html> before first paint — no light-mode
+            flash for dark users. Must run before the body renders. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body className="min-h-full bg-canvas text-ink antialiased">
-        <AuthProvider>{children}</AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

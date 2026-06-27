@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Calculator, RefreshCw, LockOpen, Lock, ArrowDownToLine, ArrowUpFromLine, Banknote, Undo2, History, Printer, X } from "lucide-react";
 import { PageHeader } from "@/shared/ui/page-header";
 import { Divider } from "@/shared/ui/divider";
-import { formatINR2 } from "@/shared/money";
+import { formatINR2, parseAmount } from "@/shared/money";
 import { useAuth } from "@/features/auth/auth-context";
 import { isShopOwner } from "@/features/auth/capabilities";
 import {
@@ -240,7 +240,7 @@ function ShiftHistory() {
 
 function ZReportModal({ report, onClose }: { report: ShiftReport; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 px-lg" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim/50 px-lg" onClick={onClose}>
       <div className="max-h-[85vh] w-[460px] max-w-full overflow-y-auto rounded-lg border border-hairline bg-canvas p-lg" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <h2 className="text-title-md text-ink">Z-report</h2>
@@ -297,7 +297,7 @@ function OpenShiftCard({ busy, onOpen }: { busy: boolean; onOpen: (float: number
       <button
         type="button"
         disabled={busy}
-        onClick={() => onOpen(Number(float) || 0)}
+        onClick={() => onOpen(parseAmount(float) ?? 0)}
         className="mt-lg inline-flex h-11 items-center gap-sm rounded-button bg-brand px-lg text-label-md text-white hover:bg-brand-strong disabled:bg-disabled"
       >
         <LockOpen size={16} /> Open shift
@@ -388,8 +388,8 @@ function CashMovementForm({ busy, onSubmit }: { busy: boolean; onSubmit: (i: { t
       <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason (optional)" className="mt-sm h-10 w-full rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
       <button
         type="button"
-        disabled={busy || !(Number(amount) > 0)}
-        onClick={() => { onSubmit({ type, amount: Number(amount), reason: reason.trim() || undefined }); setAmount(""); setReason(""); }}
+        disabled={busy || !((parseAmount(amount) ?? 0) > 0)}
+        onClick={() => { onSubmit({ type, amount: parseAmount(amount) ?? 0, reason: reason.trim() || undefined }); setAmount(""); setReason(""); }}
         className="mt-sm inline-flex h-10 items-center gap-sm rounded-button bg-brand px-lg text-label-md text-white hover:bg-brand-strong disabled:bg-disabled"
       >
         <Icon size={16} /> Record
@@ -401,7 +401,8 @@ function CashMovementForm({ busy, onSubmit }: { busy: boolean; onSubmit: (i: { t
 function CloseShiftForm({ expected, busy, onClose }: { expected: number; busy: boolean; onClose: (counted: number, note?: string) => void }) {
   const [counted, setCounted] = useState("");
   const [note, setNote] = useState("");
-  const variance = counted === "" ? null : Number(counted) - expected;
+  const parsed = parseAmount(counted);
+  const variance = parsed === null ? null : parsed - expected;
   return (
     <div className="rounded-lg border border-hairline p-lg">
       <h2 className="flex items-center gap-sm text-title-md text-ink"><Lock size={18} /> Close shift</h2>
@@ -416,9 +417,9 @@ function CloseShiftForm({ expected, busy, onClose }: { expected: number; busy: b
       <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note (optional)" className="mt-sm h-10 w-full rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
       <button
         type="button"
-        disabled={busy || counted === ""}
-        onClick={() => onClose(Number(counted) || 0, note.trim() || undefined)}
-        className="mt-sm inline-flex h-10 items-center gap-sm rounded-button bg-ink px-lg text-label-md text-white hover:opacity-90 disabled:bg-disabled"
+        disabled={busy || parsed === null}
+        onClick={() => onClose(parsed ?? 0, note.trim() || undefined)}
+        className="mt-sm inline-flex h-10 items-center gap-sm rounded-button bg-inverse-surface px-lg text-label-md text-on-inverse hover:opacity-90 disabled:bg-disabled"
       >
         <Lock size={16} /> Close &amp; print Z-report
       </button>

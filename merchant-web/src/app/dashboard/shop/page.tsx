@@ -353,7 +353,7 @@ export default function ShopPage() {
                         inputMode="numeric"
                         value={form.returnWindowDays}
                         onChange={(e) => patch({ returnWindowDays: e.target.value })}
-                        className="h-10 rounded-input border border-hairline bg-white px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+                        className="h-10 rounded-input border border-hairline bg-surface px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
                       />
                       <span className="text-body-sm text-subtle">0 means no time limit.</span>
                     </label>
@@ -372,7 +372,7 @@ export default function ShopPage() {
                       rows={3}
                       maxLength={2048}
                       placeholder="Anything customers should know — condition requirements, who pays return shipping…"
-                      className="rounded-input border border-hairline bg-white px-md py-sm text-body-md text-ink outline-none placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+                      className="rounded-input border border-hairline bg-surface px-md py-sm text-body-md text-ink outline-none placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
                     />
                   </label>
                 </>
@@ -554,7 +554,7 @@ function TextInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="h-10 rounded-input border border-hairline bg-white px-md text-body-md text-ink outline-none placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+        className="h-10 rounded-input border border-hairline bg-surface px-md text-body-md text-ink outline-none placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
       />
     </label>
   );
@@ -576,7 +576,7 @@ function TextArea({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         rows={3}
-        className="rounded-input border border-hairline bg-white px-md py-sm text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+        className="rounded-input border border-hairline bg-surface px-md py-sm text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
       />
     </label>
   );
@@ -601,7 +601,7 @@ function SelectField<T extends string>({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value as T)}
-        className="h-10 cursor-pointer rounded-input border border-hairline bg-white px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+        className="h-10 cursor-pointer rounded-input border border-hairline bg-surface px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>
@@ -642,7 +642,7 @@ function ToggleRow({
         }`}
       >
         <span
-          className={`inline-block size-5 rounded-full bg-white shadow-floating transition-transform ${
+          className={`inline-block size-5 rounded-full bg-surface shadow-floating transition-transform ${
             checked ? "translate-x-[18px]" : "translate-x-px"
           }`}
         />
@@ -677,14 +677,14 @@ function HoursRow({
             type="time"
             value={value.from}
             onChange={(e) => onChange({ ...value, from: e.target.value })}
-            className="h-9 rounded-input border border-hairline bg-white px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+            className="h-9 rounded-input border border-hairline bg-surface px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
           />
           <span className="text-body-sm text-muted">to</span>
           <input
             type="time"
             value={value.to}
             onChange={(e) => onChange({ ...value, to: e.target.value })}
-            className="h-9 rounded-input border border-hairline bg-white px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+            className="h-9 rounded-input border border-hairline bg-surface px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
           />
         </div>
       ) : (

@@ -128,7 +128,7 @@ export default function TokensPage() {
           {Object.entries(radius).map(([name, px]) => (
             <div key={name} className="flex flex-col items-center gap-sm">
               <span
-                className="size-16 border border-hairline bg-white"
+                className="size-16 border border-hairline bg-surface"
                 style={{ borderRadius: px }}
               />
               <span className="text-body-sm text-subtle">{name}</span>
@@ -143,7 +143,7 @@ export default function TokensPage() {
           {Object.entries(shadow).map(([name, value]) => (
             <div key={name} className="flex flex-col items-center gap-sm">
               <span
-                className="size-20 rounded-lg bg-white"
+                className="size-20 rounded-lg bg-surface"
                 style={{ boxShadow: value }}
               />
               <span className="text-body-sm text-subtle">{name}</span>

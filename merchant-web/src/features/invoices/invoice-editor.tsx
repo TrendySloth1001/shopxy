@@ -475,7 +475,7 @@ function SelectedContact({
 }
 
 const numInput =
-  "h-9 w-full rounded-input border border-hairline bg-white px-sm text-right text-body-sm text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft";
+  "h-9 w-full rounded-input border border-hairline bg-surface px-sm text-right text-body-sm text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft";
 
 function LineRow({
   line,
