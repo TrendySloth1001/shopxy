@@ -3,7 +3,16 @@
 import { use, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Pencil, Trash2, PackagePlus, PackageMinus } from "lucide-react";
+import {
+  ArrowLeft,
+  Pencil,
+  Trash2,
+  PackagePlus,
+  PackageMinus,
+  Share2,
+  Check,
+  ImagePlus,
+} from "lucide-react";
 import { Divider } from "@/shared/ui/divider";
 import {
   deleteProduct,
@@ -12,10 +21,14 @@ import {
 } from "@/features/products/api";
 import type { Product } from "@/features/products/schema";
 import { money, qty } from "@/features/products/format";
+import { gstFromInclusive } from "@/features/products/gst";
 import { unitLabel } from "@/features/products/units";
 import { ProductThumb, mediaSrc } from "@/features/products/components/product-thumb";
 import { StockBadge } from "@/features/products/components/stock-badge";
+import { GstBreakdown } from "@/features/products/components/gst-breakdown";
 import { ContentBlocksView } from "@/features/products/components/content-blocks-view";
+import { ReviewsSummary } from "@/features/reviews/reviews-summary";
+import { Stars } from "@/features/reviews/stars";
 import { DetailSkeleton } from "@/shared/ui/skeleton";
 import { useAuth } from "@/features/auth/auth-context";
 import { canManage } from "@/features/auth/capabilities";
@@ -42,6 +55,7 @@ export default function ProductDetailPage({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [stockSheet, setStockSheet] = useState<StockType | null>(null);
   const [draftId, setDraftId] = useState<number | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -64,6 +78,16 @@ export default function ProductDetailPage({
   }, [productId, nonce]);
 
   const reload = useCallback(() => setNonce((n) => n + 1), []);
+
+  async function onShare() {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // clipboard blocked — no-op; the URL is already in the address bar.
+    }
+  }
 
   async function onTogglePublish() {
     if (!product) return;
@@ -120,6 +144,19 @@ export default function ProductDetailPage({
             SKU {product.sku}
             {product.category?.name ? ` · ${product.category.name}` : ""}
           </p>
+          {product.ratingCount > 0 ? (
+            <div className="mt-xs flex items-center gap-sm">
+              <Stars
+                value={product.ratingAvg ?? 0}
+                size={15}
+                label={`${(product.ratingAvg ?? 0).toFixed(1)} out of 5`}
+              />
+              <span className="text-body-sm text-muted">
+                {(product.ratingAvg ?? 0).toFixed(1)} · {product.ratingCount}{" "}
+                {product.ratingCount === 1 ? "rating" : "ratings"}
+              </span>
+            </div>
+          ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-sm">
           <button
@@ -133,6 +170,14 @@ export default function ProductDetailPage({
             }`}
           >
             {product.isPublished ? "Published" : "Publish"}
+          </button>
+          <button
+            type="button"
+            onClick={onShare}
+            className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+          >
+            {copied ? <Check size={16} /> : <Share2 size={16} />}
+            {copied ? "Copied" : "Share"}
           </button>
           <Link
             href={`/dashboard/products/${product.id}/edit`}
@@ -243,13 +288,28 @@ export default function ProductDetailPage({
                   ? `${Math.round(((product.sellingPrice - product.purchasePrice) / product.sellingPrice) * 100)}%`
                   : "—",
               ],
-              ["Tax", `${product.taxPercent}%`],
+              [
+                "GST",
+                product.taxPercent > 0
+                  ? `${product.taxPercent}% · ${money(gstFromInclusive(product.sellingPrice, product.taxPercent).gst)}`
+                  : "None",
+              ],
               ["Stock", `${qty(product.stockQuantity)} ${unitLabel(product.unit)}`],
               ["Low-stock at", `${qty(product.lowStockThreshold)} ${unitLabel(product.unit)}`],
               ["HSN", product.hsnCode || "—"],
               ["Barcode", product.barcode || "—"],
             ]}
           />
+          <Divider />
+          <div>
+            <h2 className="text-title-sm text-ink">Price &amp; GST breakdown</h2>
+            <div className="mt-md">
+              <GstBreakdown
+                sellingPrice={product.sellingPrice}
+                taxPercent={product.taxPercent}
+              />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -341,6 +401,10 @@ export default function ProductDetailPage({
           />
         </Section>
       ) : null}
+
+      <Section title="Reviews">
+        <ReviewsSummary productId={product.id} />
+      </Section>
     </div>
   );
 }
@@ -360,7 +424,16 @@ function Gallery({ product }: { product: Product }) {
   const [active, setActive] = useState(0);
   const images = product.images;
   if (images.length === 0) {
-    return <ProductThumb url={null} alt={product.name} size={320} />;
+    return (
+      <Link
+        href={`/dashboard/products/${product.id}/edit`}
+        className="group flex aspect-square w-full flex-col items-center justify-center gap-sm rounded-lg border border-dashed border-hairline text-muted transition-colors hover:border-brand hover:text-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+      >
+        <ImagePlus size={32} />
+        <span className="text-label-md">Add photos</span>
+        <span className="text-body-sm text-subtle">No image yet</span>
+      </Link>
+    );
   }
   const main = images[active] ?? images[0];
   return (
