@@ -69,6 +69,44 @@ describe('invoices.service — smoke', () => {
     }
   });
 
+  it('createInvoice — B2B recipient with a GSTIN but no stateCode is charged IGST', async () => {
+    // GST-10 — the party carries a Karnataka (29) GSTIN but its `stateCode`
+    // column was never filled. The engine must fall back to the GSTIN prefix
+    // for the place of supply, so a Maharashtra (27) shop's supply to it is
+    // interstate → IGST, not CGST/SGST. Before the fix the blank stateCode
+    // defaulted the place of supply to the shop's own state (intrastate).
+    const ctx = await createTestUser();
+    try {
+      await prisma.user.update({
+        where: { id: ctx.userId },
+        data: { shopGstin: '27ABCDE1234F1Z5', shopStateCode: '27', registrationType: 'REGULAR' },
+      });
+      const product = await createTestProduct(ctx.shopId, { sellingPrice: 100 });
+      const party = await prisma.party.create({
+        // Karnataka GSTIN (prefix 29), deliberately NO stateCode.
+        data: { shopId: ctx.shopId, name: 'Interstate B2B', gstin: '29ABCDE1234F1Z5' },
+      });
+      const result = await invoicesService.createInvoice({
+        shopId: ctx.shopId,
+        type: 'SALE',
+        partyId: party.id,
+        items: [{ productId: product.id, quantity: 2, unitPrice: 100, taxPercent: 18 }],
+      });
+      expect('error' in result).toBe(false);
+      if ('error' in result) return;
+      const inv = result.invoice;
+      expect(inv.isInterstate).toBe(true);
+      expect(inv.placeOfSupplyStateCode).toBe('29');
+      expect(Number(inv.igstAmount)).toBeCloseTo(36, 2);
+      expect(Number(inv.cgstAmount)).toBe(0);
+      expect(Number(inv.sgstAmount)).toBe(0);
+      expect(Number(inv.total)).toBeCloseTo(236, 2);
+      await prisma.invoice.delete({ where: { id: inv.id } });
+    } finally {
+      await cleanupTestUser(ctx);
+    }
+  });
+
   it('createInvoice — UNREGISTERED shop issues a zero-tax Bill of Supply', async () => {
     // No shopGstin → the shop is not GST-registered and (CGST Sec 32) may
     // not collect tax. Even when the line carries an 18% rate, the engine

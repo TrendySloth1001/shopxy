@@ -94,14 +94,20 @@ export function computeInvoiceTotals(
   const total = Math.round(rawTotal);
   const roundOff = total - rawTotal;
 
+  // CGST/SGST split: round CGST to the paisa and let SGST absorb the remainder
+  // so cgst + sgst === tax exactly (mirrors the backend, which splits the GST
+  // total via `sgst = gstTotal − cgst` rather than two independent halves).
+  const cgst = interstate ? 0 : Math.round((tax / 2) * 100) / 100;
+  const sgst = interstate ? 0 : Math.round((tax - cgst) * 100) / 100;
+
   return {
     subtotal,
     discount,
     taxable,
     tax,
     igst: interstate ? tax : 0,
-    cgst: interstate ? 0 : tax / 2,
-    sgst: interstate ? 0 : tax / 2,
+    cgst,
+    sgst,
     roundOff,
     total,
   };

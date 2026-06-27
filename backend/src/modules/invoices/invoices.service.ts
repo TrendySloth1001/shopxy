@@ -4,7 +4,7 @@ import { enqueueOutbox } from '../../infra/outbox/outbox.js';
 import { Writable } from 'stream';
 import { ledgerService } from '../ledger/ledger.service.js';
 import { nextInvoiceNo } from '../../shared/numbering/sequences.js';
-import { isInterstateSupply, GSTIN_REGEX } from '../../shared/validation/indian.js';
+import { isInterstateSupply, isValidStateCode, GSTIN_REGEX } from '../../shared/validation/indian.js';
 import { amountInWords } from '../../shared/numbering/amount_in_words.js';
 import { renderInvoicePdf } from './invoice-pdf-renderer.js';
 import {
@@ -625,6 +625,20 @@ export class InvoicesService {
     // Bill of Supply so the document type matches the (zero) tax charged.
     if (data.type === 'SALE' && !isShopRegistered && documentType === 'TAX_INVOICE') {
       documentType = 'BILL_OF_SUPPLY';
+    }
+
+    // GST-10 — a B2B recipient's GSTIN encodes its state in the first two
+    // digits. When the party row carries a GSTIN but no explicit `stateCode`
+    // (a common gap on hand-entered parties), fall back to the GSTIN prefix so
+    // an interstate B2B supply isn't silently mis-charged as CGST/SGST. The
+    // shop side already derives its state from its own GSTIN the same way
+    // (shopStateCode above); the recipient side must mirror it, otherwise the
+    // place-of-supply defaults to the shop's state and IGST is never applied.
+    if (data.type === 'SALE' && !customerStateCode && customerGstin) {
+      const gstinStatePrefix = customerGstin.trim().slice(0, 2);
+      if (isValidStateCode(gstinStatePrefix)) {
+        customerStateCode = gstinStatePrefix;
+      }
     }
 
     // Place of supply. For a sale it follows the customer's state; when the

@@ -1,7 +1,9 @@
+import { Writable } from 'stream';
 import prisma from '../../infra/db/prisma.js';
 import { ledgerService } from '../ledger/ledger.service.js';
 import { nextChallanNo } from '../../shared/numbering/sequences.js';
 import { invoicesService } from '../invoices/invoices.service.js';
+import { renderChallanPdf } from './challan-pdf-renderer.js';
 
 export class ChallansService {
   async createChallan(
@@ -315,6 +317,20 @@ export class ChallansService {
     }
 
     return { invoice: result.invoice };
+  }
+
+  /// Stream the Rule 55 delivery-challan PDF into `out`. `onReady` fires right
+  /// before bytes flow (so the controller can flip response headers); returns
+  /// `{ error }` if the challan isn't found for this shop.
+  async streamPdf(
+    shopId: number,
+    id: number,
+    out: Writable,
+    onReady: () => void,
+  ): Promise<{ error: string } | null> {
+    const result = await renderChallanPdf(shopId, id, out, onReady);
+    if (result && typeof result === 'object' && 'error' in result) return result;
+    return null;
   }
 }
 

@@ -2,7 +2,7 @@ import PDFDocument from 'pdfkit';
 import { Prisma } from '@prisma/client';
 import { Writable } from 'stream';
 import prisma from '../../infra/db/prisma.js';
-import { stateNameFromCode } from '../../shared/validation/indian.js';
+import { stateNameFromCode, isInterstateSupply } from '../../shared/validation/indian.js';
 
 /// One stored quotation line (the JSON shape priceItems writes).
 interface QuoteLine {
@@ -11,6 +11,7 @@ interface QuoteLine {
   quantity?: number;
   unitPrice?: number;
   taxPercent?: number;
+  cessRate?: number;
   discount?: number;
   lineTotal?: number;
 }
@@ -61,6 +62,7 @@ export async function renderQuotationPdf(
           shopAddress: true,
           shopCity: true,
           shopState: true,
+          shopStateCode: true,
           shopPinCode: true,
           shopGstin: true,
           shopPan: true,
@@ -258,8 +260,46 @@ export async function renderQuotationPdf(
         doc.text(value, totalsX + (totalsW - 90), y, { width: 90, align: 'right' });
         y += 15;
       };
+      // GST-11 — even on a (non-statutory) quotation, label the tax by the
+      // correct head so a B2B recipient sees the split they'll be billed under.
+      // Interstate is derived from the shop's state vs the quote's place of
+      // supply; the stored `taxAmount` is the same total either way, so we
+      // split it for display (CGST = half rounded to the paisa, SGST absorbs
+      // the remainder — mirrors the invoice engine). A quote with no resolvable
+      // place of supply falls back to the intrastate CGST/SGST presentation.
+      const shopStateCode =
+        owner?.shopStateCode ?? (owner?.shopGstin ? owner.shopGstin.slice(0, 2) : null);
+      const quoteInterstate = isInterstateSupply(
+        shopStateCode,
+        quotation.placeOfSupplyStateCode,
+      );
+      // `taxAmount` bundles GST + compensation cess (priceItems sums both), so
+      // recompute cess from the stored lines and back it out before splitting,
+      // keeping cess out of the CGST/SGST/IGST heads. CGST + SGST + Cess then
+      // re-sum to the stored taxAmount exactly (gst = taxAmount − cess).
+      const D = Prisma.Decimal;
+      const round2 = (v: Prisma.Decimal) => v.toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP);
+      const taxTotal = new D((quotation.taxAmount ?? 0).toString());
+      let cessTotal = new D(0);
+      for (const it of lines) {
+        const qty = new D((it.quantity ?? 0).toString());
+        const unit = new D((it.unitPrice ?? 0).toString());
+        const disc = new D((it.discount ?? 0).toString());
+        const taxable = qty.mul(unit).sub(disc);
+        const lineTaxable = taxable.gt(0) ? taxable : new D(0);
+        cessTotal = cessTotal.add(round2(lineTaxable.mul(new D((it.cessRate ?? 0).toString())).div(100)));
+      }
+      const gstTotal = taxTotal.sub(cessTotal);
       totRow('Subtotal', money(quotation.subtotal));
-      totRow('GST', money(quotation.taxAmount));
+      if (quoteInterstate) {
+        totRow('IGST', money(gstTotal));
+      } else {
+        const cgst = round2(gstTotal.div(2));
+        const sgst = gstTotal.sub(cgst);
+        totRow('CGST', money(cgst));
+        totRow('SGST', money(sgst));
+      }
+      if (cessTotal.gt(0)) totRow('Cess', money(cessTotal));
       doc.moveTo(totalsX, y).lineTo(totalsX + totalsW, y).strokeColor('#9CA3AF').stroke();
       y += 4;
       totRow('Total', money(quotation.total), true);
