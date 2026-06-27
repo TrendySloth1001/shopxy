@@ -52,7 +52,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
               : RefreshIndicator(
                   onRefresh: () => provider.loadTree(),
                   color: AppColors.black,
-                  backgroundColor: AppColors.white,
+                  backgroundColor: AppColors.surface,
                   child: GridView.builder(
                     padding: const EdgeInsets.all(AppSizes.md),
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -179,7 +179,7 @@ class _CategoryImage extends StatelessWidget {
   Widget build(BuildContext context) {
     final url = category.imageUrl;
     final fallback = Container(
-      color: AppColors.surfaceTint,
+      color: AppColors.heroPanel,
       alignment: Alignment.center,
       child: Icon(
         resolveCategoryIcon(category.iconName),
@@ -192,7 +192,7 @@ class _CategoryImage extends StatelessWidget {
       url,
       fit: BoxFit.cover,
       loadingBuilder: (_, child, progress) =>
-          progress == null ? child : Container(color: AppColors.surfaceTint),
+          progress == null ? child : Container(color: AppColors.heroPanel),
       errorBuilder: (_, _, _) => fallback,
     );
   }

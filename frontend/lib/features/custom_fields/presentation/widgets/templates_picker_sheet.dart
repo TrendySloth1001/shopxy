@@ -19,7 +19,7 @@ class TemplatesPickerSheet extends StatefulWidget {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.surface,
       shape: AppShapes.squircleTop(AppSizes.bottomSheetRadius),
       builder: (_) => const TemplatesPickerSheet(),
     );
@@ -136,7 +136,7 @@ class _TemplatesPickerSheetState extends State<TemplatesPickerSheet> {
                 child: ListView.separated(
                   shrinkWrap: true,
                   itemCount: templates.length,
-                  separatorBuilder: (_, _) => const Divider(
+                  separatorBuilder: (_, _) => Divider(
                     height: 1,
                     color: AppColors.hairline,
                   ),
@@ -177,7 +177,7 @@ class _TemplatesPickerSheetState extends State<TemplatesPickerSheet> {
                               child:
                                   CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Icon(
+                          : Icon(
                               Icons.add_rounded,
                               color: AppColors.black,
                             ),

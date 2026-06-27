@@ -142,10 +142,10 @@ class _SectionGroup extends StatelessWidget {
     final theme = Theme.of(context);
     return Container(
       decoration: ShapeDecoration(
-        color: AppColors.white,
+        color: AppColors.surface,
         shape: AppShapes.squircle(
           AppSizes.radiusMd,
-          side: const BorderSide(color: AppColors.hairline, width: 1),
+          side: BorderSide(color: AppColors.hairline, width: 1),
         ),
       ),
       padding: const EdgeInsets.fromLTRB(

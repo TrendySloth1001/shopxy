@@ -110,7 +110,7 @@ class _AreaRow extends StatelessWidget {
           SizedBox(
             width: 52,
             child: info.viewOnly
-                ? const Icon(Icons.remove, size: AppSizes.iconSm, color: AppColors.subtle)
+                ? Icon(Icons.remove, size: AppSizes.iconSm, color: AppColors.subtle)
                 : Checkbox(value: manage, onChanged: (v) => onManage(v ?? false)),
           ),
         ],
@@ -448,7 +448,7 @@ class _RoleChip extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (custom) ...[
-                const Icon(Icons.tune_rounded, size: AppSizes.iconSm, color: AppColors.brandStrong),
+                Icon(Icons.tune_rounded, size: AppSizes.iconSm, color: AppColors.brandStrong),
                 const SizedBox(width: AppSizes.xs),
               ],
               Text(label,

@@ -624,7 +624,7 @@ class _InvoiceRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Material(
-      color: AppColors.white,
+      color: AppColors.surface,
       child: InkWell(
         onTap: () => Navigator.push(
           context,
@@ -837,7 +837,7 @@ class _ChallanRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Material(
-      color: AppColors.white,
+      color: AppColors.surface,
       child: InkWell(
         onTap: () => Navigator.push(
           context,

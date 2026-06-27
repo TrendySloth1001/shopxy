@@ -22,16 +22,16 @@ class QuoteLineThumb extends StatelessWidget {
       return Container(
         width: size,
         height: size,
-        decoration: ShapeDecoration(color: AppColors.brandSoft, shape: shape),
+        decoration: ShapeDecoration(color: AppColors.tileBg(AppColors.brandSoft), shape: shape),
         alignment: Alignment.center,
-        child: const Icon(Icons.inventory_2_outlined,
+        child: Icon(Icons.inventory_2_outlined,
             size: AppSizes.iconMd, color: AppColors.brand),
       );
     }
     return Container(
       width: size,
       height: size,
-      decoration: ShapeDecoration(color: AppColors.white, shape: shape),
+      decoration: ShapeDecoration(color: AppColors.surface, shape: shape),
       child: ClipPath(
         clipper: ShapeBorderClipper(shape: shape),
         child: CachedNetworkImage(
@@ -39,9 +39,9 @@ class QuoteLineThumb extends StatelessWidget {
           fit: BoxFit.cover,
           placeholder: (_, _) => Container(color: AppColors.heroPanel),
           errorWidget: (_, _, _) => Container(
-            color: AppColors.brandSoft,
+            color: AppColors.tileBg(AppColors.brandSoft),
             alignment: Alignment.center,
-            child: const Icon(Icons.inventory_2_outlined,
+            child: Icon(Icons.inventory_2_outlined,
                 size: AppSizes.iconMd, color: AppColors.brand),
           ),
         ),

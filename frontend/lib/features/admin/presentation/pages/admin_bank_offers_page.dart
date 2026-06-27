@@ -162,10 +162,10 @@ class _OfferRowSkeleton extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: AppSizes.sm),
       child: DecoratedBox(
         decoration: ShapeDecoration(
-          color: AppColors.white,
+          color: AppColors.surface,
           shape: AppShapes.squircle(
             AppSizes.radiusMd,
-            side: const BorderSide(color: AppColors.hairline, width: 1),
+            side: BorderSide(color: AppColors.hairline, width: 1),
           ),
         ),
         child: Padding(
@@ -234,7 +234,7 @@ class _OfferRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSizes.sm),
       child: Material(
-        color: AppColors.white,
+        color: AppColors.surface,
         shape: AppShapes.squircle(AppSizes.radiusMd),
         child: InkWell(
           customBorder: AppShapes.squircle(AppSizes.radiusMd),
@@ -321,10 +321,10 @@ class _EmptyBlock extends StatelessWidget {
         padding: const EdgeInsets.all(AppSizes.xl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: const [
+          children: [
             Icon(Icons.account_balance_outlined,
                 size: AppSizes.iconHuge, color: AppColors.subtle),
-            SizedBox(height: AppSizes.md),
+            const SizedBox(height: AppSizes.md),
             Text(
               'No bank offers yet. Tap "New offer" to curate the first one.',
               textAlign: TextAlign.center,

@@ -19,7 +19,7 @@ Future<Party?> showPartyPicker(BuildContext context) {
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
-    backgroundColor: AppColors.white,
+    backgroundColor: AppColors.surface,
     builder: (_) => const _PartyPickerSheet(),
   );
 }
@@ -73,7 +73,7 @@ class _PartyPickerSheetState extends State<_PartyPickerSheet> {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.surface,
       builder: (_) => const PartyFormSheet(),
     );
     if (created != null && mounted) {
@@ -148,7 +148,7 @@ class _PartyPickerSheetState extends State<_PartyPickerSheet> {
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Icon(
+                                    Icon(
                                       Icons.groups_outlined,
                                       size: AppSizes.iconXl,
                                       color: AppColors.muted,

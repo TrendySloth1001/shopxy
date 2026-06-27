@@ -60,7 +60,7 @@ class RecordPaymentSheet extends StatefulWidget {
     return showModalBottomSheet<Payment>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.surface,
       shape: AppShapes.squircleTop(AppSizes.bottomSheetRadius),
       builder: (_) => RecordPaymentSheet(
         type: type,

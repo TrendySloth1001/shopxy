@@ -260,7 +260,7 @@ class _ProfileHero extends StatelessWidget {
       ),
       decoration: ShapeDecoration(
         shape: AppShapes.squircle(AppSizes.radiusLg),
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
@@ -280,7 +280,7 @@ class _ProfileHero extends StatelessWidget {
                 padding: const EdgeInsets.all(AppSizes.xs),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.white,
+                  color: AppColors.surface,
                   boxShadow: AppShadows.floating,
                 ),
                 child: ProfileAvatar(
@@ -358,8 +358,8 @@ class _ProfileHero extends StatelessWidget {
               label: const Text(AppStrings.editProfile),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.brandStrong,
-                backgroundColor: AppColors.white,
-                side: const BorderSide(color: AppColors.hairline),
+                backgroundColor: AppColors.surface,
+                side: BorderSide(color: AppColors.hairline),
                 shape: AppShapes.squircle(AppSizes.radiusFull),
                 padding: const EdgeInsets.symmetric(
                   vertical: AppSizes.md,
@@ -389,7 +389,7 @@ class _ShopSetupCallout extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Material(
-      color: AppColors.accentAmberSoft,
+      color: AppColors.tileBg(AppColors.accentAmberSoft),
       shape: AppShapes.squircle(AppSizes.radiusMd),
       child: InkWell(
         onTap: onTap,
@@ -402,11 +402,11 @@ class _ShopSetupCallout extends StatelessWidget {
                 width: AppSizes.xxxl,
                 height: AppSizes.xxxl,
                 decoration: ShapeDecoration(
-                  color: AppColors.white,
+                  color: AppColors.surface,
                   shape: AppShapes.squircle(AppSizes.radiusSm),
                 ),
                 alignment: Alignment.center,
-                child: const Icon(
+                child: Icon(
                   Icons.storefront_rounded,
                   size: AppSizes.iconMd,
                   color: AppColors.accentAmber,
@@ -434,7 +434,7 @@ class _ShopSetupCallout extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(
+              Icon(
                 Icons.chevron_right_rounded,
                 color: AppColors.accentAmber,
               ),
@@ -492,10 +492,10 @@ class _ProfileCompletion extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSizes.lg),
       decoration: ShapeDecoration(
-        color: AppColors.white,
+        color: AppColors.surface,
         shape: AppShapes.squircle(
           AppSizes.radiusMd,
-          side: const BorderSide(color: AppColors.hairline),
+          side: BorderSide(color: AppColors.hairline),
         ),
       ),
       child: Column(
@@ -540,7 +540,7 @@ class _ProfileCompletion extends StatelessWidget {
               minHeight: 8,
               backgroundColor: AppColors.surfaceTint,
               valueColor:
-                  const AlwaysStoppedAnimation<Color>(AppColors.brand),
+                  AlwaysStoppedAnimation<Color>(AppColors.brand),
             ),
           ),
           if (missing.isNotEmpty) ...[
@@ -619,8 +619,8 @@ class _ManageCard extends StatelessWidget {
     for (var i = 0; i < children.length; i++) {
       if (i > 0) {
         rows.add(
-          const Padding(
-            padding: EdgeInsets.only(left: AppSizes.lg + AppSizes.xxxl + AppSizes.md),
+          Padding(
+            padding: const EdgeInsets.only(left: AppSizes.lg + AppSizes.xxxl + AppSizes.md),
             child: Divider(height: 1, color: AppColors.hairline),
           ),
         );
@@ -630,10 +630,10 @@ class _ManageCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
       decoration: ShapeDecoration(
-        color: AppColors.white,
+        color: AppColors.surface,
         shape: AppShapes.squircle(
           AppSizes.radiusMd,
-          side: const BorderSide(color: AppColors.hairline),
+          side: BorderSide(color: AppColors.hairline),
         ),
       ),
       child: Column(children: rows),
@@ -703,7 +703,7 @@ class _ManageTile extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded, color: AppColors.subtle),
+            Icon(Icons.chevron_right_rounded, color: AppColors.subtle),
           ],
         ),
       ),
@@ -775,7 +775,7 @@ class _MetaChip extends StatelessWidget {
         vertical: 3,
       ),
       decoration: ShapeDecoration(
-        color: AppColors.white,
+        color: AppColors.surface,
         shape: AppShapes.squircle(AppSizes.radiusFull),
       ),
       child: Row(
@@ -853,7 +853,7 @@ class ProfileAvatar extends StatelessWidget {
   /// Picks one of a handful of soft/strong pairs based on the user's
   /// name. Stable across reloads — same name → same colour.
   static (Color, Color) _paletteFor(String name) {
-    const pairs = <(Color, Color)>[
+    final pairs = <(Color, Color)>[
       (AppColors.brandSoft, AppColors.brandStrong),
       (AppColors.accentTealSoft, AppColors.accentTeal),
       (AppColors.accentIndigoSoft, AppColors.accentIndigo),

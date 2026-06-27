@@ -31,11 +31,11 @@ class AppIconAvatar extends StatelessWidget {
       width: size,
       height: size,
       decoration: ShapeDecoration(
-        color: filled ? AppColors.black : AppColors.white,
+        color: filled ? AppColors.inverseSurface : AppColors.surface,
         shape: AppShapes.squircle(
           AppSizes.radiusMd,
           side: BorderSide(
-            color: filled ? AppColors.black : AppColors.hairline,
+            color: filled ? AppColors.inverseSurface : AppColors.hairline,
             width: 1,
           ),
         ),
@@ -43,13 +43,13 @@ class AppIconAvatar extends StatelessWidget {
       child: Icon(
         icon,
         size: size * 0.5,
-        color: filled ? AppColors.white : AppColors.black,
+        color: filled ? AppColors.onInverse : AppColors.black,
       ),
     );
   }
 }
 
-/// Circular monogram avatar — letter on hairline-bordered white circle.
+/// Circular monogram avatar — letter on hairline-bordered surface circle.
 class AppMonogramAvatar extends StatelessWidget {
   const AppMonogramAvatar({super.key, required this.label, this.size = AppSizes.avatarSm});
 
@@ -65,13 +65,13 @@ class AppMonogramAvatar extends StatelessWidget {
       height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: AppColors.black,
+        color: AppColors.inverseSurface,
         shape: BoxShape.circle,
       ),
       child: Text(
         letter,
         style: theme.textTheme.labelLarge?.copyWith(
-          color: AppColors.white,
+          color: AppColors.onInverse,
           fontWeight: FontWeight.w700,
         ),
       ),

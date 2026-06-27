@@ -146,7 +146,7 @@ class _CollectionRow extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(AppSizes.md),
         decoration: ShapeDecoration(
-          color: AppColors.white,
+          color: AppColors.surface,
           shape: AppShapes.squircle(AppSizes.radiusLg),
         ),
         child: Row(
@@ -160,7 +160,7 @@ class _CollectionRow extends StatelessWidget {
                 shape: AppShapes.squircle(AppSizes.radiusMd),
               ),
               child: collection.coverImageUrl == null
-                  ? const Icon(Icons.collections_bookmark, color: AppColors.muted)
+                  ? Icon(Icons.collections_bookmark, color: AppColors.muted)
                   : Image.network(
                       resolveImageUrl(collection.coverImageUrl!),
                       fit: BoxFit.cover,
@@ -256,7 +256,7 @@ class _CollectionRowSkeleton extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSizes.md),
       decoration: ShapeDecoration(
-        color: AppColors.white,
+        color: AppColors.surface,
         shape: AppShapes.squircle(AppSizes.radiusLg),
       ),
       child: Row(

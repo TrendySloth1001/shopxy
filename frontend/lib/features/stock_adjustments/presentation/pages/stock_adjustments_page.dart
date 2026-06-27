@@ -96,7 +96,7 @@ class _StockAdjustmentsPageState extends State<StockAdjustmentsPage> {
     return RefreshIndicator(
       onRefresh: _load,
       color: AppColors.black,
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.surface,
       child: ListView.separated(
         padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
         itemCount: _items.length,

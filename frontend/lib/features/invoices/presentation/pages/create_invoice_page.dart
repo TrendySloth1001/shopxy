@@ -532,8 +532,8 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
       bottomNavigationBar: SafeArea(
         child: Container(
           padding: const EdgeInsets.all(AppSizes.lg),
-          decoration: const BoxDecoration(
-            color: AppColors.white,
+          decoration: BoxDecoration(
+            color: AppColors.surface,
             border: Border(top: BorderSide(color: AppColors.hairline)),
           ),
           child: Row(
@@ -545,7 +545,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                   label: Text(_isEditing ? 'Update draft' : 'Save as draft'),
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size.fromHeight(AppSizes.huge),
-                    side: const BorderSide(color: AppColors.hairline),
+                    side: BorderSide(color: AppColors.hairline),
                   ),
                 ),
               ),
@@ -555,12 +555,12 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                 child: FilledButton.icon(
                   onPressed: _isSaving ? null : () => _save(confirm: true),
                   icon: _isSaving
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: AppSizes.iconSm,
                           height: AppSizes.iconSm,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: AppColors.white,
+                            color: AppColors.onInverse,
                           ),
                         )
                       : const Icon(Icons.check_rounded),
@@ -1027,7 +1027,7 @@ class _ItemRow extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.close_rounded,
                     color: AppColors.error,
                     size: AppSizes.iconMd,

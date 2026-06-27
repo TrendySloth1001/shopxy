@@ -28,7 +28,7 @@ class AppCard extends StatelessWidget {
     );
 
     return Material(
-      color: AppColors.white,
+      color: AppColors.surface,
       shape: shape,
       child: InkWell(
         onTap: onTap,

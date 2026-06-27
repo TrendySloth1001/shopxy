@@ -270,7 +270,7 @@ class _AdminBannerEditorSheetState extends State<AdminBannerEditorSheet> {
           ),
           clipBehavior: Clip.antiAlias,
           child: _imageUrl == null
-              ? const Icon(Icons.image_outlined, color: AppColors.muted)
+              ? Icon(Icons.image_outlined, color: AppColors.muted)
               : Image.network(
                   resolveImageUrl(_imageUrl!),
                   fit: BoxFit.cover,

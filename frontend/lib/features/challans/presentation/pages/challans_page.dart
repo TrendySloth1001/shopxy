@@ -110,7 +110,7 @@ class _ChallansPageState extends State<ChallansPage> {
                         onRefresh: () =>
                             context.read<ChallansProvider>().loadChallans(),
                         color: AppColors.black,
-                        backgroundColor: AppColors.white,
+                        backgroundColor: AppColors.surface,
                         child: ListView.separated(
                           padding: const EdgeInsets.symmetric(
                             vertical: AppSizes.sm,
@@ -225,7 +225,7 @@ class _ChallanTile extends StatelessWidget {
     final df = DateFormat('dd MMM yyyy');
 
     return Material(
-      color: AppColors.white,
+      color: AppColors.surface,
       child: InkWell(
         onTap: onTap,
         splashColor: AppColors.surfaceTint,

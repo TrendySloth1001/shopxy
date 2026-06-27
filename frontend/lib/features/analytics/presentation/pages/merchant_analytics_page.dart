@@ -117,7 +117,7 @@ class _RangeBar extends StatelessWidget {
           vertical: AppSizes.sm,
         ),
         decoration: ShapeDecoration(
-          color: AppColors.white,
+          color: AppColors.surface,
           shape: AppShapes.squircle(AppSizes.radiusMd),
         ),
         child: Row(
@@ -168,7 +168,7 @@ class _Kpi extends StatelessWidget {
       width: 150,
       padding: const EdgeInsets.all(AppSizes.md),
       decoration: ShapeDecoration(
-        color: AppColors.white,
+        color: AppColors.surface,
         shape: AppShapes.squircle(AppSizes.radiusMd),
       ),
       child: Column(

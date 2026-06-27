@@ -229,7 +229,7 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
               padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
               child: Row(
                 children: [
-                  const Icon(Icons.person_outline_rounded,
+                  Icon(Icons.person_outline_rounded,
                       color: AppColors.muted),
                   const SizedBox(width: AppSizes.md),
                   Expanded(
@@ -252,7 +252,7 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
                 padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
                 child: Row(
                   children: [
-                    const Icon(Icons.person_outline_rounded,
+                    Icon(Icons.person_outline_rounded,
                         color: AppColors.muted),
                     const SizedBox(width: AppSizes.md),
                     Expanded(
@@ -264,7 +264,7 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
                         ),
                       ),
                     ),
-                    const Icon(Icons.chevron_right_rounded,
+                    Icon(Icons.chevron_right_rounded,
                         color: AppColors.muted),
                   ],
                 ),
@@ -311,7 +311,7 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
                     subtitle: Text(
                       '${_currency.format(_results[i].sellingPrice)} · ${_results[i].taxPercent.toStringAsFixed(0)}% GST · stock ${_results[i].stockQuantity.toStringAsFixed(0)}',
                     ),
-                    trailing: const Icon(Icons.add_circle_outline_rounded,
+                    trailing: Icon(Icons.add_circle_outline_rounded,
                         color: AppColors.brand),
                     onTap: () => _addProduct(_results[i]),
                   ),

@@ -771,10 +771,10 @@ class _PublishCardSkeleton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(AppSizes.lg),
         decoration: ShapeDecoration(
-          color: AppColors.white,
+          color: AppColors.surface,
           shape: AppShapes.squircle(
             AppSizes.radiusLg,
-            side: const BorderSide(color: AppColors.hairline),
+            side: BorderSide(color: AppColors.hairline),
           ),
         ),
         child: Row(
@@ -865,9 +865,9 @@ class _BannerEditor extends StatelessWidget {
                 const _BannerPlaceholder(),
               if (isUploading)
                 Container(
-                  color: AppColors.black.withValues(alpha: 0.3),
+                  color: AppColors.scrim,
                   alignment: Alignment.center,
-                  child: const CircularProgressIndicator(color: AppColors.white),
+                  child: CircularProgressIndicator(color: AppColors.onInverse),
                 ),
               Positioned(
                 right: AppSizes.md,
@@ -906,7 +906,7 @@ class _BannerPlaceholder extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.image_outlined,
               size: AppSizes.iconXl,
               color: AppColors.muted,
@@ -945,10 +945,10 @@ class _LogoEditor extends StatelessWidget {
             width: 72,
             height: 72,
             decoration: ShapeDecoration(
-              color: AppColors.white,
+              color: AppColors.surface,
               shape: AppShapes.squircle(
                 AppSizes.radiusLg,
-                side: const BorderSide(color: AppColors.hairline),
+                side: BorderSide(color: AppColors.hairline),
               ),
             ),
             clipBehavior: Clip.antiAlias,
@@ -956,12 +956,12 @@ class _LogoEditor extends StatelessWidget {
                 ? Image.network(
                     resolveImageUrl(url!),
                     fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => const Icon(
+                    errorBuilder: (_, _, _) => Icon(
                       Icons.storefront_outlined,
                       color: AppColors.muted,
                     ),
                   )
-                : const Icon(
+                : Icon(
                     Icons.add_a_photo_outlined,
                     color: AppColors.muted,
                   ),
@@ -969,14 +969,14 @@ class _LogoEditor extends StatelessWidget {
           if (isUploading)
             Positioned.fill(
               child: ColoredBox(
-                color: AppColors.black.withValues(alpha: 0.5),
-                child: const Center(
+                color: AppColors.scrim,
+                child: Center(
                   child: SizedBox(
                     width: AppSizes.iconLg,
                     height: AppSizes.iconLg,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: AppColors.white,
+                      color: AppColors.onInverse,
                     ),
                   ),
                 ),
@@ -991,14 +991,14 @@ class _LogoEditor extends StatelessWidget {
                 child: Container(
                   width: 22,
                   height: 22,
-                  decoration: const BoxDecoration(
-                    color: AppColors.black,
+                  decoration: BoxDecoration(
+                    color: AppColors.inverseSurface,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.close,
                     size: AppSizes.iconSm,
-                    color: AppColors.white,
+                    color: AppColors.onInverse,
                   ),
                 ),
               ),
@@ -1022,7 +1022,7 @@ class _ImageActionChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.white,
+      color: AppColors.surface,
       shape: AppShapes.squircle(AppSizes.radiusFull),
       child: InkWell(
         onTap: onTap,
@@ -1065,10 +1065,10 @@ class _PublishCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(AppSizes.lg),
         decoration: ShapeDecoration(
-          color: AppColors.white,
+          color: AppColors.surface,
           shape: AppShapes.squircle(
             AppSizes.radiusLg,
-            side: const BorderSide(color: AppColors.hairline),
+            side: BorderSide(color: AppColors.hairline),
           ),
         ),
         child: Row(
