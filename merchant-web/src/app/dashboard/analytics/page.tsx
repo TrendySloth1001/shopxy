@@ -104,7 +104,7 @@ export default function AnalyticsTablePage() {
       <Divider className="my-xxl" />
       <div className="flex flex-wrap items-center justify-between gap-sm">
         <SectionHeading>By product</SectionHeading>
-        <div className="flex w-full items-center gap-sm rounded-input border border-hairline bg-white px-md focus-within:border-brand focus-within:ring-2 focus-within:ring-brand-soft sm:w-64">
+        <div className="flex w-full items-center gap-sm rounded-input border border-hairline bg-surface px-md focus-within:border-brand focus-within:ring-2 focus-within:ring-brand-soft sm:w-64">
           <Search size={15} className="shrink-0 text-subtle" />
           <input
             value={search}

@@ -28,6 +28,7 @@ import {
   NotificationsToggle,
   SettingRow,
 } from "@/features/settings/components";
+import { ThemePicker } from "@/features/theme/theme-picker";
 
 type SectionKey =
   | "account"
@@ -161,11 +162,19 @@ export default function SettingsPage() {
             ) : null}
 
             {active === "preferences" ? (
-              <TileGrid>
-                <SettingRow tile icon={IndianRupee} title="Currency" subtitle="Indian Rupee (₹)" />
-                <SettingRow tile icon={Palette} title="Theme" subtitle="Light" trailing={<ComingSoon />} />
-                <SettingRow tile icon={Languages} title="Language" subtitle="English" trailing={<ComingSoon />} />
-              </TileGrid>
+              <div className="space-y-xxl">
+                <div>
+                  <h3 className="text-title-sm text-ink">Theme</h3>
+                  <p className="mb-md mt-xs text-body-sm text-muted">
+                    Choose how ShopXY looks on this device.
+                  </p>
+                  <ThemePicker />
+                </div>
+                <TileGrid>
+                  <SettingRow tile icon={IndianRupee} title="Currency" subtitle="Indian Rupee (₹)" />
+                  <SettingRow tile icon={Languages} title="Language" subtitle="English" trailing={<ComingSoon />} />
+                </TileGrid>
+              </div>
             ) : null}
 
             {active === "privacy" ? (

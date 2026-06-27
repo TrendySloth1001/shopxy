@@ -48,7 +48,7 @@ export function PeriodSwitcher({
             onClick={() => onChange(p)}
             onKeyDown={(e) => onKeyDown(e, i)}
             className={`rounded-[6px] px-md py-xs text-label-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft ${
-              selected ? "bg-ink text-white" : "text-muted hover:text-ink hover:bg-surface-tint"
+              selected ? "bg-inverse-surface text-on-inverse" : "text-muted hover:text-ink hover:bg-surface-tint"
             }`}
           >
             {PERIOD_LABEL[p]}

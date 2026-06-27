@@ -149,7 +149,7 @@ export function Sidebar() {
 
   const brand = (
     <span className="flex items-center gap-md">
-      <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-ink text-label-lg text-white">
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-inverse-surface text-label-lg text-on-inverse">
         S
       </span>
       <span className="truncate text-label-lg text-ink">
@@ -178,7 +178,7 @@ export function Sidebar() {
 
         <div className={`flex h-14 items-center px-md ${collapsed ? "justify-center" : ""}`}>
           {collapsed ? (
-            <span className="flex size-8 items-center justify-center rounded-md bg-ink text-label-lg text-white">S</span>
+            <span className="flex size-8 items-center justify-center rounded-md bg-inverse-surface text-label-lg text-on-inverse">S</span>
           ) : (
             brand
           )}
@@ -191,7 +191,7 @@ export function Sidebar() {
         {collapsed && tip ? (
           <div
             role="tooltip"
-            className="pointer-events-none fixed left-16 z-50 ml-sm -translate-y-1/2 whitespace-nowrap rounded-md bg-ink px-sm py-xs text-label-md text-white shadow-floating"
+            className="pointer-events-none fixed left-16 z-50 ml-sm -translate-y-1/2 whitespace-nowrap rounded-md bg-inverse-surface px-sm py-xs text-label-md text-on-inverse shadow-floating"
             style={{ top: tip.y }}
           >
             {tip.label}
@@ -233,7 +233,7 @@ export function Sidebar() {
           aria-label="Close menu"
           tabIndex={mobileOpen ? 0 : -1}
           onClick={closeMobile}
-          className={`absolute inset-0 bg-ink/40 transition-opacity duration-medium ${mobileOpen ? "opacity-100" : "opacity-0"}`}
+          className={`absolute inset-0 bg-scrim/40 transition-opacity duration-medium ${mobileOpen ? "opacity-100" : "opacity-0"}`}
         />
         <div
           className={`absolute inset-y-0 left-0 flex w-72 max-w-[82%] flex-col bg-canvas shadow-floating transition-transform duration-medium ${

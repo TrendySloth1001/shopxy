@@ -1,6 +1,6 @@
 {
   "name": "shopxy-merchant-desktop",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "private": true,
   "description": "ShopXY Merchant — cross-platform desktop shell (Electron) for the merchant-web app.",
   "main": "main.js",
@@ -9,9 +9,10 @@
   "scripts": {
     "dev": "cross-env SHOPXY_DESKTOP_DEV=1 electron .",
     "start": "electron .",
+    "clean": "node ./scripts/clean.js",
     "build:web": "cross-env DESKTOP_BUILD=1 npm --prefix ../merchant-web run build",
     "stage:web": "node ./scripts/stage-web.js",
-    "prepack:web": "npm run build:web && npm run stage:web",
+    "prepack:web": "npm run clean && npm run build:web && npm run stage:web",
     "pack": "npm run prepack:web && electron-builder --dir",
     "dist": "npm run prepack:web && electron-builder",
     "dist:mac": "npm run prepack:web && electron-builder --mac",

@@ -23,6 +23,10 @@ type DesktopBridge = {
   rememberCurrentAccount: () => Promise<{ ok: boolean }>;
   resumeAccount: (id: number) => Promise<ResumeResult>;
   forgetAccount: (id: number) => Promise<{ ok: boolean }>;
+  /** Persist the chosen theme so the native window background matches on the
+   *  next cold start, and re-tint the live Electron chrome. Optional: older
+   *  desktop builds won't expose it. */
+  setTheme?: (theme: string) => Promise<{ ok: boolean }>;
 };
 
 function bridge(): DesktopBridge | null {
@@ -67,5 +71,17 @@ export async function forgetAccount(id: number): Promise<void> {
     await b.forgetAccount(id);
   } catch {
     /* best effort */
+  }
+}
+
+/** Tell the desktop shell about a theme change. No-op on the browser build and
+ *  on older desktop builds that predate the bridge method. */
+export async function setDesktopTheme(theme: string): Promise<void> {
+  const b = bridge();
+  if (!b?.setTheme) return;
+  try {
+    await b.setTheme(theme);
+  } catch {
+    /* best effort — the web layer already applied the theme. */
   }
 }

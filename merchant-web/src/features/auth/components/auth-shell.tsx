@@ -168,7 +168,7 @@ function HeaderChip({
 }) {
   const styles =
     variant === "ink"
-      ? "border-ink bg-ink text-white hover:bg-ink/90"
+      ? "border-ink bg-inverse-surface text-on-inverse hover:bg-ink/90"
       : "border-hairline text-ink hover:bg-surface-tint";
   return (
     <Link

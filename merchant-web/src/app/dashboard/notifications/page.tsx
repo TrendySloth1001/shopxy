@@ -86,14 +86,14 @@ function Tab({
       onClick={onClick}
       aria-current={active ? "page" : undefined}
       className={`inline-flex h-9 items-center gap-sm rounded-button px-md text-label-md transition-colors ${
-        active ? "bg-ink text-white" : "border border-hairline text-ink hover:bg-surface-tint"
+        active ? "bg-inverse-surface text-on-inverse" : "border border-hairline text-ink hover:bg-surface-tint"
       }`}
     >
       {label}
       {badge > 0 ? (
         <span
           className={`inline-flex h-4 min-w-4 items-center justify-center rounded-full px-xs text-label-md ${
-            active ? "bg-white/20 text-white" : "bg-error text-white"
+            active ? "bg-on-inverse/20 text-on-inverse" : "bg-error text-white"
           }`}
         >
           {badge > 99 ? "99+" : badge}

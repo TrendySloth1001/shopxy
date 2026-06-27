@@ -168,7 +168,7 @@ export default function CategoryProductsPage() {
         <Package size={18} className="text-subtle" /> Products
       </h2>
 
-      <div className="flex items-center gap-sm rounded-input border border-hairline bg-white px-md focus-within:border-brand focus-within:ring-2 focus-within:ring-brand-soft">
+      <div className="flex items-center gap-sm rounded-input border border-hairline bg-surface px-md focus-within:border-brand focus-within:ring-2 focus-within:ring-brand-soft">
         <Search size={16} className="shrink-0 text-subtle" />
         <input
           value={searchInput}

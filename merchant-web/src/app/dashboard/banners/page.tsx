@@ -124,7 +124,7 @@ function BannerCard({ banner, onDelete }: { banner: Banner; onDelete: () => void
           </div>
         )}
         {!banner.isActive ? (
-          <span className="absolute left-sm top-sm rounded-full bg-white/85 px-sm py-px text-body-sm font-semibold text-muted">
+          <span className="absolute left-sm top-sm rounded-full bg-surface/85 px-sm py-px text-body-sm font-semibold text-muted">
             Off
           </span>
         ) : null}
