@@ -1,13 +1,16 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:shopxy/core/auth/remembered_accounts.dart';
 import 'package:shopxy/features/auth/presentation/pages/register_page.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
+import 'package:shopxy/features/auth/presentation/widgets/auth_scaffold.dart';
+import 'package:shopxy/features/profile/presentation/pages/legal_page.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
-import 'package:shopxy/shared/widgets/glass_widgets.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 
 class LoginPage extends StatefulWidget {
@@ -21,7 +24,6 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _email = TextEditingController();
   final _password = TextEditingController();
-  bool _obscure = true;
   bool _isLoading = false;
   String? _error;
 
@@ -40,104 +42,193 @@ class _LoginPageState extends State<LoginPage> {
     });
     try {
       await context.read<AuthProvider>().login(
-        _email.text.trim(),
-        _password.text,
-      );
+            _email.text.trim(),
+            _password.text,
+          );
     } catch (e) {
-      if (mounted) {
-        setState(
-          () => _error = friendlyError(e),
-        );
-      }
+      if (mounted) setState(() => _error = friendlyError(e));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
+  void _goToRegister() => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const RegisterPage()),
+      );
+
+  void _googleSoon() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Google sign-in is coming soon — please use your email for now.',
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Form(
+      key: _formKey,
+      child: AuthScaffold(
+        title: AppStrings.welcomeBack,
+        subtitle: 'Sign in to manage your inventory, invoices and customers.',
+        onSignIn: () {},
+        onCreateAccount: _goToRegister,
+        footerPrompt: 'New to ShopXY?',
+        footerCta: 'Create an account',
+        onFooterTap: _goToRegister,
+        children: [
+          const _RememberedAccountsSection(),
+          GoogleButton(onTap: _googleSoon),
+          const SizedBox(height: AppSizes.lg),
+          const AuthOrDivider(),
+          const SizedBox(height: AppSizes.lg),
+          if (_error != null) ...[
+            AuthErrorBanner(message: _error!),
+            const SizedBox(height: AppSizes.lg),
+          ],
+          AuthField(
+            label: AppStrings.email,
+            controller: _email,
+            keyboardType: TextInputType.emailAddress,
+            textInputAction: TextInputAction.next,
+            autofocus: true,
+            autocorrect: false,
+            validator: (v) {
+              if (v == null || v.trim().isEmpty) return AppStrings.fieldRequired;
+              if (!v.contains('@')) return AppStrings.invalidEmail;
+              return null;
+            },
+          ),
+          const SizedBox(height: AppSizes.lg),
+          AuthField(
+            label: AppStrings.password,
+            controller: _password,
+            obscure: true,
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _submit(),
+            validator: (v) =>
+                v == null || v.isEmpty ? AppStrings.fieldRequired : null,
+          ),
+          const SizedBox(height: AppSizes.lg),
+          AuthSubmitButton(
+            label: 'Sign in',
+            loading: _isLoading,
+            onPressed: _submit,
+          ),
+          const SizedBox(height: AppSizes.lg),
+          const _LegalFooter(),
+        ],
+      ),
+    );
+  }
+}
+
+/// The pre-sign-in legal copy that mirrors merchant-web: a Terms / Privacy
+/// acknowledgement, a contact-support line, and a compliance link. Stateful so
+/// the inline-link tap recognizers are disposed properly.
+class _LegalFooter extends StatefulWidget {
+  const _LegalFooter();
+
+  @override
+  State<_LegalFooter> createState() => _LegalFooterState();
+}
+
+class _LegalFooterState extends State<_LegalFooter> {
+  final _terms = TapGestureRecognizer();
+  final _privacy = TapGestureRecognizer();
+
+  @override
+  void initState() {
+    super.initState();
+    _terms.onTap = () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const LegalPage.terms()),
+        );
+    _privacy.onTap = () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const LegalPage.privacy()),
+        );
+  }
+
+  @override
+  void dispose() {
+    _terms.dispose();
+    _privacy.dispose();
+    super.dispose();
+  }
+
+  Future<void> _support() async {
+    final uri = Uri(scheme: 'mailto', path: 'support@shopxy.app');
+    if (await canLaunchUrl(uri)) await launchUrl(uri);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final muted = theme.textTheme.bodySmall?.copyWith(color: AppColors.muted);
+    final subtle = theme.textTheme.bodySmall?.copyWith(color: AppColors.subtle);
+    final link = theme.textTheme.bodySmall?.copyWith(
+      color: AppColors.black,
+      decoration: TextDecoration.underline,
+    );
 
-    return GlassPage(
-      hero: GlassHero.image(asset: 'assets/login.png', height: 280),
-      title: AppStrings.welcomeBack,
-      subtitle: AppStrings.loginSubtitle,
-      body: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const _RememberedAccountsSection(),
-            if (_error != null) ...[
-              _AuthErrorBanner(message: _error!),
-              const SizedBox(height: AppSizes.lg),
+    return Column(
+      children: [
+        Text.rich(
+          TextSpan(
+            style: muted,
+            children: [
+              const TextSpan(text: 'By signing in you agree to our '),
+              TextSpan(text: 'Terms', style: link, recognizer: _terms),
+              const TextSpan(text: ' and acknowledge our '),
+              TextSpan(
+                  text: 'Privacy Policy', style: link, recognizer: _privacy),
+              const TextSpan(
+                text:
+                    '. We use a strictly-necessary session cookie to keep you signed in.',
+              ),
             ],
-            TextFormField(
-              controller: _email,
-              decoration: const InputDecoration(
-                labelText: AppStrings.email,
-                prefixIcon: Icon(Icons.email_outlined),
-              ),
-              keyboardType: TextInputType.emailAddress,
-              textInputAction: TextInputAction.next,
-              autocorrect: false,
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) {
-                  return AppStrings.fieldRequired;
-                }
-                if (!v.contains('@')) return AppStrings.invalidEmail;
-                return null;
-              },
-            ),
-            const SizedBox(height: AppSizes.md),
-            TextFormField(
-              controller: _password,
-              decoration: InputDecoration(
-                labelText: AppStrings.password,
-                prefixIcon: const Icon(Icons.lock_outline_rounded),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscure
-                        ? Icons.visibility_outlined
-                        : Icons.visibility_off_outlined,
-                  ),
-                  onPressed: () => setState(() => _obscure = !_obscure),
-                ),
-              ),
-              obscureText: _obscure,
-              textInputAction: TextInputAction.done,
-              onFieldSubmitted: (_) => _submit(),
-              validator: (v) =>
-                  v == null || v.isEmpty ? AppStrings.fieldRequired : null,
-            ),
-            const SizedBox(height: AppSizes.lg),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: AppSizes.md),
+        GestureDetector(
+          onTap: _support,
+          child: Text.rich(
+            TextSpan(
+              style: subtle,
               children: [
-                Text(
-                  AppStrings.noAccount,
-                  style: theme.textTheme.bodyMedium?.copyWith(
+                const TextSpan(text: 'Trouble signing in? '),
+                TextSpan(
+                  text: 'Contact support',
+                  style: subtle?.copyWith(
                     color: AppColors.muted,
+                    decoration: TextDecoration.underline,
                   ),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const RegisterPage()),
-                  ),
-                  child: const Text(AppStrings.register),
                 ),
               ],
             ),
-          ],
+            textAlign: TextAlign.center,
+          ),
         ),
-      ),
-      actions: GlassActionPanel(
-        primaryLabel: AppStrings.login,
-        primaryIcon: Icons.arrow_forward_rounded,
-        onPrimary: _submit,
-        primaryLoading: _isLoading,
-      ),
+        const SizedBox(height: AppSizes.md),
+        GestureDetector(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const LegalPage.terms()),
+          ),
+          child: Text(
+            'Compliance, laws & formulas',
+            style: subtle?.copyWith(
+              color: AppColors.muted,
+              decoration: TextDecoration.underline,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -148,10 +239,12 @@ class _RememberedAccountsSection extends StatefulWidget {
   const _RememberedAccountsSection();
 
   @override
-  State<_RememberedAccountsSection> createState() => _RememberedAccountsSectionState();
+  State<_RememberedAccountsSection> createState() =>
+      _RememberedAccountsSectionState();
 }
 
-class _RememberedAccountsSectionState extends State<_RememberedAccountsSection> {
+class _RememberedAccountsSectionState
+    extends State<_RememberedAccountsSection> {
   List<RememberedAccount>? _accounts;
   int? _busyId;
   String? _error;
@@ -173,7 +266,6 @@ class _RememberedAccountsSectionState extends State<_RememberedAccountsSection> 
       _error = null;
     });
     try {
-      // On success the provider notifies and the auth gate swaps screens.
       await context.read<AuthProvider>().loginWithRemembered(id);
     } catch (e) {
       if (mounted) {
@@ -200,14 +292,15 @@ class _RememberedAccountsSectionState extends State<_RememberedAccountsSection> 
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (_error != null) ...[
-          _AuthErrorBanner(message: _error!),
+          AuthErrorBanner(message: _error!),
           const SizedBox(height: AppSizes.lg),
         ],
         Align(
           alignment: Alignment.centerLeft,
           child: Text(
             'Continue as',
-            style: theme.textTheme.labelMedium?.copyWith(color: AppColors.muted),
+            style:
+                theme.textTheme.labelMedium?.copyWith(color: AppColors.muted),
           ),
         ),
         const SizedBox(height: AppSizes.sm),
@@ -220,20 +313,6 @@ class _RememberedAccountsSectionState extends State<_RememberedAccountsSection> 
           ),
           const SizedBox(height: AppSizes.sm),
         ],
-        const SizedBox(height: AppSizes.md),
-        Row(
-          children: [
-            const Expanded(child: Divider(color: AppColors.hairline)),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSizes.md),
-              child: Text(
-                'or sign in',
-                style: theme.textTheme.bodySmall?.copyWith(color: AppColors.subtle),
-              ),
-            ),
-            const Expanded(child: Divider(color: AppColors.hairline)),
-          ],
-        ),
         const SizedBox(height: AppSizes.lg),
       ],
     );
@@ -258,10 +337,10 @@ class _AccountCard extends StatelessWidget {
     final theme = Theme.of(context);
     return Container(
       decoration: ShapeDecoration(
-        color: AppColors.white,
+        color: AppColors.surface,
         shape: AppShapes.squircle(
           AppSizes.radiusMd,
-          side: const BorderSide(color: AppColors.hairline),
+          side: BorderSide(color: AppColors.hairline),
         ),
       ),
       child: Row(
@@ -275,9 +354,11 @@ class _AccountCard extends StatelessWidget {
                   children: [
                     CircleAvatar(
                       radius: 20,
-                      backgroundColor: AppColors.brandSoft,
+                      backgroundColor: AppColors.tileBg(AppColors.brandSoft),
                       child: Text(
-                        _initials(account.name.isNotEmpty ? account.name : account.email),
+                        _initials(account.name.isNotEmpty
+                            ? account.name
+                            : account.email),
                         style: theme.textTheme.labelMedium?.copyWith(
                           color: AppColors.brandStrong,
                           fontWeight: FontWeight.w600,
@@ -299,7 +380,8 @@ class _AccountCard extends StatelessWidget {
                             account.email,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
+                            style: theme.textTheme.bodySmall
+                                ?.copyWith(color: AppColors.muted),
                           ),
                         ],
                       ),
@@ -311,7 +393,8 @@ class _AccountCard extends StatelessWidget {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     else
-                      const Icon(Icons.chevron_right_rounded, color: AppColors.subtle),
+                      Icon(Icons.chevron_right_rounded,
+                          color: AppColors.subtle),
                   ],
                 ),
               ),
@@ -319,7 +402,8 @@ class _AccountCard extends StatelessWidget {
           ),
           IconButton(
             onPressed: busy ? null : onForget,
-            icon: const Icon(Icons.close_rounded, size: AppSizes.iconSm, color: AppColors.muted),
+            icon: Icon(Icons.close_rounded,
+                size: AppSizes.iconSm, color: AppColors.muted),
             tooltip: 'Remove this account',
           ),
         ],
@@ -334,41 +418,4 @@ String _initials(String s) {
   final b = parts.length > 1 && parts.last.isNotEmpty ? parts.last[0] : '';
   final out = (a + b).toUpperCase();
   return out.isEmpty ? '?' : out;
-}
-
-class _AuthErrorBanner extends StatelessWidget {
-  const _AuthErrorBanner({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(AppSizes.md),
-      decoration: ShapeDecoration(
-        color: AppColors.white,
-        shape: AppShapes.squircle(
-          AppSizes.radiusMd,
-          side: const BorderSide(color: AppColors.error, width: 1),
-        ),
-      ),
-      child: Row(
-        children: [
-          const Icon(
-            Icons.error_outline_rounded,
-            color: AppColors.error,
-            size: AppSizes.iconSm,
-          ),
-          const SizedBox(width: AppSizes.sm),
-          Expanded(
-            child: Text(
-              message,
-              style: theme.textTheme.bodySmall?.copyWith(color: AppColors.error),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
