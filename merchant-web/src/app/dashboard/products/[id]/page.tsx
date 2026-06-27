@@ -27,6 +27,7 @@ import { ProductThumb, mediaSrc } from "@/features/products/components/product-t
 import { StockBadge } from "@/features/products/components/stock-badge";
 import { GstBreakdown } from "@/features/products/components/gst-breakdown";
 import { ContentBlocksView } from "@/features/products/components/content-blocks-view";
+import { SupplierPriceHistory } from "@/features/products/components/supplier-price-history";
 import { ReviewsSummary } from "@/features/reviews/reviews-summary";
 import { Stars } from "@/features/reviews/stars";
 import { DetailSkeleton } from "@/shared/ui/skeleton";
@@ -312,6 +313,10 @@ export default function ProductDetailPage({
           </div>
         </div>
       </div>
+
+      <Section title="Supplier price history">
+        <SupplierPriceHistory productId={product.id} />
+      </Section>
 
       {product.description ? (
         <Section title="Description">

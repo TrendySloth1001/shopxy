@@ -46,3 +46,59 @@ export type CreateStockInput = {
   partyId?: number;
   note?: string;
 };
+
+/**
+ * One stock-ledger row from `GET /stock`. Prisma serialises Decimal columns as
+ * strings, so the numeric fields are coerced. Only the fields the supplier
+ * price-history view needs are modelled; the rest pass through unread.
+ */
+const decimalToNumber = z
+  .union([z.string(), z.number()])
+  .transform((v) => Number(v));
+const nullableDecimal = z
+  .union([z.string(), z.number(), z.null()])
+  .nullish()
+  .transform((v) => (v === null || v === undefined ? null : Number(v)));
+
+export const stockTxnSchema = z.object({
+  id: z.number(),
+  productId: z.number(),
+  type: z.string(),
+  direction: z.string().nullish(),
+  quantity: decimalToNumber,
+  unitPrice: nullableDecimal,
+  vendorId: z.number().nullish(),
+  vendor: z.object({ id: z.number(), name: z.string() }).nullish(),
+  supplierName: z.string().nullish(),
+  purchasePriceMode: z.string().nullish(),
+  createdAt: z.string(),
+});
+export type StockTxn = z.infer<typeof stockTxnSchema>;
+
+/** `GET /stock` is paginated: `{ data, pagination }`. */
+export const stockTxnListSchema = z.object({
+  data: z
+    .array(stockTxnSchema)
+    .nullish()
+    .transform((v) => v ?? []),
+});
+export type StockTxnList = z.infer<typeof stockTxnListSchema>;
+
+/** Structured vendor name wins over a free-typed supplier name. */
+export function displaySupplier(t: StockTxn): string | null {
+  return t.vendor?.name ?? t.supplierName ?? null;
+}
+
+/** Human label for the per-supplier purchase-price policy. */
+export function purchasePolicyLabel(mode: string | null | undefined): string {
+  switch (mode) {
+    case "WEIGHTED_AVERAGE":
+      return "Weighted average";
+    case "USE_LATEST":
+      return "Use latest price";
+    case "KEEP_CURRENT":
+      return "Keep current price";
+    default:
+      return "—";
+  }
+}

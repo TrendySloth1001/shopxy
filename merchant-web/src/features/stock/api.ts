@@ -1,8 +1,11 @@
 import {
   stockDraftSchema,
+  stockTxnListSchema,
   suppliersResponseSchema,
   type CreateStockInput,
   type StockDraft,
+  type StockTxn,
+  type StockType,
   type SuppliersResponse,
 } from "./schema";
 
@@ -31,6 +34,26 @@ export function listSuppliers(opts?: {
   if (opts?.q) qs.set("q", opts.q);
   return fetch(`/api/stock/suppliers?${qs.toString()}`, { cache: "no-store" }).then((r) =>
     jsonOrThrow(r, (raw) => suppliersResponseSchema.parse(raw), "Could not load suppliers."),
+  );
+}
+
+/** Stock-ledger rows for a product, optionally filtered by movement type. */
+export function listStockTransactions(opts: {
+  productId: number;
+  type?: StockType;
+  limit?: number;
+}): Promise<StockTxn[]> {
+  const qs = new URLSearchParams({
+    productId: String(opts.productId),
+    limit: String(opts.limit ?? 100),
+  });
+  if (opts.type) qs.set("type", opts.type);
+  return fetch(`/api/stock?${qs.toString()}`, { cache: "no-store" }).then((r) =>
+    jsonOrThrow(
+      r,
+      (raw) => stockTxnListSchema.parse(raw).data,
+      "Could not load purchase history.",
+    ),
   );
 }
 
