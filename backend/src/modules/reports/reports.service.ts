@@ -329,12 +329,15 @@ export class ReportsService {
   // ─────────────────────────────────────────────────────────────────
   async gstSummary(shopId: number, range: DateRange) {
     const byRate = (type: 'SALE' | 'PURCHASE') => prisma.$queryRaw<
-      { tax_rate: string; taxable: string; tax: string; cess: string }[]
+      { tax_rate: string; taxable: string; tax: string; igst: string; cgst: string; sgst: string; cess: string }[]
     >`
         SELECT
           ii.tax_percent::text                                       AS tax_rate,
           COALESCE(SUM((CASE WHEN i.document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * ii.taxable_value), 0)::text AS taxable,
           COALESCE(SUM((CASE WHEN i.document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * (ii.igst_amount + ii.cgst_amount + ii.sgst_amount)), 0)::text AS tax,
+          COALESCE(SUM((CASE WHEN i.document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * ii.igst_amount), 0)::text AS igst,
+          COALESCE(SUM((CASE WHEN i.document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * ii.cgst_amount), 0)::text AS cgst,
+          COALESCE(SUM((CASE WHEN i.document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * ii.sgst_amount), 0)::text AS sgst,
           COALESCE(SUM((CASE WHEN i.document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * ii.cess_amount), 0)::text   AS cess
         FROM invoice_items ii
         JOIN invoices i ON i.id = ii.invoice_id
@@ -352,6 +355,12 @@ export class ReportsService {
         {
           output_gst: string;
           input_gst: string;
+          output_igst: string;
+          output_cgst: string;
+          output_sgst: string;
+          input_igst: string;
+          input_cgst: string;
+          input_sgst: string;
           output_cess: string;
           input_cess: string;
         }[]
@@ -359,6 +368,12 @@ export class ReportsService {
         SELECT
           COALESCE(SUM(CASE WHEN type='SALE'     THEN (CASE WHEN document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * (igst_amount + cgst_amount + sgst_amount) ELSE 0 END), 0)::text AS output_gst,
           COALESCE(SUM(CASE WHEN type='PURCHASE' THEN (CASE WHEN document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * (igst_amount + cgst_amount + sgst_amount) ELSE 0 END), 0)::text AS input_gst,
+          COALESCE(SUM(CASE WHEN type='SALE'     THEN (CASE WHEN document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * igst_amount ELSE 0 END), 0)::text AS output_igst,
+          COALESCE(SUM(CASE WHEN type='SALE'     THEN (CASE WHEN document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * cgst_amount ELSE 0 END), 0)::text AS output_cgst,
+          COALESCE(SUM(CASE WHEN type='SALE'     THEN (CASE WHEN document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * sgst_amount ELSE 0 END), 0)::text AS output_sgst,
+          COALESCE(SUM(CASE WHEN type='PURCHASE' THEN (CASE WHEN document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * igst_amount ELSE 0 END), 0)::text AS input_igst,
+          COALESCE(SUM(CASE WHEN type='PURCHASE' THEN (CASE WHEN document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * cgst_amount ELSE 0 END), 0)::text AS input_cgst,
+          COALESCE(SUM(CASE WHEN type='PURCHASE' THEN (CASE WHEN document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * sgst_amount ELSE 0 END), 0)::text AS input_sgst,
           COALESCE(SUM(CASE WHEN type='SALE'     THEN (CASE WHEN document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * cess_amount ELSE 0 END), 0)::text AS output_cess,
           COALESCE(SUM(CASE WHEN type='PURCHASE' THEN (CASE WHEN document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * cess_amount ELSE 0 END), 0)::text AS input_cess
         FROM invoices
@@ -381,12 +396,15 @@ export class ReportsService {
       // This keys off the same per-line resolution the P&L refund leg uses,
       // so the GST and sales/P&L reports reconcile on identical returns.
       prisma.$queryRaw<
-        { tax_rate: string; taxable: string; tax: string; cess: string }[]
+        { tax_rate: string; taxable: string; tax: string; igst: string; cgst: string; sgst: string; cess: string }[]
       >`
         SELECT
           line.tax_percent::text AS tax_rate,
           COALESCE(SUM(line.taxable_value * rri.quantity / NULLIF(line.quantity, 0)), 0)::text AS taxable,
           COALESCE(SUM((line.igst_amount + line.cgst_amount + line.sgst_amount) * rri.quantity / NULLIF(line.quantity, 0)), 0)::text AS tax,
+          COALESCE(SUM(line.igst_amount * rri.quantity / NULLIF(line.quantity, 0)), 0)::text AS igst,
+          COALESCE(SUM(line.cgst_amount * rri.quantity / NULLIF(line.quantity, 0)), 0)::text AS cgst,
+          COALESCE(SUM(line.sgst_amount * rri.quantity / NULLIF(line.quantity, 0)), 0)::text AS sgst,
           COALESCE(SUM(line.cess_amount * rri.quantity / NULLIF(line.quantity, 0)), 0)::text AS cess
         FROM return_request_items rri
         JOIN return_requests rr ON rr.id = rri.return_id
@@ -412,6 +430,9 @@ export class ReportsService {
     ]);
 
     const returnedGst = returnsByRate.reduce((s, r) => s + n(r.tax), 0);
+    const returnedIgst = returnsByRate.reduce((s, r) => s + n(r.igst), 0);
+    const returnedCgst = returnsByRate.reduce((s, r) => s + n(r.cgst), 0);
+    const returnedSgst = returnsByRate.reduce((s, r) => s + n(r.sgst), 0);
     const returnedCess = returnsByRate.reduce((s, r) => s + n(r.cess), 0);
     const returnedByRate = new Map(
       returnsByRate.map((r) => [n(r.tax_rate), r]),
@@ -424,6 +445,19 @@ export class ReportsService {
     const outputCess = r2(n(totalsRow[0]?.output_cess ?? 0) - returnedCess);
     const inputCess = n(totalsRow[0]?.input_cess ?? 0);
 
+    // GST-11 — IGST, CGST and SGST are distinct tax heads (different ledgers,
+    // head-wise ITC set-off under CGST Sec 49 / Rule 88A), so GSTR-1 / GSTR-3B
+    // must report each separately. The headline `outputTax`/`inputTax`/`tax`
+    // figures (sum of all three) are kept for existing consumers, but each head
+    // is now surfaced net of refunded returns so a return can be filed without
+    // re-deriving the split from raw invoice rows.
+    const outputIgst = r2(n(totalsRow[0]?.output_igst ?? 0) - returnedIgst);
+    const outputCgst = r2(n(totalsRow[0]?.output_cgst ?? 0) - returnedCgst);
+    const outputSgst = r2(n(totalsRow[0]?.output_sgst ?? 0) - returnedSgst);
+    const inputIgst = n(totalsRow[0]?.input_igst ?? 0);
+    const inputCgst = n(totalsRow[0]?.input_cgst ?? 0);
+    const inputSgst = n(totalsRow[0]?.input_sgst ?? 0);
+
     return {
       range,
       outputTax: outputGst,
@@ -435,10 +469,26 @@ export class ReportsService {
       outputCess,
       inputCess,
       netCessPayable: r2(outputCess - inputCess),
+      // GST-11 — head-wise output/input (net of returns) so the dashboard can
+      // present, and a merchant can file, IGST / CGST / SGST separately. The
+      // per-head net is the simple like-for-like offset (Sec 49); the broader
+      // cross-head utilisation order of Rule 88A is a documented downstream gap.
+      byHead: {
+        output: { igst: outputIgst, cgst: outputCgst, sgst: outputSgst },
+        input: { igst: inputIgst, cgst: inputCgst, sgst: inputSgst },
+        netPayable: {
+          igst: r2(outputIgst - inputIgst),
+          cgst: r2(outputCgst - inputCgst),
+          sgst: r2(outputSgst - inputSgst),
+        },
+      },
       /// Output tax reversed on refunded returns in this period (already
       /// netted out of outputTax / outputCess / the by-rate buckets).
       returns: {
         gst: r2(returnedGst),
+        igst: r2(returnedIgst),
+        cgst: r2(returnedCgst),
+        sgst: r2(returnedSgst),
         cess: r2(returnedCess),
       },
       outputByRate: output.map((r) => {
@@ -447,6 +497,9 @@ export class ReportsService {
           rate: n(r.tax_rate),
           taxable: r2(n(r.taxable) - n(ret?.taxable ?? 0)),
           tax: r2(n(r.tax) - n(ret?.tax ?? 0)),
+          igst: r2(n(r.igst) - n(ret?.igst ?? 0)),
+          cgst: r2(n(r.cgst) - n(ret?.cgst ?? 0)),
+          sgst: r2(n(r.sgst) - n(ret?.sgst ?? 0)),
           cess: r2(n(r.cess) - n(ret?.cess ?? 0)),
         };
       }),
@@ -454,6 +507,9 @@ export class ReportsService {
         rate: n(r.tax_rate),
         taxable: n(r.taxable),
         tax: n(r.tax),
+        igst: n(r.igst),
+        cgst: n(r.cgst),
+        sgst: n(r.sgst),
         cess: n(r.cess),
       })),
     };

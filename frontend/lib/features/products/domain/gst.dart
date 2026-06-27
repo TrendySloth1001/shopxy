@@ -39,11 +39,16 @@ GstBreakdown gstFromInclusive(double gross, double ratePercent) {
   final rate = ratePercent < 0 ? 0.0 : ratePercent;
   final taxable = rate > 0 ? (gross * 100) / (100 + rate) : gross;
   final gst = gross - taxable;
+  // Round CGST to the paisa and let SGST absorb the remainder so cgst + sgst
+  // == gst exactly (mirrors the backend split, which derives sgst from the GST
+  // total rather than rounding two independent halves).
+  final cgst = (gst / 2 * 100).roundToDouble() / 100;
+  final sgst = (gst - cgst);
   return GstBreakdown(
     rate: rate,
     taxable: taxable,
     gst: gst,
-    cgst: gst / 2,
-    sgst: gst / 2,
+    cgst: cgst,
+    sgst: sgst,
   );
 }

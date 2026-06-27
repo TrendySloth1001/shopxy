@@ -108,6 +108,38 @@ export async function cancelChallan(req: Request, res: Response) {
   res.status(204).end();
 }
 
+export async function downloadChallanPdf(req: Request, res: Response) {
+  const shopId = requireShopId(req, res);
+  if (!shopId) return;
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    res.status(400).json({ error: 'Invalid id' });
+    return;
+  }
+
+  // Look up once so we can 404 before streaming headers and name the download.
+  const challan = await challansService.getChallanById(shopId, id);
+  if (!challan) {
+    res.status(404).json({ error: 'Challan not found' });
+    return;
+  }
+  const filename = `challan-${challan.challanNo ?? id}.pdf`;
+
+  // onReady fires only after the renderer re-verifies the challan and right
+  // before bytes flow, so a late error still yields a clean JSON 5xx.
+  const err = await challansService.streamPdf(shopId, id, res, () => {
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  });
+  if (err) {
+    if (!res.headersSent) {
+      res.status(500).json({ error: err.error });
+    } else {
+      res.end();
+    }
+  }
+}
+
 export async function convertToInvoice(req: Request, res: Response) {
   const shopId = requireShopId(req, res);
   if (!shopId) return;

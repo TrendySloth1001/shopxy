@@ -71,7 +71,13 @@ export interface ShiftReport {
 export interface GstRateRowDto {
   rate: number;
   taxable: number;
+  /** Head sum (igst + cgst + sgst + cess) — kept for existing consumers. */
   tax: number;
+  /** GST-11 — distinct heads for GSTR-ready rate-wise reporting. */
+  igst: number;
+  cgst: number;
+  sgst: number;
+  cess: number;
 }
 
 export interface CashierError {
@@ -433,18 +439,46 @@ export async function report(
 
   // Rate-wise: subtract credit-note taxable + tax per rate, then drop rows that
   // net to zero (a fully-returned rate).
-  const rateMap = new Map<number, { taxable: Prisma.Decimal; tax: Prisma.Decimal }>();
-  const tax = (s: { cgstAmount: Prisma.Decimal | null; sgstAmount: Prisma.Decimal | null; igstAmount: Prisma.Decimal | null; cessAmount: Prisma.Decimal | null }) =>
-    D(s.cgstAmount).plus(D(s.sgstAmount)).plus(D(s.igstAmount)).plus(D(s.cessAmount));
+  // GST-11 — IGST, CGST and SGST are distinct tax heads and must be reported
+  // separately for GSTR; carry each through the rate map (not just the blended
+  // `tax`) so the Z-report's rate-wise table is GSTR-ready. `tax` is retained
+  // as the head sum for existing consumers.
+  type RateAgg = {
+    taxable: Prisma.Decimal;
+    igst: Prisma.Decimal;
+    cgst: Prisma.Decimal;
+    sgst: Prisma.Decimal;
+    cess: Prisma.Decimal;
+  };
+  const zeroAgg = (): RateAgg => ({
+    taxable: new Prisma.Decimal(0),
+    igst: new Prisma.Decimal(0),
+    cgst: new Prisma.Decimal(0),
+    sgst: new Prisma.Decimal(0),
+    cess: new Prisma.Decimal(0),
+  });
+  const rateMap = new Map<number, RateAgg>();
   for (const r of rateRows) {
     const rate = num(r.taxPercent);
-    const cur = rateMap.get(rate) ?? { taxable: new Prisma.Decimal(0), tax: new Prisma.Decimal(0) };
-    rateMap.set(rate, { taxable: cur.taxable.plus(D(r._sum.taxableValue)), tax: cur.tax.plus(tax(r._sum)) });
+    const cur = rateMap.get(rate) ?? zeroAgg();
+    rateMap.set(rate, {
+      taxable: cur.taxable.plus(D(r._sum.taxableValue)),
+      igst: cur.igst.plus(D(r._sum.igstAmount)),
+      cgst: cur.cgst.plus(D(r._sum.cgstAmount)),
+      sgst: cur.sgst.plus(D(r._sum.sgstAmount)),
+      cess: cur.cess.plus(D(r._sum.cessAmount)),
+    });
   }
   for (const r of returnRateRows) {
     const rate = num(r.taxPercent);
-    const cur = rateMap.get(rate) ?? { taxable: new Prisma.Decimal(0), tax: new Prisma.Decimal(0) };
-    rateMap.set(rate, { taxable: cur.taxable.minus(D(r._sum.taxableValue)), tax: cur.tax.minus(tax(r._sum)) });
+    const cur = rateMap.get(rate) ?? zeroAgg();
+    rateMap.set(rate, {
+      taxable: cur.taxable.minus(D(r._sum.taxableValue)),
+      igst: cur.igst.minus(D(r._sum.igstAmount)),
+      cgst: cur.cgst.minus(D(r._sum.cgstAmount)),
+      sgst: cur.sgst.minus(D(r._sum.sgstAmount)),
+      cess: cur.cess.minus(D(r._sum.cessAmount)),
+    });
   }
 
   return {
@@ -473,7 +507,20 @@ export async function report(
       total: netGst.total.toNumber(),
     },
     gstByRate: [...rateMap.entries()]
-      .map(([rate, v]) => ({ rate, taxable: v.taxable.toNumber(), tax: v.tax.toNumber() }))
+      .map(([rate, v]) => {
+        const tax = v.igst.plus(v.cgst).plus(v.sgst).plus(v.cess);
+        return {
+          rate,
+          taxable: v.taxable.toNumber(),
+          // `tax` kept as the head sum for existing consumers; each head split
+          // out alongside it for GSTR-ready rate-wise reporting.
+          tax: tax.toNumber(),
+          igst: v.igst.toNumber(),
+          cgst: v.cgst.toNumber(),
+          sgst: v.sgst.toNumber(),
+          cess: v.cess.toNumber(),
+        };
+      })
       // Drop rows that fully netted to zero (a rate entirely returned).
       .filter((r) => r.taxable !== 0 || r.tax !== 0)
       .sort((a, b) => a.rate - b.rate),

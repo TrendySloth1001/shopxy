@@ -6,6 +6,7 @@ import {
   getChallan,
   cancelChallan,
   convertToInvoice,
+  downloadChallanPdf,
 } from './challans.controller.js';
 
 const router = Router();
@@ -13,6 +14,7 @@ const router = Router();
 router.post('/', asyncHandler(createChallan));
 router.get('/', asyncHandler(listChallans));
 router.get('/:id', asyncHandler(getChallan));
+router.get('/:id/pdf', asyncHandler(downloadChallanPdf));
 router.patch('/:id/cancel', asyncHandler(cancelChallan));
 router.post('/:id/convert', asyncHandler(convertToInvoice));
 
