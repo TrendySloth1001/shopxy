@@ -1,9 +1,11 @@
 "use strict";
 
-const { app, BrowserWindow, shell, dialog, ipcMain, session } = require("electron");
+const { app, BrowserWindow, shell, dialog, ipcMain, session, nativeTheme } = require("electron");
 const path = require("node:path");
 const { startServer } = require("./lib/server");
 const remember = require("./lib/remember");
+const theme = require("./lib/theme");
+const { clearCacheOnUpgrade } = require("./lib/cache-bust");
 
 // Sets the macOS menu-bar title + about box (instead of "Electron").
 app.setName("ShopXY Merchant");
@@ -44,6 +46,19 @@ if (!app.requestSingleInstanceLock()) {
 
 async function bootstrap() {
   try {
+    // Theme store first — createWindow reads it for the cold-start background.
+    theme.configure({ userDataDir: app.getPath("userData") });
+    registerThemeIpc();
+    // After an in-place upgrade, Chromium would otherwise keep serving the old
+    // build's immutable `/_next/static` assets for the fixed loopback origin,
+    // leaving the user on a stale UI. Drop the asset cache once per new version
+    // (cookies/login are preserved) before the window loads.
+    await clearCacheOnUpgrade({
+      userDataDir: app.getPath("userData"),
+      version: app.getVersion(),
+      ses: session.defaultSession,
+    });
+
     server = await startServer({
       userDataDir: app.getPath("userData"),
       isPackaged: app.isPackaged,
@@ -75,14 +90,33 @@ function registerRememberIpc() {
   ipcMain.handle("remember:forget", (_e, id) => remember.forgetAccount(id));
 }
 
+// Theme bridge. The renderer owns the visual theme; main only persists it (for
+// the next cold start's window background) and re-tints native chrome live.
+function registerThemeIpc() {
+  ipcMain.handle("theme:set", (_e, value) => {
+    if (!theme.isValid(value)) return { ok: false };
+    theme.writeTheme(value);
+    nativeTheme.themeSource = theme.nativeSourceFor(value);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.setBackgroundColor(theme.backgroundFor(value));
+    }
+    return { ok: true };
+  });
+}
+
 async function createWindow(url) {
+  // Match the saved theme on the very first frame — no white flash before the
+  // dark web UI paints. nativeTheme is set here too so OS chrome agrees.
+  const savedTheme = theme.readTheme();
+  nativeTheme.themeSource = theme.nativeSourceFor(savedTheme);
+
   mainWindow = new BrowserWindow({
     width: 1320,
     height: 860,
     minWidth: 960,
     minHeight: 640,
     title: "ShopXY Merchant",
-    backgroundColor: "#f7f6f2",
+    backgroundColor: theme.backgroundFor(savedTheme),
     show: false,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),

@@ -21,9 +21,9 @@ export function SideSheet({
   width?: string;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex bg-ink/30" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex bg-scrim/30" onClick={onClose}>
       <div
-        className={`flex h-dvh ${width} max-w-full flex-col bg-white shadow-menu ${side === "right" ? "ml-auto" : ""}`}
+        className={`flex h-dvh ${width} max-w-full flex-col bg-surface shadow-menu ${side === "right" ? "ml-auto" : ""}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex shrink-0 items-center justify-between border-b border-hairline px-lg py-md">

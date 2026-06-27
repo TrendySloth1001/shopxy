@@ -50,7 +50,7 @@ export default function ProfilePage() {
 
       {/* Hero — branded identity snapshot */}
       <div className="mt-xl flex flex-wrap items-center gap-lg rounded-lg bg-hero-panel p-lg">
-        <div className="rounded-full bg-white p-xs shadow-floating">
+        <div className="rounded-full bg-surface p-xs shadow-floating">
           <Avatar url={user.avatarUrl} name={user.name} size={76} />
         </div>
         <div className="min-w-0 flex-1">
@@ -70,7 +70,7 @@ export default function ProfilePage() {
               <BadgeCheck size={13} /> {roleLabel}
             </span>
             {since ? (
-              <span className="inline-flex items-center gap-xs rounded-full bg-white px-sm py-px text-body-sm text-muted">
+              <span className="inline-flex items-center gap-xs rounded-full bg-surface px-sm py-px text-body-sm text-muted">
                 <CalendarDays size={13} /> Since {since}
               </span>
             ) : null}

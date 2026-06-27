@@ -130,7 +130,7 @@ function Toggle({
       }`}
     >
       <span
-        className={`inline-block size-5 rounded-full bg-white shadow-floating transition-transform ${
+        className={`inline-block size-5 rounded-full bg-surface shadow-floating transition-transform ${
           checked ? "translate-x-[18px]" : "translate-x-px"
         }`}
       />

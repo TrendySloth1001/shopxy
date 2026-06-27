@@ -497,7 +497,7 @@ function CustomerBlock({ order }: { order: OrderDetail }) {
           <div className="flex flex-wrap items-center gap-sm">
             <p className="text-title-md text-ink">{order.customerName}</p>
             {linked ? (
-              <span className="inline-flex items-center gap-xs rounded-full border border-success bg-white px-sm py-px text-body-sm font-bold text-success">
+              <span className="inline-flex items-center gap-xs rounded-full border border-success bg-surface px-sm py-px text-body-sm font-bold text-success">
                 <BadgeCheck size={14} /> Linked party
               </span>
             ) : null}
@@ -630,7 +630,7 @@ function StatusJourney({ order }: { order: OrderDetail }) {
           ? "border-error bg-error"
           : s.done
             ? "border-brand bg-brand"
-            : "border-hairline bg-white";
+            : "border-hairline bg-surface";
         const isFirst = i === 0;
         const isLast = i === steps.length - 1;
         const next = steps[i + 1];
@@ -892,7 +892,7 @@ function DeclinePanel({
             onClick={() => pickReason(r)}
             aria-pressed={reason === r}
             className={`inline-flex h-9 items-center rounded-full px-md text-label-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft ${
-              reason === r ? "bg-ink text-white" : "bg-surface-tint text-ink hover:bg-hairline"
+              reason === r ? "bg-inverse-surface text-on-inverse" : "bg-surface-tint text-ink hover:bg-hairline"
             }`}
           >
             {r}
@@ -905,7 +905,7 @@ function DeclinePanel({
         placeholder="Optional note to the customer"
         rows={2}
         maxLength={500}
-        className="mt-md w-full max-w-content rounded-input border border-hairline bg-white px-md py-sm text-body-md text-ink outline-none placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+        className="mt-md w-full max-w-content rounded-input border border-hairline bg-surface px-md py-sm text-body-md text-ink outline-none placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
       />
       <div className="mt-md flex gap-md">
         <button

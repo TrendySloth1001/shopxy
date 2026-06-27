@@ -147,7 +147,7 @@ export function ProfileForm({ onSaved }: { onSaved?: () => void } = {}) {
           id={regId}
           value={values.registrationType}
           onChange={(e) => set("registrationType", e.target.value)}
-          className="w-full rounded-input border border-hairline bg-white px-md py-sm text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+          className="w-full rounded-input border border-hairline bg-surface px-md py-sm text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
         >
           <option value="">Not set</option>
           {REGISTRATION_TYPES.map((t) => (
