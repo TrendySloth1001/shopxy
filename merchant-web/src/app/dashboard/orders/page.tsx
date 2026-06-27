@@ -129,7 +129,7 @@ export default function OrdersInboxPage() {
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="Search by customer, phone, item or #id"
-            className="h-10 w-full rounded-input border border-hairline bg-surface pl-massive pr-md text-body-md text-ink outline-none placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+            className="h-10 w-full rounded-input border border-hairline bg-field pl-massive pr-md text-body-md text-ink outline-none placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
           />
         </div>
         <DateField
@@ -266,7 +266,7 @@ function DateField({
   onChange: (v: string) => void;
 }) {
   return (
-    <label className="inline-flex h-10 items-center gap-sm rounded-input border border-hairline bg-surface px-md text-body-sm text-muted focus-within:border-brand focus-within:ring-2 focus-within:ring-brand-soft">
+    <label className="inline-flex h-10 items-center gap-sm rounded-input border border-hairline bg-field px-md text-body-sm text-muted focus-within:border-brand focus-within:ring-2 focus-within:ring-brand-soft">
       <span className="text-label-md text-subtle">{label}</span>
       <input
         type="date"

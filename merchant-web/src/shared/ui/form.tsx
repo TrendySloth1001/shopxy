@@ -4,7 +4,7 @@ import { useId } from "react";
 import { isoToLocalInput, localInputToIso } from "@/shared/datetime";
 
 const inputBase =
-  "h-10 w-full rounded-input border border-hairline bg-surface px-md text-body-md text-ink outline-none placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft disabled:bg-surface-tint disabled:text-disabled";
+  "h-10 w-full rounded-input border border-hairline bg-field px-md text-body-md text-ink outline-none placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft disabled:bg-field-tint disabled:text-disabled";
 
 /** Label + helper/error wrapper shared by the form fields below. */
 function FieldShell({
@@ -91,7 +91,7 @@ export function TextAreaField({
         rows={rows}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-input border border-hairline bg-surface px-md py-sm text-body-md text-ink outline-none placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+        className="w-full rounded-input border border-hairline bg-field px-md py-sm text-body-md text-ink outline-none placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
       />
     </FieldShell>
   );
@@ -181,7 +181,7 @@ export function HexColorField({
           aria-label={`${label} swatch`}
           value={swatch}
           onChange={(e) => onChange(e.target.value)}
-          className="size-10 shrink-0 cursor-pointer rounded-input border border-hairline bg-surface p-px"
+          className="size-10 shrink-0 cursor-pointer rounded-input border border-hairline bg-field p-px"
         />
         <input
           value={value}

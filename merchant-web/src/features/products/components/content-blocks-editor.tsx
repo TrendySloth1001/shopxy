@@ -11,9 +11,9 @@ export type Block = { kind: string } & Record<string, unknown>;
 
 const KINDS = ["HERO", "FEATURE", "COMPARISON", "GALLERY", "TEXT"] as const;
 const cell =
-  "h-10 w-full rounded-input border border-hairline bg-surface px-md text-body-md text-ink outline-none placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft";
+  "h-10 w-full rounded-input border border-hairline bg-field px-md text-body-md text-ink outline-none placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft";
 const area =
-  "w-full rounded-input border border-hairline bg-surface px-md py-sm text-body-md text-ink outline-none resize-y placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft";
+  "w-full rounded-input border border-hairline bg-field px-md py-sm text-body-md text-ink outline-none resize-y placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft";
 
 function emptyBlock(kind: string): Block {
   switch (kind) {

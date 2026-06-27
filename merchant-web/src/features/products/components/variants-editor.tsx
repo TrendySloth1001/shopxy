@@ -6,7 +6,7 @@ import { MiniButton } from "./form-controls";
 import { StringListEditor } from "./string-list-editor";
 
 const cell =
-  "h-9 rounded-input border border-hairline bg-surface px-sm text-body-sm text-ink outline-none placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft";
+  "h-9 rounded-input border border-hairline bg-field px-sm text-body-sm text-ink outline-none placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft";
 
 /** Parse a numeric input, clamping negatives to 0. */
 function nonNegative(raw: string): number {

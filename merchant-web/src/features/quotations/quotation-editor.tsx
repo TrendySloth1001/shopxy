@@ -259,7 +259,7 @@ export function QuotationEditor({ existing }: { existing?: Quotation }) {
 }
 
 const priceInput =
-  "h-9 w-24 rounded-input border border-hairline bg-surface px-sm text-right text-body-sm text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft";
+  "h-9 w-24 rounded-input border border-hairline bg-field px-sm text-right text-body-sm text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft";
 
 function QuoteLineRow({
   line,

@@ -69,7 +69,7 @@ export function ProductPicker({
 
   return (
     <Modal title="Pick a product" onClose={onClose} wide>
-      <label className="flex items-center gap-sm rounded-input border border-hairline bg-surface px-md focus-within:border-brand focus-within:ring-2 focus-within:ring-brand-soft">
+      <label className="flex items-center gap-sm rounded-input border border-hairline bg-field px-md focus-within:border-brand focus-within:ring-2 focus-within:ring-brand-soft">
         <Search size={16} className="text-subtle" />
         <input
           autoFocus

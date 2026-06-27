@@ -198,7 +198,7 @@ export default function ChallanDetailPage() {
               onChange={(e) => setConvertDiscount(e.target.value)}
               inputMode="decimal"
               placeholder="0.00"
-              className="h-10 rounded-input border border-hairline bg-surface px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+              className="h-10 rounded-input border border-hairline bg-field px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
             />
           </label>
           <label className="flex flex-col gap-xs">
@@ -207,7 +207,7 @@ export default function ChallanDetailPage() {
               value={convertNote}
               onChange={(e) => setConvertNote(e.target.value)}
               rows={2}
-              className="rounded-input border border-hairline bg-surface px-md py-sm text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+              className="rounded-input border border-hairline bg-field px-md py-sm text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
             />
           </label>
           <ModalActions

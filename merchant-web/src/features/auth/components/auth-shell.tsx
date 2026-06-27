@@ -85,8 +85,26 @@ export function AuthShell({
         </section>
 
         {/* Focused form column — vertically centred in its half. */}
-        <main className="flex flex-col justify-center px-lg py-massive">
-          <div className="mx-auto w-full max-w-auth">
+        <main className="relative flex flex-col justify-center px-lg py-massive">
+          {/* Mobile-only boho backdrop — the large-screen illustration panel is
+              hidden below lg, so the art sits behind the form instead. `fixed`
+              pins it to the viewport so it stays put (and doesn't resize) when
+              the on-screen keyboard opens. A translucent, frosted canvas wash
+              (theme-aware) lets the art read through while keeping the form
+              legible. */}
+          <div aria-hidden className="fixed inset-0 z-0 lg:hidden">
+            <Image
+              src="/auth-boho.jpg"
+              alt=""
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover object-top"
+            />
+            <div className="absolute inset-0 bg-linear-to-b from-canvas/65 via-canvas/80 to-canvas/95 backdrop-blur-xl" />
+          </div>
+
+          <div className="relative z-10 mx-auto w-full max-w-auth">
             <h1 className="font-display text-headline-md text-ink">{title}</h1>
             <p className="mt-sm text-body-md text-muted">{subtitle}</p>
 

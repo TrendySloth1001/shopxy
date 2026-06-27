@@ -467,7 +467,7 @@ function ReturnsPanel({ busy, run, onChanged }: { busy: boolean; run: (fn: () =>
                   inputMode="numeric"
                   placeholder="0"
                   disabled={l.returnableQty <= 0}
-                  className="h-9 w-16 rounded-input border border-hairline bg-canvas px-sm text-center text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:bg-surface-tint"
+                  className="h-9 w-16 rounded-input border border-hairline bg-canvas px-sm text-center text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:bg-field-tint"
                 />
               </li>
             ))}

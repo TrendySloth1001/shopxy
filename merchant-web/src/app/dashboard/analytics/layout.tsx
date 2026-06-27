@@ -69,7 +69,7 @@ function Tab({ href, label, active }: { href: string; label: string; active: boo
 }
 
 const dateInput =
-  "h-10 rounded-input border border-hairline bg-surface px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft";
+  "h-10 rounded-input border border-hairline bg-field px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft";
 
 function DateField({
   label,

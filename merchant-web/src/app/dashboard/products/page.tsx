@@ -200,7 +200,7 @@ function ProductsListInner() {
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="Search by name, SKU or barcode"
-            className="h-10 w-full rounded-input border border-hairline bg-surface pl-massive pr-md text-body-md text-ink outline-none placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+            className="h-10 w-full rounded-input border border-hairline bg-field pl-massive pr-md text-body-md text-ink outline-none placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
           />
         </div>
         <select
@@ -209,7 +209,7 @@ function ProductsListInner() {
             setCategoryId(e.target.value);
             setPage(1);
           }}
-          className="h-10 rounded-input border border-hairline bg-surface px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+          className="h-10 rounded-input border border-hairline bg-field px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
         >
           <option value="">All categories</option>
           {categories.map((c) => (
@@ -221,7 +221,7 @@ function ProductsListInner() {
         <select
           value={sortIdx}
           onChange={(e) => setSortIdx(Number(e.target.value))}
-          className="h-10 rounded-input border border-hairline bg-surface px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+          className="h-10 rounded-input border border-hairline bg-field px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
         >
           {SORTS.map((s, i) => (
             <option key={s.label} value={i}>
