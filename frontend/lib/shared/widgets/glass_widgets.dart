@@ -36,7 +36,7 @@ class GlassPage extends StatelessWidget {
     this.progress,
     this.navButton,
     this.scrollable = true,
-    this.backgroundColor = AppColors.white,
+    this.backgroundColor,
   });
 
   /// The hero panel (illustration + soft gray background). Pass [null] to
@@ -62,7 +62,7 @@ class GlassPage extends StatelessWidget {
   final Widget? navButton;
 
   final bool scrollable;
-  final Color backgroundColor;
+  final Color? backgroundColor;
 
   @override
   Widget build(BuildContext context) {
@@ -112,7 +112,7 @@ class GlassPage extends StatelessWidget {
     );
 
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: backgroundColor ?? AppColors.canvas,
       body: Stack(
         children: [
           SafeArea(
@@ -153,7 +153,7 @@ class GlassHero extends StatelessWidget {
     super.key,
     required this.illustration,
     this.height = 240,
-    this.backgroundColor = AppColors.heroPanel,
+    this.backgroundColor,
   });
 
   /// Convenience constructor for the bundled [LineArt] illustrations.
@@ -162,14 +162,14 @@ class GlassHero extends StatelessWidget {
     required LineArt kind,
     double illustrationSize = 160,
     double height = 240,
-    Color accent = AppColors.brand,
-    Color backgroundColor = AppColors.heroPanel,
+    Color? accent,
+    Color? backgroundColor,
   }) : this(
           key: key,
           illustration: LineIllustration(
             kind: kind,
             size: illustrationSize,
-            accent: accent,
+            accent: accent ?? AppColors.brand,
           ),
           height: height,
           backgroundColor: backgroundColor,
@@ -183,7 +183,7 @@ class GlassHero extends StatelessWidget {
     required String asset,
     double height = 260,
     double verticalPadding = AppSizes.xl,
-    Color backgroundColor = AppColors.heroPanel,
+    Color? backgroundColor,
   }) : this(
           key: key,
           illustration: Padding(
@@ -196,13 +196,16 @@ class GlassHero extends StatelessWidget {
 
   final Widget illustration;
   final double height;
-  final Color backgroundColor;
+
+  /// Hero panel fill. Defaults to [AppColors.heroPanel] (theme-aware) when null
+  /// — can't be a const default now that AppColors are getters.
+  final Color? backgroundColor;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       height: height,
-      color: backgroundColor,
+      color: backgroundColor ?? AppColors.heroPanel,
       alignment: Alignment.center,
       child: illustration,
     );
@@ -275,15 +278,19 @@ class GlassNavButton extends StatelessWidget {
     required this.onPressed,
     this.direction = GlassNavDirection.back,
     this.size = 52,
-    this.foreground = AppColors.white,
-    this.background = AppColors.black,
+    this.foreground,
+    this.background,
   });
 
   final VoidCallback onPressed;
   final GlassNavDirection direction;
   final double size;
-  final Color foreground;
-  final Color background;
+
+  /// Chevron colour. Defaults to [AppColors.onInverse] (theme-aware).
+  final Color? foreground;
+
+  /// Circle fill — a high-contrast neutral. Defaults to [AppColors.inverseSurface].
+  final Color? background;
 
   @override
   Widget build(BuildContext context) {
@@ -293,7 +300,7 @@ class GlassNavButton extends StatelessWidget {
       GlassNavDirection.close => Icons.close_rounded,
     };
     return Material(
-      color: background,
+      color: background ?? AppColors.inverseSurface,
       shape: const CircleBorder(),
       elevation: 0,
       child: InkWell(
@@ -302,7 +309,8 @@ class GlassNavButton extends StatelessWidget {
         child: SizedBox(
           width: size,
           height: size,
-          child: Icon(icon, color: foreground, size: size * 0.45),
+          child: Icon(icon,
+              color: foreground ?? AppColors.onInverse, size: size * 0.45),
         ),
       ),
     );
@@ -325,7 +333,7 @@ class GlassActionPanel extends StatelessWidget {
     this.secondaryLabel,
     this.onSecondary,
     this.primaryColor,
-    this.background = AppColors.white,
+    this.background,
   });
 
   final String primaryLabel;
@@ -336,17 +344,19 @@ class GlassActionPanel extends StatelessWidget {
   final VoidCallback? onSecondary;
 
   /// Optional override for the primary button color — pass [AppColors.brand]
-  /// when you want a Glassdoor-green CTA instead of the default black.
+  /// when you want a Glassdoor-green CTA instead of the default neutral.
   final Color? primaryColor;
-  final Color background;
+
+  /// Panel fill. Defaults to [AppColors.surface] (theme-aware) when null.
+  final Color? background;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
       decoration: BoxDecoration(
-        color: background,
-        border: const Border(top: BorderSide(color: AppColors.hairline)),
+        color: background ?? AppColors.surface,
+        border: Border(top: BorderSide(color: AppColors.hairline)),
       ),
       padding: const EdgeInsets.fromLTRB(
         AppSizes.xl,
@@ -364,7 +374,7 @@ class GlassActionPanel extends StatelessWidget {
               icon: primaryIcon,
               loading: primaryLoading,
               onPressed: onPrimary,
-              color: primaryColor ?? AppColors.black,
+              color: primaryColor ?? AppColors.inverseSurface,
             ),
           ),
           if (secondaryLabel != null) ...[
@@ -419,11 +429,11 @@ class _PillButton extends StatelessWidget {
           alignment: Alignment.center,
           padding: const EdgeInsets.symmetric(horizontal: AppSizes.xl),
           child: loading
-              ? const SizedBox(
+              ? SizedBox(
                   width: 22,
                   height: 22,
                   child: CircularProgressIndicator(
-                    color: AppColors.white,
+                    color: AppColors.onInverse,
                     strokeWidth: 2.5,
                   ),
                 )
@@ -431,13 +441,14 @@ class _PillButton extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     if (icon != null) ...[
-                      Icon(icon, color: AppColors.white, size: AppSizes.iconMd),
+                      Icon(icon,
+                          color: AppColors.onInverse, size: AppSizes.iconMd),
                       const SizedBox(width: AppSizes.sm),
                     ],
                     Text(
                       label,
                       style: theme.textTheme.titleMedium?.copyWith(
-                        color: AppColors.white,
+                        color: AppColors.onInverse,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.1,
                       ),

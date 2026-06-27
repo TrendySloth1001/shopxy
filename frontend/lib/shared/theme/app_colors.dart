@@ -1,99 +1,114 @@
 import 'package:flutter/material.dart';
+import 'package:shopxy/shared/theme/app_palette.dart';
 
-/// Calm, breathable palette. Designed to *not* attack the eye:
-/// warm canvas page, near-black inks (not pure black), refined emerald
-/// brand, and a small set of editorial accents for distinguishing
-/// entity types (vendors / parties / categories / status).
+/// Calm, breathable palette. Designed to *not* attack the eye: warm canvas
+/// page, near-black inks (not pure black), refined emerald brand, and a small
+/// set of editorial accents for distinguishing entity types.
 ///
-/// Three groups:
-///   1. Inks       — text + iconography
-///   2. Surfaces   — canvas page bg + white card surfaces + hero panels
-///   3. Accents    — brand, status, and editorial tints
+/// These are now **theme-aware getters** that read [AppPalette.active] — the
+/// palette swapped by the theme controller (see ShopxyApp) for light / dark /
+/// OLED. Because they're getters (not `const`), they re-resolve on every build,
+/// so the whole app re-tints when the theme changes without touching call
+/// sites. (This is why a colour can't be used in a `const` constructor any
+/// more — drop the `const` at those sites.)
+///
+/// Role notes for the few tokens whose meaning matters when theming:
+///   • [white]  — literal white *foreground* on a coloured fill (button text,
+///                FAB icon). Stays white in every theme. For a card/sheet/input
+///                *surface* use [surface] instead.
+///   • [black]  — primary text/icon ink. Flips light on dark.
+///   • [surface]/[inverseSurface]/[scrim] — see [AppPalette].
 class AppColors {
   AppColors._();
 
+  static AppPalette get _p => AppPalette.active;
+
   // ── Inks ─────────────────────────────────────────────
-  /// Primary ink. Warm near-black — kinder to eyes than pure #000
-  /// while still reading as "black" in copy.
-  static const Color black = Color(0xFF14181D);
+  /// Primary ink — text + iconography. Flips light in dark themes.
+  static Color get black => _p.ink;
 
-  /// Pure white reserved for floating surfaces (cards, sheets).
-  static const Color white = Color(0xFFFFFFFF);
+  /// Literal white foreground for text/icons on a coloured fill. White in every
+  /// theme. (For a raised surface use [surface], not this.)
+  static Color get white => _p.onAccent;
 
-  /// Hairline border — warm graphite at low alpha.
-  static const Color hairline = Color(0x1F14181D);
+  /// Hairline border — warm graphite at low alpha (light at low alpha on dark).
+  static Color get hairline => _p.hairline;
 
-  /// Even softer wash — used for hover/pressed surfaces.
-  static const Color surfaceTint = Color(0x0A14181D);
+  /// Soft wash for hover/pressed surfaces.
+  static Color get surfaceTint => _p.surfaceTint;
 
   /// Secondary text.
-  static const Color muted = Color(0xFF6A707A);
+  static Color get muted => _p.muted;
 
   /// Tertiary / placeholder text.
-  static const Color subtle = Color(0xFF98A0AA);
+  static Color get subtle => _p.subtle;
 
   /// Disabled foreground.
-  static const Color disabled = Color(0xFFC2C7CE);
+  static Color get disabled => _p.disabled;
 
   // ── Surfaces ─────────────────────────────────────────
-  /// Warm parchment used as the global page background. White cards
-  /// sit on top of this for subtle depth without shadows.
-  static const Color canvas = Color(0xFFF8F7F3);
+  /// Global page background.
+  static Color get canvas => _p.canvas;
 
   /// Slightly cooler tint — legacy alias kept for older callers.
-  static const Color pageTint = Color(0xFFFAFAF7);
+  static Color get pageTint => _p.pageTint;
 
-  /// Soft panel used behind hero illustrations — picks up the canvas
-  /// tone a half-step deeper so illustrations have a backdrop.
-  static const Color heroPanel = Color(0xFFEFEEE7);
+  /// Soft panel behind hero illustrations — a half-step deeper than canvas.
+  static Color get heroPanel => _p.heroPanel;
+
+  /// Raised card / input / sheet surface. White in light; a step above the
+  /// canvas in dark. Use this for floating surfaces — never [white].
+  static Color get surface => _p.surface;
+
+  /// High-contrast neutral fill (avatar, monogram, selected pill): dark in
+  /// light mode, light in dark mode. Pair with [onInverse] for its text.
+  static Color get inverseSurface => _p.inverseSurface;
+
+  /// Foreground on [inverseSurface].
+  static Color get onInverse => _p.onInverse;
+
+  /// Modal / drawer barrier. Near-black in every theme so it always dims.
+  static Color get scrim => _p.scrim;
+
+  /// Ambient shadow ink — black at low alpha, deeper on dark.
+  static Color get shadow => _p.shadow;
 
   // ── Brand ────────────────────────────────────────────
-  /// Refined emerald. Same family as the Glassdoor green that
-  /// preceded it, dropped a few notches in saturation so it reads
-  /// confident, not loud.
-  static const Color brand = Color(0xFF1E8E5A);
-  static const Color brandStrong = Color(0xFF146A42);
-
-  /// Pale brand wash — chip fills, soft accent surfaces.
-  static const Color brandSoft = Color(0xFFE6F2EC);
+  static Color get brand => _p.brand;
+  static Color get brandStrong => _p.brandStrong;
+  static Color get brandSoft => _p.brandSoft;
 
   // ── Status (soft tones) ──────────────────────────────
-  static const Color success = Color(0xFF16A34A);
-  static const Color successSoft = Color(0xFFE7F4EC);
-
-  static const Color warning = Color(0xFFB45309);
-  static const Color warningSoft = Color(0xFFFAEBD0);
-
-  static const Color error = Color(0xFFB42318);
-  static const Color errorSoft = Color(0xFFFCE9E7);
-
-  static const Color info = Color(0xFF1D4ED8);
-  static const Color infoSoft = Color(0xFFE3EAFE);
+  static Color get success => _p.success;
+  static Color get successSoft => _p.successSoft;
+  static Color get warning => _p.warning;
+  static Color get warningSoft => _p.warningSoft;
+  static Color get error => _p.error;
+  static Color get errorSoft => _p.errorSoft;
+  static Color get info => _p.info;
+  static Color get infoSoft => _p.infoSoft;
 
   // ── Editorial accents ────────────────────────────────
-  /// Used sparingly to tag distinct entity classes — vendors,
-  /// parties, categories, challans. Each comes with a soft fill so
-  /// chips, monograms, and tiles can read as a family.
-  static const Color accentTeal = Color(0xFF0E7C8A);
-  static const Color accentTealSoft = Color(0xFFDDF1F3);
+  static Color get accentTeal => _p.accentTeal;
+  static Color get accentTealSoft => _p.accentTealSoft;
+  static Color get accentIndigo => _p.accentIndigo;
+  static Color get accentIndigoSoft => _p.accentIndigoSoft;
+  static Color get accentAmber => _p.accentAmber;
+  static Color get accentAmberSoft => _p.accentAmberSoft;
+  static Color get accentRose => _p.accentRose;
+  static Color get accentRoseSoft => _p.accentRoseSoft;
 
-  static const Color accentIndigo = Color(0xFF4338CA);
-  static const Color accentIndigoSoft = Color(0xFFE5E2FB);
+  // ── Merchant-only ────────────────────────────────────
+  static Color get flashDeal => _p.flashDeal;
+  static Color get flashDealSoft => _p.flashDealSoft;
+  static Color get flashDealSoftAlt => _p.flashDealSoftAlt;
+  static Color get whatsapp => _p.whatsapp;
 
-  static const Color accentAmber = Color(0xFFA15C07);
-  static const Color accentAmberSoft = Color(0xFFFAE9CC);
-
-  static const Color accentRose = Color(0xFFB83A6F);
-  static const Color accentRoseSoft = Color(0xFFFADFEB);
-
-  /// Flash-deal palette — warm orange/peach pair used by the flash
-  /// deals editor, list page, and the app-shell tile accent. Centralised
-  /// so a brand colour update lands everywhere at once.
-  static const Color flashDeal = Color(0xFFE05A2A);
-  static const Color flashDealSoft = Color(0xFFFFE3D2);
-  static const Color flashDealSoftAlt = Color(0xFFFFD2D2);
-
-  /// WhatsApp green — used by the share/WhatsApp CTA on invoices. Kept
-  /// as a brand colour so it doesn't drift across views.
-  static const Color whatsapp = Color(0xFF25D366);
+  /// Background for an avatar / monogram / icon-puck *tile*. In light mode it
+  /// uses the supplied soft accent (colourful, recognisable); in dark / OLED it
+  /// collapses to a neutral dark puck ([heroPanel]) so large tinted squares
+  /// don't clash with the near-black background. The icon/letter on top keeps
+  /// its accent colour, so identity is preserved without a glowing tile.
+  static Color tileBg(Color softInLight) =>
+      _p.isDark ? _p.heroPanel : softInLight;
 }

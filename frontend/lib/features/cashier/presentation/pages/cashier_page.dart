@@ -20,6 +20,16 @@ String _money(num? v) => '₹${(v ?? 0).toStringAsFixed(2)}';
 double _d(Object? v) => v is num ? v.toDouble() : 0;
 int _i(Object? v) => v is num ? v.toInt() : 0;
 
+/// Parse a money text field, ignoring everything that isn't the number itself —
+/// the ₹ sign, thousands separators, spaces and stray characters — keeping only
+/// digits and the decimal point (e.g. '₹1,200.50' → 1200.5). Returns null when
+/// there's no parseable amount. Mirrors merchant-web `parseAmount`.
+double? _parseAmount(String raw) {
+  final cleaned = raw.replaceAll(RegExp(r'[^0-9.]'), '');
+  if (cleaned.isEmpty || cleaned == '.') return null;
+  return double.tryParse(cleaned);
+}
+
 class _CashierPageState extends State<CashierPage> {
   late final CashierRemoteDataSource _ds;
   bool _loading = true;
@@ -151,12 +161,12 @@ class _ShiftOwnerBanner extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSizes.md),
       decoration: BoxDecoration(
-        color: AppColors.brandSoft,
+        color: AppColors.tileBg(AppColors.brandSoft),
         borderRadius: BorderRadius.circular(AppSizes.radiusLg),
       ),
       child: Row(
         children: [
-          const Icon(Icons.account_circle_outlined, color: AppColors.brand),
+          Icon(Icons.account_circle_outlined, color: AppColors.brand),
           const SizedBox(width: AppSizes.sm),
           Expanded(
             child: Column(
@@ -168,7 +178,7 @@ class _ShiftOwnerBanner extends StatelessWidget {
             ),
           ),
           Row(children: [
-            const Icon(Icons.timer_outlined, size: AppSizes.iconSm, color: AppColors.muted),
+            Icon(Icons.timer_outlined, size: AppSizes.iconSm, color: AppColors.muted),
             const SizedBox(width: AppSizes.xs),
             Text(_elapsed(shift['openedAt']), style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700, fontFeatures: const [])),
           ]),
@@ -209,7 +219,7 @@ class _ShiftHistoryCardState extends State<_ShiftHistoryCard> {
       if (!mounted) return;
       await showModalBottomSheet<void>(
         context: context,
-        backgroundColor: AppColors.white,
+        backgroundColor: AppColors.surface,
         isScrollControlled: true,
         builder: (ctx) => DraggableScrollableSheet(
           expand: false,
@@ -263,7 +273,7 @@ class _Card extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSizes.lg),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(AppSizes.radiusLg),
         border: Border.all(color: AppColors.hairline),
       ),
@@ -322,27 +332,27 @@ class _ReportCard extends StatelessWidget {
         children: [
           Text('${_i(sales['count'])} sales · ${_money(_d(sales['gross']))} gross',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.muted)),
-          const Divider(height: AppSizes.lg, color: AppColors.hairline),
+          Divider(height: AppSizes.lg, color: AppColors.hairline),
           _KV('Opening float', _money(_d(cash['openingFloat']))),
           _KV('Cash sales', _money(_d(cash['cashSales']))),
           _KV('Pay-ins', _money(_d(cash['payIns']))),
           _KV('Pay-outs', '− ${_money(_d(cash['payOuts']))}'),
           _KV('Drops', '− ${_money(_d(cash['drops']))}'),
           _KV('Refunds', '− ${_money(_d(cash['refunds']))}'),
-          const Divider(height: AppSizes.lg, color: AppColors.hairline),
+          Divider(height: AppSizes.lg, color: AppColors.hairline),
           _KV('Expected in drawer', _money(_d(cash['expected'])), bold: true),
           if (tenders.isNotEmpty) ...[
-            const Divider(height: AppSizes.lg, color: AppColors.hairline),
+            Divider(height: AppSizes.lg, color: AppColors.hairline),
             for (final t in tenders.cast<Map>())
               _KV('${t['mode']} (${_i(t['count'])})', _money(_d(t['amount']))),
           ],
-          const Divider(height: AppSizes.lg, color: AppColors.hairline),
+          Divider(height: AppSizes.lg, color: AppColors.hairline),
           _KV('GST taxable', _money(_d(gst['taxable']))),
           if (_d(gst['cgst']) > 0) _KV('CGST', _money(_d(gst['cgst']))),
           if (_d(gst['sgst']) > 0) _KV('SGST', _money(_d(gst['sgst']))),
           if (_d(gst['igst']) > 0) _KV('IGST', _money(_d(gst['igst']))),
           if (_i(returns['count']) > 0) ...[
-            const Divider(height: AppSizes.lg, color: AppColors.hairline),
+            Divider(height: AppSizes.lg, color: AppColors.hairline),
             _KV('Returns (${_i(returns['count'])})', '− ${_money(_d(returns['amount']))}'),
           ],
         ],
@@ -387,7 +397,7 @@ class _OpenShiftFormState extends State<_OpenShiftForm> {
             ),
             const SizedBox(height: AppSizes.md),
             FilledButton.icon(
-              onPressed: widget.busy ? null : () => widget.onOpen(double.tryParse(_ctrl.text.trim()) ?? 0),
+              onPressed: widget.busy ? null : () => widget.onOpen(_parseAmount(_ctrl.text) ?? 0),
               icon: const Icon(Icons.lock_open_rounded),
               label: const Text('Open shift'),
             ),
@@ -438,7 +448,7 @@ class _CashDrawerCardState extends State<_CashDrawerCard> {
             onPressed: widget.busy
                 ? null
                 : () {
-                    final a = double.tryParse(_amount.text.trim()) ?? 0;
+                    final a = _parseAmount(_amount.text) ?? 0;
                     if (a <= 0) return;
                     widget.onRecord(_type, a, _reason.text.trim());
                     _amount.clear();
@@ -473,7 +483,7 @@ class _CloseShiftCardState extends State<_CloseShiftCard> {
 
   @override
   Widget build(BuildContext context) {
-    final counted = double.tryParse(_counted.text.trim());
+    final counted = _parseAmount(_counted.text);
     final variance = counted == null ? null : counted - widget.expected;
     return _Card(
       title: 'Close shift',
@@ -502,7 +512,6 @@ class _CloseShiftCardState extends State<_CloseShiftCard> {
           TextField(controller: _note, decoration: const InputDecoration(labelText: 'Note (optional)', border: OutlineInputBorder())),
           const SizedBox(height: AppSizes.sm),
           FilledButton.icon(
-            style: FilledButton.styleFrom(backgroundColor: AppColors.black),
             onPressed: widget.busy || counted == null ? null : () => widget.onClose(counted, _note.text.trim()),
             icon: const Icon(Icons.lock_outline_rounded),
             label: const Text('Close & Z-report'),

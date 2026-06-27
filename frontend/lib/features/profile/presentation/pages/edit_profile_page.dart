@@ -71,7 +71,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     final hasAvatar = user?.avatarUrl != null && user!.avatarUrl!.isNotEmpty;
     final source = await showModalBottomSheet<_PhotoAction>(
       context: context,
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.surface,
       builder: (ctx) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -88,9 +88,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
             ),
             if (hasAvatar)
               ListTile(
-                leading: const Icon(Icons.delete_outline,
+                leading: Icon(Icons.delete_outline,
                     color: AppColors.error),
-                title: const Text('Remove photo',
+                title: Text('Remove photo',
                     style: TextStyle(color: AppColors.error)),
                 onTap: () => Navigator.of(ctx).pop(_PhotoAction.remove),
               ),
@@ -240,7 +240,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     right: 0,
                     bottom: 0,
                     child: Material(
-                      color: AppColors.black,
+                      color: AppColors.inverseSurface,
                       shape: const CircleBorder(),
                       elevation: 1,
                       child: InkWell(
@@ -249,17 +249,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         child: Padding(
                           padding: const EdgeInsets.all(AppSizes.sm),
                           child: _uploadingAvatar
-                              ? const SizedBox(
+                              ? SizedBox(
                                   width: AppSizes.iconSm,
                                   height: AppSizes.iconSm,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    color: AppColors.white,
+                                    color: AppColors.onInverse,
                                   ),
                                 )
-                              : const Icon(
+                              : Icon(
                                   Icons.camera_alt_outlined,
-                                  color: AppColors.white,
+                                  color: AppColors.onInverse,
                                   size: AppSizes.iconSm,
                                 ),
                         ),
@@ -390,17 +390,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
             FilledButton(
               onPressed: _busy ? null : _save,
               style: FilledButton.styleFrom(
-                backgroundColor: AppColors.black,
-                foregroundColor: AppColors.white,
+                backgroundColor: AppColors.inverseSurface,
+                foregroundColor: AppColors.onInverse,
                 padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
               ),
               child: _busy
-                  ? const SizedBox(
+                  ? SizedBox(
                       height: AppSizes.xl,
                       width: AppSizes.xl,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: AppColors.white,
+                        color: AppColors.onInverse,
                       ),
                     )
                   : const Text('Save'),

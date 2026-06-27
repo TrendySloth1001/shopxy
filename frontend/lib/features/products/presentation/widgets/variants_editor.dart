@@ -196,7 +196,7 @@ class _AxisCard extends StatelessWidget {
       decoration: ShapeDecoration(
         shape: AppShapes.squircle(
           AppSizes.radiusSm,
-          side: const BorderSide(color: AppColors.hairline, width: 1),
+          side: BorderSide(color: AppColors.hairline, width: 1),
         ),
       ),
       child: Column(
@@ -295,7 +295,7 @@ class _VariantCard extends StatelessWidget {
       decoration: ShapeDecoration(
         shape: AppShapes.squircle(
           AppSizes.radiusSm,
-          side: const BorderSide(color: AppColors.hairline, width: 1),
+          side: BorderSide(color: AppColors.hairline, width: 1),
         ),
       ),
       child: Column(
@@ -471,7 +471,7 @@ class _VariantImagesRow extends StatelessWidget {
                           color: AppColors.heroPanel,
                           shape: AppShapes.squircle(AppSizes.radiusSm),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.broken_image_outlined,
                           color: AppColors.muted,
                         ),
@@ -485,14 +485,14 @@ class _VariantImagesRow extends StatelessWidget {
                       onTap: () => onRemove(i),
                       child: Container(
                         padding: const EdgeInsets.all(2),
-                        decoration: const BoxDecoration(
-                          color: AppColors.black,
+                        decoration: BoxDecoration(
+                          color: AppColors.inverseSurface,
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.close_rounded,
                           size: 12,
-                          color: AppColors.white,
+                          color: AppColors.onInverse,
                         ),
                       ),
                     ),
@@ -553,13 +553,13 @@ class _AddVariantImageTile extends StatelessWidget {
           color: AppColors.surfaceTint,
           shape: AppShapes.squircle(
             AppSizes.radiusSm,
-            side: const BorderSide(color: AppColors.hairline),
+            side: BorderSide(color: AppColors.hairline),
           ),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.add_a_photo_outlined, color: AppColors.muted),
+            Icon(Icons.add_a_photo_outlined, color: AppColors.muted),
             const SizedBox(height: 2),
             Text(
               'Add',

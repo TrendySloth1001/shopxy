@@ -131,7 +131,7 @@ class _ShopHoursPageState extends State<ShopHoursPage> {
         Material(
           color: _vacationMode
               ? AppColors.warningSoft
-              : AppColors.white,
+              : AppColors.surface,
           shape: AppShapes.squircle(AppSizes.radiusMd),
           child: Padding(
             padding: const EdgeInsets.all(AppSizes.md),
@@ -181,13 +181,13 @@ class _ShopHoursPageState extends State<ShopHoursPage> {
         ),
         const SizedBox(height: AppSizes.sm),
         Material(
-          color: AppColors.white,
+          color: AppColors.surface,
           shape: AppShapes.squircle(AppSizes.radiusMd),
           child: Column(
             children: [
               for (var i = 0; i < _dayCodes.length; i++) ...[
                 if (i != 0)
-                  const Divider(
+                  Divider(
                     height: 1,
                     color: AppColors.hairline,
                     indent: AppSizes.md,
@@ -245,7 +245,7 @@ class _ShopHoursSkeleton extends StatelessWidget {
       children: [
         // Vacation mode card skeleton
         Material(
-          color: AppColors.white,
+          color: AppColors.surface,
           shape: AppShapes.squircle(AppSizes.radiusMd),
           child: Padding(
             padding: const EdgeInsets.all(AppSizes.md),
@@ -288,13 +288,13 @@ class _ShopHoursSkeleton extends StatelessWidget {
         const SizedBox(height: AppSizes.sm),
         // 7-day rows card skeleton
         Material(
-          color: AppColors.white,
+          color: AppColors.surface,
           shape: AppShapes.squircle(AppSizes.radiusMd),
           child: Column(
             children: [
               for (var i = 0; i < 7; i++) ...[
                 if (i != 0)
-                  const Divider(
+                  Divider(
                     height: 1,
                     color: AppColors.hairline,
                     indent: AppSizes.md,
@@ -420,7 +420,7 @@ class _DayRow extends StatelessWidget {
           ),
           Expanded(
             child: hours.closed
-                ? const Align(
+                ? Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
                       'Closed',

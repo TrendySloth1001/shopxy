@@ -177,7 +177,7 @@ class _CouponRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSizes.sm),
       child: Material(
-        color: AppColors.white,
+        color: AppColors.surface,
         shape: AppShapes.squircle(AppSizes.radiusMd),
         child: InkWell(
           customBorder: AppShapes.squircle(AppSizes.radiusMd),
@@ -278,7 +278,7 @@ class _CouponRowSkeleton extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSizes.sm),
       child: Material(
-        color: AppColors.white,
+        color: AppColors.surface,
         shape: AppShapes.squircle(AppSizes.radiusMd),
         child: Padding(
           padding: const EdgeInsets.all(AppSizes.md),
@@ -347,10 +347,10 @@ class _EmptyBlock extends StatelessWidget {
         padding: const EdgeInsets.all(AppSizes.xl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: const [
+          children: [
             Icon(Icons.local_offer_outlined,
                 size: AppSizes.iconHuge, color: AppColors.subtle),
-            SizedBox(height: AppSizes.md),
+            const SizedBox(height: AppSizes.md),
             Text(
               'No coupons yet. Tap "New coupon" to create your first one.',
               textAlign: TextAlign.center,

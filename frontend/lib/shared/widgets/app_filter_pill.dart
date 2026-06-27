@@ -38,10 +38,15 @@ class AppFilterPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final activeColor = accent ?? AppColors.black;
-    final fg = selected ? AppColors.white : AppColors.black;
+    // No accent → neutral high-contrast pill: the inverse pair flips correctly
+    // in dark (light fill + dark text). With an accent (warning, brand, …) the
+    // fill is that colour and white reads on it in every theme.
+    final neutral = accent == null;
+    final activeColor = accent ?? AppColors.inverseSurface;
+    final selectedFg = neutral ? AppColors.onInverse : AppColors.white;
+    final fg = selected ? selectedFg : AppColors.black;
     final bg = selected ? activeColor : AppColors.surfaceTint;
-    final iconColor = selected ? AppColors.white : activeColor;
+    final iconColor = selected ? selectedFg : activeColor;
 
     return Padding(
       padding: const EdgeInsets.only(right: AppSizes.sm),

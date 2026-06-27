@@ -321,7 +321,7 @@ class _ShopPayoutsPageState extends State<ShopPayoutsPage>
             },
           ),
         _StepProgress(step: _step, total: _steps.length, title: _steps[_step]),
-        const Divider(height: 1, thickness: 1, color: AppColors.hairline),
+        Divider(height: 1, thickness: 1, color: AppColors.hairline),
         Expanded(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(
@@ -379,7 +379,7 @@ class _ShopPayoutsPageState extends State<ShopPayoutsPage>
     return SafeArea(
       top: false,
       child: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           border: Border(top: BorderSide(color: AppColors.hairline)),
         ),
         padding: const EdgeInsets.fromLTRB(
@@ -399,16 +399,11 @@ class _ShopPayoutsPageState extends State<ShopPayoutsPage>
             const Spacer(),
             FilledButton(
               onPressed: _submitting ? null : _onContinue,
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.black,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: AppSizes.xl, vertical: AppSizes.md),
-              ),
               child: _submitting
-                  ? const SizedBox(
+                  ? SizedBox(
                       height: 18,
                       width: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.white))
+                      child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(AppColors.onInverse)))
                   : Text(isLast ? 'Set up payouts' : 'Continue'),
             ),
           ],
@@ -484,7 +479,7 @@ class _PayoutsWizardSkeleton extends StatelessWidget {
             ],
           ),
         ),
-        const Divider(height: 1, thickness: 1, color: AppColors.hairline),
+        Divider(height: 1, thickness: 1, color: AppColors.hairline),
         // ── Form body — mirrors _BusinessStep's label + input structure ───────
         Expanded(
           child: Padding(
@@ -525,7 +520,7 @@ class _PayoutsWizardSkeleton extends StatelessWidget {
         SafeArea(
           top: false,
           child: Container(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               border: Border(top: BorderSide(color: AppColors.hairline)),
             ),
             padding: const EdgeInsets.fromLTRB(
@@ -535,11 +530,6 @@ class _PayoutsWizardSkeleton extends StatelessWidget {
                 const Spacer(),
                 FilledButton(
                   onPressed: null,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.black,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: AppSizes.xl, vertical: AppSizes.md),
-                  ),
                   child: const Text('Continue'),
                 ),
               ],
@@ -867,7 +857,7 @@ class _ResumeBanner extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.history_rounded, color: AppColors.info, size: AppSizes.iconMd),
+              Icon(Icons.history_rounded, color: AppColors.info, size: AppSizes.iconMd),
               const SizedBox(width: AppSizes.sm),
               Expanded(
                 child: Text(
@@ -1059,7 +1049,7 @@ class _ErrorLine extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.error_outline, color: AppColors.error, size: AppSizes.iconMd),
+          Icon(Icons.error_outline, color: AppColors.error, size: AppSizes.iconMd),
           const SizedBox(width: AppSizes.sm),
           Expanded(
             child: Text(

@@ -66,7 +66,7 @@ class _InvoicesPageState extends State<InvoicesPage> {
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppSizes.bottomSheetRadius)),
       ),
@@ -111,7 +111,7 @@ class _InvoicesPageState extends State<InvoicesPage> {
                   child: Container(
                     width: AppSizes.sm,
                     height: AppSizes.sm,
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       color: AppColors.brand,
                       shape: BoxShape.circle,
                     ),
@@ -213,7 +213,7 @@ class _InvoicesPageState extends State<InvoicesPage> {
                             onRefresh: () =>
                                 provider.loadInvoices(refresh: true),
                             color: AppColors.black,
-                            backgroundColor: AppColors.white,
+                            backgroundColor: AppColors.surface,
                             child: ListView.separated(
                               padding: const EdgeInsets.symmetric(
                                 vertical: AppSizes.sm,
@@ -400,12 +400,14 @@ class _InvoiceFilterSheetState extends State<_InvoiceFilterSheet> {
     ('DEBIT_NOTE', 'Debit Note', Icons.redo_rounded),
   ];
 
-  static const _statusOptions = <(String?, String, Color?)>[
-    (null, 'Any status', null),
-    ('DRAFT', 'Draft', AppColors.warning),
-    ('CONFIRMED', 'Confirmed', AppColors.success),
-    ('CANCELLED', 'Cancelled', AppColors.error),
-  ];
+  // Getter, not `static final`: the status colours are theme-aware getters, so
+  // a cached list would freeze the light-mode values and not flip in dark.
+  static List<(String?, String, Color?)> get _statusOptions => [
+        (null, 'Any status', null),
+        ('DRAFT', 'Draft', AppColors.warning),
+        ('CONFIRMED', 'Confirmed', AppColors.success),
+        ('CANCELLED', 'Cancelled', AppColors.error),
+      ];
 
   @override
   Widget build(BuildContext context) {
@@ -629,7 +631,7 @@ class _InvoiceTile extends StatelessWidget {
     final df = DateFormat('dd MMM yyyy');
 
     return Material(
-      color: AppColors.white,
+      color: AppColors.surface,
       child: InkWell(
         onTap: onTap,
         splashColor: AppColors.surfaceTint,

@@ -162,7 +162,7 @@ class _OpsTileSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(top: BorderSide(color: AppColors.hairline)),
       ),
       padding: const EdgeInsets.symmetric(
@@ -294,7 +294,7 @@ class _OpsTile extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           border: Border(top: BorderSide(color: AppColors.hairline)),
         ),
         padding: const EdgeInsets.symmetric(
@@ -338,7 +338,7 @@ class _OpsTile extends StatelessWidget {
               trailing!,
             ],
             const SizedBox(width: AppSizes.sm),
-            const Icon(Icons.chevron_right_rounded, color: AppColors.subtle),
+            Icon(Icons.chevron_right_rounded, color: AppColors.subtle),
           ],
         ),
       ),

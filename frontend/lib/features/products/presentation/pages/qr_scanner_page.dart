@@ -81,7 +81,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
     return showModalBottomSheet<_MissingProductAction>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.surface,
       shape: AppShapes.squircleTop(AppSizes.bottomSheetRadius),
       builder: (ctx) {
         final theme = Theme.of(ctx);
@@ -107,7 +107,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
                 ),
               ),
               const SizedBox(height: AppSizes.xl),
-              const Icon(
+              Icon(
                 Icons.qr_code_rounded,
                 size: AppSizes.iconHuge,
                 color: AppColors.black,
@@ -134,7 +134,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
                     vertical: AppSizes.sm,
                   ),
                   decoration: ShapeDecoration(
-                    color: AppColors.white,
+                    color: AppColors.surface,
                     shape: AppShapes.squircle(
                       AppSizes.radiusFull,
                       side: BorderSide(color: AppColors.hairline, width: 1),
@@ -174,12 +174,12 @@ class _QrScannerPageState extends State<QrScannerPage> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: AppColors.black,
+      backgroundColor: Colors.black,
       appBar: AppBar(
         title: const Text(AppStrings.scanQr),
-        backgroundColor: AppColors.black,
-        foregroundColor: AppColors.white,
-        iconTheme: const IconThemeData(color: AppColors.white),
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        iconTheme: IconThemeData(color: Colors.white),
       ),
       body: Stack(
         children: [
@@ -191,7 +191,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
               decoration: ShapeDecoration(
                 shape: AppShapes.squircle(
                   AppSizes.radiusLg,
-                  side: const BorderSide(color: AppColors.white, width: 3),
+                  side: BorderSide(color: Colors.white, width: 3),
                 ),
               ),
             ),
@@ -207,16 +207,16 @@ class _QrScannerPageState extends State<QrScannerPage> {
                   vertical: AppSizes.md,
                 ),
                 decoration: ShapeDecoration(
-                  color: AppColors.black,
+                  color: Colors.black,
                   shape: AppShapes.squircle(
                     AppSizes.radiusFull,
-                    side: const BorderSide(color: AppColors.white, width: 1),
+                    side: BorderSide(color: Colors.white, width: 1),
                   ),
                 ),
                 child: Text(
                   _isProcessing ? AppStrings.loading : AppStrings.scanHint,
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppColors.white,
+                    color: Colors.white,
                   ),
                 ),
               ),

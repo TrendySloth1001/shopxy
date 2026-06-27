@@ -428,7 +428,7 @@ class _ItemRow extends StatelessWidget {
           ),
           IconButton(
             onPressed: onRemove,
-            icon: const Icon(
+            icon: Icon(
               Icons.close_rounded,
               color: AppColors.error,
               size: AppSizes.iconMd,

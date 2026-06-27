@@ -363,7 +363,7 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
           ),
           clipBehavior: Clip.antiAlias,
           child: _imageUrl == null
-              ? const Icon(Icons.image_outlined, color: AppColors.muted)
+              ? Icon(Icons.image_outlined, color: AppColors.muted)
               : Image.network(
                   resolveImageUrl(_imageUrl!),
                   fit: BoxFit.cover,
@@ -529,7 +529,7 @@ class _Hint extends StatelessWidget {
         color: AppColors.heroPanel,
         shape: AppShapes.squircle(AppSizes.radiusMd),
       ),
-      child: Text(text, style: const TextStyle(color: AppColors.muted)),
+      child: Text(text, style: TextStyle(color: AppColors.muted)),
     );
   }
 }
@@ -621,10 +621,10 @@ class _ProductRow extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: AppSizes.sm),
       padding: const EdgeInsets.all(AppSizes.md),
       decoration: ShapeDecoration(
-        color: AppColors.white,
+        color: AppColors.surface,
         shape: AppShapes.squircle(
           AppSizes.radiusMd,
-          side: const BorderSide(color: AppColors.hairline),
+          side: BorderSide(color: AppColors.hairline),
         ),
       ),
       child: Column(
@@ -641,7 +641,7 @@ class _ProductRow extends StatelessWidget {
                   shape: AppShapes.squircle(AppSizes.radiusSm),
                 ),
                 child: draft.product.imageUrl == null
-                    ? const Icon(Icons.image_outlined, color: AppColors.muted)
+                    ? Icon(Icons.image_outlined, color: AppColors.muted)
                     : Image.network(
                         resolveImageUrl(draft.product.imageUrl!),
                         fit: BoxFit.cover,
@@ -799,7 +799,7 @@ class _BannerProductPickerSheetState extends State<_BannerProductPickerSheet> {
         if (_searching) const LinearProgressIndicator(minHeight: 2),
         Expanded(
           child: _results.isEmpty
-              ? const Center(
+              ? Center(
                   child: Text(
                     'Type 2+ characters to search',
                     style: TextStyle(color: AppColors.muted),
@@ -831,7 +831,7 @@ class _BannerProductPickerSheetState extends State<_BannerProductPickerSheet> {
                       child: Container(
                         padding: const EdgeInsets.all(AppSizes.sm),
                         decoration: ShapeDecoration(
-                          color: AppColors.white,
+                          color: AppColors.surface,
                           shape: AppShapes.squircle(AppSizes.radiusMd),
                         ),
                         child: Row(
@@ -845,7 +845,7 @@ class _BannerProductPickerSheetState extends State<_BannerProductPickerSheet> {
                                 shape: AppShapes.squircle(AppSizes.radiusSm),
                               ),
                               child: img == null
-                                  ? const Icon(Icons.image_outlined,
+                                  ? Icon(Icons.image_outlined,
                                       color: AppColors.muted)
                                   : Image.network(
                                       resolveImageUrl(img),

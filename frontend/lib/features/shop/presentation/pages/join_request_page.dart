@@ -110,12 +110,12 @@ class _JoinRequestPageState extends State<JoinRequestPage> {
             Container(
               width: AppSizes.massive,
               height: AppSizes.massive,
-              decoration: const BoxDecoration(
-                color: AppColors.brandSoft,
+              decoration: BoxDecoration(
+                color: AppColors.tileBg(AppColors.brandSoft),
                 shape: BoxShape.circle,
               ),
               alignment: Alignment.center,
-              child: const Icon(Icons.groups_rounded,
+              child: Icon(Icons.groups_rounded,
                   color: AppColors.brandStrong, size: AppSizes.iconXl),
             ),
             const SizedBox(height: AppSizes.lg),
@@ -139,7 +139,7 @@ class _JoinRequestPageState extends State<JoinRequestPage> {
                   padding: const EdgeInsets.symmetric(
                       horizontal: AppSizes.md, vertical: AppSizes.xs),
                   decoration: ShapeDecoration(
-                    color: AppColors.brandSoft,
+                    color: AppColors.tileBg(AppColors.brandSoft),
                     shape: AppShapes.squircle(AppSizes.radiusFull),
                   ),
                   child: Text(
@@ -175,7 +175,7 @@ class _JoinRequestPageState extends State<JoinRequestPage> {
             ),
             const SizedBox(height: AppSizes.sm),
             Material(
-              color: AppColors.white,
+              color: AppColors.surface,
               shape: AppShapes.squircle(AppSizes.radiusMd),
               child: Padding(
                 padding: const EdgeInsets.all(AppSizes.md),
@@ -198,11 +198,11 @@ class _JoinRequestPageState extends State<JoinRequestPage> {
               child: FilledButton(
                 onPressed: _busy ? null : _accept,
                 child: _busy
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 18,
                         height: 18,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: AppColors.white),
+                            strokeWidth: 2, valueColor: AlwaysStoppedAnimation(AppColors.onInverse)),
                       )
                     : Text('Join ${shop.length > 18 ? 'the team' : shop}'),
               ),

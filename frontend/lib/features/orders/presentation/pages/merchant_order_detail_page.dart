@@ -117,7 +117,7 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
     final ok = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.surface,
       shape: AppShapes.squircleTop(AppSizes.bottomSheetRadius),
       builder: (ctx) => _ConfirmOrderSheet(shortfall: shortfall),
     );
@@ -174,7 +174,7 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
     final result = await showModalBottomSheet<({bool ok, String note})>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.surface,
       shape: AppShapes.squircleTop(AppSizes.bottomSheetRadius),
       builder: (ctx) => const _DeclineOrderSheet(),
     );
@@ -209,7 +209,7 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
     final result = await showModalBottomSheet<_ShippingUpdateResult>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.surface,
       shape: AppShapes.squircleTop(AppSizes.bottomSheetRadius),
       builder: (ctx) => const _ShippingUpdateSheet(),
     );
@@ -257,7 +257,7 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
       final draftId = await showModalBottomSheet<int>(
         context: context,
         isScrollControlled: true,
-        backgroundColor: AppColors.white,
+        backgroundColor: AppColors.surface,
         shape: AppShapes.squircleTop(AppSizes.bottomSheetRadius),
         builder: (_) =>
             StockBottomSheet(product: product, initialType: 'STOCK_IN'),
@@ -438,8 +438,8 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
           : SafeArea(
               child: Container(
                 padding: const EdgeInsets.all(AppSizes.lg),
-                decoration: const BoxDecoration(
-                  color: AppColors.white,
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
                   border: Border(top: BorderSide(color: AppColors.hairline)),
                 ),
                 child: Row(
@@ -450,15 +450,15 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
                         what: 'manage orders',
                         child: OutlinedButton.icon(
                           onPressed: _busy ? null : _reject,
-                          icon: const Icon(Icons.close_rounded,
+                          icon: Icon(Icons.close_rounded,
                               color: AppColors.error),
-                          label: const Text(
+                          label: Text(
                             'Decline',
                             style: TextStyle(color: AppColors.error),
                           ),
                           style: OutlinedButton.styleFrom(
                             minimumSize: const Size.fromHeight(AppSizes.huge),
-                            side: const BorderSide(color: AppColors.error),
+                            side: BorderSide(color: AppColors.error),
                           ),
                         ),
                       ),
@@ -501,8 +501,8 @@ class _StickyContextStrip extends StatelessWidget {
       width: double.infinity,
       height: AppSizes.xxxl,
       padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
-      decoration: const BoxDecoration(
-        color: AppColors.white,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
         border: Border(bottom: BorderSide(color: AppColors.hairline)),
       ),
       alignment: Alignment.centerLeft,
@@ -623,8 +623,8 @@ class _Body extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Padding(
-                  padding: EdgeInsets.only(top: 2),
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
                   child: Icon(
                     Icons.location_on_outlined,
                     size: AppSizes.iconSm,
@@ -791,7 +791,7 @@ class _DecisionSummaryStrip extends StatelessWidget {
                   width: AppSizes.sm,
                   height: AppSizes.sm,
                   margin: const EdgeInsets.only(right: AppSizes.sm),
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     color: AppColors.warning,
                     shape: BoxShape.circle,
                   ),
@@ -915,7 +915,7 @@ class _ShortfallBanner extends StatelessWidget {
           color: AppColors.warningSoft,
           shape: AppShapes.squircle(
             AppSizes.radiusMd,
-            side: const BorderSide(color: AppColors.warning),
+            side: BorderSide(color: AppColors.warning),
           ),
         ),
         child: Column(
@@ -924,8 +924,8 @@ class _ShortfallBanner extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Padding(
-                  padding: EdgeInsets.only(top: 2),
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
                   child: Icon(Icons.warning_amber_rounded,
                       color: AppColors.warning, size: AppSizes.iconMd),
                 ),
@@ -1147,7 +1147,7 @@ class _CustomerNote extends StatelessWidget {
           color: AppColors.surfaceTint,
           shape: AppShapes.squircle(
             AppSizes.radiusMd,
-            side: const BorderSide(color: AppColors.hairline),
+            side: BorderSide(color: AppColors.hairline),
           ),
         ),
         child: Column(
@@ -1155,7 +1155,7 @@ class _CustomerNote extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(Icons.format_quote_rounded,
+                Icon(Icons.format_quote_rounded,
                     size: AppSizes.iconSm, color: AppColors.muted),
                 const SizedBox(width: AppSizes.xs),
                 Text(
@@ -1261,12 +1261,12 @@ class _JourneyDot extends StatelessWidget {
           width: AppSizes.md,
           height: AppSizes.md,
           decoration: BoxDecoration(
-            color: step.done || step.failed ? color : AppColors.white,
+            color: step.done || step.failed ? color : AppColors.surface,
             shape: BoxShape.circle,
             border: Border.all(color: color, width: 1.4),
           ),
           child: step.done && !step.failed
-              ? const Icon(Icons.check, size: 8, color: AppColors.white)
+              ? Icon(Icons.check, size: 8, color: AppColors.white)
               : null,
         ),
         const SizedBox(height: AppSizes.xs),
@@ -1379,7 +1379,7 @@ class _ProductThumb extends StatelessWidget {
       height: AppSizes.productThumbSize,
       decoration: ShapeDecoration(color: AppColors.heroPanel, shape: shape),
       alignment: Alignment.center,
-      child: const Icon(
+      child: Icon(
         Icons.inventory_2_outlined,
         size: AppSizes.iconMd,
         color: AppColors.muted,
@@ -1520,8 +1520,8 @@ class _TotalsBlock extends StatelessWidget {
             value: '−${currency.format(discount)}',
             muted: true,
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: AppSizes.xs),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
             child: Divider(height: 1, color: AppColors.hairline),
           ),
           _TotalLine(
@@ -1594,7 +1594,7 @@ class _ReasonChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Material(
-      color: selected ? AppColors.black : AppColors.surfaceTint,
+      color: selected ? AppColors.inverseSurface : AppColors.surfaceTint,
       shape: AppShapes.squircle(AppSizes.radiusFull),
       child: InkWell(
         customBorder: AppShapes.squircle(AppSizes.radiusFull),
@@ -1605,7 +1605,7 @@ class _ReasonChip extends StatelessWidget {
           child: Text(
             label,
             style: theme.textTheme.labelMedium?.copyWith(
-              color: selected ? AppColors.white : AppColors.black,
+              color: selected ? AppColors.onInverse : AppColors.black,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -1629,7 +1629,7 @@ class _ErrorState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.cloud_off_rounded,
+            Icon(Icons.cloud_off_rounded,
                 size: AppSizes.iconHuge, color: AppColors.muted),
             const SizedBox(height: AppSizes.md),
             Text(
@@ -1699,14 +1699,14 @@ class _ConfirmOrderSheet extends StatelessWidget {
                   color: AppColors.warningSoft,
                   shape: AppShapes.squircle(
                     AppSizes.radiusMd,
-                    side: const BorderSide(color: AppColors.warning),
+                    side: BorderSide(color: AppColors.warning),
                   ),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Padding(
-                      padding: EdgeInsets.only(top: 2),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
                       child: Icon(Icons.warning_amber_rounded,
                           color: AppColors.warning, size: AppSizes.iconMd),
                     ),
@@ -1736,7 +1736,7 @@ class _ConfirmOrderSheet extends StatelessWidget {
                     onPressed: () => Navigator.pop(context, false),
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size.fromHeight(AppSizes.huge),
-                      side: const BorderSide(color: AppColors.hairline),
+                      side: BorderSide(color: AppColors.hairline),
                     ),
                     child: const Text('Not yet'),
                   ),
@@ -1858,7 +1858,7 @@ class _DeclineOrderSheetState extends State<_DeclineOrderSheet> {
                         Navigator.pop(context, (ok: false, note: '')),
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size.fromHeight(AppSizes.huge),
-                      side: const BorderSide(color: AppColors.hairline),
+                      side: BorderSide(color: AppColors.hairline),
                     ),
                     child: const Text('Keep'),
                   ),
@@ -1948,7 +1948,7 @@ class _ShippingSection extends StatelessWidget {
                     label: const Text('Update shipping'),
                     style: OutlinedButton.styleFrom(
                       visualDensity: VisualDensity.compact,
-                      side: const BorderSide(color: AppColors.hairline),
+                      side: BorderSide(color: AppColors.hairline),
                       foregroundColor: AppColors.black,
                     ),
                   ),
@@ -1992,7 +1992,7 @@ class _ShippingEventRow extends StatelessWidget {
             child: Container(
               width: AppSizes.sm,
               height: AppSizes.sm,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: AppColors.brand,
                 shape: BoxShape.circle,
               ),
@@ -2189,7 +2189,7 @@ class _ShippingUpdateSheetState extends State<_ShippingUpdateSheet> {
                         ),
                         style: OutlinedButton.styleFrom(
                           minimumSize: const Size.fromHeight(AppSizes.huge),
-                          side: const BorderSide(color: AppColors.hairline),
+                          side: BorderSide(color: AppColors.hairline),
                           foregroundColor: AppColors.black,
                           alignment: Alignment.centerLeft,
                         ),
@@ -2219,7 +2219,7 @@ class _ShippingUpdateSheetState extends State<_ShippingUpdateSheet> {
                       onPressed: () => Navigator.pop(context),
                       style: OutlinedButton.styleFrom(
                         minimumSize: const Size.fromHeight(AppSizes.huge),
-                        side: const BorderSide(color: AppColors.hairline),
+                        side: BorderSide(color: AppColors.hairline),
                       ),
                       child: const Text('Cancel'),
                     ),
@@ -2498,7 +2498,7 @@ class _ItemsDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Divider(height: 1, color: Color(0xFFEEEEEE));
+    return Divider(height: 1, color: AppColors.hairline);
   }
 }
 
@@ -2556,23 +2556,23 @@ class _TotalsBlockSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.symmetric(
+    return Padding(
+      padding: const EdgeInsets.symmetric(
         horizontal: AppSizes.lg,
         vertical: AppSizes.md,
       ),
       child: Column(
         children: [
-          _TotalLineSkeleton(labelFactor: 0.3, valueFactor: 0.25),
-          SizedBox(height: AppSizes.xs),
-          _TotalLineSkeleton(labelFactor: 0.2, valueFactor: 0.2),
-          SizedBox(height: AppSizes.xs),
-          _TotalLineSkeleton(labelFactor: 0.25, valueFactor: 0.2),
+          const _TotalLineSkeleton(labelFactor: 0.3, valueFactor: 0.25),
+          const SizedBox(height: AppSizes.xs),
+          const _TotalLineSkeleton(labelFactor: 0.2, valueFactor: 0.2),
+          const SizedBox(height: AppSizes.xs),
+          const _TotalLineSkeleton(labelFactor: 0.25, valueFactor: 0.2),
           Padding(
-            padding: EdgeInsets.symmetric(vertical: AppSizes.xs),
-            child: Divider(height: 1, color: Color(0xFFEEEEEE)),
+            padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
+            child: Divider(height: 1, color: AppColors.hairline),
           ),
-          _TotalLineSkeleton(labelFactor: 0.2, valueFactor: 0.3),
+          const _TotalLineSkeleton(labelFactor: 0.2, valueFactor: 0.3),
         ],
       ),
     );
@@ -2666,10 +2666,10 @@ class _StockDraftCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(AppSizes.md),
         decoration: ShapeDecoration(
-          color: AppColors.brandSoft,
+          color: AppColors.tileBg(AppColors.brandSoft),
           shape: AppShapes.squircle(
             AppSizes.radiusMd,
-            side: const BorderSide(color: AppColors.brand),
+            side: BorderSide(color: AppColors.brand),
           ),
         ),
         child: Column(
@@ -2677,7 +2677,7 @@ class _StockDraftCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.inventory_outlined,
                   size: AppSizes.iconSm,
                   color: AppColors.brandStrong,
@@ -2709,7 +2709,7 @@ class _StockDraftCard extends StatelessWidget {
                 onDismiss: () => onDismiss(d),
               ),
               if (d != drafts.last)
-                const Divider(height: 1, color: AppColors.hairline),
+                Divider(height: 1, color: AppColors.hairline),
             ],
           ],
         ),
@@ -2774,12 +2774,12 @@ class _StockDraftRow extends StatelessWidget {
           FilledButton.icon(
             onPressed: isConfirming ? null : onConfirm,
             icon: isConfirming
-                ? const SizedBox(
+                ? SizedBox(
                     width: AppSizes.iconSm,
                     height: AppSizes.iconSm,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: AppColors.white,
+                      color: AppColors.onInverse,
                     ),
                   )
                 : const Icon(Icons.check_rounded, size: AppSizes.iconSm),

@@ -105,7 +105,7 @@ class _ProductsPageState extends State<ProductsPage> {
     final draftId = await showModalBottomSheet<int>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.surface,
       builder: (_) => StockBottomSheet(product: product, initialType: type),
     );
     if (!mounted) return;
@@ -346,7 +346,7 @@ class _ProductsPageState extends State<ProductsPage> {
                         : RefreshIndicator(
                             onRefresh: () => provider.loadProducts(),
                             color: AppColors.black,
-                            backgroundColor: AppColors.white,
+                            backgroundColor: AppColors.surface,
                             child: ListView.separated(
                               padding: const EdgeInsets.symmetric(
                                 vertical: AppSizes.sm,
@@ -611,8 +611,8 @@ class _ScanAction extends StatelessWidget {
         InkWell(
           customBorder: const CircleBorder(),
           onTap: onTap,
-          child: const Padding(
-            padding: EdgeInsets.all(AppSizes.xs),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSizes.xs),
             child: Icon(
               Icons.qr_code_scanner_rounded,
               size: AppSizes.iconMd,

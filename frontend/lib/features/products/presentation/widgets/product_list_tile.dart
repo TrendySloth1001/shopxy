@@ -106,7 +106,7 @@ class ProductListTile extends StatelessWidget {
     final showMetaLine = activity != null || hasVendor;
 
     return Material(
-      color: AppColors.white,
+      color: AppColors.surface,
       child: InkWell(
         onTap: onTap,
         splashColor: AppColors.surfaceTint,
@@ -460,7 +460,7 @@ class _MerchantPriceLine extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
+                Icon(
                   Icons.error_outline_rounded,
                   size: 11,
                   color: AppColors.warning,

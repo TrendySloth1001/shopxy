@@ -154,7 +154,7 @@ class _Summary extends StatelessWidget {
               vertical: AppSizes.xs,
             ),
             decoration: ShapeDecoration(
-              color: AppColors.brandSoft,
+              color: AppColors.tileBg(AppColors.brandSoft),
               shape: AppShapes.squircle(AppSizes.radiusSm),
             ),
             child: Row(
@@ -168,7 +168,7 @@ class _Summary extends StatelessWidget {
                       ),
                 ),
                 const SizedBox(width: AppSizes.xs),
-                const Icon(Icons.star_rounded, color: AppColors.brandStrong),
+                Icon(Icons.star_rounded, color: AppColors.brandStrong),
               ],
             ),
           ),

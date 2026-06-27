@@ -19,7 +19,7 @@ Future<bool?> showCouponEditorSheet({
   return showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: AppColors.white,
+    backgroundColor: AppColors.surface,
     shape: AppShapes.squircleTop(AppSizes.bottomSheetRadius),
     builder: (_) => _CouponEditorSheet(existing: existing),
   );
@@ -358,7 +358,7 @@ class _CouponEditorSheetState extends State<_CouponEditorSheet> {
                 padding: const EdgeInsets.all(AppSizes.sm),
                 color: AppColors.errorSoft,
                 child: Text(_error!,
-                    style: const TextStyle(color: AppColors.error)),
+                    style: TextStyle(color: AppColors.error)),
               ),
             ],
             const SizedBox(height: AppSizes.md),

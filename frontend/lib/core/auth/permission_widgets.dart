@@ -27,7 +27,7 @@ void showLockedHint(BuildContext context, [String? what]) {
         behavior: SnackBarBehavior.floating,
         content: Row(
           children: [
-            const Icon(Icons.lock_outline_rounded,
+            Icon(Icons.lock_outline_rounded,
                 size: 18, color: AppColors.white),
             const SizedBox(width: AppSizes.sm),
             Expanded(child: Text(msg)),
@@ -73,11 +73,11 @@ class MaybeLocked extends StatelessWidget {
               top: -2,
               child: Container(
                 padding: const EdgeInsets.all(2),
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: AppColors.muted,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.lock_rounded,
+                child: Icon(Icons.lock_rounded,
                     size: 10, color: AppColors.white),
               ),
             ),
@@ -185,11 +185,11 @@ class LockedIconButton extends StatelessWidget {
             bottom: -3,
             child: Container(
               padding: const EdgeInsets.all(1.5),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: AppColors.muted,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.lock_rounded,
+              child: Icon(Icons.lock_rounded,
                   size: 9, color: AppColors.white),
             ),
           ),
@@ -225,7 +225,7 @@ class NoAccessView extends StatelessWidget {
                 shape: AppShapes.squircle(AppSizes.radiusLg),
               ),
               alignment: Alignment.center,
-              child: const Icon(Icons.lock_outline_rounded,
+              child: Icon(Icons.lock_outline_rounded,
                   size: 30, color: AppColors.muted),
             ),
             const SizedBox(height: AppSizes.lg),

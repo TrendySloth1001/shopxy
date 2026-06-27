@@ -171,7 +171,7 @@ class _AddBlockTile extends StatelessWidget {
         decoration: ShapeDecoration(
           shape: AppShapes.squircle(
             AppSizes.radiusMd,
-            side: const BorderSide(color: AppColors.hairline, width: 1),
+            side: BorderSide(color: AppColors.hairline, width: 1),
           ),
         ),
         child: Row(
@@ -191,7 +191,7 @@ class _AddBlockTile extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.add_rounded, color: AppColors.muted),
+            Icon(Icons.add_rounded, color: AppColors.muted),
           ],
         ),
       ),
@@ -236,7 +236,7 @@ class _BlockCard extends StatelessWidget {
       decoration: ShapeDecoration(
         shape: AppShapes.squircle(
           AppSizes.radiusMd,
-          side: const BorderSide(color: AppColors.hairline, width: 1),
+          side: BorderSide(color: AppColors.hairline, width: 1),
         ),
       ),
       child: Column(
@@ -697,11 +697,11 @@ class _ImageFieldState extends State<_ImageField> {
                     ? Image.network(
                         resolveImageUrl(widget.value),
                         fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => const Icon(
+                        errorBuilder: (_, _, _) => Icon(
                             Icons.broken_image_outlined,
                             color: AppColors.muted),
                       )
-                    : const Icon(Icons.image_outlined, color: AppColors.muted),
+                    : Icon(Icons.image_outlined, color: AppColors.muted),
               ),
             ),
             const SizedBox(width: AppSizes.md),

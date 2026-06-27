@@ -20,7 +20,7 @@ Future<Vendor?> showVendorPicker(BuildContext context) {
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
-    backgroundColor: AppColors.white,
+    backgroundColor: AppColors.surface,
     builder: (_) => const _VendorPickerSheet(),
   );
 }
@@ -74,7 +74,7 @@ class _VendorPickerSheetState extends State<_VendorPickerSheet> {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.surface,
       builder: (_) => const VendorFormSheet(),
     );
     if (created != null && mounted) {
@@ -149,7 +149,7 @@ class _VendorPickerSheetState extends State<_VendorPickerSheet> {
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Icon(
+                                    Icon(
                                       Icons.local_shipping_outlined,
                                       size: AppSizes.iconXl,
                                       color: AppColors.muted,

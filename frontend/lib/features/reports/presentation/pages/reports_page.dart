@@ -139,10 +139,10 @@ class _KindPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected ? AppColors.black : AppColors.white,
+      color: selected ? AppColors.inverseSurface : AppColors.surface,
       shape: AppShapes.squircle(
         AppSizes.radiusFull,
-        side: BorderSide(color: selected ? AppColors.black : AppColors.hairline),
+        side: BorderSide(color: selected ? AppColors.inverseSurface : AppColors.hairline),
       ),
       child: InkWell(
         customBorder: AppShapes.squircle(AppSizes.radiusFull),
@@ -155,7 +155,7 @@ class _KindPill extends StatelessWidget {
           child: Text(
             label,
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: selected ? AppColors.white : AppColors.black,
+                  color: selected ? AppColors.onInverse : AppColors.black,
                   fontWeight: FontWeight.w700,
                 ),
           ),
@@ -176,7 +176,7 @@ class _ErrorBlock extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.error_outline_rounded, color: AppColors.error, size: AppSizes.iconXl),
+          Icon(Icons.error_outline_rounded, color: AppColors.error, size: AppSizes.iconXl),
           const SizedBox(height: AppSizes.sm),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSizes.xxl),
@@ -732,7 +732,7 @@ class _StatBlock extends StatelessWidget {
       width: wide ? double.infinity : null,
       padding: const EdgeInsets.all(AppSizes.lg),
       decoration: ShapeDecoration(
-        color: AppColors.white,
+        color: AppColors.surface,
         shape: AppShapes.squircle(
           AppSizes.radiusLg,
           side: BorderSide(color: AppColors.hairline),

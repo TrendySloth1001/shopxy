@@ -146,7 +146,7 @@ class _ReturnRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSizes.sm),
       child: Material(
-        color: AppColors.white,
+        color: AppColors.surface,
         shape: AppShapes.squircle(AppSizes.radiusMd),
         child: InkWell(
           customBorder: AppShapes.squircle(AppSizes.radiusMd),
@@ -249,7 +249,7 @@ class _SkeletonRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSizes.sm),
       child: Material(
-        color: AppColors.white,
+        color: AppColors.surface,
         shape: AppShapes.squircle(AppSizes.radiusMd),
         child: Padding(
           padding: const EdgeInsets.all(AppSizes.md),
@@ -308,7 +308,7 @@ class _EmptyBlock extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.assignment_return_outlined,
+            Icon(Icons.assignment_return_outlined,
                 size: AppSizes.iconHuge, color: AppColors.subtle),
             const SizedBox(height: AppSizes.md),
             Text(
