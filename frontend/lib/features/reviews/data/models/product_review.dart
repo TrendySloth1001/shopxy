@@ -42,3 +42,45 @@ class ReviewsPage {
   final List<ProductReview> data;
   final int? nextCursor;
 }
+
+/// One-shot PDP summary: average, count, how many came from verified
+/// buyers, a zero-filled 1..5 histogram, and the three most recent
+/// reviews so the section renders without a follow-up list call.
+class ReviewSummary {
+  const ReviewSummary({
+    required this.ratingAvg,
+    required this.ratingCount,
+    required this.verifiedCount,
+    required this.histogram,
+    required this.recent,
+  });
+
+  final double? ratingAvg;
+  final int ratingCount;
+  final int verifiedCount;
+
+  /// Star (1..5) → number of reviews at that star. Always fully keyed.
+  final Map<int, int> histogram;
+  final List<ProductReview> recent;
+
+  factory ReviewSummary.fromJson(Map<String, dynamic> json) {
+    final rawHist = json['histogram'] as Map<String, dynamic>? ?? const {};
+    final hist = <int, int>{for (var s = 1; s <= 5; s++) s: 0};
+    rawHist.forEach((key, value) {
+      final star = int.tryParse(key);
+      if (star != null && hist.containsKey(star)) {
+        hist[star] = (value as num).toInt();
+      }
+    });
+    final avg = json['ratingAvg'];
+    return ReviewSummary(
+      ratingAvg: avg == null ? null : (avg as num).toDouble(),
+      ratingCount: (json['ratingCount'] as num?)?.toInt() ?? 0,
+      verifiedCount: (json['verifiedCount'] as num?)?.toInt() ?? 0,
+      histogram: hist,
+      recent: (json['recent'] as List<dynamic>? ?? const [])
+          .map((e) => ProductReview.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+}

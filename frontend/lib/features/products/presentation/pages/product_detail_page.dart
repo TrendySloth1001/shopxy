@@ -3,11 +3,16 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:shopxy/core/auth/permission_widgets.dart';
 import 'package:shopxy/core/auth/shop_capabilities.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/products/data/datasources/products_remote_data_source.dart';
 import 'package:shopxy/features/products/domain/entities/product.dart';
+import 'package:shopxy/features/products/domain/gst.dart';
+import 'package:shopxy/features/reviews/data/datasources/reviews_remote_data_source.dart';
+import 'package:shopxy/features/reviews/data/models/product_review.dart';
+import 'package:shopxy/features/reviews/presentation/pages/product_reviews_page.dart';
 import 'package:shopxy/features/products/presentation/pages/add_edit_product_page.dart';
 import 'package:shopxy/features/products/presentation/providers/products_provider.dart';
 import 'package:shopxy/features/categories/presentation/widgets/category_icon_catalog.dart';
@@ -65,6 +70,12 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   // will change once these are confirmed" so the count never feels stale.
   List<Invoice> _pendingDrafts = const [];
 
+  // Review summary (average, histogram, verified count, recent reviews)
+  // for the Reviews section. Non-blocking: the header rating still shows
+  // from the denormalised product row if this fails.
+  ReviewSummary? _reviewSummary;
+  bool _isReviewSummaryLoading = true;
+
   @override
   void initState() {
     super.initState();
@@ -83,8 +94,61 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       _loadSupplierHistory(),
       _loadCustomFieldValues(),
       _loadPendingDrafts(),
+      _loadReviewSummary(),
       treeFuture,
     ]);
+  }
+
+  /// Pulls the one-shot review summary (average, histogram, verified
+  /// count, recent reviews) for the Reviews section. Non-blocking — a
+  /// failure just collapses the section to its empty/error state.
+  Future<void> _loadReviewSummary() async {
+    setState(() => _isReviewSummaryLoading = true);
+    try {
+      final ds = context.read<ReviewsRemoteDataSource>();
+      final summary = await ds.summary(widget.productId);
+      if (!mounted) return;
+      setState(() => _reviewSummary = summary);
+    } catch (_) {
+      // Non-blocking — the header rating still renders from the product row.
+    } finally {
+      if (mounted) setState(() => _isReviewSummaryLoading = false);
+    }
+  }
+
+  /// Share a concise text card for this product (name, brand, price,
+  /// SKU) via the OS share sheet — the merchant's quick way to send a
+  /// product to a customer over WhatsApp/email.
+  Future<void> _shareProduct() async {
+    final p = _product;
+    if (p == null) return;
+    final price = NumberFormat.currency(
+      symbol: AppStrings.currencySymbol,
+      decimalDigits: 2,
+    ).format(p.sellingPrice);
+    final lines = <String>[
+      p.name,
+      if (p.brand != null && p.brand!.isNotEmpty) 'Brand: ${p.brand}',
+      'Price: $price',
+      'SKU: ${p.sku}',
+    ];
+    await SharePlus.instance.share(ShareParams(text: lines.join('\n')));
+  }
+
+  void _openAllReviews() {
+    final p = _product;
+    if (p == null) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ProductReviewsPage(
+          productId: p.id,
+          productName: p.name,
+          ratingAvg: _reviewSummary?.ratingAvg ?? p.ratingAvg,
+          ratingCount: _reviewSummary?.ratingCount ?? p.ratingCount,
+        ),
+      ),
+    );
   }
 
   /// Pulls the list of DRAFT invoices that include this product so the
@@ -454,6 +518,11 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         title: const Text(AppStrings.productDetails),
         actions: [
           IconButton(
+            onPressed: _shareProduct,
+            icon: const Icon(Icons.ios_share_rounded),
+            tooltip: 'Share',
+          ),
+          IconButton(
             onPressed: _showQrDialog,
             icon: const Icon(Icons.qr_code_rounded),
             tooltip: AppStrings.generateQr,
@@ -504,7 +573,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             // Tap any image opens a pinch-zoom lightbox. Lives in
             // the scroll view so the user can scroll past it
             // instead of having it occupy permanent top real-estate.
-            ProductImageCarousel(product: p),
+            ProductImageCarousel(
+              product: p,
+              onAddPhotos: canWriteProducts ? _openEdit : null,
+            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSizes.lg,
@@ -593,10 +665,23 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         AppStrings.purchasePrice,
                         currencyFormat.format(p.purchasePrice),
                       ),
-                      _DetailRow(AppStrings.taxPercent, '${p.taxPercent}%'),
+                      _DetailRow(
+                        AppStrings.taxPercent,
+                        p.taxPercent > 0
+                            ? '${_formatRate(p.taxPercent)}% · ${currencyFormat.format(gstFromInclusive(p.sellingPrice, p.taxPercent).gst)}'
+                            : 'None',
+                      ),
                       _DetailRow(AppStrings.profitMargin, '${p.margin.toStringAsFixed(1)}%'),
                     ],
                   ),
+                  if (p.taxPercent > 0) ...[
+                    const SizedBox(height: AppSizes.lg),
+                    _GstBreakdownSection(
+                      sellingPrice: p.sellingPrice,
+                      taxPercent: p.taxPercent,
+                      currencyFormat: currencyFormat,
+                    ),
+                  ],
                   if (p.variants.isNotEmpty && _shouldShowVariants(p)) ...[
                     const SizedBox(height: AppSizes.lg),
                     _VariantsSection(
@@ -661,6 +746,12 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         p.isActive ? 'Active' : 'Inactive',
                       ),
                     ],
+                  ),
+                  const SizedBox(height: AppSizes.lg),
+                  _ReviewsSummarySection(
+                    summary: _reviewSummary,
+                    isLoading: _isReviewSummaryLoading,
+                    onSeeAll: _openAllReviews,
                   ),
                   const SizedBox(height: AppSizes.huge),
                 ],
@@ -2713,6 +2804,400 @@ class _PendingDraftRow extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Whole-number GST rates show as "18", fractional as "2.5" — keeps the
+/// CGST/SGST half-rates tidy (9 not 9.0).
+String _formatRate(double n) {
+  if (n == n.roundToDouble()) return n.toInt().toString();
+  return n.toStringAsFixed(2).replaceFirst(RegExp(r'\.?0+$'), '');
+}
+
+/// Breaks a GST-inclusive selling price into taxable value + CGST/SGST so
+/// the merchant sees how much of the price is tax — mirrors the
+/// merchant-web "Price & GST breakdown" panel. Only rendered when the
+/// product carries a GST rate.
+class _GstBreakdownSection extends StatelessWidget {
+  const _GstBreakdownSection({
+    required this.sellingPrice,
+    required this.taxPercent,
+    required this.currencyFormat,
+  });
+
+  final double sellingPrice;
+  final double taxPercent;
+  final NumberFormat currencyFormat;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final b = gstFromInclusive(sellingPrice, taxPercent);
+    final half = taxPercent / 2;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AppSectionHeader(
+          title: 'PRICE & GST BREAKDOWN',
+          padding: const EdgeInsets.only(bottom: AppSizes.sm),
+        ),
+        AppCard(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.lg,
+            vertical: AppSizes.md,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _GstRow(
+                label: 'Taxable value',
+                hint: 'price before GST',
+                value: currencyFormat.format(b.taxable),
+              ),
+              _GstRow(
+                label: 'CGST @ ${_formatRate(half)}%',
+                value: currencyFormat.format(b.cgst),
+              ),
+              _GstRow(
+                label: 'SGST @ ${_formatRate(half)}%',
+                value: currencyFormat.format(b.sgst),
+              ),
+              _GstRow(
+                label: 'Total GST @ ${_formatRate(taxPercent)}%',
+                value: currencyFormat.format(b.gst),
+                strong: true,
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: AppSizes.xs),
+                child: AppDivider.flush(),
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Selling price (incl. GST)',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                  ),
+                  Text(
+                    currencyFormat.format(sellingPrice),
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSizes.sm),
+              Text(
+                'Prices include GST. CGST + SGST shown for a sale within your '
+                'state; a sale to another state is charged the same total as IGST.',
+                style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _GstRow extends StatelessWidget {
+  const _GstRow({
+    required this.label,
+    required this.value,
+    this.hint,
+    this.strong = false,
+  });
+
+  final String label;
+  final String value;
+  final String? hint;
+  final bool strong;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text.rich(
+              TextSpan(
+                text: label,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: strong ? AppColors.black : AppColors.muted,
+                  fontWeight: strong ? FontWeight.w700 : FontWeight.w400,
+                ),
+                children: hint == null
+                    ? null
+                    : [
+                        TextSpan(
+                          text: '  ·  $hint',
+                          style: theme.textTheme.bodySmall
+                              ?.copyWith(color: AppColors.muted),
+                        ),
+                      ],
+              ),
+            ),
+          ),
+          Text(
+            value,
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontWeight: strong ? FontWeight.w800 : FontWeight.w600,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Reviews block for the product detail page — average + stars, a per-
+/// star histogram, the verified-buyer count and the most recent reviews,
+/// with a "See all reviews" jump to the full list. Mirrors the
+/// merchant-web Reviews section.
+class _ReviewsSummarySection extends StatelessWidget {
+  const _ReviewsSummarySection({
+    required this.summary,
+    required this.isLoading,
+    required this.onSeeAll,
+  });
+
+  final ReviewSummary? summary;
+  final bool isLoading;
+  final VoidCallback onSeeAll;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final s = summary;
+    final count = s?.ratingCount ?? 0;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AppSectionHeader(
+          title: 'REVIEWS',
+          padding: const EdgeInsets.only(bottom: AppSizes.sm),
+        ),
+        AppCard(
+          padding: const EdgeInsets.all(AppSizes.lg),
+          child: isLoading && s == null
+              ? const Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: AppSizes.lg),
+                    child: CircularProgressIndicator(),
+                  ),
+                )
+              : (s == null || count == 0)
+                  ? Text(
+                      'No reviews yet. Verified buyers can rate this product '
+                      'after a confirmed purchase.',
+                      style: theme.textTheme.bodyMedium
+                          ?.copyWith(color: AppColors.muted),
+                    )
+                  : _content(context, s, count),
+        ),
+      ],
+    );
+  }
+
+  Widget _content(BuildContext context, ReviewSummary s, int count) {
+    final theme = Theme.of(context);
+    final avg = s.ratingAvg ?? 0;
+    final total = count == 0 ? 1 : count;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  avg.toStringAsFixed(1),
+                  style: theme.textTheme.headlineMedium
+                      ?.copyWith(fontWeight: FontWeight.w800),
+                ),
+                _StarRow(rating: avg, size: 16),
+                const SizedBox(height: 2),
+                Text(
+                  '$count ${count == 1 ? 'rating' : 'ratings'}',
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: AppColors.muted),
+                ),
+                if (s.verifiedCount > 0)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.verified_rounded,
+                          size: 13, color: AppColors.success),
+                      const SizedBox(width: 3),
+                      Text(
+                        '${s.verifiedCount} verified',
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(color: AppColors.success),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+            const SizedBox(width: AppSizes.lg),
+            Expanded(
+              child: Column(
+                children: [
+                  for (int star = 5; star >= 1; star--)
+                    _HistogramBar(
+                      star: star,
+                      count: s.histogram[star] ?? 0,
+                      total: total,
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        if (s.recent.isNotEmpty) ...[
+          const SizedBox(height: AppSizes.md),
+          const AppDivider.flush(),
+          const SizedBox(height: AppSizes.md),
+          for (int i = 0; i < s.recent.length; i++) ...[
+            if (i > 0) const SizedBox(height: AppSizes.md),
+            _RecentReviewTile(review: s.recent[i]),
+          ],
+        ],
+        const SizedBox(height: AppSizes.md),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: AppButton.ghost(
+            label: 'See all reviews',
+            icon: Icons.reviews_outlined,
+            onPressed: onSeeAll,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Five-star row supporting half stars (for fractional averages).
+class _StarRow extends StatelessWidget {
+  const _StarRow({required this.rating, this.size = 16});
+  final double rating;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(5, (i) {
+        final filled = rating >= i + 1;
+        final half = !filled && rating >= i + 0.5;
+        return Icon(
+          filled
+              ? Icons.star_rounded
+              : half
+                  ? Icons.star_half_rounded
+                  : Icons.star_outline_rounded,
+          size: size,
+          color: filled || half ? AppColors.accentAmber : AppColors.disabled,
+        );
+      }),
+    );
+  }
+}
+
+class _HistogramBar extends StatelessWidget {
+  const _HistogramBar({
+    required this.star,
+    required this.count,
+    required this.total,
+  });
+  final int star;
+  final int count;
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final frac = total == 0 ? 0.0 : count / total;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 24,
+            child: Text(
+              '$star★',
+              style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
+            ),
+          ),
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(3),
+              child: LinearProgressIndicator(
+                value: frac,
+                minHeight: 6,
+                backgroundColor: AppColors.surfaceTint,
+                valueColor: AlwaysStoppedAnimation(AppColors.accentAmber),
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSizes.sm),
+          SizedBox(
+            width: 26,
+            child: Text(
+              '$count',
+              textAlign: TextAlign.right,
+              style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RecentReviewTile extends StatelessWidget {
+  const _RecentReviewTile({required this.review});
+  final ProductReview review;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            _StarRow(rating: review.rating.toDouble(), size: 14),
+            if (review.title != null && review.title!.isNotEmpty) ...[
+              const SizedBox(width: AppSizes.sm),
+              Flexible(
+                child: Text(
+                  review.title!,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyMedium
+                      ?.copyWith(fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
+          ],
+        ),
+        if (review.body != null && review.body!.isNotEmpty) ...[
+          const SizedBox(height: 2),
+          Text(review.body!, style: theme.textTheme.bodySmall),
+        ],
+        const SizedBox(height: 2),
+        Text(
+          review.userName ?? 'Customer',
+          style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
+        ),
+      ],
     );
   }
 }
