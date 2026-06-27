@@ -21,9 +21,19 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 /// Tapping any image opens a full-screen viewer with pinch-zoom and
 /// horizontal swipe between images.
 class ProductImageCarousel extends StatefulWidget {
-  const ProductImageCarousel({super.key, required this.product});
+  const ProductImageCarousel({
+    super.key,
+    required this.product,
+    this.onAddPhotos,
+  });
 
   final Product product;
+
+  /// When the product has no images and this is non-null, the empty
+  /// monogram band becomes a tappable "Add photos" affordance (wired to
+  /// the edit page) so the placeholder isn't a dead end. Null hides the
+  /// call-to-action — e.g. for roles that can't edit products.
+  final VoidCallback? onAddPhotos;
 
   @override
   State<ProductImageCarousel> createState() => _ProductImageCarouselState();
@@ -65,15 +75,27 @@ class _ProductImageCarouselState extends State<ProductImageCarousel> {
     final images = widget.product.images;
 
     // No images: show the monogram band, same look as before. No
-    // dot strip, no thumbnail rail — nothing to navigate.
+    // dot strip, no thumbnail rail — nothing to navigate. When the
+    // viewer can edit, the band turns into an "Add photos" call-to-
+    // action so the placeholder isn't a dead end.
     if (images.isEmpty) {
-      return Container(
+      final band = Container(
         width: double.infinity,
         height: 220,
         color: AppColors.heroPanel,
         alignment: Alignment.center,
-        child: ProductThumbnail(product: widget.product, size: 128),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ProductThumbnail(product: widget.product, size: 112),
+            if (widget.onAddPhotos != null) ...[
+              const SizedBox(height: AppSizes.md),
+              _AddPhotosPill(onTap: widget.onAddPhotos!),
+            ],
+          ],
+        ),
       );
+      return band;
     }
 
     return Column(
@@ -129,6 +151,53 @@ class _ProductImageCarouselState extends State<ProductImageCarousel> {
           const SizedBox(height: AppSizes.xs),
         ],
       ],
+    );
+  }
+}
+
+/// "Add photos" call-to-action shown over the empty monogram band when
+/// the viewer can edit the product. Tapping it opens the edit page where
+/// the image manager lives.
+class _AddPhotosPill extends StatelessWidget {
+  const _AddPhotosPill({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      color: AppColors.surface,
+      shape: AppShapes.squircle(
+        AppSizes.radiusFull,
+        side: BorderSide(color: AppColors.hairline),
+      ),
+      child: InkWell(
+        customBorder: AppShapes.squircle(AppSizes.radiusFull),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.md,
+            vertical: AppSizes.sm,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.add_a_photo_outlined,
+                size: AppSizes.iconSm,
+                color: AppColors.black,
+              ),
+              const SizedBox(width: AppSizes.xs),
+              Text(
+                'Add photos',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
