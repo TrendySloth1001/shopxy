@@ -242,7 +242,7 @@ export function PosTillView() {
                 disabled={noShift}
                 inputMode="text"
                 placeholder={noShift ? "Open a shift to start billing" : "Scan / type barcode · 3∗code for qty"}
-                className="h-11 w-full rounded-input border border-hairline bg-canvas px-md text-body-md text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:bg-surface-tint"
+                className="h-11 w-full rounded-input border border-hairline bg-canvas px-md text-body-md text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:bg-field-tint"
               />
               <button type="button" title="Find item (F3)" disabled={noShift} onClick={() => setSearchOpen(true)} className="inline-flex size-11 shrink-0 items-center justify-center rounded-button border border-hairline text-ink hover:bg-surface-tint disabled:text-disabled"><Search size={18} /></button>
             </div>
@@ -508,7 +508,7 @@ function ReturnsModal({ onClose, onNeedManager }: { onClose: () => void; onNeedM
                     <p className="truncate text-title-sm text-ink">{l.name}</p>
                     <p className="text-body-sm text-muted">returnable {l.returnableQty} · {formatINR2(l.unitPrice)}</p>
                   </div>
-                  <input value={qty[l.productId] ?? ""} onChange={(e) => setQty((q) => ({ ...q, [l.productId]: e.target.value }))} inputMode="numeric" placeholder="0" disabled={l.returnableQty <= 0} className="h-9 w-16 rounded-input border border-hairline bg-canvas px-sm text-center text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:bg-surface-tint" />
+                  <input value={qty[l.productId] ?? ""} onChange={(e) => setQty((q) => ({ ...q, [l.productId]: e.target.value }))} inputMode="numeric" placeholder="0" disabled={l.returnableQty <= 0} className="h-9 w-16 rounded-input border border-hairline bg-canvas px-sm text-center text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:bg-field-tint" />
                 </li>
               ))}
             </ul>
@@ -894,7 +894,7 @@ function BillDiscountInput({ value, onCommit, disabled }: { value: number; onCom
       disabled={disabled}
       inputMode="decimal"
       placeholder="0"
-      className="h-9 w-24 rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:bg-surface-tint"
+      className="h-9 w-24 rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:bg-field-tint"
     />
   );
 }

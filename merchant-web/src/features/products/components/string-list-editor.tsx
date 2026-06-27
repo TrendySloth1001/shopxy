@@ -33,7 +33,7 @@ export function StringListEditor({
             value={item}
             placeholder={placeholder}
             onChange={(e) => set(i, e.target.value)}
-            className="h-10 flex-1 rounded-input border border-hairline bg-surface px-md text-body-md text-ink outline-none placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+            className="h-10 flex-1 rounded-input border border-hairline bg-field px-md text-body-md text-ink outline-none placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
           />
           <button
             type="button"

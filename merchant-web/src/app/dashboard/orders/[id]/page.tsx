@@ -905,7 +905,7 @@ function DeclinePanel({
         placeholder="Optional note to the customer"
         rows={2}
         maxLength={500}
-        className="mt-md w-full max-w-content rounded-input border border-hairline bg-surface px-md py-sm text-body-md text-ink outline-none placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+        className="mt-md w-full max-w-content rounded-input border border-hairline bg-field px-md py-sm text-body-md text-ink outline-none placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
       />
       <div className="mt-md flex gap-md">
         <button

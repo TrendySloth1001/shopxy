@@ -85,6 +85,41 @@ export default function PrivacyPage() {
         </p>
       </LegalSection>
 
+      <LegalSection heading="Deleting your account and data">
+        <p>
+          You can permanently delete your ShopXY account and the personal data tied to it at any
+          time — you do not need to contact us first:
+        </p>
+        <ul className="flex flex-col gap-xs">
+          <li>
+            <span className="text-ink">In the app</span> — go to{" "}
+            <span className="text-ink">Settings → Data &amp; privacy → Delete account</span> (the
+            same path on the web app, Android and iOS). You’ll confirm with your password, then the
+            account and every session are erased.
+          </li>
+          <li>
+            <span className="text-ink">By email</span> — if you can’t sign in, write to{" "}
+            <a className="text-ink underline" href="mailto:privacy@shopxy.app">privacy@shopxy.app</a>{" "}
+            from your registered address and we’ll verify and action the request.
+          </li>
+        </ul>
+        <p>
+          <span className="text-ink">What is deleted:</span> your profile, login credentials,
+          shop settings, contacts (parties/vendors) and the business records you created, together
+          with any payout draft held on your device. Deletion completes within{" "}
+          <span className="text-ink">90 days</span>.
+        </p>
+        <p>
+          <span className="text-ink">What we must keep:</span> where you have issued invoices or
+          taken payments, Indian tax and company law requires us to retain those financial records
+          for up to 8 years. Those records are retained in a restricted, minimised form (and
+          dissociated from your login) for that period only, then deleted. A shop owner whose
+          invoices are still inside that window cannot self-delete in-app — email{" "}
+          <a className="text-ink underline" href="mailto:support@shopxy.app">support@shopxy.app</a>{" "}
+          for a controlled wipe of everything outside the legal-retention set.
+        </p>
+      </LegalSection>
+
       <LegalSection heading="Children's data">
         <p>
           ShopXY is a business tool intended for users aged 18 and over. We do not knowingly process

@@ -412,7 +412,7 @@ function InviteModal({
           onChange={(e) => setEmail(e.target.value)}
           autoFocus
           placeholder="teammate@example.com"
-          className="h-10 rounded-input border border-hairline bg-surface px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+          className="h-10 rounded-input border border-hairline bg-field px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
         />
       </label>
       <label className="flex flex-col gap-xs">
@@ -420,7 +420,7 @@ function InviteModal({
         <select
           value={custom ? "__custom__" : roleName}
           onChange={(e) => onPickRole(e.target.value)}
-          className="h-10 rounded-input border border-hairline bg-surface px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+          className="h-10 rounded-input border border-hairline bg-field px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
         >
           <option value="" disabled>Choose a role…</option>
           {roles.map((r) => (
@@ -433,7 +433,7 @@ function InviteModal({
             value={roleName}
             onChange={(e) => setRoleName(e.target.value)}
             placeholder="Custom role label (e.g. Senior cashier)"
-            className="h-10 rounded-input border border-hairline bg-surface px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+            className="h-10 rounded-input border border-hairline bg-field px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
           />
         ) : null}
         <span className="text-body-sm text-subtle">
@@ -454,7 +454,7 @@ function InviteModal({
           onChange={(e) => setMessage(e.target.value)}
           rows={2}
           maxLength={500}
-          className="rounded-input border border-hairline bg-surface px-md py-sm text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+          className="rounded-input border border-hairline bg-field px-md py-sm text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
         />
       </label>
       <ModalActions
@@ -496,7 +496,7 @@ function MemberModal({
         <input
           value={roleName}
           onChange={(e) => setRoleName(e.target.value)}
-          className="h-10 rounded-input border border-hairline bg-surface px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+          className="h-10 rounded-input border border-hairline bg-field px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
         />
       </label>
       <div className="flex flex-col gap-xs">
@@ -537,7 +537,7 @@ function RoleModal({
           onChange={(e) => setName(e.target.value)}
           autoFocus
           placeholder="e.g. Floor staff"
-          className="h-10 rounded-input border border-hairline bg-surface px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+          className="h-10 rounded-input border border-hairline bg-field px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
         />
       </label>
       <div className="flex flex-col gap-xs">

@@ -48,6 +48,9 @@
      a step above the canvas in the dark / OLED themes (see the override blocks
      below). Use `bg-surface` for any floating surface — never plain white. */
   --color-surface: #ffffff;
+  /* Input / text-field fill. Distinct from the (flat) card surface so fields
+     stay defined in dark / OLED. White in light; a raised dark below. */
+  --color-field: #ffffff;
 
   /* ── Brand ───────────────────────────────────────────────────────────── */
   --color-brand: #1e8e5a;
@@ -231,6 +234,7 @@ html[data-theme="oled"] {
   --color-page-tint: #141a20;
   --color-hero-panel: #1c232b;
   --color-surface: #171d24;
+  --color-field: #1c232b;
 
   /* Inverse pair flips: light fill + dark text on a dark UI. (Scrim is shared —
      it stays near-black in every theme, so it isn't re-declared here.) */
@@ -283,6 +287,7 @@ html[data-theme="oled"] {
   --color-page-tint: #060809;
   --color-hero-panel: #14181d;
   --color-surface: #0c1014;
+  --color-field: #14181d;
   --color-hairline: #ffffff24;
 }
 

@@ -74,7 +74,7 @@ export function ComboSelect({
           onClick={() => setOpen((o) => !o)}
           aria-haspopup="listbox"
           aria-expanded={open}
-          className={`flex h-10 w-full items-center gap-sm rounded-input border bg-surface px-md text-left text-body-md outline-none transition-colors disabled:bg-surface-tint disabled:text-disabled ${
+          className={`flex h-10 w-full items-center gap-sm rounded-input border bg-field px-md text-left text-body-md outline-none transition-colors disabled:bg-field-tint disabled:text-disabled ${
             open ? "border-brand ring-2 ring-brand-soft" : "border-hairline hover:border-muted"
           }`}
         >
@@ -90,7 +90,7 @@ export function ComboSelect({
         {open ? (
           <div
             role="listbox"
-            className="absolute left-0 right-0 z-20 mt-xs max-h-60 overflow-auto rounded-input border border-hairline bg-surface py-xs shadow-menu"
+            className="absolute left-0 right-0 z-20 mt-xs max-h-60 overflow-auto rounded-input border border-hairline bg-field py-xs shadow-menu"
           >
             {searchable ? (
               <div className="sticky top-0 flex items-center gap-sm border-b border-hairline bg-surface px-md pb-xs">
