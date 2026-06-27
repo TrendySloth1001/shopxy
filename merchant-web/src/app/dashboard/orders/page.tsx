@@ -129,7 +129,7 @@ export default function OrdersInboxPage() {
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="Search by customer, phone, item or #id"
-            className="h-10 w-full rounded-input border border-hairline bg-white pl-massive pr-md text-body-md text-ink outline-none placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+            className="h-10 w-full rounded-input border border-hairline bg-surface pl-massive pr-md text-body-md text-ink outline-none placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
           />
         </div>
         <DateField
@@ -234,7 +234,7 @@ function TabPill({
       aria-pressed={active}
       className={`inline-flex h-9 items-center gap-sm rounded-full px-md text-label-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft ${
         active
-          ? "bg-ink text-white"
+          ? "bg-inverse-surface text-on-inverse"
           : "bg-surface-tint text-muted hover:text-ink"
       }`}
     >
@@ -242,7 +242,7 @@ function TabPill({
       {badge != null ? (
         <span
           className={`inline-flex min-w-[18px] items-center justify-center rounded-full px-xs text-body-sm tabular-nums ${
-            active ? "bg-white text-ink" : "bg-warning text-white"
+            active ? "bg-surface text-ink" : "bg-warning text-white"
           }`}
         >
           {badge}
@@ -266,7 +266,7 @@ function DateField({
   onChange: (v: string) => void;
 }) {
   return (
-    <label className="inline-flex h-10 items-center gap-sm rounded-input border border-hairline bg-white px-md text-body-sm text-muted focus-within:border-brand focus-within:ring-2 focus-within:ring-brand-soft">
+    <label className="inline-flex h-10 items-center gap-sm rounded-input border border-hairline bg-surface px-md text-body-sm text-muted focus-within:border-brand focus-within:ring-2 focus-within:ring-brand-soft">
       <span className="text-label-md text-subtle">{label}</span>
       <input
         type="date"

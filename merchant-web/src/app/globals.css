@@ -20,17 +20,34 @@
 
   /* ── Inks ────────────────────────────────────────────────────────────── */
   --color-ink: #14181d;
+  /* Literal foreground white — text/icons on a coloured fill (text-white on a
+     brand button, the toggle thumb). Stays white in every theme. NOT a surface
+     colour; for raised card/input surfaces use `--color-surface` below. */
   --color-white: #ffffff;
   --color-hairline: #14181d1f;
   --color-surface-tint: #14181d0a;
   --color-muted: #6a707a;
   --color-subtle: #98a0aa;
   --color-disabled: #c2c7ce;
+  /* Scrim — the dimming wash behind modals / drawers (`bg-scrim/30…/50`). Stays
+     a near-black in every theme so it always darkens what's underneath (an
+     ink-derived scrim would invert to a *lightening* haze in dark mode). */
+  --color-scrim: #0b0e12;
+  /* High-contrast inverse pair — a solid neutral fill that flips with the theme:
+     `bg-inverse-surface text-on-inverse` is a dark chip/button with light text
+     in light mode, and a light chip with dark text in dark mode. Use this for
+     the strongest neutral CTA / selected pill — not `bg-ink` (ink is text). */
+  --color-inverse-surface: #14181d;
+  --color-on-inverse: #ffffff;
 
   /* ── Surfaces ────────────────────────────────────────────────────────── */
   --color-canvas: #f8f7f3;
   --color-page-tint: #fafaf7;
   --color-hero-panel: #efeee7;
+  /* Raised surface — cards, inputs, sheets, menus. Pure white in light mode;
+     a step above the canvas in the dark / OLED themes (see the override blocks
+     below). Use `bg-surface` for any floating surface — never plain white. */
+  --color-surface: #ffffff;
 
   /* ── Brand ───────────────────────────────────────────────────────────── */
   --color-brand: #1e8e5a;
@@ -171,6 +188,104 @@
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
 }
 
+/*
+ * ── Theme modes ─────────────────────────────────────────────────────────
+ *
+ * The merchant app ships three themes, selected by the `data-theme` attribute
+ * on <html> (set before paint by the inline script in layout.tsx, then driven
+ * by the ThemeProvider):
+ *
+ *   • light          — the default above (no attribute / data-theme="light")
+ *   • dark           — normal dark: deep-slate canvas, raised surfaces
+ *   • oled           — true-black canvas for OLED panels (shares the dark
+ *                      palette, only the canvas/surface blacks differ)
+ *
+ * Tokens are CSS custom properties, and every Tailwind utility compiles to
+ * `var(--color-…)`, so re-assigning a variable here re-themes the whole app at
+ * runtime — no per-component dark: variants. We flip the *meaning* of each
+ * surface/ink token; the brand stays emerald (brightened a touch so it carries
+ * on a dark ground) and the soft status fills become low-alpha tints.
+ */
+
+/* Shared dark palette — applies to both `dark` and `oled`.
+ *
+ * The `html` prefix is load-bearing: it lifts specificity to (0,1,1) so these
+ * overrides beat Tailwind's `:root`/`:host` theme block (0,1,0) regardless of
+ * source order. Without it the two tie on specificity and the cascade is decided
+ * by emission order — which differs between `next dev` and `next build`, so a
+ * bare `[data-theme]` selector silently no-ops in dev. */
+html[data-theme="dark"],
+html[data-theme="oled"] {
+  color-scheme: dark;
+
+  /* Inks — light text on a dark ground. `--color-white` stays literal white. */
+  --color-ink: #e7eaee;
+  --color-hairline: #ffffff1f;
+  --color-surface-tint: #ffffff0d;
+  --color-muted: #9aa3ad;
+  --color-subtle: #6c7682;
+  --color-disabled: #49515b;
+
+  /* Surfaces — deep slate canvas, raised cards a step lighter. */
+  --color-canvas: #0f1419;
+  --color-page-tint: #141a20;
+  --color-hero-panel: #1c232b;
+  --color-surface: #171d24;
+
+  /* Inverse pair flips: light fill + dark text on a dark UI. (Scrim is shared —
+     it stays near-black in every theme, so it isn't re-declared here.) */
+  --color-inverse-surface: #e7eaee;
+  --color-on-inverse: #11161b;
+
+  /* Brand — brightened emerald so it reads on dark; `strong` is the on-dark
+     text variant (used wherever `text-brand-strong` sits on a soft fill). */
+  --color-brand: #2fb877;
+  --color-brand-strong: #5fd99b;
+  --color-brand-soft: #2fb87726;
+
+  /* Status — readable foregrounds, low-alpha tinted soft fills. */
+  --color-success: #3ecf86;
+  --color-success-soft: #3ecf8626;
+  --color-warning: #e0a64a;
+  --color-warning-soft: #e0a64a26;
+  --color-error: #f0726a;
+  --color-error-soft: #f0726a26;
+  --color-info: #6aa0f5;
+  --color-info-soft: #6aa0f526;
+  --color-highlight: #5a4a1c;
+
+  /* Editorial accents. */
+  --color-accent-teal: #3bbccb;
+  --color-accent-teal-soft: #3bbccb26;
+  --color-accent-indigo: #8b87f0;
+  --color-accent-indigo-soft: #8b87f026;
+  --color-accent-amber: #d99a3c;
+  --color-accent-amber-soft: #d99a3c26;
+  --color-accent-rose: #e07aa6;
+  --color-accent-rose-soft: #e07aa626;
+
+  /* Merchant-only accents. */
+  --color-flash-deal: #f0793f;
+  --color-flash-deal-soft: #f0793f26;
+  --color-flash-deal-soft-alt: #f05a5a26;
+
+  /* Shadows read as depth only against light; on dark they need true black. */
+  --shadow-floating: 0 4px 12px rgba(0, 0, 0, 0.45);
+  --shadow-menu: 0 8px 24px rgba(0, 0, 0, 0.55);
+  --shadow-snackbar: 0 10px 28px rgba(0, 0, 0, 0.6);
+}
+
+/* OLED — pure-black canvas + near-black surfaces (only the blacks differ from
+   the shared dark palette above; this block has higher source order so it wins
+   the cascade for these tokens). */
+html[data-theme="oled"] {
+  --color-canvas: #000000;
+  --color-page-tint: #060809;
+  --color-hero-panel: #14181d;
+  --color-surface: #0c1014;
+  --color-hairline: #ffffff24;
+}
+
 /* Route-change entrance: the incoming page is a solid sheet that slides UP
    from below the fold to fully cover the outlet — like grabbing a page from
    the bottom and pulling it up. No fade (a fade reads as a "pop"); the parent
@@ -191,12 +306,16 @@
   will-change: transform;
 }
 
-/* Global page defaults: warm canvas, primary ink, Inter. */
+/* Global page defaults: warm canvas, primary ink, Inter. The canvas/ink read
+   from the active theme's tokens, so this single rule covers all three modes. */
 html {
+  color-scheme: light;
   background-color: var(--color-canvas);
   color: var(--color-ink);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  /* Re-theming swaps colours; ease them so toggling modes isn't a hard cut. */
+  transition: background-color var(--duration-medium) var(--ease-standard);
 }
 
 body {

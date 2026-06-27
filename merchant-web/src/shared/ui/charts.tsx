@@ -111,11 +111,11 @@ export function LineChart({
             style={{ left: `${xOf(hover!)}%`, top: `${yOf(hv.value)}%` }}
           />
           <div
-            className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-[140%] whitespace-nowrap rounded-md bg-ink px-sm py-xs text-center shadow-floating"
+            className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-[140%] whitespace-nowrap rounded-md bg-inverse-surface px-sm py-xs text-center shadow-floating"
             style={{ left: `${clamp(xOf(hover!), 10, 90)}%`, top: `${yOf(hv.value)}%` }}
           >
-            <span className="block text-body-sm font-semibold text-white">{formatValue(hv.value)}</span>
-            <span className="block text-body-sm text-white/70">{hv.label}</span>
+            <span className="block text-body-sm font-semibold text-on-inverse">{formatValue(hv.value)}</span>
+            <span className="block text-body-sm text-on-inverse/70">{hv.label}</span>
           </div>
         </>
       ) : null}

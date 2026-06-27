@@ -62,11 +62,11 @@ export function PickerModal<T extends { id: number }>({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-ink/30 p-lg sm:items-center"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-scrim/30 p-lg sm:items-center"
       onClick={onClose}
     >
       <div
-        className="flex max-h-[85dvh] w-full max-w-form flex-col gap-md overflow-hidden rounded-dialog bg-white p-lg shadow-menu"
+        className="flex max-h-[85dvh] w-full max-w-form flex-col gap-md overflow-hidden rounded-dialog bg-surface p-lg shadow-menu"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
@@ -81,7 +81,7 @@ export function PickerModal<T extends { id: number }>({
           </button>
         </div>
 
-        <div className="flex items-center gap-sm rounded-input border border-hairline bg-white px-md focus-within:border-brand focus-within:ring-2 focus-within:ring-brand-soft">
+        <div className="flex items-center gap-sm rounded-input border border-hairline bg-surface px-md focus-within:border-brand focus-within:ring-2 focus-within:ring-brand-soft">
           <Search size={16} className="shrink-0 text-subtle" />
           <input
             autoFocus

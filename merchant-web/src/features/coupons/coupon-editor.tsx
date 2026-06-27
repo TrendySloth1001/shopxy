@@ -286,7 +286,7 @@ function CouponPreview({
 }) {
   const headline = discountValue > 0 ? discountLabel({ discountType, discountValue }).toUpperCase() : "—";
   return (
-    <div className="overflow-hidden rounded-lg border border-hairline bg-white shadow-floating">
+    <div className="overflow-hidden rounded-lg border border-hairline bg-surface shadow-floating">
       <div className="flex items-stretch">
         {/* Discount stub */}
         <div className="flex w-1/3 shrink-0 flex-col items-center justify-center gap-xs bg-brand-soft px-md py-lg text-center">

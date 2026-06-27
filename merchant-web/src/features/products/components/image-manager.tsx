@@ -110,7 +110,7 @@ export function ImageManager({
                 onClick={() => remove(i)}
                 disabled={busy}
                 aria-label="Remove image"
-                className="absolute -right-2 -top-2 flex size-6 items-center justify-center rounded-full bg-ink text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                className="absolute -right-2 -top-2 flex size-6 items-center justify-center rounded-full bg-inverse-surface text-on-inverse transition-opacity hover:opacity-90 disabled:opacity-50"
               >
                 <X size={14} />
               </button>

@@ -447,7 +447,7 @@ function FieldEditorPanel({
           onChange={(e) => setName(e.target.value)}
           autoFocus
           placeholder="e.g. Warranty period"
-          className="h-10 rounded-input border border-hairline bg-white px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+          className="h-10 rounded-input border border-hairline bg-surface px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
         />
       </label>
 
@@ -456,7 +456,7 @@ function FieldEditorPanel({
         <select
           value={type}
           onChange={(e) => setType(e.target.value as CustomFieldType)}
-          className="h-10 rounded-input border border-hairline bg-white px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+          className="h-10 rounded-input border border-hairline bg-surface px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
         >
           {CUSTOM_FIELD_TYPES.map((t) => (
             <option key={t} value={t}>
@@ -473,7 +473,7 @@ function FieldEditorPanel({
             value={unitSuffix}
             onChange={(e) => setUnitSuffix(e.target.value)}
             placeholder="e.g. months, kg, V"
-            className="h-10 rounded-input border border-hairline bg-white px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+            className="h-10 rounded-input border border-hairline bg-surface px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
           />
         </label>
       ) : null}
@@ -486,7 +486,7 @@ function FieldEditorPanel({
             onChange={(e) => setOptionsText(e.target.value)}
             rows={4}
             placeholder={"Small\nMedium\nLarge"}
-            className="rounded-input border border-hairline bg-white px-md py-sm text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+            className="rounded-input border border-hairline bg-surface px-md py-sm text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
           />
         </label>
       ) : null}
@@ -496,7 +496,7 @@ function FieldEditorPanel({
         <select
           value={sectionId}
           onChange={(e) => setSectionId(e.target.value)}
-          className="h-10 rounded-input border border-hairline bg-white px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+          className="h-10 rounded-input border border-hairline bg-surface px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
         >
           <option value="">Ungrouped</option>
           {sections.map((s) => (
@@ -540,7 +540,7 @@ function SectionEditorPanel({
           onChange={(e) => setName(e.target.value)}
           autoFocus
           placeholder="e.g. Dimensions"
-          className="h-10 rounded-input border border-hairline bg-white px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+          className="h-10 rounded-input border border-hairline bg-surface px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
         />
       </label>
       <ModalActions
@@ -565,11 +565,11 @@ function ModalShell({
 }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-ink/30 p-lg sm:items-center"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-scrim/30 p-lg sm:items-center"
       onClick={onClose}
     >
       <div
-        className="flex w-full max-w-form flex-col gap-md rounded-dialog bg-white p-lg shadow-menu"
+        className="flex w-full max-w-form flex-col gap-md rounded-dialog bg-surface p-lg shadow-menu"
         onClick={(e) => e.stopPropagation()}
       >
         <h3 className="text-title-md text-ink">{title}</h3>

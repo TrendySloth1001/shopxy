@@ -14,11 +14,11 @@ export function Modal({
 }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-ink/30 p-lg sm:items-center"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-scrim/30 p-lg sm:items-center"
       onClick={onClose}
     >
       <div
-        className={`flex max-h-[85dvh] w-full flex-col gap-md overflow-y-auto rounded-dialog bg-white p-lg shadow-menu ${
+        className={`flex max-h-[85dvh] w-full flex-col gap-md overflow-y-auto rounded-dialog bg-surface p-lg shadow-menu ${
           wide ? "max-w-content" : "max-w-form"
         }`}
         onClick={(e) => e.stopPropagation()}

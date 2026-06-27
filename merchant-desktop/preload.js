@@ -16,4 +16,7 @@ contextBridge.exposeInMainWorld("shopxyDesktop", {
   resumeAccount: (id) => ipcRenderer.invoke("remember:resume", id),
   /** Remove + revoke a remembered account -> { ok } */
   forgetAccount: (id) => ipcRenderer.invoke("remember:forget", id),
+  /** Persist the chosen theme ("light" | "dark" | "oled") and re-tint the
+   *  native window + OS chrome to match -> { ok }. */
+  setTheme: (theme) => ipcRenderer.invoke("theme:set", theme),
 });
