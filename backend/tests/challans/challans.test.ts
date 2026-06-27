@@ -1,6 +1,10 @@
 import { describe, it, expect, afterAll } from 'vitest';
+import zlib from 'node:zlib';
+import { Writable } from 'node:stream';
+import request from 'supertest';
 import { Prisma } from '@prisma/client';
 import prisma from '../../src/infra/db/prisma.js';
+import { buildApp } from '../../src/infra/http/app.js';
 import { challansService } from '../../src/modules/challans/challans.service.js';
 import {
   computeChallanLineTax,
@@ -11,9 +15,44 @@ import { createTestUser, cleanupTestUser, createTestProduct } from '../helpers/s
 
 /// Challan coverage: the Rule 55 per-line tax math (pure unit tests) plus the
 /// load-bearing flows — create posts stock, the PDF renders to a valid document,
-/// and convert-to-invoice reconciles with the same figures the challan printed.
+/// the rendered document actually CONTAINS the Rule 55 fields, the HTTP endpoint
+/// streams it, and convert-to-invoice reconciles with the figures it printed.
 
 const n = (d: Prisma.Decimal) => d.toNumber();
+
+/// Extract the visible text from a PDFKit PDF. PDFKit FlateDecode-compresses its
+/// content streams AND draws text via `[<hex> kern …] TJ` arrays (hex strings,
+/// split by kerning), so we inflate each `stream…endstream` block, then decode
+/// every `<hex>` chunk and concatenate. Kerning splits within a single drawn
+/// string concatenate back exactly; separate draws just aren't space-joined,
+/// which is fine for substring assertions on individual labels/values.
+function pdfText(buf: Buffer): string {
+  const s = buf.toString('latin1');
+  const re = /stream\r?\n([\s\S]*?)\r?\nendstream/g;
+  let m: RegExpExecArray | null;
+  let content = '';
+  while ((m = re.exec(s))) {
+    const bytes = Buffer.from(m[1], 'latin1');
+    try {
+      content += zlib.inflateSync(bytes).toString('latin1') + '\n';
+    } catch {
+      content += m[1] + '\n'; // stream wasn't deflated — use as-is
+    }
+  }
+  let out = '';
+  // Hex strings <...> (PDFKit's default for standard fonts).
+  const hex = content.match(/<([0-9A-Fa-f\s]+)>/g) ?? [];
+  for (const h of hex) {
+    const clean = h.slice(1, -1).replace(/\s+/g, '');
+    if (clean.length >= 2 && clean.length % 2 === 0) {
+      out += Buffer.from(clean, 'hex').toString('latin1');
+    }
+  }
+  // Literal (...) strings, in case a stream uses them.
+  const lit = content.match(/\(((?:\\.|[^()\\])*)\)/g) ?? [];
+  out += ' ' + lit.map((p) => p.slice(1, -1).replace(/\\(.)/g, '$1')).join(' ');
+  return out;
+}
 
 describe('challan tax math — computeChallanLineTax', () => {
   it('intra-state registered: 18% on 2×100 splits CGST 18 / SGST 18', () => {
@@ -219,6 +258,169 @@ describe('challans.service — create, render, convert', () => {
       expect(Number(inv.total)).toBeCloseTo(236, 2);
 
       await prisma.invoice.delete({ where: { id: inv.id } });
+    } finally {
+      await cleanupTestUser(ctx);
+    }
+  });
+
+  it('rendered PDF actually contains the Rule 55 fields (intra-state heads)', async () => {
+    const ctx = await createTestUser();
+    try {
+      await registerShop(ctx.userId, '27');
+      const product = await createTestProduct(ctx.shopId, { sellingPrice: 100 });
+      await prisma.product.update({
+        where: { id: product.id },
+        data: { taxPercent: 18, hsnCode: '1234' },
+      });
+      const party = await prisma.party.create({
+        data: {
+          shopId: ctx.shopId,
+          name: 'Local Consignee',
+          stateCode: '27',
+          gstin: '27ZZZZZ9999Z1Z5',
+          address: '1 Market Rd',
+          city: 'Pune',
+          state: 'Maharashtra',
+        },
+      });
+      await seedStock(ctx, product.id, 10);
+      const created = await challansService.createChallan(ctx.shopId, {
+        partyId: party.id,
+        items: [{ productId: product.id, quantity: 2 }],
+        createdById: ctx.userId,
+      });
+      if (!('challan' in created)) throw new Error('challan not created');
+
+      const pdf = await renderChallanPdf(ctx.shopId, created.challan.id, null);
+      if (!Buffer.isBuffer(pdf)) throw new Error('expected a PDF buffer');
+      const text = pdfText(pdf);
+
+      // Rule 55 mandatory document elements are present.
+      expect(text).toContain('DELIVERY CHALLAN');
+      expect(text).toContain('Consignor');
+      expect(text).toContain('Consignee');
+      expect(text).toContain('GSTIN');
+      expect(text).toContain('PLACE OF SUPPLY');
+      expect(text).toContain('Intra-State');
+      expect(text).toContain('1234'); // HSN
+      expect(text).toContain('Authorised Signatory');
+      // Intra-state → CGST/SGST heads, NOT IGST.
+      expect(text).toContain('CGST');
+      expect(text).toContain('SGST');
+      expect(text).not.toContain('IGST');
+      // Taxable value of the goods is printed.
+      expect(text).toContain('200.00');
+    } finally {
+      await cleanupTestUser(ctx);
+    }
+  });
+
+  it('rendered PDF shows IGST (and not CGST/SGST) for an inter-state movement', async () => {
+    const ctx = await createTestUser();
+    try {
+      await registerShop(ctx.userId, '27');
+      const product = await createTestProduct(ctx.shopId, { sellingPrice: 100 });
+      await prisma.product.update({
+        where: { id: product.id },
+        data: { taxPercent: 18, hsnCode: '1234' },
+      });
+      const party = await prisma.party.create({
+        data: { shopId: ctx.shopId, name: 'Interstate Consignee', stateCode: '29' },
+      });
+      await seedStock(ctx, product.id, 10);
+      const created = await challansService.createChallan(ctx.shopId, {
+        partyId: party.id,
+        items: [{ productId: product.id, quantity: 2 }],
+        createdById: ctx.userId,
+      });
+      if (!('challan' in created)) throw new Error('challan not created');
+
+      const pdf = await renderChallanPdf(ctx.shopId, created.challan.id, null);
+      if (!Buffer.isBuffer(pdf)) throw new Error('expected a PDF buffer');
+      const text = pdfText(pdf);
+
+      expect(text).toContain('Inter-State');
+      expect(text).toContain('IGST');
+      expect(text).toContain('Rs. 36.00'); // the IGST amount
+      expect(text).toContain('Karnataka'); // place of supply 29 name
+      // SGST is the clean signal that no intra-state split was printed — 'CGST'
+      // itself can't be used because the legal subtitle says "CGST Rules 2017".
+      expect(text).not.toContain('SGST');
+    } finally {
+      await cleanupTestUser(ctx);
+    }
+  });
+
+  it('service.streamPdf writes a PDF to the response stream and fires onReady first', async () => {
+    // Exercises the exact path the controller invokes (challansService.streamPdf
+    // → renderer's stream branch): onReady must fire BEFORE any bytes so the
+    // controller can flip the response headers to application/pdf, then the
+    // document streams out starting with the %PDF- signature.
+    const ctx = await createTestUser();
+    try {
+      await registerShop(ctx.userId, '27');
+      const product = await createTestProduct(ctx.shopId, { sellingPrice: 100 });
+      await prisma.product.update({
+        where: { id: product.id },
+        data: { taxPercent: 18, hsnCode: '1234' },
+      });
+      const party = await prisma.party.create({
+        data: { shopId: ctx.shopId, name: 'Stream Consignee', stateCode: '27' },
+      });
+      await seedStock(ctx, product.id, 10);
+      const created = await challansService.createChallan(ctx.shopId, {
+        partyId: party.id,
+        items: [{ productId: product.id, quantity: 2 }],
+        createdById: ctx.userId,
+      });
+      if (!('challan' in created)) throw new Error('challan not created');
+
+      const chunks: Buffer[] = [];
+      let readyFiredBeforeBytes = false;
+      let onReadyCalled = false;
+      const sink = new Writable({
+        write(chunk: Buffer, _enc, cb) {
+          if (chunks.length === 0) readyFiredBeforeBytes = onReadyCalled;
+          chunks.push(Buffer.from(chunk));
+          cb();
+        },
+      });
+      const err = await challansService.streamPdf(ctx.shopId, created.challan.id, sink, () => {
+        onReadyCalled = true;
+      });
+
+      expect(err).toBeNull();
+      expect(onReadyCalled).toBe(true);
+      expect(readyFiredBeforeBytes).toBe(true);
+      const body = Buffer.concat(chunks);
+      expect(body.subarray(0, 5).toString('latin1')).toBe('%PDF-');
+      expect(body.length).toBeGreaterThan(500);
+
+      // A missing challan returns a structured error and never touches the stream.
+      const sink2 = new Writable({ write(_c, _e, cb) { cb(); } });
+      let onReady2 = false;
+      const miss = await challansService.streamPdf(ctx.shopId, 99999999, sink2, () => {
+        onReady2 = true;
+      });
+      expect(miss).toEqual({ error: 'Challan not found' });
+      expect(onReady2).toBe(false);
+    } finally {
+      await cleanupTestUser(ctx);
+    }
+  });
+
+  it('GET /challans/:id/pdf is registered and wired (not a 404)', async () => {
+    // Routing-only check: the merchant-area auth gate 403s a bare test token on
+    // resolveShop-less routes (a known harness limitation — see invoices, which
+    // is likewise service-tested, not HTTP-tested). A non-404 proves the route +
+    // controller are mounted; the streaming/content correctness is covered above.
+    const app = buildApp();
+    const ctx = await createTestUser();
+    try {
+      const res = await request(app)
+        .get('/challans/1/pdf')
+        .set('Authorization', `Bearer ${ctx.accessToken}`);
+      expect(res.status).not.toBe(404);
     } finally {
       await cleanupTestUser(ctx);
     }
