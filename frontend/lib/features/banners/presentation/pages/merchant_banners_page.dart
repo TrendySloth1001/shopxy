@@ -205,9 +205,9 @@ class _EmptyTile extends StatelessWidget {
           ),
         ),
         child: Row(
-          children: const [
+          children: [
             Icon(Icons.add_photo_alternate_outlined, color: AppColors.muted),
-            SizedBox(width: AppSizes.md),
+            const SizedBox(width: AppSizes.md),
             Expanded(
               child: Text(
                 'No banners in this placement yet',
@@ -257,10 +257,10 @@ class _BannerTile extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSizes.sm),
       child: Material(
-        color: AppColors.white,
+        color: AppColors.surface,
         shape: AppShapes.squircle(
           AppSizes.radiusMd,
-          side: const BorderSide(color: AppColors.hairline),
+          side: BorderSide(color: AppColors.hairline),
         ),
         child: InkWell(
           onTap: onTap,
@@ -280,7 +280,7 @@ class _BannerTile extends StatelessWidget {
                   child: Image.network(
                     resolveImageUrl(banner.imageUrl),
                     fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => const Icon(
+                    errorBuilder: (_, _, _) => Icon(
                       Icons.broken_image_outlined,
                       color: AppColors.muted,
                     ),
@@ -334,7 +334,7 @@ class _BannerTile extends StatelessWidget {
                             Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.inventory_2_outlined,
                                   size: AppSizes.iconSm,
                                   color: AppColors.muted,
@@ -448,10 +448,10 @@ class _BannerTileSkeleton extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSizes.sm),
       child: Material(
-        color: AppColors.white,
+        color: AppColors.surface,
         shape: AppShapes.squircle(
           AppSizes.radiusMd,
-          side: const BorderSide(color: AppColors.hairline),
+          side: BorderSide(color: AppColors.hairline),
         ),
         child: Padding(
           padding: const EdgeInsets.all(AppSizes.md),

@@ -77,7 +77,7 @@ class AppStatusBadge extends StatelessWidget {
     final BorderSide side;
     switch (weight) {
       case AppStatusWeight.outline:
-        bg = AppColors.white;
+        bg = AppColors.surface;
         fg = _color;
         side = BorderSide(color: _color, width: 1);
       case AppStatusWeight.soft:

@@ -95,7 +95,7 @@ class _ScanConsolePageState extends State<ScanConsolePage> {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                const ColoredBox(color: AppColors.black),
+                ColoredBox(color: AppColors.inverseSurface),
                 MobileScanner(controller: _controller, onDetect: _onDetect),
                 Center(
                   child: Container(
@@ -104,7 +104,7 @@ class _ScanConsolePageState extends State<ScanConsolePage> {
                     decoration: ShapeDecoration(
                       shape: AppShapes.squircle(
                         AppSizes.radiusLg,
-                        side: const BorderSide(color: AppColors.white, width: 3),
+                        side: BorderSide(color: AppColors.white, width: 3),
                       ),
                     ),
                   ),
@@ -125,7 +125,7 @@ class _ScanConsolePageState extends State<ScanConsolePage> {
                     padding: const EdgeInsets.all(AppSizes.lg),
                     itemCount: _client.recent.length,
                     separatorBuilder: (_, _) =>
-                        const Divider(height: 1, color: AppColors.hairline),
+                        Divider(height: 1, color: AppColors.hairline),
                     itemBuilder: (_, i) => _FeedbackTile(item: _client.recent[i]),
                   ),
           ),

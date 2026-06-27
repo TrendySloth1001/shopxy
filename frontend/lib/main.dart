@@ -6,6 +6,7 @@ import 'package:shopxy/core/auth/token_manager.dart';
 import 'package:shopxy/core/config/app_config.dart';
 import 'package:shopxy/core/network/api_client.dart';
 import 'package:shopxy/core/prefs/navigation_prefs.dart';
+import 'package:shopxy/core/prefs/theme_prefs.dart';
 import 'package:shopxy/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/categories/data/datasources/categories_remote_data_source.dart';
@@ -71,6 +72,11 @@ void main() async {
   // first frame already reflects the saved choice.
   final navPrefs = NavigationPrefsProvider(const FlutterSecureStorage());
   await navPrefs.load();
+
+  // Theme choice (light / dark / OLED) — loaded before the first frame so the
+  // app opens in the saved theme with no flash. Also primes AppPalette.active.
+  final themePrefs = ThemePrefsProvider(const FlutterSecureStorage());
+  await themePrefs.load();
 
   final apiClient = ApiClient(tokenManager);
 
@@ -171,6 +177,7 @@ void main() async {
         // Auth first — _AuthGate reads this
         ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
         ChangeNotifierProvider<NavigationPrefsProvider>.value(value: navPrefs),
+        ChangeNotifierProvider<ThemePrefsProvider>.value(value: themePrefs),
 
         // Raw HTTP client — surfaced for widgets that hit small endpoints
         // (e.g. ContactChangesSection) without their own data-source layer.

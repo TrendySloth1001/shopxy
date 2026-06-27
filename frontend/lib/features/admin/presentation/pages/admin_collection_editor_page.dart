@@ -364,7 +364,7 @@ class _AdminCollectionEditorPageState extends State<AdminCollectionEditorPage> {
           ),
           clipBehavior: Clip.antiAlias,
           child: _coverImageUrl == null
-              ? const Icon(Icons.image_outlined, color: AppColors.muted)
+              ? Icon(Icons.image_outlined, color: AppColors.muted)
               : Image.network(
                   resolveImageUrl(_coverImageUrl!),
                   fit: BoxFit.cover,
@@ -396,7 +396,7 @@ class _Hint extends StatelessWidget {
         color: AppColors.heroPanel,
         shape: AppShapes.squircle(AppSizes.radiusMd),
       ),
-      child: Text(text, style: const TextStyle(color: AppColors.muted)),
+      child: Text(text, style: TextStyle(color: AppColors.muted)),
     );
   }
 }
@@ -415,12 +415,12 @@ class _ItemRow extends StatelessWidget {
         vertical: AppSizes.sm,
       ),
       decoration: ShapeDecoration(
-        color: AppColors.white,
+        color: AppColors.surface,
         shape: AppShapes.squircle(AppSizes.radiusMd),
       ),
       child: Row(
         children: [
-          const Icon(Icons.drag_handle, color: AppColors.muted),
+          Icon(Icons.drag_handle, color: AppColors.muted),
           const SizedBox(width: AppSizes.sm),
           Container(
             width: AppSizes.avatarSm,
@@ -431,7 +431,7 @@ class _ItemRow extends StatelessWidget {
               shape: AppShapes.squircle(AppSizes.radiusSm),
             ),
             child: item.product.imageUrl == null
-                ? const Icon(Icons.image_outlined, color: AppColors.muted)
+                ? Icon(Icons.image_outlined, color: AppColors.muted)
                 : Image.network(
                     resolveImageUrl(item.product.imageUrl!),
                     fit: BoxFit.cover,
@@ -633,7 +633,7 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
         if (_searching) const LinearProgressIndicator(minHeight: 2),
         Expanded(
           child: _results.isEmpty
-              ? const Center(
+              ? Center(
                   child: Text(
                     'Type 2+ characters to search',
                     style: TextStyle(color: AppColors.muted),
@@ -656,7 +656,7 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
                       child: Container(
                         padding: const EdgeInsets.all(AppSizes.sm),
                         decoration: ShapeDecoration(
-                          color: AppColors.white,
+                          color: AppColors.surface,
                           shape: AppShapes.squircle(AppSizes.radiusMd),
                         ),
                         child: Row(
@@ -670,7 +670,7 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
                                 shape: AppShapes.squircle(AppSizes.radiusSm),
                               ),
                               child: p.imageUrl == null
-                                  ? const Icon(Icons.image_outlined,
+                                  ? Icon(Icons.image_outlined,
                                       color: AppColors.muted)
                                   : Image.network(
                                       resolveImageUrl(p.imageUrl!),

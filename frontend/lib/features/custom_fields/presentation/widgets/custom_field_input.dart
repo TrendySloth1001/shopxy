@@ -135,7 +135,7 @@ class _CustomFieldInputState extends State<CustomFieldInput> {
           decoration: ShapeDecoration(
             shape: AppShapes.squircle(
               AppSizes.radiusSm,
-              side: const BorderSide(color: AppColors.hairline, width: 1),
+              side: BorderSide(color: AppColors.hairline, width: 1),
             ),
           ),
           child: SwitchListTile(

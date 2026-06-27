@@ -23,7 +23,7 @@ class AdminBankOfferEditorSheet {
     return showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.surface,
       shape: AppShapes.squircleTop(AppSizes.bottomSheetRadius),
       builder: (_) => _Body(existing: existing),
     );
@@ -372,7 +372,7 @@ class _BodyState extends State<_Body> {
                 padding: const EdgeInsets.all(AppSizes.sm),
                 color: AppColors.errorSoft,
                 child: Text(_error!,
-                    style: const TextStyle(color: AppColors.error)),
+                    style: TextStyle(color: AppColors.error)),
               ),
             ],
             const SizedBox(height: AppSizes.md),

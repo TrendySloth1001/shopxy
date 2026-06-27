@@ -198,7 +198,7 @@ class _QuotationDetailPageState extends State<QuotationDetailPage> {
             child: ActionChip(
               onPressed: _downloading ? null : _sharePdf,
               tooltip: 'Download or share this quote as PDF',
-              backgroundColor: AppColors.brandSoft,
+              backgroundColor: AppColors.tileBg(AppColors.brandSoft),
               side: BorderSide.none,
               visualDensity: VisualDensity.compact,
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -207,7 +207,7 @@ class _QuotationDetailPageState extends State<QuotationDetailPage> {
                       width: AppSizes.iconSm,
                       height: AppSizes.iconSm,
                       child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Icon(Icons.share_rounded,
+                  : Icon(Icons.share_rounded,
                       size: AppSizes.iconSm, color: AppColors.brand),
               label: Text('Share',
                   style: theme.textTheme.labelLarge?.copyWith(
@@ -287,7 +287,7 @@ class _QuotationDetailPageState extends State<QuotationDetailPage> {
                         onPressed: _busy ? null : _decline,
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.error,
-                          side: const BorderSide(color: AppColors.error),
+                          side: BorderSide(color: AppColors.error),
                           padding:
                               const EdgeInsets.symmetric(vertical: AppSizes.lg),
                         ),
@@ -330,7 +330,7 @@ class _QuotationDetailPageState extends State<QuotationDetailPage> {
                     label: const Text('Cancel quotation'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.error,
-                      side: const BorderSide(color: AppColors.error),
+                      side: BorderSide(color: AppColors.error),
                       padding:
                           const EdgeInsets.symmetric(vertical: AppSizes.lg),
                     ),

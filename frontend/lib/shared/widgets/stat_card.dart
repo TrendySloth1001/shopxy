@@ -50,7 +50,7 @@ class StatCard extends StatelessWidget {
 
     if (emphasis) {
       return Material(
-        color: AppColors.black,
+        color: AppColors.inverseSurface,
         shape: Theme.of(context).cardTheme.shape,
         child: InkWell(
           onTap: onTap,

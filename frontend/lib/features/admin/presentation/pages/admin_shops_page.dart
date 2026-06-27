@@ -158,7 +158,7 @@ class _Row extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSizes.sm),
       child: Material(
-        color: AppColors.white,
+        color: AppColors.surface,
         shape: AppShapes.squircle(AppSizes.radiusMd),
         child: Padding(
           padding: const EdgeInsets.all(AppSizes.md),
@@ -173,7 +173,7 @@ class _Row extends StatelessWidget {
                       ? Container(
                           color: AppColors.heroPanel,
                           alignment: Alignment.center,
-                          child: const Icon(Icons.storefront_outlined,
+                          child: Icon(Icons.storefront_outlined,
                               color: AppColors.muted),
                         )
                       : Image.network(
@@ -264,7 +264,7 @@ class _ShopRowSkeleton extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSizes.sm),
       child: Material(
-        color: AppColors.white,
+        color: AppColors.surface,
         shape: AppShapes.squircle(AppSizes.radiusMd),
         child: Padding(
           padding: const EdgeInsets.all(AppSizes.md),
@@ -308,10 +308,10 @@ class _EmptyBlock extends StatelessWidget {
           padding: const EdgeInsets.all(AppSizes.xl),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: const [
+            children: [
               Icon(Icons.storefront_outlined,
                   size: AppSizes.iconHuge, color: AppColors.subtle),
-              SizedBox(height: AppSizes.md),
+              const SizedBox(height: AppSizes.md),
               Text(
                 'No shops found.',
                 textAlign: TextAlign.center,

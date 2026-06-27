@@ -263,7 +263,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     final draftId = await showModalBottomSheet<int>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.surface,
       shape: AppShapes.squircleTop(AppSizes.bottomSheetRadius),
       builder: (_) => StockBottomSheet(product: _product!, initialType: type),
     );
@@ -325,7 +325,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               Container(
                 padding: const EdgeInsets.all(AppSizes.lg),
                 decoration: ShapeDecoration(
-                  color: AppColors.white,
+                  color: AppColors.surface,
                   shape: AppShapes.squircle(
                     AppSizes.radiusMd,
                     side: BorderSide(color: AppColors.hairline, width: 1),
@@ -334,7 +334,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 child: QrImageView(
                   data: code,
                   size: AppSizes.qrCodeSize,
-                  backgroundColor: AppColors.white,
+                  backgroundColor: AppColors.surface,
                 ),
               ),
               const SizedBox(height: AppSizes.md),
@@ -492,7 +492,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       body: RefreshIndicator(
         onRefresh: _refreshAll,
         color: AppColors.black,
-        backgroundColor: AppColors.white,
+        backgroundColor: AppColors.surface,
         child: ListView(
           // No outer padding — the carousel needs to bleed full-
           // width to the screen edges. The content below is wrapped
@@ -547,7 +547,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     onTap: _openLedger,
                     child: Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.receipt_long_rounded,
                           color: AppColors.black,
                           size: AppSizes.iconMd,
@@ -572,7 +572,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                             ],
                           ),
                         ),
-                        const Icon(
+                        Icon(
                           Icons.arrow_forward_ios_rounded,
                           color: AppColors.muted,
                           size: AppSizes.iconSm,
@@ -1381,7 +1381,7 @@ class _VariantsSection extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
-                            color: AppColors.brandSoft,
+                            color: AppColors.tileBg(AppColors.brandSoft),
                             borderRadius: AppShapes.squircleRadius(
                                 AppSizes.radiusFull),
                           ),
@@ -1548,8 +1548,8 @@ class _HighlightsSection extends StatelessWidget {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Padding(
-                        padding: EdgeInsets.only(top: 8, right: AppSizes.sm),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8, right: AppSizes.sm),
                         child: SizedBox(
                           width: 4,
                           height: 4,
@@ -1796,7 +1796,7 @@ class _OffersSection extends StatelessWidget {
                                           ),
                                         ),
                                         const SizedBox(width: 4),
-                                        const Icon(
+                                        Icon(
                                           Icons.copy_rounded,
                                           size: 12,
                                           color: AppColors.muted,
@@ -1969,7 +1969,7 @@ class _TagsSection extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppColors.brandSoft,
+                    color: AppColors.tileBg(AppColors.brandSoft),
                     borderRadius: AppShapes.squircleRadius(AppSizes.radiusFull),
                   ),
                   child: Text(
@@ -2408,8 +2408,8 @@ class _StockActionBar extends StatelessWidget {
     return SafeArea(
       top: false,
       child: Container(
-        decoration: const BoxDecoration(
-          color: AppColors.white,
+        decoration: BoxDecoration(
+          color: AppColors.surface,
           border: Border(top: BorderSide(color: AppColors.hairline)),
         ),
         padding: const EdgeInsets.fromLTRB(
@@ -2534,7 +2534,7 @@ class _IdentifierChip extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSizes.xs),
-              const Icon(
+              Icon(
                 Icons.copy_rounded,
                 size: 12,
                 color: AppColors.muted,
@@ -2588,7 +2588,7 @@ class _PendingDraftsCard extends StatelessWidget {
                     color: AppColors.warning.withValues(alpha: 0.12),
                     shape: AppShapes.squircle(AppSizes.radiusSm),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.hourglass_top_rounded,
                     size: 18,
                     color: AppColors.warning,
@@ -2705,7 +2705,7 @@ class _PendingDraftRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppSizes.xs),
-            const Icon(
+            Icon(
               Icons.chevron_right_rounded,
               size: 18,
               color: AppColors.muted,

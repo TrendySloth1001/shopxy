@@ -119,8 +119,8 @@ class _PartiesPageState extends State<PartiesPage> {
                             onRefresh: () => context
                                 .read<PartiesProvider>()
                                 .loadParties(refresh: true),
-                            color: AppColors.black,
-                            backgroundColor: AppColors.white,
+                            color: AppColors.brand,
+                            backgroundColor: AppColors.surface,
                             child: ListView.separated(
                               padding: const EdgeInsets.symmetric(
                                 vertical: AppSizes.sm,
@@ -168,7 +168,7 @@ class _PartiesPageState extends State<PartiesPage> {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.surface,
       builder: (_) => PartyFormSheet(party: party),
     );
     if (saved == null || !context.mounted) return;
@@ -337,7 +337,7 @@ class _PartyTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Material(
-      color: AppColors.white,
+      color: AppColors.surface,
       child: InkWell(
         onTap: onTap,
         splashColor: AppColors.surfaceTint,
@@ -397,7 +397,7 @@ class _PartyTile extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.more_vert_rounded, color: AppColors.muted),
+                icon: Icon(Icons.more_vert_rounded, color: AppColors.muted),
                 onPressed: () => _showMenu(context),
               ),
             ],
@@ -413,7 +413,7 @@ class _PartyTile extends StatelessWidget {
     final theme = Theme.of(context);
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.surface,
       builder: (_) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -431,7 +431,7 @@ class _PartyTile extends StatelessWidget {
             // button would imply a re-send is possible when it's not.
             if (invite?.isAccepted == true)
               ListTile(
-                leading: const Icon(
+                leading: Icon(
                   Icons.verified_rounded,
                   color: AppColors.success,
                 ),
@@ -449,7 +449,7 @@ class _PartyTile extends StatelessWidget {
               )
             else if (invite == null || !invite!.isPending) ...[
               ListTile(
-                leading: const Icon(
+                leading: Icon(
                   Icons.person_add_alt_1_outlined,
                   color: AppColors.brandStrong,
                 ),
@@ -473,7 +473,7 @@ class _PartyTile extends StatelessWidget {
               ),
             ] else
               ListTile(
-                leading: const Icon(
+                leading: Icon(
                   Icons.cancel_schedule_send_outlined,
                   color: AppColors.warning,
                 ),
@@ -491,7 +491,7 @@ class _PartyTile extends StatelessWidget {
                 },
               ),
             ListTile(
-              leading: const Icon(
+              leading: Icon(
                 Icons.delete_outline_rounded,
                 color: AppColors.error,
               ),

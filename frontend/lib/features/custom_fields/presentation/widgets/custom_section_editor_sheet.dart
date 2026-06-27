@@ -27,7 +27,7 @@ class CustomSectionEditorSheet extends StatefulWidget {
     return showModalBottomSheet<CustomFieldSection>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.surface,
       shape: AppShapes.squircleTop(AppSizes.bottomSheetRadius),
       builder: (_) => CustomSectionEditorSheet(existing: existing),
     );
@@ -136,7 +136,7 @@ class _CustomSectionEditorSheetState extends State<CustomSectionEditorSheet> {
                       color: AppColors.surfaceTint,
                       shape: AppShapes.squircle(
                         AppSizes.radiusSm,
-                        side: const BorderSide(
+                        side: BorderSide(
                           color: AppColors.hairline,
                           width: 1,
                         ),

@@ -227,7 +227,7 @@ class _Pill extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Material(
-      color: selected ? AppColors.black : AppColors.surfaceTint,
+      color: selected ? AppColors.inverseSurface : AppColors.surfaceTint,
       shape: AppShapes.squircle(AppSizes.radiusFull),
       child: InkWell(
         customBorder: AppShapes.squircle(AppSizes.radiusFull),
@@ -243,7 +243,7 @@ class _Pill extends StatelessWidget {
               Text(
                 label,
                 style: theme.textTheme.labelLarge?.copyWith(
-                  color: selected ? AppColors.white : AppColors.black,
+                  color: selected ? AppColors.onInverse : AppColors.black,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -253,13 +253,13 @@ class _Pill extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(
                       horizontal: AppSizes.sm, vertical: 1),
                   decoration: BoxDecoration(
-                    color: selected ? AppColors.white : AppColors.warning,
+                    color: selected ? AppColors.inverseSurface : AppColors.warning,
                     borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
                   ),
                   child: Text(
                     '$badge',
                     style: theme.textTheme.labelSmall?.copyWith(
-                      color: selected ? AppColors.black : AppColors.white,
+                      color: selected ? AppColors.onInverse : AppColors.white,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
@@ -294,7 +294,7 @@ class _DateFilterChip extends StatelessWidget {
     final label =
         active ? '${_fmt.format(from!)} – ${_fmt.format(to!)}' : 'Any date';
     return Material(
-      color: active ? AppColors.black : AppColors.surfaceTint,
+      color: active ? AppColors.inverseSurface : AppColors.surfaceTint,
       shape: AppShapes.squircle(AppSizes.radiusFull),
       child: InkWell(
         customBorder: AppShapes.squircle(AppSizes.radiusFull),
@@ -310,13 +310,13 @@ class _DateFilterChip extends StatelessWidget {
               Icon(
                 Icons.event_rounded,
                 size: AppSizes.iconSm,
-                color: active ? AppColors.white : AppColors.black,
+                color: active ? AppColors.onInverse : AppColors.black,
               ),
               const SizedBox(width: AppSizes.sm),
               Text(
                 label,
                 style: theme.textTheme.labelMedium?.copyWith(
-                  color: active ? AppColors.white : AppColors.black,
+                  color: active ? AppColors.onInverse : AppColors.black,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -325,10 +325,10 @@ class _DateFilterChip extends StatelessWidget {
                 InkWell(
                   onTap: onClear,
                   customBorder: const CircleBorder(),
-                  child: const Icon(
+                  child: Icon(
                     Icons.close_rounded,
                     size: AppSizes.iconSm,
-                    color: AppColors.white,
+                    color: AppColors.onInverse,
                   ),
                 ),
               ],
@@ -351,7 +351,7 @@ class _OrderRow extends StatelessWidget {
     final theme = Theme.of(context);
     final preview = _itemPreviewText(order);
     return Material(
-      color: AppColors.white,
+      color: AppColors.surface,
       child: InkWell(
         onTap: () => Navigator.push(
           context,
@@ -624,7 +624,7 @@ class _ErrorState extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       children: [
         const SizedBox(height: AppSizes.massive),
-        const Icon(Icons.cloud_off_rounded,
+        Icon(Icons.cloud_off_rounded,
             size: AppSizes.iconHuge, color: AppColors.muted),
         const SizedBox(height: AppSizes.md),
         Text(

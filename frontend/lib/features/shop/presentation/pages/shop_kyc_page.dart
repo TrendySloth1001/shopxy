@@ -65,7 +65,7 @@ class ShopKycPage extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.info_outline, color: AppColors.info, size: AppSizes.iconMd),
+                Icon(Icons.info_outline, color: AppColors.info, size: AppSizes.iconMd),
                 const SizedBox(width: AppSizes.sm),
                 Expanded(
                   child: Text(
@@ -94,7 +94,7 @@ class _KycRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(top: BorderSide(color: AppColors.hairline)),
       ),
       padding: const EdgeInsets.symmetric(
@@ -105,7 +105,7 @@ class _KycRow extends StatelessWidget {
           Container(
             width: AppSizes.avatarSm,
             height: AppSizes.avatarSm,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: AppColors.heroPanel,
               shape: BoxShape.circle,
             ),

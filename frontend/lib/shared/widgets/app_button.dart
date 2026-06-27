@@ -22,7 +22,8 @@ class AppButton extends StatelessWidget {
     this.fullWidth = false,
   });
 
-  /// Primary CTA: solid black background, white text.
+  /// Primary CTA: high-contrast neutral fill + matching text — theme-aware, so
+  /// it flips correctly in dark/OLED (light fill + dark text).
   const AppButton.primary({
     super.key,
     required this.label,
@@ -169,7 +170,12 @@ class AppButton extends StatelessWidget {
     if (onPressed == null && !isLoading) return AppColors.disabled;
     switch (variant) {
       case AppButtonVariant.primary:
+        // High-contrast neutral CTA — pairs with the inverseSurface fill so it
+        // flips correctly (dark fill + light text in light mode; light fill +
+        // dark text in dark mode).
+        return AppColors.onInverse;
       case AppButtonVariant.danger:
+        // White on the saturated error red — correct in every theme.
         return AppColors.white;
       case AppButtonVariant.secondary:
       case AppButtonVariant.ghost:
@@ -185,19 +191,20 @@ class AppButton extends StatelessWidget {
     }
     switch (variant) {
       case AppButtonVariant.primary:
-        return AppColors.black;
+        return AppColors.inverseSurface;
       case AppButtonVariant.danger:
         return AppColors.error;
       case AppButtonVariant.secondary:
+        return AppColors.surface;
       case AppButtonVariant.ghost:
-        return AppColors.white;
+        return Colors.transparent;
     }
   }
 
   BorderSide _borderSide() {
     switch (variant) {
       case AppButtonVariant.secondary:
-        return const BorderSide(color: AppColors.black, width: 1);
+        return BorderSide(color: AppColors.black, width: 1);
       case AppButtonVariant.primary:
       case AppButtonVariant.danger:
       case AppButtonVariant.ghost:

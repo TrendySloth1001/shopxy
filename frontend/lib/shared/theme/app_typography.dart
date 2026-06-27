@@ -8,6 +8,10 @@ class AppTypography {
   static TextTheme get light => _build(AppColors.black);
   static TextTheme get dark => _build(AppColors.black);
 
+  /// Build the type scale tinted to a specific ink colour — used by [AppTheme]
+  /// so each theme (light / dark / OLED) gets text in its own ink.
+  static TextTheme forInk(Color ink) => _build(ink);
+
   static TextTheme _build(Color textColor) {
     final base = GoogleFonts.interTextTheme();
     return base

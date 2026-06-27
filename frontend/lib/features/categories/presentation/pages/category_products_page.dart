@@ -154,7 +154,7 @@ class _CategoryProductsPageState extends State<CategoryProductsPage> {
               : RefreshIndicator(
                   onRefresh: () => _load(),
                   color: AppColors.black,
-                  backgroundColor: AppColors.white,
+                  backgroundColor: AppColors.surface,
                   child: CustomScrollView(
                     controller: _scrollCtrl,
                     slivers: [
@@ -236,7 +236,7 @@ class _Header extends StatelessWidget {
       padding: const EdgeInsets.all(AppSizes.lg),
       decoration: ShapeDecoration(
         shape: AppShapes.squircle(AppSizes.radiusMd),
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [AppColors.accentTealSoft, AppColors.heroPanel],
@@ -248,13 +248,13 @@ class _Header extends StatelessWidget {
             width: AppSizes.fabSize,
             height: AppSizes.fabSize,
             decoration: ShapeDecoration(
-              color: AppColors.white,
+              color: AppColors.inverseSurface,
               shape: AppShapes.squircle(AppSizes.radiusMd),
             ),
             alignment: Alignment.center,
             child: Icon(
               resolveCategoryIcon(category.iconName),
-              color: AppColors.accentTeal,
+              color: AppColors.onInverse,
               size: AppSizes.iconLg,
             ),
           ),
@@ -464,21 +464,21 @@ class _SearchField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.white,
+      color: AppColors.surface,
       shape: AppShapes.squircle(
         AppSizes.radiusFull,
-        side: const BorderSide(color: AppColors.hairline),
+        side: BorderSide(color: AppColors.hairline),
       ),
       child: TextField(
         controller: controller,
         onChanged: onChanged,
         decoration: InputDecoration(
           hintText: 'Search ${AppStrings.navProducts.toLowerCase()}',
-          prefixIcon: const Icon(Icons.search_rounded, color: AppColors.subtle),
+          prefixIcon: Icon(Icons.search_rounded, color: AppColors.subtle),
           suffixIcon: controller.text.isEmpty
               ? null
               : IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.close_rounded,
                     color: AppColors.subtle,
                   ),

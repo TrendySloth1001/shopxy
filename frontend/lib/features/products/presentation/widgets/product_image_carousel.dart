@@ -188,7 +188,7 @@ class _ThumbnailStrip extends StatelessWidget {
               width: AppSizes.avatarMd,
               height: AppSizes.avatarMd,
               decoration: ShapeDecoration(
-                color: AppColors.white,
+                color: AppColors.surface,
                 shape: AppShapes.squircle(
                   AppSizes.radiusSm,
                   side: BorderSide(
@@ -215,7 +215,7 @@ class _ThumbnailStrip extends StatelessWidget {
                   ),
                   errorWidget: (_, _, _) => Container(
                     color: AppColors.heroPanel,
-                    child: const Icon(
+                    child: Icon(
                       Icons.image_not_supported_outlined,
                       color: AppColors.muted,
                     ),
@@ -256,18 +256,21 @@ class _ProductLightboxState extends State<_ProductLightbox> {
 
   @override
   Widget build(BuildContext context) {
+    // A fullscreen photo viewer is a media surface: it stays black with light
+    // controls in every theme (like any gallery lightbox), so it uses fixed
+    // Material black/white rather than theme-flipping tokens.
     return Scaffold(
-      backgroundColor: AppColors.black,
+      backgroundColor: Colors.black,
       appBar: AppBar(
-        backgroundColor: AppColors.black,
-        foregroundColor: AppColors.white,
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
         elevation: 0,
         title: Text(
           '${_index + 1} / ${widget.urls.length}',
           style: Theme.of(context)
               .textTheme
               .bodyMedium
-              ?.copyWith(color: AppColors.white),
+              ?.copyWith(color: Colors.white),
         ),
       ),
       body: PageView.builder(
@@ -282,17 +285,17 @@ class _ProductLightboxState extends State<_ProductLightbox> {
               child: CachedNetworkImage(
                 imageUrl: resolveImageUrl(widget.urls[i]),
                 fit: BoxFit.contain,
-                placeholder: (_, _) => SizedBox(
+                placeholder: (_, _) => const SizedBox(
                   width: AppSizes.iconLg,
                   height: AppSizes.iconLg,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: AppColors.white.withValues(alpha: 0.54),
+                    color: Colors.white,
                   ),
                 ),
-                errorWidget: (_, _, _) => Icon(
+                errorWidget: (_, _, _) => const Icon(
                   Icons.image_not_supported_outlined,
-                  color: AppColors.white.withValues(alpha: 0.54),
+                  color: Colors.white,
                   size: 64,
                 ),
               ),

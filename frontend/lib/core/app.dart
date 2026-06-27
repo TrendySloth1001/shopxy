@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/core/network/api_client.dart';
+import 'package:shopxy/core/prefs/theme_prefs.dart';
 import 'package:shopxy/core/router/app_shell.dart';
 import 'package:shopxy/features/auth/presentation/pages/login_page.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
@@ -10,6 +11,7 @@ import 'package:shopxy/features/shop/presentation/pages/join_request_page.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/shared/theme/app_palette.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/theme/app_theme.dart';
 
@@ -18,10 +20,16 @@ class ShopxyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Drive the whole app from the selected theme. Setting AppPalette.active
+    // here (before the subtree builds) keeps the AppColors.* getters in sync
+    // with the ThemeData we hand MaterialApp, so custom-painted widgets and
+    // Material components agree.
+    final themePrefs = context.watch<ThemePrefsProvider>();
+    AppPalette.active = themePrefs.palette;
+
     return MaterialApp(
       title: AppStrings.appName,
-      theme: AppTheme.light,
-      darkTheme: AppTheme.dark,
+      theme: AppTheme.fromPalette(themePrefs.palette),
       themeMode: ThemeMode.light,
       debugShowCheckedModeBanner: false,
       home: const _AuthGate(),
@@ -114,7 +122,7 @@ class _NoShopScreen extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.storefront_outlined,
+                Icon(Icons.storefront_outlined,
                     size: 48, color: AppColors.muted),
                 const SizedBox(height: AppSizes.lg),
                 Text('No shop linked yet',
@@ -157,13 +165,13 @@ class _SplashScreen extends StatelessWidget {
               width: 72,
               height: 72,
               decoration: ShapeDecoration(
-                color: AppColors.black,
+                color: AppColors.inverseSurface,
                 shape: AppShapes.squircle(AppSizes.radiusXl),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.inventory_2_rounded,
                 size: AppSizes.iconXl,
-                color: AppColors.white,
+                color: AppColors.onInverse,
               ),
             ),
             const SizedBox(height: AppSizes.xl),

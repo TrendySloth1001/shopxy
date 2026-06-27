@@ -230,7 +230,7 @@ class _SendInvitePageState extends State<SendInvitePage> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.error_outline_rounded,
+                          Icon(Icons.error_outline_rounded,
                               color: AppColors.error, size: AppSizes.iconMd),
                           const SizedBox(width: AppSizes.sm),
                           Expanded(
@@ -248,7 +248,7 @@ class _SendInvitePageState extends State<SendInvitePage> {
               ),
             ),
             Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 border: Border(top: BorderSide(color: AppColors.hairline)),
               ),
               padding: const EdgeInsets.fromLTRB(
@@ -262,12 +262,12 @@ class _SendInvitePageState extends State<SendInvitePage> {
                 child: FilledButton.icon(
                   onPressed: _canSend ? _send : null,
                   icon: _sending
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: AppSizes.iconSm,
                           height: AppSizes.iconSm,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: AppColors.white,
+                            color: AppColors.onInverse,
                           ),
                         )
                       : const Icon(Icons.send_rounded, size: AppSizes.iconMd),
@@ -435,10 +435,10 @@ class _ContactPickerState extends State<_ContactPicker> {
               }
               return Container(
                 decoration: ShapeDecoration(
-                  color: AppColors.white,
+                  color: AppColors.surface,
                   shape: AppShapes.squircle(
                     AppSizes.radiusMd,
-                    side: const BorderSide(color: AppColors.hairline),
+                    side: BorderSide(color: AppColors.hairline),
                   ),
                 ),
                 clipBehavior: Clip.antiAlias,
@@ -490,7 +490,7 @@ class _ContactPickerState extends State<_ContactPicker> {
                               ),
                             ),
                             if (selected)
-                              const Icon(
+                              Icon(
                                 Icons.check_circle_rounded,
                                 color: AppColors.brand,
                                 size: AppSizes.iconMd,
@@ -524,10 +524,10 @@ class _ContactListSkeleton extends StatelessWidget {
     return Container(
       height: 220,
       decoration: ShapeDecoration(
-        color: AppColors.white,
+        color: AppColors.surface,
         shape: AppShapes.squircle(
           AppSizes.radiusMd,
-          side: const BorderSide(color: AppColors.hairline),
+          side: BorderSide(color: AppColors.hairline),
         ),
       ),
       clipBehavior: Clip.antiAlias,

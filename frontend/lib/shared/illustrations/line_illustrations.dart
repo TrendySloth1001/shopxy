@@ -12,12 +12,15 @@ class LineIllustration extends StatelessWidget {
     super.key,
     required this.kind,
     this.size = 160,
-    this.accent = AppColors.brand,
+    this.accent,
   });
 
   final LineArt kind;
   final double size;
-  final Color accent;
+
+  /// Brand accent for the single highlighted stroke. Defaults to
+  /// [AppColors.brand] (theme-aware) when null.
+  final Color? accent;
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +28,7 @@ class LineIllustration extends StatelessWidget {
       width: size,
       height: size,
       child: CustomPaint(
-        painter: _LinePainter(kind, accent),
+        painter: _LinePainter(kind, accent ?? AppColors.brand),
       ),
     );
   }
@@ -141,7 +144,7 @@ class _LinePainter extends CustomPainter {
       ..lineTo(34.5, 77.5)
       ..lineTo(38, 73);
     c.drawPath(check, Paint()
-      ..color = AppColors.white
+      ..color = AppColors.onInverse
       ..strokeWidth = 1.8
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round
@@ -293,7 +296,7 @@ class _LinePainter extends CustomPainter {
       ..lineTo(69.5, 32.5)
       ..lineTo(73, 28);
     c.drawPath(check, Paint()
-      ..color = AppColors.white
+      ..color = AppColors.onInverse
       ..strokeWidth = 1.8
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round

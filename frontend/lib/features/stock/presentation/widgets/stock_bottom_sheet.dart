@@ -562,7 +562,7 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
                               maxWidth: 360,
                             ),
                             decoration: ShapeDecoration(
-                              color: AppColors.white,
+                              color: AppColors.surface,
                               shape: AppShapes.squircle(
                                 AppSizes.radiusMd,
                                 side: BorderSide(

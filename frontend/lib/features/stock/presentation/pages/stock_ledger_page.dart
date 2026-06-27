@@ -143,7 +143,7 @@ class _StockLedgerPageState extends State<StockLedgerPage> {
     return RefreshIndicator(
       onRefresh: _load,
       color: AppColors.black,
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.surface,
       child: ListView.separated(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSizes.lg,
@@ -306,7 +306,7 @@ class _LedgerEntryCard extends StatelessWidget {
                 width: AppSizes.avatarSm,
                 height: AppSizes.avatarSm,
                 decoration: ShapeDecoration(
-                  color: AppColors.white,
+                  color: AppColors.inverseSurface,
                   shape: AppShapes.squircle(
                     AppSizes.radiusSm,
                     side: BorderSide(color: accent, width: 1.2),
@@ -434,7 +434,7 @@ class _LedgerEntryCard extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const Icon(
+                  Icon(
                     Icons.arrow_forward_rounded,
                     color: AppColors.black,
                     size: AppSizes.iconSm,

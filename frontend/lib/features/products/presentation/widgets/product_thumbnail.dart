@@ -28,14 +28,16 @@ class ProductThumbnail extends StatelessWidget {
   /// Stable per-product hash → one of six brand-friendly accents. Same
   /// product always picks the same colour so the row reads as a deck
   /// of recognisable cards rather than identical placeholders.
-  static const _accents = <(Color bg, Color fg)>[
-    (AppColors.brandSoft, AppColors.brandStrong),
-    (AppColors.accentTealSoft, AppColors.accentTeal),
-    (AppColors.accentIndigoSoft, AppColors.accentIndigo),
-    (AppColors.accentAmberSoft, AppColors.accentAmber),
-    (AppColors.accentRoseSoft, AppColors.accentRose),
-    (AppColors.successSoft, AppColors.success),
-  ];
+  // Getter, not `static final`: AppColors.* are theme-aware getters, so a
+  // cached list would freeze the light-mode tints and not flip in dark.
+  static List<(Color bg, Color fg)> get _accents => [
+        (AppColors.brandSoft, AppColors.brandStrong),
+        (AppColors.accentTealSoft, AppColors.accentTeal),
+        (AppColors.accentIndigoSoft, AppColors.accentIndigo),
+        (AppColors.accentAmberSoft, AppColors.accentAmber),
+        (AppColors.accentRoseSoft, AppColors.accentRose),
+        (AppColors.successSoft, AppColors.success),
+      ];
 
   String get _initial {
     final name = product.name.trim();
@@ -53,7 +55,7 @@ class ProductThumbnail extends StatelessWidget {
     final radius = size <= 64 ? AppSizes.radiusMd : AppSizes.radiusLg;
     final shape = AppShapes.squircle(
       radius,
-      side: const BorderSide(color: AppColors.hairline, width: 1),
+      side: BorderSide(color: AppColors.hairline, width: 1),
     );
     final (bg, fg) = _palette;
 
@@ -61,7 +63,7 @@ class ProductThumbnail extends StatelessWidget {
       width: size,
       height: size,
       decoration: ShapeDecoration(
-        color: hasImage ? AppColors.white : bg,
+        color: hasImage ? AppColors.surface : AppColors.tileBg(bg),
         shape: shape,
       ),
       child: hasImage
@@ -106,7 +108,7 @@ class _MonogramFallback extends StatelessWidget {
     // visual weight whether this is a 36px thumb or a 160px hero.
     final fontSize = (size * 0.42).clamp(14.0, 64.0);
     return Container(
-      color: bg,
+      color: AppColors.tileBg(bg),
       alignment: Alignment.center,
       child: Text(
         initial,

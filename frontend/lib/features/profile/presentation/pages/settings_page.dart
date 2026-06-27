@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shopxy/core/auth/shop_capabilities.dart';
 import 'package:shopxy/core/prefs/navigation_prefs.dart';
+import 'package:shopxy/core/prefs/theme_prefs.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/custom_fields/presentation/pages/custom_fields_settings_page.dart';
 import 'package:shopxy/features/profile/presentation/pages/change_password_page.dart';
@@ -131,7 +132,7 @@ class _SettingsPageState extends State<SettingsPage> {
             icon: Icons.badge_outlined,
             title: AppStrings.editProfile,
             subtitle: user?.name ?? '—',
-            trailing: const Icon(
+            trailing: Icon(
               Icons.chevron_right_rounded,
               color: AppColors.subtle,
             ),
@@ -144,7 +145,7 @@ class _SettingsPageState extends State<SettingsPage> {
             icon: Icons.lock_outline_rounded,
             title: AppStrings.changePassword,
             subtitle: 'Update the password on your account',
-            trailing: const Icon(
+            trailing: Icon(
               Icons.chevron_right_rounded,
               color: AppColors.subtle,
             ),
@@ -173,7 +174,7 @@ class _SettingsPageState extends State<SettingsPage> {
               icon: Icons.tune_rounded,
               title: 'Shop operations',
               subtitle: 'Hours, vacation mode, payouts, KYC, team',
-              trailing: const Icon(
+              trailing: Icon(
                 Icons.chevron_right_rounded,
                 color: AppColors.subtle,
               ),
@@ -188,16 +189,10 @@ class _SettingsPageState extends State<SettingsPage> {
           // ── Appearance ──────────────────────────────────────
           const _Eyebrow('APPEARANCE'),
           const SizedBox(height: AppSizes.sm),
-          // Theme / language are placeholder rows — no `onTap` so
-          // they don't pretend to be live. The "Coming soon" chip
-          // signals the future surface without inviting taps that
-          // do nothing.
-          _SettingRow(
-            icon: Icons.palette_outlined,
-            title: AppStrings.theme,
-            subtitle: AppStrings.themeLight,
-            trailing: _comingSoonChip(context),
-          ),
+          const _ThemeRow(),
+          // Currency / language stay placeholder rows — no `onTap` so they
+          // don't pretend to be live. The "Coming soon" chip signals the
+          // future surface without inviting taps that do nothing.
           _SettingRow(
             icon: Icons.currency_rupee_rounded,
             title: AppStrings.currency,
@@ -221,7 +216,7 @@ class _SettingsPageState extends State<SettingsPage> {
             icon: Icons.tune_rounded,
             title: AppStrings.customFields,
             subtitle: AppStrings.customFieldsHint,
-            trailing: const Icon(
+            trailing: Icon(
               Icons.chevron_right_rounded,
               color: AppColors.subtle,
             ),
@@ -259,7 +254,7 @@ class _SettingsPageState extends State<SettingsPage> {
           _SettingRow(
             icon: Icons.shield_outlined,
             title: AppStrings.privacyPolicy,
-            trailing: const Icon(
+            trailing: Icon(
               Icons.chevron_right_rounded,
               color: AppColors.subtle,
             ),
@@ -271,7 +266,7 @@ class _SettingsPageState extends State<SettingsPage> {
           _SettingRow(
             icon: Icons.description_outlined,
             title: AppStrings.termsOfService,
-            trailing: const Icon(
+            trailing: Icon(
               Icons.chevron_right_rounded,
               color: AppColors.subtle,
             ),
@@ -299,7 +294,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     height: AppSizes.xl,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Icon(
+                : Icon(
                     Icons.chevron_right_rounded,
                     color: AppColors.subtle,
                   ),
@@ -312,7 +307,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 'Permanently erase your account. Shop owners with invoices '
                 'in the past 8 years must contact support (Companies Act / GST '
                 'retention).',
-            trailing: const Icon(
+            trailing: Icon(
               Icons.chevron_right_rounded,
               color: AppColors.error,
             ),
@@ -340,7 +335,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.logout_rounded,
                         color: AppColors.error,
                         size: AppSizes.iconMd,
@@ -455,7 +450,7 @@ class _DensityRow extends StatelessWidget {
               shape: AppShapes.squircle(AppSizes.radiusSm),
             ),
             alignment: Alignment.center,
-            child: const Icon(
+            child: Icon(
               Icons.density_medium_rounded,
               size: AppSizes.iconMd,
               color: AppColors.black,
@@ -516,6 +511,102 @@ class _DensityRow extends StatelessWidget {
   }
 }
 
+/// Three-way picker for [AppThemeMode] — Light, Dark and OLED. Mirrors the
+/// web app's theme picker. Writes through [ThemePrefsProvider], which swaps the
+/// active palette, persists the choice and rebuilds the whole app live so the
+/// theme flips without leaving Settings.
+class _ThemeRow extends StatelessWidget {
+  const _ThemeRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final prefs = context.watch<ThemePrefsProvider>();
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.md,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: AppSizes.xxxl,
+            height: AppSizes.xxxl,
+            decoration: ShapeDecoration(
+              color: AppColors.heroPanel,
+              shape: AppShapes.squircle(AppSizes.radiusSm),
+            ),
+            alignment: Alignment.center,
+            child: Icon(
+              Icons.palette_outlined,
+              size: AppSizes.iconMd,
+              color: AppColors.black,
+            ),
+          ),
+          const SizedBox(width: AppSizes.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  AppStrings.theme,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: AppColors.black,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  switch (prefs.mode) {
+                    AppThemeMode.light => 'Warm canvas, dark text (default).',
+                    AppThemeMode.dark => 'Deep slate surfaces, easy on the eyes.',
+                    AppThemeMode.oled => 'True black — best for OLED displays.',
+                  },
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: AppColors.muted),
+                ),
+                const SizedBox(height: AppSizes.sm),
+                SegmentedButton<AppThemeMode>(
+                  segments: const [
+                    ButtonSegment(
+                      value: AppThemeMode.light,
+                      icon: Icon(Icons.light_mode_outlined,
+                          size: AppSizes.iconSm),
+                      label: Text('Light'),
+                    ),
+                    ButtonSegment(
+                      value: AppThemeMode.dark,
+                      icon: Icon(Icons.dark_mode_outlined,
+                          size: AppSizes.iconSm),
+                      label: Text('Dark'),
+                    ),
+                    ButtonSegment(
+                      value: AppThemeMode.oled,
+                      icon: Icon(Icons.contrast_rounded, size: AppSizes.iconSm),
+                      label: Text('OLED'),
+                    ),
+                  ],
+                  selected: {prefs.mode},
+                  showSelectedIcon: false,
+                  onSelectionChanged: (set) => prefs.setMode(set.first),
+                  style: ButtonStyle(
+                    visualDensity: VisualDensity.compact,
+                    textStyle: WidgetStatePropertyAll(
+                      theme.textTheme.labelMedium
+                          ?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// Two-way picker for [NavigationStyle]. Tapping a segment writes
 /// through the [NavigationPrefsProvider] which persists the choice and
 /// rebuilds [AppShell] live — so the user sees the layout swap without
@@ -543,7 +634,7 @@ class _NavigationStyleRow extends StatelessWidget {
               shape: AppShapes.squircle(AppSizes.radiusSm),
             ),
             alignment: Alignment.center,
-            child: const Icon(
+            child: Icon(
               Icons.dashboard_customize_outlined,
               size: AppSizes.iconMd,
               color: AppColors.black,
