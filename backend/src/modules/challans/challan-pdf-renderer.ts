@@ -8,6 +8,61 @@ import {
   isValidStateCode,
 } from '../../shared/validation/indian.js';
 
+/// The Rule 55 tax figures for one challan line. CGST + SGST + IGST + cess is
+/// the tax portion of `total`; `taxable` is the value of the goods.
+export interface ChallanLineTax {
+  taxable: Prisma.Decimal;
+  taxPct: Prisma.Decimal;
+  igst: Prisma.Decimal;
+  cgst: Prisma.Decimal;
+  sgst: Prisma.Decimal;
+  cess: Prisma.Decimal;
+  total: Prisma.Decimal;
+}
+
+/// Compute the Rule 55 tax breakup for a single challan line. Pure (no I/O), so
+/// it is unit-testable and is the single source of the challan PDF's per-line
+/// math. Mirrors the invoice engine exactly:
+///   - taxable = round2(qty × sellingPrice) — exclusive, the convention the
+///     challan → invoice conversion (convertToInvoice) prices at, so a challan
+///     reconciles with the tax invoice eventually raised from it;
+///   - interstate → IGST on the whole rate; intrastate → CGST = round2(gst/2)
+///     and SGST absorbs the remainder so CGST + SGST re-sum to the GST total;
+///   - cess is charged on the taxable value and kept out of the GST heads;
+///   - when the consignor isn't GST-registered (`chargesGst` false) every tax
+///     head is zero (Sec 32 gate) — the challan then carries taxable value only.
+export function computeChallanLineTax(input: {
+  quantity: Prisma.Decimal | number | string;
+  sellingPrice: Prisma.Decimal | number | string | null | undefined;
+  taxPercent: Prisma.Decimal | number | string | null | undefined;
+  cessRate: Prisma.Decimal | number | string | null | undefined;
+  isInterstate: boolean;
+  chargesGst: boolean;
+}): ChallanLineTax {
+  const D = Prisma.Decimal;
+  const round2 = (v: Prisma.Decimal) => v.toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP);
+  const qty = new D((input.quantity ?? 0).toString());
+  const rate = input.sellingPrice != null ? new D(input.sellingPrice.toString()) : new D(0);
+  const taxable = round2(qty.mul(rate));
+  const taxPct =
+    input.chargesGst && input.taxPercent != null ? new D(input.taxPercent.toString()) : new D(0);
+  const cessRate =
+    input.chargesGst && input.cessRate != null ? new D(input.cessRate.toString()) : new D(0);
+  let igst = new D(0);
+  let cgst = new D(0);
+  let sgst = new D(0);
+  if (input.isInterstate) {
+    igst = round2(taxable.mul(taxPct).div(100));
+  } else {
+    const gst = round2(taxable.mul(taxPct).div(100));
+    cgst = round2(gst.div(2));
+    sgst = gst.sub(cgst);
+  }
+  const cess = round2(taxable.mul(cessRate).div(100));
+  const total = round2(taxable.add(igst).add(cgst).add(sgst).add(cess));
+  return { taxable, taxPct, igst, cgst, sgst, cess, total };
+}
+
 /// Render one delivery challan as a PDF — to a stream when `out` is set, or to a
 /// Buffer otherwise. Returns `{ error }` when the challan can't be found for
 /// `shopId`.
@@ -107,47 +162,25 @@ export async function renderChallanPdf(
     qty: Prisma.Decimal;
     unit: string;
     rate: Prisma.Decimal;
-    taxable: Prisma.Decimal;
-    taxPct: Prisma.Decimal;
-    igst: Prisma.Decimal;
-    cgst: Prisma.Decimal;
-    sgst: Prisma.Decimal;
-    cess: Prisma.Decimal;
-    total: Prisma.Decimal;
-  };
+  } & ChallanLineTax;
   const rows: Row[] = challan.items.map((it) => {
     const p = productMap.get(it.productId);
-    const qty = new D(it.quantity.toString());
-    const rate = p?.sellingPrice != null ? new D(p.sellingPrice.toString()) : new D(0);
-    const taxable = round2(qty.mul(rate));
-    const taxPct = chargesGst && p?.taxPercent != null ? new D(p.taxPercent.toString()) : new D(0);
-    const cessRate = chargesGst && p?.cessRate != null ? new D(p.cessRate.toString()) : new D(0);
-    let igst = new D(0);
-    let cgst = new D(0);
-    let sgst = new D(0);
-    if (isInter) {
-      igst = round2(taxable.mul(taxPct).div(100));
-    } else {
-      const gst = round2(taxable.mul(taxPct).div(100));
-      cgst = round2(gst.div(2));
-      sgst = gst.sub(cgst);
-    }
-    const cess = round2(taxable.mul(cessRate).div(100));
-    const total = round2(taxable.add(igst).add(cgst).add(sgst).add(cess));
+    const tax = computeChallanLineTax({
+      quantity: it.quantity,
+      sellingPrice: p?.sellingPrice,
+      taxPercent: p?.taxPercent,
+      cessRate: p?.cessRate,
+      isInterstate: isInter,
+      chargesGst,
+    });
     return {
       name: it.productName,
       sku: it.productSku,
       hsn: p?.hsnCode ?? '-',
-      qty,
+      qty: new D(it.quantity.toString()),
       unit: it.unit,
-      rate,
-      taxable,
-      taxPct,
-      igst,
-      cgst,
-      sgst,
-      cess,
-      total,
+      rate: p?.sellingPrice != null ? new D(p.sellingPrice.toString()) : new D(0),
+      ...tax,
     };
   });
 
