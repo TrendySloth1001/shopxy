@@ -44,8 +44,12 @@ function sealToken(token) {
   if (safeStorage.isEncryptionAvailable()) {
     return { enc: safeStorage.encryptString(token).toString("base64") };
   }
-  // Keychain unavailable (rare) — last resort, still inside the user-only store.
-  return { plain: token };
+  // Keychain unavailable (e.g. Linux without an unlocked keyring) — NEVER write
+  // the raw session-minting rememberToken to disk in cleartext (TOKEN-1).
+  // Persist nothing secret: the account still shows in the picker (display
+  // profile only), but resume will find no token and fall back to a password
+  // login. Better a re-login prompt than a plaintext credential on disk.
+  return {};
 }
 
 function openToken(acct) {
@@ -56,7 +60,8 @@ function openToken(acct) {
       return null;
     }
   }
-  return acct.plain ?? null;
+  // No encrypted token on file — never read a cleartext fallback (TOKEN-1).
+  return null;
 }
 
 async function backend(pathname, { method = "POST", body, bearer } = {}) {

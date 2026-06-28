@@ -28,6 +28,13 @@ const ACCESS_COOKIE = "sxc_access";
 const REFRESH_COOKIE = "sxc_refresh";
 /** Matches the backend refresh-token lifetime (7 days). */
 const REFRESH_MAX_AGE = 7 * 24 * 60 * 60;
+/**
+ * Matches the backend access-token lifetime (15 min). The access cookie is
+ * scoped to the token's own TTL so a stale access JWT isn't kept presentable
+ * for days; the refresh cookie (above) carries the long-lived session and
+ * `authedFetch`/`getCurrentUser` transparently re-mint the access token from it.
+ */
+const ACCESS_MAX_AGE = 15 * 60;
 
 /**
  * This app admits CUSTOMER accounts only. An OWNER (merchant) account that
@@ -52,7 +59,7 @@ function cookieOptions(maxAge: number) {
 
 export async function setSessionCookies(tokens: TokenPair): Promise<void> {
   const store = await cookies();
-  store.set(ACCESS_COOKIE, tokens.accessToken, cookieOptions(REFRESH_MAX_AGE));
+  store.set(ACCESS_COOKIE, tokens.accessToken, cookieOptions(ACCESS_MAX_AGE));
   store.set(REFRESH_COOKIE, tokens.refreshToken, cookieOptions(REFRESH_MAX_AGE));
 }
 

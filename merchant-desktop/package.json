@@ -25,6 +25,7 @@
     "electron": "^33.2.0",
     "electron-builder": "^25.1.8"
   },
+  "//SECURITY-SIGN-1": "OPERATIONAL TODO: the macOS build below sets mac.identity:null (unsigned + un-notarized) and there is no autoUpdater/publish feed, so nothing verifies binary authenticity at install/launch. Before shipping production builds you MUST: (1) sign + notarize macOS with a real Developer ID identity (set mac.identity, enable hardenedRuntime + notarize), (2) sign the Windows NSIS installer, and (3) distribute over HTTPS with published checksums. If an auto-updater is ever added, use electron-updater with signature verification and a pinned public key. This requires signing certificates that are not present in this repo.",
   "build": {
     "appId": "com.shopxy.merchant",
     "productName": "ShopXY Merchant",

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -371,8 +372,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
           : _PayAttemptOutcome.failed;
     } catch (e, st) {
       // Surface the real cause instead of silently falling back to COD.
-      // ignore: avoid_print
-      print('[checkout] online payment failed: $e\n$st');
+      // Debug-only: never leak the payment error + stack trace to release logs.
+      if (kDebugMode) {
+        debugPrint('[checkout] online payment failed: $e\n$st');
+      }
       if (mounted) {
         showAppSnackbar(
           context,

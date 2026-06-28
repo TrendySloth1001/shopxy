@@ -122,7 +122,11 @@ class OnboardingDraftStore {
 
   static const FlutterSecureStorage _defaultStorage = FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
-    iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
+    iOptions: IOSOptions(
+      // *ThisDeviceOnly so this KYC PII (PAN/GST/bank) can never ride an
+      // encrypted iCloud backup or a device-to-device transfer.
+      accessibility: KeychainAccessibility.first_unlock_this_device,
+    ),
   );
 
   static const String _key = 'payout_onboarding_draft_v1';

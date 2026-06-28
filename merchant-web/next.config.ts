@@ -12,6 +12,32 @@ const { version } = JSON.parse(readFileSync("./package.json", "utf8")) as { vers
 // optimizer isn't needed. Gated so the normal web deploy is unaffected.
 const isDesktopBuild = process.env.DESKTOP_BUILD === "1";
 
+// Conservative security-header set applied to every response. The CSP is kept
+// intentionally minimal — `frame-ancestors`/`object-src`/`base-uri` are safe
+// to pin hard, while a tight `script-src` would need a nonce for Next's runtime
+// inline bootstrap, so that is deferred (see TODO) rather than risk breaking the
+// app. Headers mirror customer-web — keep the two in sync.
+const SECURITY_HEADERS = [
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  {
+    key: "Strict-Transport-Security",
+    value: "max-age=63072000; includeSubDomains; preload",
+  },
+  {
+    key: "Permissions-Policy",
+    value: "camera=(), microphone=(), geolocation=()",
+  },
+  {
+    // TODO: tighten script-src with a per-request nonce once the inline theme
+    // boot script is nonced; until then only the non-script directives are
+    // pinned so the CSP can't break Next's runtime.
+    key: "Content-Security-Policy",
+    value: "frame-ancestors 'none'; object-src 'none'; base-uri 'self'",
+  },
+];
+
 const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
@@ -21,6 +47,9 @@ const nextConfig: NextConfig = {
   // `.next/` — that overlap corrupts the dev cache (missing .sst files). Dev
   // stays on the default `.next`; build/start use `.next-build`.
   distDir: process.env.NEXT_DIST_DIR ?? ".next",
+  async headers() {
+    return [{ source: "/(.*)", headers: SECURITY_HEADERS }];
+  },
   ...(isDesktopBuild
     ? {
         output: "standalone" as const,

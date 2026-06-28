@@ -180,9 +180,23 @@ export class AuthService {
     // hit "register" without the invite link. Customer-app (role=CUSTOMER)
     // signups keep the invite PENDING for explicit in-app acceptance.
     let user;
-    const teamInvite =
+    // SECURITY (AUTH-1): a pending TEAM invite for this email is NOT
+    // auto-claimed here. Granting a ShopMember seat from an email match alone
+    // let anyone who knew (or guessed) an invited address register it and
+    // seize a staff seat in the inviting shop — with no proof of mailbox
+    // ownership (confirmed exploitable). Team membership is now granted ONLY
+    // through the token-based accept flow (POST /auth/accept-invite), where
+    // possession of the per-invite link/token proves the recipient actually
+    // received the invitation.
+    //
+    // We still DETECT a pending team invite so we don't mint this person their
+    // own shop: ShopMember.userId is unique, so owning a shop would
+    // permanently block them from accepting the invite via the token link. A
+    // signup against an invited email therefore creates a shopless account and
+    // leaves the invite PENDING for the link-based accept.
+    const hasPendingTeamInvite =
       data.role === 'OWNER'
-        ? await prisma.invitation.findFirst({
+        ? (await prisma.invitation.count({
             where: {
               toEmail: email,
               toUserId: null,
@@ -190,69 +204,11 @@ export class AuthService {
               status: 'PENDING',
               expiresAt: { gt: new Date() },
             },
-            orderBy: { createdAt: 'desc' },
-            select: {
-              id: true,
-              shopId: true,
-              teamRoleName: true,
-              teamPermissions: true,
-              fromUserId: true,
-            },
-          })
-        : null;
-
-    if (teamInvite?.teamRoleName) {
-      const invite = teamInvite;
-      const roleName = teamInvite.teamRoleName;
-      try {
-        user = await prisma.$transaction(async (tx) => {
-          // Single-use claim first so a double submit can't onboard twice.
-          const claim = await tx.invitation.updateMany({
-            where: { id: invite.id, status: 'PENDING' },
-            data: { status: 'ACCEPTED', respondedAt: new Date() },
-          });
-          if (claim.count === 0) throw new InviteAlreadyUsedError();
-          // role=OWNER on the User row is "merchant app access", not shop
-          // ownership — they get into the merchant app, but their team role
-          // lives on ShopMember below (STAFF of the inviting shop). No Shop
-          // is created.
-          const created = await tx.user.create({
-            data: { email, name, passwordHash, role: 'OWNER', acceptedAt },
-            select: safeUserSelect,
-          });
-          await tx.invitation.update({
-            where: { id: invite.id },
-            data: { toUserId: created.id },
-          });
-          await tx.shopMember.create({
-            data: {
-              shopId: invite.shopId,
-              userId: created.id,
-              role: 'STAFF',
-              roleName,
-              permissions: normalizeRights(invite.teamPermissions),
-            },
-          });
-          await tx.notification.create({
-            data: {
-              userId: invite.fromUserId,
-              kind: 'INVITE_ACCEPTED',
-              title: `${email} joined your team`,
-              body: `As ${roleName}`,
-              data: { invitationId: invite.id, linkType: 'TEAM' },
-            },
-          });
-          return created;
-        });
-      } catch (err) {
-        // Lost the single-use race (the invite was consumed elsewhere) —
-        // fall through to a plain account below rather than failing signup.
-        if (!(err instanceof InviteAlreadyUsedError)) throw err;
-      }
-    }
+          })) > 0
+        : false;
 
     const shopName = (data.shopName ?? '').trim();
-    if (!user && data.role === 'OWNER' && shopName) {
+    if (!user && data.role === 'OWNER' && shopName && !hasPendingTeamInvite) {
       const slug = await uniqueShopSlug(slugifyShop(shopName));
       user = await prisma.$transaction(async (tx) => {
         const created = await tx.user.create({
@@ -493,7 +449,11 @@ export class AuthService {
   async refresh(token: string) {
     let payload: { sub: number; family?: string };
     try {
-      payload = jwt.verify(token, REFRESH_SECRET) as unknown as {
+      // Pin the algorithm (AUTH-2): without `algorithms`, jsonwebtoken accepts
+      // any alg the token header claims. Refresh tokens are minted HS256
+      // (see signRefresh), so verification must only ever accept HS256 — never
+      // trust an attacker-chosen header alg.
+      payload = jwt.verify(token, REFRESH_SECRET, { algorithms: ['HS256'] }) as unknown as {
         sub: number;
         family?: string;
       };

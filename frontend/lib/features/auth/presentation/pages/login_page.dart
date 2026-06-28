@@ -21,6 +21,10 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  // TODO SECURITY (SCRN-1): auth surface (credentials entered here). Enable
+  // screenshot/recents-thumbnail protection (Android FLAG_SECURE / iOS
+  // app-switcher blur) on entry and disable on exit. No cross-platform
+  // package is a dependency yet — needs a package decision before wiring.
   final _formKey = GlobalKey<FormState>();
   final _email = TextEditingController();
   final _password = TextEditingController();
