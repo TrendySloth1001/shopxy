@@ -65,15 +65,89 @@ export const stockTxnSchema = z.object({
   productId: z.number(),
   type: z.string(),
   direction: z.string().nullish(),
+  reasonCode: z.string().nullish(),
+  sourceType: z.string().nullish(),
+  sourceId: z.number().nullish(),
   quantity: decimalToNumber,
   unitPrice: nullableDecimal,
+  stockAfter: nullableDecimal,
   vendorId: z.number().nullish(),
   vendor: z.object({ id: z.number(), name: z.string() }).nullish(),
   supplierName: z.string().nullish(),
   purchasePriceMode: z.string().nullish(),
+  reversesId: z.number().nullish(),
+  note: z.string().nullish(),
+  productUnit: z.string().nullish(),
+  createdBy: z.object({ id: z.number(), name: z.string().nullish() }).nullish(),
   createdAt: z.string(),
 });
 export type StockTxn = z.infer<typeof stockTxnSchema>;
+
+/** 'IN' side of the ledger (falls back to the legacy `type` column). */
+export function isStockIn(t: StockTxn): boolean {
+  return t.direction ? t.direction === "IN" : t.type === "STOCK_IN";
+}
+
+/** This row reverses (cancels) an earlier one. */
+export function isReversal(t: StockTxn): boolean {
+  return t.reversesId != null;
+}
+
+/** Whether the row has an openable source document (invoice / challan). */
+export function hasSourceDocument(t: StockTxn): boolean {
+  return (
+    t.sourceId != null &&
+    t.sourceType !== "MANUAL" &&
+    t.sourceType !== "OPENING"
+  );
+}
+
+/** Human label for a ledger reason code. */
+export function reasonCodeLabel(code: string | null | undefined): string {
+  switch (code) {
+    case "SALE":
+      return "Sale";
+    case "PURCHASE":
+      return "Purchase";
+    case "OPENING":
+      return "Opening balance";
+    case "DAMAGE":
+      return "Damaged";
+    case "EXPIRED":
+      return "Expired";
+    case "SHRINKAGE":
+      return "Shrinkage";
+    case "RECOUNT":
+      return "Recount correction";
+    case "RETURN_IN":
+      return "Customer return";
+    case "RETURN_OUT":
+      return "Return to vendor";
+    case "TRANSFER_IN":
+      return "Transfer in";
+    case "TRANSFER_OUT":
+      return "Transfer out";
+    default:
+      return code ?? "Movement";
+  }
+}
+
+/** Human label for the source-document type. */
+export function sourceTypeLabel(code: string | null | undefined): string {
+  switch (code) {
+    case "INVOICE":
+      return "Invoice";
+    case "CHALLAN":
+      return "Challan";
+    case "ADJUSTMENT":
+      return "Adjustment";
+    case "OPENING":
+      return "Opening";
+    case "MANUAL":
+    default:
+      return "Manual";
+  }
+}
 
 /** `GET /stock` is paginated: `{ data, pagination }`. */
 export const stockTxnListSchema = z.object({
