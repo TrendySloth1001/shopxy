@@ -41,7 +41,11 @@ class RememberedAccountsStore {
           storage ??
           const FlutterSecureStorage(
             aOptions: AndroidOptions(encryptedSharedPreferences: true),
-            iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
+            iOptions: IOSOptions(
+              // *ThisDeviceOnly so the device-remember token (a full
+              // password-less credential) never rides a backup/transfer.
+              accessibility: KeychainAccessibility.first_unlock_this_device,
+            ),
           );
 
   final FlutterSecureStorage _storage;

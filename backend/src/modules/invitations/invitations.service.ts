@@ -624,56 +624,58 @@ export class InvitationsService {
   /// Called on registration: take all PENDING invites addressed to the
   /// user's email (where toUserId is null) and link them to the new
   /// account, then fan out notifications. Single transaction.
-  async claimPendingForNewUser(opts: { userId: number; email: string }) {
-    const email = opts.email.toLowerCase().trim();
-    return prisma.$transaction(async (tx) => {
-      // 1) attach the new userId — covered by (toEmail, status) index.
-      await tx.invitation.updateMany({
-        where: { toEmail: email, toUserId: null, status: 'PENDING' },
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async claimPendingForNewUser(_opts: { userId: number; email: string }) {
+    // SECURITY (AUTH-INVITE-1): a brand-new account is NO LONGER auto-bound to
+    // pending invitations by matching the raw `toEmail`. That email-only claim
+    // let an attacker who knew (or guessed) an invited address register it and
+    // have the victim's PARTY/VENDOR/TEAM invites silently bound to them —
+    // then accept (via /invitations/:id/accept, which trusts toUserId) to gain
+    // that party's invoice/ledger history or a staff seat — all with NO proof
+    // of mailbox ownership.
+    //
+    // Invitations are now claimed only by presenting the per-invite token from
+    // the invite link: see `claimByToken` (POST /invitations/claim) for
+    // PARTY/VENDOR and the token-based POST /auth/accept-invite for TEAM.
+    // Possession of the token is the proof of mailbox control. Invites bound at
+    // SEND time (when the recipient already had an account) are unaffected.
+    //
+    // FRONTEND FOLLOW-UP: the merchant/customer apps must call
+    // `POST /invitations/claim { token }` from the invite deep-link so a user
+    // who registers after being invited can still claim it.
+    return { claimed: 0 };
+  }
+
+  /// Bind a PENDING invitation to the authenticated caller by presenting the
+  /// per-invite `token` from the invite link. Possession of the token proves
+  /// the recipient actually received the invitation — the secure replacement
+  /// for the old email-match auto-claim (AUTH-INVITE-1). After a successful
+  /// claim the invite is in the caller's inbox and can be accepted/declined
+  /// through `respond` (POST /invitations/:id/accept). Idempotent for a token
+  /// already claimed by the same caller; refuses a token bound to anyone else.
+  async claimByToken(opts: { userId: number; token: string }) {
+    const token = opts.token.trim();
+    if (!token) return { error: 'Invalid invitation token' as const };
+    const invite = await prisma.invitation.findUnique({
+      where: { token },
+      select: { id: true, status: true, toUserId: true, expiresAt: true },
+    });
+    if (!invite) return { error: 'Invitation not found' as const };
+    if (invite.toUserId !== null && invite.toUserId !== opts.userId) {
+      return { error: 'This invitation belongs to someone else.' as const };
+    }
+    if (invite.status !== 'PENDING') return { error: 'This invitation has already been used.' as const };
+    if (invite.expiresAt < new Date()) return { error: 'This invitation has expired.' as const };
+    if (invite.toUserId === null) {
+      // Atomic bind: only claim if still unbound, so two concurrent claims
+      // (or a race with a send-time bind) can't both win.
+      const claimed = await prisma.invitation.updateMany({
+        where: { id: invite.id, toUserId: null, status: 'PENDING' },
         data: { toUserId: opts.userId },
       });
-
-      // 2) bulk-load just-claimed invitations so we can fan out notifs.
-      const pending = await tx.invitation.findMany({
-        where: { toUserId: opts.userId, status: 'PENDING' },
-        select: {
-          id: true,
-          linkType: true,
-          teamRoleName: true,
-          partyId: true,
-          vendorId: true,
-          fromShopName: true,
-          displayName: true,
-        },
-      });
-
-      if (pending.length > 0) {
-        await tx.notification.createMany({
-          data: pending.map((p) => ({
-            userId: opts.userId,
-            kind: 'INVITE_RECEIVED',
-            title:
-              p.linkType === 'TEAM'
-                ? `${p.fromShopName ?? 'A shop'} invited you to their team`
-                : `${p.fromShopName ?? 'A shop'} invited you`,
-            body:
-              p.linkType === 'TEAM'
-                ? `As ${p.teamRoleName ?? 'staff'}`
-                : p.displayName
-                  ? `As ${p.linkType === 'PARTY' ? 'party' : 'vendor'} "${p.displayName}"`
-                  : null,
-            data: {
-              invitationId: p.id,
-              linkType: p.linkType,
-              partyId: p.partyId,
-              vendorId: p.vendorId,
-            },
-          })),
-        });
-      }
-
-      return { claimed: pending.length };
-    });
+      if (claimed.count === 0) return { error: 'This invitation belongs to someone else.' as const };
+    }
+    return { ok: true as const, invitationId: invite.id };
   }
 }
 

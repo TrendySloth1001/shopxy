@@ -10,7 +10,38 @@ import { NextResponse, type NextRequest } from "next/server";
 const PROTECTED = ["/notifications", "/account", "/orders", "/returns"];
 const AUTH_PAGES = ["/login", "/register"];
 
+const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
+/**
+ * CSRF backstop for the cookie-authed BFF. SameSite=Lax already blocks most
+ * cross-site cookie POSTs, but a state-changing request whose `Origin` is a
+ * foreign site (or which the browser flags as cross-site via `Sec-Fetch-Site`)
+ * is rejected outright. Same-origin and direct/navigational requests pass.
+ */
+function isCrossOriginMutation(req: NextRequest): boolean {
+  if (!MUTATING_METHODS.has(req.method)) return false;
+
+  const site = req.headers.get("sec-fetch-site");
+  if (site) return site !== "same-origin" && site !== "none";
+
+  // Fallback for browsers that don't send Sec-Fetch-Site: compare Origin host
+  // against the host the request was actually sent to.
+  const origin = req.headers.get("origin");
+  if (!origin) return false; // non-browser / same-origin server call
+  try {
+    return new URL(origin).host !== req.nextUrl.host;
+  } catch {
+    return true;
+  }
+}
+
 export function middleware(req: NextRequest) {
+  // BFF route handlers carry the httpOnly session cookies; reject cross-origin
+  // mutations before they reach any handler.
+  if (req.nextUrl.pathname.startsWith("/api/") && isCrossOriginMutation(req)) {
+    return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+  }
+
   const { pathname } = req.nextUrl;
   const hasSession =
     req.cookies.has("sxc_refresh") || req.cookies.has("sxc_access");
@@ -40,5 +71,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/notifications/:path*", "/account/:path*", "/orders/:path*", "/returns/:path*", "/login", "/register"],
+  matcher: ["/api/:path*", "/dashboard/:path*", "/notifications/:path*", "/account/:path*", "/orders/:path*", "/returns/:path*", "/login", "/register"],
 };

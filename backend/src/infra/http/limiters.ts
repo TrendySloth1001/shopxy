@@ -30,6 +30,12 @@ export interface AppLimiters {
   /// sink (PR-L2). 300/min/IP is well above any real provider delivery rate
   /// (Razorpay retries are sparse) but caps a single-source flood.
   webhook: ReturnType<typeof rateLimit>;
+  /// Global authenticated backstop (CONFIG-1). Applied right after
+  /// `requireAuth` so EVERY authenticated route (writes, reports, invoice/PDF
+  /// generation, id enumeration) has a per-user ceiling, not just the few
+  /// surfaces with bespoke limiters. Generous enough for a heavy merchant
+  /// session but caps scripted abuse / scraping / id-enumeration probing.
+  perUser: ReturnType<typeof rateLimit>;
 }
 
 const perUserKeyGen = (
@@ -87,6 +93,16 @@ export function buildLimiters(): AppLimiters {
       // limiter still drops the excess. Per-IP (no user on this surface).
       standardHeaders: true,
       legacyHeaders: false,
+    }),
+    perUser: rateLimit({
+      windowMs: 60_000,
+      // 600/min/user ≈ 10 req/s sustained — comfortably above any human
+      // merchant/customer session (incl. dashboard fan-out) but a hard ceiling
+      // on scripted abuse, scraping, and id-enumeration probing (CONFIG-1).
+      max: 600,
+      standardHeaders: true,
+      legacyHeaders: false,
+      keyGenerator: perUserKeyGen as never,
     }),
   };
 }

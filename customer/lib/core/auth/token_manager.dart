@@ -7,7 +7,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 class TokenManager {
   static const _storage = FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
-    iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
+    iOptions: IOSOptions(
+      // *ThisDeviceOnly so tokens never ride an encrypted iCloud backup or a
+      // device-to-device transfer — they stay sealed to this physical device.
+      accessibility: KeychainAccessibility.first_unlock_this_device,
+    ),
   );
 
   static const _keyAccess = 'access_token';

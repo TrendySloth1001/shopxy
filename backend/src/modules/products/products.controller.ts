@@ -37,13 +37,17 @@ const productImageRef = z
 const contentBlockSchema = z.discriminatedUnion('kind', [
   z.object({
     kind: z.literal('HERO'),
-    imageUrl: z.string().min(1).max(2048),
+    // UPLOAD-3: scheme-validate (http(s) or server-relative) so a content
+    // block can't smuggle a javascript:/data: URL that renders on the PDP.
+    imageUrl: productImageRef,
     headline: z.string().min(1).max(120),
     subtext: z.string().max(240).optional(),
   }),
   z.object({
     kind: z.literal('FEATURE'),
-    imageUrl: z.string().min(1).max(2048),
+    // UPLOAD-3: scheme-validate (http(s) or server-relative) so a content
+    // block can't smuggle a javascript:/data: URL that renders on the PDP.
+    imageUrl: productImageRef,
     side: z.enum(['LEFT', 'RIGHT']),
     title: z.string().min(1).max(120),
     body: z.string().min(1).max(500),
@@ -66,7 +70,7 @@ const contentBlockSchema = z.discriminatedUnion('kind', [
     images: z
       .array(
         z.object({
-          url: z.string().min(1).max(2048),
+          url: productImageRef, // UPLOAD-3: reject javascript:/data: URLs
           caption: z.string().max(140).optional(),
         }),
       )

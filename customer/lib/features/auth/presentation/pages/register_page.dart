@@ -28,6 +28,10 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage> {
   static const _stepCount = 3;
 
+  // TODO SECURITY (SCRN-1): auth surface (credentials entered here). Enable
+  // screenshot/recents-thumbnail protection (Android FLAG_SECURE / iOS
+  // app-switcher blur) on entry and disable on exit. No cross-platform
+  // package is a dependency yet — needs a package decision before wiring.
   final _formKey = GlobalKey<FormState>();
   final _name = TextEditingController();
   final _email = TextEditingController();

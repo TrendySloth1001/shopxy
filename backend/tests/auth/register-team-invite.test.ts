@@ -3,12 +3,13 @@ import crypto from 'crypto';
 import prisma from '../../src/infra/db/prisma.js';
 import { authService } from '../../src/modules/auth/auth.service.js';
 
-/// A person invited to a shop's team who doesn't have an account yet may
-/// just hit the normal merchant "register" form (role=OWNER + a shop name)
-/// instead of the token-based accept-invite link. They must NOT end up
-/// owning their own shop — that membership is unique and would forever
-/// block them from accepting the invite. Registering with the invited
-/// email onboards them as staff of the inviting shop instead.
+/// SECURITY (AUTH-1): registering with an invited email must NOT auto-grant a
+/// team seat. Granting a ShopMember from an email match alone let anyone who
+/// knew an invited address seize staff access (no mailbox proof). Team
+/// membership is now granted ONLY via the token-based accept-invite link.
+/// A signup against an invited email therefore creates a SHOPLESS account
+/// (no own shop — so the unique-membership constraint can't later block a
+/// token accept) and leaves the invite PENDING.
 
 async function makeInvitingShop() {
   const id = crypto.randomBytes(6).toString('hex');
@@ -36,7 +37,7 @@ describe('register — pending TEAM invite takes precedence over shop creation',
     await prisma.$disconnect();
   });
 
-  it('onboards a merchant signup as STAFF of the inviting shop, with no new shop', async () => {
+  it('does NOT auto-join the team from an email match — shopless account, invite stays PENDING (AUTH-1)', async () => {
     const { ownerId, shopId, suffix } = await makeInvitingShop();
     cleanupUserIds.push(ownerId);
     cleanupShopIds.push(shopId);
@@ -57,7 +58,7 @@ describe('register — pending TEAM invite takes precedence over shop creation',
       },
     });
 
-    // The invitee just hits the normal merchant register form.
+    // Someone registers with the invited email WITHOUT presenting the token.
     const result = await authService.register({
       email: inviteeEmail,
       name: 'New Cashier',
@@ -68,25 +69,23 @@ describe('register — pending TEAM invite takes precedence over shop creation',
     if ('error' in result) throw new Error(`register failed: ${result.error}`);
     cleanupUserIds.push(result.user.id);
 
-    // They did NOT get a shop of their own.
+    // SECURE: no team membership is granted from the email match alone.
+    const membership = await prisma.shopMember.findUnique({
+      where: { userId: result.user.id },
+      select: { id: true },
+    });
+    expect(membership).toBeNull();
+
+    // And no shop of their own — so the unique-membership constraint can't
+    // block a later token-based accept of the still-pending invite.
     const ownedShop = await prisma.shop.findUnique({ where: { ownerUserId: result.user.id }, select: { id: true } });
     expect(ownedShop).toBeNull();
 
-    // They ARE a STAFF member of the inviting shop, with the invited role + rights.
-    const membership = await prisma.shopMember.findUnique({
-      where: { userId: result.user.id },
-      select: { shopId: true, role: true, roleName: true, permissions: true },
-    });
-    expect(membership?.shopId).toBe(shopId);
-    expect(membership?.role).toBe('STAFF');
-    expect(membership?.roleName).toBe('Cashier');
-    // normalizeRights expands manage → implies view.
-    expect(membership?.permissions).toContain('invoices:manage');
-
-    // The invite is now consumed (single-use), bound to the new user.
+    // The invite is UNCHANGED — still PENDING and unbound, claimable only via
+    // the token link (POST /auth/accept-invite).
     const invite = await prisma.invitation.findFirst({ where: { toEmail: inviteeEmail }, select: { status: true, toUserId: true } });
-    expect(invite?.status).toBe('ACCEPTED');
-    expect(invite?.toUserId).toBe(result.user.id);
+    expect(invite?.status).toBe('PENDING');
+    expect(invite?.toUserId).toBeNull();
   });
 
   it('creates a SHOPLESS owner when no shopName is sent (two-step onboarding)', async () => {

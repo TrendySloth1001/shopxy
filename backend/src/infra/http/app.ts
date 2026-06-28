@@ -146,6 +146,7 @@ export function buildApp(): express.Express {
     events: eventsLimiter,
     carouselWrite: carouselWriteLimiter,
     webhook: webhookLimiter,
+    perUser: perUserLimiter,
   } = buildLimiters();
 
   // Payment-gateway webhooks + meta. MOUNTED BEFORE express.json so the
@@ -227,16 +228,26 @@ export function buildApp(): express.Express {
       res.status(404).json({ error: 'Image not found' });
       return;
     }
-    res.setHeader('Content-Type', result.contentType);
+    // UPLOAD-2: never reflect an arbitrary S3 Content-Type. Pin to an image
+    // allowlist; anything else is served as a non-renderable download so a
+    // mislabelled or smuggled payload (SVG/HTML) can't execute in our origin.
+    const ALLOWED_IMAGE_TYPES = new Set(['image/webp', 'image/jpeg', 'image/png', 'image/gif']);
+    const isImage = ALLOWED_IMAGE_TYPES.has(result.contentType);
+    res.setHeader('Content-Type', isImage ? result.contentType : 'application/octet-stream');
+    if (!isImage) res.setHeader('Content-Disposition', 'attachment');
     res.setHeader('Cache-Control', 'public, max-age=3600');
-    // Prevent the browser from MIME-sniffing a misnamed payload (e.g.
-    // an SVG/HTML smuggled through a future upload path) and executing
-    // it in our origin. Belt + braces alongside upload-side allowlist.
+    // Belt + braces alongside the upload-side allowlist and the pinned type.
     res.setHeader('X-Content-Type-Options', 'nosniff');
     result.stream.pipe(res);
   });
 
   app.use(requireAuth);
+
+  // Global authenticated backstop (CONFIG-1): a per-user rate ceiling on EVERY
+  // authenticated route. Bespoke per-surface limiters (upload, events, …) still
+  // apply their tighter caps on top of this; this just ensures no authed route
+  // is entirely unbounded (heavy reports, invoice/PDF gen, id-enumeration).
+  app.use(perUserLimiter);
 
   // Review writes are authenticated but NOT role-gated — customers
   // (the marketplace buyers) are the primary author. Registered before

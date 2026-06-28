@@ -75,6 +75,11 @@ class _ShopPayoutsPageState extends State<ShopPayoutsPage>
   @override
   void initState() {
     super.initState();
+    // TODO SECURITY (SCRN-1): this screen renders/collects KYC PII (PAN/GST/
+    // bank). Enable screenshot + recents-thumbnail protection here (Android
+    // FLAG_SECURE / iOS app-switcher blur) and disable it in dispose(). No
+    // cross-platform package is currently a dependency — needs a package
+    // decision (e.g. screen_protector / no_screenshot) before wiring.
     _ds = LinkedAccountRemoteDataSource(context.read<ApiClient>());
     _provider = context.read<LinkedAccountProvider>();
     WidgetsBinding.instance.addObserver(this);

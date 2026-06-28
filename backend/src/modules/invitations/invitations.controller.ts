@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { parsePagination, paginatedResponse } from '../../shared/http/pagination.js';
 import { invitationsService } from './invitations.service.js';
 
+const claimSchema = z.object({ token: z.string().trim().min(1).max(200) });
+
 const sendSchema = z
   .object({
     toEmail: z.string().trim().email().max(200),
@@ -92,6 +94,20 @@ export class InvitationsController {
     });
     if ('error' in result) { res.status(400).json({ error: result.error }); return; }
     res.json(result.invitation);
+  }
+
+  /// POST /invitations/claim — bind a PENDING invite to the caller by
+  /// presenting its token (from the invite link). Secure replacement for the
+  /// removed email-match auto-claim (AUTH-INVITE-1).
+  async claim(req: Request, res: Response): Promise<void> {
+    const parsed = claimSchema.safeParse(req.body);
+    if (!parsed.success) { res.status(400).json({ error: 'Invalid invitation token' }); return; }
+    const result = await invitationsService.claimByToken({
+      userId: req.user!.sub,
+      token: parsed.data.token,
+    });
+    if ('error' in result) { res.status(400).json({ error: result.error }); return; }
+    res.json(result);
   }
 
   async decline(req: Request, res: Response): Promise<void> {

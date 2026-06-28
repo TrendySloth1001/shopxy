@@ -104,6 +104,52 @@ function registerThemeIpc() {
   });
 }
 
+// Open a URL in the OS browser, but only ever https:/mailto: — never file:,
+// smb:, or any custom/dangerous protocol the (potentially XSS-controlled)
+// renderer might ask us to launch. (NAV-2)
+function openExternalSafely(target) {
+  let parsed;
+  try {
+    parsed = new URL(target);
+  } catch {
+    return; // not a parseable URL — ignore
+  }
+  if (parsed.protocol === "https:" || parsed.protocol === "mailto:") {
+    shell.openExternal(parsed.href);
+  }
+}
+
+// Pin all in-place navigation to the resolved loopback origin. Without this, a
+// BFF XSS/open-redirect could top-navigate the main window to attacker content
+// that inherits the privileged `shopxyDesktop` preload bridge (account-resume +
+// token side effects). Anything off-origin is cancelled; external https links
+// are punted to the OS browser instead. (NAV-1)
+function hardenNavigation(win, serverUrl) {
+  const allowedOrigin = new URL(serverUrl).origin;
+
+  const guard = (event, target) => {
+    let targetOrigin;
+    try {
+      targetOrigin = new URL(target).origin;
+    } catch {
+      event.preventDefault();
+      return;
+    }
+    if (targetOrigin === allowedOrigin) return; // same-origin app navigation
+    event.preventDefault();
+    openExternalSafely(target); // vetted https/mailto goes to the OS browser
+  };
+
+  win.webContents.on("will-navigate", guard);
+  win.webContents.on("will-redirect", guard);
+
+  // Deny every new window/popup; vetted external links open in the OS browser.
+  win.webContents.setWindowOpenHandler(({ url: target }) => {
+    openExternalSafely(target);
+    return { action: "deny" };
+  });
+}
+
 async function createWindow(url) {
   // Match the saved theme on the very first frame — no white flash before the
   // dark web UI paints. nativeTheme is set here too so OS chrome agrees.
@@ -122,15 +168,15 @@ async function createWindow(url) {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
       nodeIntegration: false,
+      // OS-level renderer sandbox. The preload only uses contextBridge +
+      // ipcRenderer.invoke (sandbox-compatible) — all privileged work lives in
+      // main — so enabling this just shrinks the blast radius of any renderer
+      // compromise without breaking the bridge.
+      sandbox: true,
     },
   });
 
-  // External links (Terms / Privacy open with target=_blank) go to the OS
-  // browser, never a rogue Electron window.
-  mainWindow.webContents.setWindowOpenHandler(({ url: target }) => {
-    if (/^https?:\/\//i.test(target)) shell.openExternal(target);
-    return { action: "deny" };
-  });
+  hardenNavigation(mainWindow, url);
 
   mainWindow.once("ready-to-show", () => mainWindow.show());
   mainWindow.on("closed", () => {
