@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { LineChart } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { LineChart, Search, Package, Clock, ChevronRight, X } from "lucide-react";
 import { PageHeader } from "@/shared/ui/page-header";
 import { LineChart as TrendLineChart } from "@/shared/ui/charts";
 import { CardsSkeleton, ListRowsSkeleton } from "@/shared/ui/skeleton";
@@ -9,6 +10,7 @@ import { formatINR } from "@/shared/money";
 import {
   dateInputToIso,
   financialYearStartInput,
+  formatDateTime,
   inputDateDaysAgo,
   startOfMonthInput,
   todayInputDate,
@@ -18,8 +20,18 @@ import {
   getPnlReport,
   getPurchasesReport,
   getSalesReport,
+  getSoldItems,
+  getSoldProducts,
+  type Range,
 } from "@/features/reports/api";
-import type { GstReport, PnlReport, PurchasesReport, SalesReport } from "@/features/reports/schema";
+import type {
+  GstReport,
+  PnlReport,
+  PurchasesReport,
+  SalesReport,
+  SoldItem,
+  SoldProduct,
+} from "@/features/reports/schema";
 
 type Kind = "sales" | "purchases" | "gst" | "pnl";
 const TABS: { key: Kind; label: string }[] = [
@@ -44,11 +56,17 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // One ISO range, shared by the report fetch and the P&L sold-items table, so
+  // they stay in lockstep and the table only refetches when the range changes.
+  const range = useMemo<Range>(
+    () => ({ from: dateInputToIso(from), to: dateInputToIso(to, true) }),
+    [from, to],
+  );
+
   useEffect(() => {
     let active = true;
     void (async () => {
       setLoading(true);
-      const range = { from: dateInputToIso(from), to: dateInputToIso(to, true) };
       try {
         let next: ReportData;
         if (kind === "sales") next = { kind, data: await getSalesReport(range) };
@@ -70,7 +88,7 @@ export default function ReportsPage() {
     return () => {
       active = false;
     };
-  }, [kind, from, to]);
+  }, [kind, range]);
 
   function preset(p: "month" | "30d" | "fy") {
     setTo(todayInputDate());
@@ -130,7 +148,7 @@ export default function ReportsPage() {
         ) : report.kind === "gst" ? (
           <GstView r={report.data} />
         ) : (
-          <PnlView r={report.data} />
+          <PnlView r={report.data} range={range} />
         )}
       </div>
     </div>
@@ -270,6 +288,49 @@ function EmptyHint({ children }: { children: React.ReactNode }) {
   return <p className="py-lg text-center text-body-sm text-subtle">{children}</p>;
 }
 
+/**
+ * One row of the P&L "proof" statement. `kind`:
+ *   - line     — a contributing input (with a muted `basis` note explaining it)
+ *   - subtotal — a hairline-topped running figure (Revenue, COGS, Gross profit)
+ *   - total    — the final Net profit (heavier, hairline-topped)
+ */
+function StatementRow({
+  label,
+  basis,
+  value,
+  kind = "line",
+}: {
+  label: string;
+  basis?: string;
+  value: string;
+  kind?: "line" | "subtotal" | "total";
+}) {
+  const subtotal = kind === "subtotal";
+  const total = kind === "total";
+  const ruled = subtotal || total ? "border-t border-hairline" : "";
+  const labelCls = total
+    ? "text-title-md text-ink"
+    : subtotal
+      ? "text-body-md font-semibold text-ink"
+      : "text-body-md text-muted";
+  const valueCls = total
+    ? "text-title-lg font-bold text-ink"
+    : subtotal
+      ? "text-body-md font-semibold text-ink"
+      : "text-body-md text-ink";
+  return (
+    <tr className={ruled}>
+      <td className={`py-sm pr-lg align-top ${labelCls}`}>
+        <span className="block">{label}</span>
+        {basis ? (
+          <span className="mt-px block text-body-sm font-normal text-subtle">{basis}</span>
+        ) : null}
+      </td>
+      <td className={`py-sm text-right align-top tabular-nums ${valueCls}`}>{value}</td>
+    </tr>
+  );
+}
+
 /* ---------- views ---------- */
 
 function SalesView({ r }: { r: SalesReport }) {
@@ -384,9 +445,18 @@ function RateRow({ rate, taxable, tax }: { rate: number; taxable: number; tax: n
   );
 }
 
-function PnlView({ r }: { r: PnlReport }) {
+function PnlView({ r, range }: { r: PnlReport; range: Range }) {
+  // The headline figures are already netted (revenue net of returns, COGS net
+  // of restocked returns). Add the netted-out parts back to show the gross
+  // inputs each line is built from — that's the "proof" the table makes visible.
+  const refunds = r.refunds ?? 0;
+  const returnedCogs = r.returnedCogs ?? 0;
+  const grossSales = r.revenue + refunds;
+  const grossCogs = r.cogs + returnedCogs;
   return (
-    <div className="flex flex-col gap-xxl">
+    <div className="grid grid-cols-1 gap-xxxl lg:grid-cols-2 lg:gap-huge">
+      {/* Left — the P&L statement and its proof. */}
+      <div className="flex flex-col gap-xxl">
       <BigStat
         label="Net profit"
         value={formatINR(r.netProfit)}
@@ -400,6 +470,528 @@ function PnlView({ r }: { r: PnlReport }) {
         <TotalRow label="Adjustment write-offs" value={`− ${formatINR(r.writeoffs)}`} />
         <TotalRow label="Net profit" value={formatINR(r.netProfit)} strong big />
       </section>
+
+      {/* Proof: every headline figure traced back to the documents it sums. */}
+      <section className="max-w-content">
+        <SectionHeading>How this is calculated</SectionHeading>
+        <table className="w-full border-collapse">
+          <caption className="sr-only">
+            P&amp;L derivation from confirmed invoices, returns and stock adjustments
+          </caption>
+          <tbody>
+            <StatementRow
+              label="Confirmed sales"
+              basis="Taxable value (ex-GST) of confirmed sale invoices, less credit notes"
+              value={formatINR(grossSales)}
+            />
+            <StatementRow
+              label="Less: sales returns"
+              basis="Ex-GST value of refunded returns, pro-rated by returned quantity"
+              value={`− ${formatINR(refunds)}`}
+            />
+            <StatementRow label="Revenue (A)" value={formatINR(r.revenue)} kind="subtotal" />
+
+            <StatementRow
+              label="Goods sold, at cost"
+              basis="Stock cost layers consumed when each sale was confirmed"
+              value={formatINR(grossCogs)}
+            />
+            <StatementRow
+              label="Less: returned goods restocked"
+              basis="Returned items put back into inventory at their consumed cost"
+              value={`− ${formatINR(returnedCogs)}`}
+            />
+            <StatementRow
+              label="Cost of goods sold (B)"
+              value={formatINR(r.cogs)}
+              kind="subtotal"
+            />
+
+            <StatementRow
+              label="Gross profit (A − B)"
+              value={formatINR(r.grossProfit)}
+              kind="subtotal"
+            />
+            <StatementRow
+              label="Less: stock write-offs"
+              basis="Damage, expiry and shrinkage stock adjustments dated in this range"
+              value={`− ${formatINR(r.writeoffs)}`}
+            />
+            <StatementRow
+              label="Net profit (A − B − write-offs)"
+              value={formatINR(r.netProfit)}
+              kind="total"
+            />
+          </tbody>
+        </table>
+        <p className="mt-md text-body-sm text-subtle">
+          Gross margin {(r.grossMargin * 100).toFixed(1)}% = gross profit ÷ revenue.
+          Every figure is summed from confirmed invoices, refunded returns and
+          stock adjustments dated in this range; estimates and proformas are
+          excluded.
+        </p>
+      </section>
+      </div>
+
+      {/* Right — products sold in this range (one row per product); expand a
+          row for its full sale timeline. */}
+      <SoldProductsTable range={range} />
     </div>
   );
 }
+
+/**
+ * Right-hand feed on the P&L view: an aggregated, spreadsheet-style table with
+ * ONE row per product over the range (its number of sales, total qty, total
+ * revenue). The list is bounded by the number of distinct products, not the raw
+ * sale-line count, so it stays light even for a high-volume period. Expanding a
+ * row lazily loads that product's full sale timeline a page at a time. Searches
+ * server-side; horizontally scrollable on narrow screens.
+ */
+const SOLD_PAGE_SIZE = 25;
+const TIMELINE_PAGE_SIZE = 15;
+const SEARCH_DEBOUNCE_MS = 220;
+
+function SoldProductsTable({ range }: { range: Range }) {
+  const [query, setQuery] = useState("");
+  const [search, setSearch] = useState(""); // debounced value actually queried
+  const [products, setProducts] = useState<SoldProduct[]>([]);
+  const [total, setTotal] = useState(0);
+  const [totals, setTotals] = useState({ salesCount: 0, totalQuantity: 0, totalAmount: 0 });
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<number | null>(null);
+
+  // Debounce the search box so a request isn't fired on every keystroke.
+  useEffect(() => {
+    const id = setTimeout(() => setSearch(query), SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(id);
+  }, [query]);
+
+  // Reset and pull the first page whenever the range or the search changes.
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      setLoading(true);
+      setError(null);
+      setExpanded(null);
+      try {
+        const res = await getSoldProducts(range, 1, SOLD_PAGE_SIZE, search);
+        if (!active) return;
+        setProducts(res.data);
+        setTotal(res.pagination.total);
+        setTotals(res.totals);
+        setPage(1);
+      } catch (e) {
+        if (!active) return;
+        setError(e instanceof Error ? e.message : "Could not load sold products.");
+        setProducts([]);
+        setTotal(0);
+        setTotals({ salesCount: 0, totalQuantity: 0, totalAmount: 0 });
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [range, search]);
+
+  async function loadMore() {
+    const next = page + 1;
+    setLoadingMore(true);
+    try {
+      const res = await getSoldProducts(range, next, SOLD_PAGE_SIZE, search);
+      setProducts((prev) => [...prev, ...res.data]);
+      setTotal(res.pagination.total);
+      setPage(next);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not load more sold products.");
+    } finally {
+      setLoadingMore(false);
+    }
+  }
+
+  const hasMore = products.length < total;
+  const searching = query.trim().length > 0;
+
+  return (
+    <section>
+      <div className="mb-md flex items-baseline justify-between gap-md">
+        <SectionHeading>Products sold</SectionHeading>
+        {!loading && total > 0 ? (
+          <span className="shrink-0 text-body-sm tabular-nums text-subtle">
+            {products.length} of {total}
+          </span>
+        ) : null}
+      </div>
+
+      {/* Search — filters server-side across the whole range, not just the
+          loaded page. */}
+      <div className="relative mb-md">
+        <Search
+          size={16}
+          className="pointer-events-none absolute left-md top-1/2 -translate-y-1/2 text-subtle"
+        />
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search by product or SKU…"
+          aria-label="Search sold products"
+          className="h-10 w-full rounded-input border border-hairline bg-field pl-xxxl pr-huge text-body-md text-ink outline-none placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+        />
+        {query ? (
+          <button
+            type="button"
+            onClick={() => setQuery("")}
+            aria-label="Clear search"
+            className="absolute right-sm top-1/2 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-full text-subtle transition-colors hover:bg-surface-tint hover:text-ink"
+          >
+            <X size={14} />
+          </button>
+        ) : null}
+      </div>
+
+      {loading ? (
+        <ListRowsSkeleton rows={6} leading={false} />
+      ) : error ? (
+        <p className="rounded-md bg-error-soft px-md py-sm text-body-sm text-error">{error}</p>
+      ) : products.length === 0 ? (
+        <EmptyHint>
+          {searching
+            ? `No sold products match “${query.trim()}”.`
+            : "No products sold in this range."}
+        </EmptyHint>
+      ) : (
+        <>
+          <div className="overflow-x-auto rounded-md border border-hairline">
+            <table
+              style={{ minWidth: "var(--container-form)" }}
+              className="w-full border-collapse text-left"
+            >
+              <thead>
+                <tr className="bg-surface-tint">
+                  <Th>Product</Th>
+                  <Th align="right">Sales</Th>
+                  <Th align="right">Qty</Th>
+                  <Th align="right">Amount</Th>
+                </tr>
+              </thead>
+              <tbody>
+                {products.map((p) => (
+                  <ProductRow
+                    key={p.productId}
+                    product={p}
+                    range={range}
+                    expanded={expanded === p.productId}
+                    onToggle={() =>
+                      setExpanded((cur) => (cur === p.productId ? null : p.productId))
+                    }
+                  />
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t border-hairline bg-surface-tint">
+                  <td className="px-md py-sm text-label-md uppercase tracking-wide text-muted">
+                    Total
+                  </td>
+                  <td className="whitespace-nowrap px-md py-sm text-right text-body-sm font-semibold tabular-nums text-ink">
+                    {totals.salesCount} {totals.salesCount === 1 ? "sale" : "sales"}
+                  </td>
+                  <td className="whitespace-nowrap px-md py-sm text-right text-body-sm font-semibold tabular-nums text-ink">
+                    {fmtQty(totals.totalQuantity)}
+                  </td>
+                  <td className="whitespace-nowrap px-md py-sm text-right text-body-md font-bold tabular-nums text-ink">
+                    {formatINR(totals.totalAmount)}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          {hasMore ? (
+            <button
+              type="button"
+              onClick={loadMore}
+              disabled={loadingMore}
+              className="mt-md inline-flex h-9 items-center rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:text-disabled"
+            >
+              {loadingMore ? "Loading…" : `Load more (${total - products.length} left)`}
+            </button>
+          ) : (
+            <p className="mt-md text-body-sm text-subtle">
+              All {total} {total === 1 ? "product" : "products"} shown.
+            </p>
+          )}
+        </>
+      )}
+    </section>
+  );
+}
+
+/** One aggregated product row + its lazily-loaded sale timeline when expanded. */
+function ProductRow({
+  product,
+  range,
+  expanded,
+  onToggle,
+}: {
+  product: SoldProduct;
+  range: Range;
+  expanded: boolean;
+  onToggle: () => void;
+}) {
+  const tone = toneFor(product.productSku || product.productName || String(product.productId));
+  const unit = product.unit ?? "";
+  return (
+    <>
+      <tr
+        onClick={onToggle}
+        aria-expanded={expanded}
+        className={`cursor-pointer border-b border-hairline transition-colors last:border-b-0 hover:bg-surface-tint ${
+          expanded ? "bg-surface-tint" : ""
+        }`}
+      >
+        <td className="max-w-0 px-md py-sm align-middle">
+          <div className="flex min-w-0 items-center gap-sm">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggle();
+              }}
+              aria-expanded={expanded}
+              aria-label={expanded ? "Hide sale timeline" : "Show sale timeline"}
+              className="inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface-tint hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+            >
+              <ChevronRight
+                size={16}
+                className={`transition-transform ${expanded ? "rotate-90" : ""}`}
+              />
+            </button>
+            <span className={`flex size-8 shrink-0 items-center justify-center rounded-md ${tone}`}>
+              <Package size={16} />
+            </span>
+            <div className="min-w-0">
+              <span className="block truncate text-body-md text-ink">
+                {product.productName ?? "Product"}
+              </span>
+              {product.productSku ? (
+                <span className="block truncate text-body-sm text-subtle">{product.productSku}</span>
+              ) : null}
+            </div>
+          </div>
+        </td>
+        <td className="whitespace-nowrap px-md py-sm text-right align-middle">
+          <span
+            className={`inline-flex items-center rounded-full px-sm py-px text-body-sm font-semibold tabular-nums ${countTone(product.salesCount)}`}
+          >
+            {product.salesCount} {product.salesCount === 1 ? "sale" : "sales"}
+          </span>
+        </td>
+        <td className="whitespace-nowrap px-md py-sm text-right align-middle">
+          <span
+            className={`inline-flex items-center rounded-full px-sm py-px text-body-sm font-semibold tabular-nums ${qtyTone(product.totalQuantity)}`}
+          >
+            {fmtQty(product.totalQuantity)}
+            {unit ? ` ${unit}` : ""}
+          </span>
+        </td>
+        <td className="whitespace-nowrap px-md py-sm text-right align-middle text-body-md font-semibold tabular-nums text-ink">
+          {formatINR(product.totalAmount)}
+        </td>
+      </tr>
+      {expanded ? (
+        <tr>
+          <td colSpan={4} className="border-b border-hairline bg-surface p-0">
+            <ProductTimeline range={range} product={product} />
+          </td>
+        </tr>
+      ) : null}
+    </>
+  );
+}
+
+/** The drill-down: a single product's individual sales, newest first, loaded a
+ *  page at a time only once the row is expanded. Rendered as a light timeline
+ *  (not a nested grid) with a sticky product total at the bottom. */
+function ProductTimeline({ range, product }: { range: Range; product: SoldProduct }) {
+  const productId = product.productId;
+  const unit = product.unit ?? "";
+  const [items, setItems] = useState<SoldItem[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await getSoldItems(range, productId, 1, TIMELINE_PAGE_SIZE);
+        if (!active) return;
+        setItems(res.data);
+        setTotal(res.pagination.total);
+        setPage(1);
+      } catch (e) {
+        if (!active) return;
+        setError(e instanceof Error ? e.message : "Could not load the sale timeline.");
+        setItems([]);
+        setTotal(0);
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [range, productId]);
+
+  async function loadMore() {
+    const next = page + 1;
+    setLoadingMore(true);
+    try {
+      const res = await getSoldItems(range, productId, next, TIMELINE_PAGE_SIZE);
+      setItems((prev) => [...prev, ...res.data]);
+      setTotal(res.pagination.total);
+      setPage(next);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not load more sales.");
+    } finally {
+      setLoadingMore(false);
+    }
+  }
+
+  const hasMore = items.length < total;
+
+  return (
+    <div className="px-lg py-md">
+      {loading ? (
+        <ListRowsSkeleton rows={3} leading={false} />
+      ) : error ? (
+        <p className="py-sm text-body-sm text-error">{error}</p>
+      ) : items.length === 0 ? (
+        <p className="py-sm text-body-sm text-subtle">No sales found for this product.</p>
+      ) : (
+        <ol className="flex flex-col gap-xs">
+          {items.map((ev, i) => {
+            const row = (
+              <div className="flex items-center gap-sm rounded-md px-sm py-xs transition-colors hover:bg-surface-tint">
+                <Clock size={14} className={`shrink-0 ${recencyColor(ev.soldAt)}`} />
+                <span className="shrink-0 text-body-sm text-ink">{formatDateTime(ev.soldAt)}</span>
+                <span className="min-w-0 flex-1 truncate text-body-sm text-subtle">
+                  {ev.invoiceNo ?? ""}
+                </span>
+                <span
+                  className={`inline-flex shrink-0 items-center rounded-full px-sm py-px text-body-sm font-semibold tabular-nums ${qtyTone(ev.quantity)}`}
+                >
+                  {fmtQty(ev.quantity)}
+                  {unit ? ` ${unit}` : ""}
+                </span>
+                <span className="w-20 shrink-0 text-right text-body-sm font-semibold tabular-nums text-ink">
+                  {formatINR(ev.total)}
+                </span>
+              </div>
+            );
+            return (
+              <li key={i}>
+                {ev.invoiceId ? (
+                  <Link href={`/dashboard/invoices/${ev.invoiceId}`} className="block">
+                    {row}
+                  </Link>
+                ) : (
+                  row
+                )}
+              </li>
+            );
+          })}
+        </ol>
+      )}
+
+      {!loading && hasMore ? (
+        <button
+          type="button"
+          onClick={loadMore}
+          disabled={loadingMore}
+          className="mt-sm inline-flex h-8 items-center rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:text-disabled"
+        >
+          {loadingMore ? "Loading…" : `Load more (${total - items.length} left)`}
+        </button>
+      ) : null}
+
+      {!loading && !error ? (
+        <div className="mt-sm flex items-center justify-between gap-md border-t border-hairline pt-sm">
+          <span className="text-label-md uppercase tracking-wide text-subtle">
+            Total · {product.salesCount} {product.salesCount === 1 ? "sale" : "sales"} ·{" "}
+            {fmtQty(product.totalQuantity)}
+            {unit ? ` ${unit}` : ""}
+          </span>
+          <span className="text-body-md font-bold tabular-nums text-ink">
+            {formatINR(product.totalAmount)}
+          </span>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function Th({ children, align }: { children: React.ReactNode; align?: "right" }) {
+  return (
+    <th
+      className={`whitespace-nowrap border-b border-hairline px-md py-sm text-label-md uppercase tracking-wide text-muted ${
+        align === "right" ? "text-right" : "text-left"
+      }`}
+    >
+      {children}
+    </th>
+  );
+}
+
+/** Per-product icon tint — same product always gets the same colour, so a
+ *  repeated item is easy to spot while scanning the feed. */
+const SOLD_TONES = [
+  "bg-accent-teal-soft text-accent-teal",
+  "bg-accent-indigo-soft text-accent-indigo",
+  "bg-accent-amber-soft text-accent-amber",
+  "bg-accent-rose-soft text-accent-rose",
+  "bg-brand-soft text-brand-strong",
+] as const;
+
+function toneFor(key: string): string {
+  let h = 0;
+  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
+  return SOLD_TONES[h % SOLD_TONES.length];
+}
+
+/** Qty chip colour by volume: bigger sale → warmer/stronger fill. */
+function qtyTone(q: number): string {
+  if (q >= 5) return "bg-brand-soft text-brand-strong";
+  if (q >= 2) return "bg-info-soft text-info";
+  return "bg-surface-tint text-muted";
+}
+
+/** Sales-count chip colour: more repeat sales → stronger fill. */
+function countTone(c: number): string {
+  if (c >= 10) return "bg-brand-soft text-brand-strong";
+  if (c >= 3) return "bg-info-soft text-info";
+  return "bg-surface-tint text-muted";
+}
+
+/** Whole number when integral, else 2dp. */
+function fmtQty(q: number): string {
+  return Number.isInteger(q) ? String(q) : q.toFixed(2);
+}
+
+/** Clock colour by recency: today → green, this week → blue, older → muted. */
+function recencyColor(iso: string): string {
+  const days = (Date.now() - new Date(iso).getTime()) / 86_400_000;
+  if (days < 1) return "text-success";
+  if (days < 7) return "text-info";
+  return "text-subtle";
+}
+

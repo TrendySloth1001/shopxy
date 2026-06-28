@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import { reportsService, DateRange } from './reports.service.js';
+import { parsePagination, paginatedResponse } from '../../shared/http/pagination.js';
 
 const rangeSchema = z.object({
   from: z.string().datetime().optional(),
@@ -112,6 +113,37 @@ export class ReportsController {
     if (range === null) return;
     const data = await reportsService.pnl(shopId, range);
     res.json(data);
+  }
+  /// Aggregated "products sold" summary — one row per product over the range.
+  async soldProducts(req: Request, res: Response): Promise<void> {
+    const shopId = requireShopId(req, res);
+    if (shopId === null) return;
+    const range = resolveRange(req, res);
+    if (range === null) return;
+    const params = parsePagination(req);
+    const search = typeof req.query.search === 'string' ? req.query.search : undefined;
+    const { items, total, totals } = await reportsService.soldProducts(shopId, range, {
+      ...params,
+      search,
+    });
+    res.json({ ...paginatedResponse(items, total, params), totals });
+  }
+  /// Paginated per-line timeline for ONE product (the drill-down expansion).
+  async soldItems(req: Request, res: Response): Promise<void> {
+    const shopId = requireShopId(req, res);
+    if (shopId === null) return;
+    const range = resolveRange(req, res);
+    if (range === null) return;
+    const params = parsePagination(req);
+    const search = typeof req.query.search === 'string' ? req.query.search : undefined;
+    const rawPid = Number(req.query.productId);
+    const productId = Number.isInteger(rawPid) && rawPid > 0 ? rawPid : undefined;
+    const { items, total } = await reportsService.soldItems(shopId, range, {
+      ...params,
+      search,
+      productId,
+    });
+    res.json(paginatedResponse(items, total, params));
   }
 }
 

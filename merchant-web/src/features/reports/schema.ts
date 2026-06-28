@@ -108,6 +108,7 @@ export const pnlReportSchema = z
     revenue: dailyNum,
     refunds: dailyNum.nullish(),
     cogs: dailyNum,
+    returnedCogs: dailyNum.nullish(),
     writeoffs: dailyNum,
     grossProfit: dailyNum,
     netProfit: dailyNum,
@@ -115,3 +116,70 @@ export const pnlReportSchema = z
   })
   .passthrough();
 export type PnlReport = z.infer<typeof pnlReportSchema>;
+
+/** One confirmed sale line in the P&L "products sold" drill-down. */
+export const soldItemSchema = z.object({
+  productName: z.string().nullish(),
+  productSku: z.string().nullish(),
+  unit: z.string().nullish(),
+  quantity: dailyNum,
+  total: dailyNum,
+  invoiceId: z.number().nullish(),
+  invoiceNo: z.string().nullish(),
+  soldAt: z.string(),
+});
+export type SoldItem = z.infer<typeof soldItemSchema>;
+
+const paginationSchema = z
+  .object({
+    page: z.coerce.number().default(1),
+    limit: z.coerce.number().default(25),
+    total: z.coerce.number().default(0),
+    totalPages: z.coerce.number().default(0),
+  })
+  .nullish()
+  .transform((v) => v ?? { page: 1, limit: 25, total: 0, totalPages: 0 });
+
+/** Paginated `/reports/sold-items` page (one product's timeline). */
+export const soldItemsPageSchema = z.object({
+  data: z
+    .array(soldItemSchema)
+    .nullish()
+    .transform((v) => v ?? []),
+  pagination: paginationSchema,
+});
+export type SoldItemsPage = z.infer<typeof soldItemsPageSchema>;
+
+/** One aggregated product row in the P&L "products sold" summary. */
+export const soldProductSchema = z.object({
+  productId: z.number(),
+  productName: z.string().nullish(),
+  productSku: z.string().nullish(),
+  unit: z.string().nullish(),
+  salesCount: dailyNum,
+  totalQuantity: dailyNum,
+  totalAmount: dailyNum,
+  lastSoldAt: z.string(),
+});
+export type SoldProduct = z.infer<typeof soldProductSchema>;
+
+/** Grand totals across every matching product (all pages), for the footer. */
+const soldTotalsSchema = z
+  .object({
+    salesCount: dailyNum,
+    totalQuantity: dailyNum,
+    totalAmount: dailyNum,
+  })
+  .nullish()
+  .transform((v) => v ?? { salesCount: 0, totalQuantity: 0, totalAmount: 0 });
+
+/** Paginated `/reports/sold-products` page (the summary). */
+export const soldProductsPageSchema = z.object({
+  data: z
+    .array(soldProductSchema)
+    .nullish()
+    .transform((v) => v ?? []),
+  pagination: paginationSchema,
+  totals: soldTotalsSchema,
+});
+export type SoldProductsPage = z.infer<typeof soldProductsPageSchema>;
