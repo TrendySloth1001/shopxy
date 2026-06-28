@@ -625,6 +625,168 @@ export class ReportsService {
       grossMargin,
     };
   }
+
+  // ─────────────────────────────────────────────────────────────────
+  // Paginated "products sold" feed backing the P&L drill-down. Each row is one
+  // confirmed sale line (credit notes excluded — those are returns, not sales),
+  // newest first. Offset-paginated so the client pulls one page at a time
+  // instead of materialising every line of a busy period in a single response.
+  // ─────────────────────────────────────────────────────────────────
+  async soldItems(
+    shopId: number,
+    range: DateRange,
+    opts: { skip: number; limit: number; search?: string; productId?: number },
+  ) {
+    // Optional product-name / SKU search. A null pattern makes the guard a
+    // no-op (`NULL IS NULL` → match all) so the same query serves both the
+    // unfiltered feed and a search without composing SQL fragments.
+    const q = opts.search?.trim() ? `%${opts.search.trim()}%` : null;
+    // Optional single-product filter (the per-product timeline drill-down).
+    // Same null-as-no-op trick.
+    const pid = opts.productId ?? null;
+    const [rows, countRows] = await Promise.all([
+      prisma.$queryRaw<{
+        productName: string;
+        productSku: string;
+        unit: string;
+        quantity: string;
+        total: string;
+        invoiceId: number;
+        invoiceNo: string;
+        soldAt: Date;
+      }[]>`
+        SELECT ii.product_name AS "productName",
+               ii.product_sku  AS "productSku",
+               ii.unit         AS "unit",
+               ii.quantity::text AS "quantity",
+               ii.total::text    AS "total",
+               i.id            AS "invoiceId",
+               i.invoice_no    AS "invoiceNo",
+               i.invoice_date  AS "soldAt"
+        FROM invoice_items ii
+        JOIN invoices i ON i.id = ii.invoice_id
+        WHERE i.shop_id = ${shopId} AND i.type = 'SALE' AND i.status = 'CONFIRMED'
+          AND i.document_type NOT IN ('ESTIMATE', 'PROFORMA', 'CREDIT_NOTE')
+          AND i.invoice_date >= ${range.from} AND i.invoice_date < ${range.to}
+          AND (${q}::text IS NULL OR ii.product_name ILIKE ${q} OR ii.product_sku ILIKE ${q})
+          AND (${pid}::int IS NULL OR ii.product_id = ${pid})
+        ORDER BY i.invoice_date DESC, ii.id DESC
+        LIMIT ${opts.limit} OFFSET ${opts.skip}
+      `,
+      prisma.$queryRaw<{ count: string }[]>`
+        SELECT COUNT(*)::text AS count
+        FROM invoice_items ii
+        JOIN invoices i ON i.id = ii.invoice_id
+        WHERE i.shop_id = ${shopId} AND i.type = 'SALE' AND i.status = 'CONFIRMED'
+          AND i.document_type NOT IN ('ESTIMATE', 'PROFORMA', 'CREDIT_NOTE')
+          AND i.invoice_date >= ${range.from} AND i.invoice_date < ${range.to}
+          AND (${q}::text IS NULL OR ii.product_name ILIKE ${q} OR ii.product_sku ILIKE ${q})
+          AND (${pid}::int IS NULL OR ii.product_id = ${pid})
+      `,
+    ]);
+    return {
+      items: rows.map((s) => ({
+        productName: s.productName,
+        productSku: s.productSku,
+        unit: s.unit,
+        quantity: n(s.quantity),
+        total: n(s.total),
+        invoiceId: s.invoiceId,
+        invoiceNo: s.invoiceNo,
+        soldAt: s.soldAt,
+      })),
+      total: Number(countRows[0]?.count ?? 0),
+    };
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  // Aggregated "products sold" summary — ONE row per product over the range
+  // (count of sales, total qty, total revenue, last-sold), bounded by the
+  // number of distinct products rather than the raw line count. The heavy
+  // per-line history is fetched lazily via soldItems(productId) when a row is
+  // expanded, so the summary stays light even for a high-volume period.
+  // ─────────────────────────────────────────────────────────────────
+  async soldProducts(
+    shopId: number,
+    range: DateRange,
+    opts: { skip: number; limit: number; search?: string },
+  ) {
+    const q = opts.search?.trim() ? `%${opts.search.trim()}%` : null;
+    const [rows, countRows, totalsRows] = await Promise.all([
+      prisma.$queryRaw<{
+        productId: number;
+        productName: string;
+        productSku: string;
+        unit: string;
+        salesCount: string;
+        totalQuantity: string;
+        totalAmount: string;
+        lastSoldAt: Date;
+      }[]>`
+        SELECT ii.product_id      AS "productId",
+               MAX(ii.product_name) AS "productName",
+               MAX(ii.product_sku)  AS "productSku",
+               MAX(ii.unit)         AS "unit",
+               COUNT(*)::text          AS "salesCount",
+               SUM(ii.quantity)::text  AS "totalQuantity",
+               SUM(ii.total)::text     AS "totalAmount",
+               MAX(i.invoice_date)     AS "lastSoldAt"
+        FROM invoice_items ii
+        JOIN invoices i ON i.id = ii.invoice_id
+        WHERE i.shop_id = ${shopId} AND i.type = 'SALE' AND i.status = 'CONFIRMED'
+          AND i.document_type NOT IN ('ESTIMATE', 'PROFORMA', 'CREDIT_NOTE')
+          AND i.invoice_date >= ${range.from} AND i.invoice_date < ${range.to}
+          AND (${q}::text IS NULL OR ii.product_name ILIKE ${q} OR ii.product_sku ILIKE ${q})
+        GROUP BY ii.product_id
+        ORDER BY SUM(ii.total) DESC
+        LIMIT ${opts.limit} OFFSET ${opts.skip}
+      `,
+      prisma.$queryRaw<{ count: string }[]>`
+        SELECT COUNT(*)::text AS count FROM (
+          SELECT 1
+          FROM invoice_items ii
+          JOIN invoices i ON i.id = ii.invoice_id
+          WHERE i.shop_id = ${shopId} AND i.type = 'SALE' AND i.status = 'CONFIRMED'
+            AND i.document_type NOT IN ('ESTIMATE', 'PROFORMA', 'CREDIT_NOTE')
+            AND i.invoice_date >= ${range.from} AND i.invoice_date < ${range.to}
+            AND (${q}::text IS NULL OR ii.product_name ILIKE ${q} OR ii.product_sku ILIKE ${q})
+          GROUP BY ii.product_id
+        ) t
+      `,
+      // Grand totals across EVERY matching product (all pages, search applied)
+      // so the table footer always shows the true total, not just the loaded
+      // page's sum.
+      prisma.$queryRaw<{ salesCount: string; totalQuantity: string; totalAmount: string }[]>`
+        SELECT COUNT(*)::text             AS "salesCount",
+               COALESCE(SUM(ii.quantity), 0)::text AS "totalQuantity",
+               COALESCE(SUM(ii.total), 0)::text    AS "totalAmount"
+        FROM invoice_items ii
+        JOIN invoices i ON i.id = ii.invoice_id
+        WHERE i.shop_id = ${shopId} AND i.type = 'SALE' AND i.status = 'CONFIRMED'
+          AND i.document_type NOT IN ('ESTIMATE', 'PROFORMA', 'CREDIT_NOTE')
+          AND i.invoice_date >= ${range.from} AND i.invoice_date < ${range.to}
+          AND (${q}::text IS NULL OR ii.product_name ILIKE ${q} OR ii.product_sku ILIKE ${q})
+      `,
+    ]);
+    return {
+      items: rows.map((p) => ({
+        productId: p.productId,
+        productName: p.productName,
+        productSku: p.productSku,
+        unit: p.unit,
+        salesCount: Number(p.salesCount),
+        totalQuantity: n(p.totalQuantity),
+        totalAmount: n(p.totalAmount),
+        lastSoldAt: p.lastSoldAt,
+      })),
+      total: Number(countRows[0]?.count ?? 0),
+      totals: {
+        salesCount: Number(totalsRows[0]?.salesCount ?? 0),
+        totalQuantity: n(totalsRows[0]?.totalQuantity ?? 0),
+        totalAmount: n(totalsRows[0]?.totalAmount ?? 0),
+      },
+    };
+  }
 }
 
 export const reportsService = new ReportsService();
