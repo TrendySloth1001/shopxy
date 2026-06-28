@@ -131,15 +131,16 @@ function SupplierBlock({ group, unit }: { group: SupplierGroup; unit?: string | 
 
       <div className="mt-lg">
         <p className="text-label-md uppercase tracking-wide text-subtle">Recent buys</p>
-        <ul className="mt-xs max-w-md divide-y divide-hairline">
+        <ul className="mt-sm flex flex-col gap-sm">
           {txns.slice(0, 5).map((t) => (
-            <li
-              key={t.id}
-              className="flex items-center justify-between gap-lg py-sm text-body-sm"
-            >
-              <span className="text-muted">{formatDate(t.createdAt)}</span>
-              <span className="tabular-nums text-muted">Qty {fmtQty(t.quantity)}</span>
-              <span className="tabular-nums font-medium text-ink">
+            <li key={t.id} className="flex items-center gap-xl text-body-sm">
+              <span className="w-28 shrink-0 whitespace-nowrap text-muted">
+                {formatDate(t.createdAt)}
+              </span>
+              <span className="w-16 shrink-0 whitespace-nowrap tabular-nums text-muted">
+                Qty {fmtQty(t.quantity)}
+              </span>
+              <span className="shrink-0 whitespace-nowrap tabular-nums font-medium text-ink">
                 {t.unitPrice == null ? "—" : money(t.unitPrice)}
               </span>
             </li>
