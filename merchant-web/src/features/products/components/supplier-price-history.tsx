@@ -9,6 +9,7 @@ import {
   type StockTxn,
 } from "@/features/stock/schema";
 import { money, qty as fmtQty } from "@/features/products/format";
+import { unitLabel } from "@/features/products/units";
 
 /**
  * Supplier-wise purchase-price history for a product — the web mirror of the
@@ -18,7 +19,13 @@ import { money, qty as fmtQty } from "@/features/products/format";
  * supplier: the latest and average purchase price, total quantity bought, the
  * last stock-in, the price policy in force, and the most recent buys.
  */
-export function SupplierPriceHistory({ productId }: { productId: number }) {
+export function SupplierPriceHistory({
+  productId,
+  unit,
+}: {
+  productId: number;
+  unit?: string | null;
+}) {
   const [txns, setTxns] = useState<StockTxn[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,14 +38,10 @@ export function SupplierPriceHistory({ productId }: { productId: number }) {
           type: "STOCK_IN",
           limit: 100,
         });
-        if (active) {
-          setTxns(rows);
-          setError(null);
-        }
+        if (active) setTxns(rows);
       } catch (e) {
         if (active) {
           setError(e instanceof Error ? e.message : "Could not load purchase history.");
-          setTxns([]);
         }
       }
     })();
@@ -64,9 +67,9 @@ export function SupplierPriceHistory({ productId }: { productId: number }) {
   }
 
   return (
-    <div className="flex flex-col gap-lg">
+    <div className="divide-y divide-hairline">
       {groups.map((g) => (
-        <SupplierCard key={g.supplier} group={g} />
+        <SupplierBlock key={g.supplier} group={g} unit={unit} />
       ))}
     </div>
   );
@@ -91,55 +94,58 @@ function groupBySupplier(source: StockTxn[]): SupplierGroup[] {
     const sorted = [...list].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     return { supplier, txns: sorted, isVendor: sorted[0]?.vendorId != null };
   });
-  // Most recently used supplier first.
   groups.sort((a, b) => b.txns[0].createdAt.localeCompare(a.txns[0].createdAt));
   return groups;
 }
 
-function SupplierCard({ group }: { group: SupplierGroup }) {
+function SupplierBlock({ group, unit }: { group: SupplierGroup; unit?: string | null }) {
   const { supplier, txns, isVendor } = group;
   const priced = txns.filter((t) => t.unitPrice != null).map((t) => t.unitPrice as number);
   const latest = priced.length > 0 ? priced[0] : null;
   const average =
     priced.length > 0 ? priced.reduce((s, p) => s + p, 0) / priced.length : null;
   const totalQty = txns.reduce((s, t) => s + t.quantity, 0);
-  const lastStockIn = txns[0].createdAt;
-  const policy = purchasePolicyLabel(txns[0].purchasePriceMode);
+  const unitText = unit ? ` ${unitLabel(unit)}` : "";
 
   return (
-    <div className="rounded-lg border border-hairline p-lg">
+    <div className="py-lg first:pt-0 last:pb-0">
       <div className="flex items-center justify-between gap-md">
         <h3 className="min-w-0 truncate text-title-sm text-ink">{supplier}</h3>
         {isVendor ? (
-          <span className="inline-flex items-center gap-xs rounded-full bg-surface-tint px-sm py-px text-label-md text-muted">
+          <span className="inline-flex shrink-0 items-center gap-xs rounded-full bg-surface-tint px-sm py-px text-label-md text-muted">
             <Building2 size={13} /> Vendor
           </span>
         ) : null}
       </div>
 
-      <dl className="mt-md grid grid-cols-2 gap-x-xxl gap-y-sm sm:grid-cols-3">
+      <dl className="mt-md grid grid-cols-2 gap-x-xl gap-y-md sm:grid-cols-3 lg:grid-cols-5">
         <Metric label="Latest price" value={latest == null ? "—" : money(latest)} />
         <Metric label="Average price" value={average == null ? "—" : money(average)} />
         <Metric
           label="Total bought"
-          value={`${fmtQty(totalQty)} · ${txns.length} ${txns.length === 1 ? "buy" : "buys"}`}
+          value={`${fmtQty(totalQty)}${unitText} · ${txns.length} ${txns.length === 1 ? "buy" : "buys"}`}
         />
-        <Metric label="Last stock-in" value={formatDateTime(lastStockIn)} />
-        <Metric label="Price policy" value={policy} />
+        <Metric label="Last stock-in" value={formatDateTime(txns[0].createdAt)} />
+        <Metric label="Price policy" value={purchasePolicyLabel(txns[0].purchasePriceMode)} />
       </dl>
 
-      <p className="mt-md text-label-md uppercase tracking-wide text-subtle">Recent buys</p>
-      <ul className="mt-xs flex flex-col gap-xs">
-        {txns.slice(0, 5).map((t) => (
-          <li key={t.id} className="flex items-center justify-between gap-md text-body-sm">
-            <span className="text-muted">{formatDate(t.createdAt)}</span>
-            <span className="tabular-nums text-ink">Qty: {fmtQty(t.quantity)}</span>
-            <span className="w-28 text-right font-medium tabular-nums text-ink">
-              {t.unitPrice == null ? "—" : money(t.unitPrice)}
-            </span>
-          </li>
-        ))}
-      </ul>
+      <div className="mt-lg">
+        <p className="text-label-md uppercase tracking-wide text-subtle">Recent buys</p>
+        <ul className="mt-xs max-w-md divide-y divide-hairline">
+          {txns.slice(0, 5).map((t) => (
+            <li
+              key={t.id}
+              className="flex items-center justify-between gap-lg py-sm text-body-sm"
+            >
+              <span className="text-muted">{formatDate(t.createdAt)}</span>
+              <span className="tabular-nums text-muted">Qty {fmtQty(t.quantity)}</span>
+              <span className="tabular-nums font-medium text-ink">
+                {t.unitPrice == null ? "—" : money(t.unitPrice)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }
