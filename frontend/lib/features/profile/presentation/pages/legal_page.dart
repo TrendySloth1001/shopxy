@@ -46,10 +46,10 @@ Your rights (DPDP §11 and §12)
 You have the right to (a) access a copy of your personal data, (b) correct or update it, (c) withdraw consent and request erasure, and (d) nominate someone to act on your behalf. The Settings > Danger zone screen exposes "Export my data" (a downloadable JSON of every row tied to your account) and "Delete account" (immediate erasure for customer accounts; controlled erasure for shop-owner accounts whose books are still inside the 8-year retention window).
 
 Consent withdrawal
-You may withdraw consent at any time by deleting your account or by emailing support@shopxy.example. Withdrawal does not apply retroactively to processing performed lawfully before withdrawal.
+You may withdraw consent at any time by deleting your account or by emailing support@shopxy.app. Withdrawal does not apply retroactively to processing performed lawfully before withdrawal.
 
 Grievance redressal
-DPDP §13 requires a published grievance contact. Please reach our Grievance Officer at support@shopxy.example. We aim to acknowledge within 7 days and respond substantively within 30 days. If unresolved, you may approach the Data Protection Board of India.
+DPDP §13 requires a published grievance contact. Please reach our Grievance Officer at grievance@shopxy.app. We acknowledge within 48 hours and aim to resolve within one month; personal-data requests under the DPDP Act are addressed within 15 days. If unresolved, you may approach the Data Protection Board of India.
 ''';
 
 const String _termsBody = '''
@@ -67,5 +67,5 @@ ShopXY is provided as-is for managing your shop's inventory, invoices, payments 
 
 6. Termination. We may suspend accounts that violate these terms or that we reasonably suspect of fraudulent activity. You may close your account at any time via Settings > Delete account.
 
-7. Grievances. Questions, complaints or DPDP requests can be sent to support@shopxy.example. The Grievance Officer responds within 30 days.
+7. Grievances. Questions, complaints or DPDP requests can be sent to grievance@shopxy.app. The Grievance Officer acknowledges within 48 hours and responds within one month.
 ''';

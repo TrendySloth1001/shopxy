@@ -34,6 +34,7 @@ class AppPalette {
     required this.pageTint,
     required this.heroPanel,
     required this.surface,
+    required this.field,
     required this.onAccent,
     required this.inverseSurface,
     required this.onInverse,
@@ -79,6 +80,11 @@ class AppPalette {
   final Color pageTint;
   final Color heroPanel;
   final Color surface;
+
+  /// Input/field fill. Distinct from [surface] so text fields stay defined even
+  /// where cards are flat (surface == canvas in dark/OLED): white in light, a
+  /// raised dark in dark/OLED.
+  final Color field;
 
   // Inverse / literal
   final Color onAccent;
@@ -138,6 +144,7 @@ class AppPalette {
     pageTint: Color(0xFFFAFAF7),
     heroPanel: Color(0xFFEFEEE7),
     surface: Color(0xFFFFFFFF),
+    field: Color(0xFFFFFFFF),
     onAccent: Color(0xFFFFFFFF),
     inverseSurface: Color(0xFF14181D),
     onInverse: Color(0xFFFFFFFF),
@@ -185,6 +192,8 @@ class AppPalette {
     // defined by hairline borders, not a different-shade fill. Keeps every
     // screen visually consistent (no "lighter card" vs "flat page" mismatch).
     surface: Color(0xFF0F1419),
+    // Inputs stay a defined raised dark even though cards are flat.
+    field: Color(0xFF1C232B),
     onAccent: Color(0xFFFFFFFF),
     inverseSurface: Color(0xFFE7EAEE),
     onInverse: Color(0xFF11161B),
@@ -232,6 +241,8 @@ class AppPalette {
     // same black as the page, defined by hairline borders — no "lighter card"
     // shade. True flat OLED, consistent across every screen.
     surface: Color(0xFF000000),
+    // Inputs get a subtle raised fill so fields stay visible on pure black.
+    field: Color(0xFF14181D),
     onAccent: Color(0xFFFFFFFF),
     inverseSurface: Color(0xFFE7EAEE),
     onInverse: Color(0xFF11161B),

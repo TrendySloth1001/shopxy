@@ -60,6 +60,10 @@ class AppColors {
   /// canvas in dark. Use this for floating surfaces — never [white].
   static Color get surface => _p.surface;
 
+  /// Input/text-field fill — distinct from [surface] (white in light, a raised
+  /// dark in dark/OLED) so fields stay defined where cards are flat.
+  static Color get field => _p.field;
+
   /// High-contrast neutral fill (avatar, monogram, selected pill): dark in
   /// light mode, light in dark mode. Pair with [onInverse] for its text.
   static Color get inverseSurface => _p.inverseSurface;

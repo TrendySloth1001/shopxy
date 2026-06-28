@@ -210,7 +210,7 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: p.surface,
+        fillColor: p.field,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppSizes.lg,
           vertical: AppSizes.md,
