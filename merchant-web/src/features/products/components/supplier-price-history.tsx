@@ -98,8 +98,11 @@ function groupBySupplier(source: StockTxn[]): SupplierGroup[] {
   return groups;
 }
 
+const RECENT_BUYS_PREVIEW = 6;
+
 function SupplierBlock({ group, unit }: { group: SupplierGroup; unit?: string | null }) {
   const { supplier, txns, isVendor } = group;
+  const [expanded, setExpanded] = useState(false);
   const priced = txns.filter((t) => t.unitPrice != null).map((t) => t.unitPrice as number);
   const latest = priced.length > 0 ? priced[0] : null;
   const average =
@@ -130,22 +133,46 @@ function SupplierBlock({ group, unit }: { group: SupplierGroup; unit?: string | 
       </dl>
 
       <div className="mt-lg">
-        <p className="text-label-md uppercase tracking-wide text-subtle">Recent buys</p>
-        <ul className="mt-sm flex flex-col gap-sm">
-          {txns.slice(0, 5).map((t) => (
-            <li key={t.id} className="flex items-center gap-xl text-body-sm">
-              <span className="w-28 shrink-0 whitespace-nowrap text-muted">
-                {formatDate(t.createdAt)}
-              </span>
-              <span className="w-16 shrink-0 whitespace-nowrap tabular-nums text-muted">
-                Qty {fmtQty(t.quantity)}
-              </span>
-              <span className="shrink-0 whitespace-nowrap tabular-nums font-medium text-ink">
-                {t.unitPrice == null ? "—" : money(t.unitPrice)}
-              </span>
-            </li>
-          ))}
-        </ul>
+        <p className="text-label-md uppercase tracking-wide text-subtle">
+          Recent buys{txns.length > 1 ? ` · ${txns.length}` : ""}
+        </p>
+        <table className="mt-sm w-full max-w-content text-body-sm">
+          <thead>
+            <tr className="border-b border-hairline text-label-md uppercase tracking-wide text-subtle">
+              <th className="py-xs pr-lg text-left font-normal">Date</th>
+              <th className="py-xs pr-lg text-right font-normal">Qty</th>
+              <th className="py-xs pr-lg text-right font-normal">Unit price</th>
+              <th className="py-xs text-right font-normal">Amount</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-hairline">
+            {(expanded ? txns : txns.slice(0, RECENT_BUYS_PREVIEW)).map((t) => (
+              <tr key={t.id}>
+                <td className="whitespace-nowrap py-sm pr-lg text-muted">
+                  {formatDate(t.createdAt)}
+                </td>
+                <td className="py-sm pr-lg text-right tabular-nums text-muted">
+                  {fmtQty(t.quantity)}
+                </td>
+                <td className="py-sm pr-lg text-right tabular-nums text-ink">
+                  {t.unitPrice == null ? "—" : money(t.unitPrice)}
+                </td>
+                <td className="py-sm text-right tabular-nums font-medium text-ink">
+                  {t.unitPrice == null ? "—" : money(t.unitPrice * t.quantity)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {txns.length > RECENT_BUYS_PREVIEW ? (
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="mt-sm text-label-md font-semibold text-brand-strong transition-colors hover:text-brand focus-visible:outline-none focus-visible:underline"
+          >
+            {expanded ? "Show less" : `Show all ${txns.length} buys`}
+          </button>
+        ) : null}
       </div>
     </div>
   );
