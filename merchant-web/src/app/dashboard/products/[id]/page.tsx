@@ -12,6 +12,7 @@ import {
   Share2,
   Check,
   ImagePlus,
+  ScrollText,
 } from "lucide-react";
 import { Divider } from "@/shared/ui/divider";
 import {
@@ -35,6 +36,7 @@ import { useAuth } from "@/features/auth/auth-context";
 import { canManage } from "@/features/auth/capabilities";
 import { MaybeLocked } from "@/features/auth/components/maybe-locked";
 import { StockSheet } from "@/features/stock/stock-sheet";
+import { StockLedgerSheet } from "@/features/stock/stock-ledger-sheet";
 import type { StockType } from "@/features/stock/schema";
 
 export default function ProductDetailPage({
@@ -55,6 +57,7 @@ export default function ProductDetailPage({
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [stockSheet, setStockSheet] = useState<StockType | null>(null);
+  const [ledgerOpen, setLedgerOpen] = useState(false);
   const [draftId, setDraftId] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -241,6 +244,15 @@ export default function ProductDetailPage({
         />
       ) : null}
 
+      {ledgerOpen ? (
+        <StockLedgerSheet
+          productId={product.id}
+          productName={product.name}
+          productUnit={product.unit}
+          onClose={() => setLedgerOpen(false)}
+        />
+      ) : null}
+
       <Divider className="my-xxl" />
 
       {/* Gallery + key facts */}
@@ -277,6 +289,13 @@ export default function ProductDetailPage({
                 <PackageMinus size={16} /> Stock out
               </button>
             </MaybeLocked>
+            <button
+              type="button"
+              onClick={() => setLedgerOpen(true)}
+              className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+            >
+              <ScrollText size={16} /> Stock ledger
+            </button>
           </div>
           <Divider />
           <Facts
