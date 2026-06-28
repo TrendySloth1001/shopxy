@@ -334,7 +334,7 @@ export default function ProductDetailPage({
       </div>
 
       <Section title="Supplier price history">
-        <SupplierPriceHistory productId={product.id} />
+        <SupplierPriceHistory productId={product.id} unit={product.unit} />
       </Section>
 
       {product.description ? (
