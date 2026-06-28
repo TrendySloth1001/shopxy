@@ -4,3 +4,4 @@ readmes/
 
 # Desktop installer artifacts (large binaries — built locally, never committed).
 dist/
+*.dmg

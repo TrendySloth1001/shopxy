@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
@@ -48,6 +49,10 @@ class AuthScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.canvas,
+      // Keep the body (and the backdrop) full-height when the keyboard opens —
+      // otherwise the Scaffold shrinks and the background image jumps/resizes.
+      // The form scrolls instead (see the keyboard inset padding below).
+      resizeToAvoidBottomInset: false,
       body: SafeArea(
         bottom: false,
         child: LayoutBuilder(
@@ -63,7 +68,12 @@ class AuthScaffold extends StatelessWidget {
                     ],
                   )
                 else
-                  _formColumn(context),
+                  Stack(
+                    children: [
+                      const Positioned.fill(child: _PhoneBackdrop()),
+                      _formColumn(context),
+                    ],
+                  ),
                 Positioned(
                   top: AppSizes.sm,
                   left: AppSizes.lg,
@@ -85,11 +95,13 @@ class AuthScaffold extends StatelessWidget {
     final theme = Theme.of(context);
     return Center(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(
+        // Bottom inset grows with the keyboard so the focused field can scroll
+        // clear of it (the Scaffold no longer resizes — see resizeToAvoidBottomInset).
+        padding: EdgeInsets.fromLTRB(
           AppSizes.lg,
           80,
           AppSizes.lg,
-          AppSizes.xxl,
+          AppSizes.xxl + MediaQuery.viewInsetsOf(context).bottom,
         ),
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 400),
@@ -177,6 +189,49 @@ class _IllustrationPanel extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Phone-only backdrop: the boho illustration full-bleed behind the form, faded
+/// into the canvas by a top→bottom gradient so the form stays readable. Because
+/// the overlay is the theme-aware canvas colour, it lightens the art in light
+/// mode and darkens it in dark / OLED.
+class _PhoneBackdrop extends StatelessWidget {
+  const _PhoneBackdrop();
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        // Boho art, softly blurred for a frosted backdrop.
+        ImageFiltered(
+          imageFilter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+          child: Image.asset(
+            'assets/auth-boho.jpg',
+            fit: BoxFit.cover,
+            alignment: Alignment.topCenter,
+          ),
+        ),
+        // Translucent canvas wash — lets the art read through (theme-aware) while
+        // keeping the form legible. A touch denser at the bottom behind the
+        // footer/links.
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                AppColors.canvas.withValues(alpha: 0.65),
+                AppColors.canvas.withValues(alpha: 0.80),
+                AppColors.canvas.withValues(alpha: 0.95),
+              ],
+              stops: const [0.0, 0.55, 1.0],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
