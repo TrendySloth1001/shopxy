@@ -1,6 +1,13 @@
 "use client";
 
-/** Centered (mobile: bottom-sheet) dialog on a scrim. Click-outside closes. */
+import { useEffect, useRef } from "react";
+import { X } from "lucide-react";
+
+/**
+ * Centered (mobile: bottom-sheet) dialog on a scrim. The header (title + close)
+ * stays fixed while the body scrolls. Escape and click-outside close it, and
+ * the page behind is scroll-locked while it's open.
+ */
 export function Modal({
   title,
   onClose,
@@ -12,19 +19,51 @@ export function Modal({
   children: React.ReactNode;
   wide?: boolean;
 }) {
+  // Keep the latest onClose without re-running the mount effect each render.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onCloseRef.current();
+    }
+    document.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, []);
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-scrim/30 p-lg sm:items-center"
       onClick={onClose}
     >
       <div
-        className={`flex max-h-[85dvh] w-full flex-col gap-md overflow-y-auto rounded-dialog bg-surface p-lg shadow-menu ${
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        className={`flex max-h-[85dvh] w-full flex-col overflow-hidden rounded-dialog bg-surface shadow-menu ${
           wide ? "max-w-content" : "max-w-form"
         }`}
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="text-title-md text-ink">{title}</h3>
-        {children}
+        <div className="flex items-center justify-between gap-md border-b border-hairline px-lg py-md">
+          <h3 className="min-w-0 truncate text-title-md text-ink">{title}</h3>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="-mr-xs inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-button text-muted transition-colors hover:bg-surface-tint hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+          >
+            <X size={18} />
+          </button>
+        </div>
+        <div className="flex flex-col gap-md overflow-y-auto p-lg">{children}</div>
       </div>
     </div>
   );

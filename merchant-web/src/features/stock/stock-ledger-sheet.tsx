@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowDown, ArrowUp, ArrowRight } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronRight } from "lucide-react";
 import { Modal } from "@/shared/ui/modal";
 import { qty as fmtQty } from "@/features/products/format";
 import { unitLabel } from "@/features/products/units";
@@ -12,7 +12,6 @@ import {
   isReversal,
   isStockIn,
   reasonCodeLabel,
-  sourceTypeLabel,
   type StockTxn,
 } from "./schema";
 
@@ -21,7 +20,7 @@ import {
  * Flutter `StockLedgerPage`, shown as a bottom-sheet/dialog. Each row shows when
  * the movement happened, its reason, the signed quantity, the running balance,
  * the source document, supplier and operator. Rows backed by an invoice/challan
- * link straight to that document.
+ * are clickable and link straight to that document.
  */
 export function StockLedgerSheet({
   productId,
@@ -60,18 +59,18 @@ export function StockLedgerSheet({
 
   return (
     <Modal title="Stock ledger" onClose={onClose} wide>
-      <p className="-mt-sm text-body-md text-muted">{productName}</p>
+      <p className="text-body-sm text-muted">{productName}</p>
 
       {error ? (
         <p className="rounded-md bg-error-soft px-md py-sm text-body-sm text-error">{error}</p>
       ) : entries === null ? (
-        <p className="py-lg text-center text-body-sm text-muted">Loading ledger…</p>
+        <LedgerSkeleton />
       ) : entries.length === 0 ? (
-        <p className="py-lg text-center text-body-md text-muted">
+        <p className="py-xl text-center text-body-md text-muted">
           No movements recorded for this product yet.
         </p>
       ) : (
-        <ul className="flex flex-col gap-sm">
+        <ul className="-mx-sm divide-y divide-hairline">
           {entries.map((e) => (
             <LedgerEntry key={e.id} entry={e} unit={productUnit} onNavigate={onClose} />
           ))}
@@ -91,87 +90,100 @@ function LedgerEntry({
   onNavigate: () => void;
 }) {
   const stockIn = isStockIn(entry);
-  const reversal = isReversal(entry);
-  const accent = stockIn ? "text-brand-strong" : "text-error";
+  const accent = stockIn ? "text-success" : "text-error";
+  const iconBg = stockIn ? "bg-success-soft" : "bg-error-soft";
   const sign = stockIn ? "+" : "−";
   const unitStr = unit ?? entry.productUnit ?? "";
   const unitText = unitStr ? ` ${unitLabel(unitStr)}` : "";
-  const sourceHref = sourceLink(entry);
+  const href = sourceLink(entry);
 
-  const hasMeta =
-    hasSourceDocument(entry) ||
-    entry.vendor?.name ||
-    entry.supplierName ||
-    entry.note ||
-    entry.stockAfter != null;
+  // "27 Jun 2026, 11:09 am · Acme traders · by Nikhil Kumawat"
+  const meta = [
+    formatDateTime(entry.createdAt),
+    entry.vendor?.name ?? entry.supplierName ?? null,
+    entry.createdBy?.name ? `by ${entry.createdBy.name}` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
-  return (
-    <li className="rounded-lg border border-hairline p-md">
-      <div className="flex items-start gap-md">
-        <span
-          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-md border ${
-            stockIn ? "border-brand-strong/40" : "border-error/40"
-          } ${accent}`}
-        >
-          {stockIn ? <ArrowDown size={16} /> : <ArrowUp size={16} />}
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-sm">
+  const inner = (
+    <div className="flex items-start gap-md">
+      <span
+        className={`mt-px flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${iconBg} ${accent}`}
+      >
+        {stockIn ? <ArrowDown size={15} /> : <ArrowUp size={15} />}
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline justify-between gap-md">
+          <span className="flex min-w-0 items-center gap-sm">
             <span className="truncate text-body-md font-semibold text-ink">
               {reasonCodeLabel(entry.reasonCode)}
             </span>
-            {reversal ? (
-              <span className="rounded-full bg-surface-tint px-sm py-px text-label-md text-muted">
+            {isReversal(entry) ? (
+              <span className="shrink-0 rounded-full bg-surface-tint px-sm py-px text-label-md text-muted">
                 Reversal
               </span>
             ) : null}
-          </div>
-          <p className="mt-px text-body-sm text-muted">{formatDateTime(entry.createdAt)}</p>
+          </span>
+          <span className={`shrink-0 text-body-md font-bold tabular-nums ${accent}`}>
+            {sign}
+            {fmtQty(entry.quantity)}
+            {unitText}
+          </span>
         </div>
-        <span className={`shrink-0 text-body-lg font-bold tabular-nums ${accent}`}>
-          {sign}
-          {fmtQty(entry.quantity)}
-          {unitText}
-        </span>
-      </div>
 
-      {hasMeta ? (
-        <div className="mt-md border-t border-hairline pt-md">
-          <div className="flex flex-wrap items-center justify-between gap-x-md gap-y-xs">
-            <div className="flex flex-wrap items-center gap-x-sm gap-y-xs">
-              <span className={`rounded-full px-sm py-px text-label-md ${sourceToneClass(entry)}`}>
-                {sourceTypeLabel(entry.sourceType)}
-              </span>
-              {entry.vendor?.name || entry.supplierName ? (
-                <span className="text-body-sm text-muted">
-                  {entry.vendor?.name ?? entry.supplierName}
-                </span>
-              ) : null}
-              {entry.createdBy?.name ? (
-                <span className="text-body-sm text-subtle">by {entry.createdBy.name}</span>
-              ) : null}
-            </div>
-            {entry.stockAfter != null ? (
-              <span className="text-body-sm font-medium tabular-nums text-muted">
-                Bal: {fmtQty(entry.stockAfter)}
-              </span>
-            ) : null}
-          </div>
-          {entry.note ? <p className="mt-xs text-body-sm text-muted">{entry.note}</p> : null}
-          {sourceHref ? (
-            <div className="mt-sm flex justify-end">
-              <Link
-                href={sourceHref}
-                onClick={onNavigate}
-                className="inline-flex items-center gap-xs text-label-md font-semibold text-ink transition-colors hover:text-brand-strong"
-              >
-                View source <ArrowRight size={14} />
-              </Link>
-            </div>
+        <div className="mt-xs flex items-baseline justify-between gap-md">
+          <span className="truncate text-body-sm text-muted">{meta}</span>
+          {entry.stockAfter != null ? (
+            <span className="shrink-0 text-body-sm tabular-nums text-muted">
+              Bal: {fmtQty(entry.stockAfter)}
+            </span>
           ) : null}
         </div>
-      ) : null}
-    </li>
+
+        {entry.note ? (
+          <div className="mt-xs flex items-center gap-xs">
+            <span className="truncate text-body-sm text-subtle group-hover:text-ink">
+              {entry.note}
+            </span>
+            {href ? (
+              <ChevronRight size={14} className="shrink-0 text-subtle group-hover:text-ink" />
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+
+  if (href) {
+    return (
+      <li>
+        <Link
+          href={href}
+          onClick={onNavigate}
+          className="group block rounded-md px-sm py-md transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+        >
+          {inner}
+        </Link>
+      </li>
+    );
+  }
+  return <li className="px-sm py-md">{inner}</li>;
+}
+
+function LedgerSkeleton() {
+  return (
+    <ul className="-mx-sm divide-y divide-hairline">
+      {[0, 1, 2, 3].map((i) => (
+        <li key={i} className="flex items-start gap-md px-sm py-md">
+          <span className="h-8 w-8 shrink-0 animate-pulse rounded-full bg-surface-tint" />
+          <div className="flex-1 space-y-xs">
+            <div className="h-3 w-1/3 animate-pulse rounded bg-surface-tint" />
+            <div className="h-3 w-2/3 animate-pulse rounded bg-surface-tint" />
+          </div>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -181,27 +193,6 @@ function sourceLink(entry: StockTxn): string | null {
   if (entry.sourceType === "INVOICE") return `/dashboard/invoices/${entry.sourceId}`;
   if (entry.sourceType === "CHALLAN") return `/dashboard/challans/${entry.sourceId}`;
   return null;
-}
-
-/** Soft badge colour for the source-type chip, keyed off the reason. */
-function sourceToneClass(entry: StockTxn): string {
-  if (isReversal(entry)) return "bg-surface-tint text-muted";
-  switch (entry.reasonCode) {
-    case "SALE":
-    case "PURCHASE":
-    case "OPENING":
-    case "RETURN_IN":
-      return isStockIn(entry) ? "bg-success-soft text-success" : "bg-surface-tint text-muted";
-    case "DAMAGE":
-    case "EXPIRED":
-    case "SHRINKAGE":
-      return "bg-error-soft text-error";
-    case "RECOUNT":
-    case "RETURN_OUT":
-      return "bg-accent-amber-soft text-accent-amber";
-    default:
-      return "bg-surface-tint text-muted";
-  }
 }
 
 const dateTimeFmt = new Intl.DateTimeFormat("en-IN", {
