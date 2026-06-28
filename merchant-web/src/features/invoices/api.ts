@@ -26,6 +26,7 @@ export type InvoiceListFilters = {
   search?: string;
   vendorId?: number;
   partyId?: number;
+  productId?: number;
 };
 
 export function listInvoices(filters: InvoiceListFilters): Promise<Invoice[]> {
@@ -36,6 +37,7 @@ export function listInvoices(filters: InvoiceListFilters): Promise<Invoice[]> {
   if (filters.search) qs.set("search", filters.search);
   if (filters.vendorId) qs.set("vendorId", String(filters.vendorId));
   if (filters.partyId) qs.set("partyId", String(filters.partyId));
+  if (filters.productId) qs.set("productId", String(filters.productId));
   return fetch(`/api/invoices?${qs.toString()}`, { cache: "no-store" }).then((r) =>
     jsonOrThrow(r, (raw) => invoiceListSchema.parse(raw).data, "Could not load invoices."),
   );

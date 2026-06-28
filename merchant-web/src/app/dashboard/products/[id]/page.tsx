@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useCallback, useEffect, useState } from "react";
+import { use, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -13,6 +13,9 @@ import {
   Check,
   ImagePlus,
   ScrollText,
+  ArrowUpRight,
+  ArrowDownLeft,
+  Eye,
 } from "lucide-react";
 import { Divider } from "@/shared/ui/divider";
 import {
@@ -21,7 +24,16 @@ import {
   setPublished,
 } from "@/features/products/api";
 import type { Product } from "@/features/products/schema";
+import { listInvoices, updateInvoiceStatus } from "@/features/invoices/api";
+import {
+  counterpartyName,
+  invoiceItemCount,
+  isSale,
+  type Invoice,
+} from "@/features/invoices/schema";
 import { money, qty } from "@/features/products/format";
+import { formatDateTime } from "@/shared/datetime";
+import { formatINR2 } from "@/shared/money";
 import { gstFromInclusive } from "@/features/products/gst";
 import { unitLabel } from "@/features/products/units";
 import { ProductThumb, mediaSrc } from "@/features/products/components/product-thumb";
@@ -49,6 +61,7 @@ export default function ProductDetailPage({
   const router = useRouter();
   const { user } = useAuth();
   const canStock = canManage(user, "stock");
+  const canConfirmDraft = canManage(user, "invoices");
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -58,8 +71,40 @@ export default function ProductDetailPage({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [stockSheet, setStockSheet] = useState<StockType | null>(null);
   const [ledgerOpen, setLedgerOpen] = useState(false);
+  // The just-created draft (this session) — used to highlight + scroll its row.
   const [draftId, setDraftId] = useState<number | null>(null);
+  // All unconfirmed drafts touching this product. Server-backed, so they
+  // persist across reloads instead of vanishing with the in-session banner.
+  const [drafts, setDrafts] = useState<Invoice[]>([]);
   const [copied, setCopied] = useState(false);
+  const draftRef = useRef<HTMLDivElement>(null);
+
+  // Pending DRAFT invoices that include this product. Re-fetched on `nonce` so a
+  // fresh stock-in draft shows up immediately and a confirmed one drops off.
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      try {
+        const list = await listInvoices({ status: "DRAFT", productId });
+        if (active) setDrafts(list);
+      } catch {
+        // Non-fatal — the rest of the page works without the drafts panel.
+        if (active) setDrafts([]);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [productId, nonce]);
+
+  // When a draft invoice is created, pull the panel into view (once its row has
+  // loaded) so the merchant can't miss the "confirm to post stock" step — they
+  // may be scrolled down the detail page after stocking in.
+  useEffect(() => {
+    if (draftId != null && draftRef.current) {
+      draftRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [draftId, drafts]);
 
   useEffect(() => {
     let active = true;
@@ -221,14 +266,40 @@ export default function ProductDetailPage({
 
       {error ? <p className="mt-md text-body-sm text-error">{error}</p> : null}
 
-      {draftId ? (
-        <p className="mt-md rounded-md bg-brand-soft px-md py-sm text-body-sm text-brand-strong">
-          Draft invoice created.{" "}
-          <Link href={`/dashboard/invoices/${draftId}`} className="font-semibold underline">
-            Open it
-          </Link>{" "}
-          and confirm to post the stock.
-        </p>
+      {drafts.length > 0 ? (
+        <section
+          ref={draftRef}
+          aria-label="Pending draft invoices"
+          className="mt-md overflow-hidden rounded-lg border border-hairline bg-surface shadow-floating"
+        >
+          <div className="flex items-start gap-md border-b border-hairline bg-brand-soft px-lg py-md">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-surface text-brand-strong">
+              <ScrollText size={20} />
+            </span>
+            <div className="min-w-0">
+              <p className="text-title-sm text-brand-strong">
+                {drafts.length === 1
+                  ? "1 pending draft"
+                  : `${drafts.length} pending drafts`}
+              </p>
+              <p className="mt-xs text-body-sm text-ink">
+                Open a draft and confirm it to post the stock to your inventory.
+              </p>
+            </div>
+          </div>
+          <ul>
+            {drafts.map((d) => (
+              <li key={d.id}>
+                <DraftRow
+                  draft={d}
+                  highlight={d.id === draftId}
+                  canConfirm={canConfirmDraft}
+                  onConfirmed={reload}
+                />
+              </li>
+            ))}
+          </ul>
+        </section>
       ) : null}
 
       {stockSheet && canStock ? (
@@ -441,6 +512,99 @@ function BackLink() {
     >
       <ArrowLeft size={16} /> Products
     </Link>
+  );
+}
+
+/** One pending-draft row inside the product detail's drafts panel. Mirrors the
+ *  invoices-list row, with two actions: View (open the invoice) and Confirm
+ *  (post the stock for this draft right here). */
+function DraftRow({
+  draft,
+  highlight,
+  canConfirm,
+  onConfirmed,
+}: {
+  draft: Invoice;
+  highlight: boolean;
+  canConfirm: boolean;
+  onConfirmed: () => void;
+}) {
+  const sale = isSale(draft);
+  const items = invoiceItemCount(draft);
+  const label = draft.invoiceNo?.trim() ? draft.invoiceNo : `Draft #${draft.id}`;
+  const [confirming, setConfirming] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function onConfirm() {
+    setConfirming(true);
+    setError(null);
+    try {
+      await updateInvoiceStatus(draft.id, "CONFIRMED");
+      // Posting succeeded — refresh the product + drafts; this row drops off.
+      onConfirmed();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not confirm the draft.");
+      setConfirming(false);
+    }
+  }
+
+  return (
+    <div
+      className={`border-b border-hairline px-lg py-md last:border-b-0 ${
+        highlight ? "bg-brand-soft" : ""
+      }`}
+    >
+      <div className="flex flex-col gap-sm sm:flex-row sm:items-center sm:gap-md">
+        <div className="flex min-w-0 flex-1 items-center gap-md">
+          <span
+            className={`flex size-10 shrink-0 items-center justify-center rounded-full ${
+              sale ? "bg-success-soft text-success" : "bg-accent-indigo-soft text-accent-indigo"
+            }`}
+          >
+            {sale ? <ArrowUpRight size={18} /> : <ArrowDownLeft size={18} />}
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-sm">
+              <span className="truncate text-body-md text-ink">{label}</span>
+              <span className="inline-flex items-center rounded-full bg-accent-amber-soft px-sm py-px text-body-sm font-semibold text-accent-amber">
+                Draft
+              </span>
+              {highlight ? (
+                <span className="inline-flex items-center rounded-full bg-brand-soft px-sm py-px text-body-sm font-semibold text-brand-strong">
+                  Just created
+                </span>
+              ) : null}
+            </div>
+            <p className="truncate text-body-sm text-muted">{counterpartyName(draft)}</p>
+            <p className="text-body-sm text-subtle">
+              {formatDateTime(draft.invoiceDate)} · {items} {items === 1 ? "item" : "items"}
+            </p>
+          </div>
+        </div>
+        <div className="flex shrink-0 flex-wrap items-center gap-sm sm:justify-end">
+          <span className="mr-xs text-body-md font-semibold text-ink">
+            {formatINR2(draft.total)}
+          </span>
+          <Link
+            href={`/dashboard/invoices/${draft.id}`}
+            className="inline-flex h-9 items-center gap-xs rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+          >
+            <Eye size={16} /> View
+          </Link>
+          {canConfirm ? (
+            <button
+              type="button"
+              onClick={onConfirm}
+              disabled={confirming}
+              className="inline-flex h-9 items-center gap-xs rounded-button bg-brand-strong px-md text-label-md text-white transition-colors hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:bg-disabled"
+            >
+              <Check size={16} /> {confirming ? "Confirming…" : "Confirm"}
+            </button>
+          ) : null}
+        </div>
+      </div>
+      {error ? <p className="mt-sm text-body-sm text-error">{error}</p> : null}
+    </div>
   );
 }
 
