@@ -1,12 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import { BadgeCheck, CalendarDays, Pencil, X } from "lucide-react";
+import {
+  BadgeCheck,
+  CalendarDays,
+  CreditCard,
+  Pencil,
+  ReceiptText,
+  ShieldCheck,
+  Store,
+  User,
+  Users,
+  Wallet,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 import { useAuth } from "@/features/auth/auth-context";
 import { Avatar } from "@/features/auth/components/avatar";
 import { ProfileForm } from "@/features/auth/components/profile-form";
 import { profileCompletion } from "@/features/auth/profile-completion";
-import { Divider } from "@/shared/ui/divider";
+import { SettingRow } from "@/features/settings/components";
 import type { AuthUser } from "@/features/auth/types";
 import { CardsSkeleton } from "@/shared/ui/skeleton";
 
@@ -48,83 +61,99 @@ export default function ProfilePage() {
         Your identity and shop details — these appear on your invoices.
       </p>
 
-      {/* Hero — branded identity snapshot */}
-      <div className="mt-xl flex flex-wrap items-center gap-lg rounded-lg bg-hero-panel p-lg">
-        <div className="rounded-full bg-surface p-xs shadow-floating">
-          <Avatar url={user.avatarUrl} name={user.name} size={76} />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-title-lg text-ink">{user.name}</p>
-          {user.shopName?.trim() ? (
-            <p className="truncate text-title-sm text-brand-strong">{user.shopName}</p>
-          ) : null}
-          <p className="mt-xs truncate text-body-sm text-muted">{user.email}</p>
-          <div className="mt-sm flex flex-wrap items-center gap-sm">
-            <span
-              className={`inline-flex items-center gap-xs rounded-full px-sm py-px text-body-sm font-semibold ${
-                isOwner
-                  ? "bg-brand-soft text-brand-strong"
-                  : "bg-accent-indigo-soft text-accent-indigo"
-              }`}
-            >
-              <BadgeCheck size={13} /> {roleLabel}
-            </span>
-            {since ? (
-              <span className="inline-flex items-center gap-xs rounded-full bg-surface px-sm py-px text-body-sm text-muted">
-                <CalendarDays size={13} /> Since {since}
-              </span>
+      <div className="mt-xl flex flex-col gap-xl lg:flex-row lg:items-start lg:gap-xxl">
+        {/* ── Identity sidebar — sticks while the details scroll ───────── */}
+        <aside className="shrink-0 space-y-lg lg:sticky lg:top-xxl lg:w-80 xl:w-96">
+          {/* Branded identity snapshot */}
+          <div className="flex flex-col items-center rounded-lg bg-hero-panel p-xl text-center">
+            <div className="rounded-full bg-surface p-xs shadow-floating">
+              <Avatar url={user.avatarUrl} name={user.name} size={88} />
+            </div>
+            <p className="mt-md w-full truncate text-title-lg text-ink">{user.name}</p>
+            {user.shopName?.trim() ? (
+              <p className="w-full truncate text-title-sm text-brand-strong">{user.shopName}</p>
             ) : null}
+            <p className="mt-xs w-full truncate text-body-sm text-muted">{user.email}</p>
+            <div className="mt-md flex flex-wrap items-center justify-center gap-sm">
+              <span
+                className={`inline-flex items-center gap-xs rounded-full px-sm py-px text-body-sm font-semibold ${
+                  isOwner
+                    ? "bg-brand-soft text-brand-strong"
+                    : "bg-accent-indigo-soft text-accent-indigo"
+                }`}
+              >
+                <BadgeCheck size={13} /> {roleLabel}
+              </span>
+              {since ? (
+                <span className="inline-flex items-center gap-xs rounded-full bg-surface px-sm py-px text-body-sm text-muted">
+                  <CalendarDays size={13} /> Since {since}
+                </span>
+              ) : null}
+            </div>
           </div>
-        </div>
-      </div>
 
-      {/* Completion meter */}
-      {completion.percent < 100 ? (
-        <CompletionBar
-          percent={completion.percent}
-          filled={completion.filled}
-          total={completion.total}
-          missing={completion.missing}
-          onComplete={() => setEditing(true)}
-          editing={editing}
-        />
-      ) : null}
+          {/* Completion meter */}
+          {completion.percent < 100 ? (
+            <CompletionBar
+              percent={completion.percent}
+              filled={completion.filled}
+              total={completion.total}
+              missing={completion.missing}
+              onComplete={() => setEditing(true)}
+              editing={editing}
+            />
+          ) : null}
 
-      <Divider className="my-xxl" />
+          {/* Jump to related shop settings */}
+          <div className="rounded-lg border border-hairline p-sm">
+            <p className="px-sm pb-xs pt-sm text-label-md uppercase tracking-wide text-subtle">
+              Manage
+            </p>
+            <SettingRow icon={Store} title="Shop" subtitle="Storefront & policies" href="/dashboard/shop" />
+            <SettingRow icon={Users} title="Team" subtitle="Staff & permissions" href="/dashboard/team" />
+            <SettingRow icon={Wallet} title="Payouts" subtitle="Bank & KYC" href="/dashboard/payouts" />
+            <SettingRow icon={ShieldCheck} title="Security" subtitle="Password & sign-in" href="/dashboard/settings" />
+          </div>
+        </aside>
 
-      {/* Details — read-only with an Edit toggle */}
-      <div className="flex items-center justify-between gap-md">
-        <div>
-          <h2 className="text-title-md text-ink">Profile details</h2>
-          <p className="mt-xs text-body-sm text-muted">
-            Name, photo and shop details used across the app and on invoices.
-          </p>
-        </div>
-        {!editing ? (
-          <button
-            type="button"
-            onClick={() => setEditing(true)}
-            className="inline-flex h-10 shrink-0 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
-          >
-            <Pencil size={16} /> Edit profile
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setEditing(false)}
-            className="inline-flex h-10 shrink-0 items-center gap-sm rounded-button px-md text-label-md text-muted transition-colors hover:text-ink"
-          >
-            <X size={16} /> Cancel
-          </button>
-        )}
-      </div>
+        {/* ── Details pane — fills the remaining width ──────────────────── */}
+        <section className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-md border-b border-hairline pb-md">
+            <div>
+              <h2 className="text-title-md text-ink">Profile details</h2>
+              <p className="mt-xs text-body-sm text-muted">
+                Name, photo and shop details used across the app and on invoices.
+              </p>
+            </div>
+            {!editing ? (
+              <button
+                type="button"
+                onClick={() => setEditing(true)}
+                className="inline-flex h-10 shrink-0 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+              >
+                <Pencil size={16} /> Edit profile
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setEditing(false)}
+                className="inline-flex h-10 shrink-0 items-center gap-sm rounded-button px-md text-label-md text-muted transition-colors hover:text-ink"
+              >
+                <X size={16} /> Cancel
+              </button>
+            )}
+          </div>
 
-      <div className="mt-lg max-w-content">
-        {editing ? (
-          <ProfileForm onSaved={() => setEditing(false)} />
-        ) : (
-          <ReadOnlyDetails user={user} />
-        )}
+          <div className="mt-lg">
+            {editing ? (
+              <div className="max-w-content">
+                <ProfileForm onSaved={() => setEditing(false)} />
+              </div>
+            ) : (
+              <ReadOnlyDetails user={user} />
+            )}
+          </div>
+        </section>
       </div>
     </div>
   );
@@ -146,7 +175,7 @@ function CompletionBar({
   onComplete: () => void;
 }) {
   return (
-    <div className="mt-lg max-w-content rounded-lg border border-hairline p-lg">
+    <div className="rounded-lg border border-hairline p-lg">
       <div className="flex items-end justify-between gap-md">
         <div>
           <p className="text-title-sm text-ink">Profile {percent}% complete</p>
@@ -195,33 +224,73 @@ function CompletionBar({
   );
 }
 
+type DetailRow = { label: string; value: string | null | undefined };
+
 function ReadOnlyDetails({ user }: { user: AuthUser }) {
   const address = [user.shopAddress, user.shopCity, user.shopState, user.shopPinCode]
     .map((p) => p?.trim())
     .filter(Boolean)
     .join(", ");
-  const rows: Array<[string, string | null | undefined]> = [
-    ["Name", user.name],
-    ["Phone", user.phoneNumber],
-    ["Shop name", user.shopName],
-    ["Address", address || null],
-    ["State code", user.shopStateCode],
-    ["GSTIN", user.shopGstin],
-    ["GST registration", user.registrationType ? title(user.registrationType) : null],
-    ["PAN", user.shopPan],
-    ["UPI ID", user.upiVpa],
+
+  const sections: { title: string; icon: LucideIcon; rows: DetailRow[] }[] = [
+    {
+      title: "Personal",
+      icon: User,
+      rows: [
+        { label: "Name", value: user.name },
+        { label: "Phone", value: user.phoneNumber },
+        { label: "Email", value: user.email },
+      ],
+    },
+    {
+      title: "Shop",
+      icon: Store,
+      rows: [
+        { label: "Shop name", value: user.shopName },
+        { label: "Address", value: address || null },
+        { label: "State code", value: user.shopStateCode },
+      ],
+    },
+    {
+      title: "Tax & registration",
+      icon: ReceiptText,
+      rows: [
+        {
+          label: "GST registration",
+          value: user.registrationType ? title(user.registrationType) : null,
+        },
+        { label: "GSTIN", value: user.shopGstin },
+        { label: "PAN", value: user.shopPan },
+      ],
+    },
+    {
+      title: "Payment",
+      icon: CreditCard,
+      rows: [{ label: "UPI ID", value: user.upiVpa }],
+    },
   ];
+
   return (
-    <dl className="grid gap-x-xxl gap-y-md sm:grid-cols-2">
-      {rows.map(([label, value]) => (
-        <div key={label} className="flex flex-col gap-px border-b border-hairline pb-sm">
-          <dt className="text-label-md text-subtle">{label}</dt>
-          <dd className={value ? "text-body-md text-ink" : "text-body-md text-subtle"}>
-            {value || "Not set"}
-          </dd>
-        </div>
+    <div className="space-y-xxl">
+      {sections.map((section) => (
+        <section key={section.title}>
+          <div className="flex items-center gap-sm">
+            <section.icon size={16} className="shrink-0 text-subtle" />
+            <h3 className="text-label-md uppercase tracking-wide text-subtle">{section.title}</h3>
+          </div>
+          <dl className="mt-md grid gap-x-xxl gap-y-md sm:grid-cols-2 xl:grid-cols-3">
+            {section.rows.map((row) => (
+              <div key={row.label} className="flex flex-col gap-px border-b border-hairline pb-sm">
+                <dt className="text-label-md text-subtle">{row.label}</dt>
+                <dd className={row.value ? "text-body-md text-ink" : "text-body-md text-subtle"}>
+                  {row.value || "Not set"}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </section>
       ))}
-    </dl>
+    </div>
   );
 }
 

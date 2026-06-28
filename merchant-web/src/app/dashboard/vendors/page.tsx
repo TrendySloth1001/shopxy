@@ -14,7 +14,7 @@ import {
   Truck,
 } from "lucide-react";
 import { PageHeader } from "@/shared/ui/page-header";
-import { Monogram } from "@/shared/ui/monogram";
+import { Avatar } from "@/features/auth/components/avatar";
 import { Modal, ModalActions } from "@/shared/ui/modal";
 import { deleteVendor, listVendors } from "@/features/vendors/api";
 import { vendorInvoiceCount, vendorTxnCount, type Vendor } from "@/features/vendors/schema";
@@ -178,7 +178,7 @@ function VendorRow({
   return (
     <div className="flex items-center gap-md border-b border-hairline py-md">
       <Link href={`/dashboard/vendors/${vendor.id}`} className="flex min-w-0 flex-1 items-center gap-md">
-        <Monogram name={vendor.name} />
+        <Avatar url={vendor.linkedUser?.avatarUrl} name={vendor.name} size={44} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-sm">
             <span className="truncate text-body-md text-ink">{vendor.name}</span>

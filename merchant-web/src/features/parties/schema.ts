@@ -42,10 +42,12 @@ export const partyListSchema = z.object({
     .transform((v) => v ?? []),
 });
 
+// The backend only selects `{ id, name }` for the linked user, so `email` is
+// absent on the wire — keep it optional rather than failing the whole parse.
 const linkedUserSchema = z.object({
   id: z.number(),
   name: z.string(),
-  email: z.string(),
+  email: z.string().nullish(),
 });
 
 const partyTotalSchema = z.object({

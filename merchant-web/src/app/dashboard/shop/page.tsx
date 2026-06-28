@@ -269,20 +269,26 @@ export default function ShopPage() {
         </p>
       ) : null}
 
-      <div className="mt-xl max-w-content">
+      <div className="mt-xl">
         {tab === "storefront" ? (
-          <div className="flex flex-col gap-xl">
-            <Card title="Branding" desc="Logo, banner and the basics customers see first.">
-              <ImageField label="Banner" aspect="aspect-[3/1]" url={form.bannerUrl} onChange={(url) => saveImage("bannerUrl", url)} />
-              <div className="mt-lg">
-                <ImageField label="Logo" aspect="size-24" rounded url={form.logoUrl} onChange={(url) => saveImage("logoUrl", url)} />
-              </div>
-              <div className="mt-lg flex flex-col gap-lg">
-                <TextInput label="Shop name" value={form.name} onChange={(v) => patch({ name: v })} />
-                <TextInput label="Tagline" value={form.tagline} onChange={(v) => patch({ tagline: v })} placeholder="A short line shown under your name" />
-                <div className="grid grid-cols-2 gap-lg">
-                  <TextInput label="City" value={form.locationCity} onChange={(v) => patch({ locationCity: v })} />
-                  <TextInput label="State" value={form.locationState} onChange={(v) => patch({ locationState: v })} />
+          <div className="grid items-start gap-xl lg:grid-cols-3">
+            <Card
+              title="Branding"
+              desc="Logo, banner and the basics customers see first."
+              className="lg:col-span-2"
+            >
+              <div className="grid items-start gap-lg md:grid-cols-2">
+                <div className="flex flex-col gap-lg">
+                  <ImageField label="Banner" aspect="aspect-[3/1]" url={form.bannerUrl} onChange={(url) => saveImage("bannerUrl", url)} />
+                  <ImageField label="Logo" aspect="size-24" rounded url={form.logoUrl} onChange={(url) => saveImage("logoUrl", url)} />
+                </div>
+                <div className="flex flex-col gap-lg">
+                  <TextInput label="Shop name" value={form.name} onChange={(v) => patch({ name: v })} />
+                  <TextInput label="Tagline" value={form.tagline} onChange={(v) => patch({ tagline: v })} placeholder="A short line shown under your name" />
+                  <div className="grid grid-cols-2 gap-lg">
+                    <TextInput label="City" value={form.locationCity} onChange={(v) => patch({ locationCity: v })} />
+                    <TextInput label="State" value={form.locationState} onChange={(v) => patch({ locationState: v })} />
+                  </div>
                 </div>
               </div>
             </Card>
@@ -310,7 +316,7 @@ export default function ShopPage() {
 
         {tab === "hours" ? (
           <Card title="Operating hours" desc="Days you're open and your trading times.">
-            <div className="flex flex-col">
+            <div className="grid gap-x-xxl sm:grid-cols-2 xl:grid-cols-3">
               {DAYS.map((d) => (
                 <HoursRow key={d} label={DAY_LABELS[d]} value={form.hours[d]} onChange={(h) => patch({ hours: { ...form.hours, [d]: h } })} />
               ))}
@@ -320,7 +326,7 @@ export default function ShopPage() {
 
         {tab === "policies" ? (
           <Card title="Policies" desc="Shown on your storefront and order pages.">
-            <div className="flex flex-col gap-lg">
+            <div className="grid gap-lg md:grid-cols-2 xl:grid-cols-3">
               <TextArea label="Return policy" value={form.returnPolicy} onChange={(v) => patch({ returnPolicy: v })} />
               <TextArea label="Shipping policy" value={form.shippingPolicy} onChange={(v) => patch({ shippingPolicy: v })} />
               <TextArea label="Refund policy" value={form.refundPolicy} onChange={(v) => patch({ refundPolicy: v })} />
@@ -392,8 +398,10 @@ export default function ShopPage() {
 
         {tab === "more" ? (
           <Card title="More" desc="Team access and payouts.">
-            <LinkRow icon={Users} title="Team" subtitle="Invite staff and set permissions" href="/dashboard/team" />
-            <LinkRow icon={Wallet} title="Payouts" subtitle="Bank settlement & KYC" href="/dashboard/payouts" />
+            <div className="grid gap-md sm:grid-cols-2">
+              <LinkRow icon={Users} title="Team" subtitle="Invite staff and set permissions" href="/dashboard/team" />
+              <LinkRow icon={Wallet} title="Payouts" subtitle="Bank settlement & KYC" href="/dashboard/payouts" />
+            </div>
           </Card>
         ) : null}
       </div>
@@ -425,9 +433,19 @@ const TABS: { key: TabKey; label: string }[] = [
 ];
 
 /** Card shell for a settings section. */
-function Card({ title, desc, children }: { title: string; desc: string; children: React.ReactNode }) {
+function Card({
+  title,
+  desc,
+  children,
+  className,
+}: {
+  title: string;
+  desc: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <section className="rounded-xl border border-hairline bg-canvas p-lg">
+    <section className={`rounded-xl border border-hairline bg-canvas p-lg ${className ?? ""}`}>
       <h2 className="text-title-md text-ink">{title}</h2>
       <p className="mt-xs text-body-sm text-muted">{desc}</p>
       <div className="mt-lg">{children}</div>
@@ -708,7 +726,7 @@ function LinkRow({
   return (
     <Link
       href={href}
-      className="flex items-center gap-md rounded-md border-t border-hairline py-md transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+      className="flex items-center gap-md rounded-lg border border-hairline p-md transition-colors hover:border-brand-soft hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
     >
       <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-hero-panel text-ink">
         <Icon size={18} />

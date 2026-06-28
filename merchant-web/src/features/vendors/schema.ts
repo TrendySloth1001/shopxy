@@ -6,6 +6,17 @@ import { z } from "zod";
  * transaction/invoice counts for the list rows.
  */
 
+// The backend selects `{ id, name, avatarUrl }` for the linked user — `email`
+// is withheld for privacy (DPDP). `avatarUrl` is the linked user's profile
+// photo, shown as the vendor's avatar. All fields kept optional so a partial
+// projection never fails the whole parse.
+const linkedUserSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  email: z.string().nullish(),
+  avatarUrl: z.string().nullish(),
+});
+
 export const vendorSchema = z
   .object({
     id: z.number(),
@@ -22,6 +33,7 @@ export const vendorSchema = z
     gstin: z.string().nullish(),
     isActive: z.boolean().default(true),
     linkedUserId: z.number().nullish(),
+    linkedUser: linkedUserSchema.nullish(),
     createdAt: z.string().optional(),
     updatedAt: z.string().optional(),
     _count: z
@@ -42,12 +54,6 @@ export const vendorListSchema = z.object({
   total: z.coerce.number().default(0),
   page: z.coerce.number().optional(),
   limit: z.coerce.number().optional(),
-});
-
-const linkedUserSchema = z.object({
-  id: z.number(),
-  name: z.string(),
-  email: z.string(),
 });
 
 const vendorTotalSchema = z.object({
