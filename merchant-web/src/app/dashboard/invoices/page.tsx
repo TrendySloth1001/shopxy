@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -10,12 +11,15 @@ import {
   ReceiptText,
   RefreshCw,
   Search,
+  X,
 } from "lucide-react";
 import { PageHeader } from "@/shared/ui/page-header";
 import { SelectField } from "@/shared/ui/form";
 import { formatDateTime } from "@/shared/datetime";
 import { formatINR2 } from "@/shared/money";
 import { invoicePdfUrl, listInvoices } from "@/features/invoices/api";
+import { getVendor } from "@/features/vendors/api";
+import { getParty } from "@/features/parties/api";
 import {
   DOCUMENT_TYPE_LABELS,
   counterpartyName,
@@ -49,6 +53,20 @@ const DOC_OPTIONS = [
 ];
 
 export default function InvoicesPage() {
+  // useSearchParams needs a Suspense boundary during prerender.
+  return (
+    <Suspense fallback={null}>
+      <InvoicesPageInner />
+    </Suspense>
+  );
+}
+
+function InvoicesPageInner() {
+  const searchParams = useSearchParams();
+  // Deep-link filters (e.g. "View all bills" from a vendor) — read once on mount.
+  const vendorId = toId(searchParams.get("vendorId"));
+  const partyId = toId(searchParams.get("partyId"));
+
   const [rows, setRows] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -56,9 +74,11 @@ export default function InvoicesPage() {
 
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
-  const [type, setType] = useState("");
+  const [type, setType] = useState(() => normalizeType(searchParams.get("type")));
   const [status, setStatus] = useState("");
   const [documentType, setDocumentType] = useState("");
+  // Resolved name of the entity we're scoped to, for the filter banner.
+  const [scopeName, setScopeName] = useState<string | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput.trim()), 300);
@@ -66,11 +86,29 @@ export default function InvoicesPage() {
   }, [searchInput]);
 
   useEffect(() => {
+    // The banner is gated on the ids, not the name, so a stale name when the
+    // scope clears is harmless — only fetch when actually scoped.
+    if (!vendorId && !partyId) return;
+    let active = true;
+    void (async () => {
+      try {
+        const entity = vendorId ? await getVendor(vendorId) : await getParty(partyId!);
+        if (active) setScopeName(entity.name);
+      } catch {
+        if (active) setScopeName(null);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [vendorId, partyId]);
+
+  useEffect(() => {
     let active = true;
     void (async () => {
       setLoading(true);
       try {
-        const data = await listInvoices({ type, status, documentType, search });
+        const data = await listInvoices({ type, status, documentType, search, vendorId, partyId });
         if (!active) return;
         setRows(data);
         setError(null);
@@ -83,7 +121,9 @@ export default function InvoicesPage() {
     return () => {
       active = false;
     };
-  }, [nonce, type, status, documentType, search]);
+  }, [nonce, type, status, documentType, search, vendorId, partyId]);
+
+  const scoped = vendorId != null || partyId != null;
 
   return (
     <div className="w-full px-lg py-xxl md:px-xxl">
@@ -126,6 +166,22 @@ export default function InvoicesPage() {
           </Link>
         </MaybeLocked>
       </PageHeader>
+
+      {/* Scope banner — shown when deep-linked from a vendor / party. */}
+      {scoped ? (
+        <div className="mt-lg flex flex-wrap items-center gap-sm rounded-md bg-brand-soft px-md py-sm text-body-sm text-brand-strong">
+          <span>
+            Showing {vendorId ? "bills" : "invoices"} for{" "}
+            <span className="font-semibold">{scopeName ?? "this contact"}</span>
+          </span>
+          <Link
+            href="/dashboard/invoices"
+            className="inline-flex items-center gap-xs rounded-button px-sm py-px text-label-md text-brand-strong underline-offset-2 transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+          >
+            <X size={14} /> Clear filter
+          </Link>
+        </div>
+      ) : null}
 
       {/* Search */}
       <div className="mt-xl flex items-center gap-sm rounded-input border border-hairline bg-field px-md focus-within:border-brand focus-within:ring-2 focus-within:ring-brand-soft">
@@ -195,6 +251,17 @@ export default function InvoicesPage() {
       </div>
     </div>
   );
+}
+
+/** Parse a positive integer id from a query param, else undefined. */
+function toId(raw: string | null): number | undefined {
+  const n = Number(raw);
+  return Number.isInteger(n) && n > 0 ? n : undefined;
+}
+
+/** Only SALE / PURCHASE are valid type filters; anything else means "All". */
+function normalizeType(raw: string | null): string {
+  return raw === "SALE" || raw === "PURCHASE" ? raw : "";
 }
 
 function InvoiceRow({ invoice }: { invoice: Invoice }) {

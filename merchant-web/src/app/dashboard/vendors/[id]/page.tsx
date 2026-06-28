@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
+  ArrowRight,
   BadgeCheck,
   BookText,
   CheckCircle2,
@@ -22,7 +23,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { BackLink } from "@/shared/ui/page-header";
-import { Monogram } from "@/shared/ui/monogram";
+import { Avatar } from "@/features/auth/components/avatar";
 import { Divider } from "@/shared/ui/divider";
 import { LedgerList } from "@/shared/ui/ledger-list";
 import { ContactChangesSection } from "@/shared/ui/contact-changes-section";
@@ -109,7 +110,7 @@ export default function VendorDetailPage() {
       {/* Header */}
       <div className="mt-md flex flex-wrap items-start justify-between gap-md">
         <div className="flex min-w-0 items-start gap-md">
-          <Monogram name={v.name} size={52} />
+          <Avatar url={v.linkedUser?.avatarUrl} name={v.name} size={52} />
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-sm">
               <h1 className="text-headline-md text-ink">{v.name}</h1>
@@ -205,33 +206,40 @@ export default function VendorDetailPage() {
 
       {/* Ledger */}
       {ledger && ledger.entries.length > 0 ? (
-        <>
-          <Divider className="my-xl" />
-          <SectionHeading icon={<BookText size={18} />} title="Ledger" />
-          <LedgerList entries={ledger.entries} />
-        </>
+        <CollapsibleSection
+          icon={<BookText size={18} />}
+          title="Ledger"
+          count={ledger.entries.length}
+          noun="entries"
+          render={(n) => <LedgerList entries={ledger.entries.slice(0, n)} />}
+        />
       ) : null}
 
       {/* Recent bills */}
       {overview.recentInvoices.length > 0 ? (
-        <>
-          <Divider className="my-xl" />
-          <SectionHeading icon={<ReceiptText size={18} />} title="Recent bills" />
-          {overview.recentInvoices.map((inv) => (
-            <InvoiceRow key={inv.id} invoice={inv} />
-          ))}
-        </>
+        <CollapsibleSection
+          icon={<ReceiptText size={18} />}
+          title="Recent bills"
+          count={overview.recentInvoices.length}
+          noun="bills"
+          viewAllHref={`/dashboard/invoices?vendorId=${id}&type=PURCHASE`}
+          render={(n) =>
+            overview.recentInvoices.slice(0, n).map((inv) => <InvoiceRow key={inv.id} invoice={inv} />)
+          }
+        />
       ) : null}
 
       {/* Recent stock-ins */}
       {overview.recentStockIns.length > 0 ? (
-        <>
-          <Divider className="my-xl" />
-          <SectionHeading icon={<ScrollText size={18} />} title="Recent stock-in" />
-          {overview.recentStockIns.map((s) => (
-            <StockInRow key={s.id} stockIn={s} />
-          ))}
-        </>
+        <CollapsibleSection
+          icon={<ScrollText size={18} />}
+          title="Recent stock-in"
+          count={overview.recentStockIns.length}
+          noun="stock-ins"
+          render={(n) =>
+            overview.recentStockIns.slice(0, n).map((s) => <StockInRow key={s.id} stockIn={s} />)
+          }
+        />
       ) : null}
 
       {overview.recentInvoices.length === 0 &&
@@ -267,6 +275,62 @@ function ContactRow({ icon, text }: { icon: React.ReactNode; text: string }) {
       <span className="text-subtle">{icon}</span>
       {text}
     </p>
+  );
+}
+
+/** How many rows each activity section shows before "Show all". */
+const SECTION_PREVIEW = 5;
+
+/**
+ * Activity section that previews the first {@link SECTION_PREVIEW} rows and
+ * expands in place — keeps the page short when a vendor has a long history.
+ * `render(n)` is asked for the first `n` rows so each section controls its own
+ * markup (the ledger is a single component; bills/stock-ins are row lists).
+ */
+function CollapsibleSection({
+  icon,
+  title,
+  count,
+  noun,
+  preview = SECTION_PREVIEW,
+  viewAllHref,
+  render,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  count: number;
+  noun: string;
+  preview?: number;
+  /** When set, shows a link to the complete, filtered list elsewhere. */
+  viewAllHref?: string;
+  render: (visible: number) => React.ReactNode;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <>
+      <Divider className="my-xl" />
+      <SectionHeading icon={icon} title={count > preview ? `${title} · ${count}` : title} />
+      {render(expanded ? count : preview)}
+      <div className="mt-md flex flex-wrap items-center gap-x-lg gap-y-sm">
+        {count > preview ? (
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="text-label-md font-semibold text-brand-strong transition-colors hover:text-brand focus-visible:outline-none focus-visible:underline"
+          >
+            {expanded ? "Show less" : `Show all ${count} ${noun}`}
+          </button>
+        ) : null}
+        {viewAllHref ? (
+          <Link
+            href={viewAllHref}
+            className="inline-flex items-center gap-xs text-label-md font-semibold text-brand-strong transition-colors hover:text-brand focus-visible:outline-none focus-visible:underline"
+          >
+            View all in Invoices <ArrowRight size={14} />
+          </Link>
+        ) : null}
+      </div>
+    </>
   );
 }
 
