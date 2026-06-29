@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { LineChart, Search, Package, Clock, ChevronRight, X } from "lucide-react";
 import { PageHeader } from "@/shared/ui/page-header";
 import { LineChart as TrendLineChart } from "@/shared/ui/charts";
@@ -32,13 +33,15 @@ import type {
   SoldItem,
   SoldProduct,
 } from "@/features/reports/schema";
+import { CalculatorSuite } from "@/features/reports/calculators";
 
-type Kind = "sales" | "purchases" | "gst" | "pnl";
+type Kind = "sales" | "purchases" | "gst" | "pnl" | "calculator";
 const TABS: { key: Kind; label: string }[] = [
   { key: "sales", label: "Sales" },
   { key: "purchases", label: "Purchases" },
   { key: "gst", label: "GST" },
   { key: "pnl", label: "P&L" },
+  { key: "calculator", label: "Calculator" },
 ];
 
 type ReportData =
@@ -48,7 +51,23 @@ type ReportData =
   | { kind: "pnl"; data: PnlReport };
 
 export default function ReportsPage() {
-  const [kind, setKind] = useState<Kind>("sales");
+  return (
+    <Suspense>
+      <ReportsContent />
+    </Suspense>
+  );
+}
+
+function ReportsContent() {
+  const searchParams = useSearchParams();
+  const [kind, setKind] = useState<Kind>(() => {
+    const t = searchParams.get("tab");
+    return TABS.some((x) => x.key === t) ? (t as Kind) : "sales";
+  });
+  const quotationId = (() => {
+    const n = Number(searchParams.get("quotation"));
+    return Number.isInteger(n) && n > 0 ? n : undefined;
+  })();
   const [from, setFrom] = useState(() => inputDateDaysAgo(30));
   const [to, setTo] = useState(() => todayInputDate());
 
@@ -66,6 +85,14 @@ export default function ReportsPage() {
   useEffect(() => {
     let active = true;
     void (async () => {
+      // The calculator tab is a live tool, not a date-range report — skip the
+      // fetch entirely.
+      if (kind === "calculator") {
+        setReport(null);
+        setError(null);
+        setLoading(false);
+        return;
+      }
       setLoading(true);
       try {
         let next: ReportData;
@@ -120,23 +147,27 @@ export default function ReportsPage() {
         ))}
       </div>
 
-      {/* Range */}
-      <div className="mt-md flex flex-wrap items-end gap-md">
-        <DateField label="From" value={from} max={to} onChange={setFrom} />
-        <DateField label="To" value={to} min={from} max={todayInputDate()} onChange={setTo} />
-        <div className="flex flex-wrap items-center gap-xs">
-          <PresetChip label="This month" onClick={() => preset("month")} />
-          <PresetChip label="Last 30 days" onClick={() => preset("30d")} />
-          <PresetChip label="This FY" onClick={() => preset("fy")} />
+      {/* Range — not relevant to the calculator tool */}
+      {kind !== "calculator" ? (
+        <div className="mt-md flex flex-wrap items-end gap-md">
+          <DateField label="From" value={from} max={to} onChange={setFrom} />
+          <DateField label="To" value={to} min={from} max={todayInputDate()} onChange={setTo} />
+          <div className="flex flex-wrap items-center gap-xs">
+            <PresetChip label="This month" onClick={() => preset("month")} />
+            <PresetChip label="Last 30 days" onClick={() => preset("30d")} />
+            <PresetChip label="This FY" onClick={() => preset("fy")} />
+          </div>
         </div>
-      </div>
+      ) : null}
 
       {error ? (
         <p className="mt-lg rounded-md bg-error-soft px-md py-sm text-body-sm text-error">{error}</p>
       ) : null}
 
       <div className="mt-xl">
-        {loading ? (
+        {kind === "calculator" ? (
+          <CalculatorSuite quotationId={quotationId} />
+        ) : loading ? (
           <div className="space-y-xxl">
             <CardsSkeleton count={3} />
             <ListRowsSkeleton rows={6} leading={false} />
@@ -405,43 +436,182 @@ function PurchasesView({ r }: { r: PurchasesReport }) {
 
 function GstView({ r }: { r: GstReport }) {
   const owes = r.netPayable >= 0;
+  const head = r.byHead;
+  const outputCess = r.outputCess ?? 0;
+  const inputCess = r.inputCess ?? 0;
+  const hasCess = outputCess !== 0 || inputCess !== 0;
+  const returnedGst = r.returns?.gst ?? 0;
+  const hasGst = r.outputTax !== 0 || r.inputTax !== 0;
   return (
     <div className="flex flex-col gap-xxl">
-      <div className="grid grid-cols-1 gap-xl sm:grid-cols-2">
+      {/* Headline — three stats fill the width */}
+      <div className="grid grid-cols-1 gap-xl sm:grid-cols-3">
         <BigStat label="Output GST" value={formatINR(r.outputTax)} hint="Collected on sales" />
-        <BigStat label="Input GST" value={formatINR(r.inputTax)} hint="Paid on purchases" />
+        <BigStat label="Input GST (ITC)" value={formatINR(r.inputTax)} hint="Paid on purchases" />
+        <BigStat
+          label="Net GST payable"
+          value={formatINR(Math.abs(r.netPayable))}
+          tone={owes ? "error" : "success"}
+          hint={owes ? "You owe this to the tax authority" : "Input credit carried forward"}
+        />
       </div>
-      <BigStat
-        label="Net GST payable"
-        value={formatINR(Math.abs(r.netPayable))}
-        tone={owes ? "error" : "success"}
-        hint={owes ? "You owe this to the tax authority" : "You have an input credit"}
-      />
-      <section>
-        <SectionHeading>Output GST by rate</SectionHeading>
-        {r.outputByRate.length === 0 ? <EmptyHint>No output GST in this range.</EmptyHint> : r.outputByRate.map((g, i) => <RateRow key={i} rate={g.rate} taxable={g.taxable} tax={g.tax} />)}
-      </section>
-      <section>
-        <SectionHeading>Input GST by rate</SectionHeading>
-        {r.inputByRate.length === 0 ? <EmptyHint>No input GST in this range.</EmptyHint> : r.inputByRate.map((g, i) => <RateRow key={i} rate={g.rate} taxable={g.taxable} tax={g.tax} />)}
-      </section>
+
+      {/* Head-wise split — the GSTR-3B view: each head set off against its own
+          input credit. */}
+      {head && hasGst ? (
+        <section className="max-w-content">
+          <SectionHeading>Net payable by tax head</SectionHeading>
+          <div className="overflow-hidden rounded-md border border-hairline">
+            <div className="hidden bg-surface-tint px-md py-sm sm:flex sm:items-center sm:gap-md">
+              <span className="flex-1 text-label-md uppercase tracking-wide text-muted">Head</span>
+              <span className="w-24 text-right text-label-md uppercase tracking-wide text-muted">
+                Output
+              </span>
+              <span className="w-24 text-right text-label-md uppercase tracking-wide text-muted">
+                Input (ITC)
+              </span>
+              <span className="w-24 text-right text-label-md uppercase tracking-wide text-muted">
+                Net
+              </span>
+            </div>
+            <HeadRow label="IGST" sub="Inter-state" o={head.output.igst} i={head.input.igst} n={head.netPayable.igst} />
+            <HeadRow label="CGST" sub="Central" o={head.output.cgst} i={head.input.cgst} n={head.netPayable.cgst} />
+            <HeadRow label="SGST" sub="State" o={head.output.sgst} i={head.input.sgst} n={head.netPayable.sgst} />
+            <div className="flex flex-col gap-xs border-t border-hairline bg-surface-tint px-md py-sm sm:flex-row sm:items-center sm:gap-md">
+              <span className="text-label-md uppercase tracking-wide text-muted sm:flex-1">Total</span>
+              <div className="flex items-center justify-between gap-sm sm:contents">
+                <span className="text-body-sm font-semibold tabular-nums text-ink sm:w-24 sm:text-right">
+                  {formatINR(r.outputTax)}
+                </span>
+                <span className="text-body-sm font-semibold tabular-nums text-ink sm:w-24 sm:text-right">
+                  {formatINR(r.inputTax)}
+                </span>
+                <span className="text-body-md font-bold tabular-nums text-ink sm:w-24 sm:text-right">
+                  {formatINR(r.netPayable)}
+                </span>
+              </div>
+            </div>
+          </div>
+          <p className="mt-md text-body-sm text-subtle">
+            CGST + SGST apply to in-state sales; IGST to inter-state. Net is each
+            head&apos;s output tax minus its own input credit.
+          </p>
+        </section>
+      ) : null}
+
+      {/* By rate — two columns fill the width */}
+      <div className="grid grid-cols-1 gap-xxl lg:grid-cols-2">
+        <RateBreakdown title="Output GST by rate" rows={r.outputByRate} empty="No output GST in this range." />
+        <RateBreakdown title="Input GST by rate" rows={r.inputByRate} empty="No input GST in this range." />
+      </div>
+
+      {/* Cess — only when there is any (separate ledger, not GST-creditable) */}
+      {hasCess ? (
+        <section className="max-w-form">
+          <SectionHeading>Cess</SectionHeading>
+          <TotalRow label="Output cess" value={formatINR(outputCess)} strong />
+          <TotalRow label="Input cess" value={`− ${formatINR(inputCess)}`} />
+          <TotalRow label="Net cess payable" value={formatINR(r.netCessPayable ?? 0)} strong big />
+          <p className="mt-sm text-body-sm text-subtle">Cess is set off only against cess, never against GST.</p>
+        </section>
+      ) : null}
+
+      {/* Returns note */}
+      {returnedGst > 0 ? (
+        <p className="text-body-sm text-subtle">
+          Output GST is shown net of {formatINR(returnedGst)} reversed on refunded returns in this period.
+        </p>
+      ) : null}
     </div>
   );
 }
 
-function RateRow({ rate, taxable, tax }: { rate: number; taxable: number; tax: number }) {
+/** One IGST/CGST/SGST head row in the GST head-wise split. Responsive like the
+ *  products table: aligned columns on sm+, stacked with inline labels on phones. */
+function HeadRow({ label, sub, o, i, n }: { label: string; sub: string; o: number; i: number; n: number }) {
   return (
-    <div className="flex items-center justify-between gap-md border-b border-hairline py-md">
-      <span className="inline-flex h-7 min-w-12 items-center justify-center rounded-full bg-surface-tint px-sm text-body-sm font-semibold text-ink">
-        {rate}%
-      </span>
-      <div className="flex flex-1 items-center justify-end gap-xl">
-        <span className="text-body-sm text-muted">
-          Taxable <span className="tabular-nums text-ink">{formatINR(taxable)}</span>
+    <div className="flex flex-col gap-xs border-b border-hairline px-md py-sm last:border-b-0 sm:flex-row sm:items-center sm:gap-md">
+      <div className="min-w-0 sm:flex-1">
+        <span className="text-body-md text-ink">{label}</span>
+        <span className="ml-sm text-body-sm text-subtle">{sub}</span>
+      </div>
+      <div className="flex items-center justify-between gap-sm sm:contents">
+        <span className="text-body-sm tabular-nums text-ink sm:w-24 sm:text-right">
+          <span className="text-subtle sm:hidden">Output </span>
+          {formatINR(o)}
         </span>
-        <span className="text-body-md font-semibold tabular-nums text-ink">{formatINR(tax)}</span>
+        <span className="text-body-sm tabular-nums text-muted sm:w-24 sm:text-right">
+          <span className="text-subtle sm:hidden">ITC </span>
+          {formatINR(i)}
+        </span>
+        <span className="text-body-md font-semibold tabular-nums text-ink sm:w-24 sm:text-right">
+          <span className="text-subtle sm:hidden">Net </span>
+          {formatINR(n)}
+        </span>
       </div>
     </div>
+  );
+}
+
+/** GST-by-rate breakdown — a clean Rate · Taxable · GST table with a total row,
+ *  replacing the old single sparse line so the columns actually line up. */
+function RateBreakdown({
+  title,
+  rows,
+  empty,
+}: {
+  title: string;
+  rows: { rate: number; taxable: number; tax: number }[];
+  empty: string;
+}) {
+  const totalTaxable = rows.reduce((s, g) => s + g.taxable, 0);
+  const totalTax = rows.reduce((s, g) => s + g.tax, 0);
+  return (
+    <section>
+      <SectionHeading>{title}</SectionHeading>
+      {rows.length === 0 ? (
+        <EmptyHint>{empty}</EmptyHint>
+      ) : (
+        <div className="overflow-hidden rounded-md border border-hairline">
+          <div className="flex items-center gap-md bg-surface-tint px-md py-sm">
+            <span className="w-14 text-label-md uppercase tracking-wide text-muted">Rate</span>
+            <span className="flex-1 text-right text-label-md uppercase tracking-wide text-muted">
+              Taxable
+            </span>
+            <span className="w-28 text-right text-label-md uppercase tracking-wide text-muted">
+              GST
+            </span>
+          </div>
+          {rows.map((g, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-md border-b border-hairline px-md py-sm last:border-b-0"
+            >
+              <span className="w-14">
+                <span className="inline-flex items-center rounded-full bg-surface-tint px-sm py-px text-body-sm font-semibold tabular-nums text-ink">
+                  {g.rate}%
+                </span>
+              </span>
+              <span className="flex-1 text-right text-body-sm tabular-nums text-muted">
+                {formatINR(g.taxable)}
+              </span>
+              <span className="w-28 text-right text-body-sm font-semibold tabular-nums text-ink">
+                {formatINR(g.tax)}
+              </span>
+            </div>
+          ))}
+          <div className="flex items-center gap-md border-t border-hairline bg-surface-tint px-md py-sm">
+            <span className="w-14 text-label-md uppercase tracking-wide text-muted">Total</span>
+            <span className="flex-1 text-right text-body-sm font-semibold tabular-nums text-ink">
+              {formatINR(totalTaxable)}
+            </span>
+            <span className="w-28 text-right text-body-md font-bold tabular-nums text-ink">
+              {formatINR(totalTax)}
+            </span>
+          </div>
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -667,49 +837,51 @@ function SoldProductsTable({ range }: { range: Range }) {
         </EmptyHint>
       ) : (
         <>
-          <div className="overflow-x-auto rounded-md border border-hairline">
-            <table
-              style={{ minWidth: "var(--container-form)" }}
-              className="w-full border-collapse text-left"
-            >
-              <thead>
-                <tr className="bg-surface-tint">
-                  <Th>Product</Th>
-                  <Th align="right">Sales</Th>
-                  <Th align="right">Qty</Th>
-                  <Th align="right">Amount</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {products.map((p) => (
-                  <ProductRow
-                    key={p.productId}
-                    product={p}
-                    range={range}
-                    expanded={expanded === p.productId}
-                    onToggle={() =>
-                      setExpanded((cur) => (cur === p.productId ? null : p.productId))
-                    }
-                  />
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="border-t border-hairline bg-surface-tint">
-                  <td className="px-md py-sm text-label-md uppercase tracking-wide text-muted">
-                    Total
-                  </td>
-                  <td className="whitespace-nowrap px-md py-sm text-right text-body-sm font-semibold tabular-nums text-ink">
-                    {totals.salesCount} {totals.salesCount === 1 ? "sale" : "sales"}
-                  </td>
-                  <td className="whitespace-nowrap px-md py-sm text-right text-body-sm font-semibold tabular-nums text-ink">
-                    {fmtQty(totals.totalQuantity)}
-                  </td>
-                  <td className="whitespace-nowrap px-md py-sm text-right text-body-md font-bold tabular-nums text-ink">
-                    {formatINR(totals.totalAmount)}
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
+          <div className="overflow-hidden rounded-md border border-hairline">
+            {/* Column header — only on sm+, where the columns line up. On mobile
+                each row reflows into a card so the labels would be noise. */}
+            <div className="hidden bg-surface-tint px-md py-sm sm:flex sm:items-center sm:gap-md">
+              <span className="flex-1 text-label-md uppercase tracking-wide text-muted">
+                Product
+              </span>
+              <span className="w-20 text-right text-label-md uppercase tracking-wide text-muted">
+                Sales
+              </span>
+              <span className="w-20 text-right text-label-md uppercase tracking-wide text-muted">
+                Qty
+              </span>
+              <span className="w-24 text-right text-label-md uppercase tracking-wide text-muted">
+                Amount
+              </span>
+            </div>
+            {products.map((p) => (
+              <ProductRow
+                key={p.productId}
+                product={p}
+                range={range}
+                expanded={expanded === p.productId}
+                onToggle={() =>
+                  setExpanded((cur) => (cur === p.productId ? null : p.productId))
+                }
+              />
+            ))}
+            {/* Grand-total footer — reflows the same way as the rows. */}
+            <div className="flex flex-col gap-xs border-t border-hairline bg-surface-tint px-md py-sm sm:flex-row sm:items-center sm:gap-md">
+              <span className="text-label-md uppercase tracking-wide text-muted sm:flex-1">
+                Total
+              </span>
+              <div className="flex items-center justify-between gap-sm sm:contents">
+                <span className="text-body-sm font-semibold tabular-nums text-ink sm:w-20 sm:text-right">
+                  {totals.salesCount} {totals.salesCount === 1 ? "sale" : "sales"}
+                </span>
+                <span className="text-body-sm font-semibold tabular-nums text-ink sm:w-20 sm:text-right">
+                  {fmtQty(totals.totalQuantity)}
+                </span>
+                <span className="text-body-md font-bold tabular-nums text-ink sm:w-24 sm:text-right">
+                  {formatINR(totals.totalAmount)}
+                </span>
+              </div>
+            </div>
           </div>
           {hasMore ? (
             <button
@@ -731,7 +903,13 @@ function SoldProductsTable({ range }: { range: Range }) {
   );
 }
 
-/** One aggregated product row + its lazily-loaded sale timeline when expanded. */
+/**
+ * One aggregated product row + its lazily-loaded sale timeline when expanded.
+ * Responsive without a table: on sm+ it's an aligned row (product grows, the
+ * three metrics are fixed-width columns via `sm:contents`); on phones it stacks
+ * — the product name gets its own full-width line so it's always legible, with
+ * the metrics on a second line below.
+ */
 function ProductRow({
   product,
   range,
@@ -746,71 +924,60 @@ function ProductRow({
   const tone = toneFor(product.productSku || product.productName || String(product.productId));
   const unit = product.unit ?? "";
   return (
-    <>
-      <tr
+    <div className="border-b border-hairline last:border-b-0">
+      <button
+        type="button"
         onClick={onToggle}
         aria-expanded={expanded}
-        className={`cursor-pointer border-b border-hairline transition-colors last:border-b-0 hover:bg-surface-tint ${
+        className={`flex w-full flex-col gap-sm px-md py-sm text-left transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-soft sm:flex-row sm:items-center sm:gap-md ${
           expanded ? "bg-surface-tint" : ""
         }`}
       >
-        <td className="max-w-0 px-md py-sm align-middle">
-          <div className="flex min-w-0 items-center gap-sm">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggle();
-              }}
-              aria-expanded={expanded}
-              aria-label={expanded ? "Hide sale timeline" : "Show sale timeline"}
-              className="inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface-tint hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
-            >
-              <ChevronRight
-                size={16}
-                className={`transition-transform ${expanded ? "rotate-90" : ""}`}
-              />
-            </button>
-            <span className={`flex size-8 shrink-0 items-center justify-center rounded-md ${tone}`}>
-              <Package size={16} />
+        {/* Product — full width on mobile so the name is always readable */}
+        <div className="flex min-w-0 items-center gap-sm sm:flex-1">
+          <ChevronRight
+            size={16}
+            className={`shrink-0 text-muted transition-transform ${expanded ? "rotate-90" : ""}`}
+          />
+          <span className={`flex size-8 shrink-0 items-center justify-center rounded-md ${tone}`}>
+            <Package size={16} />
+          </span>
+          <div className="min-w-0">
+            <span className="block truncate text-body-md text-ink">
+              {product.productName ?? "Product"}
             </span>
-            <div className="min-w-0">
-              <span className="block truncate text-body-md text-ink">
-                {product.productName ?? "Product"}
-              </span>
-              {product.productSku ? (
-                <span className="block truncate text-body-sm text-subtle">{product.productSku}</span>
-              ) : null}
-            </div>
+            {product.productSku ? (
+              <span className="block truncate text-body-sm text-subtle">{product.productSku}</span>
+            ) : null}
           </div>
-        </td>
-        <td className="whitespace-nowrap px-md py-sm text-right align-middle">
-          <span
-            className={`inline-flex items-center rounded-full px-sm py-px text-body-sm font-semibold tabular-nums ${countTone(product.salesCount)}`}
-          >
-            {product.salesCount} {product.salesCount === 1 ? "sale" : "sales"}
+        </div>
+
+        {/* Metrics — a second line on mobile; aligned columns on sm+. The
+            `sm:contents` wrappers collapse on desktop so each chip sits in its
+            own fixed-width column lined up with the header. */}
+        <div className="flex items-center justify-between gap-sm pl-7 sm:contents sm:pl-0">
+          <span className="flex shrink-0 items-center sm:w-20 sm:justify-end">
+            <span
+              className={`inline-flex items-center rounded-full px-sm py-px text-body-sm font-semibold tabular-nums ${countTone(product.salesCount)}`}
+            >
+              {product.salesCount} {product.salesCount === 1 ? "sale" : "sales"}
+            </span>
           </span>
-        </td>
-        <td className="whitespace-nowrap px-md py-sm text-right align-middle">
-          <span
-            className={`inline-flex items-center rounded-full px-sm py-px text-body-sm font-semibold tabular-nums ${qtyTone(product.totalQuantity)}`}
-          >
-            {fmtQty(product.totalQuantity)}
-            {unit ? ` ${unit}` : ""}
+          <span className="flex shrink-0 items-center sm:w-20 sm:justify-end">
+            <span
+              className={`inline-flex items-center rounded-full px-sm py-px text-body-sm font-semibold tabular-nums ${qtyTone(product.totalQuantity)}`}
+            >
+              {fmtQty(product.totalQuantity)}
+              {unit ? ` ${unit}` : ""}
+            </span>
           </span>
-        </td>
-        <td className="whitespace-nowrap px-md py-sm text-right align-middle text-body-md font-semibold tabular-nums text-ink">
-          {formatINR(product.totalAmount)}
-        </td>
-      </tr>
-      {expanded ? (
-        <tr>
-          <td colSpan={4} className="border-b border-hairline bg-surface p-0">
-            <ProductTimeline range={range} product={product} />
-          </td>
-        </tr>
-      ) : null}
-    </>
+          <span className="shrink-0 text-body-md font-semibold tabular-nums text-ink sm:w-24 sm:text-right">
+            {formatINR(product.totalAmount)}
+          </span>
+        </div>
+      </button>
+      {expanded ? <ProductTimeline range={range} product={product} /> : null}
+    </div>
   );
 }
 
@@ -870,7 +1037,7 @@ function ProductTimeline({ range, product }: { range: Range; product: SoldProduc
   const hasMore = items.length < total;
 
   return (
-    <div className="px-lg py-md">
+    <div className="bg-surface px-md py-md sm:px-lg">
       {loading ? (
         <ListRowsSkeleton rows={3} leading={false} />
       ) : error ? (
@@ -884,9 +1051,12 @@ function ProductTimeline({ range, product }: { range: Range; product: SoldProduc
               <div className="flex items-center gap-sm rounded-md px-sm py-xs transition-colors hover:bg-surface-tint">
                 <Clock size={14} className={`shrink-0 ${recencyColor(ev.soldAt)}`} />
                 <span className="shrink-0 text-body-sm text-ink">{formatDateTime(ev.soldAt)}</span>
-                <span className="min-w-0 flex-1 truncate text-body-sm text-subtle">
+                {/* invoice no fills the gap on sm+; hidden on phones to keep the
+                    row from overflowing */}
+                <span className="hidden min-w-0 flex-1 truncate text-body-sm text-subtle sm:block">
                   {ev.invoiceNo ?? ""}
                 </span>
+                <span className="flex-1 sm:hidden" aria-hidden />
                 <span
                   className={`inline-flex shrink-0 items-center rounded-full px-sm py-px text-body-sm font-semibold tabular-nums ${qtyTone(ev.quantity)}`}
                 >
@@ -937,18 +1107,6 @@ function ProductTimeline({ range, product }: { range: Range; product: SoldProduc
         </div>
       ) : null}
     </div>
-  );
-}
-
-function Th({ children, align }: { children: React.ReactNode; align?: "right" }) {
-  return (
-    <th
-      className={`whitespace-nowrap border-b border-hairline px-md py-sm text-label-md uppercase tracking-wide text-muted ${
-        align === "right" ? "text-right" : "text-left"
-      }`}
-    >
-      {children}
-    </th>
   );
 }
 
