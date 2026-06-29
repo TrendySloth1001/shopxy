@@ -83,6 +83,13 @@ const gstRateSchema = z.object({
   cess: dailyNum.nullish(),
 });
 
+/** IGST / CGST / SGST amounts for one column (output, input or net). */
+const gstHeadSchema = z.object({
+  igst: dailyNum,
+  cgst: dailyNum,
+  sgst: dailyNum,
+});
+
 export const gstReportSchema = z
   .object({
     outputTax: dailyNum,
@@ -91,6 +98,26 @@ export const gstReportSchema = z
     outputCess: dailyNum.nullish(),
     inputCess: dailyNum.nullish(),
     netCessPayable: dailyNum.nullish(),
+    // Head-wise split (GSTR-3B): each of output / input (ITC) / net payable
+    // broken into IGST, CGST and SGST.
+    byHead: z
+      .object({
+        output: gstHeadSchema,
+        input: gstHeadSchema,
+        netPayable: gstHeadSchema,
+      })
+      .nullish(),
+    // Output tax reversed on refunded returns in the period (already netted
+    // out of the figures above).
+    returns: z
+      .object({
+        gst: dailyNum,
+        igst: dailyNum,
+        cgst: dailyNum,
+        sgst: dailyNum,
+        cess: dailyNum,
+      })
+      .nullish(),
     outputByRate: z
       .array(gstRateSchema)
       .nullish()

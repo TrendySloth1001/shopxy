@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Download, ReceiptText, XCircle } from "lucide-react";
+import { Calculator, Download, ReceiptText, XCircle } from "lucide-react";
 import { BackLink } from "@/shared/ui/page-header";
 import { Divider } from "@/shared/ui/divider";
 import { Modal, ModalActions } from "@/shared/ui/modal";
@@ -140,14 +140,22 @@ export default function QuotationDetailPage() {
             <p className="mt-xs text-body-sm text-error">Reason: {quote.declineNote}</p>
           ) : null}
         </div>
-        <a
-          href={quotationPdfUrl(id)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex h-10 shrink-0 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
-        >
-          <Download size={16} /> PDF
-        </a>
+        <div className="flex shrink-0 flex-wrap items-center gap-sm">
+          <Link
+            href={`/dashboard/reports?tab=calculator&quotation=${id}`}
+            className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
+          >
+            <Calculator size={16} /> Open in calculator
+          </Link>
+          <a
+            href={quotationPdfUrl(id)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
+          >
+            <Download size={16} /> PDF
+          </a>
+        </div>
       </div>
 
       {actionError ? (

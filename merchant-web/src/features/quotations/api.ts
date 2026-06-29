@@ -36,6 +36,7 @@ export type QuotationItemWrite = {
   quantity: number;
   unitPrice: number;
   taxPercent?: number;
+  discount?: number;
   imageUrl?: string;
 };
 
