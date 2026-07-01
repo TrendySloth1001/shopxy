@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shopxy/features/dashboard/domain/entities/dashboard_stats.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
@@ -18,6 +19,7 @@ class PeriodSwitcher extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.all(2),
       decoration: ShapeDecoration(
@@ -30,13 +32,20 @@ class PeriodSwitcher extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          for (final p in DashboardPeriod.values) _segment(p),
+          for (final p in DashboardPeriod.values) _segment(p, l10n),
         ],
       ),
     );
   }
 
-  Widget _segment(DashboardPeriod p) {
+  String _periodLabel(DashboardPeriod p, AppLocalizations l10n) =>
+      switch (p) {
+        DashboardPeriod.today => l10n.dashboardPeriodToday,
+        DashboardPeriod.week => l10n.dashboardPeriodWeek,
+        DashboardPeriod.month => l10n.dashboardPeriodMonth,
+      };
+
+  Widget _segment(DashboardPeriod p, AppLocalizations l10n) {
     final selected = p == value;
     return GestureDetector(
       onTap: () => onChanged(p),
@@ -50,7 +59,7 @@ class PeriodSwitcher extends StatelessWidget {
           shape: AppShapes.squircle(6),
         ),
         child: Text(
-          p.label,
+          _periodLabel(p, l10n),
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,

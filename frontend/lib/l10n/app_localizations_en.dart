@@ -2810,4 +2810,2069 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get couponsActiveSubtitle =>
       'When off, buyers won\'t see this coupon and can\'t redeem it.';
+
+  @override
+  String get authWelcomeBack => 'Welcome back';
+
+  @override
+  String get authLoginSubtitle =>
+      'Sign in to manage your inventory, invoices and customers.';
+
+  @override
+  String get authLoginFooterPrompt => 'New to ShopXY?';
+
+  @override
+  String get authCreateAccountCta => 'Create an account';
+
+  @override
+  String get authGoogleComingSoon =>
+      'Google sign-in is coming soon — please use your email for now.';
+
+  @override
+  String get authEmail => 'Email';
+
+  @override
+  String get authPassword => 'Password';
+
+  @override
+  String get authFieldRequired => 'This field is required';
+
+  @override
+  String get authInvalidEmail => 'Enter a valid email address';
+
+  @override
+  String get authSignIn => 'Sign in';
+
+  @override
+  String get authLegalAgreePrefix => 'By signing in you agree to our ';
+
+  @override
+  String get authLegalTerms => 'Terms';
+
+  @override
+  String get authLegalAcknowledgeMid => ' and acknowledge our ';
+
+  @override
+  String get authLegalPrivacyPolicy => 'Privacy Policy';
+
+  @override
+  String get authLegalCookieSuffix =>
+      '. We use a strictly-necessary session cookie to keep you signed in.';
+
+  @override
+  String get authTroubleSigningIn => 'Trouble signing in? ';
+
+  @override
+  String get authContactSupport => 'Contact support';
+
+  @override
+  String get authComplianceLawsFormulas => 'Compliance, laws & formulas';
+
+  @override
+  String get authContinueAs => 'Continue as';
+
+  @override
+  String get authRemoveThisAccount => 'Remove this account';
+
+  @override
+  String get authRegisterTitle => 'Create your account';
+
+  @override
+  String get authRegisterSubtitle =>
+      'Set up your merchant account to start managing your inventory, invoices and customers.';
+
+  @override
+  String get authRegisterFooterPrompt => 'Already have an account?';
+
+  @override
+  String get authAcceptTermsPrompt =>
+      'Please accept the Terms of Service and Privacy Policy to continue.';
+
+  @override
+  String get authYourName => 'Your name';
+
+  @override
+  String get authNameTooShort => 'Name must be at least 2 characters';
+
+  @override
+  String get authShopName => 'Shop name';
+
+  @override
+  String get authShopNameHelper =>
+      'Shown to customers in the marketplace. You can rename it later.';
+
+  @override
+  String get authPasswordHelper =>
+      'At least 8 characters, with a letter and a number.';
+
+  @override
+  String get authConfirmPassword => 'Confirm Password';
+
+  @override
+  String get authPasswordsDoNotMatch => 'Passwords do not match';
+
+  @override
+  String get authIAcceptThe => 'I accept the';
+
+  @override
+  String get authTermsOfService => 'Terms of Service';
+
+  @override
+  String get authPrivacyPolicy => 'Privacy Policy';
+
+  @override
+  String get authCreateAccount => 'Create account';
+
+  @override
+  String get authContinueWithGoogle => 'Continue with Google';
+
+  @override
+  String get authOrContinueWithEmail => 'or continue with email';
+
+  @override
+  String get authHide => 'Hide';
+
+  @override
+  String get authShow => 'Show';
+
+  @override
+  String get dashboardHiddenTitle => 'Dashboard hidden';
+
+  @override
+  String get dashboardHiddenMessage =>
+      'Your role doesn\'t include the dashboard overview. Ask an owner if you need it.';
+
+  @override
+  String get dashboardGreetingMorning => 'Good morning';
+
+  @override
+  String get dashboardGreetingAfternoon => 'Good afternoon';
+
+  @override
+  String get dashboardGreetingEvening => 'Good evening';
+
+  @override
+  String dashboardGreetingWithName(Object greeting, Object name) {
+    return '$greeting, $name';
+  }
+
+  @override
+  String get dashboardYourShop => 'your shop';
+
+  @override
+  String dashboardShopStatus(Object shop) {
+    return 'Here\'s how $shop is doing.';
+  }
+
+  @override
+  String get dashboardPendingInviteOne =>
+      'You have 1 pending invitation — review and accept.';
+
+  @override
+  String dashboardPendingInviteMany(Object count) {
+    return 'You have $count pending invitations — review and accept.';
+  }
+
+  @override
+  String get dashboardView => 'View';
+
+  @override
+  String get dashboardOperations => 'Operations';
+
+  @override
+  String get dashboardGstThisMonth => 'GST this month';
+
+  @override
+  String dashboardOutputTaxCollected(Object amount) {
+    return '$amount output tax collected';
+  }
+
+  @override
+  String get dashboardInventoryValue => 'Inventory value';
+
+  @override
+  String get dashboardCostBasisOfStock => 'Cost basis of stock on hand';
+
+  @override
+  String get dashboardOneSale => '1 sale';
+
+  @override
+  String dashboardSalesCount(Object count) {
+    return '$count sales';
+  }
+
+  @override
+  String dashboardOpenTillSince(Object time) {
+    return 'Open till · since $time';
+  }
+
+  @override
+  String get dashboardNeedsAttention => 'Needs attention';
+
+  @override
+  String get dashboardAllCaughtUp =>
+      'You\'re all caught up — nothing needs action right now.';
+
+  @override
+  String get dashboardOrdersToConfirm => 'Orders to confirm';
+
+  @override
+  String get dashboardReturnsToReview => 'Returns to review';
+
+  @override
+  String get dashboardQuotesToPrice => 'Quotes to price';
+
+  @override
+  String get dashboardDraftsToConfirm => 'Drafts to confirm';
+
+  @override
+  String get dashboardOutOfStock => 'Out of stock';
+
+  @override
+  String get dashboardLowStock => 'Low stock';
+
+  @override
+  String get dashboardSales => 'Sales';
+
+  @override
+  String get dashboardNetProfit => 'Net profit';
+
+  @override
+  String dashboardMarginPct(Object pct) {
+    return '$pct% margin';
+  }
+
+  @override
+  String get dashboardReceivables => 'Receivables';
+
+  @override
+  String get dashboardOnePartyOwesYou => '1 party owes you';
+
+  @override
+  String dashboardPartiesOweYou(Object count) {
+    return '$count parties owe you';
+  }
+
+  @override
+  String get dashboardPayables => 'Payables';
+
+  @override
+  String get dashboardOneVendorToPay => '1 vendor to pay';
+
+  @override
+  String dashboardVendorsToPay(Object count) {
+    return '$count vendors to pay';
+  }
+
+  @override
+  String get dashboardSalesTrend => 'Sales trend';
+
+  @override
+  String get dashboardPrevious => 'Previous';
+
+  @override
+  String get dashboardPurchases => 'Purchases';
+
+  @override
+  String get dashboardReturns => 'Returns';
+
+  @override
+  String get dashboardGetShopReady => 'Let\'s get your shop ready';
+
+  @override
+  String get dashboardOnboardingSubtitle =>
+      'Finish these steps and your dashboard fills with live numbers.';
+
+  @override
+  String dashboardStepsDone(Object done, Object total) {
+    return '$done/$total done';
+  }
+
+  @override
+  String get dashboardAddFirstProductTitle => 'Add your first product';
+
+  @override
+  String get dashboardAddFirstProductDesc =>
+      'Build your catalogue so you can bill and track stock.';
+
+  @override
+  String get dashboardAddProduct => 'Add product';
+
+  @override
+  String get dashboardCreateFirstInvoiceTitle => 'Create your first invoice';
+
+  @override
+  String get dashboardCreateFirstInvoiceDesc =>
+      'Bill a sale — GST is handled for you.';
+
+  @override
+  String get dashboardNewInvoice => 'New invoice';
+
+  @override
+  String get dashboardAddCustomerTitle => 'Add a customer';
+
+  @override
+  String get dashboardAddCustomerDesc =>
+      'Track who owes you and send them invoices.';
+
+  @override
+  String get dashboardAddCustomer => 'Add customer';
+
+  @override
+  String get dashboardSetUpPayoutsTitle => 'Set up payouts';
+
+  @override
+  String get dashboardSetUpPayoutsDesc =>
+      'Receive settlements for online orders.';
+
+  @override
+  String get dashboardSetUp => 'Set up';
+
+  @override
+  String get dashboardAlertReorder => 'Reorder';
+
+  @override
+  String get dashboardAlertFileGst => 'File GST';
+
+  @override
+  String get dashboardAlertViewReport => 'View report';
+
+  @override
+  String get dashboardAlertOpenTill => 'Open till';
+
+  @override
+  String get dashboardDismiss => 'Dismiss';
+
+  @override
+  String get dashboardRecentActivity => 'Recent activity';
+
+  @override
+  String get dashboardNoRecentMovements => 'No recent stock movements.';
+
+  @override
+  String dashboardProductFallback(Object id) {
+    return 'Product #$id';
+  }
+
+  @override
+  String get dashboardTopCategories => 'Top categories';
+
+  @override
+  String get dashboardTopProducts => 'Top products';
+
+  @override
+  String get dashboardSlowMovers => 'Slow movers';
+
+  @override
+  String get dashboardSlowMoversHint =>
+      'Share of idle in-stock units — capital that isn\'t moving.';
+
+  @override
+  String dashboardUnitsValue(Object count) {
+    return '$count units';
+  }
+
+  @override
+  String get dashboardSubjectCategorySales => 'category sales';
+
+  @override
+  String get dashboardSubjectProductSales => 'product sales';
+
+  @override
+  String get dashboardSubjectIdleStock => 'idle stock';
+
+  @override
+  String get dashboardNounCategories => 'categories';
+
+  @override
+  String get dashboardNounProducts => 'products';
+
+  @override
+  String get dashboardPieOther => 'Other';
+
+  @override
+  String get dashboardNoDataInPeriod => 'No data in this period yet.';
+
+  @override
+  String get dashboardAboutThisChart => 'About this chart';
+
+  @override
+  String get dashboardTapSliceHint => 'Tap a slice for its breakdown.';
+
+  @override
+  String dashboardPieSummaryBase(
+    Object total,
+    Object count,
+    Object noun,
+    Object avg,
+  ) {
+    return '$total across $count $noun (avg $avg each).';
+  }
+
+  @override
+  String dashboardPieSummaryLead(Object label, Object pct, Object value) {
+    return '$label leads with $pct% ($value)';
+  }
+
+  @override
+  String dashboardPieSummaryAheadOf(Object label, Object pct) {
+    return ', ahead of $label at $pct%';
+  }
+
+  @override
+  String dashboardPieSummaryTopK(Object k, Object pct, Object subject) {
+    return 'The top $k make up $pct% of $subject';
+  }
+
+  @override
+  String dashboardPieSummaryTrails(Object label, Object pct) {
+    return ', while $label trails at $pct%';
+  }
+
+  @override
+  String dashboardPieDetailTail(Object pct, Object subject) {
+    return ', $pct% of $subject.';
+  }
+
+  @override
+  String get dashboardPeriodToday => 'Today';
+
+  @override
+  String get dashboardPeriodWeek => '7 days';
+
+  @override
+  String get dashboardPeriodMonth => '30 days';
+
+  @override
+  String get dashboardDeltaNew => 'New';
+
+  @override
+  String get shopSave => 'Save';
+
+  @override
+  String get shopSaving => 'Saving…';
+
+  @override
+  String get shopSaveFailed => 'Save failed';
+
+  @override
+  String get shopCancel => 'Cancel';
+
+  @override
+  String get shopDelete => 'Delete';
+
+  @override
+  String get shopRemove => 'Remove';
+
+  @override
+  String get shopContinue => 'Continue';
+
+  @override
+  String get shopBack => 'Back';
+
+  @override
+  String get shopRetry => 'Retry';
+
+  @override
+  String get shopTryAgain => 'Try again';
+
+  @override
+  String get shopDismiss => 'Dismiss';
+
+  @override
+  String get shopEnabled => 'Enabled';
+
+  @override
+  String get shopNotYetEnabled => 'Not yet enabled';
+
+  @override
+  String get shopNotEnabledYet => 'Not enabled yet';
+
+  @override
+  String get shopHoursTitle => 'Hours & vacation mode';
+
+  @override
+  String get shopHoursSaved => 'Hours saved';
+
+  @override
+  String get shopVacationMode => 'Vacation mode';
+
+  @override
+  String get shopVacationModeSubtitle =>
+      'Blocks new orders. Existing orders, stock, and invoices stay editable as usual.';
+
+  @override
+  String get shopVacationMessageLabel =>
+      'Message shown to customers (optional)';
+
+  @override
+  String get shopVacationMessageHint =>
+      'e.g. Back on Jun 5. Thanks for your patience!';
+
+  @override
+  String get shopOpeningHours => 'OPENING HOURS';
+
+  @override
+  String get shopHoursHint =>
+      'Hours are a hint to customers — orders outside hours still go through.';
+
+  @override
+  String get shopDayClosed => 'Closed';
+
+  @override
+  String get shopDayMonday => 'Monday';
+
+  @override
+  String get shopDayTuesday => 'Tuesday';
+
+  @override
+  String get shopDayWednesday => 'Wednesday';
+
+  @override
+  String get shopDayThursday => 'Thursday';
+
+  @override
+  String get shopDayFriday => 'Friday';
+
+  @override
+  String get shopDaySaturday => 'Saturday';
+
+  @override
+  String get shopDaySunday => 'Sunday';
+
+  @override
+  String get shopOperationsTitle => 'Shop operations';
+
+  @override
+  String get shopOpsHoursOnVacation => 'On vacation — new orders blocked';
+
+  @override
+  String get shopOpsHoursSubtitle => 'Set opening hours and pause new orders.';
+
+  @override
+  String get shopOnVacationBadge => 'On vacation';
+
+  @override
+  String get shopPayoutsTitle => 'Payouts & settlement';
+
+  @override
+  String get shopKycTitle => 'KYC documents';
+
+  @override
+  String get shopOpsKycSubtitle =>
+      'PAN, GSTIN certificate, cancelled cheque. Required before payouts go live.';
+
+  @override
+  String get shopComingSoonBadge => 'Coming soon';
+
+  @override
+  String get shopTeamTitle => 'Team & roles';
+
+  @override
+  String get shopOpsTeamSubtitle =>
+      'Invite staff and scope exactly what each person can view and manage.';
+
+  @override
+  String get shopOpsPayoutsLinkBank =>
+      'Link a bank account to receive your sales settlements.';
+
+  @override
+  String get shopOpsPayoutsResume =>
+      'Resume your payout setup — you have a saved draft.';
+
+  @override
+  String get shopOpsPayoutsSetUp =>
+      'Set up your bank account to start receiving settlements.';
+
+  @override
+  String get shopOpsPayoutsActive =>
+      'Active — your sales settle to your linked bank account.';
+
+  @override
+  String get shopOpsPayoutsSubmitted =>
+      'Submitted — Razorpay is verifying your account.';
+
+  @override
+  String get shopInProgressBadge => 'In progress';
+
+  @override
+  String get shopSetUpBadge => 'Set up';
+
+  @override
+  String get shopActiveBadge => 'Active';
+
+  @override
+  String get shopUnderReviewBadge => 'Under review';
+
+  @override
+  String get shopKycIntro =>
+      'Document uploads launch with the verified-seller badge. Until then, this lists what you\'ll be asked for so you can prepare ahead. Your payout KYC is handled in Payouts & settlement.';
+
+  @override
+  String get shopKycPanTitle => 'PAN card';
+
+  @override
+  String get shopKycPanSubtitle =>
+      'Owner or business PAN. Required for payouts.';
+
+  @override
+  String get shopKycGstinTitle => 'GSTIN certificate';
+
+  @override
+  String get shopKycGstinSubtitle =>
+      'If your shop has a GSTIN, upload the registration certificate.';
+
+  @override
+  String get shopKycChequeTitle => 'Cancelled cheque';
+
+  @override
+  String get shopKycChequeSubtitle =>
+      'Bank-issued cheque with account holder name visible. Confirms settlement-account ownership.';
+
+  @override
+  String get shopKycAadhaarTitle => 'Aadhaar / address proof';
+
+  @override
+  String get shopKycAadhaarSubtitle =>
+      'For sole-proprietor shops. Skip if you already have GSTIN on file.';
+
+  @override
+  String get shopKycPhotoTitle => 'Shop / business photo';
+
+  @override
+  String get shopKycPhotoSubtitle =>
+      'Optional. Front-of-store photo helps trust + verification reviews.';
+
+  @override
+  String get shopKycNotUploaded => 'Not uploaded';
+
+  @override
+  String get shopKycUploadComingSoon => 'Upload (coming soon)';
+
+  @override
+  String get shopConnectExistingAccountTitle => 'Connect existing account';
+
+  @override
+  String get shopConnectIntro =>
+      'Already have a Razorpay linked account? Paste its id to link it — no need to re-do KYC.';
+
+  @override
+  String get shopConnectAccountIdLabel => 'Account id';
+
+  @override
+  String get shopConnectVerify => 'Verify';
+
+  @override
+  String get shopConnectConfirmTitle => 'Confirm this is your account';
+
+  @override
+  String get shopConnectFactAccount => 'Account';
+
+  @override
+  String get shopConnectFactBusiness => 'Business';
+
+  @override
+  String get shopConnectFactContact => 'Contact';
+
+  @override
+  String get shopConnectFactEmail => 'Email';
+
+  @override
+  String get shopConnectFactKycStatus => 'KYC status';
+
+  @override
+  String get shopConnectFactPayouts => 'Payouts';
+
+  @override
+  String get shopConnectPayoutsNotEnabledWarning =>
+      'Payouts aren\'t enabled yet — you can link it, but UPI at the till stays off until Razorpay activates the account.';
+
+  @override
+  String get shopConnectLinkAccount => 'Link this account';
+
+  @override
+  String get shopPermissionView => 'View';
+
+  @override
+  String get shopPermissionManage => 'Manage';
+
+  @override
+  String get shopStartFromRole => 'START FROM A ROLE';
+
+  @override
+  String get shopCustomRole => 'Custom';
+
+  @override
+  String shopAccessManageable(Object count) {
+    return 'ACCESS · $count manageable';
+  }
+
+  @override
+  String get shopPermissionTrustHint =>
+      'Manage includes view. Payouts & KYC and Team are sensitive — grant them only to people you trust.';
+
+  @override
+  String get shopGiveRoleName => 'Give the role a name';
+
+  @override
+  String get shopNewRole => 'New role';
+
+  @override
+  String get shopEditRole => 'Edit role';
+
+  @override
+  String get shopRoleNameLabel => 'Role name';
+
+  @override
+  String get shopRoleNameHint => 'e.g. Warehouse Lead';
+
+  @override
+  String get shopRoleTemplatesHint =>
+      'Members keep their current access when a role changes — roles are templates you assign, not live links.';
+
+  @override
+  String get shopPayoutsSubmittedSnack =>
+      'Submitted — Razorpay will verify your account.';
+
+  @override
+  String get shopConnectExisting => 'Connect existing';
+
+  @override
+  String get shopStepBusiness => 'Business';
+
+  @override
+  String get shopStepIdentity => 'Identity';
+
+  @override
+  String get shopStepAddress => 'Address';
+
+  @override
+  String get shopStepBank => 'Bank';
+
+  @override
+  String shopStepProgress(Object current, Object total, Object title) {
+    return 'Step $current of $total · $title';
+  }
+
+  @override
+  String get shopSetUpPayouts => 'Set up payouts';
+
+  @override
+  String get shopFieldRequired => 'Required';
+
+  @override
+  String get shopInvalidEmail => 'Invalid email';
+
+  @override
+  String get shopBusinessStepTitle => 'Your business';
+
+  @override
+  String get shopBusinessStepSubtitle =>
+      'The legal entity that receives settlements.';
+
+  @override
+  String get shopLegalBusinessName => 'Legal business name';
+
+  @override
+  String get shopDisplayName => 'Display name (optional)';
+
+  @override
+  String get shopDisplayNameHelper =>
+      'Shown to customers. Defaults to the legal name.';
+
+  @override
+  String get shopContactPersonName => 'Contact person name';
+
+  @override
+  String get shopEmail => 'Email';
+
+  @override
+  String get shopPhone => 'Phone';
+
+  @override
+  String get shopEnter10DigitNumber => 'Enter a 10-digit number';
+
+  @override
+  String get shopBusinessType => 'Business type';
+
+  @override
+  String get shopBusinessTypeProprietorship => 'Proprietorship';
+
+  @override
+  String get shopBusinessTypePartnership => 'Partnership';
+
+  @override
+  String get shopBusinessTypePrivateLimited => 'Private Limited';
+
+  @override
+  String get shopBusinessTypePublicLimited => 'Public Limited';
+
+  @override
+  String get shopBusinessTypeLlp => 'LLP';
+
+  @override
+  String get shopBusinessTypeIndividual => 'Individual';
+
+  @override
+  String get shopBusinessTypeTrust => 'Trust';
+
+  @override
+  String get shopBusinessTypeSociety => 'Society';
+
+  @override
+  String get shopBusinessTypeNgo => 'NGO';
+
+  @override
+  String get shopBusinessCategory => 'Business category';
+
+  @override
+  String get shopCategoryEcommerce => 'E-commerce / Retail';
+
+  @override
+  String get shopCategoryFood => 'Food & Beverage';
+
+  @override
+  String get shopCategoryServices => 'Services';
+
+  @override
+  String get shopCategoryHealthcare => 'Healthcare';
+
+  @override
+  String get shopCategoryEducation => 'Education';
+
+  @override
+  String get shopCategoryOthers => 'Others';
+
+  @override
+  String get shopIdentityStepTitle => 'Identity & tax';
+
+  @override
+  String get shopIdentityStepSubtitle =>
+      'Verified with the tax authority. Sent to Razorpay, never stored by this app.';
+
+  @override
+  String get shopPanHelper => 'Business or proprietor PAN (e.g. AAACL1234C).';
+
+  @override
+  String get shopInvalidPan => 'Invalid PAN';
+
+  @override
+  String get shopGstinOptional => 'GSTIN (optional)';
+
+  @override
+  String get shopGstinHelper => 'Add if your business is GST-registered.';
+
+  @override
+  String get shopInvalidGstin => 'Invalid GSTIN';
+
+  @override
+  String get shopAddressStepTitle => 'Registered address';
+
+  @override
+  String get shopAddressStepSubtitle =>
+      'The address on your business registration.';
+
+  @override
+  String get shopAddressLine1 => 'Address line 1';
+
+  @override
+  String get shopAddressLine2 => 'Address line 2 (optional)';
+
+  @override
+  String get shopCity => 'City';
+
+  @override
+  String get shopState => 'State';
+
+  @override
+  String get shopSelectState => 'Select a state';
+
+  @override
+  String get shopPinCode => 'PIN code';
+
+  @override
+  String get shopEnter6DigitPin => 'Enter a 6-digit PIN';
+
+  @override
+  String get shopCountryIndia => 'Country: India';
+
+  @override
+  String get shopBankStepTitle => 'Settlement bank account';
+
+  @override
+  String get shopBankStepSubtitle =>
+      'Where your payouts land. Sent securely to Razorpay; this app never stores your bank details.';
+
+  @override
+  String get shopAccountHolderName => 'Account holder name';
+
+  @override
+  String get shopBankAccountNumber => 'Bank account number';
+
+  @override
+  String get shopEnterValidAccountNumber => 'Enter a valid account number';
+
+  @override
+  String get shopInvalidIfsc => 'Invalid IFSC';
+
+  @override
+  String get shopResumeTitle => 'Continue where you left off?';
+
+  @override
+  String shopResumeDraftUpTo(Object step) {
+    return 'You had a saved draft up to the $step step.';
+  }
+
+  @override
+  String get shopStartOver => 'Start over';
+
+  @override
+  String get shopResume => 'Resume';
+
+  @override
+  String get shopStatusActive => 'Active — payouts enabled';
+
+  @override
+  String get shopStatusNeedsClarification =>
+      'Action needed — Razorpay needs more info';
+
+  @override
+  String get shopStatusSuspended => 'Suspended — contact support';
+
+  @override
+  String get shopStatusUnderReview => 'Under review by Razorpay';
+
+  @override
+  String get shopStatusNotActivated =>
+      'Not activated yet — finish KYC at Razorpay';
+
+  @override
+  String get shopStatusActivatedDesc =>
+      'Your settlement account is verified. Order + UPI payouts will land in your bank.';
+
+  @override
+  String shopStatusNotEnabledDesc(Object status) {
+    return 'This account is not payout-enabled yet (Razorpay status: $status). Finish its Route KYC in the Razorpay dashboard, then tap refresh to re-check live.';
+  }
+
+  @override
+  String get shopDetailAccountId => 'Account ID';
+
+  @override
+  String get shopDetailName => 'Name';
+
+  @override
+  String get shopDetailEmail => 'Email';
+
+  @override
+  String get shopDetailBusinessType => 'Business type';
+
+  @override
+  String get shopDetailKycStatus => 'KYC status';
+
+  @override
+  String get shopDetailPayouts => 'Payouts';
+
+  @override
+  String get shopRefreshFromRazorpay => 'Refresh from Razorpay';
+
+  @override
+  String get shopImageTooLarge =>
+      'Image is larger than 5 MB. Pick a smaller image or crop tighter.';
+
+  @override
+  String get shopImageUploadFailed => 'Image upload failed';
+
+  @override
+  String get shopProfileSaved => 'Shop profile saved';
+
+  @override
+  String get shopUnpublishTitle => 'Unpublish shop?';
+
+  @override
+  String get shopUnpublishMessage =>
+      'Customers will stop seeing your shop on the marketplace. Your inventory and orders are unaffected.';
+
+  @override
+  String get shopUnpublish => 'Unpublish';
+
+  @override
+  String get shopNowLive => 'Shop is now live on the marketplace';
+
+  @override
+  String get shopHiddenFromMarketplace => 'Shop hidden from marketplace';
+
+  @override
+  String get shopPublishUpdateFailed => 'Failed to update publish state';
+
+  @override
+  String get shopDiscardChangesTitle => 'Discard changes?';
+
+  @override
+  String get shopDiscardChangesMessage =>
+      'You have unsaved edits. Leaving now drops them.';
+
+  @override
+  String get shopKeepEditing => 'Keep editing';
+
+  @override
+  String get shopDiscard => 'Discard';
+
+  @override
+  String get shopMyShopTitle => 'My Shop';
+
+  @override
+  String get shopNotFound => 'Shop not found';
+
+  @override
+  String shopLiveOnMarketplaceSlug(Object slug) {
+    return 'Live on marketplace · /$slug';
+  }
+
+  @override
+  String get shopNotPublished => 'Not published';
+
+  @override
+  String get shopNameLabel => 'Shop name';
+
+  @override
+  String get shopNameHelper =>
+      'Shown on the marketplace. Renaming updates the public URL slug.';
+
+  @override
+  String get shopMin2Chars => 'Min 2 characters';
+
+  @override
+  String get shopMax80Chars => 'Max 80 characters';
+
+  @override
+  String get shopTaglineLabel => 'Tagline (optional)';
+
+  @override
+  String get shopTaglineHelper => 'One-liner shown below your shop name.';
+
+  @override
+  String get shopLocationSection => 'Location';
+
+  @override
+  String get shopLocationSectionSubtitle =>
+      'Optional. Surfaces a \"Based in …\" line on your public shop page.';
+
+  @override
+  String get shopPoliciesSection => 'Policies';
+
+  @override
+  String get shopPoliciesSectionSubtitle =>
+      'Customers see these on your shop page and as a \"Policies\" pill on every PDP. Plain text. Up to 4 KB each.';
+
+  @override
+  String get shopReturnPolicyLabel => 'Return policy';
+
+  @override
+  String get shopReturnPolicyHint =>
+      'e.g. 7-day return on unused items. Original packaging required.';
+
+  @override
+  String get shopShippingPolicyLabel => 'Shipping policy';
+
+  @override
+  String get shopShippingPolicyHint =>
+      'e.g. Ships within 24 hours from Bengaluru. 3–5 business days delivery.';
+
+  @override
+  String get shopRefundPolicyLabel => 'Refund policy';
+
+  @override
+  String get shopRefundPolicyHint =>
+      'e.g. Refunds processed within 5 business days to the original payment method.';
+
+  @override
+  String get shopReturnsCancellationSection => 'Returns & cancellation';
+
+  @override
+  String get shopReturnsCancellationSubtitle =>
+      'Whether customers can return orders, how refunds are issued, and how late an order can be cancelled.';
+
+  @override
+  String get shopAcceptReturns => 'Accept returns';
+
+  @override
+  String get shopAcceptReturnsSubtitle =>
+      'When off, customers can\'t request post-delivery returns.';
+
+  @override
+  String get shopReturnWindowLabel => 'Return window (days)';
+
+  @override
+  String get shopReturnWindowHelper => '0 means no time limit.';
+
+  @override
+  String get shopReturnWindowError => 'Enter a whole number between 0 and 365';
+
+  @override
+  String get shopRefundMethodLabel => 'Refund method';
+
+  @override
+  String get shopRefundMethodOriginal => 'Original payment method';
+
+  @override
+  String get shopRefundMethodReplacement => 'Replacement only';
+
+  @override
+  String get shopReturnPolicyNoteLabel => 'Return policy note (optional)';
+
+  @override
+  String get shopReturnPolicyNoteHint =>
+      'e.g. Items must be unused and in original packaging. Buyer pays return shipping.';
+
+  @override
+  String get shopCustomersCanCancelLabel => 'Customers can cancel';
+
+  @override
+  String get shopCustomersCanCancelHelper =>
+      'After this stage they must use a post-delivery return instead.';
+
+  @override
+  String get shopCancelUntilConfirmed => 'Until I confirm the order';
+
+  @override
+  String get shopCancelUntilPacked => 'Until packed';
+
+  @override
+  String get shopCancelUntilShipped => 'Until shipped (recommended)';
+
+  @override
+  String get shopCancelUntilDelivered => 'Until delivered';
+
+  @override
+  String get shopAddBanner => 'Add banner';
+
+  @override
+  String get shopReplace => 'Replace';
+
+  @override
+  String get shopLiveOnMarketplace => 'Live on marketplace';
+
+  @override
+  String get shopNotPublishedYet => 'Not published yet';
+
+  @override
+  String get shopPublishCardLiveDesc =>
+      'Customers can find your shop and your published products.';
+
+  @override
+  String get shopPublishCardHiddenDesc =>
+      'Toggle on once your logo, banner and at least one product are ready.';
+
+  @override
+  String get shopInviteTeammate => 'Invite a teammate';
+
+  @override
+  String get shopInviteAccessTitle => 'Invite access';
+
+  @override
+  String get shopSendInvite => 'Send invite';
+
+  @override
+  String shopInviteAccessSubtitle(Object email) {
+    return 'Choose what $email can view and manage. You can change this anytime.';
+  }
+
+  @override
+  String shopInvitationSentTo(Object email) {
+    return 'Invitation sent to $email';
+  }
+
+  @override
+  String get shopEditAccessTitle => 'Edit access';
+
+  @override
+  String shopEditAccessSubtitle(Object name) {
+    return 'Set exactly what $name can view and manage.';
+  }
+
+  @override
+  String get shopAccessUpdated => 'Access updated';
+
+  @override
+  String get shopRemoveFromTeamTitle => 'Remove from team?';
+
+  @override
+  String shopRemoveFromTeamMessage(Object name) {
+    return '$name will lose access to this shop immediately. You can invite them again later.';
+  }
+
+  @override
+  String get shopRemovedFromTeam => 'Removed from team';
+
+  @override
+  String get shopRoleCreated => 'Role created';
+
+  @override
+  String get shopRoleSaved => 'Role saved';
+
+  @override
+  String shopDeleteRoleTitle(Object name) {
+    return 'Delete “$name”?';
+  }
+
+  @override
+  String get shopDeleteRoleMessage =>
+      'This removes the role from the picker. Teammates who already have it keep their current access.';
+
+  @override
+  String get shopRoleDeleted => 'Role deleted';
+
+  @override
+  String get shopInvitationCancelled => 'Invitation cancelled';
+
+  @override
+  String get shopTeamViewOnlyBanner =>
+      'You can view the team but not change it. Ask an owner to invite people or adjust who does what.';
+
+  @override
+  String shopTeamSectionHeader(Object count) {
+    return 'TEAM · $count';
+  }
+
+  @override
+  String shopPendingInvitesHeader(Object count) {
+    return 'PENDING INVITES · $count';
+  }
+
+  @override
+  String shopRolesHeader(Object count) {
+    return 'ROLES · $count';
+  }
+
+  @override
+  String get shopEditAccessMenu => 'Edit access';
+
+  @override
+  String get shopRemoveFromTeamMenu => 'Remove from team';
+
+  @override
+  String shopInvitedAsAwaitingReply(Object role) {
+    return 'Invited as $role · awaiting reply';
+  }
+
+  @override
+  String get shopBuiltIn => 'Built-in';
+
+  @override
+  String get shopRoleViewOnly => 'View-only';
+
+  @override
+  String shopRoleAreaManageable(Object count) {
+    return '$count area manageable';
+  }
+
+  @override
+  String shopRoleAreasManageable(Object count) {
+    return '$count areas manageable';
+  }
+
+  @override
+  String get shopEditRoleMenu => 'Edit role';
+
+  @override
+  String get shopDeleteRoleMenu => 'Delete role';
+
+  @override
+  String get shopInviteSheetSubtitle =>
+      'Use a dedicated work email — shopper accounts can\'t be staff. You\'ll pick their access next.';
+
+  @override
+  String get shopEnterEmail => 'Enter an email';
+
+  @override
+  String get shopEnterValidEmail => 'Enter a valid email';
+
+  @override
+  String get shopChooseAccess => 'Choose access';
+
+  @override
+  String get shopNotNow => 'Not now';
+
+  @override
+  String get shopJoinFallbackShop => 'A shop';
+
+  @override
+  String get shopStaffRole => 'Staff';
+
+  @override
+  String get shopYoureInvitedToJoin => 'You\'re invited to join';
+
+  @override
+  String get shopAsA => 'as a ';
+
+  @override
+  String get shopWhatYoullBeAbleToDo => 'WHAT YOU\'LL BE ABLE TO DO';
+
+  @override
+  String get shopLimitedAccess => 'Limited access — ask the owner for details.';
+
+  @override
+  String get shopJoinTheTeam => 'Join the team';
+
+  @override
+  String shopJoinNamed(Object shop) {
+    return 'Join $shop';
+  }
+
+  @override
+  String get shopDeclineInvitation => 'Decline invitation';
+
+  @override
+  String get shopSheetFinishTitle => 'Finish setting up payouts';
+
+  @override
+  String get shopSheetSetupTitle => 'Set up payouts to get paid';
+
+  @override
+  String get shopSheetFinishBody =>
+      'You started setting up payouts — pick up right where you left off. Your saved details are kept securely on this device.';
+
+  @override
+  String get shopSheetSetupBody =>
+      'Add your settlement bank account so your share of each order can reach you. Your money is held until the order is delivered, then settled to your bank — usually within a few days.';
+
+  @override
+  String get shopSetUpNow => 'Set up now';
+
+  @override
+  String get shopLater => 'Later';
+
+  @override
+  String get cashierTitle => 'Cashier';
+
+  @override
+  String get cashierRoleCashier => 'Cashier';
+
+  @override
+  String cashierShiftClosedVariance(Object variance) {
+    return 'Shift closed · variance $variance';
+  }
+
+  @override
+  String get cashierPastShiftsTitle => 'Past shifts · Z-receipts';
+
+  @override
+  String get cashierLoading => 'Loading…';
+
+  @override
+  String get cashierNoShiftsYet => 'No shifts yet.';
+
+  @override
+  String cashierVarianceLabel(Object amount) {
+    return 'variance $amount';
+  }
+
+  @override
+  String get cashierShiftReportTitle => 'Shift report (X)';
+
+  @override
+  String cashierSalesSummary(Object count, Object gross) {
+    return '$count sales · $gross gross';
+  }
+
+  @override
+  String get cashierOpeningFloat => 'Opening float';
+
+  @override
+  String get cashierCashSales => 'Cash sales';
+
+  @override
+  String get cashierPayIns => 'Pay-ins';
+
+  @override
+  String get cashierPayOuts => 'Pay-outs';
+
+  @override
+  String get cashierDrops => 'Drops';
+
+  @override
+  String get cashierRefunds => 'Refunds';
+
+  @override
+  String get cashierExpectedInDrawer => 'Expected in drawer';
+
+  @override
+  String get cashierGstTaxable => 'GST taxable';
+
+  @override
+  String cashierReturnsCount(Object count) {
+    return 'Returns ($count)';
+  }
+
+  @override
+  String get cashierOpenShiftTitle => 'Open a shift';
+
+  @override
+  String get cashierOpenShiftHint =>
+      'Count the drawer and enter the opening float.';
+
+  @override
+  String get cashierOpeningFloatField => 'Opening float ₹';
+
+  @override
+  String get cashierOpenShiftButton => 'Open shift';
+
+  @override
+  String get cashierCashDrawerTitle => 'Cash drawer';
+
+  @override
+  String get cashierPayIn => 'Pay in';
+
+  @override
+  String get cashierPayOut => 'Pay out';
+
+  @override
+  String get cashierDrop => 'Drop';
+
+  @override
+  String get cashierAmountField => 'Amount ₹';
+
+  @override
+  String get cashierReasonField => 'Reason (optional)';
+
+  @override
+  String get cashierRecordButton => 'Record';
+
+  @override
+  String get cashierCloseShiftTitle => 'Close shift';
+
+  @override
+  String cashierExpectedInDrawerValue(Object amount) {
+    return 'Expected in drawer: $amount';
+  }
+
+  @override
+  String get cashierCountedCashField => 'Counted cash ₹';
+
+  @override
+  String cashierVarianceValue(Object amount, Object status) {
+    return 'Variance: $amount $status';
+  }
+
+  @override
+  String get cashierVarianceBalanced => '(balanced)';
+
+  @override
+  String get cashierVarianceOver => '(over)';
+
+  @override
+  String get cashierVarianceShort => '(short)';
+
+  @override
+  String get cashierNoteField => 'Note (optional)';
+
+  @override
+  String get cashierCloseZReportButton => 'Close & Z-report';
+
+  @override
+  String get cashierReturnsTitle => 'Returns';
+
+  @override
+  String get cashierOriginalInvoiceIdField => 'Original invoice id';
+
+  @override
+  String get cashierLookUpButton => 'Look up';
+
+  @override
+  String cashierReturnableLine(Object qty, Object price) {
+    return 'returnable $qty · $price';
+  }
+
+  @override
+  String get cashierEnterQuantityError => 'Enter a quantity to return.';
+
+  @override
+  String cashierCreditNoteCreated(Object no, Object amount) {
+    return 'Credit note $no · $amount';
+  }
+
+  @override
+  String get cashierProcessReturnButton => 'Process return';
+
+  @override
+  String get posTitle => 'Point of sale';
+
+  @override
+  String get posFindItem => 'Find item';
+
+  @override
+  String get posCashierTooltip => 'Cashier (shift · drawer · returns)';
+
+  @override
+  String get posHold => 'Hold';
+
+  @override
+  String get posRecall => 'Recall';
+
+  @override
+  String get posLogOut => 'Log out';
+
+  @override
+  String get posCashier => 'Cashier';
+
+  @override
+  String get posOpenShiftToBill => 'Open a shift to start billing';
+
+  @override
+  String get posOpenShift => 'Open shift';
+
+  @override
+  String get posScanFirstItem => 'Scan the first item.';
+
+  @override
+  String get posTotal => 'Total';
+
+  @override
+  String get posBillDiscount => 'Bill discount';
+
+  @override
+  String get posCheckout => 'Checkout';
+
+  @override
+  String get posLineDiscount => 'Line discount';
+
+  @override
+  String get posNewItem => 'New item';
+
+  @override
+  String get posName => 'Name';
+
+  @override
+  String get posSellingPrice => 'Selling price ₹';
+
+  @override
+  String get posGstPercentOptional => 'GST % (optional)';
+
+  @override
+  String get posOnHand => 'On hand';
+
+  @override
+  String get posCancel => 'Cancel';
+
+  @override
+  String get posAdd => 'Add';
+
+  @override
+  String get posSaleComplete => 'Sale complete';
+
+  @override
+  String get posInvoice => 'Invoice';
+
+  @override
+  String get posPrint => 'Print';
+
+  @override
+  String get posDone => 'Done';
+
+  @override
+  String get posCouldNotGenerateReceipt => 'Could not generate the receipt';
+
+  @override
+  String posDiscountMax(Object max) {
+    return 'Discount ₹ (max $max)';
+  }
+
+  @override
+  String get posApply => 'Apply';
+
+  @override
+  String get posDiscount => 'Discount ₹';
+
+  @override
+  String get posCollect => 'Collect';
+
+  @override
+  String get posCustomerOptional => 'Customer (optional)';
+
+  @override
+  String get posPhone => 'Phone';
+
+  @override
+  String get posCashReceived => 'Cash received ₹';
+
+  @override
+  String get posChangeDue => 'Change due';
+
+  @override
+  String get posCashDone => 'Cash — done';
+
+  @override
+  String get posOtherTenders => 'Other tenders';
+
+  @override
+  String get posOnline => 'Online';
+
+  @override
+  String get posPaymentFailedRetry => 'Payment failed. Please retry.';
+
+  @override
+  String get posNoHeldBills => 'No held bills.';
+
+  @override
+  String get posHeldBills => 'Held bills';
+
+  @override
+  String get posBill => 'Bill';
+
+  @override
+  String posItemCount(Object count) {
+    return '$count item(s)';
+  }
+
+  @override
+  String get posQuantity => 'Quantity';
+
+  @override
+  String get posSet => 'Set';
+
+  @override
+  String get posFindItemByNameSku => 'Find item by name / SKU';
+
+  @override
+  String get posSearching => 'Searching…';
+
+  @override
+  String get posTypeToSearch => 'Type to search the catalogue.';
+
+  @override
+  String get posStock => 'stock';
+
+  @override
+  String posAddedItem(Object name) {
+    return 'Added $name';
+  }
+
+  @override
+  String get posStatusLive => 'Live';
+
+  @override
+  String get posStatusConnecting => 'Connecting';
+
+  @override
+  String get posStatusReconnecting => 'Reconnecting';
+
+  @override
+  String get posStatusOffline => 'Offline';
+
+  @override
+  String get bannersTitle => 'Banners';
+
+  @override
+  String get bannersRefresh => 'Refresh';
+
+  @override
+  String get bannersNewBanner => 'New banner';
+
+  @override
+  String get bannersDeleteTitle => 'Delete banner?';
+
+  @override
+  String bannersDeleteMessage(Object placement) {
+    return 'This banner will be removed from $placement.';
+  }
+
+  @override
+  String get bannersCancel => 'Cancel';
+
+  @override
+  String get bannersDelete => 'Delete';
+
+  @override
+  String get bannersEmptyPlacement => 'No banners in this placement yet';
+
+  @override
+  String get bannersStatusLive => 'Live';
+
+  @override
+  String get bannersStatusScheduled => 'Scheduled';
+
+  @override
+  String get bannersStatusExpired => 'Expired';
+
+  @override
+  String get bannersStatusOff => 'Off';
+
+  @override
+  String bannersSortOrder(Object order) {
+    return 'Sort $order';
+  }
+
+  @override
+  String bannersProductCountOne(Object count) {
+    return '$count product';
+  }
+
+  @override
+  String bannersProductCountOther(Object count) {
+    return '$count products';
+  }
+
+  @override
+  String bannersWindowFrom(Object date) {
+    return 'from $date';
+  }
+
+  @override
+  String bannersWindowUntil(Object date) {
+    return 'until $date';
+  }
+
+  @override
+  String get bannersImageUploadFailed => 'Image upload failed';
+
+  @override
+  String get bannersImageTooLarge =>
+      'Image is larger than 5 MB. Pick a smaller image or crop tighter.';
+
+  @override
+  String get bannersImageRequired => 'An image is required';
+
+  @override
+  String get bannersSaveFailed => 'Save failed';
+
+  @override
+  String bannersProductsSaveFailed(Object error) {
+    return 'Banner saved, but products failed: $error';
+  }
+
+  @override
+  String get bannersAlreadyPinned => 'Already pinned to this banner';
+
+  @override
+  String get bannersEditBanner => 'Edit banner';
+
+  @override
+  String get bannersPlacement => 'Placement';
+
+  @override
+  String get bannersLink => 'Link';
+
+  @override
+  String get bannersSort => 'Sort';
+
+  @override
+  String get bannersActive => 'Active';
+
+  @override
+  String get bannersActiveSubtitle => 'When off, hidden regardless of schedule';
+
+  @override
+  String get bannersSaving => 'Saving…';
+
+  @override
+  String get bannersSaveChanges => 'Save changes';
+
+  @override
+  String get bannersCreateBanner => 'Create banner';
+
+  @override
+  String get bannersUploadImage => 'Upload image *';
+
+  @override
+  String get bannersReplaceImage => 'Replace image';
+
+  @override
+  String get bannersStarts => 'Starts';
+
+  @override
+  String get bannersEnds => 'Ends';
+
+  @override
+  String get bannersProducts => 'Products';
+
+  @override
+  String get bannersAdd => 'Add';
+
+  @override
+  String get bannersSaveFirstHint => 'Save the banner first to add products.';
+
+  @override
+  String get bannersAddProductsHint =>
+      'Tap “Add” to pin products with an optional discount.';
+
+  @override
+  String get bannersNotSet => 'Not set';
+
+  @override
+  String get bannersSearchProduct => 'Search product name or SKU';
+
+  @override
+  String get bannersSearchHint => 'Type 2+ characters to search';
+
+  @override
+  String get challansTitle => 'Challans';
+
+  @override
+  String get challansSearchHint => 'Search challans...';
+
+  @override
+  String get challansFilterAll => 'All';
+
+  @override
+  String get challansEmptyTitle => 'No challans found';
+
+  @override
+  String get challansEmptySubtitle => 'Tap + to create a challan';
+
+  @override
+  String get challansCreate => 'Create Challan';
+
+  @override
+  String get challansItemsLabel => 'items';
+
+  @override
+  String get challansCancel => 'Cancel Challan';
+
+  @override
+  String get challansCancelConfirm =>
+      'Cancel this challan? This cannot be undone.';
+
+  @override
+  String get challansYes => 'Yes';
+
+  @override
+  String get challansNo => 'No';
+
+  @override
+  String get challansError => 'Something went wrong';
+
+  @override
+  String get challansPartyName => 'Party Name';
+
+  @override
+  String get challansPhone => 'Phone';
+
+  @override
+  String get challansNote => 'Note';
+
+  @override
+  String get challansLinkedInvoice => 'Invoice';
+
+  @override
+  String get challansItemsHeader => 'Challan Items';
+
+  @override
+  String get challansEmptyItems => 'No items added yet';
+
+  @override
+  String get challansConvertToInvoice => 'Convert to Invoice';
+
+  @override
+  String get challansAddAtLeastOne => 'Add at least one product';
+
+  @override
+  String get challansDiscardTitle => 'Discard changes?';
+
+  @override
+  String get challansDiscardMessage => 'Your edits will be lost.';
+
+  @override
+  String get challansKeepEditing => 'Keep editing';
+
+  @override
+  String get challansDiscard => 'Discard';
+
+  @override
+  String get challansSubmit => 'Submit';
+
+  @override
+  String get challansPartyInfo => 'Party Info';
+
+  @override
+  String get challansSelectParty => 'Select party';
+
+  @override
+  String get challansFieldRequired => 'This field is required';
+
+  @override
+  String get challansAddProducts => 'Add Products';
+
+  @override
+  String get challansNoPricesHint => 'Prices are not visible to the party';
+
+  @override
+  String get challansSearchProducts => 'Search products...';
+
+  @override
+  String get challansChange => 'Change';
+
+  @override
+  String get returnsTitle => 'Returns';
+
+  @override
+  String get returnsTabOpen => 'Open';
+
+  @override
+  String get returnsTabApproved => 'Approved';
+
+  @override
+  String get returnsTabReceived => 'Received';
+
+  @override
+  String get returnsTabRefunded => 'Refunded';
+
+  @override
+  String get returnsTabAll => 'All';
+
+  @override
+  String returnsRowTitle(Object id, Object name) {
+    return 'Return #$id · $name';
+  }
+
+  @override
+  String get returnsItemCountOne => '1 item';
+
+  @override
+  String returnsItemCountOther(Object count) {
+    return '$count items';
+  }
+
+  @override
+  String get returnsRefundLabel => 'Refund';
+
+  @override
+  String get returnsEmpty => 'No returns in this view yet.';
+
+  @override
+  String get returnsRetry => 'Retry';
+
+  @override
+  String get returnsStatusRequested => 'Requested';
+
+  @override
+  String get returnsStatusApproved => 'Approved';
+
+  @override
+  String get returnsStatusRejected => 'Rejected';
+
+  @override
+  String get returnsStatusCancelled => 'Cancelled';
+
+  @override
+  String get returnsStatusPickedUp => 'Picked up';
+
+  @override
+  String get returnsStatusReceived => 'Received';
+
+  @override
+  String get returnsStatusRefunded => 'Refunded';
+
+  @override
+  String returnsDetailTitle(Object id) {
+    return 'Return #$id';
+  }
+
+  @override
+  String get returnsNoteOptional => 'Note (optional)';
+
+  @override
+  String get returnsNoteRequired => 'Note required';
+
+  @override
+  String get returnsCancel => 'Cancel';
+
+  @override
+  String get returnsBuyerNote => 'Buyer note';
+
+  @override
+  String get returnsYourNote => 'Your note';
+
+  @override
+  String returnsRefundedToOriginal(Object amount, Object name) {
+    return 'Refunded $amount to $name\'s original payment method';
+  }
+
+  @override
+  String get returnsApproveTitle => 'Approve return';
+
+  @override
+  String get returnsApprove => 'Approve';
+
+  @override
+  String get returnsApproveHint =>
+      'Pickup instructions for the buyer (optional)';
+
+  @override
+  String get returnsApprovedToast => 'Return approved';
+
+  @override
+  String get returnsRejectTitle => 'Reject return';
+
+  @override
+  String get returnsReject => 'Reject';
+
+  @override
+  String get returnsRejectHint => 'Why? Shown to the buyer';
+
+  @override
+  String get returnsRejectedToast => 'Return rejected';
+
+  @override
+  String get returnsPickedUpToast => 'Marked as picked up';
+
+  @override
+  String get returnsReceivedToast => 'Marked as received';
+
+  @override
+  String returnsRefundConfirmTitle(Object amount) {
+    return 'Refund $amount?';
+  }
+
+  @override
+  String get returnsRefundConfirmBody =>
+      'This refunds the buyer to their original payment method. The action can\'t be undone.';
+
+  @override
+  String get returnsRefund => 'Refund';
+
+  @override
+  String get returnsRefundIssuedToast =>
+      'Refund issued to original payment method';
+
+  @override
+  String returnsOrderSlice(Object orderId, Object sliceId) {
+    return 'Order #$orderId · Slice #$sliceId';
+  }
+
+  @override
+  String get returnsRefundPreview => 'Refund preview: ';
+
+  @override
+  String get returnsItems => 'Items';
+
+  @override
+  String get returnsReasonDamaged => 'Damaged on arrival';
+
+  @override
+  String get returnsReasonWrongItem => 'Wrong item sent';
+
+  @override
+  String get returnsReasonNotAsDescribed => 'Not as described';
+
+  @override
+  String get returnsReasonSizeFit => 'Size / fit issue';
+
+  @override
+  String get returnsReasonChangedMind => 'Buyer changed mind';
+
+  @override
+  String get returnsReasonDefective => 'Defective / not working';
+
+  @override
+  String get returnsReasonOther => 'Other';
+
+  @override
+  String get returnsTimeline => 'Timeline';
+
+  @override
+  String get returnsMarkPickedUp => 'Mark as picked up';
+
+  @override
+  String get returnsMarkReceived => 'Mark as received';
 }

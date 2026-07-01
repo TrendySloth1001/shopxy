@@ -7,8 +7,8 @@ import 'package:shopxy/features/parties/domain/entities/party.dart';
 import 'package:shopxy/features/parties/presentation/widgets/party_picker.dart';
 import 'package:shopxy/features/products/data/datasources/products_remote_data_source.dart';
 import 'package:shopxy/features/products/domain/entities/product.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
-import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
 import 'package:shopxy/shared/widgets/app_card.dart';
@@ -133,7 +133,7 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
     if (!_formKey.currentState!.validate()) return;
     if (_items.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(AppStrings.challanNoItems)),
+        SnackBar(content: Text(AppLocalizations.of(context).challansAddAtLeastOne)),
       );
       return;
     }
@@ -163,19 +163,20 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
   }
 
   Future<bool> _confirmDiscard() async {
+    final l10n = AppLocalizations.of(context);
     final discard = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Discard changes?'),
-        content: const Text('Your edits will be lost.'),
+        title: Text(l10n.challansDiscardTitle),
+        content: Text(l10n.challansDiscardMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Keep editing'),
+            child: Text(l10n.challansKeepEditing),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Discard'),
+            child: Text(l10n.challansDiscard),
           ),
         ],
       ),
@@ -185,6 +186,7 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
 
     return PopScope(
@@ -196,7 +198,7 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
       },
       child: Scaffold(
       appBar: AppBar(
-        title: const Text(AppStrings.createChallan),
+        title: Text(l10n.challansCreate),
         actions: [
           TextButton(
             onPressed: _isSaving ? null : _save,
@@ -206,7 +208,7 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
                     height: AppSizes.iconMd,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text(AppStrings.submit),
+                : Text(l10n.challansSubmit),
           ),
         ],
       ),
@@ -224,7 +226,7 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
                 padding: const EdgeInsets.all(AppSizes.lg),
                 children: [
             AppSectionHeader(
-              title: AppStrings.challanPartyInfo.toUpperCase(),
+              title: l10n.challansPartyInfo.toUpperCase(),
               padding: const EdgeInsets.only(bottom: AppSizes.sm),
             ),
             if (_selectedParty != null)
@@ -235,7 +237,7 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
               )
             else ...[
               AppButton.secondary(
-                label: AppStrings.selectParty,
+                label: l10n.challansSelectParty,
                 icon: Icons.person_search_rounded,
                 onPressed: _pickParty,
                 fullWidth: true,
@@ -243,42 +245,42 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
               const SizedBox(height: AppSizes.md),
               TextFormField(
                 controller: _partyName,
-                decoration: const InputDecoration(
-                  labelText: AppStrings.partyName,
+                decoration: InputDecoration(
+                  labelText: l10n.challansPartyName,
                 ),
                 validator: (v) =>
                     _selectedParty == null && (v == null || v.trim().isEmpty)
-                        ? AppStrings.fieldRequired
+                        ? l10n.challansFieldRequired
                         : null,
                 textCapitalization: TextCapitalization.words,
               ),
               const SizedBox(height: AppSizes.md),
               TextFormField(
                 controller: _partyPhone,
-                decoration: const InputDecoration(labelText: AppStrings.phone),
+                decoration: InputDecoration(labelText: l10n.challansPhone),
                 keyboardType: TextInputType.phone,
               ),
             ],
             const SizedBox(height: AppSizes.md),
             TextFormField(
               controller: _note,
-              decoration: const InputDecoration(labelText: AppStrings.note),
+              decoration: InputDecoration(labelText: l10n.challansNote),
               maxLines: 2,
             ),
             const SizedBox(height: AppSizes.xxl),
             AppSectionHeader(
-              title: AppStrings.challanAddProducts.toUpperCase(),
+              title: l10n.challansAddProducts.toUpperCase(),
               padding: const EdgeInsets.only(bottom: AppSizes.sm),
             ),
             Text(
-              AppStrings.challanNoPricesHint,
+              l10n.challansNoPricesHint,
               style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
             ),
             const SizedBox(height: AppSizes.md),
             TextFormField(
               controller: _searchCtrl,
               decoration: InputDecoration(
-                labelText: AppStrings.searchProducts,
+                labelText: l10n.challansSearchProducts,
                 prefixIcon: const Icon(Icons.search_rounded),
                 suffixIcon: _isSearching
                     ? const Padding(
@@ -319,14 +321,14 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
               children: [
                 Expanded(
                   child: AppSectionHeader(
-                    title: AppStrings.challanItems.toUpperCase(),
+                    title: l10n.challansItemsHeader.toUpperCase(),
                     padding: const EdgeInsets.only(bottom: AppSizes.sm),
                   ),
                 ),
                 Padding(
                   padding: const EdgeInsets.only(bottom: AppSizes.sm),
                   child: Text(
-                    '${_items.length} ${AppStrings.items}',
+                    '${_items.length} ${l10n.challansItemsLabel}',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: AppColors.muted,
                     ),
@@ -339,7 +341,7 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
                 padding: const EdgeInsets.all(AppSizes.xl),
                 alignment: Alignment.center,
                 child: Text(
-                  AppStrings.challanEmptyItems,
+                  l10n.challansEmptyItems,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: AppColors.muted,
                   ),
@@ -464,6 +466,7 @@ class _SelectedPartyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     return AppCard(
       padding: const EdgeInsets.all(AppSizes.md),
@@ -493,7 +496,7 @@ class _SelectedPartyCard extends StatelessWidget {
               ],
             ),
           ),
-          TextButton(onPressed: onChange, child: const Text('Change')),
+          TextButton(onPressed: onChange, child: Text(l10n.challansChange)),
           IconButton(
             icon: const Icon(Icons.close_rounded),
             onPressed: onClear,

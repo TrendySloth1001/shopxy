@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/features/shop/data/models/shop.dart';
 import 'package:shopxy/features/shop/presentation/providers/shop_provider.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
@@ -8,15 +9,6 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 
 const _dayCodes = <String>['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-const _dayLabels = <String, String>{
-  'mon': 'Monday',
-  'tue': 'Tuesday',
-  'wed': 'Wednesday',
-  'thu': 'Thursday',
-  'fri': 'Friday',
-  'sat': 'Saturday',
-  'sun': 'Sunday',
-};
 
 /// Editor for `Shop.operatingHours` + `Shop.vacationMode` +
 /// `Shop.vacationMessage`. Vacation mode at the top — it's the most
@@ -93,26 +85,28 @@ class _ShopHoursPageState extends State<ShopHoursPage> {
       operatingHours: body.isEmpty ? null : body,
     );
     if (!mounted) return;
+    final l10n = AppLocalizations.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(ok ? 'Hours saved' : provider.error ?? 'Save failed'),
+        content: Text(ok ? l10n.shopHoursSaved : provider.error ?? l10n.shopSaveFailed),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final provider = context.watch<ShopProvider>();
     final shop = provider.shop;
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
-        title: const Text('Hours & vacation mode'),
+        title: Text(l10n.shopHoursTitle),
         actions: [
           if (shop != null)
             TextButton(
               onPressed: provider.isSaving ? null : () => _save(shop),
-              child: Text(provider.isSaving ? 'Saving…' : 'Save'),
+              child: Text(provider.isSaving ? l10n.shopSaving : l10n.shopSave),
             ),
         ],
       ),
@@ -124,6 +118,16 @@ class _ShopHoursPageState extends State<ShopHoursPage> {
 
   Widget _buildForm(Shop shop) {
     _hydrate(shop);
+    final l10n = AppLocalizations.of(context);
+    final dayNames = <String, String>{
+      'mon': l10n.shopDayMonday,
+      'tue': l10n.shopDayTuesday,
+      'wed': l10n.shopDayWednesday,
+      'thu': l10n.shopDayThursday,
+      'fri': l10n.shopDayFriday,
+      'sat': l10n.shopDaySaturday,
+      'sun': l10n.shopDaySunday,
+    };
     return ListView(
       padding: const EdgeInsets.fromLTRB(
           AppSizes.lg, AppSizes.lg, AppSizes.lg, AppSizes.huge),
@@ -143,24 +147,23 @@ class _ShopHoursPageState extends State<ShopHoursPage> {
                   value: _vacationMode,
                   onChanged: (v) => setState(() => _vacationMode = v),
                   title: Text(
-                    'Vacation mode',
+                    l10n.shopVacationMode,
                     style: Theme.of(context)
                         .textTheme
                         .titleMedium
                         ?.copyWith(fontWeight: FontWeight.w800),
                   ),
-                  subtitle: const Text(
-                    'Blocks new orders. Existing orders, stock, and '
-                    'invoices stay editable as usual.',
+                  subtitle: Text(
+                    l10n.shopVacationModeSubtitle,
                   ),
                 ),
                 if (_vacationMode) ...[
                   const SizedBox(height: AppSizes.sm),
                   TextField(
                     controller: _vacationMessage,
-                    decoration: const InputDecoration(
-                      labelText: 'Message shown to customers (optional)',
-                      hintText: 'e.g. Back on Jun 5. Thanks for your patience!',
+                    decoration: InputDecoration(
+                      labelText: l10n.shopVacationMessageLabel,
+                      hintText: l10n.shopVacationMessageHint,
                     ),
                     maxLength: 280,
                     maxLines: 2,
@@ -172,7 +175,7 @@ class _ShopHoursPageState extends State<ShopHoursPage> {
         ),
         const SizedBox(height: AppSizes.xl),
         Text(
-          'OPENING HOURS',
+          l10n.shopOpeningHours,
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
                 color: AppColors.muted,
                 fontWeight: FontWeight.w800,
@@ -194,7 +197,7 @@ class _ShopHoursPageState extends State<ShopHoursPage> {
                     endIndent: AppSizes.md,
                   ),
                 _DayRow(
-                  label: _dayLabels[_dayCodes[i]]!,
+                  label: dayNames[_dayCodes[i]]!,
                   hours: _hours[_dayCodes[i]]!,
                   onChange: (next) {
                     setState(() => _hours[_dayCodes[i]] = next);
@@ -206,8 +209,7 @@ class _ShopHoursPageState extends State<ShopHoursPage> {
         ),
         const SizedBox(height: AppSizes.lg),
         Text(
-          'Hours are a hint to customers — orders outside hours still '
-          'go through.',
+          l10n.shopHoursHint,
           style: Theme.of(context)
               .textTheme
               .bodySmall
@@ -403,6 +405,7 @@ class _DayRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(
           horizontal: AppSizes.md, vertical: AppSizes.sm),
@@ -423,7 +426,7 @@ class _DayRow extends StatelessWidget {
                 ? Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      'Closed',
+                      l10n.shopDayClosed,
                       style: TextStyle(
                           color: AppColors.muted, fontStyle: FontStyle.italic),
                     ),

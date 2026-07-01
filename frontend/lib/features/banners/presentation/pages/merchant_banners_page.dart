@@ -5,6 +5,7 @@ import 'package:shopxy/core/network/image_url.dart';
 import 'package:shopxy/features/admin/data/models/banner.dart';
 import 'package:shopxy/features/banners/presentation/pages/merchant_banner_editor_sheet.dart';
 import 'package:shopxy/features/banners/presentation/providers/merchant_banners_provider.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
@@ -37,16 +38,17 @@ class _MerchantBannersPageState extends State<MerchantBannersPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final provider = context.watch<MerchantBannersProvider>();
     final grouped = provider.grouped;
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
-        title: const Text('Banners'),
+        title: Text(l10n.bannersTitle),
         actions: [
           IconButton(
-            tooltip: 'Refresh',
+            tooltip: l10n.bannersRefresh,
             icon: const Icon(Icons.refresh),
             onPressed: provider.isLoading ? null : () => provider.load(),
           ),
@@ -55,7 +57,7 @@ class _MerchantBannersPageState extends State<MerchantBannersPage> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openEditor(),
         icon: const Icon(Icons.add),
-        label: const Text('New banner'),
+        label: Text(l10n.bannersNewBanner),
       ),
       body: provider.isLoading && provider.banners.isEmpty
           ? const _BannersSkeleton()
@@ -81,14 +83,14 @@ class _MerchantBannersPageState extends State<MerchantBannersPage> {
                             final confirm = await showDialog<bool>(
                               context: context,
                               builder: (ctx) => AlertDialog(
-                                title: const Text('Delete banner?'),
+                                title: Text(l10n.bannersDeleteTitle),
                                 content: Text(
-                                  'This banner will be removed from ${b.placement.label}.',
+                                  l10n.bannersDeleteMessage(b.placement.label),
                                 ),
                                 actions: [
                                   TextButton(
                                     onPressed: () => Navigator.pop(ctx, false),
-                                    child: const Text('Cancel'),
+                                    child: Text(l10n.bannersCancel),
                                   ),
                                   FilledButton.tonal(
                                     style: FilledButton.styleFrom(
@@ -96,7 +98,7 @@ class _MerchantBannersPageState extends State<MerchantBannersPage> {
                                       foregroundColor: AppColors.error,
                                     ),
                                     onPressed: () => Navigator.pop(ctx, true),
-                                    child: const Text('Delete'),
+                                    child: Text(l10n.bannersDelete),
                                   ),
                                 ],
                               ),
@@ -210,7 +212,7 @@ class _EmptyTile extends StatelessWidget {
             const SizedBox(width: AppSizes.md),
             Expanded(
               child: Text(
-                'No banners in this placement yet',
+                AppLocalizations.of(context).bannersEmptyPlacement,
                 style: TextStyle(color: AppColors.muted),
               ),
             ),
@@ -231,12 +233,27 @@ class _BannerTile extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onDelete;
 
+  /// Stable status key used for both colour selection and picking the
+  /// localized display label. Kept in English (not user-facing directly).
   String get _status {
     final now = DateTime.now();
     if (!banner.isActive) return 'Off';
     if (banner.startAt != null && banner.startAt!.isAfter(now)) return 'Scheduled';
     if (banner.endAt != null && banner.endAt!.isBefore(now)) return 'Expired';
     return 'Live';
+  }
+
+  String _statusLabel(AppLocalizations l10n) {
+    switch (_status) {
+      case 'Live':
+        return l10n.bannersStatusLive;
+      case 'Scheduled':
+        return l10n.bannersStatusScheduled;
+      case 'Expired':
+        return l10n.bannersStatusExpired;
+      default:
+        return l10n.bannersStatusOff;
+    }
   }
 
   Color get _statusColor {
@@ -254,6 +271,7 @@ class _BannerTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSizes.sm),
       child: Material(
@@ -312,7 +330,7 @@ class _BannerTile extends StatelessWidget {
                               shape: AppShapes.squircle(AppSizes.radiusFull),
                             ),
                             child: Text(
-                              _status,
+                              _statusLabel(l10n),
                               style: Theme.of(context)
                                   .textTheme
                                   .labelSmall
@@ -324,7 +342,7 @@ class _BannerTile extends StatelessWidget {
                           ),
                           const SizedBox(width: AppSizes.sm),
                           Text(
-                            'Sort ${banner.sortOrder}',
+                            l10n.bannersSortOrder('${banner.sortOrder}'),
                             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                                   color: AppColors.muted,
                                 ),
@@ -341,7 +359,11 @@ class _BannerTile extends StatelessWidget {
                                 ),
                                 const SizedBox(width: 2),
                                 Text(
-                                  '${banner.productCount} product${banner.productCount == 1 ? '' : 's'}',
+                                  banner.productCount == 1
+                                      ? l10n.bannersProductCountOne(
+                                          '${banner.productCount}')
+                                      : l10n.bannersProductCountOther(
+                                          '${banner.productCount}'),
                                   style: Theme.of(context)
                                       .textTheme
                                       .labelSmall
@@ -353,7 +375,7 @@ class _BannerTile extends StatelessWidget {
                           if (banner.startAt != null || banner.endAt != null) ...[
                             const SizedBox(width: AppSizes.sm),
                             Text(
-                              _windowLabel(banner),
+                              _windowLabel(l10n, banner),
                               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                                     color: AppColors.muted,
                                   ),
@@ -365,7 +387,7 @@ class _BannerTile extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  tooltip: 'Delete',
+                  tooltip: l10n.bannersDelete,
                   icon: const Icon(Icons.delete_outline),
                   onPressed: onDelete,
                 ),
@@ -377,13 +399,13 @@ class _BannerTile extends StatelessWidget {
     );
   }
 
-  String _windowLabel(AdminBanner b) {
+  String _windowLabel(AppLocalizations l10n, AdminBanner b) {
     final df = DateFormat.MMMd();
     if (b.startAt != null && b.endAt != null) {
       return '${df.format(b.startAt!)} – ${df.format(b.endAt!)}';
     }
-    if (b.startAt != null) return 'from ${df.format(b.startAt!)}';
-    if (b.endAt != null) return 'until ${df.format(b.endAt!)}';
+    if (b.startAt != null) return l10n.bannersWindowFrom(df.format(b.startAt!));
+    if (b.endAt != null) return l10n.bannersWindowUntil(df.format(b.endAt!));
     return '';
   }
 }

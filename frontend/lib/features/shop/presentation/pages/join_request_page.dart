@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/core/network/api_client.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/notifications/data/datasources/notifications_remote_data_source.dart';
@@ -44,8 +45,6 @@ class _JoinRequestPageState extends State<JoinRequestPage> {
     _invites = InvitationsRemoteDataSource(context.read<ApiClient>());
   }
 
-  String get _roleLabel => widget.invite.teamRoleName ?? 'Staff';
-
   void _snack(String msg) {
     if (!mounted) return;
     ScaffoldMessenger.of(context)
@@ -85,8 +84,10 @@ class _JoinRequestPageState extends State<JoinRequestPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final inv = widget.invite;
-    final shop = inv.fromShopName ?? inv.fromUserName ?? 'A shop';
+    final shop = inv.fromShopName ?? inv.fromUserName ?? l10n.shopJoinFallbackShop;
+    final roleLabel = widget.invite.teamRoleName ?? l10n.shopStaffRole;
     final responsibilities =
         responsibilitiesFromPermissions(inv.teamPermissions);
 
@@ -98,7 +99,7 @@ class _JoinRequestPageState extends State<JoinRequestPage> {
         actions: [
           TextButton(
             onPressed: _busy ? null : _notNow,
-            child: const Text('Not now'),
+            child: Text(l10n.shopNotNow),
           ),
         ],
       ),
@@ -120,7 +121,7 @@ class _JoinRequestPageState extends State<JoinRequestPage> {
             ),
             const SizedBox(height: AppSizes.lg),
             Text(
-              "You're invited to join",
+              l10n.shopYoureInvitedToJoin,
               style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted),
             ),
             const SizedBox(height: 2),
@@ -132,7 +133,7 @@ class _JoinRequestPageState extends State<JoinRequestPage> {
             const SizedBox(height: AppSizes.md),
             Row(
               children: [
-                Text('as a ',
+                Text(l10n.shopAsA,
                     style: theme.textTheme.titleMedium
                         ?.copyWith(color: AppColors.muted)),
                 Container(
@@ -143,7 +144,7 @@ class _JoinRequestPageState extends State<JoinRequestPage> {
                     shape: AppShapes.squircle(AppSizes.radiusFull),
                   ),
                   child: Text(
-                    _roleLabel,
+                    roleLabel,
                     style: theme.textTheme.titleMedium?.copyWith(
                       color: AppColors.brandStrong,
                       fontWeight: FontWeight.w800,
@@ -167,7 +168,7 @@ class _JoinRequestPageState extends State<JoinRequestPage> {
             ],
             const SizedBox(height: AppSizes.xl),
             Text(
-              'WHAT YOU\'LL BE ABLE TO DO',
+              l10n.shopWhatYoullBeAbleToDo,
               style: theme.textTheme.labelSmall?.copyWith(
                   color: AppColors.muted,
                   fontWeight: FontWeight.w800,
@@ -182,8 +183,8 @@ class _JoinRequestPageState extends State<JoinRequestPage> {
                 child: Column(
                   children: [
                     if (responsibilities.isEmpty)
-                      const _ResponsibilityRow(
-                        text: 'Limited access — ask the owner for details.',
+                      _ResponsibilityRow(
+                        text: l10n.shopLimitedAccess,
                         denied: true,
                       ),
                     for (final r in responsibilities)
@@ -204,7 +205,7 @@ class _JoinRequestPageState extends State<JoinRequestPage> {
                         child: CircularProgressIndicator(
                             strokeWidth: 2, valueColor: AlwaysStoppedAnimation(AppColors.onInverse)),
                       )
-                    : Text('Join ${shop.length > 18 ? 'the team' : shop}'),
+                    : Text(shop.length > 18 ? l10n.shopJoinTheTeam : l10n.shopJoinNamed(shop)),
               ),
             ),
             const SizedBox(height: AppSizes.sm),
@@ -213,7 +214,7 @@ class _JoinRequestPageState extends State<JoinRequestPage> {
               child: TextButton(
                 onPressed: _busy ? null : _decline,
                 style: TextButton.styleFrom(foregroundColor: AppColors.error),
-                child: const Text('Decline invitation'),
+                child: Text(l10n.shopDeclineInvitation),
               ),
             ),
           ],

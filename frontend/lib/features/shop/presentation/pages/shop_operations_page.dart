@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/core/auth/permission_widgets.dart';
 import 'package:shopxy/core/auth/shop_capabilities.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
@@ -48,6 +49,7 @@ class _ShopOperationsPageState extends State<ShopOperationsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final shopProvider = context.watch<ShopProvider>();
     final shop = shopProvider.shop;
     final payouts = context.watch<LinkedAccountProvider>();
@@ -66,7 +68,7 @@ class _ShopOperationsPageState extends State<ShopOperationsPage> {
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
-        title: const Text('Shop operations'),
+        title: Text(l10n.shopOperationsTitle),
         actions: [
           AccessReloadButton(onReload: () => context.read<ShopProvider>().load()),
         ],
@@ -82,13 +84,13 @@ class _ShopOperationsPageState extends State<ShopOperationsPage> {
             icon: Icons.schedule_rounded,
             iconBg: AppColors.brandSoft,
             iconColor: AppColors.brandStrong,
-            title: 'Hours & vacation mode',
+            title: l10n.shopHoursTitle,
             subtitle: shop?.vacationMode == true
-                ? 'On vacation — new orders blocked'
-                : 'Set opening hours and pause new orders.',
+                ? l10n.shopOpsHoursOnVacation
+                : l10n.shopOpsHoursSubtitle,
             trailing: shop?.vacationMode == true
-                ? const AppStatusBadge(
-                    label: 'On vacation',
+                ? AppStatusBadge(
+                    label: l10n.shopOnVacationBadge,
                     tone: AppStatusTone.warning,
                     weight: AppStatusWeight.soft,
                     dense: true,
@@ -103,9 +105,9 @@ class _ShopOperationsPageState extends State<ShopOperationsPage> {
             icon: Icons.account_balance_outlined,
             iconBg: AppColors.infoSoft,
             iconColor: AppColors.info,
-            title: 'Payouts & settlement',
-            subtitle: _payoutsSubtitle(payouts),
-            trailing: _payoutsBadge(payouts),
+            title: l10n.shopPayoutsTitle,
+            subtitle: _payoutsSubtitle(l10n, payouts),
+            trailing: _payoutsBadge(l10n, payouts),
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const ShopPayoutsPage()),
             ),
@@ -115,12 +117,10 @@ class _ShopOperationsPageState extends State<ShopOperationsPage> {
             icon: Icons.verified_user_outlined,
             iconBg: AppColors.accentIndigoSoft,
             iconColor: AppColors.accentIndigo,
-            title: 'KYC documents',
-            subtitle:
-                'PAN, GSTIN certificate, cancelled cheque. Required '
-                'before payouts go live.',
-            trailing: const AppStatusBadge(
-              label: 'Coming soon',
+            title: l10n.shopKycTitle,
+            subtitle: l10n.shopOpsKycSubtitle,
+            trailing: AppStatusBadge(
+              label: l10n.shopComingSoonBadge,
               tone: AppStatusTone.info,
               weight: AppStatusWeight.soft,
               dense: true,
@@ -134,10 +134,8 @@ class _ShopOperationsPageState extends State<ShopOperationsPage> {
               icon: Icons.group_outlined,
               iconBg: AppColors.accentRoseSoft,
               iconColor: AppColors.accentRose,
-              title: 'Team & roles',
-              subtitle:
-                  'Invite staff and scope exactly what each person can '
-                  'view and manage.',
+              title: l10n.shopTeamTitle,
+              subtitle: l10n.shopOpsTeamSubtitle,
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => const ShopTeamPage()),
               ),
@@ -222,24 +220,24 @@ class _OperationsSkeleton extends StatelessWidget {
   }
 }
 
-String _payoutsSubtitle(LinkedAccountProvider p) {
-  if (!p.loaded) return 'Link a bank account to receive your sales settlements.';
-  if (p.hasDraft) return 'Resume your payout setup — you have a saved draft.';
+String _payoutsSubtitle(AppLocalizations l10n, LinkedAccountProvider p) {
+  if (!p.loaded) return l10n.shopOpsPayoutsLinkBank;
+  if (p.hasDraft) return l10n.shopOpsPayoutsResume;
   final s = p.status;
   if (s == null) {
-    return 'Set up your bank account to start receiving settlements.';
+    return l10n.shopOpsPayoutsSetUp;
   }
   if (s.payoutsEnabled) {
-    return 'Active — your sales settle to your linked bank account.';
+    return l10n.shopOpsPayoutsActive;
   }
-  return 'Submitted — Razorpay is verifying your account.';
+  return l10n.shopOpsPayoutsSubmitted;
 }
 
-Widget? _payoutsBadge(LinkedAccountProvider p) {
+Widget? _payoutsBadge(AppLocalizations l10n, LinkedAccountProvider p) {
   if (!p.loaded) return null;
   if (p.hasDraft) {
-    return const AppStatusBadge(
-      label: 'In progress',
+    return AppStatusBadge(
+      label: l10n.shopInProgressBadge,
       tone: AppStatusTone.warning,
       weight: AppStatusWeight.soft,
       dense: true,
@@ -247,23 +245,23 @@ Widget? _payoutsBadge(LinkedAccountProvider p) {
   }
   final s = p.status;
   if (s == null) {
-    return const AppStatusBadge(
-      label: 'Set up',
+    return AppStatusBadge(
+      label: l10n.shopSetUpBadge,
       tone: AppStatusTone.warning,
       weight: AppStatusWeight.soft,
       dense: true,
     );
   }
   if (s.payoutsEnabled) {
-    return const AppStatusBadge(
-      label: 'Active',
+    return AppStatusBadge(
+      label: l10n.shopActiveBadge,
       tone: AppStatusTone.success,
       weight: AppStatusWeight.soft,
       dense: true,
     );
   }
-  return const AppStatusBadge(
-    label: 'Under review',
+  return AppStatusBadge(
+    label: l10n.shopUnderReviewBadge,
     tone: AppStatusTone.info,
     weight: AppStatusWeight.soft,
     dense: true,

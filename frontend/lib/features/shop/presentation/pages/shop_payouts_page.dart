@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/core/network/api_client.dart';
 import 'package:shopxy/features/shop/data/datasources/linked_account_remote_data_source.dart';
 import 'package:shopxy/features/shop/data/datasources/onboarding_draft_store.dart';
@@ -257,7 +258,7 @@ class _ShopPayoutsPageState extends State<ShopPayoutsPage>
         await _provider.clearDraft();
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Submitted — Razorpay will verify your account.')),
+          SnackBar(content: Text(AppLocalizations.of(context).shopPayoutsSubmittedSnack)),
         );
       }
     } catch (e) {
@@ -267,12 +268,27 @@ class _ShopPayoutsPageState extends State<ShopPayoutsPage>
     }
   }
 
+  /// Localized display title for a wizard step index.
+  String _stepTitle(AppLocalizations l10n, int i) {
+    switch (i) {
+      case 0:
+        return l10n.shopStepBusiness;
+      case 1:
+        return l10n.shopStepIdentity;
+      case 2:
+        return l10n.shopStepAddress;
+      default:
+        return l10n.shopStepBank;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
-        title: const Text('Payouts & settlement'),
+        title: Text(l10n.shopPayoutsTitle),
         actions: [
           TextButton(
             onPressed: () async {
@@ -282,7 +298,7 @@ class _ShopPayoutsPageState extends State<ShopPayoutsPage>
               );
               if (linked == true && mounted) await _load(refresh: true);
             },
-            child: const Text('Connect existing'),
+            child: Text(l10n.shopConnectExisting),
           ),
         ],
       ),
@@ -306,6 +322,7 @@ class _ShopPayoutsPageState extends State<ShopPayoutsPage>
   }
 
   Widget _wizard() {
+    final l10n = AppLocalizations.of(context);
     final isLast = _step == _steps.length - 1;
     final draft = _provider.draft;
     return Column(
@@ -313,7 +330,7 @@ class _ShopPayoutsPageState extends State<ShopPayoutsPage>
         if (_error != null)
           _ErrorLine(
             message: _error!,
-            actionLabel: 'Dismiss',
+            actionLabel: l10n.shopDismiss,
             onRetry: () => setState(() => _error = null),
           ),
         if (_resumeOffered && draft != null)
@@ -325,7 +342,7 @@ class _ShopPayoutsPageState extends State<ShopPayoutsPage>
               setState(() => _resumeOffered = false);
             },
           ),
-        _StepProgress(step: _step, total: _steps.length, title: _steps[_step]),
+        _StepProgress(step: _step, total: _steps.length, title: _stepTitle(l10n, _step)),
         Divider(height: 1, thickness: 1, color: AppColors.hairline),
         Expanded(
           child: SingleChildScrollView(
@@ -381,6 +398,7 @@ class _ShopPayoutsPageState extends State<ShopPayoutsPage>
   }
 
   Widget _footer({required bool isLast}) {
+    final l10n = AppLocalizations.of(context);
     return SafeArea(
       top: false,
       child: Container(
@@ -399,7 +417,7 @@ class _ShopPayoutsPageState extends State<ShopPayoutsPage>
                         setState(() => _step--);
                         _autosave();
                       },
-                child: const Text('Back'),
+                child: Text(l10n.shopBack),
               ),
             const Spacer(),
             FilledButton(
@@ -409,7 +427,7 @@ class _ShopPayoutsPageState extends State<ShopPayoutsPage>
                       height: 18,
                       width: 18,
                       child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(AppColors.onInverse)))
-                  : Text(isLast ? 'Set up payouts' : 'Continue'),
+                  : Text(isLast ? l10n.shopSetUpPayouts : l10n.shopContinue),
             ),
           ],
         ),
@@ -426,6 +444,7 @@ class _ShopPayoutsPageState extends State<ShopPayoutsPage>
     String? helper,
     bool optional = false,
   }) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSizes.md),
       child: TextFormField(
@@ -436,14 +455,16 @@ class _ShopPayoutsPageState extends State<ShopPayoutsPage>
         validator: validator ??
             (optional
                 ? null
-                : (v) => (v == null || v.trim().isEmpty) ? 'Required' : null),
+                : (v) => (v == null || v.trim().isEmpty) ? l10n.shopFieldRequired : null),
       ),
     );
   }
 
   String? _emailValidator(String? v) {
     final s = (v ?? '').trim();
-    return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(s) ? null : 'Invalid email';
+    return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(s)
+        ? null
+        : AppLocalizations.of(context).shopInvalidEmail;
   }
 }
 
@@ -456,6 +477,7 @@ class _PayoutsWizardSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -535,7 +557,7 @@ class _PayoutsWizardSkeleton extends StatelessWidget {
                 const Spacer(),
                 FilledButton(
                   onPressed: null,
-                  child: const Text('Continue'),
+                  child: Text(l10n.shopContinue),
                 ),
               ],
             ),
@@ -581,53 +603,54 @@ class _BusinessStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const _StepIntro(
-          title: 'Your business',
-          subtitle: 'The legal entity that receives settlements.',
+        _StepIntro(
+          title: l10n.shopBusinessStepTitle,
+          subtitle: l10n.shopBusinessStepSubtitle,
         ),
-        field(legalName, 'Legal business name'),
-        field(customerFacing, 'Display name (optional)',
-            helper: 'Shown to customers. Defaults to the legal name.',
+        field(legalName, l10n.shopLegalBusinessName),
+        field(customerFacing, l10n.shopDisplayName,
+            helper: l10n.shopDisplayNameHelper,
             optional: true),
-        field(contact, 'Contact person name'),
-        field(email, 'Email',
+        field(contact, l10n.shopContactPersonName),
+        field(email, l10n.shopEmail,
             keyboard: TextInputType.emailAddress, validator: emailValidator),
-        field(phone, 'Phone',
+        field(phone, l10n.shopPhone,
             keyboard: TextInputType.phone,
             formatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)],
-            validator: (v) => (v == null || v.trim().length < 10) ? 'Enter a 10-digit number' : null),
+            validator: (v) => (v == null || v.trim().length < 10) ? l10n.shopEnter10DigitNumber : null),
         Padding(
           padding: const EdgeInsets.only(bottom: AppSizes.md),
           child: DropdownButtonFormField<String>(
             initialValue: businessType,
-            decoration: const InputDecoration(labelText: 'Business type'),
-            items: const [
-              DropdownMenuItem(value: 'proprietorship', child: Text('Proprietorship')),
-              DropdownMenuItem(value: 'partnership', child: Text('Partnership')),
-              DropdownMenuItem(value: 'private_limited', child: Text('Private Limited')),
-              DropdownMenuItem(value: 'public_limited', child: Text('Public Limited')),
-              DropdownMenuItem(value: 'llp', child: Text('LLP')),
-              DropdownMenuItem(value: 'individual', child: Text('Individual')),
-              DropdownMenuItem(value: 'trust', child: Text('Trust')),
-              DropdownMenuItem(value: 'society', child: Text('Society')),
-              DropdownMenuItem(value: 'ngo', child: Text('NGO')),
+            decoration: InputDecoration(labelText: l10n.shopBusinessType),
+            items: [
+              DropdownMenuItem(value: 'proprietorship', child: Text(l10n.shopBusinessTypeProprietorship)),
+              DropdownMenuItem(value: 'partnership', child: Text(l10n.shopBusinessTypePartnership)),
+              DropdownMenuItem(value: 'private_limited', child: Text(l10n.shopBusinessTypePrivateLimited)),
+              DropdownMenuItem(value: 'public_limited', child: Text(l10n.shopBusinessTypePublicLimited)),
+              DropdownMenuItem(value: 'llp', child: Text(l10n.shopBusinessTypeLlp)),
+              DropdownMenuItem(value: 'individual', child: Text(l10n.shopBusinessTypeIndividual)),
+              DropdownMenuItem(value: 'trust', child: Text(l10n.shopBusinessTypeTrust)),
+              DropdownMenuItem(value: 'society', child: Text(l10n.shopBusinessTypeSociety)),
+              DropdownMenuItem(value: 'ngo', child: Text(l10n.shopBusinessTypeNgo)),
             ],
             onChanged: (v) => onBusinessType(v ?? businessType),
           ),
         ),
         DropdownButtonFormField<String>(
           initialValue: category,
-          decoration: const InputDecoration(labelText: 'Business category'),
-          items: const [
-            DropdownMenuItem(value: 'ecommerce', child: Text('E-commerce / Retail')),
-            DropdownMenuItem(value: 'food', child: Text('Food & Beverage')),
-            DropdownMenuItem(value: 'services', child: Text('Services')),
-            DropdownMenuItem(value: 'healthcare', child: Text('Healthcare')),
-            DropdownMenuItem(value: 'education', child: Text('Education')),
-            DropdownMenuItem(value: 'others', child: Text('Others')),
+          decoration: InputDecoration(labelText: l10n.shopBusinessCategory),
+          items: [
+            DropdownMenuItem(value: 'ecommerce', child: Text(l10n.shopCategoryEcommerce)),
+            DropdownMenuItem(value: 'food', child: Text(l10n.shopCategoryFood)),
+            DropdownMenuItem(value: 'services', child: Text(l10n.shopCategoryServices)),
+            DropdownMenuItem(value: 'healthcare', child: Text(l10n.shopCategoryHealthcare)),
+            DropdownMenuItem(value: 'education', child: Text(l10n.shopCategoryEducation)),
+            DropdownMenuItem(value: 'others', child: Text(l10n.shopCategoryOthers)),
           ],
           onChanged: (v) => onCategory(v ?? category),
         ),
@@ -643,18 +666,18 @@ class _IdentityStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const _StepIntro(
-          title: 'Identity & tax',
-          subtitle: 'Verified with the tax authority. Sent to Razorpay, never '
-              'stored by this app.',
+        _StepIntro(
+          title: l10n.shopIdentityStepTitle,
+          subtitle: l10n.shopIdentityStepSubtitle,
         ),
         field(
           pan,
           'PAN',
-          helper: 'Business or proprietor PAN (e.g. AAACL1234C).',
+          helper: l10n.shopPanHelper,
           formatters: [
             FilteringTextInputFormatter.allow(RegExp('[A-Za-z0-9]')),
             LengthLimitingTextInputFormatter(10),
@@ -662,13 +685,13 @@ class _IdentityStep extends StatelessWidget {
           ],
           validator: (v) {
             final s = (v ?? '').trim().toUpperCase();
-            return RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]$').hasMatch(s) ? null : 'Invalid PAN';
+            return RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]$').hasMatch(s) ? null : l10n.shopInvalidPan;
           },
         ),
         field(
           gst,
-          'GSTIN (optional)',
-          helper: 'Add if your business is GST-registered.',
+          l10n.shopGstinOptional,
+          helper: l10n.shopGstinHelper,
           optional: true,
           formatters: [
             FilteringTextInputFormatter.allow(RegExp('[A-Za-z0-9]')),
@@ -680,7 +703,7 @@ class _IdentityStep extends StatelessWidget {
             if (s.isEmpty) return null; // optional
             return RegExp(r'^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][0-9A-Z]Z[0-9A-Z]$').hasMatch(s)
                 ? null
-                : 'Invalid GSTIN';
+                : l10n.shopInvalidGstin;
           },
         ),
       ],
@@ -705,39 +728,40 @@ class _AddressStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const _StepIntro(
-          title: 'Registered address',
-          subtitle: 'The address on your business registration.',
+        _StepIntro(
+          title: l10n.shopAddressStepTitle,
+          subtitle: l10n.shopAddressStepSubtitle,
         ),
-        field(street1, 'Address line 1'),
-        field(street2, 'Address line 2 (optional)', optional: true),
-        field(city, 'City'),
+        field(street1, l10n.shopAddressLine1),
+        field(street2, l10n.shopAddressLine2, optional: true),
+        field(city, l10n.shopCity),
         Padding(
           padding: const EdgeInsets.only(bottom: AppSizes.md),
           child: DropdownButtonFormField<String>(
             initialValue: state,
             isExpanded: true,
-            decoration: const InputDecoration(labelText: 'State'),
+            decoration: InputDecoration(labelText: l10n.shopState),
             items: _indianStates
                 .map((s) => DropdownMenuItem(value: s, child: Text(s)))
                 .toList(),
-            validator: (v) => (v == null || v.isEmpty) ? 'Select a state' : null,
+            validator: (v) => (v == null || v.isEmpty) ? l10n.shopSelectState : null,
             onChanged: onState,
           ),
         ),
         field(
           postal,
-          'PIN code',
+          l10n.shopPinCode,
           keyboard: TextInputType.number,
           formatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(6)],
-          validator: (v) => RegExp(r'^\d{6}$').hasMatch((v ?? '').trim()) ? null : 'Enter a 6-digit PIN',
+          validator: (v) => RegExp(r'^\d{6}$').hasMatch((v ?? '').trim()) ? null : l10n.shopEnter6DigitPin,
         ),
         Padding(
           padding: const EdgeInsets.only(top: AppSizes.xs),
-          child: Text('Country: India',
+          child: Text(l10n.shopCountryIndia,
               style: Theme.of(context)
                   .textTheme
                   .bodySmall
@@ -760,21 +784,21 @@ class _BankStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const _StepIntro(
-          title: 'Settlement bank account',
-          subtitle: 'Where your payouts land. Sent securely to Razorpay; this '
-              'app never stores your bank details.',
+        _StepIntro(
+          title: l10n.shopBankStepTitle,
+          subtitle: l10n.shopBankStepSubtitle,
         ),
-        field(beneficiary, 'Account holder name'),
+        field(beneficiary, l10n.shopAccountHolderName),
         field(
           account,
-          'Bank account number',
+          l10n.shopBankAccountNumber,
           keyboard: TextInputType.number,
           formatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(20)],
-          validator: (v) => (v == null || v.trim().length < 6) ? 'Enter a valid account number' : null,
+          validator: (v) => (v == null || v.trim().length < 6) ? l10n.shopEnterValidAccountNumber : null,
         ),
         field(
           ifsc,
@@ -786,7 +810,7 @@ class _BankStep extends StatelessWidget {
           ],
           validator: (v) {
             final s = (v ?? '').trim().toUpperCase();
-            return RegExp(r'^[A-Z]{4}0[A-Z0-9]{6}$').hasMatch(s) ? null : 'Invalid IFSC';
+            return RegExp(r'^[A-Z]{4}0[A-Z0-9]{6}$').hasMatch(s) ? null : l10n.shopInvalidIfsc;
           },
         ),
       ],
@@ -805,6 +829,7 @@ class _StepProgress extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(
           AppSizes.lg, AppSizes.md, AppSizes.lg, AppSizes.md),
@@ -829,7 +854,7 @@ class _StepProgress extends StatelessWidget {
           ),
           const SizedBox(height: AppSizes.sm),
           Text(
-            'Step ${step + 1} of $total · $title',
+            l10n.shopStepProgress(step + 1, total, title),
             style: theme.textTheme.labelMedium?.copyWith(
               color: AppColors.muted,
               fontWeight: FontWeight.w700,
@@ -853,6 +878,7 @@ class _ResumeBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return Container(
       color: AppColors.infoSoft,
       padding: const EdgeInsets.fromLTRB(
@@ -866,7 +892,7 @@ class _ResumeBanner extends StatelessWidget {
               const SizedBox(width: AppSizes.sm),
               Expanded(
                 child: Text(
-                  'Continue where you left off?',
+                  l10n.shopResumeTitle,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: AppColors.info,
                     fontWeight: FontWeight.w800,
@@ -879,14 +905,14 @@ class _ResumeBanner extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(left: AppSizes.xl),
             child: Text(
-              'You had a saved draft up to the ${draft.stepLabel} step.',
+              l10n.shopResumeDraftUpTo(draft.stepLabel),
               style: theme.textTheme.bodySmall?.copyWith(color: AppColors.info),
             ),
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              TextButton(onPressed: onDiscard, child: const Text('Start over')),
+              TextButton(onPressed: onDiscard, child: Text(l10n.shopStartOver)),
               const SizedBox(width: AppSizes.xs),
               FilledButton(
                 onPressed: onResume,
@@ -895,7 +921,7 @@ class _ResumeBanner extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(
                       horizontal: AppSizes.lg, vertical: AppSizes.sm),
                 ),
-                child: const Text('Resume'),
+                child: Text(l10n.shopResume),
               ),
             ],
           ),
@@ -944,19 +970,20 @@ class _StatusSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final activated = status!.payoutsEnabled;
     final (label, color, icon) = activated
-        ? ('Active — payouts enabled', AppColors.success, Icons.verified_rounded)
+        ? (l10n.shopStatusActive, AppColors.success, Icons.verified_rounded)
         : switch (status!.kycStatus) {
             'NEEDS_CLARIFICATION' => (
-                'Action needed — Razorpay needs more info',
+                l10n.shopStatusNeedsClarification,
                 AppColors.error,
                 Icons.error_outline,
               ),
-            'SUSPENDED' => ('Suspended — contact support', AppColors.error, Icons.block),
-            'UNDER_REVIEW' => ('Under review by Razorpay', AppColors.info, Icons.hourglass_top_rounded),
+            'SUSPENDED' => (l10n.shopStatusSuspended, AppColors.error, Icons.block),
+            'UNDER_REVIEW' => (l10n.shopStatusUnderReview, AppColors.info, Icons.hourglass_top_rounded),
             // 'created' (and anything else) = not yet submitted/activated for Route.
-            _ => ('Not activated yet — finish KYC at Razorpay', AppColors.warning, Icons.pending_outlined),
+            _ => (l10n.shopStatusNotActivated, AppColors.warning, Icons.pending_outlined),
           };
 
     return Padding(
@@ -982,21 +1009,18 @@ class _StatusSection extends StatelessWidget {
           const SizedBox(height: AppSizes.xs),
           Text(
             activated
-                ? 'Your settlement account is verified. Order + UPI payouts will '
-                    'land in your bank.'
-                : 'This account is not payout-enabled yet (Razorpay status: '
-                    '${status!.kycStatus.toLowerCase()}). Finish its Route KYC in the '
-                    'Razorpay dashboard, then tap refresh to re-check live.',
+                ? l10n.shopStatusActivatedDesc
+                : l10n.shopStatusNotEnabledDesc(status!.kycStatus.toLowerCase()),
             style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
           ),
           const SizedBox(height: AppSizes.lg),
-          _DetailRow(label: 'Account ID', value: status!.providerAccountId ?? '—'),
-          _DetailRow(label: 'Name', value: status!.contactName ?? '—'),
-          _DetailRow(label: 'Email', value: status!.email ?? '—'),
+          _DetailRow(label: l10n.shopDetailAccountId, value: status!.providerAccountId ?? '—'),
+          _DetailRow(label: l10n.shopDetailName, value: status!.contactName ?? '—'),
+          _DetailRow(label: l10n.shopDetailEmail, value: status!.email ?? '—'),
           if (status!.businessType != null)
-            _DetailRow(label: 'Business type', value: status!.businessType!),
-          _DetailRow(label: 'KYC status', value: status!.kycStatus),
-          _DetailRow(label: 'Payouts', value: activated ? 'Enabled' : 'Not enabled yet'),
+            _DetailRow(label: l10n.shopDetailBusinessType, value: status!.businessType!),
+          _DetailRow(label: l10n.shopDetailKycStatus, value: status!.kycStatus),
+          _DetailRow(label: l10n.shopDetailPayouts, value: activated ? l10n.shopEnabled : l10n.shopNotEnabledYet),
           const SizedBox(height: AppSizes.sm),
           Align(
             alignment: Alignment.centerLeft,
@@ -1004,7 +1028,7 @@ class _StatusSection extends StatelessWidget {
               onPressed: onRefresh,
               style: TextButton.styleFrom(padding: EdgeInsets.zero),
               icon: const Icon(Icons.refresh, size: 18),
-              label: const Text('Refresh from Razorpay'),
+              label: Text(l10n.shopRefreshFromRazorpay),
             ),
           ),
         ],
@@ -1041,13 +1065,14 @@ class _DetailRow extends StatelessWidget {
 
 /// Flat error line (icon + colored text + retry), no filled banner.
 class _ErrorLine extends StatelessWidget {
-  const _ErrorLine({required this.message, required this.onRetry, this.actionLabel = 'Retry'});
+  const _ErrorLine({required this.message, required this.onRetry, this.actionLabel});
   final String message;
   final VoidCallback onRetry;
-  final String actionLabel;
+  final String? actionLabel;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(
           AppSizes.lg, AppSizes.sm, AppSizes.lg, AppSizes.sm),
@@ -1068,7 +1093,7 @@ class _ErrorLine extends StatelessWidget {
           TextButton(
             onPressed: onRetry,
             style: TextButton.styleFrom(padding: EdgeInsets.zero),
-            child: Text(actionLabel),
+            child: Text(actionLabel ?? l10n.shopRetry),
           ),
         ],
       ),

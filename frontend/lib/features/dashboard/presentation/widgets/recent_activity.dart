@@ -4,6 +4,7 @@ import 'package:shopxy/features/challans/presentation/pages/challan_detail_page.
 import 'package:shopxy/features/dashboard/domain/entities/dashboard_stats.dart';
 import 'package:shopxy/features/dashboard/presentation/widgets/dashboard_ui.dart';
 import 'package:shopxy/features/invoices/presentation/pages/invoice_detail_page.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
@@ -16,8 +17,9 @@ class RecentActivity extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return DashSection(
-      title: 'Recent activity',
+      title: l10n.dashboardRecentActivity,
       child: transactions.isEmpty
           ? Padding(
               padding: const EdgeInsets.symmetric(vertical: AppSizes.lg),
@@ -27,7 +29,7 @@ class RecentActivity extends StatelessWidget {
                       size: AppSizes.iconMd, color: AppColors.subtle),
                   const SizedBox(width: AppSizes.md),
                   Expanded(
-                    child: Text('No recent stock movements.',
+                    child: Text(l10n.dashboardNoRecentMovements,
                         style:
                             DashText.bodyMd.copyWith(color: AppColors.muted)),
                   ),
@@ -58,6 +60,7 @@ class _ActivityRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final isIn = tx.isIn;
     final isOut = tx.isOut;
     final accent = isIn
@@ -103,7 +106,8 @@ class _ActivityRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    tx.productName ?? 'Product #${tx.productId}',
+                    tx.productName ??
+                        l10n.dashboardProductFallback('${tx.productId}'),
                     style: DashText.bodyMd,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

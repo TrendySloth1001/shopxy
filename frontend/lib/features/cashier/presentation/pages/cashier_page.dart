@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/core/network/api_client.dart';
 import 'package:shopxy/features/cashier/data/cashier_remote_data_source.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 
@@ -92,10 +93,11 @@ class _CashierPageState extends State<CashierPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
-        title: const Text('Cashier'),
+        title: Text(l10n.cashierTitle),
         actions: [IconButton(onPressed: _loading ? null : _load, icon: const Icon(Icons.refresh_rounded))],
       ),
       body: _loading
@@ -124,7 +126,7 @@ class _CashierPageState extends State<CashierPage> {
                         final rep = await _ds.closeShift(counted, note);
                         if (!mounted) return;
                         final variance = _d(rep['cash']?['variance']);
-                        _toast('Shift closed · variance ${_money(variance)}');
+                        _toast(l10n.cashierShiftClosedVariance(_money(variance)));
                         await _load();
                       }),
                     ),
@@ -155,8 +157,9 @@ class _ShiftOwnerBanner extends StatelessWidget {
   final Map<String, dynamic> shift;
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final name = (shift['openedByName'] as String?) ?? 'Cashier';
+    final name = (shift['openedByName'] as String?) ?? l10n.cashierRoleCashier;
     final email = shift['openedByEmail'] as String?;
     return Container(
       padding: const EdgeInsets.all(AppSizes.md),
@@ -234,23 +237,24 @@ class _ShiftHistoryCardState extends State<_ShiftHistoryCard> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     return _Card(
-      title: 'Past shifts · Z-receipts',
+      title: l10n.cashierPastShiftsTitle,
       icon: Icons.history_rounded,
       child: _shifts == null
-          ? const Padding(padding: EdgeInsets.symmetric(vertical: AppSizes.md), child: Text('Loading…'))
+          ? Padding(padding: const EdgeInsets.symmetric(vertical: AppSizes.md), child: Text(l10n.cashierLoading))
           : _shifts!.isEmpty
-              ? const Padding(padding: EdgeInsets.symmetric(vertical: AppSizes.md), child: Text('No shifts yet.'))
+              ? Padding(padding: const EdgeInsets.symmetric(vertical: AppSizes.md), child: Text(l10n.cashierNoShiftsYet))
               : Column(
                   children: [
                     for (final s in _shifts!)
                       ListTile(
                         contentPadding: EdgeInsets.zero,
-                        title: Text('${s['openedByName'] ?? 'Cashier'} · ${s['status']}', style: theme.textTheme.titleSmall),
+                        title: Text('${s['openedByName'] ?? l10n.cashierRoleCashier} · ${s['status']}', style: theme.textTheme.titleSmall),
                         subtitle: Text(
                           '${DateTime.tryParse(s['openedAt']?.toString() ?? '')?.toLocal().toString().split('.').first ?? ''}'
-                          '${s['variance'] != null ? ' · variance ${_money(_d(s['variance']))}' : ''}',
+                          '${s['variance'] != null ? ' · ${l10n.cashierVarianceLabel(_money(_d(s['variance'])))}' : ''}',
                           style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
                         ),
                         trailing: const Icon(Icons.chevron_right_rounded),
@@ -319,41 +323,42 @@ class _ReportCard extends StatelessWidget {
   final Map<String, dynamic> report;
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final cash = (report['cash'] as Map?)?.cast<String, dynamic>() ?? {};
     final gst = (report['gst'] as Map?)?.cast<String, dynamic>() ?? {};
     final tenders = (report['tenders'] as List?) ?? const [];
     final returns = (report['returns'] as Map?)?.cast<String, dynamic>() ?? {};
     final sales = (report['sales'] as Map?)?.cast<String, dynamic>() ?? {};
     return _Card(
-      title: 'Shift report (X)',
+      title: l10n.cashierShiftReportTitle,
       icon: Icons.summarize_outlined,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('${_i(sales['count'])} sales · ${_money(_d(sales['gross']))} gross',
+          Text(l10n.cashierSalesSummary('${_i(sales['count'])}', _money(_d(sales['gross']))),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.muted)),
           Divider(height: AppSizes.lg, color: AppColors.hairline),
-          _KV('Opening float', _money(_d(cash['openingFloat']))),
-          _KV('Cash sales', _money(_d(cash['cashSales']))),
-          _KV('Pay-ins', _money(_d(cash['payIns']))),
-          _KV('Pay-outs', '− ${_money(_d(cash['payOuts']))}'),
-          _KV('Drops', '− ${_money(_d(cash['drops']))}'),
-          _KV('Refunds', '− ${_money(_d(cash['refunds']))}'),
+          _KV(l10n.cashierOpeningFloat, _money(_d(cash['openingFloat']))),
+          _KV(l10n.cashierCashSales, _money(_d(cash['cashSales']))),
+          _KV(l10n.cashierPayIns, _money(_d(cash['payIns']))),
+          _KV(l10n.cashierPayOuts, '− ${_money(_d(cash['payOuts']))}'),
+          _KV(l10n.cashierDrops, '− ${_money(_d(cash['drops']))}'),
+          _KV(l10n.cashierRefunds, '− ${_money(_d(cash['refunds']))}'),
           Divider(height: AppSizes.lg, color: AppColors.hairline),
-          _KV('Expected in drawer', _money(_d(cash['expected'])), bold: true),
+          _KV(l10n.cashierExpectedInDrawer, _money(_d(cash['expected'])), bold: true),
           if (tenders.isNotEmpty) ...[
             Divider(height: AppSizes.lg, color: AppColors.hairline),
             for (final t in tenders.cast<Map>())
               _KV('${t['mode']} (${_i(t['count'])})', _money(_d(t['amount']))),
           ],
           Divider(height: AppSizes.lg, color: AppColors.hairline),
-          _KV('GST taxable', _money(_d(gst['taxable']))),
+          _KV(l10n.cashierGstTaxable, _money(_d(gst['taxable']))),
           if (_d(gst['cgst']) > 0) _KV('CGST', _money(_d(gst['cgst']))),
           if (_d(gst['sgst']) > 0) _KV('SGST', _money(_d(gst['sgst']))),
           if (_d(gst['igst']) > 0) _KV('IGST', _money(_d(gst['igst']))),
           if (_i(returns['count']) > 0) ...[
             Divider(height: AppSizes.lg, color: AppColors.hairline),
-            _KV('Returns (${_i(returns['count'])})', '− ${_money(_d(returns['amount']))}'),
+            _KV(l10n.cashierReturnsCount('${_i(returns['count'])}'), '− ${_money(_d(returns['amount']))}'),
           ],
         ],
       ),
@@ -379,27 +384,28 @@ class _OpenShiftFormState extends State<_OpenShiftForm> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.all(AppSizes.lg),
       child: _Card(
-        title: 'Open a shift',
+        title: l10n.cashierOpenShiftTitle,
         icon: Icons.lock_open_rounded,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Count the drawer and enter the opening float.',
+            Text(l10n.cashierOpenShiftHint,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.muted)),
             const SizedBox(height: AppSizes.md),
             TextField(
               controller: _ctrl,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Opening float ₹', border: OutlineInputBorder()),
+              decoration: InputDecoration(labelText: l10n.cashierOpeningFloatField, border: const OutlineInputBorder()),
             ),
             const SizedBox(height: AppSizes.md),
             FilledButton.icon(
               onPressed: widget.busy ? null : () => widget.onOpen(_parseAmount(_ctrl.text) ?? 0),
               icon: const Icon(Icons.lock_open_rounded),
-              label: const Text('Open shift'),
+              label: Text(l10n.cashierOpenShiftButton),
             ),
           ],
         ),
@@ -429,20 +435,21 @@ class _CashDrawerCardState extends State<_CashDrawerCard> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return _Card(
-      title: 'Cash drawer',
+      title: l10n.cashierCashDrawerTitle,
       icon: Icons.savings_outlined,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Wrap(spacing: AppSizes.sm, children: [
-            for (final t in const [('PAY_IN', 'Pay in'), ('PAY_OUT', 'Pay out'), ('DROP', 'Drop')])
+            for (final t in [('PAY_IN', l10n.cashierPayIn), ('PAY_OUT', l10n.cashierPayOut), ('DROP', l10n.cashierDrop)])
               ChoiceChip(label: Text(t.$2), selected: _type == t.$1, onSelected: (_) => setState(() => _type = t.$1)),
           ]),
           const SizedBox(height: AppSizes.sm),
-          TextField(controller: _amount, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Amount ₹', border: OutlineInputBorder())),
+          TextField(controller: _amount, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: l10n.cashierAmountField, border: const OutlineInputBorder())),
           const SizedBox(height: AppSizes.sm),
-          TextField(controller: _reason, decoration: const InputDecoration(labelText: 'Reason (optional)', border: OutlineInputBorder())),
+          TextField(controller: _reason, decoration: InputDecoration(labelText: l10n.cashierReasonField, border: const OutlineInputBorder())),
           const SizedBox(height: AppSizes.sm),
           FilledButton(
             onPressed: widget.busy
@@ -454,7 +461,7 @@ class _CashDrawerCardState extends State<_CashDrawerCard> {
                     _amount.clear();
                     _reason.clear();
                   },
-            child: const Text('Record'),
+            child: Text(l10n.cashierRecordButton),
           ),
         ],
       ),
@@ -483,38 +490,42 @@ class _CloseShiftCardState extends State<_CloseShiftCard> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final counted = _parseAmount(_counted.text);
     final variance = counted == null ? null : counted - widget.expected;
     return _Card(
-      title: 'Close shift',
+      title: l10n.cashierCloseShiftTitle,
       icon: Icons.lock_outline_rounded,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Expected in drawer: ${_money(widget.expected)}',
+          Text(l10n.cashierExpectedInDrawerValue(_money(widget.expected)),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.muted)),
           const SizedBox(height: AppSizes.sm),
           TextField(
             controller: _counted,
             keyboardType: TextInputType.number,
             onChanged: (_) => setState(() {}),
-            decoration: const InputDecoration(labelText: 'Counted cash ₹', border: OutlineInputBorder()),
+            decoration: InputDecoration(labelText: l10n.cashierCountedCashField, border: const OutlineInputBorder()),
           ),
           if (variance != null)
             Padding(
               padding: const EdgeInsets.only(top: AppSizes.xs),
               child: Text(
-                'Variance: ${variance >= 0 ? '+' : ''}${_money(variance)} ${variance == 0 ? '(balanced)' : variance > 0 ? '(over)' : '(short)'}',
+                l10n.cashierVarianceValue(
+                  '${variance >= 0 ? '+' : ''}${_money(variance)}',
+                  variance == 0 ? l10n.cashierVarianceBalanced : variance > 0 ? l10n.cashierVarianceOver : l10n.cashierVarianceShort,
+                ),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(color: variance == 0 ? AppColors.success : AppColors.warning),
               ),
             ),
           const SizedBox(height: AppSizes.sm),
-          TextField(controller: _note, decoration: const InputDecoration(labelText: 'Note (optional)', border: OutlineInputBorder())),
+          TextField(controller: _note, decoration: InputDecoration(labelText: l10n.cashierNoteField, border: const OutlineInputBorder())),
           const SizedBox(height: AppSizes.sm),
           FilledButton.icon(
             onPressed: widget.busy || counted == null ? null : () => widget.onClose(counted, _note.text.trim()),
             icon: const Icon(Icons.lock_outline_rounded),
-            label: const Text('Close & Z-report'),
+            label: Text(l10n.cashierCloseZReportButton),
           ),
         ],
       ),
@@ -549,9 +560,10 @@ class _ReturnsCardState extends State<_ReturnsCard> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final lines = (_returnable?['lines'] as List?)?.cast<Map>() ?? const [];
     return _Card(
-      title: 'Returns',
+      title: l10n.cashierReturnsTitle,
       icon: Icons.assignment_return_outlined,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -561,7 +573,7 @@ class _ReturnsCardState extends State<_ReturnsCard> {
               child: TextField(
                 controller: _invoiceId,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Original invoice id', border: OutlineInputBorder()),
+                decoration: InputDecoration(labelText: l10n.cashierOriginalInvoiceIdField, border: const OutlineInputBorder()),
               ),
             ),
             const SizedBox(width: AppSizes.sm),
@@ -578,7 +590,7 @@ class _ReturnsCardState extends State<_ReturnsCard> {
                           _qty.clear();
                         });
                       }),
-              child: const Text('Look up'),
+              child: Text(l10n.cashierLookUpButton),
             ),
           ]),
           if (_returnable != null) ...[
@@ -590,7 +602,7 @@ class _ReturnsCardState extends State<_ReturnsCard> {
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text('${l['name']}', maxLines: 1, overflow: TextOverflow.ellipsis),
-                      Text('returnable ${_i(l['returnableQty'])} · ${_money(_d(l['unitPrice']))}',
+                      Text(l10n.cashierReturnableLine('${_i(l['returnableQty'])}', _money(_d(l['unitPrice']))),
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.muted)),
                     ]),
                   ),
@@ -621,7 +633,7 @@ class _ReturnsCardState extends State<_ReturnsCard> {
                           final q = double.tryParse(ctrl.text.trim()) ?? 0;
                           if (q > 0) reqLines.add({'productId': productId, 'quantity': q});
                         });
-                        if (reqLines.isEmpty) throw Exception('Enter a quantity to return.');
+                        if (reqLines.isEmpty) throw Exception(l10n.cashierEnterQuantityError);
                         final messenger = ScaffoldMessenger.of(context);
                         final res = await widget.ds.processReturn(
                           originalInvoiceId: _i(_returnable!['invoiceId']),
@@ -630,12 +642,12 @@ class _ReturnsCardState extends State<_ReturnsCard> {
                         );
                         if (!mounted) return;
                         messenger.showSnackBar(SnackBar(
-                            content: Text('Credit note ${res['creditNoteNo']} · ${_money(_d(res['refundAmount']))}')));
+                            content: Text(l10n.cashierCreditNoteCreated('${res['creditNoteNo']}', _money(_d(res['refundAmount']))))));
                         setState(() => _returnable = null);
                         await widget.onChanged();
                       }),
               icon: const Icon(Icons.assignment_return_outlined),
-              label: const Text('Process return'),
+              label: Text(l10n.cashierProcessReturnButton),
             ),
           ],
         ],

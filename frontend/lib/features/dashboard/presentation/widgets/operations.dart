@@ -5,6 +5,7 @@ import 'package:shopxy/features/dashboard/presentation/widgets/dashboard_ui.dart
 import 'package:shopxy/features/pos/presentation/pages/pos_page.dart';
 import 'package:shopxy/features/reports/presentation/pages/reports_page.dart';
 import 'package:shopxy/features/stock_adjustments/presentation/pages/stock_adjustments_page.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 
@@ -16,23 +17,25 @@ class Operations extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final tiles = <Widget>[
       if (operations.till != null) _TillTile(till: operations.till!),
       if (operations.gstMtd != null)
         _Tile(
           icon: Icons.receipt_long_outlined,
           iconColor: AppColors.accentIndigo,
-          label: 'GST this month',
+          label: l10n.dashboardGstThisMonth,
           value: inr.format(operations.gstMtd!.netPayable),
-          sub: '${inr.format(operations.gstMtd!.outputTax)} output tax collected',
+          sub: l10n.dashboardOutputTaxCollected(
+              inr.format(operations.gstMtd!.outputTax)),
           onTap: () => dashPush(context, const ReportsPage()),
         ),
       _Tile(
         icon: Icons.inventory_2_outlined,
         iconColor: AppColors.brandStrong,
-        label: 'Inventory value',
+        label: l10n.dashboardInventoryValue,
         value: inr.format(operations.inventoryValue),
-        sub: 'Cost basis of stock on hand',
+        sub: l10n.dashboardCostBasisOfStock,
         onTap: () => dashPush(context, const StockAdjustmentsPage()),
       ),
     ];
@@ -40,7 +43,7 @@ class Operations extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Eyebrow('Operations'),
+        Eyebrow(l10n.dashboardOperations),
         const SizedBox(height: AppSizes.md),
         LayoutBuilder(
           builder: (context, c) {
@@ -109,12 +112,15 @@ class _TillTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final since = DateFormat('hh:mm a').format(till.openedAt.toLocal());
     final topTenders = till.tenders
         .take(3)
         .map((t) => '${t.mode} ${inr.format(t.amount)}')
         .join(' · ');
-    final salesLabel = till.salesCount == 1 ? '1 sale' : '${till.salesCount} sales';
+    final salesLabel = till.salesCount == 1
+        ? l10n.dashboardOneSale
+        : l10n.dashboardSalesCount('${till.salesCount}');
     return DashCard(
       onTap: () => dashPush(context, const PosPage()),
       child: Column(
@@ -127,7 +133,7 @@ class _TillTile extends StatelessWidget {
                   size: AppSizes.iconSm, color: AppColors.success),
               const SizedBox(width: AppSizes.sm),
               Flexible(
-                child: Text('Open till · since $since',
+                child: Text(l10n.dashboardOpenTillSince(since),
                     style: DashText.labelMd, overflow: TextOverflow.ellipsis),
               ),
             ],

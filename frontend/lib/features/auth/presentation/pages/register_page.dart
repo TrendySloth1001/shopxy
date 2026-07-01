@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/auth/presentation/widgets/auth_scaffold.dart';
 import 'package:shopxy/features/profile/presentation/pages/legal_page.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
-import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/validation/auth_validators.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
@@ -48,10 +48,8 @@ class _RegisterPageState extends State<RegisterPage> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (!_acceptedTerms || !_acceptedPrivacy) {
-      setState(
-        () => _error =
-            'Please accept the Terms of Service and Privacy Policy to continue.',
-      );
+      final l10n = AppLocalizations.of(context);
+      setState(() => _error = l10n.authAcceptTermsPrompt);
       return;
     }
     setState(() {
@@ -74,17 +72,17 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Form(
       key: _formKey,
       child: AuthScaffold(
         heroAsset: 'assets/register.png',
-        title: AppStrings.registerTitle,
-        subtitle:
-            'Set up your merchant account to start managing your inventory, invoices and customers.',
+        title: l10n.authRegisterTitle,
+        subtitle: l10n.authRegisterSubtitle,
         onSignIn: () => Navigator.pop(context),
         onCreateAccount: () {},
-        footerPrompt: 'Already have an account?',
-        footerCta: 'Sign in',
+        footerPrompt: l10n.authRegisterFooterPrompt,
+        footerCta: l10n.authSignIn,
         onFooterTap: () => Navigator.pop(context),
         children: [
           if (_error != null) ...[
@@ -92,64 +90,63 @@ class _RegisterPageState extends State<RegisterPage> {
             const SizedBox(height: AppSizes.lg),
           ],
           AuthField(
-            label: 'Your name',
+            label: l10n.authYourName,
             controller: _name,
             textCapitalization: TextCapitalization.words,
             textInputAction: TextInputAction.next,
             validator: (v) {
-              if (v == null || v.trim().isEmpty) return AppStrings.fieldRequired;
-              if (v.trim().length < 2) return AppStrings.nameTooShort;
+              if (v == null || v.trim().isEmpty) return l10n.authFieldRequired;
+              if (v.trim().length < 2) return l10n.authNameTooShort;
               return null;
             },
           ),
           const SizedBox(height: AppSizes.lg),
           AuthField(
-            label: 'Shop name',
+            label: l10n.authShopName,
             controller: _shopName,
-            helper:
-                'Shown to customers in the marketplace. You can rename it later.',
+            helper: l10n.authShopNameHelper,
             textCapitalization: TextCapitalization.words,
             textInputAction: TextInputAction.next,
             validator: (v) {
-              if (v == null || v.trim().isEmpty) return AppStrings.fieldRequired;
-              if (v.trim().length < 2) return AppStrings.nameTooShort;
+              if (v == null || v.trim().isEmpty) return l10n.authFieldRequired;
+              if (v.trim().length < 2) return l10n.authNameTooShort;
               return null;
             },
           ),
           const SizedBox(height: AppSizes.lg),
           AuthField(
-            label: AppStrings.email,
+            label: l10n.authEmail,
             controller: _email,
             keyboardType: TextInputType.emailAddress,
             autocorrect: false,
             textInputAction: TextInputAction.next,
             validator: (v) {
-              if (v == null || v.trim().isEmpty) return AppStrings.fieldRequired;
+              if (v == null || v.trim().isEmpty) return l10n.authFieldRequired;
               if (!v.contains('@') || !v.contains('.')) {
-                return AppStrings.invalidEmail;
+                return l10n.authInvalidEmail;
               }
               return null;
             },
           ),
           const SizedBox(height: AppSizes.lg),
           AuthField(
-            label: AppStrings.password,
+            label: l10n.authPassword,
             controller: _password,
             obscure: true,
-            helper: 'At least 8 characters, with a letter and a number.',
+            helper: l10n.authPasswordHelper,
             textInputAction: TextInputAction.next,
             validator: AuthValidators.password,
           ),
           const SizedBox(height: AppSizes.lg),
           AuthField(
-            label: AppStrings.confirmPassword,
+            label: l10n.authConfirmPassword,
             controller: _confirm,
             obscure: true,
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => _submit(),
             validator: (v) {
-              if (v == null || v.isEmpty) return AppStrings.fieldRequired;
-              if (v != _password.text) return AppStrings.passwordsDoNotMatch;
+              if (v == null || v.isEmpty) return l10n.authFieldRequired;
+              if (v != _password.text) return l10n.authPasswordsDoNotMatch;
               return null;
             },
           ),
@@ -157,8 +154,8 @@ class _RegisterPageState extends State<RegisterPage> {
           _ConsentCheckbox(
             value: _acceptedTerms,
             onChanged: (v) => setState(() => _acceptedTerms = v ?? false),
-            label: 'I accept the',
-            linkLabel: 'Terms of Service',
+            label: l10n.authIAcceptThe,
+            linkLabel: l10n.authTermsOfService,
             onLinkTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const LegalPage.terms()),
@@ -167,8 +164,8 @@ class _RegisterPageState extends State<RegisterPage> {
           _ConsentCheckbox(
             value: _acceptedPrivacy,
             onChanged: (v) => setState(() => _acceptedPrivacy = v ?? false),
-            label: 'I accept the',
-            linkLabel: 'Privacy Policy',
+            label: l10n.authIAcceptThe,
+            linkLabel: l10n.authPrivacyPolicy,
             onLinkTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const LegalPage.privacy()),
@@ -176,7 +173,7 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
           const SizedBox(height: AppSizes.lg),
           AuthSubmitButton(
-            label: 'Create account',
+            label: l10n.authCreateAccount,
             loading: _isLoading,
             onPressed: _canSubmit ? _submit : null,
           ),

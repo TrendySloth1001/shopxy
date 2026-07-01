@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/features/shop/presentation/pages/shop_payouts_page.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
@@ -32,6 +33,7 @@ class _PayoutSetupSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
@@ -64,7 +66,7 @@ class _PayoutSetupSheet extends StatelessWidget {
             ),
             const SizedBox(height: AppSizes.md),
             Text(
-              hasDraft ? 'Finish setting up payouts' : 'Set up payouts to get paid',
+              hasDraft ? l10n.shopSheetFinishTitle : l10n.shopSheetSetupTitle,
               style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w800,
                 letterSpacing: -0.3,
@@ -73,11 +75,8 @@ class _PayoutSetupSheet extends StatelessWidget {
             const SizedBox(height: AppSizes.sm),
             Text(
               hasDraft
-                  ? 'You started setting up payouts — pick up right where you '
-                      'left off. Your saved details are kept securely on this device.'
-                  : 'Add your settlement bank account so your share of each order '
-                      'can reach you. Your money is held until the order is '
-                      'delivered, then settled to your bank — usually within a few days.',
+                  ? l10n.shopSheetFinishBody
+                  : l10n.shopSheetSetupBody,
               style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted),
             ),
             const SizedBox(height: AppSizes.xl),
@@ -97,12 +96,12 @@ class _PayoutSetupSheet extends StatelessWidget {
                   MaterialPageRoute(builder: (_) => const ShopPayoutsPage()),
                 );
               },
-              child: Text(hasDraft ? 'Continue' : 'Set up now'),
+              child: Text(hasDraft ? l10n.shopContinue : l10n.shopSetUpNow),
             ),
             const SizedBox(height: AppSizes.xs),
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Later'),
+              child: Text(l10n.shopLater),
             ),
           ],
         ),

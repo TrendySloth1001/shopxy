@@ -4,6 +4,7 @@ import 'package:shopxy/features/dashboard/domain/entities/dashboard_stats.dart';
 import 'package:shopxy/features/dashboard/presentation/widgets/dashboard_ui.dart';
 import 'package:shopxy/features/products/presentation/pages/products_page.dart';
 import 'package:shopxy/features/reports/presentation/pages/reports_page.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
@@ -12,13 +13,14 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 /// resets when the app restarts (mirrors the web's sessionStorage).
 final Set<String> _dismissed = <String>{};
 
-/// CTA labels per alert id (the message already carries the detail).
-const _cta = <String, String>{
-  'low-stock': 'Reorder',
-  'gst-due': 'File GST',
-  'sales-drop': 'View report',
-  'till-open': 'Open till',
-};
+/// CTA label per alert id (the message already carries the detail).
+String _ctaLabel(AppLocalizations l10n, String id) => switch (id) {
+      'low-stock' => l10n.dashboardAlertReorder,
+      'gst-due' => l10n.dashboardAlertFileGst,
+      'sales-drop' => l10n.dashboardAlertViewReport,
+      'till-open' => l10n.dashboardAlertOpenTill,
+      _ => l10n.dashboardView,
+    };
 
 /// Dismissible smart-alert notifications. Mirrors `components/alerts.tsx`.
 class Alerts extends StatefulWidget {
@@ -92,12 +94,13 @@ class _AlertRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final (icon, iconColor) = switch (alert.severity) {
       AlertSeverity.critical => (Icons.error_outline_rounded, AppColors.error),
       AlertSeverity.warning => (Icons.warning_amber_rounded, AppColors.warning),
       AlertSeverity.info => (Icons.info_outline_rounded, AppColors.brandStrong),
     };
-    final cta = _cta[alert.id] ?? 'View';
+    final cta = _ctaLabel(l10n, alert.id);
 
     return Padding(
       padding: const EdgeInsets.symmetric(
@@ -134,7 +137,7 @@ class _AlertRow extends StatelessWidget {
             icon: const Icon(Icons.close_rounded, size: 16),
             color: AppColors.subtle,
             visualDensity: VisualDensity.compact,
-            tooltip: 'Dismiss',
+            tooltip: l10n.dashboardDismiss,
           ),
         ],
       ),

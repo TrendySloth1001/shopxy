@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shopxy/features/dashboard/domain/entities/dashboard_stats.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
@@ -251,8 +252,8 @@ class DeltaChip extends StatelessWidget {
       return _pill(
         bg: AppColors.surfaceTint,
         fg: AppColors.muted,
-        child: const Text('New',
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+        child: Text(AppLocalizations.of(context).dashboardDeltaNew,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
       );
     }
     final v = value!;

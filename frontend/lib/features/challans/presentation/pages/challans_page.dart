@@ -7,8 +7,8 @@ import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/challans/presentation/pages/challan_detail_page.dart';
 import 'package:shopxy/features/challans/presentation/pages/create_challan_page.dart';
 import 'package:shopxy/features/challans/presentation/providers/challans_provider.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
-import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_error_view.dart';
@@ -48,11 +48,12 @@ class _ChallansPageState extends State<ChallansPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final provider = context.watch<ChallansProvider>();
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(AppStrings.navChallans),
+        title: Text(l10n.challansTitle),
         actions: [AccessReloadButton(onReload: () => provider.loadChallans())],
       ),
       body: Column(
@@ -65,7 +66,7 @@ class _ChallansPageState extends State<ChallansPage> {
               0,
             ),
             child: AppSearchBar(
-              hint: AppStrings.searchChallans,
+              hint: l10n.challansSearchHint,
               onChanged: context.read<ChallansProvider>().setSearch,
             ),
           ),
@@ -82,7 +83,7 @@ class _ChallansPageState extends State<ChallansPage> {
                         (s) => Padding(
                           padding: const EdgeInsets.only(right: AppSizes.sm),
                           child: FilterChip(
-                            label: Text(s ?? AppStrings.all),
+                            label: Text(s ?? l10n.challansFilterAll),
                             selected: provider.statusFilter == s,
                             onSelected: (_) =>
                                 context.read<ChallansProvider>().setStatus(s),
@@ -103,8 +104,8 @@ class _ChallansPageState extends State<ChallansPage> {
                     : provider.challans.isEmpty
                     ? EmptyState.line(
                         kind: LineArt.deliveryNote,
-                        title: AppStrings.noChallans,
-                        subtitle: AppStrings.challansTapCreate,
+                        title: l10n.challansEmptyTitle,
+                        subtitle: l10n.challansEmptySubtitle,
                       )
                     : RefreshIndicator(
                         onRefresh: () =>
@@ -149,7 +150,7 @@ class _ChallansPageState extends State<ChallansPage> {
         child: FloatingActionButton.extended(
           onPressed: _openCreate,
           icon: const Icon(Icons.add_rounded),
-          label: const Text(AppStrings.createChallan),
+          label: Text(l10n.challansCreate),
         ),
       ),
     );
@@ -221,6 +222,7 @@ class _ChallanTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final df = DateFormat('dd MMM yyyy');
 
@@ -251,7 +253,7 @@ class _ChallanTile extends StatelessWidget {
                     ),
                     const SizedBox(height: AppSizes.xs),
                     Text(
-                      '${challan.partyName} • ${df.format(challan.createdAt as DateTime)} • ${challan.itemCount} ${AppStrings.items}',
+                      '${challan.partyName} • ${df.format(challan.createdAt as DateTime)} • ${challan.itemCount} ${l10n.challansItemsLabel}',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: AppColors.muted,
                       ),

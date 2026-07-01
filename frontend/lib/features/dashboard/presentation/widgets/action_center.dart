@@ -6,6 +6,7 @@ import 'package:shopxy/features/orders/presentation/pages/orders_inbox_page.dart
 import 'package:shopxy/features/products/presentation/pages/products_page.dart';
 import 'package:shopxy/features/quotations/presentation/pages/quotations_page.dart';
 import 'package:shopxy/features/returns/presentation/pages/merchant_returns_page.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
@@ -29,23 +30,27 @@ class ActionCenter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final items = <_Item>[
-      _Item(queue.orders, 'Orders to confirm', Icons.shopping_bag_outlined,
-          _Tone.brand, () => const OrdersInboxPage()),
-      _Item(queue.returns, 'Returns to review', Icons.replay_rounded,
+      _Item(queue.orders, l10n.dashboardOrdersToConfirm,
+          Icons.shopping_bag_outlined, _Tone.brand,
+          () => const OrdersInboxPage()),
+      _Item(queue.returns, l10n.dashboardReturnsToReview, Icons.replay_rounded,
           _Tone.amber, () => const MerchantReturnsPage()),
-      _Item(queue.quotations, 'Quotes to price', Icons.description_outlined,
-          _Tone.brand, () => const QuotationsPage()),
-      _Item(queue.drafts, 'Drafts to confirm', Icons.assignment_outlined,
-          _Tone.brand, () => const InvoicesPage()),
-      _Item(queue.outOfStock, 'Out of stock', Icons.inventory_2_outlined,
-          _Tone.error, () => const ProductsPage()),
-      _Item(queue.lowStock, 'Low stock', Icons.inventory_outlined, _Tone.amber,
+      _Item(queue.quotations, l10n.dashboardQuotesToPrice,
+          Icons.description_outlined, _Tone.brand,
+          () => const QuotationsPage()),
+      _Item(queue.drafts, l10n.dashboardDraftsToConfirm,
+          Icons.assignment_outlined, _Tone.brand, () => const InvoicesPage()),
+      _Item(queue.outOfStock, l10n.dashboardOutOfStock,
+          Icons.inventory_2_outlined, _Tone.error,
           () => const ProductsPage()),
+      _Item(queue.lowStock, l10n.dashboardLowStock, Icons.inventory_outlined,
+          _Tone.amber, () => const ProductsPage()),
     ].where((it) => it.count > 0).toList();
 
     return DashSection(
-      title: 'Needs attention',
+      title: l10n.dashboardNeedsAttention,
       child: items.isEmpty
           ? DashCard(
               padding: const EdgeInsets.symmetric(
@@ -57,7 +62,7 @@ class ActionCenter extends StatelessWidget {
                   const SizedBox(width: AppSizes.md),
                   Expanded(
                     child: Text(
-                      'You’re all caught up — nothing needs action right now.',
+                      l10n.dashboardAllCaughtUp,
                       style: DashText.bodyMd.copyWith(color: AppColors.muted),
                     ),
                   ),

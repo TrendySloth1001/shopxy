@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
@@ -17,44 +18,38 @@ class ShopKycPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    const docs = [
+    final l10n = AppLocalizations.of(context);
+    final docs = [
       _KycDoc(
-        title: 'PAN card',
-        subtitle: 'Owner or business PAN. Required for payouts.',
+        title: l10n.shopKycPanTitle,
+        subtitle: l10n.shopKycPanSubtitle,
         icon: Icons.badge_outlined,
       ),
       _KycDoc(
-        title: 'GSTIN certificate',
-        subtitle:
-            'If your shop has a GSTIN, upload the registration certificate.',
+        title: l10n.shopKycGstinTitle,
+        subtitle: l10n.shopKycGstinSubtitle,
         icon: Icons.receipt_long_outlined,
       ),
       _KycDoc(
-        title: 'Cancelled cheque',
-        subtitle:
-            'Bank-issued cheque with account holder name visible. '
-            'Confirms settlement-account ownership.',
+        title: l10n.shopKycChequeTitle,
+        subtitle: l10n.shopKycChequeSubtitle,
         icon: Icons.account_balance_wallet_outlined,
       ),
       _KycDoc(
-        title: 'Aadhaar / address proof',
-        subtitle:
-            'For sole-proprietor shops. Skip if you already have GSTIN '
-            'on file.',
+        title: l10n.shopKycAadhaarTitle,
+        subtitle: l10n.shopKycAadhaarSubtitle,
         icon: Icons.home_outlined,
       ),
       _KycDoc(
-        title: 'Shop / business photo',
-        subtitle:
-            'Optional. Front-of-store photo helps trust + verification '
-            'reviews.',
+        title: l10n.shopKycPhotoTitle,
+        subtitle: l10n.shopKycPhotoSubtitle,
         icon: Icons.storefront_outlined,
       ),
     ];
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(title: const Text('KYC documents')),
+      appBar: AppBar(title: Text(l10n.shopKycTitle)),
       body: ListView(
         padding: const EdgeInsets.only(bottom: AppSizes.huge),
         children: [
@@ -69,10 +64,7 @@ class ShopKycPage extends StatelessWidget {
                 const SizedBox(width: AppSizes.sm),
                 Expanded(
                   child: Text(
-                    'Document uploads launch with the verified-seller badge. '
-                    'Until then, this lists what you\'ll be asked for so you can '
-                    'prepare ahead. Your payout KYC is handled in Payouts & '
-                    'settlement.',
+                    l10n.shopKycIntro,
                     style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
                   ),
                 ),
@@ -93,6 +85,7 @@ class _KycRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return Container(
       decoration: BoxDecoration(
         border: Border(top: BorderSide(color: AppColors.hairline)),
@@ -127,8 +120,8 @@ class _KycRow extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const AppStatusBadge(
-                      label: 'Not uploaded',
+                    AppStatusBadge(
+                      label: l10n.shopKycNotUploaded,
                       tone: AppStatusTone.warning,
                       weight: AppStatusWeight.soft,
                       dense: true,
@@ -144,7 +137,7 @@ class _KycRow extends StatelessWidget {
                 OutlinedButton.icon(
                   onPressed: null,
                   icon: const Icon(Icons.upload_file_rounded, size: AppSizes.iconSm),
-                  label: const Text('Upload (coming soon)'),
+                  label: Text(l10n.shopKycUploadComingSoon),
                 ),
               ],
             ),

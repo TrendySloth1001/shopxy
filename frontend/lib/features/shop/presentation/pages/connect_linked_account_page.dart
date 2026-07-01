@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/core/network/api_client.dart';
 import 'package:shopxy/features/shop/data/datasources/linked_account_remote_data_source.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
@@ -75,16 +76,16 @@ class _ConnectLinkedAccountPageState extends State<ConnectLinkedAccountPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final d = _details;
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(title: const Text('Connect existing account')),
+      appBar: AppBar(title: Text(l10n.shopConnectExistingAccountTitle)),
       body: ListView(
         padding: const EdgeInsets.all(AppSizes.xl),
         children: [
           Text(
-            'Already have a Razorpay linked account? Paste its id to link it — no '
-            'need to re-do KYC.',
+            l10n.shopConnectIntro,
             style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted),
           ),
           const SizedBox(height: AppSizes.lg),
@@ -94,8 +95,8 @@ class _ConnectLinkedAccountPageState extends State<ConnectLinkedAccountPage> {
             enabled: !_busy && d == null,
             onChanged: (_) => setState(() => _details = null),
             inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'\s'))],
-            decoration: const InputDecoration(
-              labelText: 'Account id',
+            decoration: InputDecoration(
+              labelText: l10n.shopConnectAccountIdLabel,
               hintText: 'acc_XXXXXXXXXXXX',
             ),
           ),
@@ -109,7 +110,7 @@ class _ConnectLinkedAccountPageState extends State<ConnectLinkedAccountPage> {
               onPressed: _idValid && !_busy ? _verify : null,
               child: _busy
                   ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Text('Verify'),
+                  : Text(l10n.shopConnectVerify),
             )
           else ...[
             Container(
@@ -121,20 +122,19 @@ class _ConnectLinkedAccountPageState extends State<ConnectLinkedAccountPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Confirm this is your account',
+                  Text(l10n.shopConnectConfirmTitle,
                       style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
                   const SizedBox(height: AppSizes.md),
-                  _Fact(label: 'Account', value: d.accountId),
-                  _Fact(label: 'Business', value: d.legalBusinessName ?? '—'),
-                  _Fact(label: 'Contact', value: d.contactName ?? '—'),
-                  _Fact(label: 'Email', value: d.email ?? '—'),
-                  _Fact(label: 'KYC status', value: d.kycStatus),
-                  _Fact(label: 'Payouts', value: d.payoutsEnabled ? 'Enabled' : 'Not yet enabled'),
+                  _Fact(label: l10n.shopConnectFactAccount, value: d.accountId),
+                  _Fact(label: l10n.shopConnectFactBusiness, value: d.legalBusinessName ?? '—'),
+                  _Fact(label: l10n.shopConnectFactContact, value: d.contactName ?? '—'),
+                  _Fact(label: l10n.shopConnectFactEmail, value: d.email ?? '—'),
+                  _Fact(label: l10n.shopConnectFactKycStatus, value: d.kycStatus),
+                  _Fact(label: l10n.shopConnectFactPayouts, value: d.payoutsEnabled ? l10n.shopEnabled : l10n.shopNotYetEnabled),
                   if (!d.payoutsEnabled) ...[
                     const SizedBox(height: AppSizes.sm),
                     Text(
-                      'Payouts aren\'t enabled yet — you can link it, but UPI at the till '
-                      'stays off until Razorpay activates the account.',
+                      l10n.shopConnectPayoutsNotEnabledWarning,
                       style: theme.textTheme.bodySmall?.copyWith(color: AppColors.warning),
                     ),
                   ],
@@ -149,13 +149,13 @@ class _ConnectLinkedAccountPageState extends State<ConnectLinkedAccountPage> {
                     onPressed: _busy ? null : _confirm,
                     child: _busy
                         ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Text('Link this account'),
+                        : Text(l10n.shopConnectLinkAccount),
                   ),
                 ),
                 const SizedBox(width: AppSizes.md),
                 OutlinedButton(
                   onPressed: _busy ? null : () => setState(() => _details = null),
-                  child: const Text('Cancel'),
+                  child: Text(l10n.shopCancel),
                 ),
               ],
             ),

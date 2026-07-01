@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:shopxy/features/dashboard/domain/entities/dashboard_stats.dart';
 import 'package:shopxy/features/dashboard/presentation/widgets/dashboard_ui.dart';
 import 'package:shopxy/features/dashboard/presentation/widgets/trend_chart.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 
@@ -32,13 +33,14 @@ class TrendCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final labels = trend.labels.map(_fmtDay).toList();
     final total = trend.sales.fold<double>(0, (s, v) => s + v);
 
     final series = <TrendSeriesData>[
       TrendSeriesData(
           key: 'sales',
-          label: 'Sales',
+          label: l10n.dashboardSales,
           color: AppColors.brand,
           values: trend.sales),
       for (final p in trend.paymentSeries)
@@ -54,21 +56,21 @@ class TrendCard extends StatelessWidget {
     if (trend.previous.any((v) => v != 0)) {
       comparisons.add(TrendSeriesData(
           key: 'previous',
-          label: 'Previous',
+          label: l10n.dashboardPrevious,
           color: AppColors.subtle,
           values: trend.previous));
     }
     if (trend.purchases.any((v) => v != 0)) {
       comparisons.add(TrendSeriesData(
           key: 'purchases',
-          label: 'Purchases',
+          label: l10n.dashboardPurchases,
           color: AppColors.accentAmber,
           values: trend.purchases));
     }
     if (trend.returns.any((v) => v != 0)) {
       comparisons.add(TrendSeriesData(
           key: 'returns',
-          label: 'Returns',
+          label: l10n.dashboardReturns,
           color: AppColors.accentRose,
           values: trend.returns));
     }
@@ -79,7 +81,7 @@ class TrendCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Eyebrow('Sales trend'),
+          Eyebrow(l10n.dashboardSalesTrend),
           const SizedBox(height: AppSizes.xs),
           Text(inr.format(total),
               style: DashText.titleMd.copyWith(fontFeatures: tabularFigures)),

@@ -6,8 +6,8 @@ import 'package:shopxy/features/challans/domain/entities/challan.dart';
 import 'package:shopxy/features/challans/presentation/pages/challans_page.dart';
 import 'package:shopxy/features/challans/presentation/providers/challans_provider.dart';
 import 'package:shopxy/features/invoices/presentation/pages/invoice_detail_page.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
-import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
 import 'package:shopxy/shared/widgets/app_card.dart';
@@ -55,12 +55,13 @@ class _ChallanDetailPageState extends State<ChallanDetailPage> {
   }
 
   Future<void> _cancel() async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await AppConfirmDialog.show(
       context,
-      title: AppStrings.cancelChallan,
-      message: AppStrings.cancelChallanConfirm,
-      confirmLabel: AppStrings.yes,
-      cancelLabel: AppStrings.no,
+      title: l10n.challansCancel,
+      message: l10n.challansCancelConfirm,
+      confirmLabel: l10n.challansYes,
+      cancelLabel: l10n.challansNo,
       danger: true,
     );
     if (!confirmed || !mounted) return;
@@ -100,6 +101,7 @@ class _ChallanDetailPageState extends State<ChallanDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
 
     if (_isLoading) {
@@ -108,7 +110,7 @@ class _ChallanDetailPageState extends State<ChallanDetailPage> {
     if (_challan == null) {
       return Scaffold(
         appBar: AppBar(),
-        body: const Center(child: Text(AppStrings.error)),
+        body: Center(child: Text(l10n.challansError)),
       );
     }
 
@@ -122,9 +124,9 @@ class _ChallanDetailPageState extends State<ChallanDetailPage> {
           if (c.isPending)
             PopupMenuButton<String>(
               itemBuilder: (_) => [
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'cancel',
-                  child: Text(AppStrings.cancelChallan),
+                  child: Text(l10n.challansCancel),
                 ),
               ],
               onSelected: (v) {
@@ -174,15 +176,15 @@ class _ChallanDetailPageState extends State<ChallanDetailPage> {
                   style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
                 ),
                 const SizedBox(height: AppSizes.md),
-                _InfoRow(label: AppStrings.partyName, value: c.partyName),
+                _InfoRow(label: l10n.challansPartyName, value: c.partyName),
                 if (c.partyPhone != null)
-                  _InfoRow(label: AppStrings.phone, value: c.partyPhone!),
+                  _InfoRow(label: l10n.challansPhone, value: c.partyPhone!),
                 if (c.note != null && c.note!.isNotEmpty)
-                  _InfoRow(label: AppStrings.note, value: c.note!),
+                  _InfoRow(label: l10n.challansNote, value: c.note!),
                 if (c.isConverted && c.invoice != null) ...[
                   const SizedBox(height: AppSizes.sm),
                   _InfoRow(
-                    label: AppStrings.challanLinkedInvoice,
+                    label: l10n.challansLinkedInvoice,
                     value: c.invoice!.invoiceNo,
                   ),
                 ],
@@ -191,15 +193,15 @@ class _ChallanDetailPageState extends State<ChallanDetailPage> {
           ),
           const SizedBox(height: AppSizes.md),
           AppSectionHeader(
-            title: AppStrings.challanItems.toUpperCase(),
+            title: l10n.challansItemsHeader.toUpperCase(),
             padding: const EdgeInsets.only(bottom: AppSizes.sm),
           ),
           AppCard(
             padding: EdgeInsets.zero,
             child: c.items.isEmpty
-                ? const Padding(
-                    padding: EdgeInsets.all(AppSizes.lg),
-                    child: Text(AppStrings.challanEmptyItems),
+                ? Padding(
+                    padding: const EdgeInsets.all(AppSizes.lg),
+                    child: Text(l10n.challansEmptyItems),
                   )
                 : Column(
                     children: [
@@ -256,7 +258,7 @@ class _ChallanDetailPageState extends State<ChallanDetailPage> {
               child: Padding(
                 padding: const EdgeInsets.all(AppSizes.lg),
                 child: AppButton.primary(
-                  label: AppStrings.convertToInvoice,
+                  label: l10n.challansConvertToInvoice,
                   icon: Icons.receipt_long_rounded,
                   onPressed: _convertToInvoice,
                   isLoading: _isConverting,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shopxy/features/dashboard/domain/entities/dashboard_stats.dart';
 import 'package:shopxy/features/dashboard/presentation/widgets/dashboard_ui.dart';
 import 'package:shopxy/features/dashboard/presentation/widgets/infographic_pie.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 
 /// Ranked analytics as infographic pie charts. Top categories + top products
@@ -13,43 +14,44 @@ class Analytics extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final categories = _PieCard(
-      title: 'Top categories',
+      title: l10n.dashboardTopCategories,
       child: InfographicPie(
         rows: insights.topCategories
             .map((c) => PieRow(label: c.name, value: c.revenue))
             .toList(),
         palette: piePaletteA,
         formatValue: (v) => inr.format(v),
-        subject: 'category sales',
-        itemNoun: 'categories',
+        subject: l10n.dashboardSubjectCategorySales,
+        itemNoun: l10n.dashboardNounCategories,
       ),
     );
 
     final products = _PieCard(
-      title: 'Top products',
+      title: l10n.dashboardTopProducts,
       child: InfographicPie(
         rows: insights.topProducts
             .map((p) => PieRow(label: p.name, value: p.revenue))
             .toList(),
         palette: piePaletteB,
         formatValue: (v) => inr.format(v),
-        subject: 'product sales',
-        itemNoun: 'products',
+        subject: l10n.dashboardSubjectProductSales,
+        itemNoun: l10n.dashboardNounProducts,
       ),
     );
 
     final slowMovers = _PieCard(
-      title: 'Slow movers',
-      hint: 'Share of idle in-stock units — capital that isn’t moving.',
+      title: l10n.dashboardSlowMovers,
+      hint: l10n.dashboardSlowMoversHint,
       child: InfographicPie(
         rows: insights.slowMovers
             .map((m) => PieRow(label: m.name, value: m.stock))
             .toList(),
         palette: piePaletteC,
-        formatValue: (v) => '${v.toStringAsFixed(0)} units',
-        subject: 'idle stock',
-        itemNoun: 'products',
+        formatValue: (v) => l10n.dashboardUnitsValue(v.toStringAsFixed(0)),
+        subject: l10n.dashboardSubjectIdleStock,
+        itemNoun: l10n.dashboardNounProducts,
       ),
     );
 

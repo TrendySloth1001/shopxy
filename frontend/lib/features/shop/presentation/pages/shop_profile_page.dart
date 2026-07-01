@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/core/network/image_url.dart';
 import 'package:shopxy/features/shop/data/models/shop.dart';
 import 'package:shopxy/features/shop/presentation/providers/shop_provider.dart';
@@ -107,9 +108,9 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
     const maxBytes = 5 * 1024 * 1024;
     if (file.lengthSync() > maxBytes) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
-            'Image is larger than 5 MB. Pick a smaller image or crop tighter.',
+            AppLocalizations.of(context).shopImageTooLarge,
           ),
         ),
       );
@@ -136,7 +137,7 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
     });
     if (url == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(shop.error ?? 'Image upload failed')),
+        SnackBar(content: Text(shop.error ?? AppLocalizations.of(context).shopImageUploadFailed)),
       );
     }
   }
@@ -211,28 +212,30 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
           : _cancellationPolicy,
     );
     if (!mounted) return;
+    final l10n = AppLocalizations.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(ok ? 'Shop profile saved' : 'Save failed')),
+      SnackBar(content: Text(ok ? l10n.shopProfileSaved : l10n.shopSaveFailed)),
     );
   }
 
   Future<void> _togglePublish(Shop shop) async {
+    final l10n = AppLocalizations.of(context);
     if (shop.isPublished) {
       final confirm = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('Unpublish shop?'),
-          content: const Text(
-            'Customers will stop seeing your shop on the marketplace. Your inventory and orders are unaffected.',
+          title: Text(l10n.shopUnpublishTitle),
+          content: Text(
+            l10n.shopUnpublishMessage,
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel'),
+              child: Text(l10n.shopCancel),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Unpublish'),
+              child: Text(l10n.shopUnpublish),
             ),
           ],
         ),
@@ -247,9 +250,9 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
         content: Text(
           ok
               ? (!shop.isPublished
-                  ? 'Shop is now live on the marketplace'
-                  : 'Shop hidden from marketplace')
-              : 'Failed to update publish state',
+                  ? l10n.shopNowLive
+                  : l10n.shopHiddenFromMarketplace)
+              : l10n.shopPublishUpdateFailed,
         ),
       ),
     );
@@ -258,22 +261,23 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
   /// Returns true when the user confirms they want to discard
   /// unsaved edits. Used by PopScope to guard the back gesture.
   Future<bool> _confirmDiscard(BuildContext context) async {
+    final l10n = AppLocalizations.of(context);
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Discard changes?'),
-        content: const Text(
-          "You have unsaved edits. Leaving now drops them.",
+        title: Text(l10n.shopDiscardChangesTitle),
+        content: Text(
+          l10n.shopDiscardChangesMessage,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Keep editing'),
+            child: Text(l10n.shopKeepEditing),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: AppColors.error),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Discard'),
+            child: Text(l10n.shopDiscard),
           ),
         ],
       ),
@@ -283,6 +287,7 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final provider = context.watch<ShopProvider>();
     final shop = provider.shop;
     final dirty = shop != null && _isDirty(shop);
@@ -301,12 +306,12 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
       child: Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
-        title: const Text('My Shop'),
+        title: Text(l10n.shopMyShopTitle),
         actions: [
           if (dirty)
             TextButton(
               onPressed: provider.isSaving ? null : () => _save(shop),
-              child: Text(provider.isSaving ? 'Saving…' : 'Save'),
+              child: Text(provider.isSaving ? l10n.shopSaving : l10n.shopSave),
             ),
         ],
       ),
@@ -317,7 +322,7 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
                   child: Padding(
                     padding: const EdgeInsets.all(AppSizes.xl),
                     child: Text(
-                      provider.error ?? 'Shop not found',
+                      provider.error ?? l10n.shopNotFound,
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -329,6 +334,7 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
 
   Widget _buildForm(Shop shop) {
     _hydrate(shop);
+    final l10n = AppLocalizations.of(context);
     return Form(
       key: _formKey,
       child: ListView(
@@ -380,8 +386,8 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
                           const SizedBox(width: AppSizes.xs),
                           Text(
                             shop.isPublished
-                                ? 'Live on marketplace · /${shop.slug}'
-                                : 'Not published',
+                                ? l10n.shopLiveOnMarketplaceSlug(shop.slug)
+                                : l10n.shopNotPublished,
                             style: Theme.of(context)
                                 .textTheme
                                 .bodySmall
@@ -407,15 +413,14 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
               children: [
                 TextFormField(
                   controller: _name,
-                  decoration: const InputDecoration(
-                    labelText: 'Shop name',
-                    helperText:
-                        'Shown on the marketplace. Renaming updates the public URL slug.',
+                  decoration: InputDecoration(
+                    labelText: l10n.shopNameLabel,
+                    helperText: l10n.shopNameHelper,
                   ),
                   validator: (v) {
                     final value = v?.trim() ?? '';
-                    if (value.length < 2) return 'Min 2 characters';
-                    if (value.length > 80) return 'Max 80 characters';
+                    if (value.length < 2) return l10n.shopMin2Chars;
+                    if (value.length > 80) return l10n.shopMax80Chars;
                     return null;
                   },
                   onChanged: (_) => setState(() {}),
@@ -423,19 +428,17 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
                 const SizedBox(height: AppSizes.lg),
                 TextFormField(
                   controller: _tagline,
-                  decoration: const InputDecoration(
-                    labelText: 'Tagline (optional)',
-                    helperText: 'One-liner shown below your shop name.',
+                  decoration: InputDecoration(
+                    labelText: l10n.shopTaglineLabel,
+                    helperText: l10n.shopTaglineHelper,
                   ),
                   maxLength: 140,
                   onChanged: (_) => setState(() {}),
                 ),
                 const SizedBox(height: AppSizes.lg),
                 _SectionHeader(
-                  title: 'Location',
-                  subtitle:
-                      'Optional. Surfaces a "Based in …" line on your '
-                      'public shop page.',
+                  title: l10n.shopLocationSection,
+                  subtitle: l10n.shopLocationSectionSubtitle,
                 ),
                 const SizedBox(height: AppSizes.md),
                 Row(
@@ -443,8 +446,8 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
                     Expanded(
                       child: TextFormField(
                         controller: _locationCity,
-                        decoration: const InputDecoration(
-                          labelText: 'City',
+                        decoration: InputDecoration(
+                          labelText: l10n.shopCity,
                         ),
                         textCapitalization: TextCapitalization.words,
                         onChanged: (_) => setState(() {}),
@@ -454,8 +457,8 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
                     Expanded(
                       child: TextFormField(
                         controller: _locationState,
-                        decoration: const InputDecoration(
-                          labelText: 'State',
+                        decoration: InputDecoration(
+                          labelText: l10n.shopState,
                         ),
                         textCapitalization: TextCapitalization.words,
                         onChanged: (_) => setState(() {}),
@@ -465,20 +468,15 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
                 ),
                 const SizedBox(height: AppSizes.xl),
                 _SectionHeader(
-                  title: 'Policies',
-                  subtitle:
-                      'Customers see these on your shop page and as a '
-                      '"Policies" pill on every PDP. Plain text. Up to '
-                      '4 KB each.',
+                  title: l10n.shopPoliciesSection,
+                  subtitle: l10n.shopPoliciesSectionSubtitle,
                 ),
                 const SizedBox(height: AppSizes.md),
                 TextFormField(
                   controller: _returnPolicy,
-                  decoration: const InputDecoration(
-                    labelText: 'Return policy',
-                    hintText:
-                        'e.g. 7-day return on unused items. Original '
-                        'packaging required.',
+                  decoration: InputDecoration(
+                    labelText: l10n.shopReturnPolicyLabel,
+                    hintText: l10n.shopReturnPolicyHint,
                   ),
                   minLines: 2,
                   maxLines: 6,
@@ -488,11 +486,9 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
                 const SizedBox(height: AppSizes.md),
                 TextFormField(
                   controller: _shippingPolicy,
-                  decoration: const InputDecoration(
-                    labelText: 'Shipping policy',
-                    hintText:
-                        'e.g. Ships within 24 hours from Bengaluru. '
-                        '3–5 business days delivery.',
+                  decoration: InputDecoration(
+                    labelText: l10n.shopShippingPolicyLabel,
+                    hintText: l10n.shopShippingPolicyHint,
                   ),
                   minLines: 2,
                   maxLines: 6,
@@ -502,11 +498,9 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
                 const SizedBox(height: AppSizes.md),
                 TextFormField(
                   controller: _refundPolicy,
-                  decoration: const InputDecoration(
-                    labelText: 'Refund policy',
-                    hintText:
-                        'e.g. Refunds processed within 5 business days '
-                        'to the original payment method.',
+                  decoration: InputDecoration(
+                    labelText: l10n.shopRefundPolicyLabel,
+                    hintText: l10n.shopRefundPolicyHint,
                   ),
                   minLines: 2,
                   maxLines: 6,
@@ -515,20 +509,16 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
                 ),
                 const SizedBox(height: AppSizes.xl),
                 _SectionHeader(
-                  title: 'Returns & cancellation',
-                  subtitle:
-                      'Whether customers can return orders, how refunds '
-                      'are issued, and how late an order can be '
-                      'cancelled.',
+                  title: l10n.shopReturnsCancellationSection,
+                  subtitle: l10n.shopReturnsCancellationSubtitle,
                 ),
                 const SizedBox(height: AppSizes.sm),
                 SwitchListTile.adaptive(
                   value: _returnsEnabled,
                   onChanged: (v) => setState(() => _returnsEnabled = v),
-                  title: const Text('Accept returns'),
-                  subtitle: const Text(
-                    "When off, customers can't request post-delivery "
-                    'returns.',
+                  title: Text(l10n.shopAcceptReturns),
+                  subtitle: Text(
+                    l10n.shopAcceptReturnsSubtitle,
                   ),
                   contentPadding: EdgeInsets.zero,
                 ),
@@ -536,16 +526,16 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
                   const SizedBox(height: AppSizes.md),
                   TextFormField(
                     controller: _returnWindowDays,
-                    decoration: const InputDecoration(
-                      labelText: 'Return window (days)',
-                      helperText: '0 means no time limit.',
+                    decoration: InputDecoration(
+                      labelText: l10n.shopReturnWindowLabel,
+                      helperText: l10n.shopReturnWindowHelper,
                     ),
                     keyboardType: TextInputType.number,
                     validator: (v) {
                       if (!_returnsEnabled) return null;
                       final n = int.tryParse(v?.trim() ?? '');
                       if (n == null || n < 0 || n > 365) {
-                        return 'Enter a whole number between 0 and 365';
+                        return l10n.shopReturnWindowError;
                       }
                       return null;
                     },
@@ -555,17 +545,17 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
                   DropdownButtonFormField<String>(
                     initialValue: _refundMode,
                     isExpanded: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Refund method',
+                    decoration: InputDecoration(
+                      labelText: l10n.shopRefundMethodLabel,
                     ),
-                    items: const [
+                    items: [
                       DropdownMenuItem(
                         value: 'ORIGINAL',
-                        child: Text('Original payment method'),
+                        child: Text(l10n.shopRefundMethodOriginal),
                       ),
                       DropdownMenuItem(
                         value: 'REPLACEMENT',
-                        child: Text('Replacement only'),
+                        child: Text(l10n.shopRefundMethodReplacement),
                       ),
                     ],
                     onChanged: (v) => setState(
@@ -575,11 +565,9 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
                   const SizedBox(height: AppSizes.md),
                   TextFormField(
                     controller: _returnPolicyNote,
-                    decoration: const InputDecoration(
-                      labelText: 'Return policy note (optional)',
-                      hintText:
-                          'e.g. Items must be unused and in original '
-                          'packaging. Buyer pays return shipping.',
+                    decoration: InputDecoration(
+                      labelText: l10n.shopReturnPolicyNoteLabel,
+                      hintText: l10n.shopReturnPolicyNoteHint,
                     ),
                     minLines: 2,
                     maxLines: 6,
@@ -591,28 +579,26 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
                 DropdownButtonFormField<String>(
                   initialValue: _cancellationPolicy,
                   isExpanded: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Customers can cancel',
-                    helperText:
-                        'After this stage they must use a post-delivery '
-                        'return instead.',
+                  decoration: InputDecoration(
+                    labelText: l10n.shopCustomersCanCancelLabel,
+                    helperText: l10n.shopCustomersCanCancelHelper,
                   ),
-                  items: const [
+                  items: [
                     DropdownMenuItem(
                       value: 'UNTIL_CONFIRMED',
-                      child: Text('Until I confirm the order'),
+                      child: Text(l10n.shopCancelUntilConfirmed),
                     ),
                     DropdownMenuItem(
                       value: 'UNTIL_PACKED',
-                      child: Text('Until packed'),
+                      child: Text(l10n.shopCancelUntilPacked),
                     ),
                     DropdownMenuItem(
                       value: 'UNTIL_SHIPPED',
-                      child: Text('Until shipped (recommended)'),
+                      child: Text(l10n.shopCancelUntilShipped),
                     ),
                     DropdownMenuItem(
                       value: 'UNTIL_DELIVERED',
-                      child: Text('Until delivered'),
+                      child: Text(l10n.shopCancelUntilDelivered),
                     ),
                   ],
                   onChanged: (v) => setState(
@@ -846,6 +832,7 @@ class _BannerEditor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return GestureDetector(
       onTap: onPick,
       child: AspectRatio(
@@ -877,14 +864,14 @@ class _BannerEditor extends StatelessWidget {
                     if (onRemove != null) ...[
                       _ImageActionChip(
                         icon: Icons.delete_outline,
-                        label: 'Remove',
+                        label: l10n.shopRemove,
                         onTap: onRemove!,
                       ),
                       const SizedBox(width: AppSizes.sm),
                     ],
                     _ImageActionChip(
                       icon: Icons.camera_alt_outlined,
-                      label: url == null ? 'Add banner' : 'Replace',
+                      label: url == null ? l10n.shopAddBanner : l10n.shopReplace,
                       onTap: onPick,
                     ),
                   ],
@@ -913,7 +900,7 @@ class _BannerPlaceholder extends StatelessWidget {
             ),
             const SizedBox(height: AppSizes.xs),
             Text(
-              'Add a banner',
+              AppLocalizations.of(context).shopAddBanner,
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
                     color: AppColors.muted,
                   ),
@@ -1059,6 +1046,7 @@ class _PublishCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final color = shop.isPublished ? AppColors.brand : AppColors.muted;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
@@ -1084,8 +1072,8 @@ class _PublishCard extends StatelessWidget {
                 children: [
                   Text(
                     shop.isPublished
-                        ? 'Live on marketplace'
-                        : 'Not published yet',
+                        ? l10n.shopLiveOnMarketplace
+                        : l10n.shopNotPublishedYet,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           color: color,
                           fontWeight: FontWeight.w700,
@@ -1094,8 +1082,8 @@ class _PublishCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     shop.isPublished
-                        ? 'Customers can find your shop and your published products.'
-                        : 'Toggle on once your logo, banner and at least one product are ready.',
+                        ? l10n.shopPublishCardLiveDesc
+                        : l10n.shopPublishCardHiddenDesc,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: AppColors.muted,
                         ),
