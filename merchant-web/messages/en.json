@@ -1,0 +1,9 @@
+{
+  "settings": {
+    "theme": "Theme",
+    "themeSubtitle": "Choose how ShopXY looks on this device.",
+    "language": "Language",
+    "languageSubtitle": "Choose your preferred language.",
+    "currency": "Currency"
+  }
+}

@@ -5,8 +5,10 @@ import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shopxy/core/auth/shop_capabilities.dart';
+import 'package:shopxy/core/prefs/locale_prefs.dart';
 import 'package:shopxy/core/prefs/navigation_prefs.dart';
 import 'package:shopxy/core/prefs/theme_prefs.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/custom_fields/presentation/pages/custom_fields_settings_page.dart';
 import 'package:shopxy/features/profile/presentation/pages/change_password_page.dart';
@@ -190,20 +192,16 @@ class _SettingsPageState extends State<SettingsPage> {
           const _Eyebrow('APPEARANCE'),
           const SizedBox(height: AppSizes.sm),
           const _ThemeRow(),
-          // Currency / language stay placeholder rows — no `onTap` so they
-          // don't pretend to be live. The "Coming soon" chip signals the
-          // future surface without inviting taps that do nothing.
+          // Currency stays a placeholder row — no `onTap` so it doesn't pretend
+          // to be live; the "Coming soon" chip signals the future surface.
           _SettingRow(
             icon: Icons.currency_rupee_rounded,
             title: AppStrings.currency,
             subtitle: 'Indian Rupee (₹)',
-          ),
-          _SettingRow(
-            icon: Icons.language_rounded,
-            title: AppStrings.language,
-            subtitle: 'English',
             trailing: _comingSoonChip(context),
           ),
+          // Language is live (multilingual pilot): English + हिन्दी.
+          const _LanguageRow(),
           const _NavigationStyleRow(),
           const _DensityRow(),
 
@@ -522,6 +520,7 @@ class _ThemeRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final prefs = context.watch<ThemePrefsProvider>();
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSizes.lg,
@@ -550,7 +549,7 @@ class _ThemeRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  AppStrings.theme,
+                  l10n.theme,
                   style: theme.textTheme.bodyLarge?.copyWith(
                     color: AppColors.black,
                     fontWeight: FontWeight.w600,
@@ -559,14 +558,14 @@ class _ThemeRow extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   switch (prefs.mode) {
-                    AppThemeMode.light => 'Warm canvas, dark text (default).',
-                    AppThemeMode.beige => 'Soft sepia paper — warm, low glare.',
-                    AppThemeMode.rose => 'Warm blush — soft and easy on the eye.',
-                    AppThemeMode.sage => 'Cool mint-green — calm and quiet.',
-                    AppThemeMode.dark => 'Deep slate surfaces, easy on the eyes.',
-                    AppThemeMode.oled => 'True black — best for OLED displays.',
-                    AppThemeMode.midnight => 'Deep navy — indigo-tinted dark.',
-                    AppThemeMode.nord => 'Muted arctic blue-grey — soft dark.',
+                    AppThemeMode.light => l10n.themeLightDesc,
+                    AppThemeMode.beige => l10n.themeBeigeDesc,
+                    AppThemeMode.rose => l10n.themeRoseDesc,
+                    AppThemeMode.sage => l10n.themeSageDesc,
+                    AppThemeMode.dark => l10n.themeDarkDesc,
+                    AppThemeMode.oled => l10n.themeOledDesc,
+                    AppThemeMode.midnight => l10n.themeMidnightDesc,
+                    AppThemeMode.nord => l10n.themeNordDesc,
                   },
                   style: theme.textTheme.bodySmall
                       ?.copyWith(color: AppColors.muted),
@@ -589,7 +588,7 @@ class _ThemeRow extends StatelessWidget {
                             border: Border.all(color: AppColors.hairline),
                           ),
                         ),
-                        label: Text(_themeLabel(mode)),
+                        label: Text(_themeLabel(l10n, mode)),
                         selected: prefs.mode == mode,
                         onSelected: (_) => prefs.setMode(mode),
                       ),
@@ -604,16 +603,97 @@ class _ThemeRow extends StatelessWidget {
   }
 }
 
-/// Display label for a theme mode, shown on its picker chip.
-String _themeLabel(AppThemeMode mode) => switch (mode) {
-      AppThemeMode.light => 'Light',
-      AppThemeMode.beige => 'Beige',
-      AppThemeMode.rose => 'Rose',
-      AppThemeMode.sage => 'Sage',
-      AppThemeMode.dark => 'Dark',
-      AppThemeMode.oled => 'OLED',
-      AppThemeMode.midnight => 'Midnight',
-      AppThemeMode.nord => 'Nord',
+/// Display label for a theme mode, shown on its picker chip (localized).
+String _themeLabel(AppLocalizations l10n, AppThemeMode mode) => switch (mode) {
+      AppThemeMode.light => l10n.themeLight,
+      AppThemeMode.beige => l10n.themeBeige,
+      AppThemeMode.rose => l10n.themeRose,
+      AppThemeMode.sage => l10n.themeSage,
+      AppThemeMode.dark => l10n.themeDark,
+      AppThemeMode.oled => l10n.themeOled,
+      AppThemeMode.midnight => l10n.themeMidnight,
+      AppThemeMode.nord => l10n.themeNord,
+    };
+
+/// Picker for the UI language — the multilingual pilot (English + हिन्दी).
+/// Mirrors [_ThemeRow]: writes through [LocalePrefsProvider], which persists the
+/// choice, swaps the Devanagari font and rebuilds the whole app live. Language
+/// names are shown as endonyms (each in its own script), the convention for
+/// language pickers, so they read the same regardless of the active locale.
+class _LanguageRow extends StatelessWidget {
+  const _LanguageRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final prefs = context.watch<LocalePrefsProvider>();
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.md,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: AppSizes.xxxl,
+            height: AppSizes.xxxl,
+            decoration: ShapeDecoration(
+              color: AppColors.heroPanel,
+              shape: AppShapes.squircle(AppSizes.radiusSm),
+            ),
+            alignment: Alignment.center,
+            child: Icon(
+              Icons.language_rounded,
+              size: AppSizes.iconMd,
+              color: AppColors.black,
+            ),
+          ),
+          const SizedBox(width: AppSizes.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.language,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: AppColors.black,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  l10n.languageSubtitle,
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: AppColors.muted),
+                ),
+                const SizedBox(height: AppSizes.sm),
+                Wrap(
+                  spacing: AppSizes.sm,
+                  runSpacing: AppSizes.sm,
+                  children: [
+                    for (final lang in AppLanguage.values)
+                      ChoiceChip(
+                        label: Text(_languageLabel(lang)),
+                        selected: prefs.language == lang,
+                        onSelected: (_) => prefs.setLanguage(lang),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Endonym for a language — its own self-name, shown in its own script.
+String _languageLabel(AppLanguage lang) => switch (lang) {
+      AppLanguage.english => 'English',
+      AppLanguage.hindi => 'हिन्दी',
     };
 
 /// Two-way picker for [NavigationStyle]. Tapping a segment writes

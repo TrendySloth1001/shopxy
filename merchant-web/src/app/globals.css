@@ -587,6 +587,14 @@ body {
   font-family: var(--font-sans);
 }
 
+/* Devanagari languages (Hindi) swap the sans stack to Noto Sans Devanagari so
+   the script renders instead of tofu boxes; Latin (e.g. "ShopXY") falls back to
+   Inter. Driven by <html lang> in layout.tsx (from the locale cookie). */
+html[lang="hi"] {
+  --font-sans: var(--font-noto-devanagari), var(--font-inter), ui-sans-serif,
+    system-ui, sans-serif;
+}
+
 /* Honour the OS Reduce Motion setting — short-circuit all motion. */
 @media (prefers-reduced-motion: reduce) {
   *,

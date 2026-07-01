@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import { readFileSync } from "node:fs";
+import createNextIntlPlugin from "next-intl/plugin";
 
 // Surface the package version as a build-time constant so the Settings → About
 // "App version" row reflects the real release instead of a hard-coded string.
@@ -64,4 +65,8 @@ const nextConfig: NextConfig = {
     : {}),
 };
 
-export default nextConfig;
+// Wire next-intl. App Router with NO i18n routing — the active locale comes
+// from a cookie, resolved in src/i18n/request.ts (not the URL).
+const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
+
+export default withNextIntl(nextConfig);

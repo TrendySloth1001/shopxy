@@ -26,7 +26,7 @@ class AppTheme {
   static ThemeData get midnight => fromPalette(AppPalette.midnight);
   static ThemeData get nord => fromPalette(AppPalette.nord);
 
-  static ThemeData fromPalette(AppPalette p) {
+  static ThemeData fromPalette(AppPalette p, {bool devanagari = false}) {
     final scheme = ColorScheme(
       brightness: p.brightness,
       primary: p.ink,
@@ -58,7 +58,7 @@ class AppTheme {
       surfaceTint: Colors.transparent,
     );
 
-    final textTheme = AppTypography.forInk(p.ink);
+    final textTheme = AppTypography.forInk(p.ink, devanagari: devanagari);
 
     return ThemeData(
       useMaterial3: true,

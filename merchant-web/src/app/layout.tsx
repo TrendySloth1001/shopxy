@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
-import { Inter, Plus_Jakarta_Sans } from "next/font/google";
+import { Inter, Noto_Sans_Devanagari, Plus_Jakarta_Sans } from "next/font/google";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
 import { AuthProvider } from "@/features/auth/auth-context";
 import { ThemeProvider } from "@/features/theme/theme-context";
 import { THEME_INIT_SCRIPT } from "@/features/theme/theme";
@@ -22,6 +24,17 @@ const jakarta = Plus_Jakarta_Sans({
   display: "swap",
 });
 
+// Noto Sans Devanagari — covers the Devanagari script (Hindi). Exposed as
+// `--font-noto-devanagari`; globals.css swaps `--font-sans` to it for `lang="hi"`
+// so Hindi renders instead of tofu (□) boxes. Latin subset kept so mixed strings
+// (e.g. "ShopXY") stay consistent.
+const notoDevanagari = Noto_Sans_Devanagari({
+  variable: "--font-noto-devanagari",
+  subsets: ["devanagari", "latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: {
     default: "ShopXY — Merchant",
@@ -30,15 +43,21 @@ export const metadata: Metadata = {
   description: "Manage inventory, invoices, parties and vendors.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Active UI locale (from the `locale` cookie via src/i18n/request.ts) drives
+  // `<html lang>` — which in turn selects the Devanagari font in globals.css —
+  // and the messages handed to the client provider.
+  const locale = await getLocale();
+  const messages = await getMessages();
+
   return (
     <html
-      lang="en"
-      className={`${inter.variable} ${jakarta.variable} h-full`}
+      lang={locale}
+      className={`${inter.variable} ${jakarta.variable} ${notoDevanagari.variable} h-full`}
       suppressHydrationWarning
     >
       <head>
@@ -47,9 +66,11 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className="min-h-full bg-canvas text-ink antialiased">
-        <ThemeProvider>
-          <AuthProvider>{children}</AuthProvider>
-        </ThemeProvider>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <ThemeProvider>
+            <AuthProvider>{children}</AuthProvider>
+          </ThemeProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

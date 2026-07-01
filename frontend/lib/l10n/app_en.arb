@@ -1,0 +1,36 @@
+{
+  "@@locale": "en",
+
+  "settingsPreferences": "Preferences",
+  "@settingsPreferences": { "description": "Settings section: appearance & language preferences" },
+  "settingsPreferencesSubtitle": "Currency, theme and language.",
+
+  "theme": "Theme",
+  "themeSubtitle": "Choose how ShopXY looks on this device.",
+  "themeLight": "Light",
+  "themeBeige": "Beige",
+  "themeRose": "Rose",
+  "themeSage": "Sage",
+  "themeDark": "Dark",
+  "themeOled": "OLED",
+  "themeMidnight": "Midnight",
+  "themeNord": "Nord",
+  "themeLightDesc": "Warm canvas, dark text (default).",
+  "themeBeigeDesc": "Soft sepia paper — warm, low glare.",
+  "themeRoseDesc": "Warm blush — soft and easy on the eye.",
+  "themeSageDesc": "Cool mint-green — calm and quiet.",
+  "themeDarkDesc": "Deep slate surfaces, easy on the eyes.",
+  "themeOledDesc": "True black — best for OLED displays.",
+  "themeMidnightDesc": "Deep navy — indigo-tinted dark.",
+  "themeNordDesc": "Muted arctic blue-grey — soft dark.",
+
+  "language": "Language",
+  "languageSubtitle": "Choose your preferred language.",
+
+  "commonSave": "Save",
+  "commonCancel": "Cancel",
+  "commonSignOut": "Sign out",
+
+  "noShopTitle": "No shop linked yet",
+  "noShopBody": "Ask a shop owner to invite you to their team, then sign in again to accept."
+}
