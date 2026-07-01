@@ -1,3 +1,6 @@
+"use client";
+
+import { useTranslations } from "next-intl";
 import { Receipt, Wallet } from "lucide-react";
 import { formatDateTime } from "@/shared/datetime";
 import { formatINR2 } from "@/shared/money";
@@ -9,10 +12,11 @@ import type { LedgerEntry } from "@/shared/ledger";
  * Each row shows the running balance — shared by vendor + party detail pages.
  */
 export function LedgerList({ entries }: { entries: LedgerEntry[] }) {
+  const t = useTranslations("common");
   if (entries.length === 0) {
     return (
       <p className="rounded-md bg-surface-tint px-md py-lg text-center text-body-sm text-muted">
-        No ledger activity yet.
+        {t("ledger.empty")}
       </p>
     );
   }
@@ -43,7 +47,7 @@ export function LedgerList({ entries }: { entries: LedgerEntry[] }) {
                 {isInvoice ? "+" : "−"}
                 {formatINR2(amount)}
               </p>
-              <p className="text-body-sm text-subtle">Bal {formatINR2(e.runningBalance)}</p>
+              <p className="text-body-sm text-subtle">{t("ledger.balance")} {formatINR2(e.runningBalance)}</p>
             </div>
           </div>
         );

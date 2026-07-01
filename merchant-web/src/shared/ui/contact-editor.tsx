@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { BackLink } from "@/shared/ui/page-header";
 import { SelectField, TextAreaField, TextField } from "@/shared/ui/form";
 import { INDIAN_STATES, stateCodeForName, stateNameForCode } from "@/shared/india";
@@ -59,6 +60,7 @@ export function ContactEditor({
   initial: ContactInitial;
   onSubmit: (values: ContactWrite) => Promise<void>;
 }) {
+  const t = useTranslations("common");
   const router = useRouter();
 
   const [name, setName] = useState(blank(initial.name));
@@ -78,7 +80,7 @@ export function ContactEditor({
 
   async function save() {
     setError(null);
-    if (!name.trim()) return setError(`Enter the ${nameLabel.toLowerCase()}.`);
+    if (!name.trim()) return setError(t("contactEditor.nameRequired", { name: nameLabel.toLowerCase() }));
     const stateName = stateNameForCode(stateCode);
     const values: ContactWrite = {
       name: name.trim(),
@@ -98,13 +100,13 @@ export function ContactEditor({
       await onSubmit(values);
       router.push(backHref);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Save failed.");
+      setError(e instanceof Error ? e.message : t("contactEditor.saveFailed"));
       setBusy(false);
     }
   }
 
   const stateOptions = [
-    { value: "", label: "Not set" },
+    { value: "", label: t("contactEditor.stateNotSet") },
     ...INDIAN_STATES.map((s) => ({ value: s.code, label: `${s.code} — ${s.name}` })),
   ];
 
@@ -121,28 +123,28 @@ export function ContactEditor({
       <div className="mt-xl flex max-w-content flex-col gap-lg">
         <TextField label={nameLabel} value={name} onChange={setName} placeholder="Acme Traders" />
         <TextField
-          label="Contact person"
+          label={t("contactField.contactName")}
           value={contactName}
           onChange={setContactName}
-          placeholder="Optional"
+          placeholder={t("optional")}
         />
 
         <div className="grid grid-cols-1 gap-md sm:grid-cols-2">
-          <TextField label="Phone" value={phone} onChange={setPhone} inputMode="numeric" />
-          <TextField label="Email" value={email} onChange={setEmail} type="email" />
+          <TextField label={t("contactField.phone")} value={phone} onChange={setPhone} inputMode="numeric" />
+          <TextField label={t("contactField.email")} value={email} onChange={setEmail} type="email" />
         </div>
 
         <div className="grid grid-cols-1 gap-md sm:grid-cols-2">
-          <TextField label="GSTIN" value={gstin} onChange={(v) => setGstin(v.toUpperCase())} />
-          <TextField label="PAN" value={pan} onChange={(v) => setPan(v.toUpperCase())} />
+          <TextField label={t("contactField.gstin")} value={gstin} onChange={(v) => setGstin(v.toUpperCase())} />
+          <TextField label={t("contactField.panNumber")} value={pan} onChange={(v) => setPan(v.toUpperCase())} />
         </div>
 
-        <TextAreaField label="Address" value={address} onChange={setAddress} rows={2} />
+        <TextAreaField label={t("contactField.address")} value={address} onChange={setAddress} rows={2} />
 
         <div className="grid grid-cols-1 gap-md sm:grid-cols-3">
-          <TextField label="City" value={city} onChange={setCity} />
-          <TextField label="PIN code" value={pinCode} onChange={setPinCode} inputMode="numeric" />
-          <SelectField label="State" value={stateCode} onChange={setStateCode} options={stateOptions} />
+          <TextField label={t("contactField.city")} value={city} onChange={setCity} />
+          <TextField label={t("contactField.pinCode")} value={pinCode} onChange={setPinCode} inputMode="numeric" />
+          <SelectField label={t("contactField.state")} value={stateCode} onChange={setStateCode} options={stateOptions} />
         </div>
       </div>
 
@@ -152,7 +154,7 @@ export function ContactEditor({
           href={backHref}
           className="inline-flex h-11 items-center rounded-button px-md text-label-md text-muted transition-colors hover:text-ink"
         >
-          Cancel
+          {t("cancel")}
         </Link>
         <button
           type="button"
@@ -160,7 +162,7 @@ export function ContactEditor({
           disabled={busy}
           className="inline-flex h-11 items-center rounded-button bg-brand px-xl text-label-lg text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:bg-disabled"
         >
-          {busy ? "Saving…" : isEdit ? "Save changes" : `Add ${nameLabel.toLowerCase()}`}
+          {busy ? t("saving") : isEdit ? t("saveChanges") : t("contactEditor.addContact", { name: nameLabel.toLowerCase() })}
         </button>
       </div>
     </div>

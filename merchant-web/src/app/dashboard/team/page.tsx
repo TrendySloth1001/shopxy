@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Plus, Pencil, Trash2, Mail, ShieldCheck, Link2, Check } from "lucide-react";
 import { Divider } from "@/shared/ui/divider";
 import { Modal, ModalActions } from "@/shared/ui/modal";
@@ -19,10 +20,26 @@ import {
   updateRole,
 } from "@/features/team/api";
 import type { Invite, Member, Role } from "@/features/team/schema";
-import { normalizeRights, summariseRights } from "@/features/team/permissions";
+import {
+  normalizeRights,
+  summaryAreas,
+  type Area,
+} from "@/features/team/permissions";
 import { PermissionMatrix } from "@/features/team/permission-matrix";
 import { useCanManage, useGrantCeiling } from "@/features/auth/use-can";
 import { ListRowsSkeleton } from "@/shared/ui/skeleton";
+
+/** Translated, comma-joined access summary, e.g. "Products, Orders +2". */
+function useSummary() {
+  const t = useTranslations("team");
+  return (rights: readonly string[]): string => {
+    const areas = summaryAreas(rights);
+    if (areas.length === 0) return t("summary.none");
+    const labels = areas.map((a) => t(`area.${a}.label` as `area.${Area}.label`));
+    if (labels.length <= 3) return labels.join(", ");
+    return `${labels.slice(0, 3).join(", ")} +${labels.length - 3}`;
+  };
+}
 
 export default function TeamPage() {
   const [members, setMembers] = useState<Member[]>([]);
@@ -38,7 +55,9 @@ export default function TeamPage() {
   const [editMember, setEditMember] = useState<Member | null>(null);
   const [roleEditor, setRoleEditor] = useState<Role | "new" | null>(null);
   const canEdit = useCanManage("team");
-  const lockTitle = "You don't have access. Ask the shop owner.";
+  const t = useTranslations("team");
+  const summarise = useSummary();
+  const lockTitle = t("lockTitle");
 
   const reload = useCallback(() => setNonce((n) => n + 1), []);
 
@@ -58,7 +77,7 @@ export default function TeamPage() {
         setRoles(r);
         setError(null);
       } catch (e) {
-        if (active) setError(e instanceof Error ? e.message : "Could not load the team.");
+        if (active) setError(e instanceof Error ? e.message : t("error.load"));
       } finally {
         if (active) setLoading(false);
       }
@@ -66,6 +85,7 @@ export default function TeamPage() {
     return () => {
       active = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nonce]);
 
   async function run(fn: () => Promise<void>) {
@@ -75,7 +95,7 @@ export default function TeamPage() {
       await fn();
       reload();
     } catch (e) {
-      setActionError(e instanceof Error ? e.message : "Something went wrong.");
+      setActionError(e instanceof Error ? e.message : t("error.generic"));
     } finally {
       setBusy(false);
     }
@@ -85,17 +105,15 @@ export default function TeamPage() {
     <div className="w-full px-lg py-xxl md:px-xxl">
       <div className="flex flex-wrap items-start justify-between gap-md">
         <div>
-          <h1 className="text-headline-md text-ink">Team</h1>
-          <p className="mt-xs text-body-md text-muted">
-            Invite staff and control exactly what each person can see and do.
-          </p>
+          <h1 className="text-headline-md text-ink">{t("title")}</h1>
+          <p className="mt-xs text-body-md text-muted">{t("subtitle")}</p>
         </div>
         <button
           type="button"
           onClick={() => setInviteOpen(true)}
           className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-lg text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
         >
-          <Plus size={18} /> Invite teammate
+          <Plus size={18} /> {t("invite.cta")}
         </button>
       </div>
 
@@ -115,14 +133,14 @@ export default function TeamPage() {
             onClick={reload}
             className="inline-flex h-10 items-center rounded-button border border-hairline px-lg text-label-md text-ink transition-colors hover:bg-surface-tint"
           >
-            Try again
+            {t("retry")}
           </button>
         </div>
       ) : (
         <>
           {/* Members */}
           <h2 className="mt-xl text-title-md text-ink">
-            Members <span className="text-subtle">· {members.length}</span>
+            {t("members.title")} <span className="text-subtle">· {members.length}</span>
           </h2>
           <ul className="mt-sm">
             {members.map((m) => (
@@ -137,15 +155,15 @@ export default function TeamPage() {
                 </div>
                 <div className="hidden min-w-0 sm:block sm:w-64">
                   <p className="truncate text-body-sm text-ink">
-                    {m.isOwner ? "Owner" : m.roleName || "Staff"}
+                    {m.isOwner ? t("role.owner") : m.roleName || t("role.staff")}
                   </p>
                   <p className="truncate text-body-sm text-muted">
-                    {m.isOwner ? "Full access" : summariseRights(m.permissions)}
+                    {m.isOwner ? t("role.fullAccess") : summarise(m.permissions)}
                   </p>
                 </div>
                 {m.isOwner ? (
                   <span className="rounded-full bg-brand-soft px-sm py-px text-body-sm text-brand-strong">
-                    Owner
+                    {t("role.owner")}
                   </span>
                 ) : (
                   <div className="flex items-center gap-xs">
@@ -153,7 +171,7 @@ export default function TeamPage() {
                       type="button"
                       onClick={() => setEditMember(m)}
                       disabled={!canEdit}
-                      aria-label="Edit permissions"
+                      aria-label={t("members.editAria")}
                       title={canEdit ? undefined : lockTitle}
                       className="rounded-md p-xs text-muted transition-colors hover:bg-surface-tint hover:text-ink disabled:text-disabled disabled:hover:bg-transparent"
                     >
@@ -163,7 +181,7 @@ export default function TeamPage() {
                       type="button"
                       disabled={busy || !canEdit}
                       onClick={() => run(() => removeMember(m.user.id))}
-                      aria-label="Remove member"
+                      aria-label={t("members.removeAria")}
                       title={canEdit ? undefined : lockTitle}
                       className="rounded-md p-xs text-muted transition-colors hover:bg-error-soft hover:text-error disabled:text-disabled disabled:hover:bg-transparent"
                     >
@@ -180,13 +198,9 @@ export default function TeamPage() {
             <>
               <Divider className="my-xl" />
               <h2 className="text-title-md text-ink">
-                Pending invites <span className="text-subtle">· {invites.length}</span>
+                {t("invites.title")} <span className="text-subtle">· {invites.length}</span>
               </h2>
-              <p className="mt-xs text-body-sm text-muted">
-                Copy each person&rsquo;s invite link and send it to them. If they don&rsquo;t
-                have an account yet it lets them join your team as staff — without creating
-                their own shop. If they already have an account, the link sends them to sign in.
-              </p>
+              <p className="mt-xs text-body-sm text-muted">{t("invites.help")}</p>
               <ul className="mt-sm">
                 {invites.map((inv) => (
                   <li
@@ -199,7 +213,7 @@ export default function TeamPage() {
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-body-md text-ink">{inv.toEmail}</p>
                       <p className="truncate text-body-sm text-muted">
-                        {inv.teamRoleName || "Staff"} · {summariseRights(inv.teamPermissions)}
+                        {inv.teamRoleName || t("role.staff")} · {summarise(inv.teamPermissions)}
                       </p>
                     </div>
                     <div className="flex shrink-0 items-center gap-xs">
@@ -211,7 +225,7 @@ export default function TeamPage() {
                         title={canEdit ? undefined : lockTitle}
                         className="inline-flex h-9 items-center rounded-button px-md text-label-md text-muted transition-colors hover:text-error disabled:text-disabled disabled:hover:text-muted"
                       >
-                        Cancel
+                        {t("invites.cancel")}
                       </button>
                     </div>
                   </li>
@@ -224,19 +238,17 @@ export default function TeamPage() {
           <Divider className="my-xl" />
           <div className="flex items-center justify-between gap-md">
             <h2 className="text-title-md text-ink">
-              Roles <span className="text-subtle">· {roles.length}</span>
+              {t("roles.title")} <span className="text-subtle">· {roles.length}</span>
             </h2>
             <button
               type="button"
               onClick={() => setRoleEditor("new")}
               className="inline-flex h-9 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
             >
-              <Plus size={16} /> New role
+              <Plus size={16} /> {t("roles.new")}
             </button>
           </div>
-          <p className="mt-xs text-body-sm text-muted">
-            Reusable permission presets you can apply when inviting teammates.
-          </p>
+          <p className="mt-xs text-body-sm text-muted">{t("roles.help")}</p>
           <ul className="mt-sm">
             {roles.map((role) => (
               <li
@@ -251,19 +263,19 @@ export default function TeamPage() {
                     {role.name}
                     {role.builtin ? (
                       <span className="ml-sm rounded-full bg-surface-tint px-sm py-px text-body-sm text-muted">
-                        Built-in
+                        {t("roles.builtin")}
                       </span>
                     ) : null}
                   </p>
                   <p className="truncate text-body-sm text-muted">
-                    {summariseRights(role.permissions)}
+                    {summarise(role.permissions)}
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setRoleEditor(role)}
                   disabled={!canEdit}
-                  aria-label="Edit role"
+                  aria-label={t("roles.editAria")}
                   title={canEdit ? undefined : lockTitle}
                   className="rounded-md p-xs text-muted transition-colors hover:bg-surface-tint hover:text-ink disabled:text-disabled disabled:hover:bg-transparent"
                 >
@@ -273,7 +285,7 @@ export default function TeamPage() {
                   type="button"
                   disabled={busy || !canEdit}
                   onClick={() => run(() => deleteRole(role.id))}
-                  aria-label="Delete role"
+                  aria-label={t("roles.deleteAria")}
                   title={canEdit ? undefined : lockTitle}
                   className="rounded-md p-xs text-muted transition-colors hover:bg-error-soft hover:text-error disabled:text-disabled disabled:hover:bg-transparent"
                 >
@@ -337,6 +349,7 @@ export default function TeamPage() {
  *  the "Set up your shop" register form. */
 function CopyInviteLink({ token }: { token: string | null }) {
   const [copied, setCopied] = useState(false);
+  const t = useTranslations("team");
 
   if (!token) return null;
 
@@ -350,7 +363,7 @@ function CopyInviteLink({ token }: { token: string | null }) {
     } catch {
       // Clipboard blocked (insecure context / permissions) — surface the
       // URL so the owner can copy it by hand rather than failing silently.
-      window.prompt("Copy this invite link:", url);
+      window.prompt(t("invites.copyPrompt"), url);
     }
   };
 
@@ -358,11 +371,11 @@ function CopyInviteLink({ token }: { token: string | null }) {
     <button
       type="button"
       onClick={() => void onCopy()}
-      title="Copy invite link"
+      title={t("invites.copyTitle")}
       className="inline-flex h-9 items-center gap-xs rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
     >
       {copied ? <Check size={15} className="text-success" /> : <Link2 size={15} />}
-      {copied ? "Copied" : "Copy link"}
+      {copied ? t("invites.copied") : t("invites.copyLink")}
     </button>
   );
 }
@@ -389,6 +402,7 @@ function InviteModal({
   const [perms, setPerms] = useState<Set<string>>(new Set());
   const [custom, setCustom] = useState(false);
   const ceiling = useGrantCeiling();
+  const t = useTranslations("team");
 
   function onPickRole(value: string) {
     if (value === "__custom__") {
@@ -403,52 +417,52 @@ function InviteModal({
   }
 
   return (
-    <SideSheet title="Invite teammate" onClose={onClose} side="right" width="w-[600px]">
+    <SideSheet title={t("invite.title")} onClose={onClose} side="right" width="w-[600px]">
       <label className="flex flex-col gap-xs">
-        <span className="text-label-md text-muted">Email</span>
+        <span className="text-label-md text-muted">{t("invite.emailLabel")}</span>
         <input
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           autoFocus
-          placeholder="teammate@example.com"
+          placeholder={t("invite.emailPlaceholder")}
           className="h-10 rounded-input border border-hairline bg-field px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
         />
       </label>
       <label className="flex flex-col gap-xs">
-        <span className="text-label-md text-muted">Role</span>
+        <span className="text-label-md text-muted">{t("invite.roleLabel")}</span>
         <select
           value={custom ? "__custom__" : roleName}
           onChange={(e) => onPickRole(e.target.value)}
           className="h-10 rounded-input border border-hairline bg-field px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
         >
-          <option value="" disabled>Choose a role…</option>
+          <option value="" disabled>{t("invite.roleChoose")}</option>
           {roles.map((r) => (
             <option key={r.id} value={r.name}>{r.name}</option>
           ))}
-          <option value="__custom__">Custom role…</option>
+          <option value="__custom__">{t("invite.roleCustom")}</option>
         </select>
         {custom ? (
           <input
             value={roleName}
             onChange={(e) => setRoleName(e.target.value)}
-            placeholder="Custom role label (e.g. Senior cashier)"
+            placeholder={t("invite.customPlaceholder")}
             className="h-10 rounded-input border border-hairline bg-field px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
           />
         ) : null}
-        <span className="text-body-sm text-subtle">
-          Pick a saved role to prefill its access, then fine-tune the checkboxes below.
-        </span>
+        <span className="text-body-sm text-subtle">{t("invite.roleHint")}</span>
       </label>
       <div className="flex flex-col gap-xs">
-        <span className="text-label-md text-muted">Access</span>
+        <span className="text-label-md text-muted">{t("invite.accessLabel")}</span>
         <p className="rounded-md bg-surface-tint px-md py-sm text-body-sm text-muted">
-          For a cashier, pick <span className="font-semibold text-ink">Cashier</span> above — or tick <span className="font-semibold text-ink">Billing &amp; POS → Manage</span> (that&rsquo;s what unlocks the Point of sale till &amp; cashier console).
+          {t.rich("invite.accessHint", {
+            b: (chunks) => <span className="font-semibold text-ink">{chunks}</span>,
+          })}
         </p>
         <PermissionMatrix value={perms} onChange={setPerms} ceiling={ceiling} />
       </div>
       <label className="flex flex-col gap-xs">
-        <span className="text-label-md text-muted">Message (optional)</span>
+        <span className="text-label-md text-muted">{t("invite.messageLabel")}</span>
         <textarea
           value={message}
           onChange={(e) => setMessage(e.target.value)}
@@ -460,7 +474,7 @@ function InviteModal({
       <ModalActions
         busy={busy}
         disabled={!email.trim() || !roleName.trim() || perms.size === 0}
-        confirmLabel="Send invite"
+        confirmLabel={t("invite.submit")}
         onCancel={onClose}
         onConfirm={() =>
           onSubmit({
@@ -486,13 +500,14 @@ function MemberModal({
   onClose: () => void;
   onSubmit: (roleName: string, permissions: string[]) => void;
 }) {
-  const [roleName, setRoleName] = useState(member.roleName ?? "Staff");
+  const t = useTranslations("team");
+  const [roleName, setRoleName] = useState(member.roleName ?? t("role.staff"));
   const [perms, setPerms] = useState<Set<string>>(new Set(member.permissions));
   const ceiling = useGrantCeiling();
   return (
-    <Modal title={`Edit ${member.user.name}`} onClose={onClose} wide>
+    <Modal title={t("memberEdit.title", { name: member.user.name })} onClose={onClose} wide>
       <label className="flex flex-col gap-xs">
-        <span className="text-label-md text-muted">Role label</span>
+        <span className="text-label-md text-muted">{t("memberEdit.roleLabel")}</span>
         <input
           value={roleName}
           onChange={(e) => setRoleName(e.target.value)}
@@ -500,13 +515,13 @@ function MemberModal({
         />
       </label>
       <div className="flex flex-col gap-xs">
-        <span className="text-label-md text-muted">Access</span>
+        <span className="text-label-md text-muted">{t("memberEdit.accessLabel")}</span>
         <PermissionMatrix value={perms} onChange={setPerms} ceiling={ceiling} />
       </div>
       <ModalActions
         busy={busy}
         disabled={!roleName.trim() || perms.size === 0}
-        confirmLabel="Save permissions"
+        confirmLabel={t("memberEdit.submit")}
         onCancel={onClose}
         onConfirm={() => onSubmit(roleName.trim(), normalizeRights(perms))}
       />
@@ -525,29 +540,34 @@ function RoleModal({
   onClose: () => void;
   onSubmit: (name: string, permissions: string[]) => void;
 }) {
+  const t = useTranslations("team");
   const [name, setName] = useState(role?.name ?? "");
   const [perms, setPerms] = useState<Set<string>>(new Set(role?.permissions ?? []));
   const ceiling = useGrantCeiling();
   return (
-    <Modal title={role ? `Edit ${role.name}` : "New role"} onClose={onClose} wide>
+    <Modal
+      title={role ? t("roleEdit.editTitle", { name: role.name }) : t("roleEdit.newTitle")}
+      onClose={onClose}
+      wide
+    >
       <label className="flex flex-col gap-xs">
-        <span className="text-label-md text-muted">Role name</span>
+        <span className="text-label-md text-muted">{t("roleEdit.nameLabel")}</span>
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
           autoFocus
-          placeholder="e.g. Floor staff"
+          placeholder={t("roleEdit.namePlaceholder")}
           className="h-10 rounded-input border border-hairline bg-field px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
         />
       </label>
       <div className="flex flex-col gap-xs">
-        <span className="text-label-md text-muted">Access</span>
+        <span className="text-label-md text-muted">{t("roleEdit.accessLabel")}</span>
         <PermissionMatrix value={perms} onChange={setPerms} ceiling={ceiling} />
       </div>
       <ModalActions
         busy={busy}
         disabled={!name.trim() || perms.size === 0}
-        confirmLabel={role ? "Save role" : "Create role"}
+        confirmLabel={role ? t("roleEdit.submitSave") : t("roleEdit.submitCreate")}
         onCancel={onClose}
         onConfirm={() => onSubmit(name.trim(), normalizeRights(perms))}
       />

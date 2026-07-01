@@ -4,38 +4,41 @@ import type { AuthUser } from "./types";
  * Profile-completion model. The fields here are the ones that make an invoice
  * look professional + let a customer reach the shop — kept in lockstep with the
  * Flutter `profileCompletion` helper so both apps show the same percentage.
+ *
+ * `key` is a stable message-catalog key (resolved against `auth.field.<key>` at
+ * the render site); the array holds no display strings.
  */
-const FIELDS: { label: string; get: (u: AuthUser) => string | null | undefined }[] = [
-  { label: "Name", get: (u) => u.name },
-  { label: "Photo", get: (u) => u.avatarUrl },
-  { label: "Phone", get: (u) => u.phoneNumber },
-  { label: "Shop name", get: (u) => u.shopName },
-  { label: "Address", get: (u) => u.shopAddress },
-  { label: "City", get: (u) => u.shopCity },
-  { label: "State", get: (u) => u.shopState },
-  { label: "State code", get: (u) => u.shopStateCode },
-  { label: "PIN code", get: (u) => u.shopPinCode },
-  { label: "GSTIN", get: (u) => u.shopGstin },
-  { label: "PAN", get: (u) => u.shopPan },
-  { label: "UPI ID", get: (u) => u.upiVpa },
+const FIELDS: { key: string; get: (u: AuthUser) => string | null | undefined }[] = [
+  { key: "name", get: (u) => u.name },
+  { key: "photo", get: (u) => u.avatarUrl },
+  { key: "phone", get: (u) => u.phoneNumber },
+  { key: "shopName", get: (u) => u.shopName },
+  { key: "address", get: (u) => u.shopAddress },
+  { key: "city", get: (u) => u.shopCity },
+  { key: "state", get: (u) => u.shopState },
+  { key: "stateCode", get: (u) => u.shopStateCode },
+  { key: "pinCode", get: (u) => u.shopPinCode },
+  { key: "gstin", get: (u) => u.shopGstin },
+  { key: "pan", get: (u) => u.shopPan },
+  { key: "upiId", get: (u) => u.upiVpa },
 ];
 
 export type ProfileCompletion = {
   percent: number;
   filled: number;
   total: number;
-  /** Labels of the fields still empty. */
+  /** Message-catalog keys (`auth.field.<key>`) of the fields still empty. */
   missing: string[];
 };
 
 export function profileCompletion(user: AuthUser): ProfileCompletion {
-  const states = FIELDS.map((f) => ({ label: f.label, filled: !!f.get(user)?.trim() }));
+  const states = FIELDS.map((f) => ({ key: f.key, filled: !!f.get(user)?.trim() }));
   const filled = states.filter((s) => s.filled).length;
   const total = states.length;
   return {
     percent: Math.round((filled / total) * 100),
     filled,
     total,
-    missing: states.filter((s) => !s.filled).map((s) => s.label),
+    missing: states.filter((s) => !s.filled).map((s) => s.key),
   };
 }

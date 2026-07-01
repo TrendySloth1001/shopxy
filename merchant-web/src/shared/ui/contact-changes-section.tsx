@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { History } from "lucide-react";
 import { formatRelativeTime } from "@/shared/datetime";
 import {
-  fieldLabel,
+  contactFieldKey,
   listContactChanges,
   type ContactChange,
 } from "@/shared/contact-changes";
@@ -14,6 +15,7 @@ import {
  * Lazy-loads the field-level change log on first expand.
  */
 export function ContactChangesSection({ kind, id }: { kind: "parties" | "vendors"; id: number }) {
+  const t = useTranslations("common");
   const [open, setOpen] = useState(false);
   const [rows, setRows] = useState<ContactChange[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +26,7 @@ export function ContactChangesSection({ kind, id }: { kind: "parties" | "vendors
     if (next && rows === null) {
       void listContactChanges(kind, id)
         .then(setRows)
-        .catch((e) => setError(e instanceof Error ? e.message : "Could not load history."));
+        .catch((e) => setError(e instanceof Error ? e.message : t("contactChanges.loadError")));
     }
   }
 
@@ -36,8 +38,8 @@ export function ContactChangesSection({ kind, id }: { kind: "parties" | "vendors
         aria-expanded={open}
         className="flex items-center gap-sm text-title-sm text-ink transition-colors hover:text-brand-strong"
       >
-        <History size={18} className="text-muted" /> Activity & history
-        <span className="text-body-sm text-subtle">{open ? "Hide" : "Show"}</span>
+        <History size={18} className="text-muted" /> {t("contactChanges.title")}
+        <span className="text-body-sm text-subtle">{open ? t("hide") : t("show")}</span>
       </button>
 
       {open ? (
@@ -45,14 +47,16 @@ export function ContactChangesSection({ kind, id }: { kind: "parties" | "vendors
           {error ? (
             <p className="text-body-sm text-error">{error}</p>
           ) : rows === null ? (
-            <p className="text-body-sm text-subtle">Loading…</p>
+            <p className="text-body-sm text-subtle">{t("loading")}</p>
           ) : rows.length === 0 ? (
-            <p className="text-body-sm text-subtle">No changes recorded yet.</p>
+            <p className="text-body-sm text-subtle">{t("contactChanges.empty")}</p>
           ) : (
             <ul className="border-t border-hairline">
-              {rows.map((c) => (
+              {rows.map((c) => {
+                const fk = contactFieldKey(c.field);
+                return (
                 <li key={c.id} className="flex flex-wrap items-baseline gap-x-md gap-y-px border-b border-hairline py-sm">
-                  <span className="text-body-md text-ink">{fieldLabel(c.field)}</span>
+                  <span className="text-body-md text-ink">{fk ? t(fk) : c.field}</span>
                   <span className="text-body-sm text-muted">
                     {c.oldValue ?? "—"} <span className="text-subtle">→</span> {c.newValue ?? "—"}
                   </span>
@@ -61,7 +65,8 @@ export function ContactChangesSection({ kind, id }: { kind: "parties" | "vendors
                     {formatRelativeTime(c.changedAt)}
                   </span>
                 </li>
-              ))}
+                );
+              })}
             </ul>
           )}
         </div>

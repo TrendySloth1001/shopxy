@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useAuth } from "../auth-context";
 import { Avatar } from "./avatar";
 
@@ -10,6 +11,7 @@ export function AppHeader() {
   const { user, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const t = useTranslations("auth");
 
   async function onSignOut() {
     await logout();
@@ -24,14 +26,14 @@ export function AppHeader() {
         </Link>
         <nav className="flex items-center gap-lg">
           <HeaderLink href="/dashboard" active={pathname === "/dashboard"}>
-            Dashboard
+            {t("appHeader.dashboard")}
           </HeaderLink>
           <HeaderLink href="/account" active={pathname === "/account"}>
-            Account
+            {t("appHeader.account")}
           </HeaderLink>
           <Link
             href="/account"
-            aria-label="Account"
+            aria-label={t("appHeader.account")}
             className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
           >
             <Avatar url={user?.avatarUrl} name={user?.name ?? ""} size={28} />
@@ -41,7 +43,7 @@ export function AppHeader() {
             onClick={onSignOut}
             className="text-label-md text-muted transition-colors hover:text-ink focus-visible:text-ink focus-visible:outline-none"
           >
-            Sign out
+            {t("appHeader.signOut")}
           </button>
         </nav>
       </div>

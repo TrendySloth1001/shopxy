@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 import { ImagePlus, Trash2, Upload } from "lucide-react";
 import { mediaSrc } from "@/features/products/components/product-thumb";
 import { uploadImage } from "@/features/products/api";
@@ -26,6 +27,7 @@ export function ImageUploadField({
   /** "banner" → wide 3:1 tile; "square" → 96px; "round" → 96px circle. */
   aspect?: "banner" | "square" | "round";
 }) {
+  const t = useTranslations("common");
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +39,7 @@ export function ImageUploadField({
     try {
       onChange(await uploadImage(file));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Upload failed.");
+      setError(e instanceof Error ? e.message : t("imageUpload.failed"));
     } finally {
       setUploading(false);
     }
@@ -81,7 +83,7 @@ export function ImageUploadField({
             disabled={uploading}
             className="inline-flex h-9 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint disabled:text-disabled"
           >
-            <Upload size={16} /> {uploading ? "Uploading…" : url ? "Replace" : "Upload"}
+            <Upload size={16} /> {uploading ? t("imageUpload.uploading") : url ? t("imageUpload.replace") : t("imageUpload.upload")}
           </button>
           {url ? (
             <button
@@ -89,7 +91,7 @@ export function ImageUploadField({
               onClick={() => onChange(null)}
               className="inline-flex h-9 items-center gap-sm rounded-button px-md text-label-md text-muted transition-colors hover:text-error"
             >
-              <Trash2 size={16} /> Remove
+              <Trash2 size={16} /> {t("imageUpload.remove")}
             </button>
           ) : null}
           {helper ? <span className="text-body-sm text-subtle">{helper}</span> : null}

@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Lock } from "lucide-react";
 import { useAuth } from "../auth-context";
 import { areaForPath, canManage, canView } from "../capabilities";
@@ -13,22 +14,23 @@ import { AREA_LABELS } from "@/features/team/permissions";
  * `NoAccessView`. Shown when a user reaches a section they may not view.
  */
 export function NoAccessView({ label }: { label?: string }) {
+  const t = useTranslations("auth");
   return (
     <div className="flex min-h-[60vh] w-full flex-col items-center justify-center px-lg py-xxxl text-center">
       <span className="flex size-14 shrink-0 items-center justify-center rounded-full bg-surface-tint text-muted">
         <Lock size={26} />
       </span>
       <h1 className="mt-lg text-title-md text-ink">
-        {label ? `No access to ${label}` : "No access"}
+        {label ? t("noAccess.titleLabelled", { label }) : t("noAccess.title")}
       </h1>
       <p className="mt-xs max-w-content text-body-md text-muted">
-        You don’t have permission to view this section. Ask the shop owner to grant you access.
+        {t("noAccess.description")}
       </p>
       <Link
         href="/dashboard"
         className="mt-xl inline-flex h-10 items-center rounded-button border border-hairline px-lg text-label-md text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
       >
-        Back to dashboard
+        {t("noAccess.backToDashboard")}
       </Link>
     </div>
   );

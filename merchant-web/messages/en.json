@@ -1924,5 +1924,1507 @@
       "gstSgst": "GST SGST",
       "gstIgst": "GST IGST"
     }
+  },
+  "customFields": {
+    "list": {
+      "title": "Custom fields",
+      "subtitle": "Extra product attributes — grouped into sections, reused across your catalogue."
+    },
+    "actions": {
+      "section": "Section",
+      "newField": "New field",
+      "field": "Field",
+      "tryAgain": "Try again",
+      "renameSection": "Rename section",
+      "deleteSection": "Delete section",
+      "editField": "Edit field",
+      "deleteField": "Delete field",
+      "cancel": "Cancel",
+      "saving": "Saving…"
+    },
+    "templates": {
+      "heading": "Start from a template"
+    },
+    "empty": {
+      "title": "No custom fields yet",
+      "body": "Apply a template above, or create your first field to capture details like warranty, material or voltage."
+    },
+    "group": {
+      "ungrouped": "Ungrouped",
+      "noFields": "No fields in this section."
+    },
+    "field": {
+      "hiddenBadge": "Hidden",
+      "optionsCount": "{count} options"
+    },
+    "lockedHint": "You don't have access. Ask the shop owner.",
+    "fieldForm": {
+      "newTitle": "New field",
+      "editTitle": "Edit field",
+      "nameLabel": "Field name",
+      "namePlaceholder": "e.g. Warranty period",
+      "typeLabel": "Type",
+      "unitSuffixLabel": "Unit suffix (optional)",
+      "unitSuffixPlaceholder": "e.g. months, kg, V",
+      "optionsLabel": "Options (one per line)",
+      "optionsPlaceholder": "Small\nMedium\nLarge",
+      "sectionLabel": "Section",
+      "saveConfirm": "Save field",
+      "createConfirm": "Create field"
+    },
+    "sectionForm": {
+      "renameTitle": "Rename section",
+      "newTitle": "New section",
+      "nameLabel": "Section name",
+      "namePlaceholder": "e.g. Dimensions",
+      "saveConfirm": "Save",
+      "createConfirm": "Create section"
+    },
+    "types": {
+      "text": "Short text",
+      "longText": "Long text",
+      "number": "Number",
+      "date": "Date",
+      "boolean": "Yes / No",
+      "dropdown": "Dropdown"
+    },
+    "errors": {
+      "load": "Could not load custom fields.",
+      "applyTemplate": "Could not apply the template.",
+      "saveField": "Could not save the field.",
+      "deleteField": "Could not delete the field.",
+      "saveSection": "Could not save the section.",
+      "deleteSection": "Could not delete the section."
+    }
+  },
+  "auth": {
+    "common": {
+      "pleaseWait": "Please wait…",
+      "loading": "Loading…",
+      "cancel": "Cancel",
+      "notSet": "Not set"
+    },
+    "header": {
+      "signIn": "Sign in",
+      "createAccount": "Create account"
+    },
+    "shell": {
+      "attribution": "Illustration by <author></author> on <pixabay>Pixabay</pixabay>"
+    },
+    "login": {
+      "title": "Welcome back",
+      "subtitle": "Sign in to manage your inventory, invoices and customers.",
+      "footerPrompt": "New to ShopXY?",
+      "footerCta": "Create an account",
+      "submit": "Sign in",
+      "failed": "Sign in failed.",
+      "orContinueWithEmail": "or continue with email",
+      "continueWithGoogle": "Continue with Google",
+      "legalConsent": "By signing in you agree to our <terms>Terms</terms> and acknowledge our <privacy>Privacy Policy</privacy>. We use a strictly-necessary session cookie to keep you signed in.",
+      "troubleSigningIn": "Trouble signing in? <support>Contact support</support>",
+      "complianceLink": "Compliance, laws & formulas"
+    },
+    "notice": {
+      "passwordChanged": "Password changed. Please sign in again.",
+      "signedOutEverywhere": "Signed out of all devices.",
+      "accountDeleted": "Your account has been deleted.",
+      "googleSoon": "Google sign-in is coming soon — please use your email for now."
+    },
+    "register": {
+      "title": "Create your account",
+      "subtitle": "Set up your merchant account. You'll name your shop in the next step — or skip it if you've been invited to join a team.",
+      "footerPrompt": "Already have an account?",
+      "footerCta": "Sign in",
+      "submit": "Create account",
+      "failed": "Could not create your account.",
+      "acceptTerms": "I accept the <link>Terms of Service</link>",
+      "acceptPrivacy": "I accept the <link>Privacy Policy</link>"
+    },
+    "invite": {
+      "title": "Join the team",
+      "checking": "Checking your invitation…",
+      "linkInvalid": "This invitation link is invalid.",
+      "notValid": "This invitation is not valid.",
+      "checkFailed": "Could not check this invitation — check your connection and reload the page.",
+      "acceptFailed": "Could not accept this invitation.",
+      "defaultRole": "Staff",
+      "defaultShop": "a shop",
+      "goToSignIn": "Go to sign in →",
+      "summary": "<shop></shop> invited <email></email> to join as <role></role>. Set a password to accept.",
+      "submit": "Accept & create account",
+      "haveAccount": "Already have an account?",
+      "signIn": "Sign in"
+    },
+    "field": {
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Confirm password",
+      "passwordHelper": "At least 8 characters, with a letter and a number.",
+      "yourName": "Your name",
+      "yourNameOptional": "Your name (optional)",
+      "name": "Name",
+      "photo": "Photo",
+      "phone": "Phone",
+      "phoneNumber": "Phone number",
+      "shopName": "Shop name",
+      "address": "Address",
+      "city": "City",
+      "state": "State",
+      "stateCode": "State code",
+      "stateCodeHelper": "2-digit GST code",
+      "pinCode": "PIN code",
+      "gstin": "GSTIN",
+      "gstRegistration": "GST registration",
+      "pan": "PAN",
+      "upiId": "UPI ID",
+      "show": "Show",
+      "hide": "Hide",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "capsLockOn": "Caps Lock is on."
+    },
+    "regType": {
+      "REGULAR": "Regular",
+      "COMPOSITION": "Composition",
+      "UNREGISTERED": "Unregistered"
+    },
+    "role": {
+      "OWNER": "Owner",
+      "MANAGER": "Manager",
+      "STOCKIST": "Stockist",
+      "CASHIER": "Cashier",
+      "STAFF": "Staff"
+    },
+    "remembered": {
+      "continueAs": "Continue as",
+      "resumeFailed": "Couldn't sign in. Please use your password.",
+      "signingIn": "Signing in…",
+      "removeTitle": "Remove this account",
+      "removeAria": "Remove {email}",
+      "orSignIn": "or sign in"
+    },
+    "profile": {
+      "saved": "Profile saved.",
+      "saveFailed": "Could not save your changes.",
+      "saveChanges": "Save changes"
+    },
+    "profilePage": {
+      "title": "Profile",
+      "subtitle": "Your identity and shop details — these appear on your invoices.",
+      "since": "Since {date}",
+      "manage": "Manage",
+      "shopTitle": "Shop",
+      "shopSubtitle": "Storefront & policies",
+      "teamTitle": "Team",
+      "teamSubtitle": "Staff & permissions",
+      "payoutsTitle": "Payouts",
+      "payoutsSubtitle": "Bank & KYC",
+      "securityTitle": "Security",
+      "securitySubtitle": "Password & sign-in",
+      "detailsTitle": "Profile details",
+      "detailsSubtitle": "Name, photo and shop details used across the app and on invoices.",
+      "editProfile": "Edit profile"
+    },
+    "completion": {
+      "title": "Profile {percent}% complete",
+      "detailsAdded": "{filled} of {total} details added.",
+      "completeIt": "Complete it",
+      "whatsLeft": "What's left"
+    },
+    "details": {
+      "personal": "Personal",
+      "shop": "Shop",
+      "tax": "Tax & registration",
+      "payment": "Payment"
+    },
+    "security": {
+      "currentPassword": "Current password",
+      "newPassword": "New password",
+      "confirmNewPassword": "Confirm new password",
+      "changeSignsOutNote": "Changing your password signs you out of every device.",
+      "changePassword": "Change password",
+      "changeFailed": "Could not change your password.",
+      "signOutAllTitle": "Sign out of all devices",
+      "signOutAllDesc": "Revoke every active session, including this one.",
+      "signingOut": "Signing out…",
+      "signOutEverywhere": "Sign out everywhere"
+    },
+    "danger": {
+      "exportTitle": "Export my data",
+      "exportDesc": "Download a copy of your account data as JSON.",
+      "exportFailed": "Could not export your data.",
+      "preparing": "Preparing…",
+      "downloadData": "Download my data",
+      "deleteTitle": "Delete my account",
+      "deleteDesc": "Permanently delete your account and data. This cannot be undone.",
+      "deleteFailed": "Could not delete your account.",
+      "enterPasswordToConfirm": "Enter your password to confirm.",
+      "confirmPassword": "Confirm your password",
+      "deleting": "Deleting…",
+      "permanentlyDelete": "Permanently delete",
+      "deleteAccount": "Delete account"
+    },
+    "avatar": {
+      "uploadFailed": "Could not upload the image.",
+      "removeFailed": "Could not remove your photo.",
+      "working": "Working…",
+      "changePhoto": "Change photo",
+      "remove": "Remove",
+      "formatHint": "JPEG, PNG or WebP, up to 8 MB."
+    },
+    "locked": {
+      "tooltip": "You don't have access. Ask the shop owner.",
+      "label": "Locked"
+    },
+    "noAccess": {
+      "title": "No access",
+      "titleLabelled": "No access to {label}",
+      "description": "You don't have permission to view this section. Ask the shop owner to grant you access.",
+      "backToDashboard": "Back to dashboard"
+    },
+    "appHeader": {
+      "dashboard": "Dashboard",
+      "account": "Account",
+      "signOut": "Sign out"
+    },
+    "tokens": {
+      "title": "Design tokens",
+      "intro": "The single source of truth ported from the Flutter merchant app. Calm, flat, hairline-grouped — never chunky.",
+      "inks": "Inks",
+      "surfaces": "Surfaces",
+      "brandStatus": "Brand & status",
+      "accents": "Editorial & merchant accents",
+      "typeScale": "Type scale",
+      "sampleDisplay": "Display — invoices, totals",
+      "sampleHeadline": "Headline — section titles",
+      "sampleTitle": "Title — card headers",
+      "sampleBody": "Body — the quick brown fox jumps over the lazy dog while the ledger reconciles itself.",
+      "sampleLabel": "Label — metadata",
+      "spacing": "Spacing",
+      "radii": "Radii",
+      "elevation": "Elevation",
+      "motion": "Motion"
+    }
+  },
+  "legal": {
+    "doc": {
+      "lastUpdated": "Last updated {date}"
+    },
+    "privacy": {
+      "title": "Privacy Policy",
+      "updated": "June 2026",
+      "overview": {
+        "heading": "Overview",
+        "body": "ShopXY (“we”, “us”) helps merchants run their shop — inventory, invoices, parties and payments. This policy explains what personal data we collect, why, how long we keep it, and your rights under India’s Digital Personal Data Protection Act, 2023 (DPDP)."
+      },
+      "collect": {
+        "heading": "What we collect",
+        "body": "Account details (name, email, phone), shop details (name, address, GSTIN/PAN where you provide them), and the business records you create in the app (products, invoices, customers, vendors, payments). We also log basic technical data to keep the service secure and working."
+      },
+      "use": {
+        "heading": "How we use it",
+        "body": "To provide the service, generate your invoices and reports, send transactional emails you opt into, and meet legal/tax obligations. We do not sell your personal data, and we do not use it for targeted advertising to children."
+      },
+      "share": {
+        "heading": "Who we share it with",
+        "intro": "We share data only with the processors who help us run ShopXY:",
+        "razorpay": "payment collection, refunds and payouts. Payment KYC details you submit for payouts are forwarded to Razorpay under their terms and are not stored by us.",
+        "hostingName": "Cloud hosting and infrastructure provider",
+        "hosting": "application hosting, database, object storage and backups. [TO FILL: name the hosting provider, e.g. AWS Mumbai / specific vendor]",
+        "outro": "We also disclose data where required by law. We do not sell your personal data."
+      },
+      "retention": {
+        "heading": "Retention schedule",
+        "intro": "We keep data only as long as we need it:",
+        "invoicesLabel": "Invoices, payments and tax records",
+        "invoices": "retained for 8 years, the period required under Indian tax and company law.",
+        "profileLabel": "Account and shop profile",
+        "profile": "kept while your account is active; deleted (or anonymised) within 90 days of account deletion, except records we must legally retain.",
+        "supportLabel": "Support tickets and grievance records",
+        "support": "up to 3 years from resolution.",
+        "logsLabel": "Technical and security logs",
+        "logs": "up to 180 days."
+      },
+      "rights": {
+        "heading": "Your rights under the DPDP Act",
+        "body": "You can access, correct, export or delete your personal data from Settings → Data & privacy, subject to records we must legally retain. Export and deletion requests are honoured by our systems. You may also withdraw consent and nominate another person to exercise your rights in the event of death or incapacity. Contact our Grievance Officer for any request you can’t complete in-app."
+      },
+      "delete": {
+        "heading": "Deleting your account and data",
+        "intro": "You can permanently delete your ShopXY account and the personal data tied to it at any time — you do not need to contact us first:",
+        "inAppLabel": "In the app",
+        "inAppPre": "go to",
+        "inAppPath": "Settings → Data & privacy → Delete account",
+        "inAppPost": "(the same path on the web app, Android and iOS). You’ll confirm with your password, then the account and every session are erased.",
+        "byEmailLabel": "By email",
+        "byEmailPre": "if you can’t sign in, write to",
+        "byEmailPost": "from your registered address and we’ll verify and action the request.",
+        "deletedLabel": "What is deleted:",
+        "deletedPre": "your profile, login credentials, shop settings, contacts (parties/vendors) and the business records you created, together with any payout draft held on your device. Deletion completes within",
+        "deletedDays": "90 days",
+        "keptLabel": "What we must keep:",
+        "keptPre": "where you have issued invoices or taken payments, Indian tax and company law requires us to retain those financial records for up to 8 years. Those records are retained in a restricted, minimised form (and dissociated from your login) for that period only, then deleted. A shop owner whose invoices are still inside that window cannot self-delete in-app — email",
+        "keptPost": "for a controlled wipe of everything outside the legal-retention set."
+      },
+      "children": {
+        "heading": "Children's data",
+        "body": "ShopXY is a business tool intended for users aged 18 and over. We do not knowingly process the personal data of a child (a person under 18) without verifiable consent from a parent or lawful guardian, and we do not undertake tracking, behavioural monitoring, or targeted advertising directed at children. If we learn that we hold a child’s data without the required consent, we will delete it."
+      },
+      "crossBorder": {
+        "heading": "Cross-border transfers",
+        "body": "Your personal data is primarily stored and processed on infrastructure located in India. Where a processor (such as a payment provider) operates outside India, any transfer is limited to that purpose and made only to countries not restricted by the Government of India under the DPDP Act, with contractual safeguards in place."
+      },
+      "security": {
+        "heading": "Security & breach notification",
+        "body": "We protect data with encryption in transit and access controls, and we forward payment KYC to our payment provider rather than storing it. No system is perfectly secure. In the event of a personal-data breach, we will notify the Data Protection Board of India and affected users without undue delay and within the timelines prescribed under the DPDP Act and its rules. We encourage strong passwords and care with account access."
+      },
+      "contact": {
+        "heading": "Contact",
+        "body": "For privacy questions, email privacy@shopxy.app."
+      }
+    },
+    "terms": {
+      "title": "Terms of Service",
+      "updated": "June 2026",
+      "acceptance": {
+        "heading": "Acceptance",
+        "body": "By creating a ShopXY account you agree to these terms. If you use ShopXY on behalf of a business, you confirm you’re authorised to bind that business."
+      },
+      "account": {
+        "heading": "Your account",
+        "body": "Keep your login secure and your shop details accurate. You’re responsible for activity under your account and for any team members you invite."
+      },
+      "acceptableUse": {
+        "heading": "Acceptable use",
+        "body": "Don’t use ShopXY for unlawful goods or activity, to infringe others’ rights, or to disrupt the service. You’re responsible for the legality of your listings, invoices and tax handling."
+      },
+      "content": {
+        "heading": "Your content & records",
+        "body": "You own the business data you put into ShopXY. You grant us the limited rights needed to host and process it to run the service. You’re responsible for keeping your own backups of critical records."
+      },
+      "payments": {
+        "heading": "Payments & payouts",
+        "body": "Where you enable payouts, settlement and KYC are handled by our payment partner under their terms. Taxes (e.g. GST) on your sales are your responsibility."
+      },
+      "availability": {
+        "heading": "Availability & liability",
+        "body": "ShopXY is provided “as is”. To the extent permitted by law, we aren’t liable for indirect or consequential losses. We aim for high availability but don’t guarantee uninterrupted service."
+      },
+      "termination": {
+        "heading": "Termination",
+        "body": "You can stop using ShopXY at any time and delete your account from Settings. We may suspend accounts that violate these terms."
+      },
+      "governingLaw": {
+        "heading": "Governing law",
+        "body": "These terms are governed by the laws of India. Questions? Email support@shopxy.app."
+      }
+    },
+    "grievance": {
+      "heading": "Grievance Officer",
+      "intro": "In line with the Information Technology (Intermediary Guidelines) Rules, 2021 and India’s Digital Personal Data Protection Act, 2023, you may contact our Grievance Officer with any complaint about the service or your personal data:",
+      "nameLabel": "Name:",
+      "namePlaceholder": "[TO FILL: Grievance Officer name]",
+      "designationLabel": "Designation:",
+      "designationPlaceholder": "[TO FILL: designation]",
+      "emailLabel": "Email:",
+      "phoneLabel": "Phone:",
+      "phonePlaceholder": "[TO FILL: phone number]",
+      "addressLabel": "Postal address:",
+      "addressPlaceholder": "[TO FILL: registered postal address]",
+      "sla": "We acknowledge every grievance within <strong>48 hours</strong> of receipt and aim to resolve grievances within <strong>one month</strong>. Grievances relating to your personal data under the DPDP Act are addressed within <strong>15 days</strong>."
+    },
+    "compliance": {
+      "layout": {
+        "title": "Compliance, laws & formulas",
+        "updated": "Last updated June 2026"
+      },
+      "nav": {
+        "ariaLabel": "Compliance topics",
+        "onThisSite": "On this site"
+      },
+      "pagination": {
+        "ariaLabel": "Topic pagination"
+      },
+      "section": {
+        "keyPoints": "Key points",
+        "howCalculated": "How it's calculated",
+        "governingLaw": "Governing law"
+      },
+      "intro": "ShopXY is an Indian commerce platform with a merchant app, a customer app, and a shared backend. These pages set out, in plain language, the laws ShopXY follows and the exact formulas it uses for tax, refunds, settlements and disclosures. They are provided for information only: the descriptions reflect how the platform is built today, and the formulas are reproduced exactly as the system applies them so that merchants and customers can understand every figure on an invoice or refund.",
+      "topics": "Topics",
+      "scope": {
+        "heading": "A note on scope",
+        "body": "These pages describe how ShopXY is built today and are provided for general information; they are not legal advice. Where a value is still being finalised (for example, the named Grievance Officer or the hosting provider), it is marked as pending on the relevant policy page. The <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy> remain the operative documents."
+      },
+      "overview": {
+        "nav": "Overview"
+      },
+      "dataProtection": {
+        "nav": "Data protection",
+        "heading": "Data protection and privacy (DPDP)",
+        "summary": "Consent, your rights, retention windows and breach handling under the DPDP Act 2023.",
+        "body": {
+          "0": "When you register, ShopXY records your explicit consent to both the Terms of Service and the Privacy Policy. Both consents must be given before an account is created, and the exact moment of consent is timestamped. This consent gate is enforced on the server, so it cannot be bypassed by altering the app on your device.",
+          "1": "You can ask to see the personal data ShopXY holds about you. The data export covers your profile, addresses, reviews, wishlist, cart, orders, return requests, notifications, invitations and purchase requests; shop owners additionally receive a full export of their shop's data, scoped to that shop. Your password is never included in any export.",
+          "2": "You can ask for your account to be deleted. For customers, deletion removes reviews, addresses, wishlist, cart, notifications and login tokens, and product ratings are recomputed in the same operation. For shop owners who still hold confirmed invoices within the statutory retention window, the law requires those tax records to be kept; in that case the account is anonymised (identifying fields cleared and login disabled) rather than fully erased, so the books of account remain intact.",
+          "3": "ShopXY practises data minimisation. A customer's login email is not disclosed to a merchant when the customer links to a shop; only the name and the contact email the merchant already entered are shared. A merchant's internal user identifier is never exposed to linked customers.",
+          "4": "You may withdraw consent at any time through granular notification preferences (orders, deals, account, messages, push and SMS), and ShopXY honours the withdrawal by not sending further communications of that type.",
+          "5": "Personal data is primarily stored and processed on infrastructure located in India. Limited cross-border transfers occur only for specific processing purposes such as payment handling, only to countries not restricted by the Government of India, and under contractual safeguards. Data is protected with encryption in transit, access controls and least-privilege handling; payment details are forwarded to the payment provider and are not stored by ShopXY. In the event of a personal-data breach, ShopXY will notify the Data Protection Board of India and affected users without undue delay, within the timelines prescribed under the DPDP Act."
+        },
+        "keyPoints": {
+          "0": "Both Terms and Privacy consent are mandatory at registration, enforced server-side with a recorded consent timestamp.",
+          "1": "You can export all your personal data; your password hash is always stripped from the export.",
+          "2": "Customers can delete their accounts permanently; owners with retained tax invoices are anonymised instead of erased, to meet the 8-year books-of-account retention.",
+          "3": "Confirmed invoices, orders and payment records are retained for 8 years (Companies Act §128 / GST Rules §36); account profile and non-retained personal data are deleted or anonymised within 90 days of account closure.",
+          "4": "ShopXY is intended for users aged 18 and over and does not knowingly process children's data without verifiable parental consent.",
+          "5": "A customer's login email is never disclosed to merchants on linking."
+        },
+        "lawRefs": {
+          "0": "DPDP Act 2023 §5 (notice)",
+          "1": "DPDP §6 (consent & breach notice)",
+          "2": "DPDP §8 (security, minimisation, children's data)",
+          "3": "DPDP §9 (withdrawal)",
+          "4": "DPDP §11 (right to access)",
+          "5": "DPDP §12 (erasure)",
+          "6": "DPDP §13/§15 (grievance officer)",
+          "7": "DPDP §4 (cross-border transfer)",
+          "8": "IT Rules 2021",
+          "9": "Companies Act §128",
+          "10": "GST Rules §36"
+        },
+        "formulas": {
+          "consentGate": {
+            "label": "Consent gate at registration",
+            "expression": "acceptedTerms === true AND acceptedPrivacy === true; acceptedAt = now()",
+            "note": "Both consents are required as a literal true at the API layer; the consent time is stamped at registration."
+          },
+          "retentionCutoff": {
+            "label": "Tax-record retention cutoff (deletion eligibility)",
+            "expression": "cutoff = today − 8 years; protected = CONFIRMED invoices where invoiceDate ≥ cutoff",
+            "note": "If an owner has any protected invoices, the account is anonymised rather than hard-deleted."
+          },
+          "erasure": {
+            "label": "Erasure decision",
+            "expression": "CUSTOMER → cascade-delete personal data + recompute product ratings; OWNER with protected invoices → pseudonymise (clear name/email/phone/avatar, disable login)",
+            "note": "Requires current-password verification before any deletion proceeds."
+          }
+        }
+      },
+      "itAct": {
+        "nav": "IT Act & intermediary",
+        "heading": "IT Act, intermediary status and published policies",
+        "summary": "Marketplace status, the policies we publish, acceptable use and the Grievance Officer.",
+        "body": {
+          "0": "ShopXY operates as a neutral marketplace intermediary, not as a principal seller. Orders are accepted and fulfilled by individual shops; each shop is responsible for its own pricing, availability, product descriptions and fulfilment.",
+          "1": "The platform publishes its Terms of Service, Privacy Policy and consumer policies (returns, refunds, cancellation and shipping) in a clear and accessible manner. These are reachable before login: the customer storefront links Privacy, Terms and Consumer Policies in its public footer, and the merchant login screen links Terms and Privacy. This satisfies the requirement that policies be available at or before the point data is collected.",
+          "2": "An Acceptable Use Policy prohibits using ShopXY for unlawful goods, for infringing the rights of others, or for disrupting the service. Customers are additionally told not to misuse the order, cancel, return, payment or messaging systems or attempt to defraud a shop; merchants are reminded they are responsible for the legality of their listings, invoices and tax handling.",
+          "3": "A Grievance Officer is published as the contact point for service complaints and data-related grievances, with committed service levels. The officer's name, designation, phone and postal address are pending appointment and are currently shown as placeholders awaiting completion."
+        },
+        "keyPoints": {
+          "0": "ShopXY is a marketplace; orders are accepted and fulfilled by individual shops, not by the platform.",
+          "1": "Terms, Privacy and consumer policies are published and reachable before login.",
+          "2": "A Grievance Officer is the published contact for complaints; officer name/phone/postal address are still to be filled in.",
+          "3": "Grievance service levels: acknowledge within 48 hours; resolve consumer/service grievances within one month; resolve DPDP data grievances within 15 days."
+        },
+        "lawRefs": {
+          "0": "IT (Intermediary Guidelines & Digital Media Ethics Code) Rules 2021, Rule 3(1)(b)",
+          "1": "IT Rules 2021, Rule 3(1)(f)",
+          "2": "IT Rules 2021, Rule 3(2) (grievance officer)",
+          "3": "Consumer Protection (E-Commerce) Rules 2020, r.4(5)/r.5(3)",
+          "4": "DPDP Act 2023 §5/§13"
+        },
+        "formulas": {
+          "grievanceSla": {
+            "label": "Grievance service-level commitments",
+            "expression": "acknowledge ≤ 48 hours; resolve consumer/service grievance ≤ 1 month; resolve DPDP data grievance ≤ 15 days",
+            "note": "Contact is grievance@shopxy.app; officer name, designation, phone and postal address are pending appointment."
+          },
+          "policyDiscoverability": {
+            "label": "Pre-login policy discoverability",
+            "expression": "customer footer → Privacy + Terms + Consumer Policies; merchant login → Terms + Privacy",
+            "note": "Policies are accessible at or before the point of data collection."
+          }
+        }
+      },
+      "gst": {
+        "nav": "GST & tax",
+        "heading": "GST and tax, with formulas",
+        "summary": "How CGST/SGST/IGST, cess, rounding, TCS/TDS and invoice numbering are computed.",
+        "body": {
+          "0": "GST is calculated line by line using exact decimal arithmetic (not floating-point), so figures never drift at the paisa level. Each amount is rounded to two decimal places using round-half-up only at the points where the law fixes a printed figure: the line discount, the taxable value and each tax component.",
+          "1": "The taxable value of a line is the quantity times the unit price, less any discount, and the discount is clamped so the taxable value can never go negative. Where the price is marked GST-inclusive (the MRP convention used on the customer storefront), the tax is backed out of the price rather than added on top, so the invoice total equals the amount actually collected.",
+          "2": "A discount recorded on the invoice header reduces the value of supply, so it is apportioned across lines before tax is computed; the last line absorbs any rounding remainder so the shares re-sum exactly. Whether the supply is interstate or intrastate is decided by comparing the shop's state code with the place of supply. Interstate supplies carry IGST; intrastate supplies carry CGST and SGST split equally, computed from a single GST total so the two halves always re-sum without drift. Compensation cess, where applicable, is charged on the taxable value at the notified cess rate. The grand total is rounded to the nearest whole rupee and the adjustment is shown as a separate round-off line.",
+          "3": "Only a regular GST-registered shop holding a GSTIN may charge output tax and issue a tax invoice. Composition dealers and unregistered shops cannot charge GST; their sale documents are automatically issued as Bills of Supply with zero tax. Each invoice carries a unique, consecutive serial number per shop per financial year, where the Indian financial year runs from 1 April to 31 March.",
+          "4": "When a customer returns goods, a sequentially-numbered credit note is issued that references the original invoice and reverses the output tax on the same side (IGST, or CGST plus SGST) as the original sale, using the original invoice's frozen interstate flag so a later change of the shop's state cannot flip an old reversal.",
+          "5": "Because ShopXY collects payment on behalf of sellers, it acts as an e-commerce operator: it collects GST TCS at 1% of net taxable value and deducts income-tax TDS at 1% of the gross supply value, withholding these from the seller's settlement."
+        },
+        "keyPoints": {
+          "0": "All money math uses exact decimal arithmetic and round-half-up to two decimals only where the law fixes a printed figure.",
+          "1": "Interstate supply (place of supply differs from shop state) is taxed as IGST; intrastate supply is taxed as CGST + SGST split equally.",
+          "2": "Customer storefront prices are GST-inclusive (MRP); tax is backed out of the price, not added on top.",
+          "3": "Header/coupon discounts reduce the taxable value before GST is computed (CGST §15(3)).",
+          "4": "Only a REGULAR shop with a GSTIN may charge output GST; COMPOSITION and UNREGISTERED shops issue Bills of Supply with zero tax.",
+          "5": "Returns generate a numbered credit note that references the original invoice and reverses tax on the same side as the original sale.",
+          "6": "As an e-commerce operator, ShopXY collects 1% GST TCS (net taxable) and deducts 1% income-tax TDS (gross) from seller settlements."
+        },
+        "lawRefs": {
+          "0": "CGST Act 2017 §10 / §15 / §32 / §34 / §52 / §170",
+          "1": "IGST Act 2017 §5 / §7 / §8 / §10 / §12",
+          "2": "GST (Compensation to States) Act 2017 §8",
+          "3": "CGST Rules 2017, Rule 46 / 49 / 53(1A)",
+          "4": "SGST Act (State legislation)",
+          "5": "Income Tax Act 1961 §194-O",
+          "6": "Legal Metrology (Packaged Commodities) Rules 2011",
+          "7": "Notification 78/2020-CT"
+        },
+        "formulas": {
+          "taxableExclusive": {
+            "label": "Taxable value (GST-exclusive)",
+            "expression": "lineAmount = quantity × unitPrice; lineDiscountTotal = min(discount, lineAmount); taxableValue = lineAmount − lineDiscountTotal (≥ 0)",
+            "note": "Discount is clamped to the line gross so taxable value can never be negative."
+          },
+          "taxableInclusive": {
+            "label": "Taxable value (GST-inclusive / MRP path)",
+            "expression": "taxableValue = lineAmount × 100 / (100 + taxPercent + cessRate); tax = lineAmount − taxableValue",
+            "note": "Used when the price is marked tax-inclusive; the divisor embeds both GST and cess."
+          },
+          "headerDiscount": {
+            "label": "Header / coupon discount apportionment (CGST §15(3))",
+            "expression": "headerShare[i] = (i is last) ? (headerDiscount − Σ prior shares) : ROUND_HALF_UP(headerDiscount × lineBase[i] / baseTaxableTotal)",
+            "note": "Apportioned across lines before tax; the last line absorbs rounding drift."
+          },
+          "interstate": {
+            "label": "Interstate determination",
+            "expression": "isInterstate = (shopStateCode ≠ placeOfSupplyStateCode)",
+            "note": "Shop state code derives from registration, falling back to the first two digits of the GSTIN; unknown sides default to intrastate (safer than mis-charging IGST)."
+          },
+          "igst": {
+            "label": "IGST (interstate)",
+            "expression": "igstAmount = ROUND_HALF_UP(taxableValue × taxPercent / 100)",
+            "note": "Charged when the place of supply is outside the shop's state."
+          },
+          "cgstSgst": {
+            "label": "CGST and SGST (intrastate)",
+            "expression": "gstTotal = ROUND_HALF_UP(taxableValue × taxPercent / 100); cgst = ROUND_HALF_UP(gstTotal / 2); sgst = gstTotal − cgst",
+            "note": "Total computed first, then split, so CGST + SGST always re-sum to the GST total."
+          },
+          "cess": {
+            "label": "Compensation cess",
+            "expression": "cessAmount = ROUND_HALF_UP(taxableValue × cessRate / 100)",
+            "note": "Zero for most goods; ad-valorem for specified luxury/demerit goods."
+          },
+          "grandTotal": {
+            "label": "Grand total rounding (CGST §170)",
+            "expression": "grandTotalRaw = taxableValueTotal + igst + cgst + sgst + cess; total = ROUND_HALF_UP(grandTotalRaw, 0); roundOff = total − grandTotalRaw",
+            "note": "Rounded to the nearest whole rupee; the round-off is recorded as a separate line."
+          },
+          "registrationGate": {
+            "label": "Registration gate and document downgrade",
+            "expression": "isShopRegistered = (registrationType = REGULAR) AND (GSTIN present); if SALE AND not registered AND TAX_INVOICE → downgrade to BILL_OF_SUPPLY (all tax = 0)",
+            "note": "COMPOSITION and UNREGISTERED shops cannot charge output GST."
+          },
+          "serialNumbering": {
+            "label": "Invoice serial numbering (Rule 46(b))",
+            "expression": "invoiceNo = prefix / FY / LPAD(sequence, 5, '0')  e.g. CRN/25-26/00042",
+            "note": "Prefixes: INV (sale), PUR (purchase), CRN (credit note), DBN (debit note), EST (estimate)."
+          },
+          "financialYear": {
+            "label": "Financial year",
+            "expression": "if month ≥ April: FY = YY(year)-YY(year+1); else FY = YY(year−1)-YY(year)",
+            "note": "India's financial year runs 1 April to 31 March; numbering resets at the FY boundary."
+          },
+          "rateSlabs": {
+            "label": "Permitted GST rate slabs",
+            "expression": "taxPercent ∈ {0, 0.1, 0.25, 1, 1.5, 3, 5, 12, 18, 28}",
+            "note": "A merchant may mark a line exempt/nil, but only a notified slab is accepted."
+          },
+          "gstinHsn": {
+            "label": "GSTIN / HSN format",
+            "expression": "GSTIN: 2-digit state + 10-char PAN + entity + Z + checksum (e.g. 27ABCDE1234F1Z5); HSN: 4, 6 or 8 digits",
+            "note": "HSN for goods or SAC for services is mandatory on tax invoices; 8-digit HSN is required for exports."
+          },
+          "recipientDetails": {
+            "label": "Recipient details requirement (Rule 46(e)/(f))",
+            "expression": "needsRecipientDetails = (customer GSTIN present) OR (total ≥ ₹50,000)",
+            "note": "When required, recipient name and address are mandatory on the tax invoice."
+          },
+          "operatorTcs": {
+            "label": "Operator GST TCS (CGST §52)",
+            "expression": "gstTcsTotal = ROUND_HALF_UP(netTaxable × 1 / 100); interstate → IGST-TCS = total; else CGST-TCS = ROUND_HALF_UP(total/2), SGST-TCS = total − CGST-TCS",
+            "note": "Collected on the net taxable value of the seller's supply."
+          },
+          "operatorTds": {
+            "label": "Operator income-tax TDS (§194-O)",
+            "expression": "incomeTaxTds = ROUND_HALF_UP(grossAmount × 1 / 100)",
+            "note": "Deducted on the gross supply value (invoice total) from the seller's settlement."
+          }
+        }
+      },
+      "payments": {
+        "nav": "Payments & RBI",
+        "heading": "Payments, refunds and settlement (RBI)",
+        "summary": "Refund-to-source, the disabled PPI wallet, idempotency, held transfers and webhook security.",
+        "body": {
+          "0": "Refunds for online payments are always reversed to the customer's original payment instrument (card, UPI or netbanking). They are never converted to wallet or store credit. The in-app wallet has been deprecated: loading real money into a spendable wallet would require RBI authorisation as a prepaid payment instrument, so wallet top-up is disabled and that endpoint returns a permanent error.",
+          "1": "Refunds are idempotent and crash-safe. Every refund attempt is persisted with its provider reference and status, and a replay using the same idempotency key returns the prior refund rather than refunding twice. The refundable amount is capped at the captured amount less anything already refunded. A reconciliation sweep automatically re-drives refunds that are still pending or have failed, so a refund is never silently dropped.",
+          "2": "Marketplace settlements use a held-transfer model on Razorpay Route. A seller's portion is created as an on-hold transfer held in the provider's regulated balance, never in a ShopXY-controlled account. Transfers carry a deterministic key so retries cannot double-pay; before creating a transfer the system lists existing transfers and reconciles instead of creating a duplicate. When the buyer confirms delivery, the held transfer is released to settle to the seller; when a return is refunded, the seller's held slice is clawed back, and if the refund exceeds the recoverable slice the gap is flagged for manual recovery while the customer refund always proceeds.",
+          "3": "Sellers can only receive payouts after their linked account passes KYC. A seller's bank details, PAN and GST flow directly to the payment provider during onboarding and are never stored by ShopXY; only the provider's account identifier is kept. Until a linked account is activated, the seller's transfers are recorded as KYC-gated and no money moves; account activation re-triggers reconciliation to release them.",
+          "4": "Provider communications are authenticated. Webhooks are verified with an HMAC-SHA256 signature and fail closed if the signature is invalid or the secret is missing in production. Each event is processed exactly once via a unique event identifier, and an ownership check ensures one tenant's webhook can never settle another tenant's payment. On a payment-captured event the captured amount must equal the order intent amount, or the event is rejected, preventing amount tampering and partial payments settling as fully paid."
+        },
+        "keyPoints": {
+          "0": "Online refunds always go back to the original payment instrument; wallet/store-credit refunds are not used.",
+          "1": "Wallet top-up is disabled — loading spendable money would require an RBI PPI licence (PSS Act 2007).",
+          "2": "Refunds are idempotent: a refund is capped at captured-minus-already-refunded and replays never double-refund.",
+          "3": "Seller funds are held on-hold in the provider's regulated balance, released on buyer confirmation and clawed back on returns.",
+          "4": "Seller PAN and bank details flow directly to the payment provider and are never stored by ShopXY.",
+          "5": "Webhooks are verified by HMAC-SHA256 and fail closed; events are processed exactly once with a tenant ownership check.",
+          "6": "Payouts are gated behind KYC activation of the seller's linked account."
+        },
+        "lawRefs": {
+          "0": "RBI Master Direction — Payment & Settlement Systems (PSS) Act 2007",
+          "1": "RBI PPI (Prepaid Payment Instrument) Master Direction",
+          "2": "Consumer Protection (E-Commerce) Rules 2020, Rule 4(7)",
+          "3": "RBI KYC / linked-account directions",
+          "4": "DPDP Act 2023"
+        },
+        "formulas": {
+          "refundableCap": {
+            "label": "Refundable amount cap",
+            "expression": "refundable = amountCaptured − amountAlreadyRefunded; refund = min(requested, refundable)",
+            "note": "Refund can never exceed what remains unrefunded on the original capture."
+          },
+          "walletTopup": {
+            "label": "Wallet top-up status",
+            "expression": "POST /me/wallet/topup → 410 Gone",
+            "note": "Disabled because a spendable in-app wallet requires an RBI PPI authorisation."
+          },
+          "kycMapping": {
+            "label": "KYC payouts mapping",
+            "expression": "activated | funds_released | created → payoutsEnabled = true; under_review | needs_clarification | suspended | funds_held → payoutsEnabled = false",
+            "note": "Re-derived on every status read (never cached as activated)."
+          },
+          "heldTransfer": {
+            "label": "Held transfer key and hold window",
+            "expression": "transferKey = 'gw:{paymentId}:pr:{requestId}'; on_hold = true; on_hold_until = now + returnWindowDays (or null if indefinite)",
+            "note": "Deterministic key prevents double-pays; the hold auto-releases after the return window."
+          },
+          "returnReversal": {
+            "label": "Return reversal and shortfall",
+            "expression": "remaining = transfer.amount − reversedAmount; reverse = min(requested, remaining); shortfall = max(requested − remaining, 0)",
+            "note": "Any shortfall is flagged for manual recovery; the customer refund always proceeds."
+          },
+          "webhookSignature": {
+            "label": "Webhook signature (fail-closed)",
+            "expression": "expected = HMAC-SHA256(webhookSecret, rawBody); accept only if timingSafeEqual(expected, signature)",
+            "note": "Rejected with 400 if the secret is empty in production or the signature does not match."
+          },
+          "amountVerification": {
+            "label": "Amount verification on capture",
+            "expression": "captured_paise = amountPaid; reject if captured_paise ≠ intent.amount_paise",
+            "note": "Prevents amount tampering and partial-payment orders settling as fully paid."
+          }
+        }
+      },
+      "consumer": {
+        "nav": "Consumer protection",
+        "heading": "Consumer protection: returns, refunds, cancellations and pricing",
+        "summary": "Return windows, cancellation gates, credit-note refunds and transparent MRP pricing.",
+        "body": {
+          "0": "Each shop publishes its return, refund, cancellation and shipping policy, and these terms are shown to the customer before purchase and on order detail pages. Returns are only permitted after goods are marked delivered, and the return window is counted from the delivery date. The default window is 7 days, configurable by the merchant; a setting of zero means an unlimited return period.",
+          "1": "Cancellation is governed by each shop's cancellation policy, which can allow cancellation up to confirmation, packing, shipping (the default) or delivery. After the relevant milestone, cancellation is no longer available and the customer's remedy is the post-delivery returns flow.",
+          "2": "When a return is approved, a GST credit note is issued that links to the original invoice and reverses CGST, SGST or IGST in proportion to the quantity returned and the original place of supply; the goods are restocked. The refund equals the credit note's tax-inclusive total, and is computed from what the buyer actually paid (gross less coupon discount), prorated to the returned share and capped at the credit note total. Refunds for online payments are reversed to the original payment instrument and are idempotent and reconciled, so they are never silently dropped.",
+          "3": "Pricing is transparent. A product's selling price can never exceed its Maximum Retail Price, enforced at create, update and publish. Storefront prices are shown GST-inclusive and labelled 'inclusive of all taxes'; MRP is always displayed, with a struck-through price and discount percentage when on offer. Seller-funded coupon discounts reduce the taxable value before GST is applied. Country of origin is shown on the product page when present, and assurance copy is qualified to each shop's actual policy rather than presented as unbacked blanket claims, in line with the guidance against misleading practices and dark patterns."
+        },
+        "keyPoints": {
+          "0": "Returns are allowed only after delivery; the window is counted from the delivery date and defaults to 7 days (0 = unlimited).",
+          "1": "Cancellation is allowed only up to the shop's chosen milestone (default: until shipped); after that, only returns apply.",
+          "2": "Every approved return mints a GST credit note linked to the original invoice and reverses tax by the original place of supply.",
+          "3": "Refunds equal the tax-inclusive credit-note total, based on what the buyer actually paid, prorated and capped; online refunds go to source.",
+          "4": "Selling price can never exceed MRP, enforced at create, update and publish.",
+          "5": "Storefront prices are GST-inclusive and labelled 'inclusive of all taxes'; MRP is always shown.",
+          "6": "Marketing assurances are qualified to each shop's actual policy, not generic unbacked claims (anti dark-pattern)."
+        },
+        "lawRefs": {
+          "0": "Consumer Protection (E-Commerce) Rules 2020, r.3 / r.4 / r.5",
+          "1": "Consumer Protection Act 2019, s.2(28)/s.2(47)",
+          "2": "CCPA Guidelines for Prevention of Dark Patterns 2023",
+          "3": "CGST Act 2017 §15 / §34",
+          "4": "CGST Rules 2017, Rule 53",
+          "5": "Legal Metrology Act s.18/s.36",
+          "6": "Legal Metrology (Packaged Commodities) Rules 2011, r.6 / r.10"
+        },
+        "formulas": {
+          "returnWindow": {
+            "label": "Return eligibility window",
+            "expression": "ageDays = (now − deliveredAt) / 86,400,000; eligible if ageDays ≤ windowDays (or windowDays = 0 for unlimited)",
+            "note": "The window starts at the delivered event, and a return after it is rejected as WINDOW_EXPIRED. Default windowDays = 7."
+          },
+          "cancellationGate": {
+            "label": "Cancellation gate",
+            "expression": "isCancellableByPolicy(policy, events) = false if any recorded event type is in CANCEL_BLOCKERS[policy]",
+            "note": "Policies: UNTIL_CONFIRMED, UNTIL_PACKED, UNTIL_SHIPPED (default), UNTIL_DELIVERED."
+          },
+          "refundAmount": {
+            "label": "Refund amount on return",
+            "expression": "buyerOutlay = gross − coupon; refund = min(buyerOutlay × returnFraction, creditNoteTotal)",
+            "note": "Refund is based on what the buyer actually paid, prorated to the returned share and capped at the credit-note total."
+          },
+          "creditNoteReversal": {
+            "label": "Credit-note GST reversal",
+            "expression": "creditNoteGST = (originalInvoiceGST × returnedQty) / originalQty, on the original place of supply (IGST vs CGST+SGST)",
+            "note": "A CONFIRMED CREDIT_NOTE is minted, linked to the original invoice; goods are restocked."
+          },
+          "sellingCeiling": {
+            "label": "Selling price ceiling (Legal Metrology)",
+            "expression": "sellingPrice ≤ MRP",
+            "note": "Enforced at product create, variant, update and publish."
+          },
+          "refundIdempotency": {
+            "label": "Refund idempotency key",
+            "expression": "idempotencyKey = `return-refund-${id}`",
+            "note": "Replays return the prior refund; failed refunds are re-driven by the reconciliation scheduler."
+          }
+        }
+      },
+      "customerSide": {
+        "nav": "Customer side",
+        "heading": "Customer-side disclosures and ledgers",
+        "summary": "What the customer sees at checkout, place-of-supply and read-only shop ledgers.",
+        "body": {
+          "0": "Before payment, the customer sees a complete price breakup. When tax applies, the checkout shows the taxable value and per-rate GST, labelled '(incl.)', with a note that prices are inclusive of all taxes. Because storefront prices follow the MRP (GST-inclusive) convention, the invoice engine backs the tax out of each line so the tax-invoice total equals the amount collected.",
+          "1": "Place of supply for a customer order is the destination, derived from the shipping address state. If the destination state differs from the shop's state the order is taxed as IGST; if it is the same state it is taxed as CGST plus SGST. This is the same engine used across the platform, so the customer's invoice matches the merchant's books.",
+          "2": "Product pages disclose the information required before purchase: MRP is always shown and labelled 'inclusive of all taxes', and a compliance block shows country of origin (when present), net quantity and the marketed-by / brand details. Some packaged-commodity fields such as HSN on the product page and full manufacturer/packer/importer details remain deferred and are not yet shown on the product page.",
+          "3": "A single order line can only be returned for the quantity originally purchased, summed across all return requests for that line, so refunds cannot exceed the purchase. The customer app's per-shop invoice ledgers are read-only views of the backend invoices and payments, scoped to the shop and the customer, so every GST, tax, credit-note and refund rule described above applies equally to what the customer sees.",
+          "4": "The customer storefront publishes the privacy policy, terms and the consumer policy page (cancellation, returns, refunds and shipping), all linked from the public footer. The privacy notice states concrete retention periods, a breach-notification commitment, a children's-data clause, the cross-border transfer posture and the processor list, with the cloud hosting provider name still to be filled in."
+        },
+        "keyPoints": {
+          "0": "Checkout shows taxable value and per-rate GST with an 'inclusive of all taxes' note before payment.",
+          "1": "Customer-order place of supply is the shipping-address state; different state → IGST, same state → CGST + SGST.",
+          "2": "MRP is always shown on the product page and labelled 'inclusive of all taxes'.",
+          "3": "A line's cumulative returned quantity can never exceed the quantity originally purchased.",
+          "4": "Customer shop ledgers are read-only views of the same backend invoices and payments — all tax and refund rules apply identically.",
+          "5": "Customer legal pages (privacy, terms, policies) are published and linked from the public footer.",
+          "6": "HSN on the product page and full manufacturer/packer/importer details are deferred and not yet shown."
+        },
+        "lawRefs": {
+          "0": "Consumer Protection (E-Commerce) Rules 2020, r.3(2) / r.4(3) / r.5(3) / r.6(5)",
+          "1": "CGST Act 2017 §15 / §34",
+          "2": "CGST Rules 2017, Rule 46 / Rule 53",
+          "3": "IGST Act 2017 §10 / §16",
+          "4": "Legal Metrology (Packaged Commodities) Rules 2011, r.6 / r.10",
+          "5": "DPDP Act 2023 §5 / §8 / §9 / §16",
+          "6": "IT Intermediary Rules 2021, r.3(1)(b)/r.3(2)"
+        },
+        "formulas": {
+          "customerTaxable": {
+            "label": "Customer-order taxable value (inclusive)",
+            "expression": "taxableValue = inclusivePrice × 100 / (100 + taxPercent); tax = inclusivePrice − taxableValue",
+            "note": "confirmRequest passes isPriceInclusive = true so the engine backs tax out of each line."
+          },
+          "customerPlaceOfSupply": {
+            "label": "Place of supply for a customer order",
+            "expression": "placeOfSupplyStateCode = stateCode(shippingAddress.state); if ≠ shopStateCode → IGST, else → CGST + SGST",
+            "note": "Drives the same interstate split used across the platform."
+          },
+          "returnCap": {
+            "label": "Cumulative return cap per line",
+            "expression": "Σ(returnedQty across all return requests for the line) ≤ originalPurchasedQty",
+            "note": "requested + alreadyReturned must not exceed the original quantity."
+          }
+        }
+      }
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "subtitle": "Your inbox, invitations you've received, and invites you've sent.",
+    "tabs": {
+      "inbox": "Inbox",
+      "invites": "Invites",
+      "sent": "Sent"
+    },
+    "inbox": {
+      "emptyTitle": "No notifications yet",
+      "emptyBody": "When something happens — an invitation reply, a new order, a quotation update — you’ll see it here.",
+      "markAllRead": "Mark all read",
+      "loading": "Loading…",
+      "loadMore": "Load more",
+      "unread": "Unread"
+    },
+    "invites": {
+      "emptyTitle": "No invitations",
+      "emptyBody": "When another shop invites you to link as a customer, vendor or team member, it appears here.",
+      "aShop": "A shop",
+      "wantsToAdd": "wants to add you as their {role}",
+      "accept": "Accept",
+      "decline": "Decline"
+    },
+    "sent": {
+      "emptyTitle": "No invites sent",
+      "emptyBody": "Invite a customer or vendor to link their account from their detail page.",
+      "cancelInvitation": "Cancel invitation"
+    },
+    "roles": {
+      "supplier": "supplier",
+      "teamMember": "team member",
+      "customer": "customer"
+    },
+    "status": {
+      "invited": "Invited",
+      "linked": "Linked",
+      "declined": "Declined",
+      "cancelled": "Cancelled",
+      "expired": "Expired"
+    },
+    "errors": {
+      "loadNotifications": "Could not load notifications.",
+      "loadInvitations": "Could not load invitations.",
+      "updateInvitation": "Could not update the invitation.",
+      "cancelInvitation": "Could not cancel the invitation."
+    },
+    "inviteControl": {
+      "invited": "Invited",
+      "cancelInvitation": "Cancel invitation",
+      "invite": "Invite",
+      "addEmailFirst": "Add an email to this contact first",
+      "modalTitle": "Invite {name} to ShopXY",
+      "explainerParty": "We’ll email an invite. When they accept, their account links to this customer so they can see their ledger with you.",
+      "explainerVendor": "We’ll email an invite. When they accept, their account links to this vendor so they can see their ledger with you.",
+      "emailLabel": "Email",
+      "messageLabel": "Message (optional)",
+      "sendInvite": "Send invite",
+      "invalidEmail": "Enter a valid email address.",
+      "cancelError": "Could not cancel.",
+      "sendError": "Could not send the invitation."
+    }
+  },
+  "scanConsole": {
+    "meta": {
+      "title": "Scan console · ShopXY"
+    },
+    "header": {
+      "title": "Scan console",
+      "subtitle": "Open the scanner on the ShopXY app and scan products — they appear here live."
+    },
+    "presence": {
+      "scannerConnected": "Scanner connected",
+      "scannerConnectedMany": "Scanner connected ×{count}",
+      "waitingForScanner": "Waiting for scanner"
+    },
+    "actions": {
+      "clear": "Clear"
+    },
+    "status": {
+      "live": "Live",
+      "connecting": "Connecting",
+      "reconnecting": "Reconnecting",
+      "offline": "Offline"
+    },
+    "summary": {
+      "products": "Products",
+      "itemsScanned": "Items scanned",
+      "totalValue": "Total value"
+    },
+    "empty": {
+      "connecting": "Connecting to the scan feed…",
+      "waitingFirstScan": "Scanner connected — waiting for the first scan.",
+      "openScanner": "Connected — open the scanner on the app to begin.",
+      "hint": "On the ShopXY app, open the scanner and point it at a product’s barcode or QR. Each scan shows up here instantly."
+    },
+    "errors": {
+      "connectionFailed": "Connection failed.",
+      "clearFailed": "Could not clear the console."
+    }
+  },
+  "pos": {
+    "metaTitle": "Point of sale · ShopXY",
+    "title": "Point of sale",
+    "topBar": {
+      "cashier": "Cashier",
+      "drawer": "Drawer {amount}",
+      "openShift": "Open shift",
+      "returns": "Returns",
+      "hold": "Hold",
+      "recall": "Recall"
+    },
+    "bill": {
+      "item": "Item",
+      "qty": "Qty",
+      "amount": "Amount",
+      "openShiftToBill": "Open a shift to start billing",
+      "scanFirstItem": "Scan the first item to begin",
+      "decrease": "Decrease",
+      "increase": "Increase",
+      "remove": "Remove",
+      "qtyLabel": "Quantity"
+    },
+    "totals": {
+      "totalPayable": "Total payable",
+      "itemCount": "{count, plural, one {# item} other {# items}}",
+      "saved": "Saved {amount}"
+    },
+    "scan": {
+      "placeholder": "Scan / type barcode · 3∗code for qty",
+      "placeholderNoShift": "Open a shift to start billing",
+      "findItemTitle": "Find item (F3)",
+      "queuedOffline": "{count, plural, one {# scan queued offline} other {# scans queued offline}}"
+    },
+    "customer": {
+      "namePlaceholder": "Customer name",
+      "phonePlaceholder": "Phone"
+    },
+    "discount": {
+      "billLabel": "Bill discount ₹",
+      "lineTitle": "Line discount",
+      "amountPlaceholder": "Discount ₹",
+      "clear": "Clear",
+      "apply": "Apply"
+    },
+    "pay": {
+      "button": "Pay {amount}"
+    },
+    "paid": {
+      "saleComplete": "Sale complete",
+      "invoice": "Invoice {no}",
+      "paidOnline": "Paid online",
+      "printReceipt": "Print receipt",
+      "newSale": "New sale"
+    },
+    "common": {
+      "loading": "Loading…",
+      "cancel": "Cancel",
+      "somethingWrong": "Something went wrong."
+    },
+    "shift": {
+      "title": "Shift & cash drawer",
+      "loadError": "Could not load the shift.",
+      "openingFloat": "Opening float (₹)",
+      "openingFloatRow": "Opening float",
+      "cashSales": "Cash sales",
+      "payIns": "Pay-ins",
+      "payOuts": "Pay-outs",
+      "drops": "Drops",
+      "refunds": "Refunds",
+      "expectedInDrawer": "Expected in drawer",
+      "cashDrawer": "Cash drawer",
+      "payIn": "Pay in",
+      "payOut": "Pay out",
+      "drop": "Drop",
+      "amountPlaceholder": "Amount ₹",
+      "reasonPlaceholder": "Reason",
+      "record": "Record",
+      "closeShift": "Close shift",
+      "countedCashPlaceholder": "Counted cash ₹",
+      "close": "Close",
+      "variance": "Variance {sign}{amount} {state}",
+      "balanced": "(balanced)",
+      "over": "(over)",
+      "short": "(short)"
+    },
+    "returns": {
+      "enterQty": "Enter a quantity to return.",
+      "creditNoteDone": "Credit note {no} · refund {amount}",
+      "originalInvoicePlaceholder": "Original invoice id",
+      "lookUp": "Look up",
+      "returnableQty": "returnable {qty} · {price}",
+      "refundVia": "Refund via",
+      "processReturn": "Process return"
+    },
+    "tender": {
+      "collect": "Collect {amount}",
+      "cash": "Cash",
+      "cashReceivedPlaceholder": "Cash received ₹",
+      "changeDue": "Change due",
+      "cashDone": "Cash — done",
+      "otherTenders": "Other tenders",
+      "card": "Card",
+      "online": "Online"
+    },
+    "held": {
+      "title": "Held bills",
+      "empty": "No held bills.",
+      "billNo": "Bill #{id}"
+    },
+    "manager": {
+      "authFailed": "Authorisation failed.",
+      "title": "Manager authorisation",
+      "description": "A manager must approve this action. Enter manager credentials below.",
+      "emailLabel": "Manager email",
+      "passwordLabel": "Password",
+      "authorising": "Authorising…",
+      "authorise": "Authorise"
+    },
+    "quickAdd": {
+      "title": "New item · {code}",
+      "subtitle": "Not in the catalogue — add it and ring it up.",
+      "namePlaceholder": "Name",
+      "pricePlaceholder": "Price ₹",
+      "gstPlaceholder": "GST %",
+      "onHandPlaceholder": "On hand",
+      "addToCart": "Add to cart"
+    },
+    "conn": {
+      "live": "Live",
+      "connecting": "Connecting",
+      "reconnecting": "Reconnecting",
+      "offline": "Offline"
+    },
+    "search": {
+      "title": "Find item",
+      "placeholder": "Type a product name or SKU",
+      "searching": "Searching…",
+      "noMatches": "No matches.",
+      "startTyping": "Start typing to search.",
+      "stock": "stock {stock}",
+      "tapToAdd": "Tap an item to add it to the bill."
+    },
+    "errors": {
+      "reconnecting": "Reconnecting…",
+      "offlineScanQueued": "Offline — scan queued, will sync on reconnect.",
+      "couldNotReachTill": "Couldn't reach the till — please retry.",
+      "couldNotStartOnline": "Couldn't start the online payment. Please retry.",
+      "paymentFailed": "Payment failed. Please retry.",
+      "couldNotOpenRazorpay": "Couldn't open Razorpay. Please retry."
+    }
+  },
+  "reports": {
+    "title": "Reports",
+    "subtitle": "Sales, purchases, GST and profit over a date range — from your confirmed invoices, returns and stock.",
+    "errors": {
+      "report": "Could not load the report."
+    },
+    "tabs": {
+      "sales": "Sales",
+      "purchases": "Purchases",
+      "gst": "GST",
+      "pnl": "P&L",
+      "calculator": "Calculator"
+    },
+    "range": {
+      "from": "From",
+      "to": "To",
+      "thisMonth": "This month",
+      "last30Days": "Last 30 days",
+      "thisFy": "This FY"
+    },
+    "common": {
+      "product": "Product",
+      "customer": "Customer",
+      "vendor": "Vendor",
+      "loading": "Loading…"
+    },
+    "trend": {
+      "noActivity": "No activity in this range.",
+      "ariaLabel": "Daily trend",
+      "pace": "≈ {perDay}/day at this pace · ~{perMonth} over 30 days",
+      "averageSuffix": " · dashed line is the 7-day average"
+    },
+    "sales": {
+      "total": "Total sales",
+      "summaryHint": "{count} confirmed invoices · {gst} GST · net {net} after refunds",
+      "topProducts": "Top products",
+      "noSales": "No sales in this range.",
+      "soldSub": "{qty} sold",
+      "soldSubSku": "{qty} sold · {sku}",
+      "topCustomers": "Top customers",
+      "noCustomers": "No customers in this range.",
+      "customerInvoices": "{count, plural, one {# invoice} other {# invoices}}"
+    },
+    "purchases": {
+      "total": "Total purchases",
+      "summaryHint": "{count} confirmed bills · {gst} GST",
+      "topProducts": "Top purchased products",
+      "noPurchases": "No purchases in this range.",
+      "boughtSub": "{qty} bought",
+      "boughtSubSku": "{qty} bought · {sku}",
+      "topVendors": "Top vendors",
+      "noVendors": "No vendors in this range.",
+      "vendorBills": "{count, plural, one {# bill} other {# bills}}"
+    },
+    "gst": {
+      "outputGst": "Output GST",
+      "collectedOnSales": "Collected on sales",
+      "inputGst": "Input GST (ITC)",
+      "paidOnPurchases": "Paid on purchases",
+      "netPayable": "Net GST payable",
+      "owesHint": "You owe this to the tax authority",
+      "creditHint": "Input credit carried forward",
+      "netByHead": "Net payable by tax head",
+      "headCol": "Head",
+      "outputCol": "Output",
+      "inputCol": "Input (ITC)",
+      "netCol": "Net",
+      "igst": "IGST",
+      "interState": "Inter-state",
+      "cgst": "CGST",
+      "central": "Central",
+      "sgst": "SGST",
+      "state": "State",
+      "total": "Total",
+      "headNote": "CGST + SGST apply to in-state sales; IGST to inter-state. Net is each head's output tax minus its own input credit.",
+      "outputByRate": "Output GST by rate",
+      "noOutput": "No output GST in this range.",
+      "inputByRate": "Input GST by rate",
+      "noInput": "No input GST in this range.",
+      "rateCol": "Rate",
+      "taxableCol": "Taxable",
+      "gstCol": "GST",
+      "cess": "Cess",
+      "outputCess": "Output cess",
+      "inputCess": "Input cess",
+      "netCess": "Net cess payable",
+      "cessNote": "Cess is set off only against cess, never against GST.",
+      "returnsNote": "Output GST is shown net of {amount} reversed on refunded returns in this period."
+    },
+    "pnl": {
+      "netProfit": "Net profit",
+      "grossMarginHint": "Gross margin {pct}%",
+      "revenue": "Revenue",
+      "cogs": "Cost of goods sold",
+      "grossProfit": "Gross profit",
+      "writeoffs": "Adjustment write-offs",
+      "howCalculated": "How this is calculated",
+      "caption": "P&L derivation from confirmed invoices, returns and stock adjustments",
+      "confirmedSales": "Confirmed sales",
+      "confirmedSalesBasis": "Taxable value (ex-GST) of confirmed sale invoices, less credit notes",
+      "lessSalesReturns": "Less: sales returns",
+      "lessSalesReturnsBasis": "Ex-GST value of refunded returns, pro-rated by returned quantity",
+      "revenueA": "Revenue (A)",
+      "goodsSoldCost": "Goods sold, at cost",
+      "goodsSoldCostBasis": "Stock cost layers consumed when each sale was confirmed",
+      "lessRestocked": "Less: returned goods restocked",
+      "lessRestockedBasis": "Returned items put back into inventory at their consumed cost",
+      "cogsB": "Cost of goods sold (B)",
+      "grossProfitAB": "Gross profit (A − B)",
+      "lessWriteoffs": "Less: stock write-offs",
+      "lessWriteoffsBasis": "Damage, expiry and shrinkage stock adjustments dated in this range",
+      "netProfitFormula": "Net profit (A − B − write-offs)",
+      "proofNote": "Gross margin {pct}% = gross profit ÷ revenue. Every figure is summed from confirmed invoices, refunded returns and stock adjustments dated in this range; estimates and proformas are excluded."
+    },
+    "soldProducts": {
+      "title": "Products sold",
+      "countOf": "{shown} of {total}",
+      "searchPlaceholder": "Search by product or SKU…",
+      "searchAria": "Search sold products",
+      "clearSearch": "Clear search",
+      "loadError": "Could not load sold products.",
+      "loadMoreError": "Could not load more sold products.",
+      "noMatch": "No sold products match “{query}”.",
+      "noneInRange": "No products sold in this range.",
+      "productCol": "Product",
+      "salesCol": "Sales",
+      "qtyCol": "Qty",
+      "amountCol": "Amount",
+      "total": "Total",
+      "salesCount": "{count, plural, one {# sale} other {# sales}}",
+      "loadMore": "Load more ({left} left)",
+      "allShown": "{total, plural, one {All # product shown.} other {All # products shown.}}"
+    },
+    "timeline": {
+      "loadError": "Could not load the sale timeline.",
+      "loadMoreError": "Could not load more sales.",
+      "noSales": "No sales found for this product.",
+      "loadMore": "Load more ({left} left)",
+      "totalLine": "Total · {count, plural, one {# sale} other {# sales}} · {qty}"
+    },
+    "calc": {
+      "title": "Pricing & profit calculator",
+      "blurb": "Add products on the right, then set quantity, GST and discount per line — totals, GST, profit and margin update live.",
+      "noProductsYet": "No products yet — add some from the list on the right.",
+      "colProduct": "Product",
+      "colGst": "GST",
+      "colQty": "Qty",
+      "colDisc": "Disc",
+      "colLineTotal": "Line total",
+      "supply": "Supply",
+      "withinState": "Within state",
+      "interState": "Inter-state",
+      "discountIn": "Discount in",
+      "overallDiscount": "Overall discount",
+      "grandTotalLabel": "Grand total · incl. GST",
+      "productsQty": "{count, plural, one {# product} other {# products}} · {qty} qty",
+      "offSuffix": " · {amount} off",
+      "profit": "Profit",
+      "margin": "Margin",
+      "gst": "GST",
+      "blockTotal": "Total",
+      "grossSubtotal": "Gross subtotal",
+      "inclGst": "incl. GST",
+      "lineDiscounts": "Line discounts",
+      "grandTotalInclGst": "Grand total (incl. GST)",
+      "blockGstInter": "GST · inter-state",
+      "blockGstIntra": "GST · within state",
+      "subtotal": "Subtotal",
+      "taxableExGst": "taxable, ex-GST",
+      "gstTotal": "GST total",
+      "costOfGoods": "Cost of goods",
+      "revenue": "Revenue",
+      "markup": "Markup",
+      "returnOnCost": "return on cost",
+      "profitMargin": "Profit margin",
+      "quotation": "Quotation",
+      "loadQuotation": "Load a quotation",
+      "chooseCustomer": "Choose customer",
+      "download": "Download",
+      "sending": "Sending…",
+      "priceAndSend": "Price & send",
+      "sendQuotation": "Send quotation",
+      "new": "New",
+      "noteLabel": "Note (optional)",
+      "notePlaceholder": "Shown on the quotation…",
+      "quotationHelp": "Download and Send both save the quotation (the PDF is generated from a saved quote). A customer-requested quote is priced & sent back; otherwise a new one goes to the chosen customer. Totals are GST-inclusive — the customer's quote matches the grand total above.",
+      "yourProducts": "Your products",
+      "addedCount": "{count} added",
+      "searchByNameSku": "Search by name or SKU…",
+      "searchProducts": "Search products",
+      "clear": "Clear",
+      "loadingProducts": "Loading your products…",
+      "noProductsFound": "No products found.",
+      "searchNumberOrCustomer": "Search by number or customer…",
+      "noQuotations": "No quotations yet.",
+      "searchCustomers": "Search customers…",
+      "each": "each",
+      "qtyFor": "Quantity for {name}",
+      "priceFor": "Price for {name}",
+      "gstFor": "GST for {name}",
+      "discFor": "Discount for {name}",
+      "removeName": "Remove {name}",
+      "loadQuoteError": "Could not load the quotation.",
+      "needProduct": "Add at least one product with a price and quantity.",
+      "chooseCustomerFirst": "Choose a customer first.",
+      "saveError": "Could not save the quotation.",
+      "sentMsg": "Quotation {no} sent to {name}.",
+      "theCustomer": "the customer"
+    }
+  },
+  "team": {
+    "title": "Team",
+    "subtitle": "Invite staff and control exactly what each person can see and do.",
+    "lockTitle": "You don't have access. Ask the shop owner.",
+    "retry": "Try again",
+    "error": {
+      "load": "Could not load the team.",
+      "generic": "Something went wrong."
+    },
+    "invite": {
+      "cta": "Invite teammate",
+      "title": "Invite teammate",
+      "emailLabel": "Email",
+      "emailPlaceholder": "teammate@example.com",
+      "roleLabel": "Role",
+      "roleChoose": "Choose a role…",
+      "roleCustom": "Custom role…",
+      "customPlaceholder": "Custom role label (e.g. Senior cashier)",
+      "roleHint": "Pick a saved role to prefill its access, then fine-tune the checkboxes below.",
+      "accessLabel": "Access",
+      "accessHint": "For a cashier, pick <b>Cashier</b> above — or tick <b>Billing & POS → Manage</b> (that's what unlocks the Point of sale till & cashier console).",
+      "messageLabel": "Message (optional)",
+      "submit": "Send invite"
+    },
+    "members": {
+      "title": "Members",
+      "editAria": "Edit permissions",
+      "removeAria": "Remove member"
+    },
+    "role": {
+      "owner": "Owner",
+      "staff": "Staff",
+      "fullAccess": "Full access"
+    },
+    "invites": {
+      "title": "Pending invites",
+      "help": "Copy each person's invite link and send it to them. If they don't have an account yet it lets them join your team as staff — without creating their own shop. If they already have an account, the link sends them to sign in.",
+      "cancel": "Cancel",
+      "copyLink": "Copy link",
+      "copied": "Copied",
+      "copyTitle": "Copy invite link",
+      "copyPrompt": "Copy this invite link:"
+    },
+    "roles": {
+      "title": "Roles",
+      "new": "New role",
+      "help": "Reusable permission presets you can apply when inviting teammates.",
+      "builtin": "Built-in",
+      "editAria": "Edit role",
+      "deleteAria": "Delete role"
+    },
+    "summary": {
+      "none": "No access"
+    },
+    "memberEdit": {
+      "title": "Edit {name}",
+      "roleLabel": "Role label",
+      "accessLabel": "Access",
+      "submit": "Save permissions"
+    },
+    "roleEdit": {
+      "editTitle": "Edit {name}",
+      "newTitle": "New role",
+      "nameLabel": "Role name",
+      "namePlaceholder": "e.g. Floor staff",
+      "accessLabel": "Access",
+      "submitSave": "Save role",
+      "submitCreate": "Create role"
+    },
+    "matrix": {
+      "area": "Area",
+      "view": "View",
+      "manage": "Manage",
+      "grantLocked": "You can't grant access you don't have yourself."
+    },
+    "area": {
+      "dashboard": {
+        "label": "Dashboard",
+        "hint": "Home overview"
+      },
+      "products": {
+        "label": "Products",
+        "hint": "Catalogue, prices, stock items"
+      },
+      "orders": {
+        "label": "Orders",
+        "hint": "Online orders inbox"
+      },
+      "invoices": {
+        "label": "Billing & POS",
+        "hint": "Point of sale (till), bills, returns, cashier shifts"
+      },
+      "quotations": {
+        "label": "Quotations",
+        "hint": "Price quotes / estimates sent to customers"
+      },
+      "challans": {
+        "label": "Challans",
+        "hint": "Delivery / dispatch challans for goods"
+      },
+      "payments": {
+        "label": "Payments",
+        "hint": "Receipts & payments"
+      },
+      "parties": {
+        "label": "Customers",
+        "hint": "Customers & suppliers"
+      },
+      "stock": {
+        "label": "Stock",
+        "hint": "Stock in / out & adjustments"
+      },
+      "vendors": {
+        "label": "Vendors",
+        "hint": "Vendors / suppliers"
+      },
+      "marketing": {
+        "label": "Marketing",
+        "hint": "Banners & coupons"
+      },
+      "shop": {
+        "label": "Shop",
+        "hint": "Shop profile & settings"
+      },
+      "reports": {
+        "label": "Reports",
+        "hint": "Sales reports"
+      },
+      "payouts": {
+        "label": "Payouts",
+        "hint": "Razorpay payouts"
+      },
+      "team": {
+        "label": "Team",
+        "hint": "Team members & roles"
+      }
+    }
+  },
+  "common": {
+    "comingSoon": "Coming soon",
+    "close": "Close",
+    "cancel": "Cancel",
+    "saving": "Saving…",
+    "saveChanges": "Save changes",
+    "loading": "Loading…",
+    "search": "Search…",
+    "show": "Show",
+    "hide": "Hide",
+    "optional": "Optional",
+    "notificationsToggle": {
+      "label": "Email notifications",
+      "description": "Low-stock alerts and the weekly summary.",
+      "saveError": "Could not save the preference."
+    },
+    "reviews": {
+      "loading": "Loading reviews…",
+      "loadError": "Could not load reviews.",
+      "empty": "No reviews yet. Verified buyers can rate this product after a confirmed purchase.",
+      "outOf5": "{value} out of 5",
+      "rating": "rating",
+      "ratings": "ratings",
+      "verified": "{count} verified",
+      "customer": "Customer"
+    },
+    "comboSelect": {
+      "placeholder": "Select…",
+      "empty": "Nothing to choose from."
+    },
+    "imageUpload": {
+      "failed": "Upload failed.",
+      "uploading": "Uploading…",
+      "replace": "Replace",
+      "upload": "Upload",
+      "remove": "Remove"
+    },
+    "picker": {
+      "loadError": "Could not load results.",
+      "noMatches": "No matches."
+    },
+    "contactChanges": {
+      "title": "Activity & history",
+      "empty": "No changes recorded yet.",
+      "loadError": "Could not load history."
+    },
+    "contactField": {
+      "name": "Name",
+      "contactName": "Contact person",
+      "phone": "Phone",
+      "email": "Email",
+      "address": "Address",
+      "city": "City",
+      "state": "State",
+      "stateCode": "State code",
+      "pinCode": "PIN code",
+      "panNumber": "PAN",
+      "gstin": "GSTIN",
+      "isActive": "Active"
+    },
+    "contactEditor": {
+      "nameRequired": "Enter the {name}.",
+      "saveFailed": "Save failed.",
+      "stateNotSet": "Not set",
+      "addContact": "Add {name}"
+    },
+    "ledger": {
+      "empty": "No ledger activity yet.",
+      "balance": "Bal"
+    },
+    "cta": {
+      "actionLabel": "CTA action",
+      "targetLabel": "Target",
+      "kind": {
+        "none": "No action",
+        "category": "Open category",
+        "product": "Open product",
+        "collection": "Open collection",
+        "url": "External URL"
+      },
+      "hint": {
+        "none": "Tapping the slide does nothing.",
+        "category": "Category slug, e.g. \"kurta-sets\".",
+        "product": "Numeric product id.",
+        "collection": "Collection slug, e.g. \"festive-edit\".",
+        "url": "Full https:// URL."
+      }
+    },
+    "colorField": {
+      "swatchLabel": "{label} swatch"
+    }
   }
 }

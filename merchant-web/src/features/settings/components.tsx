@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { ChevronRight, type LucideIcon } from "lucide-react";
 import { useAuth } from "@/features/auth/auth-context";
 
@@ -16,9 +17,10 @@ export function Eyebrow({ children }: { children: React.ReactNode }) {
 
 /** Small muted pill — e.g. "Coming soon". */
 export function ComingSoon() {
+  const t = useTranslations("common");
   return (
     <span className="rounded-full bg-hero-panel px-sm py-px text-label-md uppercase tracking-wide text-muted">
-      Coming soon
+      {t("comingSoon")}
     </span>
   );
 }
@@ -144,6 +146,7 @@ export function NotificationsToggle({
 }: {
   icon: LucideIcon;
 }) {
+  const t = useTranslations("common");
   const { user, updateProfile } = useAuth();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -156,7 +159,7 @@ export function NotificationsToggle({
     try {
       await updateProfile({ emailNotifications: !value });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not save the preference.");
+      setError(e instanceof Error ? e.message : t("notificationsToggle.saveError"));
     } finally {
       setSaving(false);
     }
@@ -168,16 +171,16 @@ export function NotificationsToggle({
         <Icon size={18} />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-body-md text-ink">Email notifications</p>
+        <p className="text-body-md text-ink">{t("notificationsToggle.label")}</p>
         <p className="text-body-sm text-muted">
-          {error ?? "Low-stock alerts and the weekly summary."}
+          {error ?? t("notificationsToggle.description")}
         </p>
       </div>
       <Toggle
         checked={value}
         disabled={saving}
         onChange={toggle}
-        label="Email notifications"
+        label={t("notificationsToggle.label")}
       />
     </div>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Search, X } from "lucide-react";
 
 /** What each result row renders — derived from the picked entity. */
@@ -29,6 +30,7 @@ export function PickerModal<T extends { id: number }>({
   onClose: () => void;
   emptyHint?: string;
 }) {
+  const t = useTranslations("common");
   const [input, setInput] = useState("");
   const [query, setQuery] = useState("");
   const [rows, setRows] = useState<T[]>([]);
@@ -50,7 +52,7 @@ export function PickerModal<T extends { id: number }>({
         setRows(result);
         setError(null);
       } catch (e) {
-        if (active) setError(e instanceof Error ? e.message : "Could not load results.");
+        if (active) setError(e instanceof Error ? e.message : t("picker.loadError"));
       } finally {
         if (active) setLoading(false);
       }
@@ -58,7 +60,7 @@ export function PickerModal<T extends { id: number }>({
     return () => {
       active = false;
     };
-  }, [query, load]);
+  }, [query, load, t]);
 
   return (
     <div
@@ -74,7 +76,7 @@ export function PickerModal<T extends { id: number }>({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t("close")}
             className="inline-flex size-8 items-center justify-center rounded-button text-muted transition-colors hover:bg-surface-tint hover:text-ink"
           >
             <X size={16} />
@@ -96,10 +98,10 @@ export function PickerModal<T extends { id: number }>({
           {error ? (
             <p className="rounded-md bg-error-soft px-md py-sm text-body-sm text-error">{error}</p>
           ) : loading ? (
-            <p className="py-xl text-center text-body-sm text-subtle">Loading…</p>
+            <p className="py-xl text-center text-body-sm text-subtle">{t("loading")}</p>
           ) : rows.length === 0 ? (
             <p className="py-xl text-center text-body-sm text-subtle">
-              {emptyHint ?? "No matches."}
+              {emptyHint ?? t("picker.noMatches")}
             </p>
           ) : (
             <ul>

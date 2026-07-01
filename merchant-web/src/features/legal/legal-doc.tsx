@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
 /**
  * Shared reading layout for the public legal pages (/legal/*). Centered reading
  * rail, hairline-separated sections, token-only. Content is supplied per page.
  */
-export function LegalDoc({
+export async function LegalDoc({
   title,
   updated,
   children,
@@ -14,6 +15,7 @@ export function LegalDoc({
   updated: string;
   children: React.ReactNode;
 }) {
+  const t = await getTranslations("legal");
   return (
     <main className="mx-auto max-w-content px-lg py-xxxl">
       <Link
@@ -23,7 +25,7 @@ export function LegalDoc({
         <ArrowLeft size={16} /> ShopXY
       </Link>
       <h1 className="mt-md text-headline-md text-ink">{title}</h1>
-      <p className="mt-xs text-body-sm text-subtle">Last updated {updated}</p>
+      <p className="mt-xs text-body-sm text-subtle">{t("doc.lastUpdated", { date: updated })}</p>
       <div className="mt-xl flex flex-col gap-xl">{children}</div>
     </main>
   );

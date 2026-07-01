@@ -7,12 +7,14 @@ import { z } from "zod";
  * party/vendor `linkedUserId`.
  */
 
-export const INVITE_STATUS_META: Record<string, { label: string; classes: string }> = {
-  PENDING: { label: "Invited", classes: "bg-accent-amber-soft text-accent-amber" },
-  ACCEPTED: { label: "Linked", classes: "bg-success-soft text-success" },
-  DECLINED: { label: "Declined", classes: "bg-surface-tint text-muted" },
-  CANCELLED: { label: "Cancelled", classes: "bg-surface-tint text-muted" },
-  EXPIRED: { label: "Expired", classes: "bg-error-soft text-error" },
+// `labelKey` is a stable message-catalog key (notifications.status.<key>);
+// the display label is resolved at the point of use via useTranslations.
+export const INVITE_STATUS_META: Record<string, { labelKey: string; classes: string }> = {
+  PENDING: { labelKey: "invited", classes: "bg-accent-amber-soft text-accent-amber" },
+  ACCEPTED: { labelKey: "linked", classes: "bg-success-soft text-success" },
+  DECLINED: { labelKey: "declined", classes: "bg-surface-tint text-muted" },
+  CANCELLED: { labelKey: "cancelled", classes: "bg-surface-tint text-muted" },
+  EXPIRED: { labelKey: "expired", classes: "bg-error-soft text-error" },
 };
 
 export const invitationSchema = z

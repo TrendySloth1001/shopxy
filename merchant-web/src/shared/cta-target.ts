@@ -8,26 +8,29 @@
 
 export type CtaKind = "none" | "category" | "product" | "collection" | "url";
 
-export const CTA_KIND_OPTIONS: ReadonlyArray<{ value: CtaKind; label: string }> = [
-  { value: "none", label: "No action" },
-  { value: "category", label: "Open category" },
-  { value: "product", label: "Open product" },
-  { value: "collection", label: "Open collection" },
-  { value: "url", label: "External URL" },
+/** Selectable CTA kinds with the message-catalog key (under "common") for each
+ *  option's label. The field translates `labelKey` at the point of use. */
+export const CTA_KIND_OPTIONS: ReadonlyArray<{ value: CtaKind; labelKey: string }> = [
+  { value: "none", labelKey: "cta.kind.none" },
+  { value: "category", labelKey: "cta.kind.category" },
+  { value: "product", labelKey: "cta.kind.product" },
+  { value: "collection", labelKey: "cta.kind.collection" },
+  { value: "url", labelKey: "cta.kind.url" },
 ];
 
-export function ctaHint(kind: CtaKind): string {
+/** Message-catalog key (under "common") for the helper hint of a CTA kind. */
+export function ctaHintKey(kind: CtaKind): string {
   switch (kind) {
     case "none":
-      return "Tapping the slide does nothing.";
+      return "cta.hint.none";
     case "category":
-      return 'Category slug, e.g. "kurta-sets".';
+      return "cta.hint.category";
     case "product":
-      return "Numeric product id.";
+      return "cta.hint.product";
     case "collection":
-      return 'Collection slug, e.g. "festive-edit".';
+      return "cta.hint.collection";
     case "url":
-      return "Full https:// URL.";
+      return "cta.hint.url";
   }
 }
 

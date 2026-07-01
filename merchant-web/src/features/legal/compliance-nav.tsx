@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { SECTIONS } from "./compliance-content";
 
 const BASE = "/legal/compliance";
 
 const ITEMS = [
-  { href: BASE, label: "Overview" },
-  ...SECTIONS.map((s) => ({ href: `${BASE}/${s.id}`, label: s.nav })),
+  { href: BASE, labelKey: "compliance.overview.nav" },
+  ...SECTIONS.map((s) => ({ href: `${BASE}/${s.id}`, labelKey: `compliance.${s.key}.nav` })),
 ];
 
 /**
@@ -18,11 +19,12 @@ const ITEMS = [
  */
 export function ComplianceNav() {
   const pathname = usePathname();
+  const t = useTranslations("legal");
 
   return (
-    <nav aria-label="Compliance topics" className="flex flex-col gap-sm">
+    <nav aria-label={t("compliance.nav.ariaLabel")} className="flex flex-col gap-sm">
       <p className="hidden text-label-md uppercase tracking-wide text-subtle lg:block">
-        On this site
+        {t("compliance.nav.onThisSite")}
       </p>
       <div className="-mx-lg flex gap-xs overflow-x-auto px-lg pb-sm lg:mx-0 lg:flex-col lg:gap-px lg:overflow-visible lg:px-0 lg:pb-0">
         {ITEMS.map((item) => {
@@ -38,7 +40,7 @@ export function ComplianceNav() {
                   : "text-muted hover:text-ink"
               }`}
             >
-              {item.label}
+              {t(item.labelKey)}
             </Link>
           );
         })}

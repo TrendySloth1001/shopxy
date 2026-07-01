@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   BadgeCheck,
   CalendarDays,
@@ -23,12 +24,7 @@ import { SettingRow } from "@/features/settings/components";
 import type { AuthUser } from "@/features/auth/types";
 import { CardsSkeleton } from "@/shared/ui/skeleton";
 
-const SHOP_ROLE_LABELS: Record<string, string> = {
-  OWNER: "Owner",
-  MANAGER: "Manager",
-  STOCKIST: "Stockist",
-  CASHIER: "Cashier",
-};
+const SHOP_ROLES = ["OWNER", "MANAGER", "STOCKIST", "CASHIER"] as const;
 
 function memberSince(iso?: string): string | null {
   if (!iso) return null;
@@ -39,6 +35,7 @@ function memberSince(iso?: string): string | null {
 
 export default function ProfilePage() {
   const { user } = useAuth();
+  const t = useTranslations("auth");
   const [editing, setEditing] = useState(false);
 
   if (!user) {
@@ -49,16 +46,19 @@ export default function ProfilePage() {
     );
   }
 
-  const roleLabel = SHOP_ROLE_LABELS[user.shopRole ?? "OWNER"] ?? "Staff";
-  const isOwner = (user.shopRole ?? "OWNER") === "OWNER";
+  const shopRole = user.shopRole ?? "OWNER";
+  const roleLabel = (SHOP_ROLES as readonly string[]).includes(shopRole)
+    ? t(`role.${shopRole}`)
+    : t("role.STAFF");
+  const isOwner = shopRole === "OWNER";
   const since = memberSince(user.createdAt);
   const completion = profileCompletion(user);
 
   return (
     <div className="w-full px-lg py-xxl md:px-xxl">
-      <h1 className="text-headline-md text-ink">Profile</h1>
+      <h1 className="text-headline-md text-ink">{t("profilePage.title")}</h1>
       <p className="mt-xs text-body-md text-muted">
-        Your identity and shop details — these appear on your invoices.
+        {t("profilePage.subtitle")}
       </p>
 
       <div className="mt-xl flex flex-col gap-xl lg:flex-row lg:items-start lg:gap-xxl">
@@ -86,7 +86,7 @@ export default function ProfilePage() {
               </span>
               {since ? (
                 <span className="inline-flex items-center gap-xs rounded-full bg-surface px-sm py-px text-body-sm text-muted">
-                  <CalendarDays size={13} /> Since {since}
+                  <CalendarDays size={13} /> {t("profilePage.since", { date: since })}
                 </span>
               ) : null}
             </div>
@@ -107,12 +107,12 @@ export default function ProfilePage() {
           {/* Jump to related shop settings */}
           <div className="rounded-lg border border-hairline p-sm">
             <p className="px-sm pb-xs pt-sm text-label-md uppercase tracking-wide text-subtle">
-              Manage
+              {t("profilePage.manage")}
             </p>
-            <SettingRow icon={Store} title="Shop" subtitle="Storefront & policies" href="/dashboard/shop" />
-            <SettingRow icon={Users} title="Team" subtitle="Staff & permissions" href="/dashboard/team" />
-            <SettingRow icon={Wallet} title="Payouts" subtitle="Bank & KYC" href="/dashboard/payouts" />
-            <SettingRow icon={ShieldCheck} title="Security" subtitle="Password & sign-in" href="/dashboard/settings" />
+            <SettingRow icon={Store} title={t("profilePage.shopTitle")} subtitle={t("profilePage.shopSubtitle")} href="/dashboard/shop" />
+            <SettingRow icon={Users} title={t("profilePage.teamTitle")} subtitle={t("profilePage.teamSubtitle")} href="/dashboard/team" />
+            <SettingRow icon={Wallet} title={t("profilePage.payoutsTitle")} subtitle={t("profilePage.payoutsSubtitle")} href="/dashboard/payouts" />
+            <SettingRow icon={ShieldCheck} title={t("profilePage.securityTitle")} subtitle={t("profilePage.securitySubtitle")} href="/dashboard/settings" />
           </div>
         </aside>
 
@@ -120,9 +120,9 @@ export default function ProfilePage() {
         <section className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-md border-b border-hairline pb-md">
             <div>
-              <h2 className="text-title-md text-ink">Profile details</h2>
+              <h2 className="text-title-md text-ink">{t("profilePage.detailsTitle")}</h2>
               <p className="mt-xs text-body-sm text-muted">
-                Name, photo and shop details used across the app and on invoices.
+                {t("profilePage.detailsSubtitle")}
               </p>
             </div>
             {!editing ? (
@@ -131,7 +131,7 @@ export default function ProfilePage() {
                 onClick={() => setEditing(true)}
                 className="inline-flex h-10 shrink-0 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
               >
-                <Pencil size={16} /> Edit profile
+                <Pencil size={16} /> {t("profilePage.editProfile")}
               </button>
             ) : (
               <button
@@ -139,7 +139,7 @@ export default function ProfilePage() {
                 onClick={() => setEditing(false)}
                 className="inline-flex h-10 shrink-0 items-center gap-sm rounded-button px-md text-label-md text-muted transition-colors hover:text-ink"
               >
-                <X size={16} /> Cancel
+                <X size={16} /> {t("common.cancel")}
               </button>
             )}
           </div>
@@ -174,13 +174,14 @@ function CompletionBar({
   editing: boolean;
   onComplete: () => void;
 }) {
+  const t = useTranslations("auth");
   return (
     <div className="rounded-lg border border-hairline p-lg">
       <div className="flex items-end justify-between gap-md">
         <div>
-          <p className="text-title-sm text-ink">Profile {percent}% complete</p>
+          <p className="text-title-sm text-ink">{t("completion.title", { percent })}</p>
           <p className="mt-xs text-body-sm text-muted">
-            {filled} of {total} details added.
+            {t("completion.detailsAdded", { filled, total })}
           </p>
         </div>
         {!editing ? (
@@ -189,7 +190,7 @@ function CompletionBar({
             onClick={onComplete}
             className="inline-flex h-9 shrink-0 items-center rounded-button bg-brand px-md text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
           >
-            Complete it
+            {t("completion.completeIt")}
           </button>
         ) : null}
       </div>
@@ -207,14 +208,14 @@ function CompletionBar({
       </div>
       {missing.length > 0 ? (
         <div className="mt-md">
-          <p className="text-label-md uppercase tracking-wide text-subtle">What’s left</p>
+          <p className="text-label-md uppercase tracking-wide text-subtle">{t("completion.whatsLeft")}</p>
           <div className="mt-sm flex flex-wrap gap-sm">
             {missing.map((m) => (
               <span
                 key={m}
                 className="inline-flex items-center rounded-full bg-surface-tint px-sm py-px text-body-sm text-muted"
               >
-                {m}
+                {t(`field.${m}`)}
               </span>
             ))}
           </div>
@@ -224,66 +225,79 @@ function CompletionBar({
   );
 }
 
-type DetailRow = { label: string; value: string | null | undefined };
+type DetailRow = { key: string; label: string; value: string | null | undefined };
 
 function ReadOnlyDetails({ user }: { user: AuthUser }) {
+  const t = useTranslations("auth");
   const address = [user.shopAddress, user.shopCity, user.shopState, user.shopPinCode]
     .map((p) => p?.trim())
     .filter(Boolean)
     .join(", ");
 
-  const sections: { title: string; icon: LucideIcon; rows: DetailRow[] }[] = [
+  const regTypeValue =
+    user.registrationType && (["REGULAR", "COMPOSITION", "UNREGISTERED"] as const).includes(
+      user.registrationType as "REGULAR" | "COMPOSITION" | "UNREGISTERED",
+    )
+      ? t(`regType.${user.registrationType}`)
+      : null;
+
+  const sections: { key: string; title: string; icon: LucideIcon; rows: DetailRow[] }[] = [
     {
-      title: "Personal",
+      key: "personal",
+      title: t("details.personal"),
       icon: User,
       rows: [
-        { label: "Name", value: user.name },
-        { label: "Phone", value: user.phoneNumber },
-        { label: "Email", value: user.email },
+        { key: "name", label: t("field.name"), value: user.name },
+        { key: "phone", label: t("field.phone"), value: user.phoneNumber },
+        { key: "email", label: t("field.email"), value: user.email },
       ],
     },
     {
-      title: "Shop",
+      key: "shop",
+      title: t("details.shop"),
       icon: Store,
       rows: [
-        { label: "Shop name", value: user.shopName },
-        { label: "Address", value: address || null },
-        { label: "State code", value: user.shopStateCode },
+        { key: "shopName", label: t("field.shopName"), value: user.shopName },
+        { key: "address", label: t("field.address"), value: address || null },
+        { key: "stateCode", label: t("field.stateCode"), value: user.shopStateCode },
       ],
     },
     {
-      title: "Tax & registration",
+      key: "tax",
+      title: t("details.tax"),
       icon: ReceiptText,
       rows: [
         {
-          label: "GST registration",
-          value: user.registrationType ? title(user.registrationType) : null,
+          key: "gstRegistration",
+          label: t("field.gstRegistration"),
+          value: regTypeValue,
         },
-        { label: "GSTIN", value: user.shopGstin },
-        { label: "PAN", value: user.shopPan },
+        { key: "gstin", label: t("field.gstin"), value: user.shopGstin },
+        { key: "pan", label: t("field.pan"), value: user.shopPan },
       ],
     },
     {
-      title: "Payment",
+      key: "payment",
+      title: t("details.payment"),
       icon: CreditCard,
-      rows: [{ label: "UPI ID", value: user.upiVpa }],
+      rows: [{ key: "upiId", label: t("field.upiId"), value: user.upiVpa }],
     },
   ];
 
   return (
     <div className="space-y-xxl">
       {sections.map((section) => (
-        <section key={section.title}>
+        <section key={section.key}>
           <div className="flex items-center gap-sm">
             <section.icon size={16} className="shrink-0 text-subtle" />
             <h3 className="text-label-md uppercase tracking-wide text-subtle">{section.title}</h3>
           </div>
           <dl className="mt-md grid gap-x-xxl gap-y-md sm:grid-cols-2 xl:grid-cols-3">
             {section.rows.map((row) => (
-              <div key={row.label} className="flex flex-col gap-px border-b border-hairline pb-sm">
+              <div key={row.key} className="flex flex-col gap-px border-b border-hairline pb-sm">
                 <dt className="text-label-md text-subtle">{row.label}</dt>
                 <dd className={row.value ? "text-body-md text-ink" : "text-body-md text-subtle"}>
-                  {row.value || "Not set"}
+                  {row.value || t("common.notSet")}
                 </dd>
               </div>
             ))}
@@ -292,8 +306,4 @@ function ReadOnlyDetails({ user }: { user: AuthUser }) {
       ))}
     </div>
   );
-}
-
-function title(s: string): string {
-  return s.charAt(0) + s.slice(1).toLowerCase();
 }

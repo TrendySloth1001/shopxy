@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useTranslations } from "next-intl";
 import { X } from "lucide-react";
 
 /**
@@ -19,6 +20,7 @@ export function Modal({
   children: React.ReactNode;
   wide?: boolean;
 }) {
+  const t = useTranslations("common");
   // Keep the latest onClose without re-running the mount effect each render.
   const onCloseRef = useRef(onClose);
   useEffect(() => {
@@ -57,7 +59,7 @@ export function Modal({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t("close")}
             className="-mr-xs inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-button text-muted transition-colors hover:bg-surface-tint hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
           >
             <X size={18} />
@@ -84,6 +86,7 @@ export function ModalActions({
   onConfirm: () => void;
   danger?: boolean;
 }) {
+  const t = useTranslations("common");
   return (
     <div className="mt-sm flex justify-end gap-md">
       <button
@@ -92,7 +95,7 @@ export function ModalActions({
         disabled={busy}
         className="inline-flex h-10 items-center rounded-button px-md text-label-md text-muted transition-colors hover:text-ink disabled:text-disabled"
       >
-        Cancel
+        {t("cancel")}
       </button>
       <button
         type="button"
@@ -104,7 +107,7 @@ export function ModalActions({
             : "bg-brand hover:bg-brand-strong focus-visible:ring-brand-soft"
         }`}
       >
-        {busy ? "Saving…" : confirmLabel}
+        {busy ? t("saving") : confirmLabel}
       </button>
     </div>
   );

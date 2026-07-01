@@ -7,6 +7,7 @@ import {
   type InputHTMLAttributes,
   type KeyboardEvent,
 } from "react";
+import { useTranslations } from "next-intl";
 
 type FieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, "id" | "type"> & {
   label: string;
@@ -38,6 +39,7 @@ export function Field({
   onBlur,
   ...inputProps
 }: FieldProps) {
+  const t = useTranslations("auth");
   const id = useId();
   const [revealed, setRevealed] = useState(false);
   const [capsLock, setCapsLock] = useState(false);
@@ -98,9 +100,9 @@ export function Field({
             type="button"
             onClick={() => setRevealed((v) => !v)}
             className="absolute inset-y-0 right-0 px-md text-label-md text-muted transition-colors hover:text-ink focus-visible:text-ink focus-visible:outline-none"
-            aria-label={revealed ? "Hide password" : "Show password"}
+            aria-label={revealed ? t("field.hidePassword") : t("field.showPassword")}
           >
-            {revealed ? "Hide" : "Show"}
+            {revealed ? t("field.hide") : t("field.show")}
           </button>
         ) : null}
       </div>
@@ -110,7 +112,7 @@ export function Field({
         </p>
       ) : showCapsWarning ? (
         <p id={`${id}-caps`} role="status" className="text-body-sm text-warning">
-          Caps Lock is on.
+          {t("field.capsLockOn")}
         </p>
       ) : helper ? (
         <p id={`${id}-helper`} className="text-body-sm text-subtle">

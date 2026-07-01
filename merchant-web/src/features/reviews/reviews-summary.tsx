@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { BadgeCheck } from "lucide-react";
 import { getReviewSummary } from "./api";
 import type { Review, ReviewSummary } from "./schema";
@@ -13,6 +14,7 @@ import { Stars } from "./stars";
  * reviews yet, so the section is always informative.
  */
 export function ReviewsSummary({ productId }: { productId: number }) {
+  const t = useTranslations("common");
   const [summary, setSummary] = useState<ReviewSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +27,7 @@ export function ReviewsSummary({ productId }: { productId: number }) {
         if (active) setSummary(s);
       } catch (e) {
         if (active)
-          setError(e instanceof Error ? e.message : "Could not load reviews.");
+          setError(e instanceof Error ? e.message : t("reviews.loadError"));
       } finally {
         if (active) setLoading(false);
       }
@@ -33,10 +35,10 @@ export function ReviewsSummary({ productId }: { productId: number }) {
     return () => {
       active = false;
     };
-  }, [productId]);
+  }, [productId, t]);
 
   if (loading) {
-    return <p className="text-body-sm text-muted">Loading reviews…</p>;
+    return <p className="text-body-sm text-muted">{t("reviews.loading")}</p>;
   }
   if (error) {
     return <p className="text-body-sm text-muted">{error}</p>;
@@ -46,8 +48,7 @@ export function ReviewsSummary({ productId }: { productId: number }) {
   if (!summary || count === 0) {
     return (
       <p className="text-body-md text-muted">
-        No reviews yet. Verified buyers can rate this product after a confirmed
-        purchase.
+        {t("reviews.empty")}
       </p>
     );
   }
@@ -66,12 +67,12 @@ export function ReviewsSummary({ productId }: { productId: number }) {
             </span>
             <span className="text-body-md text-muted">/ 5</span>
           </div>
-          <Stars value={avg} size={18} label={`${avg.toFixed(1)} out of 5`} />
+          <Stars value={avg} size={18} label={t("reviews.outOf5", { value: avg.toFixed(1) })} />
           <p className="text-body-sm text-muted">
-            {count} {count === 1 ? "rating" : "ratings"}
+            {count} {count === 1 ? t("reviews.rating") : t("reviews.ratings")}
             {summary.verifiedCount > 0 ? (
               <span className="ml-xs inline-flex items-center gap-px text-success">
-                · <BadgeCheck size={13} /> {summary.verifiedCount} verified
+                · <BadgeCheck size={13} /> {t("reviews.verified", { count: summary.verifiedCount })}
               </span>
             ) : null}
           </p>
@@ -115,11 +116,12 @@ export function ReviewsSummary({ productId }: { productId: number }) {
 }
 
 function ReviewRow({ review }: { review: Review }) {
-  const name = review.user?.name?.trim() || "Customer";
+  const t = useTranslations("common");
+  const name = review.user?.name?.trim() || t("reviews.customer");
   return (
     <li className="border-t border-hairline pt-md">
       <div className="flex flex-wrap items-center gap-sm">
-        <Stars value={review.rating} size={14} label={`${review.rating} out of 5`} />
+        <Stars value={review.rating} size={14} label={t("reviews.outOf5", { value: review.rating })} />
         {review.title ? (
           <span className="text-body-md text-ink">{review.title}</span>
         ) : null}

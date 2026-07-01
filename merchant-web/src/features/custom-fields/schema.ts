@@ -16,13 +16,17 @@ export const CUSTOM_FIELD_TYPES = [
 ] as const;
 export type CustomFieldType = (typeof CUSTOM_FIELD_TYPES)[number];
 
-export const CUSTOM_FIELD_TYPE_LABELS: Record<CustomFieldType, string> = {
-  TEXT: "Short text",
-  LONG_TEXT: "Long text",
-  NUMBER: "Number",
-  DATE: "Date",
-  BOOLEAN: "Yes / No",
-  DROPDOWN: "Dropdown",
+/**
+ * Stable i18n keys (under the "customFields" namespace) for each field type's
+ * display label. Translate at the point of use with `t(CUSTOM_FIELD_TYPE_LABEL_KEYS[type])`.
+ */
+export const CUSTOM_FIELD_TYPE_LABEL_KEYS: Record<CustomFieldType, string> = {
+  TEXT: "types.text",
+  LONG_TEXT: "types.longText",
+  NUMBER: "types.number",
+  DATE: "types.date",
+  BOOLEAN: "types.boolean",
+  DROPDOWN: "types.dropdown",
 };
 
 const arr = <T extends z.ZodTypeAny>(s: T) =>

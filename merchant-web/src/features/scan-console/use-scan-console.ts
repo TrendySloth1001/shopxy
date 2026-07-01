@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { clearConsole, requestTicket, wsBase } from "./api";
 import {
   scanEventSchema,
@@ -19,6 +20,7 @@ const MAX_BACKOFF_MS = 8_000;
  * drop, with capped exponential backoff.
  */
 export function useScanConsole() {
+  const t = useTranslations("scanConsole");
   const [rows, setRows] = useState<ConsoleRow[]>([]);
   const [status, setStatus] = useState<ConsoleStatus>("connecting");
   const [presence, setPresence] = useState<Presence>({ consoles: 0, scanners: 0 });
@@ -115,11 +117,11 @@ export function useScanConsole() {
       };
     } catch (e) {
       if (closedRef.current) return;
-      setError(e instanceof Error ? e.message : "Connection failed.");
+      setError(e instanceof Error ? e.message : t("errors.connectionFailed"));
       setStatus("reconnecting");
       scheduleReconnect();
     }
-  }, [upsert, scheduleReconnect]);
+  }, [upsert, scheduleReconnect, t]);
 
   useEffect(() => {
     connectRef.current = () => void connect();
@@ -145,9 +147,9 @@ export function useScanConsole() {
     try {
       await clearConsole();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not clear the console.");
+      setError(e instanceof Error ? e.message : t("errors.clearFailed"));
     }
-  }, []);
+  }, [t]);
 
   const totals = useMemo(() => {
     let qty = 0;

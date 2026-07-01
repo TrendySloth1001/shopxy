@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { getSection, SECTIONS } from "@/features/legal/compliance-content";
 import { ComplianceSectionBody } from "@/features/legal/compliance-section";
@@ -16,8 +17,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const section = getSection(slug);
+  if (!section) return { title: "Compliance · ShopXY" };
+  const t = await getTranslations("legal");
   return {
-    title: section ? `${section.nav} · Compliance · ShopXY` : "Compliance · ShopXY",
+    title: `${t(`compliance.${section.key}.nav`)} · Compliance · ShopXY`,
   };
 }
 
@@ -30,18 +33,19 @@ export default async function ComplianceTopicPage({
   const section = getSection(slug);
   if (!section) notFound();
 
+  const t = await getTranslations("legal");
   const idx = SECTIONS.findIndex((s) => s.id === slug);
   const prev = idx > 0 ? SECTIONS[idx - 1] : null;
   const next = idx < SECTIONS.length - 1 ? SECTIONS[idx + 1] : null;
 
   return (
     <article className="flex flex-col gap-xl">
-      <h2 className="font-display text-headline-sm text-ink">{section.heading}</h2>
+      <h2 className="font-display text-headline-sm text-ink">{t(`compliance.${section.key}.heading`)}</h2>
 
       <ComplianceSectionBody section={section} />
 
       <nav
-        aria-label="Topic pagination"
+        aria-label={t("compliance.pagination.ariaLabel")}
         className="flex items-center justify-between gap-md border-t border-hairline pt-lg"
       >
         {prev ? (
@@ -49,7 +53,7 @@ export default async function ComplianceTopicPage({
             href={`/legal/compliance/${prev.id}`}
             className="inline-flex items-center gap-xs text-label-md text-muted transition-colors hover:text-ink"
           >
-            <ArrowLeft size={16} /> {prev.nav}
+            <ArrowLeft size={16} /> {t(`compliance.${prev.key}.nav`)}
           </Link>
         ) : (
           <span />
@@ -59,7 +63,7 @@ export default async function ComplianceTopicPage({
             href={`/legal/compliance/${next.id}`}
             className="inline-flex items-center gap-xs text-label-md text-muted transition-colors hover:text-ink"
           >
-            {next.nav} <ArrowRight size={16} />
+            {t(`compliance.${next.key}.nav`)} <ArrowRight size={16} />
           </Link>
         ) : (
           <span />

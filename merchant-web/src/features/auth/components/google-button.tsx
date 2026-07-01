@@ -1,3 +1,7 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 /**
  * "Continue with Google" button. The 4-colour Google "G" is a third-party brand
  * asset, so its fills are the official hex values (NOT house tokens — logos are
@@ -9,13 +13,14 @@
  * returns a "coming soon" notice instead of a dead link (see PENDING.md).
  */
 export function GoogleButton() {
+  const t = useTranslations("auth");
   return (
     <a
       href="/api/auth/google"
       className="inline-flex h-12 w-full items-center justify-center gap-sm rounded-full border border-hairline bg-surface text-label-lg text-ink transition-colors hover:border-brand hover:text-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
     >
       <GoogleLogo />
-      Continue with Google
+      {t("login.continueWithGoogle")}
     </a>
   );
 }

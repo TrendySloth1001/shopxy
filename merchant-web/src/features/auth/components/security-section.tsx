@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useAuth } from "../auth-context";
 import { changePasswordSchema } from "../schema";
 import { Field } from "./field";
@@ -15,6 +16,7 @@ import { Banner } from "./banner";
 export function SecuritySection() {
   const { changePassword, logoutEverywhere } = useAuth();
   const router = useRouter();
+  const t = useTranslations("auth");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -50,7 +52,7 @@ export function SecuritySection() {
       await changePassword(parsed.data.currentPassword, parsed.data.newPassword);
       router.replace("/login?reason=password-changed");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not change your password.");
+      setError(err instanceof Error ? err.message : t("security.changeFailed"));
       setSubmitting(false);
     }
   }
@@ -70,7 +72,7 @@ export function SecuritySection() {
       <form onSubmit={onChangePassword} noValidate className="flex flex-col gap-lg">
         {error ? <Banner variant="error" message={error} /> : null}
         <Field
-          label="Current password"
+          label={t("security.currentPassword")}
           autoComplete="current-password"
           toggleable
           value={currentPassword}
@@ -78,16 +80,16 @@ export function SecuritySection() {
           error={fieldErrors.currentPassword}
         />
         <Field
-          label="New password"
+          label={t("security.newPassword")}
           autoComplete="new-password"
           toggleable
-          helper="At least 8 characters, with a letter and a number."
+          helper={t("field.passwordHelper")}
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
           error={fieldErrors.newPassword}
         />
         <Field
-          label="Confirm new password"
+          label={t("security.confirmNewPassword")}
           autoComplete="new-password"
           toggleable
           value={confirmPassword}
@@ -95,17 +97,17 @@ export function SecuritySection() {
           error={fieldErrors.confirmPassword}
         />
         <p className="text-body-sm text-subtle">
-          Changing your password signs you out of every device.
+          {t("security.changeSignsOutNote")}
         </p>
         <div>
-          <SubmitButton loading={submitting}>Change password</SubmitButton>
+          <SubmitButton loading={submitting}>{t("security.changePassword")}</SubmitButton>
         </div>
       </form>
 
       <div className="flex flex-col gap-sm">
-        <p className="text-body-md text-ink">Sign out of all devices</p>
+        <p className="text-body-md text-ink">{t("security.signOutAllTitle")}</p>
         <p className="text-body-sm text-muted">
-          Revoke every active session, including this one.
+          {t("security.signOutAllDesc")}
         </p>
         <button
           type="button"
@@ -113,7 +115,7 @@ export function SecuritySection() {
           disabled={signingOut}
           className="mt-xs inline-flex h-11 w-fit items-center justify-center rounded-button border border-hairline px-lg text-label-md text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:text-disabled"
         >
-          {signingOut ? "Signing out…" : "Sign out everywhere"}
+          {signingOut ? t("security.signingOut") : t("security.signOutEverywhere")}
         </button>
       </div>
     </div>

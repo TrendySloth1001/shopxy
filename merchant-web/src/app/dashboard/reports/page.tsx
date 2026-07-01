@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { LineChart, Search, Package, Clock, ChevronRight, X } from "lucide-react";
 import { PageHeader } from "@/shared/ui/page-header";
 import { LineChart as TrendLineChart } from "@/shared/ui/charts";
@@ -36,13 +37,7 @@ import type {
 import { CalculatorSuite } from "@/features/reports/calculators";
 
 type Kind = "sales" | "purchases" | "gst" | "pnl" | "calculator";
-const TABS: { key: Kind; label: string }[] = [
-  { key: "sales", label: "Sales" },
-  { key: "purchases", label: "Purchases" },
-  { key: "gst", label: "GST" },
-  { key: "pnl", label: "P&L" },
-  { key: "calculator", label: "Calculator" },
-];
+const TABS: Kind[] = ["sales", "purchases", "gst", "pnl", "calculator"];
 
 type ReportData =
   | { kind: "sales"; data: SalesReport }
@@ -59,10 +54,11 @@ export default function ReportsPage() {
 }
 
 function ReportsContent() {
+  const t = useTranslations("reports");
   const searchParams = useSearchParams();
   const [kind, setKind] = useState<Kind>(() => {
-    const t = searchParams.get("tab");
-    return TABS.some((x) => x.key === t) ? (t as Kind) : "sales";
+    const tab = searchParams.get("tab");
+    return TABS.some((x) => x === tab) ? (tab as Kind) : "sales";
   });
   const quotationId = (() => {
     const n = Number(searchParams.get("quotation"));
@@ -105,7 +101,7 @@ function ReportsContent() {
         setError(null);
       } catch (e) {
         if (active) {
-          setError(e instanceof Error ? e.message : "Could not load the report.");
+          setError(e instanceof Error ? e.message : t("errors.report"));
           setReport(null);
         }
       } finally {
@@ -115,6 +111,7 @@ function ReportsContent() {
     return () => {
       active = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kind, range]);
 
   function preset(p: "month" | "30d" | "fy") {
@@ -127,22 +124,22 @@ function ReportsContent() {
       <PageHeader
         icon={LineChart}
         tone="teal"
-        title="Reports"
-        subtitle="Sales, purchases, GST and profit over a date range — from your confirmed invoices, returns and stock."
+        title={t("title")}
+        subtitle={t("subtitle")}
       />
 
       {/* Tabs */}
       <div className="mt-xl flex flex-wrap items-center gap-sm">
-        {TABS.map((t) => (
+        {TABS.map((tab) => (
           <button
-            key={t.key}
+            key={tab}
             type="button"
-            onClick={() => setKind(t.key)}
+            onClick={() => setKind(tab)}
             className={`inline-flex h-9 items-center rounded-button px-md text-label-md transition-colors ${
-              kind === t.key ? "bg-brand text-white" : "border border-hairline text-ink hover:bg-surface-tint"
+              kind === tab ? "bg-brand text-white" : "border border-hairline text-ink hover:bg-surface-tint"
             }`}
           >
-            {t.label}
+            {t(`tabs.${tab}`)}
           </button>
         ))}
       </div>
@@ -150,12 +147,12 @@ function ReportsContent() {
       {/* Range — not relevant to the calculator tool */}
       {kind !== "calculator" ? (
         <div className="mt-md flex flex-wrap items-end gap-md">
-          <DateField label="From" value={from} max={to} onChange={setFrom} />
-          <DateField label="To" value={to} min={from} max={todayInputDate()} onChange={setTo} />
+          <DateField label={t("range.from")} value={from} max={to} onChange={setFrom} />
+          <DateField label={t("range.to")} value={to} min={from} max={todayInputDate()} onChange={setTo} />
           <div className="flex flex-wrap items-center gap-xs">
-            <PresetChip label="This month" onClick={() => preset("month")} />
-            <PresetChip label="Last 30 days" onClick={() => preset("30d")} />
-            <PresetChip label="This FY" onClick={() => preset("fy")} />
+            <PresetChip label={t("range.thisMonth")} onClick={() => preset("month")} />
+            <PresetChip label={t("range.last30Days")} onClick={() => preset("30d")} />
+            <PresetChip label={t("range.thisFy")} onClick={() => preset("fy")} />
           </div>
         </div>
       ) : null}
@@ -279,7 +276,8 @@ function movingAverage(values: number[], window = 7): number[] {
  * as such so it isn't read as a promise.
  */
 function TrendChart({ points }: { points: { day: string; amount: number }[] }) {
-  if (points.length === 0) return <EmptyHint>No activity in this range.</EmptyHint>;
+  const t = useTranslations("reports");
+  if (points.length === 0) return <EmptyHint>{t("trend.noActivity")}</EmptyHint>;
   const values = points.map((p) => p.amount);
   const total = values.reduce((s, v) => s + v, 0);
   const perDay = points.length > 0 ? total / points.length : 0;
@@ -289,7 +287,7 @@ function TrendChart({ points }: { points: { day: string; amount: number }[] }) {
         points={points.map((p) => ({ label: labelDay(p.day), value: p.amount }))}
         overlay={points.length >= 4 ? movingAverage(values) : undefined}
         heightClass="h-40 sm:h-52"
-        ariaLabel="Daily trend"
+        ariaLabel={t("trend.ariaLabel")}
         formatValue={formatINR}
       />
       <div className="mt-xs flex justify-between text-body-sm text-subtle">
@@ -297,8 +295,8 @@ function TrendChart({ points }: { points: { day: string; amount: number }[] }) {
         <span>{labelDay(points[points.length - 1].day)}</span>
       </div>
       <p className="mt-sm text-body-sm text-muted">
-        ≈ {formatINR(perDay)}/day at this pace · ~{formatINR(perDay * 30)} over 30 days
-        {points.length >= 4 ? " · dashed line is the 7-day average" : ""}
+        {t("trend.pace", { perDay: formatINR(perDay), perMonth: formatINR(perDay * 30) })}
+        {points.length >= 4 ? t("trend.averageSuffix") : ""}
       </p>
     </section>
   );
@@ -365,33 +363,38 @@ function StatementRow({
 /* ---------- views ---------- */
 
 function SalesView({ r }: { r: SalesReport }) {
+  const t = useTranslations("reports");
   const maxProd = Math.max(...r.topProducts.map((p) => p.revenue), 0);
   const maxCust = Math.max(...r.topCustomers.map((c) => c.revenue), 0);
   return (
     <div className="flex flex-col gap-xxl">
       <BigStat
-        label="Total sales"
+        label={t("sales.total")}
         value={formatINR(r.summary.total)}
-        hint={`${r.summary.invoiceCount} confirmed invoices · ${formatINR(r.summary.taxAmount)} GST · net ${formatINR(r.summary.netRevenue)} after refunds`}
+        hint={t("sales.summaryHint", {
+          count: r.summary.invoiceCount,
+          gst: formatINR(r.summary.taxAmount),
+          net: formatINR(r.summary.netRevenue),
+        })}
       />
       <TrendChart points={r.daily.map((d) => ({ day: d.day, amount: d.revenue }))} />
       <section>
-        <SectionHeading>Top products</SectionHeading>
+        <SectionHeading>{t("sales.topProducts")}</SectionHeading>
         {r.topProducts.length === 0 ? (
-          <EmptyHint>No sales in this range.</EmptyHint>
+          <EmptyHint>{t("sales.noSales")}</EmptyHint>
         ) : (
           r.topProducts.map((p, i) => (
-            <LeaderRow key={i} name={p.productName ?? "Product"} sub={`${p.quantity} sold${p.productSku ? ` · ${p.productSku}` : ""}`} value={formatINR(p.revenue)} amount={p.revenue} max={maxProd} />
+            <LeaderRow key={i} name={p.productName ?? t("common.product")} sub={p.productSku ? t("sales.soldSubSku", { qty: p.quantity, sku: p.productSku }) : t("sales.soldSub", { qty: p.quantity })} value={formatINR(p.revenue)} amount={p.revenue} max={maxProd} />
           ))
         )}
       </section>
       <section>
-        <SectionHeading>Top customers</SectionHeading>
+        <SectionHeading>{t("sales.topCustomers")}</SectionHeading>
         {r.topCustomers.length === 0 ? (
-          <EmptyHint>No customers in this range.</EmptyHint>
+          <EmptyHint>{t("sales.noCustomers")}</EmptyHint>
         ) : (
           r.topCustomers.map((c, i) => (
-            <LeaderRow key={i} name={c.name ?? "Customer"} sub={`${c.invoices} ${c.invoices === 1 ? "invoice" : "invoices"}`} value={formatINR(c.revenue)} amount={c.revenue} max={maxCust} />
+            <LeaderRow key={i} name={c.name ?? t("common.customer")} sub={t("sales.customerInvoices", { count: c.invoices })} value={formatINR(c.revenue)} amount={c.revenue} max={maxCust} />
           ))
         )}
       </section>
@@ -400,33 +403,34 @@ function SalesView({ r }: { r: SalesReport }) {
 }
 
 function PurchasesView({ r }: { r: PurchasesReport }) {
+  const t = useTranslations("reports");
   const maxProd = Math.max(...r.topProducts.map((p) => p.spend), 0);
   const maxVend = Math.max(...r.topVendors.map((v) => v.spend), 0);
   return (
     <div className="flex flex-col gap-xxl">
       <BigStat
-        label="Total purchases"
+        label={t("purchases.total")}
         value={formatINR(r.summary.total)}
-        hint={`${r.summary.invoiceCount} confirmed bills · ${formatINR(r.summary.taxAmount)} GST`}
+        hint={t("purchases.summaryHint", { count: r.summary.invoiceCount, gst: formatINR(r.summary.taxAmount) })}
       />
       <TrendChart points={r.daily.map((d) => ({ day: d.day, amount: d.spend }))} />
       <section>
-        <SectionHeading>Top purchased products</SectionHeading>
+        <SectionHeading>{t("purchases.topProducts")}</SectionHeading>
         {r.topProducts.length === 0 ? (
-          <EmptyHint>No purchases in this range.</EmptyHint>
+          <EmptyHint>{t("purchases.noPurchases")}</EmptyHint>
         ) : (
           r.topProducts.map((p, i) => (
-            <LeaderRow key={i} name={p.productName ?? "Product"} sub={`${p.quantity} bought${p.productSku ? ` · ${p.productSku}` : ""}`} value={formatINR(p.spend)} amount={p.spend} max={maxProd} />
+            <LeaderRow key={i} name={p.productName ?? t("common.product")} sub={p.productSku ? t("purchases.boughtSubSku", { qty: p.quantity, sku: p.productSku }) : t("purchases.boughtSub", { qty: p.quantity })} value={formatINR(p.spend)} amount={p.spend} max={maxProd} />
           ))
         )}
       </section>
       <section>
-        <SectionHeading>Top vendors</SectionHeading>
+        <SectionHeading>{t("purchases.topVendors")}</SectionHeading>
         {r.topVendors.length === 0 ? (
-          <EmptyHint>No vendors in this range.</EmptyHint>
+          <EmptyHint>{t("purchases.noVendors")}</EmptyHint>
         ) : (
           r.topVendors.map((v, i) => (
-            <LeaderRow key={i} name={v.name ?? "Vendor"} sub={`${v.invoices} ${v.invoices === 1 ? "bill" : "bills"}`} value={formatINR(v.spend)} amount={v.spend} max={maxVend} />
+            <LeaderRow key={i} name={v.name ?? t("common.vendor")} sub={t("purchases.vendorBills", { count: v.invoices })} value={formatINR(v.spend)} amount={v.spend} max={maxVend} />
           ))
         )}
       </section>
@@ -435,6 +439,7 @@ function PurchasesView({ r }: { r: PurchasesReport }) {
 }
 
 function GstView({ r }: { r: GstReport }) {
+  const t = useTranslations("reports");
   const owes = r.netPayable >= 0;
   const head = r.byHead;
   const outputCess = r.outputCess ?? 0;
@@ -446,13 +451,13 @@ function GstView({ r }: { r: GstReport }) {
     <div className="flex flex-col gap-xxl">
       {/* Headline — three stats fill the width */}
       <div className="grid grid-cols-1 gap-xl sm:grid-cols-3">
-        <BigStat label="Output GST" value={formatINR(r.outputTax)} hint="Collected on sales" />
-        <BigStat label="Input GST (ITC)" value={formatINR(r.inputTax)} hint="Paid on purchases" />
+        <BigStat label={t("gst.outputGst")} value={formatINR(r.outputTax)} hint={t("gst.collectedOnSales")} />
+        <BigStat label={t("gst.inputGst")} value={formatINR(r.inputTax)} hint={t("gst.paidOnPurchases")} />
         <BigStat
-          label="Net GST payable"
+          label={t("gst.netPayable")}
           value={formatINR(Math.abs(r.netPayable))}
           tone={owes ? "error" : "success"}
-          hint={owes ? "You owe this to the tax authority" : "Input credit carried forward"}
+          hint={owes ? t("gst.owesHint") : t("gst.creditHint")}
         />
       </div>
 
@@ -460,25 +465,25 @@ function GstView({ r }: { r: GstReport }) {
           input credit. */}
       {head && hasGst ? (
         <section className="max-w-content">
-          <SectionHeading>Net payable by tax head</SectionHeading>
+          <SectionHeading>{t("gst.netByHead")}</SectionHeading>
           <div className="overflow-hidden rounded-md border border-hairline">
             <div className="hidden bg-surface-tint px-md py-sm sm:flex sm:items-center sm:gap-md">
-              <span className="flex-1 text-label-md uppercase tracking-wide text-muted">Head</span>
+              <span className="flex-1 text-label-md uppercase tracking-wide text-muted">{t("gst.headCol")}</span>
               <span className="w-24 text-right text-label-md uppercase tracking-wide text-muted">
-                Output
+                {t("gst.outputCol")}
               </span>
               <span className="w-24 text-right text-label-md uppercase tracking-wide text-muted">
-                Input (ITC)
+                {t("gst.inputCol")}
               </span>
               <span className="w-24 text-right text-label-md uppercase tracking-wide text-muted">
-                Net
+                {t("gst.netCol")}
               </span>
             </div>
-            <HeadRow label="IGST" sub="Inter-state" o={head.output.igst} i={head.input.igst} n={head.netPayable.igst} />
-            <HeadRow label="CGST" sub="Central" o={head.output.cgst} i={head.input.cgst} n={head.netPayable.cgst} />
-            <HeadRow label="SGST" sub="State" o={head.output.sgst} i={head.input.sgst} n={head.netPayable.sgst} />
+            <HeadRow label={t("gst.igst")} sub={t("gst.interState")} o={head.output.igst} i={head.input.igst} n={head.netPayable.igst} />
+            <HeadRow label={t("gst.cgst")} sub={t("gst.central")} o={head.output.cgst} i={head.input.cgst} n={head.netPayable.cgst} />
+            <HeadRow label={t("gst.sgst")} sub={t("gst.state")} o={head.output.sgst} i={head.input.sgst} n={head.netPayable.sgst} />
             <div className="flex flex-col gap-xs border-t border-hairline bg-surface-tint px-md py-sm sm:flex-row sm:items-center sm:gap-md">
-              <span className="text-label-md uppercase tracking-wide text-muted sm:flex-1">Total</span>
+              <span className="text-label-md uppercase tracking-wide text-muted sm:flex-1">{t("gst.total")}</span>
               <div className="flex items-center justify-between gap-sm sm:contents">
                 <span className="text-body-sm font-semibold tabular-nums text-ink sm:w-24 sm:text-right">
                   {formatINR(r.outputTax)}
@@ -493,33 +498,32 @@ function GstView({ r }: { r: GstReport }) {
             </div>
           </div>
           <p className="mt-md text-body-sm text-subtle">
-            CGST + SGST apply to in-state sales; IGST to inter-state. Net is each
-            head&apos;s output tax minus its own input credit.
+            {t("gst.headNote")}
           </p>
         </section>
       ) : null}
 
       {/* By rate — two columns fill the width */}
       <div className="grid grid-cols-1 gap-xxl lg:grid-cols-2">
-        <RateBreakdown title="Output GST by rate" rows={r.outputByRate} empty="No output GST in this range." />
-        <RateBreakdown title="Input GST by rate" rows={r.inputByRate} empty="No input GST in this range." />
+        <RateBreakdown title={t("gst.outputByRate")} rows={r.outputByRate} empty={t("gst.noOutput")} />
+        <RateBreakdown title={t("gst.inputByRate")} rows={r.inputByRate} empty={t("gst.noInput")} />
       </div>
 
       {/* Cess — only when there is any (separate ledger, not GST-creditable) */}
       {hasCess ? (
         <section className="max-w-form">
-          <SectionHeading>Cess</SectionHeading>
-          <TotalRow label="Output cess" value={formatINR(outputCess)} strong />
-          <TotalRow label="Input cess" value={`− ${formatINR(inputCess)}`} />
-          <TotalRow label="Net cess payable" value={formatINR(r.netCessPayable ?? 0)} strong big />
-          <p className="mt-sm text-body-sm text-subtle">Cess is set off only against cess, never against GST.</p>
+          <SectionHeading>{t("gst.cess")}</SectionHeading>
+          <TotalRow label={t("gst.outputCess")} value={formatINR(outputCess)} strong />
+          <TotalRow label={t("gst.inputCess")} value={`− ${formatINR(inputCess)}`} />
+          <TotalRow label={t("gst.netCess")} value={formatINR(r.netCessPayable ?? 0)} strong big />
+          <p className="mt-sm text-body-sm text-subtle">{t("gst.cessNote")}</p>
         </section>
       ) : null}
 
       {/* Returns note */}
       {returnedGst > 0 ? (
         <p className="text-body-sm text-subtle">
-          Output GST is shown net of {formatINR(returnedGst)} reversed on refunded returns in this period.
+          {t("gst.returnsNote", { amount: formatINR(returnedGst) })}
         </p>
       ) : null}
     </div>
@@ -564,6 +568,7 @@ function RateBreakdown({
   rows: { rate: number; taxable: number; tax: number }[];
   empty: string;
 }) {
+  const t = useTranslations("reports");
   const totalTaxable = rows.reduce((s, g) => s + g.taxable, 0);
   const totalTax = rows.reduce((s, g) => s + g.tax, 0);
   return (
@@ -574,12 +579,12 @@ function RateBreakdown({
       ) : (
         <div className="overflow-hidden rounded-md border border-hairline">
           <div className="flex items-center gap-md bg-surface-tint px-md py-sm">
-            <span className="w-14 text-label-md uppercase tracking-wide text-muted">Rate</span>
+            <span className="w-14 text-label-md uppercase tracking-wide text-muted">{t("gst.rateCol")}</span>
             <span className="flex-1 text-right text-label-md uppercase tracking-wide text-muted">
-              Taxable
+              {t("gst.taxableCol")}
             </span>
             <span className="w-28 text-right text-label-md uppercase tracking-wide text-muted">
-              GST
+              {t("gst.gstCol")}
             </span>
           </div>
           {rows.map((g, i) => (
@@ -601,7 +606,7 @@ function RateBreakdown({
             </div>
           ))}
           <div className="flex items-center gap-md border-t border-hairline bg-surface-tint px-md py-sm">
-            <span className="w-14 text-label-md uppercase tracking-wide text-muted">Total</span>
+            <span className="w-14 text-label-md uppercase tracking-wide text-muted">{t("gst.total")}</span>
             <span className="flex-1 text-right text-body-sm font-semibold tabular-nums text-ink">
               {formatINR(totalTaxable)}
             </span>
@@ -616,6 +621,7 @@ function RateBreakdown({
 }
 
 function PnlView({ r, range }: { r: PnlReport; range: Range }) {
+  const t = useTranslations("reports");
   // The headline figures are already netted (revenue net of returns, COGS net
   // of restocked returns). Add the netted-out parts back to show the gross
   // inputs each line is built from — that's the "proof" the table makes visible.
@@ -623,82 +629,80 @@ function PnlView({ r, range }: { r: PnlReport; range: Range }) {
   const returnedCogs = r.returnedCogs ?? 0;
   const grossSales = r.revenue + refunds;
   const grossCogs = r.cogs + returnedCogs;
+  const marginPct = (r.grossMargin * 100).toFixed(1);
   return (
     <div className="grid grid-cols-1 gap-xxxl lg:grid-cols-2 lg:gap-huge">
       {/* Left — the P&L statement and its proof. */}
       <div className="flex flex-col gap-xxl">
       <BigStat
-        label="Net profit"
+        label={t("pnl.netProfit")}
         value={formatINR(r.netProfit)}
         tone={r.netProfit >= 0 ? "success" : "error"}
-        hint={`Gross margin ${(r.grossMargin * 100).toFixed(1)}%`}
+        hint={t("pnl.grossMarginHint", { pct: marginPct })}
       />
       <section className="max-w-form">
-        <TotalRow label="Revenue" value={formatINR(r.revenue)} strong />
-        <TotalRow label="Cost of goods sold" value={`− ${formatINR(r.cogs)}`} />
-        <TotalRow label="Gross profit" value={formatINR(r.grossProfit)} strong />
-        <TotalRow label="Adjustment write-offs" value={`− ${formatINR(r.writeoffs)}`} />
-        <TotalRow label="Net profit" value={formatINR(r.netProfit)} strong big />
+        <TotalRow label={t("pnl.revenue")} value={formatINR(r.revenue)} strong />
+        <TotalRow label={t("pnl.cogs")} value={`− ${formatINR(r.cogs)}`} />
+        <TotalRow label={t("pnl.grossProfit")} value={formatINR(r.grossProfit)} strong />
+        <TotalRow label={t("pnl.writeoffs")} value={`− ${formatINR(r.writeoffs)}`} />
+        <TotalRow label={t("pnl.netProfit")} value={formatINR(r.netProfit)} strong big />
       </section>
 
       {/* Proof: every headline figure traced back to the documents it sums. */}
       <section className="max-w-content">
-        <SectionHeading>How this is calculated</SectionHeading>
+        <SectionHeading>{t("pnl.howCalculated")}</SectionHeading>
         <table className="w-full border-collapse">
           <caption className="sr-only">
-            P&amp;L derivation from confirmed invoices, returns and stock adjustments
+            {t("pnl.caption")}
           </caption>
           <tbody>
             <StatementRow
-              label="Confirmed sales"
-              basis="Taxable value (ex-GST) of confirmed sale invoices, less credit notes"
+              label={t("pnl.confirmedSales")}
+              basis={t("pnl.confirmedSalesBasis")}
               value={formatINR(grossSales)}
             />
             <StatementRow
-              label="Less: sales returns"
-              basis="Ex-GST value of refunded returns, pro-rated by returned quantity"
+              label={t("pnl.lessSalesReturns")}
+              basis={t("pnl.lessSalesReturnsBasis")}
               value={`− ${formatINR(refunds)}`}
             />
-            <StatementRow label="Revenue (A)" value={formatINR(r.revenue)} kind="subtotal" />
+            <StatementRow label={t("pnl.revenueA")} value={formatINR(r.revenue)} kind="subtotal" />
 
             <StatementRow
-              label="Goods sold, at cost"
-              basis="Stock cost layers consumed when each sale was confirmed"
+              label={t("pnl.goodsSoldCost")}
+              basis={t("pnl.goodsSoldCostBasis")}
               value={formatINR(grossCogs)}
             />
             <StatementRow
-              label="Less: returned goods restocked"
-              basis="Returned items put back into inventory at their consumed cost"
+              label={t("pnl.lessRestocked")}
+              basis={t("pnl.lessRestockedBasis")}
               value={`− ${formatINR(returnedCogs)}`}
             />
             <StatementRow
-              label="Cost of goods sold (B)"
+              label={t("pnl.cogsB")}
               value={formatINR(r.cogs)}
               kind="subtotal"
             />
 
             <StatementRow
-              label="Gross profit (A − B)"
+              label={t("pnl.grossProfitAB")}
               value={formatINR(r.grossProfit)}
               kind="subtotal"
             />
             <StatementRow
-              label="Less: stock write-offs"
-              basis="Damage, expiry and shrinkage stock adjustments dated in this range"
+              label={t("pnl.lessWriteoffs")}
+              basis={t("pnl.lessWriteoffsBasis")}
               value={`− ${formatINR(r.writeoffs)}`}
             />
             <StatementRow
-              label="Net profit (A − B − write-offs)"
+              label={t("pnl.netProfitFormula")}
               value={formatINR(r.netProfit)}
               kind="total"
             />
           </tbody>
         </table>
         <p className="mt-md text-body-sm text-subtle">
-          Gross margin {(r.grossMargin * 100).toFixed(1)}% = gross profit ÷ revenue.
-          Every figure is summed from confirmed invoices, refunded returns and
-          stock adjustments dated in this range; estimates and proformas are
-          excluded.
+          {t("pnl.proofNote", { pct: marginPct })}
         </p>
       </section>
       </div>
@@ -723,6 +727,7 @@ const TIMELINE_PAGE_SIZE = 15;
 const SEARCH_DEBOUNCE_MS = 220;
 
 function SoldProductsTable({ range }: { range: Range }) {
+  const t = useTranslations("reports");
   const [query, setQuery] = useState("");
   const [search, setSearch] = useState(""); // debounced value actually queried
   const [products, setProducts] = useState<SoldProduct[]>([]);
@@ -756,7 +761,7 @@ function SoldProductsTable({ range }: { range: Range }) {
         setPage(1);
       } catch (e) {
         if (!active) return;
-        setError(e instanceof Error ? e.message : "Could not load sold products.");
+        setError(e instanceof Error ? e.message : t("soldProducts.loadError"));
         setProducts([]);
         setTotal(0);
         setTotals({ salesCount: 0, totalQuantity: 0, totalAmount: 0 });
@@ -767,6 +772,7 @@ function SoldProductsTable({ range }: { range: Range }) {
     return () => {
       active = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [range, search]);
 
   async function loadMore() {
@@ -778,7 +784,7 @@ function SoldProductsTable({ range }: { range: Range }) {
       setTotal(res.pagination.total);
       setPage(next);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not load more sold products.");
+      setError(e instanceof Error ? e.message : t("soldProducts.loadMoreError"));
     } finally {
       setLoadingMore(false);
     }
@@ -790,10 +796,10 @@ function SoldProductsTable({ range }: { range: Range }) {
   return (
     <section>
       <div className="mb-md flex items-baseline justify-between gap-md">
-        <SectionHeading>Products sold</SectionHeading>
+        <SectionHeading>{t("soldProducts.title")}</SectionHeading>
         {!loading && total > 0 ? (
           <span className="shrink-0 text-body-sm tabular-nums text-subtle">
-            {products.length} of {total}
+            {t("soldProducts.countOf", { shown: products.length, total })}
           </span>
         ) : null}
       </div>
@@ -809,15 +815,15 @@ function SoldProductsTable({ range }: { range: Range }) {
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search by product or SKU…"
-          aria-label="Search sold products"
+          placeholder={t("soldProducts.searchPlaceholder")}
+          aria-label={t("soldProducts.searchAria")}
           className="h-10 w-full rounded-input border border-hairline bg-field pl-xxxl pr-huge text-body-md text-ink outline-none placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
         />
         {query ? (
           <button
             type="button"
             onClick={() => setQuery("")}
-            aria-label="Clear search"
+            aria-label={t("soldProducts.clearSearch")}
             className="absolute right-sm top-1/2 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-full text-subtle transition-colors hover:bg-surface-tint hover:text-ink"
           >
             <X size={14} />
@@ -832,8 +838,8 @@ function SoldProductsTable({ range }: { range: Range }) {
       ) : products.length === 0 ? (
         <EmptyHint>
           {searching
-            ? `No sold products match “${query.trim()}”.`
-            : "No products sold in this range."}
+            ? t("soldProducts.noMatch", { query: query.trim() })
+            : t("soldProducts.noneInRange")}
         </EmptyHint>
       ) : (
         <>
@@ -842,16 +848,16 @@ function SoldProductsTable({ range }: { range: Range }) {
                 each row reflows into a card so the labels would be noise. */}
             <div className="hidden bg-surface-tint px-md py-sm sm:flex sm:items-center sm:gap-md">
               <span className="flex-1 text-label-md uppercase tracking-wide text-muted">
-                Product
+                {t("soldProducts.productCol")}
               </span>
               <span className="w-20 text-right text-label-md uppercase tracking-wide text-muted">
-                Sales
+                {t("soldProducts.salesCol")}
               </span>
               <span className="w-20 text-right text-label-md uppercase tracking-wide text-muted">
-                Qty
+                {t("soldProducts.qtyCol")}
               </span>
               <span className="w-24 text-right text-label-md uppercase tracking-wide text-muted">
-                Amount
+                {t("soldProducts.amountCol")}
               </span>
             </div>
             {products.map((p) => (
@@ -868,11 +874,11 @@ function SoldProductsTable({ range }: { range: Range }) {
             {/* Grand-total footer — reflows the same way as the rows. */}
             <div className="flex flex-col gap-xs border-t border-hairline bg-surface-tint px-md py-sm sm:flex-row sm:items-center sm:gap-md">
               <span className="text-label-md uppercase tracking-wide text-muted sm:flex-1">
-                Total
+                {t("soldProducts.total")}
               </span>
               <div className="flex items-center justify-between gap-sm sm:contents">
                 <span className="text-body-sm font-semibold tabular-nums text-ink sm:w-20 sm:text-right">
-                  {totals.salesCount} {totals.salesCount === 1 ? "sale" : "sales"}
+                  {t("soldProducts.salesCount", { count: totals.salesCount })}
                 </span>
                 <span className="text-body-sm font-semibold tabular-nums text-ink sm:w-20 sm:text-right">
                   {fmtQty(totals.totalQuantity)}
@@ -890,11 +896,11 @@ function SoldProductsTable({ range }: { range: Range }) {
               disabled={loadingMore}
               className="mt-md inline-flex h-9 items-center rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:text-disabled"
             >
-              {loadingMore ? "Loading…" : `Load more (${total - products.length} left)`}
+              {loadingMore ? t("common.loading") : t("soldProducts.loadMore", { left: total - products.length })}
             </button>
           ) : (
             <p className="mt-md text-body-sm text-subtle">
-              All {total} {total === 1 ? "product" : "products"} shown.
+              {t("soldProducts.allShown", { total })}
             </p>
           )}
         </>
@@ -921,6 +927,7 @@ function ProductRow({
   expanded: boolean;
   onToggle: () => void;
 }) {
+  const t = useTranslations("reports");
   const tone = toneFor(product.productSku || product.productName || String(product.productId));
   const unit = product.unit ?? "";
   return (
@@ -944,7 +951,7 @@ function ProductRow({
           </span>
           <div className="min-w-0">
             <span className="block truncate text-body-md text-ink">
-              {product.productName ?? "Product"}
+              {product.productName ?? t("common.product")}
             </span>
             {product.productSku ? (
               <span className="block truncate text-body-sm text-subtle">{product.productSku}</span>
@@ -960,7 +967,7 @@ function ProductRow({
             <span
               className={`inline-flex items-center rounded-full px-sm py-px text-body-sm font-semibold tabular-nums ${countTone(product.salesCount)}`}
             >
-              {product.salesCount} {product.salesCount === 1 ? "sale" : "sales"}
+              {t("soldProducts.salesCount", { count: product.salesCount })}
             </span>
           </span>
           <span className="flex shrink-0 items-center sm:w-20 sm:justify-end">
@@ -985,6 +992,7 @@ function ProductRow({
  *  page at a time only once the row is expanded. Rendered as a light timeline
  *  (not a nested grid) with a sticky product total at the bottom. */
 function ProductTimeline({ range, product }: { range: Range; product: SoldProduct }) {
+  const t = useTranslations("reports");
   const productId = product.productId;
   const unit = product.unit ?? "";
   const [items, setItems] = useState<SoldItem[]>([]);
@@ -1007,7 +1015,7 @@ function ProductTimeline({ range, product }: { range: Range; product: SoldProduc
         setPage(1);
       } catch (e) {
         if (!active) return;
-        setError(e instanceof Error ? e.message : "Could not load the sale timeline.");
+        setError(e instanceof Error ? e.message : t("timeline.loadError"));
         setItems([]);
         setTotal(0);
       } finally {
@@ -1017,6 +1025,7 @@ function ProductTimeline({ range, product }: { range: Range; product: SoldProduc
     return () => {
       active = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [range, productId]);
 
   async function loadMore() {
@@ -1028,7 +1037,7 @@ function ProductTimeline({ range, product }: { range: Range; product: SoldProduc
       setTotal(res.pagination.total);
       setPage(next);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not load more sales.");
+      setError(e instanceof Error ? e.message : t("timeline.loadMoreError"));
     } finally {
       setLoadingMore(false);
     }
@@ -1043,7 +1052,7 @@ function ProductTimeline({ range, product }: { range: Range; product: SoldProduc
       ) : error ? (
         <p className="py-sm text-body-sm text-error">{error}</p>
       ) : items.length === 0 ? (
-        <p className="py-sm text-body-sm text-subtle">No sales found for this product.</p>
+        <p className="py-sm text-body-sm text-subtle">{t("timeline.noSales")}</p>
       ) : (
         <ol className="flex flex-col gap-xs">
           {items.map((ev, i) => {
@@ -1090,15 +1099,14 @@ function ProductTimeline({ range, product }: { range: Range; product: SoldProduc
           disabled={loadingMore}
           className="mt-sm inline-flex h-8 items-center rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:text-disabled"
         >
-          {loadingMore ? "Loading…" : `Load more (${total - items.length} left)`}
+          {loadingMore ? t("common.loading") : t("timeline.loadMore", { left: total - items.length })}
         </button>
       ) : null}
 
       {!loading && !error ? (
         <div className="mt-sm flex items-center justify-between gap-md border-t border-hairline pt-sm">
           <span className="text-label-md uppercase tracking-wide text-subtle">
-            Total · {product.salesCount} {product.salesCount === 1 ? "sale" : "sales"} ·{" "}
-            {fmtQty(product.totalQuantity)}
+            {t("timeline.totalLine", { count: product.salesCount, qty: fmtQty(product.totalQuantity) })}
             {unit ? ` ${unit}` : ""}
           </span>
           <span className="text-body-md font-bold tabular-nums text-ink">

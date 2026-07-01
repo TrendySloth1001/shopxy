@@ -21,24 +21,26 @@ const listSchema = z.object({
     .transform((v) => v ?? []),
 });
 
-/** Friendly labels for the tracked contact fields. */
-export const CONTACT_FIELD_LABELS: Record<string, string> = {
-  name: "Name",
-  contactName: "Contact person",
-  phone: "Phone",
-  email: "Email",
-  address: "Address",
-  city: "City",
-  state: "State",
-  stateCode: "State code",
-  pinCode: "PIN code",
-  panNumber: "PAN",
-  gstin: "GSTIN",
-  isActive: "Active",
+/** Message-catalog keys (under "common") for the tracked contact fields. */
+export const CONTACT_FIELD_KEYS: Record<string, string> = {
+  name: "contactField.name",
+  contactName: "contactField.contactName",
+  phone: "contactField.phone",
+  email: "contactField.email",
+  address: "contactField.address",
+  city: "contactField.city",
+  state: "contactField.state",
+  stateCode: "contactField.stateCode",
+  pinCode: "contactField.pinCode",
+  panNumber: "contactField.panNumber",
+  gstin: "contactField.gstin",
+  isActive: "contactField.isActive",
 };
 
-export function fieldLabel(field: string): string {
-  return CONTACT_FIELD_LABELS[field] ?? field;
+/** Message-catalog key for a tracked field, or null for an unknown field
+ *  (the caller then falls back to the raw field name). */
+export function contactFieldKey(field: string): string | null {
+  return CONTACT_FIELD_KEYS[field] ?? null;
 }
 
 export function listContactChanges(kind: "parties" | "vendors", id: number): Promise<ContactChange[]> {

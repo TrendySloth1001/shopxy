@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { wsBase } from "@/features/scan-console/api";
 import { requestPosTicket } from "./api";
 import { openRazorpayCheckout } from "@/shared/razorpay";
@@ -41,6 +42,7 @@ const CMD_TIMEOUT_MS = 12_000;
  * `snapshot` command. Server is the source of truth.
  */
 export function usePosSale() {
+  const t = useTranslations("pos");
   const [snapshot, setSnapshot] = useState<SaleSnapshot | null>(null);
   const [status, setStatus] = useState<ConnStatus>("connecting");
   const [error, setError] = useState<string | null>(null);
@@ -217,9 +219,9 @@ export function usePosSale() {
       setError(null);
       const r = await sendCmd(op, { saleId, ...args });
       if (r.ok) applySnapshot(r.data);
-      else setError(r.error === "offline" || r.error === "timeout" || r.error === "disconnected" ? "Reconnecting…" : r.error);
+      else setError(r.error === "offline" || r.error === "timeout" || r.error === "disconnected" ? t("errors.reconnecting") : r.error);
     },
-    [sendCmd, applySnapshot],
+    [sendCmd, applySnapshot, t],
   );
 
   const scan = useCallback(
@@ -234,7 +236,7 @@ export function usePosSale() {
       if (!r.ok) {
         outboxRef.current.push({ code: c, id, quantity: q });
         setPending(outboxRef.current.length);
-        setError("Offline — scan queued, will sync on reconnect.");
+        setError(t("errors.offlineScanQueued"));
         return;
       }
       if (unknownScanSchema.safeParse(r.data).success) {
@@ -243,7 +245,7 @@ export function usePosSale() {
         applySnapshot(r.data);
       }
     },
-    [sendCmd, applySnapshot],
+    [sendCmd, applySnapshot, t],
   );
 
   const addItem = useCallback((productId: number, quantity = 1) => runSnap("addItem", { productId, quantity }), [runSnap]);
@@ -275,10 +277,10 @@ export function usePosSale() {
       if ((r.detail as { code?: string } | undefined)?.code === "OVERRIDE_REQUIRED") {
         return { ok: false, overrideRequired: true };
       }
-      setError(r.error === "offline" || r.error === "timeout" || r.error === "disconnected" ? "Reconnecting…" : r.error);
+      setError(r.error === "offline" || r.error === "timeout" || r.error === "disconnected" ? t("errors.reconnecting") : r.error);
       return { ok: false, overrideRequired: false };
     },
-    [sendCmd, applySnapshot],
+    [sendCmd, applySnapshot, t],
   );
   const setLineDiscount = useCallback((productId: number, discount: number, override?: string) => runPrivileged("setLineDiscount", { productId, discount, override }), [runPrivileged]);
   const setHeaderDiscount = useCallback((discount: number, override?: string) => runPrivileged("setHeaderDiscount", { discount, override }), [runPrivileged]);
@@ -309,10 +311,10 @@ export function usePosSale() {
         const parsed = checkoutResultSchema.safeParse(r.data);
         if (parsed.success) setCheckout(parsed.data);
       } else {
-        setError(r.error === "offline" || r.error === "timeout" ? "Couldn't reach the till — please retry." : r.error);
+        setError(r.error === "offline" || r.error === "timeout" ? t("errors.couldNotReachTill") : r.error);
       }
     },
-    [sendCmd],
+    [sendCmd, t],
   );
 
   // Online tender: create an order, open Razorpay Checkout (UPI QR + cards), then
@@ -324,12 +326,12 @@ export function usePosSale() {
     setError(null);
     const r = await sendCmd("payOnline", { saleId });
     if (!r.ok) {
-      setError(r.error === "offline" || r.error === "timeout" ? "Couldn't reach the till — please retry." : r.error);
+      setError(r.error === "offline" || r.error === "timeout" ? t("errors.couldNotReachTill") : r.error);
       return;
     }
     const parsed = posPaySessionSchema.safeParse(r.data);
     if (!parsed.success) {
-      setError("Couldn't start the online payment. Please retry.");
+      setError(t("errors.couldNotStartOnline"));
       return;
     }
     onlineRef.current = parsed.data.amount;
@@ -346,17 +348,17 @@ export function usePosSale() {
         onlineRef.current = null;
         await sendCmd("cancelOnline", { saleId });
         void refresh();
-        if (result.outcome === "failed") setError(result.message ?? "Payment failed. Please retry.");
+        if (result.outcome === "failed") setError(result.message ?? t("errors.paymentFailed"));
       }
     } catch {
       onlineRef.current = null;
       await sendCmd("cancelOnline", { saleId });
       void refresh();
-      setError("Couldn't open Razorpay. Please retry.");
+      setError(t("errors.couldNotOpenRazorpay"));
     } finally {
       setPaying(false);
     }
-  }, [sendCmd, refresh]);
+  }, [sendCmd, refresh, t]);
 
   // Hold the current bill (park it) and start a fresh empty cart. The parked
   // sale stays OPEN and is recallable from `listOpen`.

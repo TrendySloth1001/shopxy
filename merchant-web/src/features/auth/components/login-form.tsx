@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useAuth } from "../auth-context";
 import { loginSchema } from "../schema";
 import { Field } from "./field";
@@ -13,6 +14,7 @@ import { GoogleButton } from "./google-button";
 export function LoginForm() {
   const { login, status } = useAuth();
   const router = useRouter();
+  const t = useTranslations("auth");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fieldErrors, setFieldErrors] = useState<{
@@ -42,7 +44,7 @@ export function LoginForm() {
       await login(parsed.data.email, parsed.data.password);
       router.replace("/dashboard");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Sign in failed.");
+      setError(err instanceof Error ? err.message : t("login.failed"));
     } finally {
       setSubmitting(false);
     }
@@ -53,12 +55,12 @@ export function LoginForm() {
       <GoogleButton />
       <div className="flex items-center gap-md text-label-sm text-subtle">
         <span className="h-px flex-1 bg-hairline" />
-        or continue with email
+        {t("login.orContinueWithEmail")}
         <span className="h-px flex-1 bg-hairline" />
       </div>
       {error ? <AuthErrorBanner message={error} /> : null}
       <Field
-        label="Email"
+        label={t("field.email")}
         type="email"
         name="email"
         autoComplete="email"
@@ -69,7 +71,7 @@ export function LoginForm() {
         error={fieldErrors.email}
       />
       <Field
-        label="Password"
+        label={t("field.password")}
         name="password"
         autoComplete="current-password"
         toggleable
@@ -77,37 +79,43 @@ export function LoginForm() {
         onChange={(e) => setPassword(e.target.value)}
         error={fieldErrors.password}
       />
-      <SubmitButton loading={submitting} pill>Sign in</SubmitButton>
+      <SubmitButton loading={submitting} pill>{t("login.submit")}</SubmitButton>
       {/* Pre-signin discoverability of the published policies — the DPDP notice
           and the user agreement must be accessible before/around collection,
           not only behind auth. (DPDP Act 2023 s.5; IT Intermediary Rules 2021
           r.3(1)(b)/(f).) */}
       <p className="text-center text-body-sm text-muted">
-        By signing in you agree to our{" "}
-        <Link href="/legal/terms" className="text-ink underline hover:text-brand">
-          Terms
-        </Link>{" "}
-        and acknowledge our{" "}
-        <Link href="/legal/privacy" className="text-ink underline hover:text-brand">
-          Privacy Policy
-        </Link>
-        . We use a strictly-necessary session cookie to keep you signed in.
+        {t.rich("login.legalConsent", {
+          terms: (chunks) => (
+            <Link href="/legal/terms" className="text-ink underline hover:text-brand">
+              {chunks}
+            </Link>
+          ),
+          privacy: (chunks) => (
+            <Link href="/legal/privacy" className="text-ink underline hover:text-brand">
+              {chunks}
+            </Link>
+          ),
+        })}
       </p>
       <p className="text-center text-body-sm text-subtle">
-        Trouble signing in?{" "}
-        <a
-          href="mailto:support@shopxy.app"
-          className="text-muted underline hover:text-brand"
-        >
-          Contact support
-        </a>
+        {t.rich("login.troubleSigningIn", {
+          support: (chunks) => (
+            <a
+              href="mailto:support@shopxy.app"
+              className="text-muted underline hover:text-brand"
+            >
+              {chunks}
+            </a>
+          ),
+        })}
       </p>
       <p className="text-center text-body-sm text-subtle">
         <Link
           href="/legal/compliance"
           className="text-muted underline hover:text-brand"
         >
-          Compliance, laws &amp; formulas
+          {t("login.complianceLink")}
         </Link>
       </p>
     </form>
