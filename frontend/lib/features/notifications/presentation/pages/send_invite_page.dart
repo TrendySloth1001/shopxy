@@ -5,6 +5,7 @@ import 'package:shopxy/features/parties/data/datasources/parties_remote_data_sou
 import 'package:shopxy/features/parties/domain/entities/party.dart';
 import 'package:shopxy/features/vendors/data/datasources/vendors_remote_data_source.dart';
 import 'package:shopxy/features/vendors/domain/entities/vendor.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
@@ -91,6 +92,7 @@ class _SendInvitePageState extends State<SendInvitePage> {
   }
 
   Future<void> _send() async {
+    final l10n = AppLocalizations.of(context);
     setState(() {
       _sending = true;
       _error = null;
@@ -110,7 +112,7 @@ class _SendInvitePageState extends State<SendInvitePage> {
           );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invitation sent')),
+        SnackBar(content: Text(l10n.notificationsInvitationSent)),
       );
       Navigator.pop(context);
     } catch (e) {
@@ -122,9 +124,10 @@ class _SendInvitePageState extends State<SendInvitePage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Send invitation')),
+      appBar: AppBar(title: Text(l10n.notificationsSendInvitationTitle)),
       body: SafeArea(
         child: Column(
           children: [
@@ -133,16 +136,14 @@ class _SendInvitePageState extends State<SendInvitePage> {
                 padding: const EdgeInsets.all(AppSizes.lg),
                 children: [
                   Text(
-                    'Invite by email',
+                    l10n.notificationsInviteByEmail,
                     style: theme.textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(height: AppSizes.xs),
                   Text(
-                    'They will see your request under Notifications. '
-                    "If they don't have a Shopxy account yet, it shows "
-                    'up the moment they sign up with this email.',
+                    l10n.notificationsInviteByEmailHelp,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: AppColors.muted,
                     ),
@@ -189,8 +190,8 @@ class _SendInvitePageState extends State<SendInvitePage> {
                       textCapitalization: TextCapitalization.words,
                       decoration: InputDecoration(
                         labelText: _type == _LinkType.party
-                            ? 'Customer name'
-                            : 'Vendor name',
+                            ? l10n.notificationsCustomerName
+                            : l10n.notificationsVendorName,
                         prefixIcon: Icon(
                           _type == _LinkType.party
                               ? Icons.groups_outlined
@@ -204,9 +205,9 @@ class _SendInvitePageState extends State<SendInvitePage> {
                     controller: _emailCtl,
                     keyboardType: TextInputType.emailAddress,
                     autocorrect: false,
-                    decoration: const InputDecoration(
-                      labelText: 'Recipient email',
-                      prefixIcon: Icon(Icons.alternate_email_rounded),
+                    decoration: InputDecoration(
+                      labelText: l10n.notificationsRecipientEmail,
+                      prefixIcon: const Icon(Icons.alternate_email_rounded),
                     ),
                     onChanged: (_) => setState(() {}),
                   ),
@@ -215,9 +216,9 @@ class _SendInvitePageState extends State<SendInvitePage> {
                     controller: _messageCtl,
                     maxLines: 3,
                     maxLength: 500,
-                    decoration: const InputDecoration(
-                      labelText: 'Message (optional)',
-                      hintText: 'Hey! Linking your account on Shopxy…',
+                    decoration: InputDecoration(
+                      labelText: l10n.notificationsMessageOptional,
+                      hintText: l10n.notificationsMessageHint,
                     ),
                   ),
                   if (_error != null) ...[
@@ -271,7 +272,7 @@ class _SendInvitePageState extends State<SendInvitePage> {
                           ),
                         )
                       : const Icon(Icons.send_rounded, size: AppSizes.iconMd),
-                  label: const Text('Send invitation'),
+                  label: Text(l10n.notificationsSendInvitationTitle),
                 ),
               ),
             ),
@@ -294,17 +295,18 @@ class _TypeSwitch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return SegmentedButton<_LinkType>(
-      segments: const [
+      segments: [
         ButtonSegment(
           value: _LinkType.party,
-          icon: Icon(Icons.groups_outlined),
-          label: Text('Party (customer)'),
+          icon: const Icon(Icons.groups_outlined),
+          label: Text(l10n.notificationsRolePartyCustomer),
         ),
         ButtonSegment(
           value: _LinkType.vendor,
-          icon: Icon(Icons.storefront_outlined),
-          label: Text('Vendor (supplier)'),
+          icon: const Icon(Icons.storefront_outlined),
+          label: Text(l10n.notificationsRoleVendorSupplier),
         ),
       ],
       selected: {value},
@@ -320,17 +322,18 @@ class _ModeSwitch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return SegmentedButton<_SourceMode>(
-      segments: const [
+      segments: [
         ButtonSegment(
           value: _SourceMode.existing,
-          icon: Icon(Icons.contacts_outlined),
-          label: Text('Existing'),
+          icon: const Icon(Icons.contacts_outlined),
+          label: Text(l10n.notificationsModeExisting),
         ),
         ButtonSegment(
           value: _SourceMode.fresh,
-          icon: Icon(Icons.person_add_alt_1_outlined),
-          label: Text('New contact'),
+          icon: const Icon(Icons.person_add_alt_1_outlined),
+          label: Text(l10n.notificationsModeNewContact),
         ),
       ],
       selected: {value},
@@ -386,12 +389,15 @@ class _ContactPickerState extends State<_ContactPicker> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          widget.type == _LinkType.party ? 'Choose party' : 'Choose vendor',
+          widget.type == _LinkType.party
+              ? l10n.notificationsChooseParty
+              : l10n.notificationsChooseVendor,
           style: theme.textTheme.labelLarge?.copyWith(
             color: AppColors.muted,
             fontWeight: FontWeight.w700,
@@ -402,8 +408,8 @@ class _ContactPickerState extends State<_ContactPicker> {
         TextField(
           decoration: InputDecoration(
             hintText: widget.type == _LinkType.party
-                ? 'Search parties…'
-                : 'Search vendors…',
+                ? l10n.notificationsSearchParties
+                : l10n.notificationsSearchVendors,
             prefixIcon: const Icon(Icons.search_rounded),
           ),
           onChanged: (v) {
@@ -431,7 +437,7 @@ class _ContactPickerState extends State<_ContactPicker> {
               }
               final list = snap.data ?? const [];
               if (list.isEmpty) {
-                return const Center(child: Text('No contacts found'));
+                return Center(child: Text(l10n.notificationsNoContactsFound));
               }
               return Container(
                 decoration: ShapeDecoration(

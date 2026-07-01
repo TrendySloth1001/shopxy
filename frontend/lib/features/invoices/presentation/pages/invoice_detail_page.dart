@@ -13,6 +13,7 @@ import 'package:shopxy/features/payments/data/datasources/payments_remote_data_s
 import 'package:shopxy/features/payments/domain/entities/payment.dart';
 import 'package:shopxy/features/invoices/presentation/pages/create_invoice_page.dart';
 import 'package:shopxy/features/invoices/presentation/providers/invoices_provider.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
@@ -89,12 +90,12 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
 
   /// Human label for a receipt's channel. Platform-collected receipts (online
   /// gateway / wallet) use mode OTHER; their note distinguishes which.
-  String _paymentModeLabel(Payment p) {
+  String _paymentModeLabel(AppLocalizations l10n, Payment p) {
     switch (p.mode) {
       case 'OTHER':
-        return p.note ?? 'Online';
+        return p.note ?? l10n.invoicesPaymentModeOnline;
       case 'CASH':
-        return 'Cash';
+        return l10n.invoicesPaymentModeCash;
       case 'UPI':
         return 'UPI';
       case 'NEFT':
@@ -102,9 +103,9 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
       case 'RTGS':
         return 'RTGS';
       case 'CHEQUE':
-        return 'Cheque';
+        return l10n.invoicesPaymentModeCheque;
       case 'CARD':
-        return 'Card';
+        return l10n.invoicesPaymentModeCard;
       default:
         return p.mode;
     }
@@ -193,7 +194,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not open WhatsApp')),
+        SnackBar(content: Text(AppLocalizations.of(context).invoicesCouldNotOpenWhatsApp)),
       );
     }
   }
@@ -218,22 +219,20 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
   Future<void> _convertToInvoice() async {
     final invoice = _invoice;
     if (invoice == null) return;
+    final l10n = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Convert to Invoice?'),
-        content: Text(
-          'A new tax invoice will be created from ${invoice.invoiceNo}. '
-          'The estimate stays on file unchanged.',
-        ),
+        title: Text(l10n.invoicesConvertTitle),
+        content: Text(l10n.invoicesConvertBody(invoice.invoiceNo)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(l10n.invoicesCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Convert'),
+            child: Text(l10n.invoicesConvert),
           ),
         ],
       ),
@@ -276,6 +275,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
   }
 
   Future<void> _updateStatus(String status) async {
+    final l10n = AppLocalizations.of(context);
     final provider = context.read<InvoicesProvider>();
     final messenger = ScaffoldMessenger.of(context);
     try {
@@ -288,8 +288,8 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
         SnackBar(
           content: Text(
             status == 'CONFIRMED'
-                ? '${updated.invoiceNo} confirmed'
-                : '${updated.invoiceNo} cancelled',
+                ? l10n.invoicesConfirmedNamed(updated.invoiceNo)
+                : l10n.invoicesCancelledNamed(updated.invoiceNo),
           ),
         ),
       );
@@ -307,22 +307,20 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
   Future<void> _confirmAndCancel() async {
     final invoice = _invoice;
     if (invoice == null) return;
+    final l10n = AppLocalizations.of(context);
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text(AppStrings.cancelInvoice),
-        content: Text(
-          'Cancel ${invoice.invoiceNo}? No stock will be moved and the '
-          'invoice will be marked as cancelled.',
-        ),
+        title: Text(l10n.invoicesCancelInvoice),
+        content: Text(l10n.invoicesCancelConfirmBody(invoice.invoiceNo)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Keep draft'),
+            child: Text(l10n.invoicesKeepDraft),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text(AppStrings.cancelInvoice),
+            child: Text(l10n.invoicesCancelInvoice),
           ),
         ],
       ),
@@ -332,6 +330,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
 
     if (_isLoading) {
@@ -341,7 +340,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
     if (_invoice == null) {
       return Scaffold(
         appBar: AppBar(),
-        body: const Center(child: Text(AppStrings.error)),
+        body: Center(child: Text(l10n.invoicesErrorTitle)),
       );
     }
 
@@ -356,17 +355,17 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
             if (invoice.isDraft)
               IconButton(
                 icon: const Icon(Icons.edit_outlined),
-                tooltip: 'Edit',
+                tooltip: l10n.invoicesEdit,
                 onPressed: _openEdit,
               ),
             IconButton(
               icon: const Icon(Icons.share_rounded),
-              tooltip: 'Share',
+              tooltip: l10n.invoicesShare,
               onPressed: _sharePdf,
             ),
             IconButton(
               icon: const Icon(Icons.download_rounded),
-              tooltip: AppStrings.downloadInvoice,
+              tooltip: l10n.invoicesDownloadTooltip,
               onPressed: _downloadPdf,
             ),
           ] else
@@ -384,10 +383,10 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
           // not-yet-confirmed invoice.
           if (!invoice.isConfirmed)
             PopupMenuButton<String>(
-              itemBuilder: (_) => const [
+              itemBuilder: (_) => [
                 PopupMenuItem(
                   value: 'delete',
-                  child: Text(AppStrings.delete),
+                  child: Text(l10n.invoicesDelete),
                 ),
               ],
               onSelected: (v) async {
@@ -396,10 +395,9 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                   // confirm like every other destructive action.
                   final confirmed = await AppConfirmDialog.show(
                     context,
-                    title: AppStrings.delete,
-                    message:
-                        'Delete ${invoice.invoiceNo}? This can\'t be undone.',
-                    confirmLabel: AppStrings.delete,
+                    title: l10n.invoicesDelete,
+                    message: l10n.invoicesDeleteConfirmBody(invoice.invoiceNo),
+                    confirmLabel: l10n.invoicesDelete,
                     danger: true,
                   );
                   if (!confirmed || !context.mounted) return;
@@ -410,7 +408,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                         .deleteInvoice(invoice.id);
                     if (!context.mounted) return;
                     messenger.showSnackBar(
-                      SnackBar(content: Text('${invoice.invoiceNo} deleted')),
+                      SnackBar(content: Text(l10n.invoicesDeletedNamed(invoice.invoiceNo))),
                     );
                     Navigator.pop(context);
                   } catch (e) {
@@ -424,7 +422,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
             ),
         ],
       ),
-      bottomNavigationBar: invoice.isDraft ? _buildDraftActionBar() : null,
+      bottomNavigationBar: invoice.isDraft ? _buildDraftActionBar(l10n) : null,
       body: Column(
         children: [
           GlassHero.line(
@@ -462,7 +460,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                   runSpacing: AppSizes.xs,
                   children: [
                     AppStatusBadge(
-                      label: _documentTypeLabel(invoice.documentType),
+                      label: _documentTypeLabel(l10n, invoice.documentType),
                       tone: AppStatusTone.neutral,
                       dense: true,
                     ),
@@ -476,8 +474,8 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                 const SizedBox(height: AppSizes.xs),
                 Text(
                   invoice.isSale
-                      ? AppStrings.saleInvoice
-                      : AppStrings.purchaseInvoice,
+                      ? l10n.invoicesSaleInvoice
+                      : l10n.invoicesPurchaseInvoice,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: AppColors.muted,
                   ),
@@ -491,19 +489,19 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                 const SizedBox(height: AppSizes.md),
                 _InfoRow(
                   label: invoice.isSale
-                      ? AppStrings.customer
-                      : AppStrings.vendor,
+                      ? l10n.invoicesCustomer
+                      : l10n.invoicesVendor,
                   value: invoice.partyName,
                 ),
                 if (invoice.isSale) ...[
                   if (invoice.customerPhone != null)
                     _InfoRow(
-                      label: AppStrings.phone,
+                      label: l10n.invoicesPhone,
                       value: invoice.customerPhone!,
                     ),
                   if (invoice.customerGstin != null)
                     _InfoRow(
-                      label: AppStrings.gstin,
+                      label: l10n.invoicesGstin,
                       value: invoice.customerGstin!,
                     ),
                   if (invoice.customerPanNumber != null)
@@ -519,7 +517,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                   )
                       .isNotEmpty)
                     _InfoRow(
-                      label: AppStrings.address,
+                      label: l10n.invoicesAddress,
                       value: _addressLine(
                         invoice.customerAddress,
                         invoice.customerCity,
@@ -530,12 +528,12 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                 ] else ...[
                   if (invoice.vendor?.name != null)
                     _InfoRow(
-                      label: AppStrings.vendor,
+                      label: l10n.invoicesVendor,
                       value: invoice.vendor!.name,
                     ),
                   if (invoice.vendorGstin != null)
                     _InfoRow(
-                      label: AppStrings.gstin,
+                      label: l10n.invoicesGstin,
                       value: invoice.vendorGstin!,
                     ),
                   if (_addressLine(
@@ -546,7 +544,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                   )
                       .isNotEmpty)
                     _InfoRow(
-                      label: AppStrings.address,
+                      label: l10n.invoicesAddress,
                       value: _addressLine(
                         invoice.vendorAddress,
                         invoice.vendorCity,
@@ -561,7 +559,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
           const AppDivider.flush(),
           const SizedBox(height: AppSizes.lg),
           AppSectionHeader(
-            title: AppStrings.invoiceItems.toUpperCase(),
+            title: l10n.invoicesInvoiceItems.toUpperCase(),
             padding: const EdgeInsets.only(bottom: AppSizes.sm),
           ),
           const AppDivider.flush(),
@@ -574,14 +572,14 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
           const SizedBox(height: AppSizes.md),
           Column(
             children: [
-                _TotalRow(label: AppStrings.subtotal, value: invoice.subtotal),
+                _TotalRow(label: l10n.invoicesSubtotal, value: invoice.subtotal),
                 // GST split mirrors how the invoice was saved. For older
                 // rows without the split (igst/cgst/sgst all 0) we fall
                 // back to the single taxAmount column.
                 if (invoice.igstAmount == 0 &&
                     invoice.cgstAmount == 0 &&
                     invoice.sgstAmount == 0)
-                  _TotalRow(label: AppStrings.taxAmount, value: invoice.taxAmount)
+                  _TotalRow(label: l10n.invoicesTaxAmount, value: invoice.taxAmount)
                 else if (invoice.isInterstate)
                   _TotalRow(label: 'IGST', value: invoice.igstAmount)
                 else ...[
@@ -589,17 +587,17 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                   _TotalRow(label: 'SGST', value: invoice.sgstAmount),
                 ],
                 if (invoice.cessAmount > 0)
-                  _TotalRow(label: 'Cess', value: invoice.cessAmount),
+                  _TotalRow(label: l10n.invoicesCess, value: invoice.cessAmount),
                 if (invoice.discount > 0)
-                  _TotalRow(label: AppStrings.discount, value: -invoice.discount),
+                  _TotalRow(label: l10n.invoicesDiscount, value: -invoice.discount),
                 if (invoice.roundOff != 0)
-                  _TotalRow(label: 'Round-off', value: invoice.roundOff),
+                  _TotalRow(label: l10n.invoicesRoundOff, value: invoice.roundOff),
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: AppSizes.sm),
                   child: AppDivider.flush(),
                 ),
                 _TotalRow(
-                  label: AppStrings.total,
+                  label: l10n.invoicesTotal,
                   value: invoice.total,
                   isHighlight: true,
                 ),
@@ -612,9 +610,9 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                     padding: EdgeInsets.symmetric(vertical: AppSizes.sm),
                     child: AppDivider.flush(),
                   ),
-                  _TotalRow(label: 'Received', value: _paidTotal),
+                  _TotalRow(label: l10n.invoicesReceived, value: _paidTotal),
                   _TotalRow(
-                    label: 'Outstanding',
+                    label: l10n.invoicesOutstanding,
                     value: _outstanding(invoice),
                     isHighlight: true,
                   ),
@@ -631,7 +629,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    _paymentModeLabel(p),
+                                    _paymentModeLabel(l10n, p),
                                     style: theme.textTheme.bodySmall?.copyWith(
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -680,11 +678,11 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
               Icons.chat_rounded,
               color: AppColors.whatsapp,
             ),
-            title: const Text('Send via WhatsApp'),
+            title: Text(l10n.invoicesSendViaWhatsApp),
             subtitle: Text(
               invoice.customerPhone != null && invoice.customerPhone!.isNotEmpty
-                  ? 'Opens chat with ${invoice.customerPhone}'
-                  : 'Pick a chat to send to',
+                  ? l10n.invoicesOpensChatWith(invoice.customerPhone!)
+                  : l10n.invoicesPickChatToSend,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: AppColors.muted,
               ),
@@ -706,9 +704,9 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                 Icons.swap_horiz_rounded,
                 color: AppColors.brand,
               ),
-              title: const Text('Convert to Invoice'),
+              title: Text(l10n.invoicesConvertToInvoice),
               subtitle: Text(
-                'Create a tax invoice from this estimate',
+                l10n.invoicesConvertTileSubtitle,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: AppColors.muted,
                 ),
@@ -727,11 +725,11 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                 Icons.check_circle_outline_rounded,
                 color: AppColors.success,
               ),
-              title: const Text('Mark as Paid'),
+              title: Text(l10n.invoicesMarkAsPaid),
               subtitle: Text(
                 invoice.type == 'SALE'
-                    ? 'Record a receipt for this invoice'
-                    : 'Record a payment for this bill',
+                    ? l10n.invoicesRecordReceiptSubtitle
+                    : l10n.invoicesRecordPaymentSubtitle,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: AppColors.muted,
                 ),
@@ -753,7 +751,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                 if (!context.mounted) return;
                 if (created != null) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Payment recorded')),
+                    SnackBar(content: Text(l10n.invoicesPaymentRecorded)),
                   );
                 }
               },
@@ -764,7 +762,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
             const AppDivider.flush(),
             const SizedBox(height: AppSizes.lg),
             Text(
-              AppStrings.note,
+              l10n.invoicesNote,
               style: theme.textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
@@ -788,7 +786,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
   /// AppButton's inner [Center] expands unbounded in [bottomNavigationBar]
   /// — wrap each in a [SizedBox] with explicit height so they don't
   /// stretch to fill the screen.
-  Widget _buildDraftActionBar() {
+  Widget _buildDraftActionBar(AppLocalizations l10n) {
     return SafeArea(
       top: false,
       child: Container(
@@ -806,7 +804,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
             children: [
               Expanded(
                 child: AppButton.secondary(
-                  label: AppStrings.cancelInvoice,
+                  label: l10n.invoicesCancelInvoice,
                   onPressed: _confirmAndCancel,
                   fullWidth: true,
                 ),
@@ -815,7 +813,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
               Expanded(
                 flex: 2,
                 child: AppButton.primary(
-                  label: AppStrings.confirmInvoice,
+                  label: l10n.invoicesConfirmInvoice,
                   onPressed: () => _updateStatus('CONFIRMED'),
                   fullWidth: true,
                 ),
@@ -840,16 +838,16 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
     return parts.join(', ');
   }
 
-  static String _documentTypeLabel(String docType) {
+  static String _documentTypeLabel(AppLocalizations l10n, String docType) {
     switch (docType) {
       case 'TAX_INVOICE':
-        return 'TAX INVOICE';
+        return l10n.invoicesDocTaxInvoice.toUpperCase();
       case 'BILL_OF_SUPPLY':
-        return 'BILL OF SUPPLY';
+        return l10n.invoicesDocBillOfSupply.toUpperCase();
       case 'CREDIT_NOTE':
-        return 'CREDIT NOTE';
+        return l10n.invoicesDocCreditNote.toUpperCase();
       case 'DEBIT_NOTE':
-        return 'DEBIT NOTE';
+        return l10n.invoicesDocDebitNote.toUpperCase();
       default:
         return docType.replaceAll('_', ' ');
     }

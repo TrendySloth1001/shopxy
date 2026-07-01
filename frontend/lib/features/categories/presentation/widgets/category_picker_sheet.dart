@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:shopxy/features/categories/data/datasources/categories_remote_data_source.dart';
 import 'package:shopxy/features/categories/domain/entities/category.dart';
 import 'package:shopxy/features/categories/presentation/widgets/category_icon_catalog.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
-import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
@@ -90,6 +90,7 @@ class _CategoryPickerSheetState extends State<CategoryPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final mediaQuery = MediaQuery.of(context);
     final maxHeight = mediaQuery.size.height * 0.82;
@@ -115,7 +116,7 @@ class _CategoryPickerSheetState extends State<CategoryPickerSheet> {
                   children: [
                     Expanded(
                       child: Text(
-                        AppStrings.selectCategory,
+                        l10n.categoriesPickerTitle,
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w700,
                         ),
@@ -124,7 +125,7 @@ class _CategoryPickerSheetState extends State<CategoryPickerSheet> {
                     IconButton(
                       onPressed: () => Navigator.of(context).pop(),
                       icon: const Icon(Icons.close_rounded),
-                      tooltip: AppStrings.cancel,
+                      tooltip: l10n.categoriesCancel,
                     ),
                   ],
                 ),
@@ -136,7 +137,7 @@ class _CategoryPickerSheetState extends State<CategoryPickerSheet> {
                 TextButton.icon(
                   onPressed: () => _pick(null),
                   icon: const Icon(Icons.close_rounded, size: AppSizes.iconSm),
-                  label: const Text(AppStrings.clearSelection),
+                  label: Text(l10n.categoriesClearSelection),
                   style: TextButton.styleFrom(foregroundColor: AppColors.error),
                 ),
               ],
@@ -148,6 +149,7 @@ class _CategoryPickerSheetState extends State<CategoryPickerSheet> {
   }
 
   Widget _buildBody(ThemeData theme) {
+    final l10n = AppLocalizations.of(context);
     if (_isLoading) {
       return const Center(
         child: Padding(
@@ -160,7 +162,7 @@ class _CategoryPickerSheetState extends State<CategoryPickerSheet> {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: AppSizes.lg),
         child: Text(
-          AppStrings.error,
+          l10n.categoriesError,
           style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.error),
         ),
       );
@@ -170,7 +172,7 @@ class _CategoryPickerSheetState extends State<CategoryPickerSheet> {
         padding: const EdgeInsets.symmetric(vertical: AppSizes.xl),
         child: Center(
           child: Text(
-            AppStrings.noCategoriesMatch,
+            l10n.categoriesNoMatch,
             style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted),
           ),
         ),
@@ -224,6 +226,7 @@ class _ParentRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final isSelected = parent.category.id == currentSelectionId;
     return Column(
@@ -253,7 +256,7 @@ class _ParentRow extends StatelessWidget {
                       ),
                       if (parent.children.isNotEmpty)
                         Text(
-                          '${parent.children.length} subcategories',
+                          '${parent.children.length} ${l10n.categoriesSubcategoriesUnit}',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: AppColors.muted,
                           ),

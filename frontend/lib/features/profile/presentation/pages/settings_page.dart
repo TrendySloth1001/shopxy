@@ -17,7 +17,6 @@ import 'package:shopxy/features/shop/presentation/pages/shop_operations_page.dar
 import 'package:shopxy/features/profile/presentation/pages/legal_page.dart';
 import 'package:shopxy/shared/constants/app_durations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
-import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_dialog.dart';
@@ -43,6 +42,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _exportData() async {
     if (_exporting) return;
+    final l10n = AppLocalizations.of(context);
     setState(() => _exporting = true);
     try {
       final bytes = await context.read<AuthProvider>().exportData();
@@ -53,7 +53,7 @@ class _SettingsPageState extends State<SettingsPage> {
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(file.path)],
-          text: 'Your ShopXY data export',
+          text: l10n.profileDataExportShareText,
         ),
       );
     } catch (e) {
@@ -61,7 +61,7 @@ class _SettingsPageState extends State<SettingsPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Export failed: ${friendlyError(e)}',
+            '${l10n.profileExportFailed} ${friendlyError(e)}',
           ),
         ),
       );
@@ -71,13 +71,14 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _deleteAccount() async {
+    final l10n = AppLocalizations.of(context);
     final password = await _DeleteAccountDialog.show(context);
     if (password == null || !mounted) return;
     try {
       await context.read<AuthProvider>().deleteAccount(password);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Account deleted')),
+        SnackBar(content: Text(l10n.profileAccountDeleted)),
       );
     } catch (e) {
       if (!mounted) return;
@@ -91,11 +92,12 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _logout() async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await AppConfirmDialog.show(
       context,
-      title: AppStrings.logout,
-      message: AppStrings.logoutConfirm,
-      confirmLabel: AppStrings.logout,
+      title: l10n.profileLogout,
+      message: l10n.profileLogoutConfirm,
+      confirmLabel: l10n.profileLogout,
       danger: true,
     );
     if (confirmed && mounted) {
@@ -105,13 +107,14 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _toggleEmailNotifications(bool value) async {
     if (_savingEmailNotifications) return;
+    final l10n = AppLocalizations.of(context);
     setState(() => _savingEmailNotifications = true);
     try {
       await context.read<AuthProvider>().updateProfile(emailNotifications: value);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not save preference: ${friendlyError(e)}')),
+        SnackBar(content: Text('${l10n.profilePreferenceSaveFailed} ${friendlyError(e)}')),
       );
     } finally {
       if (mounted) setState(() => _savingEmailNotifications = false);
@@ -121,18 +124,19 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().user;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text(AppStrings.settings)),
+      appBar: AppBar(title: Text(l10n.profileSettings)),
       body: ListView(
         padding: const EdgeInsets.only(bottom: AppSizes.huge),
         children: [
           // ── Account ─────────────────────────────────────────
-          const _Eyebrow('ACCOUNT'),
+          _Eyebrow(l10n.profileSectionAccount),
           const SizedBox(height: AppSizes.sm),
           _SettingRow(
             icon: Icons.badge_outlined,
-            title: AppStrings.editProfile,
+            title: l10n.profileEditProfile,
             subtitle: user?.name ?? '—',
             trailing: Icon(
               Icons.chevron_right_rounded,
@@ -145,8 +149,8 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           _SettingRow(
             icon: Icons.lock_outline_rounded,
-            title: AppStrings.changePassword,
-            subtitle: 'Update the password on your account',
+            title: l10n.profileChangePassword,
+            subtitle: l10n.profileChangePasswordSubtitle,
             trailing: Icon(
               Icons.chevron_right_rounded,
               color: AppColors.subtle,
@@ -158,7 +162,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           _SettingRow(
             icon: Icons.alternate_email_rounded,
-            title: AppStrings.email,
+            title: l10n.profileEmail,
             subtitle: user?.email ?? '—',
           ),
 
@@ -170,12 +174,12 @@ class _SettingsPageState extends State<SettingsPage> {
           if ((user?.canView('shop') ?? false) ||
               (user?.canView('payouts') ?? false) ||
               (user?.canView('team') ?? false)) ...[
-            const _Eyebrow('SHOP OPERATIONS'),
+            _Eyebrow(l10n.profileSectionShopOperations),
             const SizedBox(height: AppSizes.sm),
             _SettingRow(
               icon: Icons.tune_rounded,
-              title: 'Shop operations',
-              subtitle: 'Hours, vacation mode, payouts, KYC, team',
+              title: l10n.profileShopOperations,
+              subtitle: l10n.profileShopOperationsSubtitle,
               trailing: Icon(
                 Icons.chevron_right_rounded,
                 color: AppColors.subtle,
@@ -189,15 +193,15 @@ class _SettingsPageState extends State<SettingsPage> {
           ],
 
           // ── Appearance ──────────────────────────────────────
-          const _Eyebrow('APPEARANCE'),
+          _Eyebrow(l10n.profileSectionAppearance),
           const SizedBox(height: AppSizes.sm),
           const _ThemeRow(),
           // Currency stays a placeholder row — no `onTap` so it doesn't pretend
           // to be live; the "Coming soon" chip signals the future surface.
           _SettingRow(
             icon: Icons.currency_rupee_rounded,
-            title: AppStrings.currency,
-            subtitle: 'Indian Rupee (₹)',
+            title: l10n.profileCurrency,
+            subtitle: l10n.profileCurrencyIndianRupee,
             trailing: _comingSoonChip(context),
           ),
           // Language is live (multilingual pilot): English + हिन्दी.
@@ -208,12 +212,12 @@ class _SettingsPageState extends State<SettingsPage> {
           const _Gap(),
 
           // ── Inventory ───────────────────────────────────────
-          const _Eyebrow('INVENTORY'),
+          _Eyebrow(l10n.profileSectionInventory),
           const SizedBox(height: AppSizes.sm),
           _SettingRow(
             icon: Icons.tune_rounded,
-            title: AppStrings.customFields,
-            subtitle: AppStrings.customFieldsHint,
+            title: l10n.profileCustomFields,
+            subtitle: l10n.profileCustomFieldsHint,
             trailing: Icon(
               Icons.chevron_right_rounded,
               color: AppColors.subtle,
@@ -229,12 +233,12 @@ class _SettingsPageState extends State<SettingsPage> {
           const _Gap(),
 
           // ── Notifications ───────────────────────────────────
-          const _Eyebrow('NOTIFICATIONS'),
+          _Eyebrow(l10n.profileSectionNotifications),
           const SizedBox(height: AppSizes.sm),
           _SettingToggle(
             icon: Icons.notifications_none_rounded,
-            title: 'Email notifications',
-            subtitle: 'Low-stock alerts and weekly summary',
+            title: l10n.profileEmailNotifications,
+            subtitle: l10n.profileEmailNotificationsSubtitle,
             value: user?.emailNotifications ?? true,
             onChanged: _savingEmailNotifications ? null : _toggleEmailNotifications,
           ),
@@ -242,16 +246,16 @@ class _SettingsPageState extends State<SettingsPage> {
           const _Gap(),
 
           // ── About ───────────────────────────────────────────
-          const _Eyebrow('ABOUT'),
+          _Eyebrow(l10n.profileSectionAbout),
           const SizedBox(height: AppSizes.sm),
-          const _SettingRow(
+          _SettingRow(
             icon: Icons.info_outline_rounded,
-            title: AppStrings.appVersion,
+            title: l10n.profileAppVersion,
             subtitle: '1.0.0',
           ),
           _SettingRow(
             icon: Icons.shield_outlined,
-            title: AppStrings.privacyPolicy,
+            title: l10n.profilePrivacyPolicy,
             trailing: Icon(
               Icons.chevron_right_rounded,
               color: AppColors.subtle,
@@ -263,7 +267,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           _SettingRow(
             icon: Icons.description_outlined,
-            title: AppStrings.termsOfService,
+            title: l10n.profileTermsOfService,
             trailing: Icon(
               Icons.chevron_right_rounded,
               color: AppColors.subtle,
@@ -279,13 +283,12 @@ class _SettingsPageState extends State<SettingsPage> {
           // ── Danger zone ─────────────────────────────────────
           // DPDP §11/§12 affordances. Kept above the logout row so the
           // destructive actions live together at the bottom of the page.
-          const _Eyebrow('DANGER ZONE'),
+          _Eyebrow(l10n.profileSectionDangerZone),
           const SizedBox(height: AppSizes.sm),
           _SettingRow(
             icon: Icons.download_rounded,
-            title: 'Export my data',
-            subtitle:
-                'Download a JSON copy of every record tied to your account.',
+            title: l10n.profileExportMyData,
+            subtitle: l10n.profileExportMyDataSubtitle,
             trailing: _exporting
                 ? const SizedBox(
                     width: AppSizes.xl,
@@ -300,11 +303,8 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           _SettingRow(
             icon: Icons.delete_forever_rounded,
-            title: 'Delete account',
-            subtitle:
-                'Permanently erase your account. Shop owners with invoices '
-                'in the past 8 years must contact support (Companies Act / GST '
-                'retention).',
+            title: l10n.profileDeleteAccount,
+            subtitle: l10n.profileDeleteAccountSubtitle,
             trailing: Icon(
               Icons.chevron_right_rounded,
               color: AppColors.error,
@@ -341,7 +341,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       const SizedBox(width: AppSizes.md),
                       Expanded(
                         child: Text(
-                          AppStrings.logout,
+                          l10n.profileLogout,
                           style: Theme.of(context)
                               .textTheme
                               .bodyLarge
@@ -373,7 +373,7 @@ class _SettingsPageState extends State<SettingsPage> {
         shape: AppShapes.squircle(AppSizes.radiusFull),
       ),
       child: Text(
-        AppStrings.comingSoon,
+        AppLocalizations.of(context).profileComingSoon,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
               color: AppColors.muted,
               fontWeight: FontWeight.w700,
@@ -432,6 +432,7 @@ class _DensityRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final prefs = context.watch<NavigationPrefsProvider>();
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSizes.lg,
@@ -460,7 +461,7 @@ class _DensityRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'List density',
+                  l10n.profileListDensity,
                   style: theme.textTheme.bodyLarge?.copyWith(
                     color: AppColors.black,
                     fontWeight: FontWeight.w600,
@@ -469,24 +470,24 @@ class _DensityRow extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   prefs.isCompact
-                      ? 'Tighter rows — more products per screen.'
-                      : 'Comfortable spacing (default).',
+                      ? l10n.profileListDensityCompactDesc
+                      : l10n.profileListDensityComfortableDesc,
                   style: theme.textTheme.bodySmall
                       ?.copyWith(color: AppColors.muted),
                 ),
                 const SizedBox(height: AppSizes.sm),
                 SegmentedButton<ListDensity>(
-                  segments: const [
+                  segments: [
                     ButtonSegment(
                       value: ListDensity.comfortable,
-                      icon: Icon(Icons.format_line_spacing_rounded,
+                      icon: const Icon(Icons.format_line_spacing_rounded,
                           size: AppSizes.iconSm),
-                      label: Text('Comfortable'),
+                      label: Text(l10n.profileDensityComfortable),
                     ),
                     ButtonSegment(
                       value: ListDensity.compact,
-                      icon: Icon(Icons.density_small_rounded, size: AppSizes.iconSm),
-                      label: Text('Compact'),
+                      icon: const Icon(Icons.density_small_rounded, size: AppSizes.iconSm),
+                      label: Text(l10n.profileDensityCompact),
                     ),
                   ],
                   selected: {prefs.density},
@@ -707,6 +708,7 @@ class _NavigationStyleRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final prefs = context.watch<NavigationPrefsProvider>();
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSizes.lg,
@@ -735,7 +737,7 @@ class _NavigationStyleRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Navigation style',
+                  l10n.profileNavigationStyle,
                   style: theme.textTheme.bodyLarge?.copyWith(
                     color: AppColors.black,
                     fontWeight: FontWeight.w600,
@@ -744,24 +746,24 @@ class _NavigationStyleRow extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   prefs.isSidebar
-                      ? 'Left-side rail with destinations stacked vertically.'
-                      : 'Bottom tab bar (default).',
+                      ? l10n.profileNavigationStyleSidebarDesc
+                      : l10n.profileNavigationStyleBottomDesc,
                   style: theme.textTheme.bodySmall
                       ?.copyWith(color: AppColors.muted),
                 ),
                 const SizedBox(height: AppSizes.sm),
                 SegmentedButton<NavigationStyle>(
-                  segments: const [
+                  segments: [
                     ButtonSegment(
                       value: NavigationStyle.bottomBar,
-                      icon: Icon(Icons.dock_rounded, size: AppSizes.iconSm),
-                      label: Text('Bottom bar'),
+                      icon: const Icon(Icons.dock_rounded, size: AppSizes.iconSm),
+                      label: Text(l10n.profileNavStyleBottomBar),
                     ),
                     ButtonSegment(
                       value: NavigationStyle.sidebar,
-                      icon: Icon(Icons.view_sidebar_outlined,
+                      icon: const Icon(Icons.view_sidebar_outlined,
                           size: AppSizes.iconSm),
-                      label: Text('Sidebar'),
+                      label: Text(l10n.profileNavStyleSidebar),
                     ),
                   ],
                   selected: {prefs.style},
@@ -952,17 +954,15 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return AlertDialog(
-      title: const Text('Delete account'),
+      title: Text(l10n.profileDeleteAccount),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'This permanently erases your account and revokes every '
-            'session. Owners whose invoices are still inside the 8-year '
-            'Companies Act / GST retention window cannot delete in-app — '
-            'contact support@shopxy.example for a controlled wipe.',
+            l10n.profileDeleteAccountDialogBody,
             style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
           ),
           const SizedBox(height: AppSizes.md),
@@ -971,7 +971,7 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
             obscureText: _obscure,
             autofocus: true,
             decoration: InputDecoration(
-              labelText: 'Current password',
+              labelText: l10n.profileCurrentPassword,
               suffixIcon: IconButton(
                 icon: Icon(
                   _obscure
@@ -987,7 +987,7 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(l10n.profileCancel),
         ),
         TextButton(
           onPressed: () {
@@ -995,7 +995,7 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
             Navigator.pop(context, _password.text);
           },
           style: TextButton.styleFrom(foregroundColor: AppColors.error),
-          child: const Text('Delete'),
+          child: Text(l10n.profileDelete),
         ),
       ],
     );

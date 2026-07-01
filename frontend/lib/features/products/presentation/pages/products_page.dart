@@ -14,6 +14,7 @@ import 'package:shopxy/features/products/presentation/providers/products_provide
 import 'package:shopxy/features/products/presentation/widgets/product_list_tile.dart';
 import 'package:shopxy/features/stock/presentation/widgets/stock_bottom_sheet.dart';
 import 'package:shopxy/core/prefs/navigation_prefs.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
@@ -184,6 +185,7 @@ class _ProductsPageState extends State<ProductsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final provider = context.watch<ProductsProvider>();
     // select the exact gating slice → rebuilds only when one of these
     // flips, not on unrelated AuthProvider changes.
@@ -211,13 +213,13 @@ class _ProductsPageState extends State<ProductsPage> {
     return Scaffold(
       appBar: AppBar(
         leading: const ShellMenuButton(),
-        title: const Text(AppStrings.navProducts),
+        title: Text(l10n.productsTitle),
         actions: [
           Builder(
             builder: (ctx) {
               final prefs = ctx.watch<NavigationPrefsProvider>();
               return IconButton(
-                tooltip: prefs.isCompact ? 'Switch to card view' : 'Switch to compact view',
+                tooltip: prefs.isCompact ? l10n.productsSwitchToCardView : l10n.productsSwitchToCompactView,
                 icon: Icon(
                   prefs.isCompact
                       ? Icons.view_agenda_outlined
@@ -234,14 +236,14 @@ class _ProductsPageState extends State<ProductsPage> {
             LockedIconButton(
               allowed: canWrite,
               icon: Icons.add_rounded,
-              tooltip: AppStrings.addProduct,
+              tooltip: l10n.productsAddProduct,
               what: 'add products',
               onPressed: _openAddProduct,
             ),
         ],
       ),
       body: !canView
-          ? const NoAccessView(title: 'Products hidden')
+          ? NoAccessView(title: l10n.productsHidden)
           : Column(
         children: [
           Padding(
@@ -252,7 +254,7 @@ class _ProductsPageState extends State<ProductsPage> {
               0,
             ),
             child: AppSearchBar(
-              hint: AppStrings.searchProducts,
+              hint: l10n.productsSearchHint,
               controller: _searchController,
               onChanged: provider.setSearch,
               trailing: _ScanAction(onTap: _openScanner),
@@ -261,7 +263,7 @@ class _ProductsPageState extends State<ProductsPage> {
           AppFilterStrip(
             children: [
               AppFilterPill(
-                label: AppStrings.filterAll,
+                label: l10n.productsFilterAll,
                 selected: !hasFilter,
                 onTap: () {
                   if (provider.lowStockOnly) {
@@ -277,14 +279,14 @@ class _ProductsPageState extends State<ProductsPage> {
                 },
               ),
               AppFilterPill(
-                label: AppStrings.lowStock,
+                label: l10n.productsLowStock,
                 icon: Icons.warning_amber_rounded,
                 selected: provider.lowStockOnly,
                 accent: AppColors.warning,
                 onTap: () => provider.setLowStockOnly(!provider.lowStockOnly),
               ),
               AppFilterPill(
-                label: AppStrings.outOfStock,
+                label: l10n.productsOutOfStock,
                 icon: Icons.remove_circle_outline_rounded,
                 selected: provider.outOfStockOnly,
                 accent: AppColors.error,
@@ -297,8 +299,8 @@ class _ProductsPageState extends State<ProductsPage> {
               // bottom sheet handles 10 or 10,000 the same way.
               AppFilterPill(
                 label: provider.categoryFilter == null
-                    ? AppStrings.categoryPickerLabel
-                    : (_selectedCategoryName ?? AppStrings.categoryPickerLabel),
+                    ? l10n.productsCategoryPickerLabel
+                    : (_selectedCategoryName ?? l10n.productsCategoryPickerLabel),
                 icon: Icons.folder_outlined,
                 trailingIcon: Icons.expand_more_rounded,
                 selected: provider.categoryFilter != null,
@@ -325,19 +327,19 @@ class _ProductsPageState extends State<ProductsPage> {
                             return EmptyState.line(
                               kind: LineArt.boxes,
                               title: isAllStockedUp
-                                  ? AppStrings.allStockedUpTitle
+                                  ? l10n.productsAllStockedUpTitle
                                   : (hasFilter || isSearching)
-                                      ? AppStrings.noMatches
-                                      : AppStrings.noProducts,
+                                      ? l10n.productsNoMatches
+                                      : l10n.productsNoProducts,
                               subtitle: isAllStockedUp
-                                  ? AppStrings.allStockedUpHint
+                                  ? l10n.productsAllStockedUpHint
                                   : (hasFilter || isSearching)
-                                      ? AppStrings.noMatchesHint
-                                      : AppStrings.noProductsHint,
+                                      ? l10n.productsNoMatchesHint
+                                      : l10n.productsNoProductsHint,
                               action: (hasFilter || isSearching || !canWrite)
                                   ? null
                                   : AppButton.primary(
-                                      label: AppStrings.addProduct,
+                                      label: l10n.productsAddProduct,
                                       icon: Icons.add_rounded,
                                       onPressed: _openAddProduct,
                                     ),
@@ -401,7 +403,7 @@ class _ProductsPageState extends State<ProductsPage> {
                                                 foregroundColor: AppColors.white,
                                                 icon:
                                                     Icons.arrow_downward_rounded,
-                                                label: 'Stock in',
+                                                label: l10n.productsStockInAction,
                                                 padding: EdgeInsets.zero,
                                               ),
                                             ],
@@ -419,7 +421,7 @@ class _ProductsPageState extends State<ProductsPage> {
                                                 backgroundColor: AppColors.error,
                                                 foregroundColor: AppColors.white,
                                                 icon: Icons.arrow_upward_rounded,
-                                                label: 'Stock out',
+                                                label: l10n.productsStockOutAction,
                                                 padding: EdgeInsets.zero,
                                               ),
                                             ],

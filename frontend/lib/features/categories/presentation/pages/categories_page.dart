@@ -4,8 +4,8 @@ import 'package:shopxy/features/categories/domain/entities/category.dart';
 import 'package:shopxy/features/categories/presentation/pages/category_products_page.dart';
 import 'package:shopxy/features/categories/presentation/providers/categories_provider.dart';
 import 'package:shopxy/features/categories/presentation/widgets/category_icon_catalog.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
-import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
@@ -36,18 +36,19 @@ class _CategoriesPageState extends State<CategoriesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final provider = context.watch<CategoriesProvider>();
     final tree = provider.tree;
 
     return Scaffold(
-      appBar: AppBar(title: const Text(AppStrings.navCategories)),
+      appBar: AppBar(title: Text(l10n.categoriesTitle)),
       body: provider.isLoading && tree.isEmpty
           ? const _CategoriesGridSkeleton()
           : tree.isEmpty
               ? EmptyState.line(
                   kind: LineArt.productTag,
-                  title: AppStrings.noCategories,
-                  subtitle: AppStrings.noCategoriesHint,
+                  title: l10n.categoriesEmptyTitle,
+                  subtitle: l10n.categoriesEmptyHint,
                 )
               : RefreshIndicator(
                   onRefresh: () => provider.loadTree(),

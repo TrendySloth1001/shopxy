@@ -13,6 +13,7 @@ import 'package:shopxy/features/orders/domain/entities/merchant_order.dart';
 import 'package:shopxy/features/orders/presentation/providers/orders_provider.dart';
 import 'package:shopxy/features/products/data/datasources/products_remote_data_source.dart';
 import 'package:shopxy/features/stock/presentation/widgets/stock_bottom_sheet.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
@@ -123,6 +124,7 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
     );
     if (ok != true || !mounted) return;
 
+    final l10n = AppLocalizations.of(context);
     final ordersProvider = context.read<OrdersProvider>();
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
@@ -134,7 +136,7 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
       final result = await ordersProvider.confirm(widget.orderId);
       if (!mounted) return;
       messenger.showSnackBar(
-        SnackBar(content: Text('Invoice ${result.invoiceNo} created')),
+        SnackBar(content: Text(l10n.ordersInvoiceCreated(result.invoiceNo))),
       );
       navigator.pushReplacement(
         MaterialPageRoute(
@@ -181,6 +183,7 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
     if (result == null || !result.ok || !mounted) return;
     final note = result.note;
 
+    final l10n = AppLocalizations.of(context);
     final ordersProvider = context.read<OrdersProvider>();
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
@@ -188,7 +191,7 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
     try {
       await ordersProvider.reject(widget.orderId, note: note);
       if (!mounted) return;
-      messenger.showSnackBar(const SnackBar(content: Text('Order declined')));
+      messenger.showSnackBar(SnackBar(content: Text(l10n.ordersDeclinedToast)));
       navigator.pop();
     } catch (e) {
       if (mounted) {
@@ -215,6 +218,7 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
     );
     if (result == null || !mounted) return;
 
+    final l10n = AppLocalizations.of(context);
     final ordersProvider = context.read<OrdersProvider>();
     final messenger = ScaffoldMessenger.of(context);
     setState(() => _busy = true);
@@ -229,7 +233,7 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
       );
       if (!mounted) return;
       messenger.showSnackBar(
-        const SnackBar(content: Text('Shipping update posted')),
+        SnackBar(content: Text(l10n.ordersShippingPosted)),
       );
       setState(() => _busy = false);
       // Re-pull so the events timeline reflects the new milestone.
@@ -286,6 +290,7 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
 
   Future<void> _confirmStockDraft(_PendingStockDraft draft) async {
     if (_confirmingDraftIds.contains(draft.invoiceId)) return;
+    final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
     setState(() => _confirmingDraftIds.add(draft.invoiceId));
     try {
@@ -300,7 +305,7 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
         _confirmingDraftIds.remove(draft.invoiceId);
       });
       messenger.showSnackBar(
-        SnackBar(content: Text('${draft.productName} stock posted')),
+        SnackBar(content: Text(l10n.ordersStockPosted(draft.productName))),
       );
       await _load();
     } catch (e) {
@@ -329,11 +334,12 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
   }
 
   Future<void> _launch(Uri uri) async {
+    final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok && mounted) {
       messenger.showSnackBar(
-        const SnackBar(content: Text('Could not open that app')),
+        SnackBar(content: Text(l10n.ordersCouldNotOpenApp)),
       );
     }
   }
@@ -347,10 +353,11 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
   Future<void> _whatsappCustomer() async {
     final phone = _order?.customerPhone;
     if (phone == null || phone.isEmpty) return;
+    final l10n = AppLocalizations.of(context);
     final digits = phone.replaceAll(RegExp(r'[^0-9]'), '');
     final order = _order!;
     final msg = Uri.encodeComponent(
-      'Hi ${order.customerName}, regarding your order #${order.id}.',
+      l10n.ordersWhatsappGreeting(order.customerName, '${order.id}'),
     );
     await _launch(Uri.parse('https://wa.me/$digits?text=$msg'));
   }
@@ -358,11 +365,13 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
   Future<void> _emailCustomer() async {
     final email = _order?.customerEmail;
     if (email == null || email.isEmpty) return;
+    final l10n = AppLocalizations.of(context);
     await _launch(
       Uri(
         scheme: 'mailto',
         path: email,
-        query: 'subject=${Uri.encodeComponent('Order #${_order!.id}')}',
+        query:
+            'subject=${Uri.encodeComponent(l10n.ordersEmailSubject('${_order!.id}'))}',
       ),
     );
   }
@@ -370,30 +379,32 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
   Future<void> _shareSummary() async {
     final order = _order;
     if (order == null) return;
+    final l10n = AppLocalizations.of(context);
     final lines = <String>[
-      'Order #${order.id} from ${order.customerName}',
+      l10n.ordersShareHeader('${order.id}', order.customerName),
       _date.format(order.createdAt.toLocal()),
       '',
       for (final i in order.items)
         '• ${i.productName} × ${_qtyLabel(i.quantity)} ${i.unit} — ${_currency.format(i.total)}',
       '',
-      'Total: ${_currency.format(order.subtotal)}',
+      '${l10n.ordersTotalsTotal}: ${_currency.format(order.subtotal)}',
     ];
     await SharePlus.instance.share(ShareParams(text: lines.join('\n')));
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final order = _order;
     final canWriteOrders = context.select<AuthProvider, bool>(
         (a) => a.user?.canWriteOrders ?? false);
     return Scaffold(
       appBar: AppBar(
-        title: Text('Order #${widget.orderId}'),
+        title: Text(l10n.ordersDetailTitle('${widget.orderId}')),
         actions: [
           if (order != null)
             IconButton(
-              tooltip: AppStrings.orderActionShare,
+              tooltip: l10n.ordersActionShare,
               icon: const Icon(Icons.ios_share_rounded),
               onPressed: _shareSummary,
             ),
@@ -447,13 +458,13 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
                     Expanded(
                       child: MaybeLocked(
                         allowed: canWriteOrders,
-                        what: 'manage orders',
+                        what: l10n.ordersManageWhat,
                         child: OutlinedButton.icon(
                           onPressed: _busy ? null : _reject,
                           icon: Icon(Icons.close_rounded,
                               color: AppColors.error),
                           label: Text(
-                            'Decline',
+                            l10n.ordersDecline,
                             style: TextStyle(color: AppColors.error),
                           ),
                           style: OutlinedButton.styleFrom(
@@ -468,11 +479,11 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
                       flex: 2,
                       child: MaybeLocked(
                         allowed: canWriteOrders,
-                        what: 'manage orders',
+                        what: l10n.ordersManageWhat,
                         child: FilledButton.icon(
                           onPressed: _busy ? null : _confirm,
                           icon: const Icon(Icons.check_rounded),
-                          label: const Text(AppStrings.confirmAndCreateInvoice),
+                          label: Text(l10n.ordersConfirmAndCreateInvoice),
                           style: FilledButton.styleFrom(
                             backgroundColor: AppColors.brand,
                             minimumSize: const Size.fromHeight(AppSizes.huge),
@@ -573,6 +584,7 @@ class _Body extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     return ListView(
       controller: scrollController,
@@ -705,7 +717,7 @@ class _Body extends StatelessWidget {
                 ),
               ),
               icon: const Icon(Icons.receipt_long_outlined),
-              label: Text('Open invoice ${order.linkedInvoiceNo!}'),
+              label: Text(l10n.ordersOpenInvoice(order.linkedInvoiceNo!)),
               style: FilledButton.styleFrom(
                 minimumSize: const Size.fromHeight(AppSizes.huge),
               ),
@@ -752,21 +764,22 @@ class _DecisionSummaryStrip extends StatelessWidget {
   final DateFormat relativeFmt;
   final NumberFormat currencyCompact;
 
-  String _relative(DateTime dt) {
+  String _relative(AppLocalizations l10n, DateTime dt) {
     final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 1) return 'just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes} min ago';
+    if (diff.inMinutes < 1) return l10n.ordersJustNow;
+    if (diff.inMinutes < 60) return l10n.ordersMinAgo('${diff.inMinutes}');
     if (diff.inHours < 24) {
-      return '${diff.inHours} hr${diff.inHours == 1 ? "" : "s"} ago';
+      return l10n.ordersHrAgo('${diff.inHours}');
     }
     if (diff.inDays < 7) {
-      return '${diff.inDays} day${diff.inDays == 1 ? "" : "s"} ago';
+      return l10n.ordersDayAgo('${diff.inDays}');
     }
     return DateFormat('d MMM').format(dt);
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final urgency = DateTime.now().difference(order.createdAt).inHours >= 1 &&
         order.isPending;
@@ -797,7 +810,7 @@ class _DecisionSummaryStrip extends StatelessWidget {
                   ),
                 ),
               Text(
-                '${relativeFmt.format(order.createdAt.toLocal())} · ${_relative(order.createdAt)}',
+                '${relativeFmt.format(order.createdAt.toLocal())} · ${_relative(l10n, order.createdAt)}',
                 style: theme.textTheme.bodySmall
                     ?.copyWith(color: AppColors.muted),
               ),
@@ -809,17 +822,17 @@ class _DecisionSummaryStrip extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 _SummaryStat(
-                  label: AppStrings.orderSummaryItemsLabel,
+                  label: l10n.ordersSummaryItemsLabel,
                   value: '${order.items.length}',
                 ),
                 const _ThinVRule(),
                 _SummaryStat(
-                  label: AppStrings.orderSummaryQtyLabel,
+                  label: l10n.ordersSummaryQtyLabel,
                   value: qtyLabel,
                 ),
                 const _ThinVRule(),
                 _SummaryStat(
-                  label: AppStrings.orderSummaryTotalLabel,
+                  label: l10n.ordersSummaryTotalLabel,
                   value: currencyCompact.format(order.subtotal),
                   emphasis: true,
                 ),
@@ -901,6 +914,7 @@ class _ShortfallBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -935,8 +949,8 @@ class _ShortfallBanner extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '$shortCount of $totalCount '
-                        '${totalCount == 1 ? "item" : "items"} short on stock',
+                        l10n.ordersShortfallTitle(
+                            '$shortCount', '$totalCount'),
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: AppColors.warning,
                           fontWeight: FontWeight.w800,
@@ -944,8 +958,7 @@ class _ShortfallBanner extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Restock now or decline — the invoice will fail to '
-                        'post otherwise.',
+                        l10n.ordersShortfallBody,
                         style: theme.textTheme.bodySmall
                             ?.copyWith(color: AppColors.warning),
                       ),
@@ -960,7 +973,7 @@ class _ShortfallBanner extends StatelessWidget {
                 FilledButton.icon(
                   onPressed: onRestock,
                   icon: const Icon(Icons.add_box_outlined, size: AppSizes.iconSm),
-                  label: const Text(AppStrings.orderRestock),
+                  label: Text(l10n.ordersRestock),
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.warning,
                     foregroundColor: AppColors.white,
@@ -996,6 +1009,7 @@ class _CustomerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final phone = order.customerPhone;
     final email = order.customerEmail;
@@ -1048,8 +1062,8 @@ class _CustomerCard extends StatelessWidget {
                 ),
               ),
               if (order.isLinkedCustomer)
-                const AppStatusBadge(
-                  label: AppStrings.orderLinkedParty,
+                AppStatusBadge(
+                  label: l10n.ordersLinkedParty,
                   icon: Icons.verified_outlined,
                   tone: AppStatusTone.success,
                 ),
@@ -1062,21 +1076,21 @@ class _CustomerCard extends StatelessWidget {
                 if (canCall)
                   _ReachButton(
                     icon: Icons.call_rounded,
-                    label: 'Call',
+                    label: l10n.ordersCall,
                     onTap: onCall,
                   ),
                 if (canCall) const SizedBox(width: AppSizes.sm),
                 if (canCall)
                   _ReachButton(
                     icon: Icons.chat_rounded,
-                    label: 'WhatsApp',
+                    label: l10n.ordersWhatsapp,
                     onTap: onWhatsapp,
                   ),
                 if (canEmail) const SizedBox(width: AppSizes.sm),
                 if (canEmail)
                   _ReachButton(
                     icon: Icons.email_outlined,
-                    label: 'Email',
+                    label: l10n.ordersEmail,
                     onTap: onEmail,
                   ),
               ],
@@ -1138,6 +1152,7 @@ class _CustomerNote extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
@@ -1159,7 +1174,7 @@ class _CustomerNote extends StatelessWidget {
                     size: AppSizes.iconSm, color: AppColors.muted),
                 const SizedBox(width: AppSizes.xs),
                 Text(
-                  AppStrings.orderCustomerNote.toUpperCase(),
+                  l10n.ordersCustomerNote.toUpperCase(),
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: AppColors.muted,
                     fontWeight: FontWeight.w700,
@@ -1189,6 +1204,7 @@ class _StatusJourney extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final invoiced = order.linkedInvoiceNo != null;
     final confirmed = order.isConfirmed;
     final placed = true;
@@ -1198,18 +1214,18 @@ class _StatusJourney extends StatelessWidget {
     final paid = order.isPaid;
 
     final steps = <_JourneyStep>[
-      _JourneyStep(label: AppStrings.orderJourneyPlaced, done: placed),
+      _JourneyStep(label: l10n.ordersJourneyPlaced, done: placed),
       _JourneyStep(
         label: order.isRejected
-            ? 'Declined'
+            ? l10n.ordersJourneyDeclined
             : order.isCancelled
-                ? 'Cancelled'
-                : AppStrings.orderJourneyConfirmed,
+                ? l10n.ordersJourneyCancelled
+                : l10n.ordersJourneyConfirmed,
         done: confirmed,
         failed: order.isRejected || order.isCancelled,
       ),
-      _JourneyStep(label: AppStrings.orderJourneyInvoiced, done: invoiced),
-      _JourneyStep(label: AppStrings.orderJourneyPaid, done: paid),
+      _JourneyStep(label: l10n.ordersJourneyInvoiced, done: invoiced),
+      _JourneyStep(label: l10n.ordersJourneyPaid, done: paid),
     ];
 
     return Row(
@@ -1406,10 +1422,11 @@ class _StockChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final stock = item.stockQuantity;
     if (!item.productActive) {
       return _Chip(
-        label: AppStrings.inactiveProduct,
+        label: l10n.ordersInactiveProduct,
         color: AppColors.error,
         soft: AppColors.errorSoft,
         icon: Icons.block_rounded,
@@ -1417,7 +1434,7 @@ class _StockChip extends StatelessWidget {
     }
     if (stock == null) {
       return _Chip(
-        label: AppStrings.orderStockUnknown,
+        label: l10n.ordersStockUnknown,
         color: AppColors.muted,
         soft: AppColors.surfaceTint,
         icon: Icons.help_outline_rounded,
@@ -1427,7 +1444,7 @@ class _StockChip extends StatelessWidget {
     final have = _qtyLabel(stock);
     if (item.stockOk) {
       return _Chip(
-        label: 'Asked $ask · $have ${item.unit} in stock',
+        label: l10n.ordersStockOk(ask, have, item.unit),
         color: AppColors.success,
         soft: AppColors.successSoft,
         icon: Icons.check_circle_outline_rounded,
@@ -1435,7 +1452,7 @@ class _StockChip extends StatelessWidget {
     }
     final short = _qtyLabel(item.shortfall);
     return _Chip(
-      label: 'Asked $ask · in stock $have · short $short',
+      label: l10n.ordersStockShort(ask, have, short),
       color: AppColors.warning,
       soft: AppColors.warningSoft,
       icon: Icons.warning_amber_rounded,
@@ -1489,6 +1506,7 @@ class _TotalsBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final subtotal = order.subtotal;
     // We don't have tax/discount fields snapshotted on the request yet;
@@ -1507,16 +1525,16 @@ class _TotalsBlock extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _TotalLine(
-            label: AppStrings.orderTotalsSubtotal,
+            label: l10n.ordersTotalsSubtotal,
             value: currency.format(subtotal),
           ),
           _TotalLine(
-            label: AppStrings.orderTotalsTax,
+            label: l10n.ordersTotalsTax,
             value: currency.format(tax),
             muted: true,
           ),
           _TotalLine(
-            label: AppStrings.orderTotalsDiscount,
+            label: l10n.ordersTotalsDiscount,
             value: '−${currency.format(discount)}',
             muted: true,
           ),
@@ -1525,14 +1543,14 @@ class _TotalsBlock extends StatelessWidget {
             child: Divider(height: 1, color: AppColors.hairline),
           ),
           _TotalLine(
-            label: AppStrings.orderTotalsTotal,
+            label: l10n.ordersTotalsTotal,
             value: currency.format(total),
             emphasis: true,
           ),
           if (order.isPending && order.hasStockShortfall) ...[
             const SizedBox(height: AppSizes.xs),
             Text(
-              AppStrings.orderPartialFulfillFootnote,
+              l10n.ordersPartialFulfillFootnote,
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: AppColors.muted),
             ),
@@ -1622,6 +1640,7 @@ class _ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     return Center(
       child: Padding(
@@ -1633,7 +1652,7 @@ class _ErrorState extends StatelessWidget {
                 size: AppSizes.iconHuge, color: AppColors.muted),
             const SizedBox(height: AppSizes.md),
             Text(
-              AppStrings.error,
+              l10n.ordersError,
               style: theme.textTheme.titleMedium
                   ?.copyWith(fontWeight: FontWeight.w700),
             ),
@@ -1648,7 +1667,7 @@ class _ErrorState extends StatelessWidget {
             FilledButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh_rounded),
-              label: const Text(AppStrings.retry),
+              label: Text(l10n.ordersRetry),
             ),
           ],
         ),
@@ -1660,6 +1679,25 @@ class _ErrorState extends StatelessWidget {
 String _qtyLabel(double q) =>
     q.truncateToDouble() == q ? q.toInt().toString() : q.toStringAsFixed(2);
 
+/// Localized label for a shipping milestone type. Falls back to the raw
+/// type for any unmapped value (keeps historical/unknown milestones legible).
+String _milestoneLabel(AppLocalizations l10n, String type) {
+  switch (type) {
+    case 'PACKED':
+      return l10n.ordersMilestonePacked;
+    case 'SHIPPED':
+      return l10n.ordersMilestoneShipped;
+    case 'OUT_FOR_DELIVERY':
+      return l10n.ordersMilestoneOutForDelivery;
+    case 'DELIVERED':
+      return l10n.ordersMilestoneDelivered;
+    case 'RETURNED':
+      return l10n.ordersMilestoneReturned;
+    default:
+      return type;
+  }
+}
+
 /// Modal bottom sheet replacement for the old confirm dialog. Same
 /// copy + same destructive-tone fallback when a shortfall is detected;
 /// just a sheet so it composes with the rest of the page's modal style.
@@ -1669,6 +1707,7 @@ class _ConfirmOrderSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     return SafeArea(
       child: Padding(
@@ -1685,8 +1724,8 @@ class _ConfirmOrderSheet extends StatelessWidget {
             const _SheetHandle(),
             Text(
               shortfall
-                  ? 'Stock looks short — confirm anyway?'
-                  : AppStrings.confirmOrderTitle,
+                  ? l10n.ordersConfirmShortfallTitle
+                  : l10n.ordersConfirmOrderTitle,
               style: theme.textTheme.titleMedium
                   ?.copyWith(fontWeight: FontWeight.w800),
             ),
@@ -1713,9 +1752,7 @@ class _ConfirmOrderSheet extends StatelessWidget {
                     const SizedBox(width: AppSizes.sm),
                     Expanded(
                       child: Text(
-                        'Some items have less stock than the customer asked '
-                        'for. The draft invoice will fail to post when you '
-                        'try to confirm it.',
+                        l10n.ordersConfirmShortfallWarning,
                         style: theme.textTheme.bodySmall
                             ?.copyWith(color: AppColors.warning),
                       ),
@@ -1724,7 +1761,7 @@ class _ConfirmOrderSheet extends StatelessWidget {
                 ),
               ),
             Text(
-              AppStrings.confirmOrderBody,
+              l10n.ordersConfirmOrderBody,
               style: theme.textTheme.bodyMedium
                   ?.copyWith(color: AppColors.muted, height: 1.4),
             ),
@@ -1738,7 +1775,7 @@ class _ConfirmOrderSheet extends StatelessWidget {
                       minimumSize: const Size.fromHeight(AppSizes.huge),
                       side: BorderSide(color: AppColors.hairline),
                     ),
-                    child: const Text('Not yet'),
+                    child: Text(l10n.ordersNotYet),
                   ),
                 ),
                 const SizedBox(width: AppSizes.md),
@@ -1751,7 +1788,7 @@ class _ConfirmOrderSheet extends StatelessWidget {
                           shortfall ? AppColors.warning : AppColors.brand,
                       minimumSize: const Size.fromHeight(AppSizes.huge),
                     ),
-                    child: const Text(AppStrings.confirmOrder),
+                    child: Text(l10n.ordersConfirmOrder),
                   ),
                 ),
               ],
@@ -1772,14 +1809,9 @@ class _DeclineOrderSheet extends StatefulWidget {
 
 class _DeclineOrderSheetState extends State<_DeclineOrderSheet> {
   final _ctrl = TextEditingController();
-  String? _selectedReason;
-
-  static const _reasons = [
-    AppStrings.orderDeclineReasonOutOfStock,
-    AppStrings.orderDeclineReasonClosed,
-    AppStrings.orderDeclineReasonPriceChanged,
-    AppStrings.orderDeclineReasonOther,
-  ];
+  // Stable identity for the selected quick-pick reason. 'OTHER' clears the
+  // note field; the others prefill it with their localized label.
+  String? _selectedReasonKey;
 
   @override
   void dispose() {
@@ -1787,20 +1819,28 @@ class _DeclineOrderSheetState extends State<_DeclineOrderSheet> {
     super.dispose();
   }
 
-  void _pickReason(String r) {
+  void _pickReason(String key, String label) {
     setState(() {
-      _selectedReason = r;
-      if (r == AppStrings.orderDeclineReasonOther) {
+      _selectedReasonKey = key;
+      if (key == 'OTHER') {
         _ctrl.clear();
       } else {
-        _ctrl.text = r;
+        _ctrl.text = label;
       }
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
+    // Quick-pick decline reasons: stable key + localized label.
+    final reasons = <(String, String)>[
+      ('OUT_OF_STOCK', l10n.ordersDeclineReasonOutOfStock),
+      ('CLOSED', l10n.ordersDeclineReasonClosed),
+      ('PRICE_CHANGED', l10n.ordersDeclineReasonPriceChanged),
+      ('OTHER', l10n.ordersDeclineReasonOther),
+    ];
     return SafeArea(
       child: Padding(
         padding: EdgeInsets.only(
@@ -1815,13 +1855,13 @@ class _DeclineOrderSheetState extends State<_DeclineOrderSheet> {
           children: [
             const _SheetHandle(),
             Text(
-              AppStrings.declineOrderTitle,
+              l10n.ordersDeclineOrderTitle,
               style: theme.textTheme.titleMedium
                   ?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: AppSizes.xs),
             Text(
-              AppStrings.declineOrderBody,
+              l10n.ordersDeclineOrderBody,
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: AppColors.muted, height: 1.4),
             ),
@@ -1830,11 +1870,11 @@ class _DeclineOrderSheetState extends State<_DeclineOrderSheet> {
               spacing: AppSizes.sm,
               runSpacing: AppSizes.sm,
               children: [
-                for (final r in _reasons)
+                for (final (key, label) in reasons)
                   _ReasonChip(
-                    label: r,
-                    selected: _selectedReason == r,
-                    onTap: () => _pickReason(r),
+                    label: label,
+                    selected: _selectedReasonKey == key,
+                    onTap: () => _pickReason(key, label),
                   ),
               ],
             ),
@@ -1843,7 +1883,7 @@ class _DeclineOrderSheetState extends State<_DeclineOrderSheet> {
               controller: _ctrl,
               maxLines: 3,
               decoration: InputDecoration(
-                hintText: AppStrings.declineOrderNoteHint,
+                hintText: l10n.ordersDeclineOrderNoteHint,
                 border: OutlineInputBorder(
                   borderRadius: AppShapes.squircleRadius(AppSizes.radiusSm),
                 ),
@@ -1860,7 +1900,7 @@ class _DeclineOrderSheetState extends State<_DeclineOrderSheet> {
                       minimumSize: const Size.fromHeight(AppSizes.huge),
                       side: BorderSide(color: AppColors.hairline),
                     ),
-                    child: const Text('Keep'),
+                    child: Text(l10n.ordersKeep),
                   ),
                 ),
                 const SizedBox(width: AppSizes.md),
@@ -1875,7 +1915,7 @@ class _DeclineOrderSheetState extends State<_DeclineOrderSheet> {
                       backgroundColor: AppColors.error,
                       minimumSize: const Size.fromHeight(AppSizes.huge),
                     ),
-                    child: const Text(AppStrings.declineOrder),
+                    child: Text(l10n.ordersDeclineOrder),
                   ),
                 ),
               ],
@@ -1919,6 +1959,7 @@ class _ShippingSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
@@ -1929,7 +1970,7 @@ class _ShippingSection extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'SHIPPING UPDATES',
+                  l10n.ordersShippingUpdates.toUpperCase(),
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: AppColors.muted,
                     fontWeight: FontWeight.w700,
@@ -1940,12 +1981,12 @@ class _ShippingSection extends StatelessWidget {
               if (order.isConfirmed)
                 MaybeLocked(
                   allowed: canWriteOrders,
-                  what: 'manage orders',
+                  what: l10n.ordersManageWhat,
                   child: OutlinedButton.icon(
                     onPressed: busy ? null : onUpdateShipping,
                     icon: const Icon(Icons.local_shipping_outlined,
                         size: AppSizes.iconSm),
-                    label: const Text('Update shipping'),
+                    label: Text(l10n.ordersUpdateShipping),
                     style: OutlinedButton.styleFrom(
                       visualDensity: VisualDensity.compact,
                       side: BorderSide(color: AppColors.hairline),
@@ -1958,7 +1999,7 @@ class _ShippingSection extends StatelessWidget {
           const SizedBox(height: AppSizes.sm),
           if (order.events.isEmpty)
             Text(
-              'No shipping updates yet.',
+              l10n.ordersNoShippingUpdates,
               style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
             )
           else
@@ -1976,6 +2017,7 @@ class _ShippingEventRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final meta = [
       dateFmt.format(event.occurredAt.toLocal()),
@@ -2004,7 +2046,7 @@ class _ShippingEventRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  event.label,
+                  _milestoneLabel(l10n, event.type),
                   style: theme.textTheme.bodyMedium
                       ?.copyWith(fontWeight: FontWeight.w700),
                 ),
@@ -2044,11 +2086,12 @@ class _ShippingUpdateSheetState extends State<_ShippingUpdateSheet> {
   // add-back / credit-note GST reversal / transfer clawback), so returns
   // run through the dedicated returns flow. The backend rejects RETURNED
   // here, and historical RETURNED events still render in the timeline.
-  static const _milestones = <(String, String)>[
-    ('PACKED', 'Packed'),
-    ('SHIPPED', 'Shipped'),
-    ('OUT_FOR_DELIVERY', 'Out for delivery'),
-    ('DELIVERED', 'Delivered'),
+  // Labels are resolved from l10n at build time via _milestoneLabel.
+  static const _milestoneTypes = <String>[
+    'PACKED',
+    'SHIPPED',
+    'OUT_FOR_DELIVERY',
+    'DELIVERED',
   ];
   static final _etaFmt = DateFormat('d MMM · h:mm a');
 
@@ -2120,6 +2163,7 @@ class _ShippingUpdateSheetState extends State<_ShippingUpdateSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     return SafeArea(
       child: Padding(
@@ -2136,14 +2180,13 @@ class _ShippingUpdateSheetState extends State<_ShippingUpdateSheet> {
             children: [
               const _SheetHandle(),
               Text(
-                'Update shipping',
+                l10n.ordersUpdateShipping,
                 style: theme.textTheme.titleMedium
                     ?.copyWith(fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: AppSizes.xs),
               Text(
-                'The customer sees these updates on their order. '
-                'Marking Delivered starts their return window.',
+                l10n.ordersShippingSheetBody,
                 style: theme.textTheme.bodySmall
                     ?.copyWith(color: AppColors.muted, height: 1.4),
               ),
@@ -2152,9 +2195,9 @@ class _ShippingUpdateSheetState extends State<_ShippingUpdateSheet> {
                 spacing: AppSizes.sm,
                 runSpacing: AppSizes.sm,
                 children: [
-                  for (final (value, label) in _milestones)
+                  for (final value in _milestoneTypes)
                     _ReasonChip(
-                      label: label,
+                      label: _milestoneLabel(l10n, value),
                       selected: _type == value,
                       onTap: () => setState(() => _type = value),
                     ),
@@ -2165,14 +2208,12 @@ class _ShippingUpdateSheetState extends State<_ShippingUpdateSheet> {
                 TextField(
                   controller: _courierCtrl,
                   textCapitalization: TextCapitalization.words,
-                  decoration:
-                      _fieldDecoration('Courier (optional), e.g. Delhivery'),
+                  decoration: _fieldDecoration(l10n.ordersCourierHint),
                 ),
                 const SizedBox(height: AppSizes.md),
                 TextField(
                   controller: _awbCtrl,
-                  decoration:
-                      _fieldDecoration('AWB / tracking number (optional)'),
+                  decoration: _fieldDecoration(l10n.ordersAwbHint),
                 ),
                 const SizedBox(height: AppSizes.md),
                 Row(
@@ -2184,7 +2225,7 @@ class _ShippingUpdateSheetState extends State<_ShippingUpdateSheet> {
                             size: AppSizes.iconSm),
                         label: Text(
                           _eta == null
-                              ? 'ETA (optional)'
+                              ? l10n.ordersEtaHint
                               : _etaFmt.format(_eta!),
                         ),
                         style: OutlinedButton.styleFrom(
@@ -2197,7 +2238,7 @@ class _ShippingUpdateSheetState extends State<_ShippingUpdateSheet> {
                     ),
                     if (_eta != null)
                       IconButton(
-                        tooltip: 'Clear ETA',
+                        tooltip: l10n.ordersClearEta,
                         onPressed: () => setState(() => _eta = null),
                         icon: const Icon(Icons.close_rounded,
                             size: AppSizes.iconSm),
@@ -2209,7 +2250,7 @@ class _ShippingUpdateSheetState extends State<_ShippingUpdateSheet> {
               TextField(
                 controller: _noteCtrl,
                 maxLines: 2,
-                decoration: _fieldDecoration('Note (optional)'),
+                decoration: _fieldDecoration(l10n.ordersNoteHint),
               ),
               const SizedBox(height: AppSizes.lg),
               Row(
@@ -2221,7 +2262,7 @@ class _ShippingUpdateSheetState extends State<_ShippingUpdateSheet> {
                         minimumSize: const Size.fromHeight(AppSizes.huge),
                         side: BorderSide(color: AppColors.hairline),
                       ),
-                      child: const Text('Cancel'),
+                      child: Text(l10n.ordersCancel),
                     ),
                   ),
                   const SizedBox(width: AppSizes.md),
@@ -2231,7 +2272,7 @@ class _ShippingUpdateSheetState extends State<_ShippingUpdateSheet> {
                       onPressed: _submit,
                       icon: const Icon(Icons.local_shipping_outlined,
                           size: AppSizes.iconSm),
-                      label: const Text('Save update'),
+                      label: Text(l10n.ordersSaveUpdate),
                       style: FilledButton.styleFrom(
                         backgroundColor: AppColors.brand,
                         minimumSize: const Size.fromHeight(AppSizes.huge),
@@ -2655,6 +2696,7 @@ class _StockDraftCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -2685,8 +2727,8 @@ class _StockDraftCard extends StatelessWidget {
                 const SizedBox(width: AppSizes.sm),
                 Text(
                   drafts.length == 1
-                      ? '1 stock draft pending'
-                      : '${drafts.length} stock drafts pending',
+                      ? l10n.ordersStockDraftPendingOne
+                      : l10n.ordersStockDraftPendingMany('${drafts.length}'),
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: AppColors.brandStrong,
                     fontWeight: FontWeight.w800,
@@ -2696,7 +2738,7 @@ class _StockDraftCard extends StatelessWidget {
             ),
             const SizedBox(height: 2),
             Text(
-              'Confirm to post the stock — until then the shortfall stays.',
+              l10n.ordersStockDraftHint,
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: AppColors.brandStrong),
             ),
@@ -2732,6 +2774,7 @@ class _StockDraftRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
@@ -2750,7 +2793,7 @@ class _StockDraftRow extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  'Draft invoice #${draft.invoiceId}',
+                  l10n.ordersDraftInvoiceNo('${draft.invoiceId}'),
                   style: theme.textTheme.bodySmall
                       ?.copyWith(color: AppColors.muted),
                 ),
@@ -2758,7 +2801,7 @@ class _StockDraftRow extends StatelessWidget {
             ),
           ),
           IconButton(
-            tooltip: 'Open draft',
+            tooltip: l10n.ordersOpenDraft,
             onPressed: isConfirming
                 ? null
                 : () => Navigator.push(
@@ -2783,7 +2826,7 @@ class _StockDraftRow extends StatelessWidget {
                     ),
                   )
                 : const Icon(Icons.check_rounded, size: AppSizes.iconSm),
-            label: const Text('Confirm'),
+            label: Text(l10n.ordersConfirm),
             style: FilledButton.styleFrom(
               backgroundColor: AppColors.brand,
               visualDensity: VisualDensity.compact,
@@ -2791,7 +2834,7 @@ class _StockDraftRow extends StatelessWidget {
             ),
           ),
           IconButton(
-            tooltip: 'Hide',
+            tooltip: l10n.ordersHide,
             onPressed: isConfirming ? null : onDismiss,
             icon: const Icon(Icons.close_rounded, size: AppSizes.iconSm),
           ),

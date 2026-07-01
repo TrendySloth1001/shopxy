@@ -8,6 +8,7 @@ import 'package:shopxy/features/parties/domain/entities/party_overview.dart';
 import 'package:shopxy/features/payments/data/datasources/payments_remote_data_source.dart';
 import 'package:shopxy/features/payments/domain/entities/payment.dart';
 import 'package:shopxy/features/payments/presentation/widgets/record_payment_sheet.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/app_card.dart';
@@ -85,16 +86,17 @@ class _PartyDetailPageState extends State<PartyDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final canRecord = !_isLoading &&
         _overview != null &&
         !(_overview!.isSystem);
     return Scaffold(
-      appBar: AppBar(title: const Text('Party')),
+      appBar: AppBar(title: Text(l10n.partiesPartyTitle)),
       floatingActionButton: canRecord
           ? FloatingActionButton.extended(
               onPressed: _openRecordPayment,
               icon: const Icon(Icons.payments_outlined),
-              label: const Text('Record payment'),
+              label: Text(l10n.partiesRecordPayment),
             )
           : null,
       body: _isLoading
@@ -118,6 +120,7 @@ class _PartyDetailPageState extends State<PartyDetailPage> {
 
   List<Widget> _buildBody(PartyOverview p) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     final ledger = _ledger;
     return [
@@ -128,7 +131,7 @@ class _PartyDetailPageState extends State<PartyDetailPage> {
       _Totals(party: p, currency: _currency),
       const SizedBox(height: AppSizes.xl),
       if (ledger != null && ledger.entries.isNotEmpty) ...[
-        const AppSectionHeader(title: 'Ledger'),
+        AppSectionHeader(title: l10n.partiesLedger),
         const AppDivider(),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
@@ -151,14 +154,14 @@ class _PartyDetailPageState extends State<PartyDetailPage> {
         const SizedBox(height: AppSizes.xl),
       ],
       if (p.recentInvoices.isNotEmpty) ...[
-        const AppSectionHeader(title: 'Recent invoices'),
+        AppSectionHeader(title: l10n.partiesRecentInvoices),
         const AppDivider(),
         for (final inv in p.recentInvoices)
           _InvoiceRow(invoice: inv, currency: _currency, dateFmt: _dateFmt),
         const SizedBox(height: AppSizes.xl),
       ],
       if (p.recentChallans.isNotEmpty) ...[
-        const AppSectionHeader(title: 'Recent challans'),
+        AppSectionHeader(title: l10n.partiesRecentChallans),
         const AppDivider(),
         for (final c in p.recentChallans)
           _ChallanRow(challan: c, dateFmt: _dateFmt),
@@ -169,7 +172,7 @@ class _PartyDetailPageState extends State<PartyDetailPage> {
         Padding(
           padding: const EdgeInsets.all(AppSizes.xl),
           child: Text(
-            'No activity yet.',
+            l10n.partiesNoActivityYet,
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted),
           ),
@@ -455,6 +458,7 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
       child: Column(
@@ -486,8 +490,8 @@ class _Header extends StatelessWidget {
                 ),
               ),
               if (party.linkedUser != null)
-                const AppStatusBadge(
-                  label: 'Linked',
+                AppStatusBadge(
+                  label: l10n.partiesInviteStatusLinked,
                   icon: Icons.verified_outlined,
                   tone: AppStatusTone.success,
                 ),
@@ -501,7 +505,9 @@ class _Header extends StatelessWidget {
           if (party.address != null && party.address!.isNotEmpty)
             _ContactLine(icon: Icons.place_outlined, value: party.address!),
           if (party.gstin != null && party.gstin!.isNotEmpty)
-            _ContactLine(icon: Icons.badge_outlined, value: 'GSTIN ${party.gstin}'),
+            _ContactLine(
+                icon: Icons.badge_outlined,
+                value: '${l10n.partiesGstinLabel} ${party.gstin}'),
         ],
       ),
     );
@@ -542,31 +548,35 @@ class _Totals extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final billsCount = party.totals
+        .where((t) => t.type == "SALE")
+        .fold(0, (s, t) => s + t.count);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
       child: Row(
         children: [
           Expanded(
             child: _StatBlock(
-              label: 'Net billed',
+              label: l10n.partiesNetBilled,
               value: currency.format(party.netBilled),
-              hint: '${party.invoiceCount} invoices',
+              hint: '${party.invoiceCount} ${l10n.partiesInvoicesUnit}',
             ),
           ),
           const SizedBox(width: AppSizes.md),
           Expanded(
             child: _StatBlock(
-              label: 'Sales',
+              label: l10n.partiesSales,
               value: currency.format(party.totalSales),
-              hint: '${party.totals.where((t) => t.type == "SALE").fold(0, (s, t) => s + t.count)} bills',
+              hint: '$billsCount ${l10n.partiesBillsUnit}',
             ),
           ),
           const SizedBox(width: AppSizes.md),
           Expanded(
             child: _StatBlock(
-              label: 'Returns',
+              label: l10n.partiesReturns,
               value: currency.format(party.totalReturns),
-              hint: '${party.challanCount} challans',
+              hint: '${party.challanCount} ${l10n.partiesChallansUnit}',
             ),
           ),
         ],
@@ -623,6 +633,7 @@ class _InvoiceRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return Material(
       color: AppColors.surface,
       child: InkWell(
@@ -649,7 +660,7 @@ class _InvoiceRow extends StatelessWidget {
                           ?.copyWith(fontWeight: FontWeight.w600),
                     ),
                     Text(
-                      '${dateFmt.format(invoice.invoiceDate)} · ${invoice.itemCount} item${invoice.itemCount == 1 ? '' : 's'}',
+                      '${dateFmt.format(invoice.invoiceDate)} · ${invoice.itemCount} ${l10n.partiesItemsUnit}',
                       style: theme.textTheme.bodySmall
                           ?.copyWith(color: AppColors.muted),
                     ),
@@ -694,6 +705,7 @@ class _BalanceTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final balance = party.balance;
     final positive = balance > 0;
     final settled = balance.abs() < 0.005;
@@ -701,10 +713,10 @@ class _BalanceTile extends StatelessWidget {
         ? AppColors.muted
         : (positive ? AppColors.error : AppColors.success);
     final label = settled
-        ? 'No outstanding'
+        ? l10n.partiesNoOutstanding
         : positive
-            ? 'Owes you'
-            : 'Advance / credit';
+            ? l10n.partiesOwesYou
+            : l10n.partiesAdvanceCredit;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
       child: AppCard(
@@ -725,7 +737,7 @@ class _BalanceTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'BALANCE',
+                    l10n.partiesBalance,
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: AppColors.muted,
                       letterSpacing: 0.6,
@@ -768,6 +780,7 @@ class _LedgerRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final isInvoice = entry.isInvoice;
     final amount = isInvoice ? entry.debit : entry.credit;
     return Padding(
@@ -816,7 +829,7 @@ class _LedgerRow extends StatelessWidget {
               ),
               const SizedBox(height: AppSizes.xs),
               Text(
-                'Bal ${currency.format(entry.runningBalance)}',
+                '${l10n.partiesBalanceShort} ${currency.format(entry.runningBalance)}',
                 style: theme.textTheme.bodySmall
                     ?.copyWith(color: AppColors.muted),
               ),
@@ -836,6 +849,7 @@ class _ChallanRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return Material(
       color: AppColors.surface,
       child: InkWell(
@@ -862,7 +876,7 @@ class _ChallanRow extends StatelessWidget {
                           ?.copyWith(fontWeight: FontWeight.w600),
                     ),
                     Text(
-                      '${dateFmt.format(challan.createdAt)} · ${challan.itemCount} item${challan.itemCount == 1 ? '' : 's'}',
+                      '${dateFmt.format(challan.createdAt)} · ${challan.itemCount} ${l10n.partiesItemsUnit}',
                       style: theme.textTheme.bodySmall
                           ?.copyWith(color: AppColors.muted),
                     ),

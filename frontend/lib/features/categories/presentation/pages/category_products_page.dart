@@ -8,8 +8,8 @@ import 'package:shopxy/features/products/data/datasources/products_remote_data_s
 import 'package:shopxy/features/products/domain/entities/product.dart';
 import 'package:shopxy/features/products/presentation/pages/product_detail_page.dart';
 import 'package:shopxy/features/products/presentation/widgets/product_list_tile.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
-import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
@@ -142,6 +142,7 @@ class _CategoryProductsPageState extends State<CategoryProductsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
@@ -184,11 +185,12 @@ class _CategoryProductsPageState extends State<CategoryProductsPage> {
                           child: EmptyState.line(
                             kind: LineArt.productTag,
                             title: _search.isEmpty
-                                ? 'No products in this category'
-                                : 'No products match "$_search"',
+                                ? l10n.categoriesProductsEmptyTitle
+                                : l10n.categoriesProductsNoMatchTitle(_search),
                             subtitle: _search.isEmpty
-                                ? 'Assign products to "${widget.category.name}" from the product editor.'
-                                : 'Try a shorter or different search.',
+                                ? l10n.categoriesProductsEmptySubtitle(
+                                    widget.category.name)
+                                : l10n.categoriesProductsNoMatchSubtitle,
                           ),
                         )
                       else
@@ -224,6 +226,7 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final fmt = NumberFormat.decimalPattern('en_IN');
     return Container(
@@ -295,7 +298,7 @@ class _Header extends StatelessWidget {
                     const SizedBox(width: AppSizes.xs),
                     Text(
                       '${fmt.format(totalProducts)} '
-                      '${totalProducts == 1 ? 'product' : 'products'}',
+                      '${totalProducts == 1 ? l10n.categoriesProductUnit : l10n.categoriesProductsUnit}',
                       style: theme.textTheme.labelMedium?.copyWith(
                         color: AppColors.muted,
                         fontWeight: FontWeight.w600,
@@ -463,6 +466,7 @@ class _SearchField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Material(
       color: AppColors.surface,
       shape: AppShapes.squircle(
@@ -473,7 +477,7 @@ class _SearchField extends StatelessWidget {
         controller: controller,
         onChanged: onChanged,
         decoration: InputDecoration(
-          hintText: 'Search ${AppStrings.navProducts.toLowerCase()}',
+          hintText: l10n.categoriesSearchProductsHint,
           prefixIcon: Icon(Icons.search_rounded, color: AppColors.subtle),
           suffixIcon: controller.text.isEmpty
               ? null

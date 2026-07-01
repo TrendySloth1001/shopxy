@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shopxy/core/network/image_url.dart';
 import 'package:shopxy/features/products/domain/entities/product.dart';
 import 'package:shopxy/features/products/presentation/widgets/product_thumbnail.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_durations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
@@ -165,6 +166,7 @@ class _AddPhotosPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return Material(
       color: AppColors.surface,
       shape: AppShapes.squircle(
@@ -189,7 +191,7 @@ class _AddPhotosPill extends StatelessWidget {
               ),
               const SizedBox(width: AppSizes.xs),
               Text(
-                'Add photos',
+                l10n.productsAddPhotos,
                 style: theme.textTheme.labelLarge?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),

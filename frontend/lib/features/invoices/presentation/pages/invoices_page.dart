@@ -13,6 +13,7 @@ import 'package:shopxy/features/invoices/domain/entities/invoice.dart';
 import 'package:shopxy/features/invoices/presentation/pages/create_invoice_page.dart';
 import 'package:shopxy/features/invoices/presentation/pages/invoice_detail_page.dart';
 import 'package:shopxy/features/invoices/presentation/providers/invoices_provider.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
@@ -83,6 +84,7 @@ class _InvoicesPageState extends State<InvoicesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final provider = context.watch<InvoicesProvider>();
     final canManage = context.select<AuthProvider, bool>(
         (a) => a.user?.canManage('invoices') ?? false);
@@ -94,14 +96,14 @@ class _InvoicesPageState extends State<InvoicesPage> {
     return Scaffold(
       appBar: AppBar(
         leading: Navigator.canPop(context) ? null : const ShellMenuButton(),
-        title: const Text(AppStrings.navInvoices),
+        title: Text(l10n.invoicesNavTitle),
         actions: [
           Stack(
             clipBehavior: Clip.none,
             children: [
               IconButton(
                 icon: const Icon(Icons.tune_rounded),
-                tooltip: 'Filters',
+                tooltip: l10n.invoicesFiltersTooltip,
                 onPressed: () => _openFilterSheet(provider),
               ),
               if (activeSecondary.isNotEmpty)
@@ -124,7 +126,7 @@ class _InvoicesPageState extends State<InvoicesPage> {
           LockedIconButton(
             allowed: canManage,
             icon: Icons.add_rounded,
-            tooltip: AppStrings.createInvoice,
+            tooltip: l10n.invoicesCreateTitle,
             what: 'create invoices',
             onPressed: _openCreate,
           ),
@@ -140,7 +142,7 @@ class _InvoicesPageState extends State<InvoicesPage> {
               0,
             ),
             child: AppSearchBar(
-              hint: AppStrings.searchInvoices,
+              hint: l10n.invoicesSearchHint,
               controller: _searchCtrl,
               onChanged: provider.updateSearch,
             ),
@@ -151,12 +153,12 @@ class _InvoicesPageState extends State<InvoicesPage> {
           AppFilterStrip(
             children: [
               AppFilterPill(
-                label: AppStrings.filterAll,
+                label: l10n.invoicesFilterAll,
                 selected: provider.typeFilter == null,
                 onTap: () => provider.setTypeFilter(null),
               ),
               AppFilterPill(
-                label: AppStrings.invoiceTypeSale,
+                label: l10n.invoicesFilterSales,
                 icon: Icons.arrow_upward_rounded,
                 selected: provider.typeFilter == 'SALE',
                 onTap: () => provider.setTypeFilter(
@@ -164,7 +166,7 @@ class _InvoicesPageState extends State<InvoicesPage> {
                 ),
               ),
               AppFilterPill(
-                label: AppStrings.invoiceTypePurchase,
+                label: l10n.invoicesFilterPurchases,
                 icon: Icons.arrow_downward_rounded,
                 selected: provider.typeFilter == 'PURCHASE',
                 onTap: () => provider.setTypeFilter(
@@ -187,9 +189,9 @@ class _InvoicesPageState extends State<InvoicesPage> {
                 : provider.error != null && provider.invoices.isEmpty
                     ? EmptyState.line(
                         kind: LineArt.warning,
-                        title: AppStrings.error,
+                        title: l10n.invoicesErrorTitle,
                         action: AppButton.secondary(
-                          label: AppStrings.retry,
+                          label: l10n.invoicesRetry,
                           onPressed: () =>
                               provider.loadInvoices(refresh: true),
                         ),
@@ -197,13 +199,13 @@ class _InvoicesPageState extends State<InvoicesPage> {
                     : provider.invoices.isEmpty
                         ? EmptyState.line(
                             kind: LineArt.invoice,
-                            title: AppStrings.noInvoices,
-                            subtitle: AppStrings.noInvoicesHint,
+                            title: l10n.invoicesEmptyTitle,
+                            subtitle: l10n.invoicesEmptyBody,
                             action: MaybeLocked(
                               allowed: canManage,
                               what: 'create invoices',
                               child: AppButton.primary(
-                                label: AppStrings.createInvoice,
+                                label: l10n.invoicesCreateTitle,
                                 icon: Icons.add_rounded,
                                 onPressed: _openCreate,
                               ),
@@ -245,9 +247,10 @@ class _InvoicesPageState extends State<InvoicesPage> {
   }
 
   Future<void> _downloadPdf(BuildContext context, Invoice invoice) async {
+    final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
     messenger.showSnackBar(
-      const SnackBar(content: Text(AppStrings.generatingPdf)),
+      SnackBar(content: Text(l10n.invoicesGeneratingPdf)),
     );
 
     try {
@@ -285,20 +288,20 @@ class _ActiveSecondaryFiltersRow extends StatelessWidget {
   final VoidCallback onClearDocumentType;
   final VoidCallback onClearStatus;
 
-  String _documentLabel(String d) => switch (d) {
-        'TAX_INVOICE' => 'Tax Invoice',
-        'BILL_OF_SUPPLY' => 'Bill of Supply',
-        'ESTIMATE' => 'Estimate',
-        'PROFORMA' => 'Proforma',
-        'CREDIT_NOTE' => 'Credit Note',
-        'DEBIT_NOTE' => 'Debit Note',
+  String _documentLabel(AppLocalizations l10n, String d) => switch (d) {
+        'TAX_INVOICE' => l10n.invoicesDocTaxInvoice,
+        'BILL_OF_SUPPLY' => l10n.invoicesDocBillOfSupply,
+        'ESTIMATE' => l10n.invoicesDocEstimate,
+        'PROFORMA' => l10n.invoicesDocProforma,
+        'CREDIT_NOTE' => l10n.invoicesDocCreditNote,
+        'DEBIT_NOTE' => l10n.invoicesDocDebitNote,
         _ => d,
       };
 
-  String _statusLabel(String s) => switch (s) {
-        'DRAFT' => 'Draft',
-        'CONFIRMED' => 'Confirmed',
-        'CANCELLED' => 'Cancelled',
+  String _statusLabel(AppLocalizations l10n, String s) => switch (s) {
+        'DRAFT' => l10n.invoicesStatusDraft,
+        'CONFIRMED' => l10n.invoicesStatusConfirmed,
+        'CANCELLED' => l10n.invoicesStatusCancelled,
         _ => s,
       };
 
@@ -348,13 +351,14 @@ class _ActiveSecondaryFiltersRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final chips = <Widget>[];
     if (documentType != null) {
-      chips.add(_chip(context, _documentLabel(documentType!), onClearDocumentType));
+      chips.add(_chip(context, _documentLabel(l10n, documentType!), onClearDocumentType));
     }
     if (status != null) {
       final (c, s) = _statusColors(status!);
-      chips.add(_chip(context, _statusLabel(status!), onClearStatus, color: c, soft: s));
+      chips.add(_chip(context, _statusLabel(l10n, status!), onClearStatus, color: c, soft: s));
     }
     return Padding(
       padding: const EdgeInsets.fromLTRB(AppSizes.lg, 0, AppSizes.lg, AppSizes.sm),
@@ -390,27 +394,49 @@ class _InvoiceFilterSheetState extends State<_InvoiceFilterSheet> {
   late String? _documentType = widget.documentType;
   late String? _status = widget.status;
 
-  static const _documentOptions = <(String?, String, IconData)>[
-    (null, 'All documents', Icons.layers_outlined),
-    ('TAX_INVOICE', 'Tax Invoice', Icons.receipt_long_rounded),
-    ('BILL_OF_SUPPLY', 'Bill of Supply', Icons.description_outlined),
-    ('ESTIMATE', 'Estimate', Icons.request_quote_outlined),
-    ('PROFORMA', 'Proforma', Icons.article_outlined),
-    ('CREDIT_NOTE', 'Credit Note', Icons.undo_rounded),
-    ('DEBIT_NOTE', 'Debit Note', Icons.redo_rounded),
+  static const _documentOptions = <(String?, IconData)>[
+    (null, Icons.layers_outlined),
+    ('TAX_INVOICE', Icons.receipt_long_rounded),
+    ('BILL_OF_SUPPLY', Icons.description_outlined),
+    ('ESTIMATE', Icons.request_quote_outlined),
+    ('PROFORMA', Icons.article_outlined),
+    ('CREDIT_NOTE', Icons.undo_rounded),
+    ('DEBIT_NOTE', Icons.redo_rounded),
   ];
 
   // Getter, not `static final`: the status colours are theme-aware getters, so
   // a cached list would freeze the light-mode values and not flip in dark.
-  static List<(String?, String, Color?)> get _statusOptions => [
-        (null, 'Any status', null),
-        ('DRAFT', 'Draft', AppColors.warning),
-        ('CONFIRMED', 'Confirmed', AppColors.success),
-        ('CANCELLED', 'Cancelled', AppColors.error),
+  static List<(String?, Color?)> get _statusOptions => [
+        (null, null),
+        ('DRAFT', AppColors.warning),
+        ('CONFIRMED', AppColors.success),
+        ('CANCELLED', AppColors.error),
       ];
+
+  String _documentOptionLabel(AppLocalizations l10n, String? value) =>
+      switch (value) {
+        null => l10n.invoicesFilterAllDocuments,
+        'TAX_INVOICE' => l10n.invoicesDocTaxInvoice,
+        'BILL_OF_SUPPLY' => l10n.invoicesDocBillOfSupply,
+        'ESTIMATE' => l10n.invoicesDocEstimate,
+        'PROFORMA' => l10n.invoicesDocProforma,
+        'CREDIT_NOTE' => l10n.invoicesDocCreditNote,
+        'DEBIT_NOTE' => l10n.invoicesDocDebitNote,
+        _ => value,
+      };
+
+  String _statusOptionLabel(AppLocalizations l10n, String? value) =>
+      switch (value) {
+        null => l10n.invoicesFilterAnyStatus,
+        'DRAFT' => l10n.invoicesStatusDraft,
+        'CONFIRMED' => l10n.invoicesStatusConfirmed,
+        'CANCELLED' => l10n.invoicesStatusCancelled,
+        _ => value,
+      };
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     return SafeArea(
       child: Padding(
@@ -432,10 +458,10 @@ class _InvoiceFilterSheetState extends State<_InvoiceFilterSheet> {
                 ),
               ),
               const SizedBox(height: AppSizes.lg),
-              Text('Filters', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+              Text(l10n.invoicesFiltersTitle, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
               const SizedBox(height: AppSizes.lg),
               Text(
-                'Document type',
+                l10n.invoicesDocumentTypeLabel,
                 style: theme.textTheme.labelMedium?.copyWith(
                   color: AppColors.muted,
                   letterSpacing: 0.6,
@@ -447,9 +473,9 @@ class _InvoiceFilterSheetState extends State<_InvoiceFilterSheet> {
                 spacing: AppSizes.sm,
                 runSpacing: AppSizes.sm,
                 children: [
-                  for (final (value, label, icon) in _documentOptions)
+                  for (final (value, icon) in _documentOptions)
                     AppFilterPill(
-                      label: label,
+                      label: _documentOptionLabel(l10n, value),
                       icon: icon,
                       selected: _documentType == value,
                       onTap: () => setState(() => _documentType = value),
@@ -458,7 +484,7 @@ class _InvoiceFilterSheetState extends State<_InvoiceFilterSheet> {
               ),
               const SizedBox(height: AppSizes.lg),
               Text(
-                'Status',
+                l10n.invoicesStatusLabel,
                 style: theme.textTheme.labelMedium?.copyWith(
                   color: AppColors.muted,
                   letterSpacing: 0.6,
@@ -470,9 +496,9 @@ class _InvoiceFilterSheetState extends State<_InvoiceFilterSheet> {
                 spacing: AppSizes.sm,
                 runSpacing: AppSizes.sm,
                 children: [
-                  for (final (value, label, _) in _statusOptions)
+                  for (final (value, _) in _statusOptions)
                     AppFilterPill(
-                      label: label,
+                      label: _statusOptionLabel(l10n, value),
                       selected: _status == value,
                       onTap: () => setState(() => _status = value),
                     ),
@@ -483,7 +509,7 @@ class _InvoiceFilterSheetState extends State<_InvoiceFilterSheet> {
                 children: [
                   Expanded(
                     child: AppButton.secondary(
-                      label: 'Clear all',
+                      label: l10n.invoicesClearAll,
                       onPressed: () => setState(() {
                         _documentType = null;
                         _status = null;
@@ -494,7 +520,7 @@ class _InvoiceFilterSheetState extends State<_InvoiceFilterSheet> {
                   Expanded(
                     flex: 2,
                     child: AppButton.primary(
-                      label: 'Apply',
+                      label: l10n.invoicesApply,
                       onPressed: () {
                         widget.onApply(_documentType, _status);
                         Navigator.pop(context);
@@ -627,8 +653,10 @@ class _InvoiceTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final df = DateFormat('dd MMM yyyy');
+    final count = invoice.itemCount ?? invoice.items.length;
 
     return Material(
       color: AppColors.surface,
@@ -701,7 +729,7 @@ class _InvoiceTile extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    '${invoice.itemCount ?? invoice.items.length} item${(invoice.itemCount ?? invoice.items.length) == 1 ? '' : 's'}',
+                    '$count ${count == 1 ? l10n.invoicesItemUnit : l10n.invoicesItemsUnit}',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: AppColors.muted,
                     ),
@@ -709,7 +737,7 @@ class _InvoiceTile extends StatelessWidget {
                   IconButton(
                     icon: const Icon(Icons.download_rounded, size: AppSizes.iconMd),
                     onPressed: onDownload,
-                    tooltip: AppStrings.downloadInvoice,
+                    tooltip: l10n.invoicesDownloadTooltip,
                     visualDensity: VisualDensity.compact,
                   ),
                 ],

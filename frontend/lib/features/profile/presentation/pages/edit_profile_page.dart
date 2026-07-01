@@ -7,8 +7,8 @@ import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/profile/presentation/pages/profile_page.dart'
     show ProfileAvatar;
 import 'package:shopxy/features/shop/presentation/providers/shop_provider.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
-import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/constants/indian.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
@@ -67,6 +67,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Future<void> _changePhoto() async {
+    final l10n = AppLocalizations.of(context);
     final user = context.read<AuthProvider>().user;
     final hasAvatar = user?.avatarUrl != null && user!.avatarUrl!.isNotEmpty;
     final source = await showModalBottomSheet<_PhotoAction>(
@@ -78,19 +79,19 @@ class _EditProfilePageState extends State<EditProfilePage> {
           children: [
             ListTile(
               leading: const Icon(Icons.camera_alt_outlined),
-              title: const Text('Take a photo'),
+              title: Text(l10n.profileTakePhoto),
               onTap: () => Navigator.of(ctx).pop(_PhotoAction.camera),
             ),
             ListTile(
               leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('Pick from gallery'),
+              title: Text(l10n.profilePickFromGallery),
               onTap: () => Navigator.of(ctx).pop(_PhotoAction.gallery),
             ),
             if (hasAvatar)
               ListTile(
                 leading: Icon(Icons.delete_outline,
                     color: AppColors.error),
-                title: Text('Remove photo',
+                title: Text(l10n.profileRemovePhoto,
                     style: TextStyle(color: AppColors.error)),
                 onTap: () => Navigator.of(ctx).pop(_PhotoAction.remove),
               ),
@@ -205,7 +206,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile updated')),
+        SnackBar(content: Text(AppLocalizations.of(context).profileProfileUpdated)),
       );
       Navigator.pop(context);
     } catch (e) {
@@ -220,9 +221,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final user = context.watch<AuthProvider>().user;
     return Scaffold(
-      appBar: AppBar(title: const Text(AppStrings.editProfile)),
+      appBar: AppBar(title: Text(l10n.profileEditProfile)),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -272,12 +274,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
             const SizedBox(height: AppSizes.xl),
             TextFormField(
               controller: _name,
-              decoration: const InputDecoration(labelText: 'Name'),
+              decoration: InputDecoration(labelText: l10n.profileName),
               textCapitalization: TextCapitalization.words,
               validator: (v) {
                 final t = (v ?? '').trim();
-                if (t.length < 2) return 'Name must be at least 2 characters';
-                if (t.length > 80) return 'Name too long';
+                if (t.length < 2) return l10n.profileNameMinLength;
+                if (t.length > 80) return l10n.profileNameTooLong;
                 return null;
               },
             ),
@@ -285,33 +287,33 @@ class _EditProfilePageState extends State<EditProfilePage> {
             TextFormField(
               initialValue: user?.email ?? '',
               enabled: false,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                helperText: 'Email changes are not supported yet',
+              decoration: InputDecoration(
+                labelText: l10n.profileEmail,
+                helperText: l10n.profileEmailNotEditable,
               ),
             ),
             const SizedBox(height: AppSizes.xl),
             Text(
-              'Shop details',
+              l10n.profileShopDetails,
               style: theme.textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
             ),
             const SizedBox(height: AppSizes.xs),
             Text(
-              'These appear on invoices and PDFs. GSTIN must match the state.',
+              l10n.profileShopDetailsHint,
               style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
             ),
             const SizedBox(height: AppSizes.md),
             TextFormField(
               controller: _shopName,
-              decoration: const InputDecoration(labelText: 'Shop name'),
+              decoration: InputDecoration(labelText: l10n.profileShopName),
               textCapitalization: TextCapitalization.words,
             ),
             const SizedBox(height: AppSizes.md),
             TextFormField(
               controller: _shopAddress,
-              decoration: const InputDecoration(labelText: 'Shop address'),
+              decoration: InputDecoration(labelText: l10n.profileShopAddress),
               maxLines: 2,
               textCapitalization: TextCapitalization.sentences,
             ),
@@ -321,7 +323,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 Expanded(
                   child: TextFormField(
                     controller: _shopCity,
-                    decoration: const InputDecoration(labelText: 'City'),
+                    decoration: InputDecoration(labelText: l10n.profileCity),
                     textCapitalization: TextCapitalization.words,
                   ),
                 ),
@@ -329,7 +331,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 Expanded(
                   child: TextFormField(
                     controller: _shopPinCode,
-                    decoration: const InputDecoration(labelText: 'PIN code'),
+                    decoration: InputDecoration(labelText: l10n.profilePinCode),
                     keyboardType: TextInputType.number,
                     validator: IndianValidators.pincode,
                   ),
@@ -340,11 +342,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
             DropdownButtonFormField<String>(
               initialValue: _shopStateCode,
               isExpanded: true,
-              decoration: const InputDecoration(labelText: 'State'),
+              decoration: InputDecoration(labelText: l10n.profileState),
               items: [
-                const DropdownMenuItem<String>(
+                DropdownMenuItem<String>(
                   value: null,
-                  child: Text('— Select —'),
+                  child: Text(l10n.profileSelectPlaceholder),
                 ),
                 for (final s in IndianStates.all)
                   DropdownMenuItem<String>(
@@ -360,7 +362,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 Expanded(
                   child: TextFormField(
                     controller: _shopGstin,
-                    decoration: const InputDecoration(labelText: 'GSTIN'),
+                    decoration: InputDecoration(labelText: l10n.profileGstin),
                     textCapitalization: TextCapitalization.characters,
                     validator: IndianValidators.gstin,
                   ),
@@ -369,7 +371,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 Expanded(
                   child: TextFormField(
                     controller: _shopPan,
-                    decoration: const InputDecoration(labelText: 'PAN'),
+                    decoration: InputDecoration(labelText: l10n.profilePan),
                     textCapitalization: TextCapitalization.characters,
                     validator: IndianValidators.pan,
                   ),
@@ -379,8 +381,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
             const SizedBox(height: AppSizes.md),
             TextFormField(
               controller: _upiVpa,
-              decoration: const InputDecoration(
-                labelText: 'UPI ID',
+              decoration: InputDecoration(
+                labelText: l10n.profileUpiId,
                 hintText: 'shop@upi',
               ),
               keyboardType: TextInputType.emailAddress,
@@ -403,7 +405,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         color: AppColors.onInverse,
                       ),
                     )
-                  : const Text('Save'),
+                  : Text(l10n.profileSave),
             ),
           ],
         ),

@@ -7,6 +7,7 @@ import 'package:shopxy/features/payments/domain/entities/payment.dart';
 import 'package:shopxy/features/payments/presentation/widgets/record_payment_sheet.dart';
 import 'package:shopxy/features/vendors/data/datasources/vendors_remote_data_source.dart';
 import 'package:shopxy/features/vendors/domain/entities/vendor_overview.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/app_card.dart';
@@ -85,14 +86,15 @@ class _VendorDetailPageState extends State<VendorDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final canRecord = !_isLoading && _overview != null;
     return Scaffold(
-      appBar: AppBar(title: const Text('Vendor')),
+      appBar: AppBar(title: Text(l10n.vendorsDetailTitle)),
       floatingActionButton: canRecord
           ? FloatingActionButton.extended(
               onPressed: _openRecordPayment,
               icon: const Icon(Icons.payments_outlined),
-              label: const Text('Record payment'),
+              label: Text(l10n.vendorsRecordPayment),
             )
           : null,
       body: _isLoading
@@ -116,6 +118,7 @@ class _VendorDetailPageState extends State<VendorDetailPage> {
 
   List<Widget> _buildBody(VendorOverview v) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     final ledger = _ledger;
     return [
@@ -126,7 +129,7 @@ class _VendorDetailPageState extends State<VendorDetailPage> {
       _Totals(vendor: v, currency: _currency),
       const SizedBox(height: AppSizes.xl),
       if (ledger != null && ledger.entries.isNotEmpty) ...[
-        const AppSectionHeader(title: 'Ledger'),
+        AppSectionHeader(title: l10n.vendorsLedger),
         const AppDivider(),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
@@ -149,14 +152,14 @@ class _VendorDetailPageState extends State<VendorDetailPage> {
         const SizedBox(height: AppSizes.xl),
       ],
       if (v.recentInvoices.isNotEmpty) ...[
-        const AppSectionHeader(title: 'Recent bills'),
+        AppSectionHeader(title: l10n.vendorsRecentBills),
         const AppDivider(),
         for (final inv in v.recentInvoices)
           _InvoiceRow(invoice: inv, currency: _currency, dateFmt: _dateFmt),
         const SizedBox(height: AppSizes.xl),
       ],
       if (v.recentStockIns.isNotEmpty) ...[
-        const AppSectionHeader(title: 'Recent stock-in'),
+        AppSectionHeader(title: l10n.vendorsRecentStockIn),
         const AppDivider(),
         for (final s in v.recentStockIns)
           _StockInRow(
@@ -172,7 +175,7 @@ class _VendorDetailPageState extends State<VendorDetailPage> {
         Padding(
           padding: const EdgeInsets.all(AppSizes.xl),
           child: Text(
-            'No activity yet.',
+            l10n.vendorsNoActivity,
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted),
           ),
@@ -188,6 +191,7 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
       child: Column(
@@ -219,8 +223,8 @@ class _Header extends StatelessWidget {
                 ),
               ),
               if (vendor.linkedUser != null)
-                const AppStatusBadge(
-                  label: 'Linked',
+                AppStatusBadge(
+                  label: l10n.vendorsLinked,
                   icon: Icons.verified_outlined,
                   tone: AppStatusTone.success,
                 ),
@@ -235,7 +239,8 @@ class _Header extends StatelessWidget {
             _ContactLine(icon: Icons.place_outlined, value: vendor.address!),
           if (vendor.gstin != null && vendor.gstin!.isNotEmpty)
             _ContactLine(
-                icon: Icons.badge_outlined, value: 'GSTIN ${vendor.gstin}'),
+                icon: Icons.badge_outlined,
+                value: '${l10n.vendorsGstin} ${vendor.gstin}'),
         ],
       ),
     );
@@ -276,31 +281,32 @@ class _Totals extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
       child: Row(
         children: [
           Expanded(
             child: _StatBlock(
-              label: 'Net purchased',
+              label: l10n.vendorsNetPurchased,
               value: currency.format(vendor.netPurchased),
-              hint: '${vendor.invoiceCount} bills',
+              hint: '${vendor.invoiceCount} ${l10n.vendorsBillsUnit}',
             ),
           ),
           const SizedBox(width: AppSizes.md),
           Expanded(
             child: _StatBlock(
-              label: 'Stock-ins',
+              label: l10n.vendorsStockIns,
               value: '${vendor.stockInCount}',
-              hint: 'Ledger rows',
+              hint: l10n.vendorsLedgerRows,
             ),
           ),
           const SizedBox(width: AppSizes.md),
           Expanded(
             child: _StatBlock(
-              label: 'Returns',
+              label: l10n.vendorsReturns,
               value: currency.format(vendor.totalReturns),
-              hint: '${vendor.totals.where((t) => t.type == "PURCHASE_RETURN").fold(0, (s, t) => s + t.count)} bills',
+              hint: '${vendor.totals.where((t) => t.type == "PURCHASE_RETURN").fold(0, (s, t) => s + t.count)} ${l10n.vendorsBillsUnit}',
             ),
           ),
         ],
@@ -357,6 +363,9 @@ class _InvoiceRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
+    final itemsUnit =
+        invoice.itemCount == 1 ? l10n.vendorsItemUnit : l10n.vendorsItemsUnit;
     return Material(
       color: AppColors.surface,
       child: InkWell(
@@ -383,7 +392,7 @@ class _InvoiceRow extends StatelessWidget {
                           ?.copyWith(fontWeight: FontWeight.w600),
                     ),
                     Text(
-                      '${dateFmt.format(invoice.invoiceDate)} · ${invoice.itemCount} item${invoice.itemCount == 1 ? '' : 's'}',
+                      '${dateFmt.format(invoice.invoiceDate)} · ${invoice.itemCount} $itemsUnit',
                       style: theme.textTheme.bodySmall
                           ?.copyWith(color: AppColors.muted),
                     ),
@@ -489,6 +498,7 @@ class _BalanceTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final balance = vendor.balance;
     // Vendor balance convention: positive = we owe the vendor; negative = advance.
     final positive = balance > 0;
@@ -497,10 +507,10 @@ class _BalanceTile extends StatelessWidget {
         ? AppColors.muted
         : (positive ? AppColors.error : AppColors.success);
     final label = settled
-        ? 'No outstanding'
+        ? l10n.vendorsNoOutstanding
         : positive
-            ? 'You owe'
-            : 'Advance with vendor';
+            ? l10n.vendorsYouOwe
+            : l10n.vendorsAdvanceWithVendor;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
       child: AppCard(
@@ -521,7 +531,7 @@ class _BalanceTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'BALANCE',
+                    l10n.vendorsBalanceLabel,
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: AppColors.muted,
                       letterSpacing: 0.6,
@@ -761,6 +771,7 @@ class _LedgerRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     // Vendor side: invoice = bill we owe (credit); payment = money we paid (debit).
     final isInvoice = entry.isInvoice;
     final amount = isInvoice ? entry.credit : entry.debit;
@@ -810,7 +821,7 @@ class _LedgerRow extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                'Bal ${currency.format(entry.runningBalance)}',
+                '${l10n.vendorsBalShort} ${currency.format(entry.runningBalance)}',
                 style: theme.textTheme.bodySmall
                     ?.copyWith(color: AppColors.muted),
               ),

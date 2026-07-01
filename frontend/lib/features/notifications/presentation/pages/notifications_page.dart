@@ -9,6 +9,7 @@ import 'package:shopxy/features/quotations/domain/entities/quotation.dart';
 import 'package:shopxy/features/quotations/presentation/pages/quotation_detail_page.dart';
 import 'package:shopxy/features/quotations/presentation/pages/quotations_page.dart';
 import 'package:shopxy/features/quotations/presentation/providers/quotations_provider.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
@@ -47,25 +48,30 @@ class _NotificationsPageState extends State<NotificationsPage>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final p = context.watch<NotificationsProvider>();
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notifications'),
+        title: Text(l10n.notificationsTitle),
         bottom: TabBar(
           controller: _tabs,
           tabs: [
-            Tab(text: p.unread > 0 ? 'Inbox (${p.unread})' : 'Inbox'),
+            Tab(
+              text: p.unread > 0
+                  ? '${l10n.notificationsTabInbox} (${p.unread})'
+                  : l10n.notificationsTabInbox,
+            ),
             Tab(
               text: p.pendingIncoming.isNotEmpty
-                  ? 'Invites (${p.pendingIncoming.length})'
-                  : 'Invites',
+                  ? '${l10n.notificationsTabInvites} (${p.pendingIncoming.length})'
+                  : l10n.notificationsTabInvites,
             ),
-            const Tab(text: 'Sent'),
+            Tab(text: l10n.notificationsTabSent),
           ],
         ),
         actions: [
           IconButton(
-            tooltip: 'Mark all read',
+            tooltip: l10n.notificationsMarkAllRead,
             icon: const Icon(Icons.done_all_rounded),
             onPressed: p.unread == 0 ? null : p.markAllRead,
           ),
@@ -77,7 +83,7 @@ class _NotificationsPageState extends State<NotificationsPage>
           MaterialPageRoute(builder: (_) => const SendInvitePage()),
         ),
         icon: const Icon(Icons.person_add_alt_1_rounded),
-        label: const Text('Invite'),
+        label: Text(l10n.notificationsInviteButton),
       ),
       body: TabBarView(
         controller: _tabs,
@@ -100,15 +106,16 @@ class _InboxTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final p = context.watch<NotificationsProvider>();
     if (p.isLoadingInbox && p.items.isEmpty) {
       return const _InboxSkeleton();
     }
     if (p.items.isEmpty) {
-      return const _EmptyHint(
+      return _EmptyHint(
         icon: Icons.notifications_none_rounded,
-        title: 'No notifications yet',
-        body: 'When something happens — like an invitation reply — you\'ll see it here.',
+        title: l10n.notificationsInboxEmptyTitle,
+        body: l10n.notificationsInboxEmptyBody,
       );
     }
     return RefreshIndicator(
@@ -336,12 +343,13 @@ class _IncomingTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final p = context.watch<NotificationsProvider>();
     if (p.incoming.isEmpty) {
-      return const _EmptyHint(
+      return _EmptyHint(
         icon: Icons.mark_email_unread_outlined,
-        title: 'No invitations',
-        body: 'When a shop invites you as a party or vendor, you\'ll see the request here.',
+        title: l10n.notificationsIncomingEmptyTitle,
+        body: l10n.notificationsIncomingEmptyBody,
       );
     }
     return RefreshIndicator(
@@ -367,10 +375,13 @@ class _IncomingInviteTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final p = context.read<NotificationsProvider>();
-    final shopName = invite.fromShopName ?? invite.fromUserName ?? 'A shop';
-    final roleLabel = invite.isParty ? 'party (customer)' : 'vendor (supplier)';
+    final shopName = invite.fromShopName ?? invite.fromUserName ?? l10n.notificationsAShop;
+    final roleLabel = invite.isParty
+        ? l10n.notificationsRolePartyCustomer
+        : l10n.notificationsRoleVendorSupplier;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -415,7 +426,7 @@ class _IncomingInviteTile extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      'wants to add you as their $roleLabel'
+                      '${l10n.notificationsWantsToAddYou(roleLabel)}'
                       '${invite.displayName != null ? " — \"${invite.displayName}\"" : ""}',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: AppColors.muted,
@@ -451,7 +462,7 @@ class _IncomingInviteTile extends StatelessWidget {
                   child: OutlinedButton.icon(
                     onPressed: () => _decline(context, p),
                     icon: const Icon(Icons.close_rounded, size: AppSizes.iconMd),
-                    label: const Text('Decline'),
+                    label: Text(l10n.notificationsDecline),
                   ),
                 ),
                 const SizedBox(width: AppSizes.sm),
@@ -459,7 +470,7 @@ class _IncomingInviteTile extends StatelessWidget {
                   child: FilledButton.icon(
                     onPressed: () => _accept(context, p),
                     icon: const Icon(Icons.check_rounded, size: AppSizes.iconMd),
-                    label: const Text('Accept'),
+                    label: Text(l10n.notificationsAccept),
                   ),
                 ),
               ],
@@ -471,11 +482,12 @@ class _IncomingInviteTile extends StatelessWidget {
   }
 
   Future<void> _accept(BuildContext context, NotificationsProvider p) async {
+    final l10n = AppLocalizations.of(context);
     try {
       await p.accept(invite.id);
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invitation accepted')),
+        SnackBar(content: Text(l10n.notificationsInvitationAccepted)),
       );
     } catch (e) {
       if (!context.mounted) return;
@@ -486,11 +498,12 @@ class _IncomingInviteTile extends StatelessWidget {
   }
 
   Future<void> _decline(BuildContext context, NotificationsProvider p) async {
+    final l10n = AppLocalizations.of(context);
     try {
       await p.decline(invite.id);
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invitation declined')),
+        SnackBar(content: Text(l10n.notificationsInvitationDeclined)),
       );
     } catch (e) {
       if (!context.mounted) return;
@@ -510,12 +523,13 @@ class _OutgoingTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final p = context.watch<NotificationsProvider>();
     if (p.outgoing.isEmpty) {
-      return const _EmptyHint(
+      return _EmptyHint(
         icon: Icons.outbox_outlined,
-        title: 'No invitations sent yet',
-        body: 'Tap the Invite button to invite a party or vendor by email.',
+        title: l10n.notificationsOutgoingEmptyTitle,
+        body: l10n.notificationsOutgoingEmptyBody,
       );
     }
     return RefreshIndicator(
@@ -544,6 +558,7 @@ class _OutgoingInviteTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final p = context.read<NotificationsProvider>();
     return Padding(
@@ -584,7 +599,10 @@ class _OutgoingInviteTile extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  invite.displayName ?? (invite.isParty ? 'Party' : 'Vendor'),
+                  invite.displayName ??
+                      (invite.isParty
+                          ? l10n.notificationsRoleParty
+                          : l10n.notificationsRoleVendor),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: AppColors.muted,
                   ),
@@ -595,14 +613,14 @@ class _OutgoingInviteTile extends StatelessWidget {
           _StatusChip(status: invite.status),
           if (invite.isPending)
             IconButton(
-              tooltip: 'Cancel',
+              tooltip: l10n.notificationsCancel,
               icon: const Icon(Icons.close_rounded, size: AppSizes.iconMd),
               onPressed: () async {
                 try {
                   await p.cancel(invite.id);
                   if (!context.mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Invitation cancelled')),
+                    SnackBar(content: Text(l10n.notificationsInvitationCancelled)),
                   );
                 } catch (e) {
                   if (!context.mounted) return;
@@ -628,12 +646,13 @@ class _StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final (label, fg, bg) = switch (status) {
-      InviteStatus.pending => ('Pending', AppColors.warning, AppColors.warningSoft),
-      InviteStatus.accepted => ('Accepted', AppColors.success, AppColors.successSoft),
-      InviteStatus.declined => ('Declined', AppColors.muted, AppColors.heroPanel),
-      InviteStatus.cancelled => ('Cancelled', AppColors.muted, AppColors.heroPanel),
-      InviteStatus.expired => ('Expired', AppColors.error, AppColors.errorSoft),
+      InviteStatus.pending => (l10n.notificationsStatusPending, AppColors.warning, AppColors.warningSoft),
+      InviteStatus.accepted => (l10n.notificationsStatusAccepted, AppColors.success, AppColors.successSoft),
+      InviteStatus.declined => (l10n.notificationsStatusDeclined, AppColors.muted, AppColors.heroPanel),
+      InviteStatus.cancelled => (l10n.notificationsStatusCancelled, AppColors.muted, AppColors.heroPanel),
+      InviteStatus.expired => (l10n.notificationsStatusExpired, AppColors.error, AppColors.errorSoft),
     };
     return Container(
       padding: const EdgeInsets.symmetric(

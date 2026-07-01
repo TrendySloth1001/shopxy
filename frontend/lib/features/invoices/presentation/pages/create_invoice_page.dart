@@ -12,6 +12,7 @@ import 'package:shopxy/features/products/domain/entities/product.dart';
 import 'package:shopxy/features/products/presentation/pages/qr_scanner_page.dart';
 import 'package:shopxy/features/vendors/domain/entities/vendor.dart';
 import 'package:shopxy/features/vendors/presentation/widgets/vendor_picker.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/constants/indian.dart';
@@ -367,10 +368,11 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
   ///     just-created draft's detail page so the merchant lands on the
   ///     row they need to fix, with a snackbar explaining why.
   Future<void> _save({required bool confirm}) async {
+    final l10n = AppLocalizations.of(context);
     if (!_formKey.currentState!.validate()) return;
     if (_items.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(AppStrings.invoiceNeedsItems)),
+        SnackBar(content: Text(l10n.invoicesNeedsItems)),
       );
       return;
     }
@@ -419,7 +421,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
             await provider.updateStatus(existing.id, 'CONFIRMED');
             if (!mounted) return;
             messenger.showSnackBar(
-              const SnackBar(content: Text('Invoice updated and confirmed')),
+              SnackBar(content: Text(l10n.invoicesUpdatedAndConfirmed)),
             );
           } catch (e) {
             if (!mounted) return;
@@ -429,7 +431,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
           }
         } else if (mounted) {
           messenger.showSnackBar(
-            const SnackBar(content: Text('Saved as draft')),
+            SnackBar(content: Text(l10n.invoicesSavedAsDraft)),
           );
         }
         if (mounted) navigator.pop(true);
@@ -455,7 +457,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
 
       if (!confirm) {
         messenger.showSnackBar(
-          const SnackBar(content: Text('Saved as draft')),
+          SnackBar(content: Text(l10n.invoicesSavedAsDraft)),
         );
         navigator.pop(true);
         return;
@@ -463,7 +465,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
       if (result.confirmed) {
         messenger.showSnackBar(
           SnackBar(
-            content: Text('Invoice ${result.invoice.invoiceNo} confirmed'),
+            content: Text(l10n.invoicesConfirmedNamed(result.invoice.invoiceNo)),
           ),
         );
         navigator.pop(true);
@@ -475,7 +477,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
         SnackBar(
           content: Text(
             result.confirmError ??
-                'Saved as draft — confirm failed, please review.',
+                l10n.invoicesSavedDraftConfirmFailed,
           ),
         ),
       );
@@ -494,19 +496,20 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
   }
 
   Future<bool> _confirmDiscard() async {
+    final l10n = AppLocalizations.of(context);
     final discard = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Discard changes?'),
-        content: const Text('Your edits will be lost.'),
+        title: Text(l10n.invoicesDiscardChangesTitle),
+        content: Text(l10n.invoicesDiscardChangesBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Keep editing'),
+            child: Text(l10n.invoicesKeepEditing),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Discard'),
+            child: Text(l10n.invoicesDiscard),
           ),
         ],
       ),
@@ -516,6 +519,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
 
     return PopScope(
@@ -527,7 +531,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
       },
       child: Scaffold(
       appBar: AppBar(
-        title: Text(_isEditing ? 'Edit Draft' : AppStrings.createInvoice),
+        title: Text(_isEditing ? l10n.invoicesEditDraftTitle : l10n.invoicesCreateTitle),
       ),
       bottomNavigationBar: SafeArea(
         child: Container(
@@ -542,7 +546,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                 child: OutlinedButton.icon(
                   onPressed: _isSaving ? null : () => _save(confirm: false),
                   icon: const Icon(Icons.save_outlined),
-                  label: Text(_isEditing ? 'Update draft' : 'Save as draft'),
+                  label: Text(_isEditing ? l10n.invoicesUpdateDraft : l10n.invoicesSaveAsDraft),
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size.fromHeight(AppSizes.huge),
                     side: BorderSide(color: AppColors.hairline),
@@ -565,7 +569,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                         )
                       : const Icon(Icons.check_rounded),
                   label: Text(
-                    _isEditing ? 'Update & confirm' : 'Save & confirm',
+                    _isEditing ? l10n.invoicesUpdateAndConfirm : l10n.invoicesSaveAndConfirm,
                   ),
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.brand,
@@ -595,20 +599,20 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                 padding: const EdgeInsets.all(AppSizes.lg),
                 children: [
             AppSectionHeader(
-              title: AppStrings.invoiceType.toUpperCase(),
+              title: l10n.invoicesInvoiceType.toUpperCase(),
               padding: const EdgeInsets.only(bottom: AppSizes.sm),
             ),
             SegmentedButton<String>(
-              segments: const [
+              segments: [
                 ButtonSegment(
                   value: 'SALE',
-                  label: Text(AppStrings.saleInvoice),
-                  icon: Icon(Icons.arrow_upward_rounded),
+                  label: Text(l10n.invoicesSaleInvoice),
+                  icon: const Icon(Icons.arrow_upward_rounded),
                 ),
                 ButtonSegment(
                   value: 'PURCHASE',
-                  label: Text(AppStrings.purchaseInvoice),
-                  icon: Icon(Icons.arrow_downward_rounded),
+                  label: Text(l10n.invoicesPurchaseInvoice),
+                  icon: const Icon(Icons.arrow_downward_rounded),
                 ),
               ],
               selected: {_type},
@@ -628,8 +632,8 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
 
             AppSectionHeader(
               title: (_type == 'SALE'
-                      ? AppStrings.customerInfo
-                      : AppStrings.vendorInfo)
+                      ? l10n.invoicesCustomerInfo
+                      : l10n.invoicesVendorInfo)
                   .toUpperCase(),
               padding: const EdgeInsets.only(bottom: AppSizes.sm),
             ),
@@ -642,7 +646,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                 )
               else
                 AppButton.secondary(
-                  label: AppStrings.selectVendor,
+                  label: l10n.invoicesSelectVendor,
                   icon: Icons.local_shipping_outlined,
                   onPressed: _pickVendor,
                   fullWidth: true,
@@ -656,7 +660,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                 )
               else ...[
                 AppButton.secondary(
-                  label: AppStrings.selectParty,
+                  label: l10n.invoicesSelectParty,
                   icon: Icons.person_search_rounded,
                   onPressed: _pickParty,
                   fullWidth: true,
@@ -664,8 +668,8 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                 const SizedBox(height: AppSizes.md),
                 TextFormField(
                   controller: _customerName,
-                  decoration: const InputDecoration(
-                    labelText: AppStrings.customerName,
+                  decoration: InputDecoration(
+                    labelText: l10n.invoicesCustomerName,
                   ),
                   textCapitalization: TextCapitalization.words,
                 ),
@@ -675,8 +679,8 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                     Expanded(
                       child: TextFormField(
                         controller: _customerPhone,
-                        decoration: const InputDecoration(
-                          labelText: AppStrings.phone,
+                        decoration: InputDecoration(
+                          labelText: l10n.invoicesPhone,
                         ),
                         keyboardType: TextInputType.phone,
                       ),
@@ -685,8 +689,8 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                     Expanded(
                       child: TextFormField(
                         controller: _customerGstin,
-                        decoration: const InputDecoration(
-                          labelText: AppStrings.gstin,
+                        decoration: InputDecoration(
+                          labelText: l10n.invoicesGstin,
                         ),
                         textCapitalization: TextCapitalization.characters,
                       ),
@@ -699,14 +703,14 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                 DropdownButtonFormField<String>(
                   initialValue: _walkInStateCode,
                   isExpanded: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Place of supply (state)',
-                    helperText: 'Buyer state — drives CGST/SGST vs IGST',
+                  decoration: InputDecoration(
+                    labelText: l10n.invoicesPlaceOfSupply,
+                    helperText: l10n.invoicesPlaceOfSupplyHelper,
                   ),
                   items: [
-                    const DropdownMenuItem<String>(
+                    DropdownMenuItem<String>(
                       value: null,
-                      child: Text('— Select —'),
+                      child: Text(l10n.invoicesSelectDash),
                     ),
                     for (final s in IndianStates.all)
                       DropdownMenuItem<String>(
@@ -722,7 +726,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
             const SizedBox(height: AppSizes.xxl),
 
             AppSectionHeader(
-              title: AppStrings.invoiceItems.toUpperCase(),
+              title: l10n.invoicesInvoiceItems.toUpperCase(),
               padding: const EdgeInsets.only(bottom: AppSizes.sm),
             ),
 
@@ -733,7 +737,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                   child: TextField(
                     controller: _productSearch,
                     decoration: InputDecoration(
-                      labelText: AppStrings.searchToAddProduct,
+                      labelText: l10n.invoicesSearchToAddProduct,
                       prefixIcon: _isSearchingProducts
                           ? const Padding(
                               padding: EdgeInsets.all(AppSizes.md),
@@ -750,7 +754,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                 ),
                 const SizedBox(width: AppSizes.sm),
                 IconButton.filledTonal(
-                  tooltip: 'Scan barcode',
+                  tooltip: l10n.invoicesScanBarcode,
                   onPressed: _scanProduct,
                   icon: const Icon(Icons.qr_code_scanner_rounded),
                 ),
@@ -788,7 +792,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                 padding: const EdgeInsets.all(AppSizes.lg),
                 child: Center(
                   child: Text(
-                    AppStrings.noItemsYet,
+                    l10n.invoicesNoItemsYet,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: AppColors.muted,
                     ),
@@ -816,7 +820,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
 
             if (_items.isNotEmpty) ...[
               AppSectionHeader(
-                title: AppStrings.totals.toUpperCase(),
+                title: l10n.invoicesTotals.toUpperCase(),
                 padding: const EdgeInsets.only(bottom: AppSizes.sm),
               ),
               if (_type == 'SALE') ...[
@@ -825,18 +829,18 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                 // creates an EST-prefixed quotation the user can later
                 // convert via the detail page.
                 SegmentedButton<String>(
-                  segments: const [
+                  segments: [
                     ButtonSegment(
                       value: 'TAX_INVOICE',
-                      label: Text('Tax Invoice'),
+                      label: Text(l10n.invoicesDocTaxInvoice),
                     ),
                     ButtonSegment(
                       value: 'BILL_OF_SUPPLY',
-                      label: Text('Bill of Supply'),
+                      label: Text(l10n.invoicesDocBillOfSupply),
                     ),
                     ButtonSegment(
                       value: 'ESTIMATE',
-                      label: Text('Estimate'),
+                      label: Text(l10n.invoicesDocEstimate),
                     ),
                   ],
                   selected: {_documentType},
@@ -855,18 +859,18 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                 value: _isPriceInclusive,
                 onChanged: (v) => setState(() => _isPriceInclusive = v),
                 title: Text(
-                  'Prices include GST',
+                  l10n.invoicesPricesIncludeGst,
                   style: theme.textTheme.bodyMedium,
                 ),
                 subtitle: Text(
                   _isPriceInclusive
-                      ? 'Tax is backed out of the entered prices'
-                      : 'GST is added on top of the entered prices',
+                      ? l10n.invoicesPricesInclusiveHint
+                      : l10n.invoicesPricesExclusiveHint,
                   style: theme.textTheme.bodySmall
                       ?.copyWith(color: AppColors.muted),
                 ),
               ),
-              _TotalRow(label: AppStrings.subtotal, value: _subtotal),
+              _TotalRow(label: l10n.invoicesSubtotal, value: _subtotal),
               // GST split: same formula as the backend — line.taxableValue =
               // qty*price − discount, line tax = taxableValue * rate / 100.
               // We sum across lines and either show one IGST row (interstate)
@@ -881,7 +885,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                 children: [
                   Expanded(
                     child: Text(
-                      AppStrings.discount,
+                      l10n.invoicesDiscount,
                       style: theme.textTheme.bodyMedium,
                     ),
                   ),
@@ -903,13 +907,13 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                 ],
               ),
               if (_roundOff != 0)
-                _TotalRow(label: 'Round-off', value: _roundOff),
+                _TotalRow(label: l10n.invoicesRoundOff, value: _roundOff),
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: AppSizes.sm),
                 child: AppDivider.flush(),
               ),
               _TotalRow(
-                label: 'Grand Total',
+                label: l10n.invoicesGrandTotal,
                 value: _total,
                 isHighlight: true,
               ),
@@ -919,7 +923,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
             // Note
             TextFormField(
               controller: _note,
-              decoration: const InputDecoration(labelText: AppStrings.note),
+              decoration: InputDecoration(labelText: l10n.invoicesNote),
               maxLines: 2,
               textCapitalization: TextCapitalization.sentences,
             ),
@@ -949,6 +953,7 @@ class _SelectedVendorCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     return AppCard(
       padding: const EdgeInsets.all(AppSizes.md),
@@ -970,7 +975,7 @@ class _SelectedVendorCard extends StatelessWidget {
                   Text(vendor.phone!, style: theme.textTheme.bodySmall),
                 if (vendor.gstin != null)
                   Text(
-                    'GSTIN: ${vendor.gstin}',
+                    '${l10n.invoicesGstin}: ${vendor.gstin}',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: AppColors.muted,
                     ),
@@ -978,7 +983,7 @@ class _SelectedVendorCard extends StatelessWidget {
               ],
             ),
           ),
-          TextButton(onPressed: onChange, child: const Text('Change')),
+          TextButton(onPressed: onChange, child: Text(l10n.invoicesChange)),
           IconButton(
             icon: const Icon(Icons.close_rounded),
             onPressed: onClear,
@@ -1002,6 +1007,7 @@ class _ItemRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSizes.sm),
@@ -1041,7 +1047,7 @@ class _ItemRow extends StatelessWidget {
             Row(
               children: [
                 _NumField(
-                  label: AppStrings.quantity,
+                  label: l10n.invoicesQuantity,
                   value: item.quantity,
                   onChanged: (v) {
                     item.quantity = v;
@@ -1050,7 +1056,7 @@ class _ItemRow extends StatelessWidget {
                 ),
                 const SizedBox(width: AppSizes.sm),
                 _NumField(
-                  label: AppStrings.unitPrice,
+                  label: l10n.invoicesUnitPrice,
                   value: item.unitPrice,
                   prefix: AppStrings.currencySymbol,
                   onChanged: (v) {
@@ -1060,7 +1066,7 @@ class _ItemRow extends StatelessWidget {
                 ),
                 const SizedBox(width: AppSizes.sm),
                 _NumField(
-                  label: '${AppStrings.tax} %',
+                  label: '${l10n.invoicesTax} %',
                   value: item.taxPercent,
                   onChanged: (v) {
                     item.taxPercent = v;
@@ -1073,7 +1079,7 @@ class _ItemRow extends StatelessWidget {
             Align(
               alignment: Alignment.centerRight,
               child: Text(
-                '${AppStrings.total}: ${AppStrings.currencySymbol}${item.total.toStringAsFixed(2)}',
+                '${l10n.invoicesTotal}: ${AppStrings.currencySymbol}${item.total.toStringAsFixed(2)}',
                 style: theme.textTheme.bodySmall?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -1167,6 +1173,7 @@ class _SelectedPartyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     return AppCard(
       padding: const EdgeInsets.all(AppSizes.md),
@@ -1188,7 +1195,7 @@ class _SelectedPartyCard extends StatelessWidget {
                   Text(party.phone!, style: theme.textTheme.bodySmall),
                 if (party.gstin != null)
                   Text(
-                    'GSTIN: ${party.gstin}',
+                    '${l10n.invoicesGstin}: ${party.gstin}',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: AppColors.muted,
                     ),
@@ -1196,7 +1203,7 @@ class _SelectedPartyCard extends StatelessWidget {
               ],
             ),
           ),
-          TextButton(onPressed: onChange, child: const Text('Change')),
+          TextButton(onPressed: onChange, child: Text(l10n.invoicesChange)),
           IconButton(
             icon: const Icon(Icons.close_rounded),
             onPressed: onClear,

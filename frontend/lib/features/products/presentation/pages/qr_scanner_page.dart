@@ -5,8 +5,8 @@ import 'package:shopxy/features/products/domain/entities/product_draft.dart';
 import 'package:shopxy/features/products/domain/entities/product.dart';
 import 'package:shopxy/features/products/presentation/pages/add_edit_product_page.dart';
 import 'package:shopxy/features/products/presentation/providers/products_provider.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
-import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
@@ -85,6 +85,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
       shape: AppShapes.squircleTop(AppSizes.bottomSheetRadius),
       builder: (ctx) {
         final theme = Theme.of(ctx);
+        final l10n = AppLocalizations.of(ctx);
         return Padding(
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(ctx).viewInsets.bottom + AppSizes.xl,
@@ -114,7 +115,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
               ),
               const SizedBox(height: AppSizes.md),
               Text(
-                AppStrings.productNotFoundTitle,
+                l10n.productsNotFoundTitle,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w700,
@@ -122,7 +123,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
               ),
               const SizedBox(height: AppSizes.xs),
               Text(
-                AppStrings.productNotFoundHint,
+                l10n.productsNotFoundHint,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted),
               ),
@@ -150,14 +151,14 @@ class _QrScannerPageState extends State<QrScannerPage> {
               ),
               const SizedBox(height: AppSizes.xl),
               AppButton.primary(
-                label: AppStrings.addProduct,
+                label: l10n.productsAddProduct,
                 icon: Icons.add_rounded,
                 onPressed: () => Navigator.pop(ctx, _MissingProductAction.add),
                 fullWidth: true,
               ),
               const SizedBox(height: AppSizes.sm),
               AppButton.secondary(
-                label: AppStrings.scanAgain,
+                label: l10n.productsScanAgain,
                 onPressed: () =>
                     Navigator.pop(ctx, _MissingProductAction.retry),
                 fullWidth: true,
@@ -172,11 +173,12 @@ class _QrScannerPageState extends State<QrScannerPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text(AppStrings.scanQr),
+        title: Text(l10n.productsScanQr),
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
         iconTheme: IconThemeData(color: Colors.white),
@@ -214,7 +216,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
                   ),
                 ),
                 child: Text(
-                  _isProcessing ? AppStrings.loading : AppStrings.scanHint,
+                  _isProcessing ? l10n.productsLoading : l10n.productsScanHint,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: Colors.white,
                   ),

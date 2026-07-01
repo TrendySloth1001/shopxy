@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/features/notifications/presentation/pages/notifications_page.dart';
 import 'package:shopxy/features/notifications/presentation/providers/notifications_provider.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 
@@ -12,9 +13,10 @@ class NotificationBell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final unread = context.select<NotificationsProvider, int>((p) => p.unread);
     return IconButton(
-      tooltip: 'Notifications',
+      tooltip: l10n.notificationsTitle,
       onPressed: () => Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => const NotificationsPage()),

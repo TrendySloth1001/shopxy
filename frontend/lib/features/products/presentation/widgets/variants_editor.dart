@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shopxy/core/network/image_url.dart';
 import 'package:shopxy/features/products/domain/entities/product.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
@@ -116,11 +117,12 @@ class _VariantsEditorState extends State<VariantsEditor> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Axes',
+          l10n.productsAxes,
           style: theme.textTheme.labelMedium?.copyWith(
               fontWeight: FontWeight.w800, color: AppColors.muted),
         ),
@@ -139,13 +141,13 @@ class _VariantsEditorState extends State<VariantsEditor> {
             alignment: Alignment.centerLeft,
             child: OutlinedButton.icon(
               icon: const Icon(Icons.add, size: 16),
-              label: const Text('Add axis (e.g. Colour, Size)'),
+              label: Text(l10n.productsAddAxis),
               onPressed: _addAxis,
             ),
           ),
         const SizedBox(height: AppSizes.lg),
         Text(
-          'Variants',
+          l10n.productsVariantsLabel,
           style: theme.textTheme.labelMedium?.copyWith(
               fontWeight: FontWeight.w800, color: AppColors.muted),
         ),
@@ -163,7 +165,7 @@ class _VariantsEditorState extends State<VariantsEditor> {
             alignment: Alignment.centerLeft,
             child: OutlinedButton.icon(
               icon: const Icon(Icons.add, size: 16),
-              label: const Text('Add variant'),
+              label: Text(l10n.productsAddVariant),
               onPressed: _addVariant,
             ),
           ),
@@ -190,6 +192,7 @@ class _AxisCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       margin: const EdgeInsets.only(bottom: AppSizes.sm),
       padding: const EdgeInsets.all(AppSizes.sm),
@@ -208,9 +211,9 @@ class _AxisCard extends StatelessWidget {
                 child: TextFormField(
                   initialValue: axis.name,
                   onChanged: onName,
-                  decoration: const InputDecoration(
-                    labelText: 'Axis name (e.g. Colour)',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: l10n.productsAxisNameLabel,
+                    border: const OutlineInputBorder(),
                     isDense: true,
                   ),
                 ),
@@ -232,7 +235,7 @@ class _AxisCard extends StatelessWidget {
                       initialValue: axis.values[i],
                       onChanged: (v) => onUpdateValue(i, v),
                       decoration: InputDecoration(
-                        labelText: 'Value ${i + 1}',
+                        labelText: l10n.productsValueN('${i + 1}'),
                         border: const OutlineInputBorder(),
                         isDense: true,
                       ),
@@ -249,7 +252,7 @@ class _AxisCard extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: TextButton.icon(
               icon: const Icon(Icons.add, size: 16),
-              label: const Text('Add value'),
+              label: Text(l10n.productsAddValue),
               onPressed: onAddValue,
             ),
           ),
@@ -289,6 +292,7 @@ class _VariantCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       margin: const EdgeInsets.only(bottom: AppSizes.sm),
       padding: const EdgeInsets.all(AppSizes.sm),
@@ -312,7 +316,7 @@ class _VariantCard extends StatelessWidget {
                     shape: AppShapes.squircle(AppSizes.radiusSm),
                   ),
                   child: Text(
-                    'DEFAULT',
+                    l10n.productsDefaultBadge,
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         fontWeight: FontWeight.w800, letterSpacing: 0.6),
                   ),
@@ -342,7 +346,7 @@ class _VariantCard extends StatelessWidget {
                       variant.copyWith(attributes: _patchAttr(a.name, v)));
                 },
                 decoration: InputDecoration(
-                  labelText: a.name.isEmpty ? 'Axis' : a.name,
+                  labelText: a.name.isEmpty ? l10n.productsAxisFallback : a.name,
                   border: const OutlineInputBorder(),
                   isDense: true,
                 ),
@@ -351,9 +355,9 @@ class _VariantCard extends StatelessWidget {
           TextFormField(
             initialValue: variant.sku,
             onChanged: (v) => onChange(variant.copyWith(sku: v)),
-            decoration: const InputDecoration(
-              labelText: 'SKU',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: l10n.productsSku,
+              border: const OutlineInputBorder(),
               isDense: true,
             ),
           ),
@@ -366,9 +370,9 @@ class _VariantCard extends StatelessWidget {
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   onChanged: (v) => onChange(variant.copyWith(
                       mrp: double.tryParse(v) ?? variant.mrp)),
-                  decoration: const InputDecoration(
-                    labelText: 'MRP',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: l10n.productsMrp,
+                    border: const OutlineInputBorder(),
                     isDense: true,
                   ),
                 ),
@@ -381,9 +385,9 @@ class _VariantCard extends StatelessWidget {
                   onChanged: (v) => onChange(variant.copyWith(
                       sellingPrice:
                           double.tryParse(v) ?? variant.sellingPrice)),
-                  decoration: const InputDecoration(
-                    labelText: 'Selling',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: l10n.productsSellingShort,
+                    border: const OutlineInputBorder(),
                     isDense: true,
                   ),
                 ),
@@ -396,9 +400,9 @@ class _VariantCard extends StatelessWidget {
                   onChanged: (v) => onChange(variant.copyWith(
                       stockQuantity:
                           double.tryParse(v) ?? variant.stockQuantity)),
-                  decoration: const InputDecoration(
-                    labelText: 'Stock',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: l10n.productsStockShort,
+                    border: const OutlineInputBorder(),
                     isDense: true,
                   ),
                 ),
@@ -415,9 +419,7 @@ class _VariantCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSizes.xs),
           Text(
-            'Add images for this exact variant — what colour it looks '
-            'like, how it fits. Customers picking this option will see '
-            'these instead of the product-level gallery.',
+            l10n.productsVariantImagesHint,
             style: Theme.of(context)
                 .textTheme
                 .labelSmall
@@ -520,18 +522,19 @@ class _AddVariantImageTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return PopupMenuButton<ImageSource>(
-      tooltip: 'Add variant image',
+      tooltip: l10n.productsAddVariantImage,
       onSelected: (s) =>
           s == ImageSource.camera ? onCamera() : onGallery(),
-      itemBuilder: (_) => const [
+      itemBuilder: (_) => [
         PopupMenuItem(
           value: ImageSource.gallery,
           child: Row(
             children: [
-              Icon(Icons.photo_library_outlined, size: 18),
-              SizedBox(width: 8),
-              Text('From gallery'),
+              const Icon(Icons.photo_library_outlined, size: 18),
+              const SizedBox(width: 8),
+              Text(l10n.productsFromGallery),
             ],
           ),
         ),
@@ -539,9 +542,9 @@ class _AddVariantImageTile extends StatelessWidget {
           value: ImageSource.camera,
           child: Row(
             children: [
-              Icon(Icons.photo_camera_outlined, size: 18),
-              SizedBox(width: 8),
-              Text('Take photo'),
+              const Icon(Icons.photo_camera_outlined, size: 18),
+              const SizedBox(width: 8),
+              Text(l10n.productsTakePhotoMenu),
             ],
           ),
         ),
@@ -562,7 +565,7 @@ class _AddVariantImageTile extends StatelessWidget {
             Icon(Icons.add_a_photo_outlined, color: AppColors.muted),
             const SizedBox(height: 2),
             Text(
-              'Add',
+              l10n.productsAddShort,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     color: AppColors.muted,
                     fontWeight: FontWeight.w700,
