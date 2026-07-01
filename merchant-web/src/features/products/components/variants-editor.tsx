@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Plus, X } from "lucide-react";
 import type { ProductVariant, VariantAxis } from "../schema";
 import { MiniButton } from "./form-controls";
@@ -49,6 +50,7 @@ export function VariantsEditor({
   onAxes: (next: VariantAxis[]) => void;
   onVariants: (next: ProductVariant[]) => void;
 }) {
+  const t = useTranslations("products");
   function patchVariant(i: number, p: Partial<ProductVariant>) {
     onVariants(variants.map((v, idx) => (idx === i ? { ...v, ...p } : v)));
   }
@@ -83,19 +85,19 @@ export function VariantsEditor({
     <div className="flex flex-col gap-lg">
       {/* Axes */}
       <div className="flex flex-col gap-md">
-        <p className="text-label-md text-muted">Axes (e.g. Colour, Size)</p>
+        <p className="text-label-md text-muted">{t("variants.axesLabel")}</p>
         {axes.map((axis, ai) => (
           <div key={ai} className="rounded-md border border-hairline p-sm">
             <div className="flex items-center gap-sm">
               <input
                 className={`${cell} flex-1`}
-                placeholder="Axis name"
+                placeholder={t("variants.axisNamePlaceholder")}
                 value={axis.name}
                 onChange={(e) =>
                   onAxes(axes.map((a, idx) => (idx === ai ? { ...a, name: e.target.value } : a)))
                 }
               />
-              <button type="button" aria-label="Remove axis"
+              <button type="button" aria-label={t("variants.removeAxis")}
                 onClick={() => onAxes(axes.filter((_, idx) => idx !== ai))}
                 className="rounded-md p-sm text-muted hover:bg-surface-tint hover:text-ink">
                 <X size={16} />
@@ -105,7 +107,7 @@ export function VariantsEditor({
               <StringListEditor
                 items={axis.values}
                 onChange={(v) => onAxes(axes.map((a, idx) => (idx === ai ? { ...a, values: v } : a)))}
-                placeholder="Value"
+                placeholder={t("variants.valuePlaceholder")}
               />
             </div>
           </div>
@@ -113,11 +115,11 @@ export function VariantsEditor({
         <div className="flex flex-wrap gap-sm">
           {axes.length < 3 ? (
             <MiniButton onClick={() => onAxes([...axes, { name: "", values: [""] }])}>
-              <Plus size={16} /> Add axis
+              <Plus size={16} /> {t("variants.addAxis")}
             </MiniButton>
           ) : null}
           {namedAxes.length > 0 ? (
-            <MiniButton onClick={generate}>Generate variants</MiniButton>
+            <MiniButton onClick={generate}>{t("variants.generate")}</MiniButton>
           ) : null}
         </div>
       </div>
@@ -125,7 +127,7 @@ export function VariantsEditor({
       {/* Variants */}
       {variants.length > 0 ? (
         <div className="flex flex-col gap-sm">
-          <p className="text-label-md text-muted">Variants ({variants.length})</p>
+          <p className="text-label-md text-muted">{t("variants.countLabel", { count: variants.length })}</p>
           {variants.map((v, vi) => (
             <div key={vi} className="flex flex-wrap items-center gap-sm rounded-md border border-hairline p-sm">
               {namedAxes.map((axis) => (
@@ -147,18 +149,18 @@ export function VariantsEditor({
               ))}
               <input
                 className={`${cell} w-28 ${duplicateSkus.has(v.sku.trim().toLowerCase()) ? "border-error" : ""}`}
-                placeholder="SKU" value={v.sku}
+                placeholder={t("variants.skuPlaceholder")} value={v.sku}
                 aria-invalid={duplicateSkus.has(v.sku.trim().toLowerCase()) || undefined}
                 onChange={(e) => patchVariant(vi, { sku: e.target.value })} />
-              <input className={`${cell} w-20`} type="number" min={0} step={0.01} placeholder="MRP" value={String(v.mrp)}
+              <input className={`${cell} w-20`} type="number" min={0} step={0.01} placeholder={t("variants.mrpPlaceholder")} value={String(v.mrp)}
                 onChange={(e) => patchVariant(vi, { mrp: nonNegative(e.target.value) })} />
-              <input className={`${cell} w-20`} type="number" min={0} step={0.01} placeholder="Sell" value={String(v.sellingPrice)}
+              <input className={`${cell} w-20`} type="number" min={0} step={0.01} placeholder={t("variants.sellPlaceholder")} value={String(v.sellingPrice)}
                 onChange={(e) => patchVariant(vi, { sellingPrice: nonNegative(e.target.value) })} />
-              <input className={`${cell} w-20`} type="number" min={0} step={0.01} placeholder="Cost" value={String(v.purchasePrice)}
+              <input className={`${cell} w-20`} type="number" min={0} step={0.01} placeholder={t("variants.costPlaceholder")} value={String(v.purchasePrice)}
                 onChange={(e) => patchVariant(vi, { purchasePrice: nonNegative(e.target.value) })} />
-              <input className={`${cell} w-16`} type="number" min={0} step={1} placeholder="Qty" value={String(v.stockQuantity)}
+              <input className={`${cell} w-16`} type="number" min={0} step={1} placeholder={t("variants.qtyPlaceholder")} value={String(v.stockQuantity)}
                 onChange={(e) => patchVariant(vi, { stockQuantity: Math.round(nonNegative(e.target.value)) })} />
-              <button type="button" aria-label="Remove variant"
+              <button type="button" aria-label={t("variants.removeVariant")}
                 onClick={() => onVariants(variants.filter((_, idx) => idx !== vi))}
                 className="rounded-md p-sm text-muted hover:bg-surface-tint hover:text-ink">
                 <X size={16} />
@@ -167,11 +169,13 @@ export function VariantsEditor({
           ))}
           {duplicateSkus.size > 0 ? (
             <p className="text-body-sm text-error">
-              Duplicate SKU{duplicateSkus.size === 1 ? "" : "s"}: {[...duplicateSkus].join(", ")} — each variant needs a unique SKU.
+              {duplicateSkus.size === 1
+                ? t("variants.duplicateSkuOne", { skus: [...duplicateSkus].join(", ") })
+                : t("variants.duplicateSkuOther", { skus: [...duplicateSkus].join(", ") })}
             </p>
           ) : null}
           <MiniButton onClick={() => onVariants([...variants, emptyVariant()])}>
-            <Plus size={16} /> Add variant
+            <Plus size={16} /> {t("variants.addVariant")}
           </MiniButton>
         </div>
       ) : null}

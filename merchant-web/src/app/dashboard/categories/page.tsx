@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { FolderTree, RefreshCw } from "lucide-react";
 import { PageHeader } from "@/shared/ui/page-header";
 import { getCategoryTree } from "@/features/categories/api";
@@ -8,6 +9,7 @@ import { CategoryCard } from "@/features/categories/category-card";
 import type { CategoryNode } from "@/features/categories/schema";
 
 export default function CategoriesPage() {
+  const t = useTranslations("categories");
   const [nodes, setNodes] = useState<CategoryNode[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +25,7 @@ export default function CategoriesPage() {
         setNodes(tree);
         setError(null);
       } catch (e) {
-        if (active) setError(e instanceof Error ? e.message : "Could not load categories.");
+        if (active) setError(e instanceof Error ? e.message : t("list.loadError"));
       } finally {
         if (active) setLoading(false);
       }
@@ -31,21 +33,21 @@ export default function CategoriesPage() {
     return () => {
       active = false;
     };
-  }, [nonce]);
+  }, [nonce, t]);
 
   return (
     <div className="w-full px-lg py-xxl md:px-xxl">
       <PageHeader
         icon={FolderTree}
         tone="teal"
-        title="Categories"
-        subtitle="Browse the storefront taxonomy and drill into the products filed under each category. The catalogue itself is platform-managed."
+        title={t("list.title")}
+        subtitle={t("list.subtitle")}
       >
         <button
           type="button"
           onClick={() => setNonce((n) => n + 1)}
           disabled={loading}
-          aria-label="Refresh"
+          aria-label={t("actions.refresh")}
           className="inline-flex size-10 items-center justify-center rounded-button border border-hairline text-ink transition-colors hover:bg-surface-tint disabled:text-disabled"
         >
           <RefreshCw size={16} />
@@ -71,7 +73,7 @@ export default function CategoriesPage() {
             <span className="flex size-12 items-center justify-center rounded-full bg-accent-teal-soft text-accent-teal">
               <FolderTree size={22} />
             </span>
-            <p className="text-body-md text-muted">No categories in the taxonomy yet.</p>
+            <p className="text-body-md text-muted">{t("list.empty")}</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-lg sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">

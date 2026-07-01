@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Search } from "lucide-react";
 import { Modal } from "@/shared/ui/modal";
 import { listProducts } from "../api";
@@ -30,6 +31,7 @@ export function ProductPicker({
   onPick: (product: PickedProduct) => void;
   onClose: () => void;
 }) {
+  const t = useTranslations("products");
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<PickedProduct[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,7 +57,7 @@ export function ProductPicker({
             })),
           );
         } catch (e) {
-          if (active) setError(e instanceof Error ? e.message : "Could not load products.");
+          if (active) setError(e instanceof Error ? e.message : t("picker.loadError"));
         } finally {
           if (active) setLoading(false);
         }
@@ -65,28 +67,28 @@ export function ProductPicker({
       active = false;
       clearTimeout(handle);
     };
-  }, [query]);
+  }, [query, t]);
 
   return (
-    <Modal title="Pick a product" onClose={onClose} wide>
+    <Modal title={t("picker.title")} onClose={onClose} wide>
       <label className="flex items-center gap-sm rounded-input border border-hairline bg-field px-md focus-within:border-brand focus-within:ring-2 focus-within:ring-brand-soft">
         <Search size={16} className="text-subtle" />
         <input
           autoFocus
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search your catalog"
+          placeholder={t("picker.searchPlaceholder")}
           className="h-10 flex-1 bg-transparent text-body-md text-ink outline-none placeholder:text-subtle"
         />
       </label>
 
       <div className="-mx-lg mt-sm max-h-[50dvh] overflow-y-auto px-lg">
         {loading ? (
-          <p className="py-xl text-center text-body-sm text-subtle">Searching…</p>
+          <p className="py-xl text-center text-body-sm text-subtle">{t("picker.searching")}</p>
         ) : error ? (
           <p className="py-xl text-center text-body-sm text-error">{error}</p>
         ) : results.length === 0 ? (
-          <p className="py-xl text-center text-body-sm text-muted">No products found.</p>
+          <p className="py-xl text-center text-body-sm text-muted">{t("picker.noResults")}</p>
         ) : (
           results.map((p) => (
             <button
@@ -99,7 +101,7 @@ export function ProductPicker({
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-body-md text-ink">{p.name}</span>
                 <span className="block truncate text-body-sm text-muted">
-                  SKU {p.sku} · {money(p.sellingPrice)}
+                  {t("picker.skuPrefix")} {p.sku} · {money(p.sellingPrice)}
                 </span>
               </span>
             </button>

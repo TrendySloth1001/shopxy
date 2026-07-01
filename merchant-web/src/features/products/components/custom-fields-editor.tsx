@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   getProductCustomFields,
   listCustomFieldDefs,
@@ -17,6 +18,7 @@ const cell =
  * aren't part of the product PATCH payload).
  */
 export function CustomFieldsEditor({ productId }: { productId: number }) {
+  const t = useTranslations("products");
   const [defs, setDefs] = useState<CustomFieldDef[]>([]);
   const [values, setValues] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(true);
@@ -40,7 +42,7 @@ export function CustomFieldsEditor({ productId }: { productId: number }) {
         }
         setValues(map);
       } catch (e) {
-        if (active) setError(e instanceof Error ? e.message : "Could not load custom fields.");
+        if (active) setError(e instanceof Error ? e.message : t("customFields.loadError"));
       } finally {
         if (active) setLoading(false);
       }
@@ -48,7 +50,7 @@ export function CustomFieldsEditor({ productId }: { productId: number }) {
     return () => {
       active = false;
     };
-  }, [productId]);
+  }, [productId, t]);
 
   async function save() {
     setSaving(true);
@@ -61,28 +63,28 @@ export function CustomFieldsEditor({ productId }: { productId: number }) {
       );
       setSaved(true);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not save custom fields.");
+      setError(e instanceof Error ? e.message : t("customFields.saveError"));
     } finally {
       setSaving(false);
     }
   }
 
-  if (loading) return <p className="text-body-sm text-subtle">Loading…</p>;
+  if (loading) return <p className="text-body-sm text-subtle">{t("customFields.loading")}</p>;
   if (error && defs.length === 0)
     return <p className="text-body-sm text-error">{error}</p>;
   if (defs.length === 0)
     return (
       <p className="text-body-sm text-muted">
-        No custom fields defined for your shop yet.
+        {t("customFields.empty")}
       </p>
     );
 
   return (
     <div className="flex flex-col gap-md">
       {error ? <p className="text-body-sm text-error">{error}</p> : null}
-      {saved ? <p className="text-body-sm text-brand-strong">Saved.</p> : null}
+      {saved ? <p className="text-body-sm text-brand-strong">{t("customFields.saved")}</p> : null}
       {defs.map((d) => {
-        const label = d.label ?? d.name ?? `Field #${d.id}`;
+        const label = d.label ?? d.name ?? t("customFields.fieldFallback", { id: d.id });
         const value = values[d.id] ?? "";
         const set = (v: string) => {
           setValues((prev) => ({ ...prev, [d.id]: v }));
@@ -117,7 +119,7 @@ export function CustomFieldsEditor({ productId }: { productId: number }) {
         disabled={saving}
         className="inline-flex h-10 w-fit items-center rounded-button border border-hairline px-lg text-label-md text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:text-disabled"
       >
-        {saving ? "Saving…" : "Save custom fields"}
+        {saving ? t("customFields.saving") : t("customFields.save")}
       </button>
     </div>
   );

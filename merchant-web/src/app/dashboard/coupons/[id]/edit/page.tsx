@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { CouponEditor } from "@/features/coupons/coupon-editor";
 import { getCoupon } from "@/features/coupons/api";
 import type { Coupon } from "@/features/coupons/schema";
 import { FormSkeleton } from "@/shared/ui/skeleton";
 
 export default function EditCouponPage() {
+  const t = useTranslations("coupons");
   const params = useParams<{ id: string }>();
   const id = Number(params.id);
   const [coupon, setCoupon] = useState<Coupon | null>(null);
@@ -20,13 +22,13 @@ export default function EditCouponPage() {
         const c = await getCoupon(id);
         if (active) setCoupon(c);
       } catch (e) {
-        if (active) setError(e instanceof Error ? e.message : "Could not load the coupon.");
+        if (active) setError(e instanceof Error ? e.message : t("errors.loadOne"));
       }
     })();
     return () => {
       active = false;
     };
-  }, [id]);
+  }, [id, t]);
 
   if (error) return <p className="w-full px-lg py-xxl text-body-sm text-error md:px-xxl">{error}</p>;
   if (!coupon) return <FormSkeleton />;

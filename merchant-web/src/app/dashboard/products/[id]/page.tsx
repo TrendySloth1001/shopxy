@@ -3,6 +3,7 @@
 import { use, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   ArrowLeft,
   Pencil,
@@ -60,6 +61,7 @@ export default function ProductDetailPage({
   const productId = Number(id);
   const router = useRouter();
   const { user } = useAuth();
+  const t = useTranslations("products");
   const canStock = canManage(user, "stock");
   const canConfirmDraft = canManage(user, "invoices");
 
@@ -116,7 +118,7 @@ export default function ProductDetailPage({
           setError(null);
         }
       } catch (e) {
-        if (active) setError(e instanceof Error ? e.message : "Could not load the product.");
+        if (active) setError(e instanceof Error ? e.message : t("detail.loadError"));
       } finally {
         if (active) setLoading(false);
       }
@@ -124,7 +126,7 @@ export default function ProductDetailPage({
     return () => {
       active = false;
     };
-  }, [productId, nonce]);
+  }, [productId, nonce, t]);
 
   const reload = useCallback(() => setNonce((n) => n + 1), []);
 
@@ -158,7 +160,7 @@ export default function ProductDetailPage({
       await deleteProduct(product.id);
       router.replace("/dashboard/products");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not delete the product.");
+      setError(e instanceof Error ? e.message : t("detail.deleteError"));
       setBusy(false);
     }
   }
@@ -190,7 +192,7 @@ export default function ProductDetailPage({
           ) : null}
           <h1 className="text-headline-md text-ink">{product.name}</h1>
           <p className="mt-xs text-body-md text-muted">
-            SKU {product.sku}
+            {t("detail.skuPrefix")} {product.sku}
             {product.category?.name ? ` · ${product.category.name}` : ""}
           </p>
           {product.ratingCount > 0 ? (
@@ -198,11 +200,13 @@ export default function ProductDetailPage({
               <Stars
                 value={product.ratingAvg ?? 0}
                 size={15}
-                label={`${(product.ratingAvg ?? 0).toFixed(1)} out of 5`}
+                label={t("detail.ratingOutOf", { value: (product.ratingAvg ?? 0).toFixed(1) })}
               />
               <span className="text-body-sm text-muted">
-                {(product.ratingAvg ?? 0).toFixed(1)} · {product.ratingCount}{" "}
-                {product.ratingCount === 1 ? "rating" : "ratings"}
+                {(product.ratingAvg ?? 0).toFixed(1)} ·{" "}
+                {product.ratingCount === 1
+                  ? t("detail.ratingCountOne", { count: product.ratingCount })
+                  : t("detail.ratingCountOther", { count: product.ratingCount })}
               </span>
             </div>
           ) : null}
@@ -218,7 +222,7 @@ export default function ProductDetailPage({
                 : "border border-hairline text-ink hover:bg-surface-tint"
             }`}
           >
-            {product.isPublished ? "Published" : "Publish"}
+            {product.isPublished ? t("detail.published") : t("detail.publish")}
           </button>
           <button
             type="button"
@@ -226,13 +230,13 @@ export default function ProductDetailPage({
             className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
           >
             {copied ? <Check size={16} /> : <Share2 size={16} />}
-            {copied ? "Copied" : "Share"}
+            {copied ? t("detail.copied") : t("detail.share")}
           </button>
           <Link
             href={`/dashboard/products/${product.id}/edit`}
             className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
           >
-            <Pencil size={16} /> Edit
+            <Pencil size={16} /> {t("detail.edit")}
           </Link>
           {confirmDelete ? (
             <>
@@ -242,14 +246,14 @@ export default function ProductDetailPage({
                 disabled={busy}
                 className="inline-flex h-10 items-center gap-sm rounded-button bg-error px-md text-label-md text-white transition-colors hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error-soft disabled:bg-disabled"
               >
-                <Trash2 size={16} /> Confirm delete
+                <Trash2 size={16} /> {t("detail.confirmDelete")}
               </button>
               <button
                 type="button"
                 onClick={() => setConfirmDelete(false)}
                 className="h-10 rounded-button px-md text-label-md text-muted hover:text-ink"
               >
-                Cancel
+                {t("detail.cancel")}
               </button>
             </>
           ) : (
@@ -258,7 +262,7 @@ export default function ProductDetailPage({
               onClick={() => setConfirmDelete(true)}
               className="inline-flex h-10 items-center gap-sm rounded-button border border-error px-md text-label-md text-error transition-colors hover:bg-error-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error-soft"
             >
-              <Trash2 size={16} /> Delete
+              <Trash2 size={16} /> {t("detail.delete")}
             </button>
           )}
         </div>
@@ -269,7 +273,7 @@ export default function ProductDetailPage({
       {drafts.length > 0 ? (
         <section
           ref={draftRef}
-          aria-label="Pending draft invoices"
+          aria-label={t("detail.drafts.ariaLabel")}
           className="mt-md overflow-hidden rounded-lg border border-hairline bg-surface shadow-floating"
         >
           <div className="flex items-start gap-md border-b border-hairline bg-brand-soft px-lg py-md">
@@ -279,11 +283,11 @@ export default function ProductDetailPage({
             <div className="min-w-0">
               <p className="text-title-sm text-brand-strong">
                 {drafts.length === 1
-                  ? "1 pending draft"
-                  : `${drafts.length} pending drafts`}
+                  ? t("detail.drafts.countOne", { count: drafts.length })
+                  : t("detail.drafts.countOther", { count: drafts.length })}
               </p>
               <p className="mt-xs text-body-sm text-ink">
-                Open a draft and confirm it to post the stock to your inventory.
+                {t("detail.drafts.hint")}
               </p>
             </div>
           </div>
@@ -342,22 +346,22 @@ export default function ProductDetailPage({
           </div>
           <StockBadge product={product} />
           <div className="flex flex-wrap items-center gap-sm">
-            <MaybeLocked area="stock" label="Stock in">
+            <MaybeLocked area="stock" label={t("detail.stockIn")}>
               <button
                 type="button"
                 onClick={() => setStockSheet("STOCK_IN")}
                 className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-md text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
               >
-                <PackagePlus size={16} /> Stock in
+                <PackagePlus size={16} /> {t("detail.stockIn")}
               </button>
             </MaybeLocked>
-            <MaybeLocked area="stock" label="Stock out">
+            <MaybeLocked area="stock" label={t("detail.stockOut")}>
               <button
                 type="button"
                 onClick={() => setStockSheet("STOCK_OUT")}
                 className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
               >
-                <PackageMinus size={16} /> Stock out
+                <PackageMinus size={16} /> {t("detail.stockOut")}
               </button>
             </MaybeLocked>
             <button
@@ -365,35 +369,35 @@ export default function ProductDetailPage({
               onClick={() => setLedgerOpen(true)}
               className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
             >
-              <ScrollText size={16} /> Stock ledger
+              <ScrollText size={16} /> {t("detail.stockLedger")}
             </button>
           </div>
           <Divider />
           <Facts
             rows={[
-              ["Purchase price", money(product.purchasePrice)],
-              ["Profit / unit", money(product.sellingPrice - product.purchasePrice)],
+              [t("detail.facts.purchasePrice"), money(product.purchasePrice)],
+              [t("detail.facts.profitPerUnit"), money(product.sellingPrice - product.purchasePrice)],
               [
-                "Margin",
+                t("detail.facts.margin"),
                 product.sellingPrice > 0
                   ? `${Math.round(((product.sellingPrice - product.purchasePrice) / product.sellingPrice) * 100)}%`
                   : "—",
               ],
               [
-                "GST",
+                t("detail.facts.gst"),
                 product.taxPercent > 0
                   ? `${product.taxPercent}% · ${money(gstFromInclusive(product.sellingPrice, product.taxPercent).gst)}`
-                  : "None",
+                  : t("detail.facts.none"),
               ],
-              ["Stock", `${qty(product.stockQuantity)} ${unitLabel(product.unit)}`],
-              ["Low-stock at", `${qty(product.lowStockThreshold)} ${unitLabel(product.unit)}`],
-              ["HSN", product.hsnCode || "—"],
-              ["Barcode", product.barcode || "—"],
+              [t("detail.facts.stock"), `${qty(product.stockQuantity)} ${unitLabel(product.unit)}`],
+              [t("detail.facts.lowStockAt"), `${qty(product.lowStockThreshold)} ${unitLabel(product.unit)}`],
+              [t("detail.facts.hsn"), product.hsnCode || "—"],
+              [t("detail.facts.barcode"), product.barcode || "—"],
             ]}
           />
           <Divider />
           <div>
-            <h2 className="text-title-sm text-ink">Price &amp; GST breakdown</h2>
+            <h2 className="text-title-sm text-ink">{t("detail.gstBreakdownHeading")}</h2>
             <div className="mt-md">
               <GstBreakdown
                 sellingPrice={product.sellingPrice}
@@ -404,12 +408,12 @@ export default function ProductDetailPage({
         </div>
       </div>
 
-      <Section title="Supplier price history">
+      <Section title={t("detail.sections.supplierPriceHistory")}>
         <SupplierPriceHistory productId={product.id} unit={product.unit} />
       </Section>
 
       {product.description ? (
-        <Section title="Description">
+        <Section title={t("detail.sections.description")}>
           <p className="max-w-content whitespace-pre-line text-body-md text-ink">
             {product.description}
           </p>
@@ -417,13 +421,13 @@ export default function ProductDetailPage({
       ) : null}
 
       {product.tags.length > 0 ? (
-        <Section title="Tags">
+        <Section title={t("detail.sections.tags")}>
           <Chips items={product.tags} />
         </Section>
       ) : null}
 
       {product.highlights.length > 0 ? (
-        <Section title="Highlights">
+        <Section title={t("detail.sections.highlights")}>
           <ul className="list-disc space-y-xs pl-lg text-body-md text-ink">
             {product.highlights.map((h, i) => (
               <li key={i}>{h}</li>
@@ -433,7 +437,7 @@ export default function ProductDetailPage({
       ) : null}
 
       {product.specs.length > 0 ? (
-        <Section title="Specifications">
+        <Section title={t("detail.sections.specifications")}>
           <div className="flex flex-col gap-lg">
             {product.specs.map((g, gi) => (
               <div key={gi}>
@@ -453,7 +457,7 @@ export default function ProductDetailPage({
       ) : null}
 
       {product.offers.length > 0 ? (
-        <Section title="Offers">
+        <Section title={t("detail.sections.offers")}>
           <ul className="flex flex-col gap-sm">
             {product.offers.map((o, i) => (
               <li key={i} className="flex flex-wrap items-baseline gap-sm border-t border-hairline py-sm">
@@ -461,7 +465,7 @@ export default function ProductDetailPage({
                   {o.kind}
                 </span>
                 <span className="text-body-md text-ink">{o.headline}</span>
-                {o.code ? <span className="text-body-sm text-muted">Code: {o.code}</span> : null}
+                {o.code ? <span className="text-body-sm text-muted">{t("detail.offerCode", { code: o.code })}</span> : null}
               </li>
             ))}
           </ul>
@@ -469,7 +473,7 @@ export default function ProductDetailPage({
       ) : null}
 
       {product.variants.length > 1 ? (
-        <Section title={`Variants (${product.variants.length})`}>
+        <Section title={t("detail.sections.variants", { count: product.variants.length })}>
           <ul>
             {product.variants.map((v) => (
               <li key={v.id ?? v.sku} className="flex items-center gap-md border-t border-hairline py-sm">
@@ -490,14 +494,14 @@ export default function ProductDetailPage({
       ) : null}
 
       {product.contentBlocks.length > 0 ? (
-        <Section title="A+ content">
+        <Section title={t("detail.sections.aplusContent")}>
           <ContentBlocksView
             blocks={product.contentBlocks as Array<Record<string, unknown>>}
           />
         </Section>
       ) : null}
 
-      <Section title="Reviews">
+      <Section title={t("detail.sections.reviews")}>
         <ReviewsSummary productId={product.id} />
       </Section>
     </div>
@@ -505,12 +509,13 @@ export default function ProductDetailPage({
 }
 
 function BackLink() {
+  const t = useTranslations("products");
   return (
     <Link
       href="/dashboard/products"
       className="inline-flex items-center gap-sm text-body-md text-muted transition-colors hover:text-ink"
     >
-      <ArrowLeft size={16} /> Products
+      <ArrowLeft size={16} /> {t("detail.backToProducts")}
     </Link>
   );
 }
@@ -529,9 +534,12 @@ function DraftRow({
   canConfirm: boolean;
   onConfirmed: () => void;
 }) {
+  const t = useTranslations("products");
   const sale = isSale(draft);
   const items = invoiceItemCount(draft);
-  const label = draft.invoiceNo?.trim() ? draft.invoiceNo : `Draft #${draft.id}`;
+  const label = draft.invoiceNo?.trim()
+    ? draft.invoiceNo
+    : t("detail.drafts.fallbackLabel", { id: draft.id });
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -543,7 +551,7 @@ function DraftRow({
       // Posting succeeded — refresh the product + drafts; this row drops off.
       onConfirmed();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not confirm the draft.");
+      setError(e instanceof Error ? e.message : t("detail.drafts.confirmError"));
       setConfirming(false);
     }
   }
@@ -567,17 +575,20 @@ function DraftRow({
             <div className="flex flex-wrap items-center gap-sm">
               <span className="truncate text-body-md text-ink">{label}</span>
               <span className="inline-flex items-center rounded-full bg-accent-amber-soft px-sm py-px text-body-sm font-semibold text-accent-amber">
-                Draft
+                {t("detail.drafts.badge")}
               </span>
               {highlight ? (
                 <span className="inline-flex items-center rounded-full bg-brand-soft px-sm py-px text-body-sm font-semibold text-brand-strong">
-                  Just created
+                  {t("detail.drafts.justCreated")}
                 </span>
               ) : null}
             </div>
             <p className="truncate text-body-sm text-muted">{counterpartyName(draft)}</p>
             <p className="text-body-sm text-subtle">
-              {formatDateTime(draft.invoiceDate)} · {items} {items === 1 ? "item" : "items"}
+              {formatDateTime(draft.invoiceDate)} ·{" "}
+              {items === 1
+                ? t("detail.drafts.itemCountOne", { count: items })
+                : t("detail.drafts.itemCountOther", { count: items })}
             </p>
           </div>
         </div>
@@ -589,7 +600,7 @@ function DraftRow({
             href={`/dashboard/invoices/${draft.id}`}
             className="inline-flex h-9 items-center gap-xs rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
           >
-            <Eye size={16} /> View
+            <Eye size={16} /> {t("detail.drafts.view")}
           </Link>
           {canConfirm ? (
             <button
@@ -598,7 +609,7 @@ function DraftRow({
               disabled={confirming}
               className="inline-flex h-9 items-center gap-xs rounded-button bg-brand-strong px-md text-label-md text-white transition-colors hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:bg-disabled"
             >
-              <Check size={16} /> {confirming ? "Confirming…" : "Confirm"}
+              <Check size={16} /> {confirming ? t("detail.drafts.confirming") : t("detail.drafts.confirm")}
             </button>
           ) : null}
         </div>
@@ -609,6 +620,7 @@ function DraftRow({
 }
 
 function Gallery({ product }: { product: Product }) {
+  const t = useTranslations("products");
   const [active, setActive] = useState(0);
   const images = product.images;
   if (images.length === 0) {
@@ -618,8 +630,8 @@ function Gallery({ product }: { product: Product }) {
         className="group flex aspect-square w-full flex-col items-center justify-center gap-sm rounded-lg border border-dashed border-hairline text-muted transition-colors hover:border-brand hover:text-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
       >
         <ImagePlus size={32} />
-        <span className="text-label-md">Add photos</span>
-        <span className="text-body-sm text-subtle">No image yet</span>
+        <span className="text-label-md">{t("detail.gallery.addPhotos")}</span>
+        <span className="text-body-sm text-subtle">{t("detail.gallery.noImageYet")}</span>
       </Link>
     );
   }
@@ -639,7 +651,7 @@ function Gallery({ product }: { product: Product }) {
               key={img.id}
               type="button"
               onClick={() => setActive(i)}
-              aria-label={`Image ${i + 1}`}
+              aria-label={t("detail.gallery.imageLabel", { index: i + 1 })}
               className={`rounded-md ${i === active ? "ring-2 ring-brand" : ""}`}
             >
               <ProductThumb url={img.url} alt={product.name} size={56} />

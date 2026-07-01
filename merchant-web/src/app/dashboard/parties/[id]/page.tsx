@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   BadgeCheck,
   BookText,
@@ -56,6 +57,7 @@ const BALANCE_PUCK: Record<"owe" | "settled" | "advance", string> = {
 };
 
 export default function PartyDetailPage() {
+  const t = useTranslations("parties");
   const params = useParams<{ id: string }>();
   const id = Number(params.id);
 
@@ -80,7 +82,7 @@ export default function PartyDetailPage() {
         setOverview(o);
         setLedger(l);
       } catch (e) {
-        if (active) setError(e instanceof Error ? e.message : "Could not load the customer.");
+        if (active) setError(e instanceof Error ? e.message : t("errors.load"));
       } finally {
         if (active) setLoading(false);
       }
@@ -88,7 +90,7 @@ export default function PartyDetailPage() {
     return () => {
       active = false;
     };
-  }, [id, nonce]);
+  }, [id, nonce, t]);
 
   if (loading) {
     return <DetailSkeleton />;
@@ -96,9 +98,9 @@ export default function PartyDetailPage() {
   if (error || !overview) {
     return (
       <div className="w-full px-lg py-xxl md:px-xxl">
-        <BackLink href={BACK} label="Customers" />
+        <BackLink href={BACK} label={t("detail.back")} />
         <p className="mt-md rounded-md bg-error-soft px-md py-sm text-body-sm text-error">
-          {error ?? "Customer not found."}
+          {error ?? t("detail.notFound")}
         </p>
       </div>
     );
@@ -109,7 +111,7 @@ export default function PartyDetailPage() {
 
   return (
     <div className="w-full px-lg py-xxl pb-massive md:px-xxl">
-      <BackLink href={BACK} label="Customers" />
+      <BackLink href={BACK} label={t("detail.back")} />
 
       {/* Header */}
       <div className="mt-md flex flex-wrap items-start justify-between gap-md">
@@ -120,7 +122,7 @@ export default function PartyDetailPage() {
               <h1 className="text-headline-md text-ink">{p.name}</h1>
               {p.linkedUser ? (
                 <span className="inline-flex items-center gap-xs rounded-full bg-success-soft px-sm py-px text-body-sm font-semibold text-success">
-                  <BadgeCheck size={13} /> Linked
+                  <BadgeCheck size={13} /> {t("badges.linked")}
                 </span>
               ) : null}
             </div>
@@ -141,13 +143,13 @@ export default function PartyDetailPage() {
               onClick={() => setPayOpen(true)}
               className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
             >
-              <Wallet size={16} /> Record payment
+              <Wallet size={16} /> {t("detail.recordPayment")}
             </button>
             <Link
               href={`/dashboard/parties/${id}/edit`}
               className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-md text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
             >
-              <Pencil size={16} /> Edit
+              <Pencil size={16} /> {t("actions.edit")}
             </Link>
           </div>
         ) : null}
@@ -179,11 +181,11 @@ export default function PartyDetailPage() {
             )}
           </span>
           <div>
-            <p className="text-label-md uppercase tracking-wide text-subtle">Balance</p>
+            <p className="text-label-md uppercase tracking-wide text-subtle">{t("detail.balance")}</p>
             <p className={`text-headline-md font-bold ${BALANCE_TONE_TEXT[balanceView.tone]}`}>
               {formatINR(Math.abs(overview.balance))}
             </p>
-            <p className="text-body-sm text-muted">{balanceView.label}</p>
+            <p className="text-body-sm text-muted">{t(`detail.balanceTone.${balanceView.tone}`)}</p>
           </div>
         </div>
       </div>
@@ -192,21 +194,21 @@ export default function PartyDetailPage() {
       <div className="mt-lg grid grid-cols-1 gap-lg sm:grid-cols-3">
         <StatBlock
           icon={<ReceiptText size={16} />}
-          label="Net billed"
+          label={t("stats.netBilled")}
           value={formatINR(netBilled(overview))}
-          hint={`${overview.counts.invoices} bills`}
+          hint={t("stats.billsCount", { count: overview.counts.invoices })}
         />
         <StatBlock
           icon={<ShoppingBag size={16} />}
-          label="Sales"
+          label={t("stats.sales")}
           value={formatINR(totalSales(overview))}
-          hint={`${overview.counts.challans} challans`}
+          hint={t("stats.challansCount", { count: overview.counts.challans })}
         />
         <StatBlock
           icon={<RotateCcw size={16} />}
-          label="Returns"
+          label={t("stats.returns")}
           value={formatINR(totalReturns(overview))}
-          hint="sales returns"
+          hint={t("stats.salesReturns")}
         />
       </div>
 
@@ -214,7 +216,7 @@ export default function PartyDetailPage() {
       {ledger && ledger.entries.length > 0 ? (
         <>
           <Divider className="my-xl" />
-          <SectionHeading icon={<BookText size={18} />} title="Ledger" />
+          <SectionHeading icon={<BookText size={18} />} title={t("detail.ledger")} />
           <LedgerList entries={ledger.entries} />
         </>
       ) : null}
@@ -223,7 +225,7 @@ export default function PartyDetailPage() {
       {overview.recentInvoices.length > 0 ? (
         <>
           <Divider className="my-xl" />
-          <SectionHeading icon={<ReceiptText size={18} />} title="Recent invoices" />
+          <SectionHeading icon={<ReceiptText size={18} />} title={t("detail.recentInvoices")} />
           {overview.recentInvoices.map((inv) => (
             <InvoiceRow key={inv.id} invoice={inv} />
           ))}
@@ -234,7 +236,7 @@ export default function PartyDetailPage() {
       {overview.recentChallans.length > 0 ? (
         <>
           <Divider className="my-xl" />
-          <SectionHeading icon={<ClipboardList size={18} />} title="Recent challans" />
+          <SectionHeading icon={<ClipboardList size={18} />} title={t("detail.recentChallans")} />
           {overview.recentChallans.map((c) => (
             <ChallanRow key={c.id} challan={c} />
           ))}
@@ -246,7 +248,7 @@ export default function PartyDetailPage() {
       (!ledger || ledger.entries.length === 0) ? (
         <>
           <Divider className="my-xl" />
-          <p className="py-xl text-center text-body-sm text-subtle">No activity yet.</p>
+          <p className="py-xl text-center text-body-sm text-subtle">{t("detail.noActivity")}</p>
         </>
       ) : null}
 
@@ -310,6 +312,7 @@ function StatBlock({
 }
 
 function InvoiceRow({ invoice }: { invoice: PartyInvoiceRef }) {
+  const t = useTranslations("parties");
   const items = invoice._count?.items ?? 0;
   return (
     <Link
@@ -322,7 +325,7 @@ function InvoiceRow({ invoice }: { invoice: PartyInvoiceRef }) {
       <div className="min-w-0 flex-1">
         <p className="truncate text-body-md text-ink">{invoice.invoiceNo}</p>
         <p className="text-body-sm text-muted">
-          {formatDateTime(invoice.invoiceDate)} · {items} {items === 1 ? "item" : "items"}
+          {formatDateTime(invoice.invoiceDate)} · {t("row.itemCount", { count: items })}
         </p>
       </div>
       <div className="flex shrink-0 items-center gap-sm">
@@ -331,7 +334,7 @@ function InvoiceRow({ invoice }: { invoice: PartyInvoiceRef }) {
             DOC_STATUS_CLASSES[invoice.status] ?? "bg-surface-tint text-muted"
           }`}
         >
-          {invoice.status}
+          {t.has(`docStatus.${invoice.status}`) ? t(`docStatus.${invoice.status}`) : invoice.status}
         </span>
         <span className="text-body-md font-semibold text-ink">{formatINR(invoice.total)}</span>
       </div>
@@ -340,6 +343,7 @@ function InvoiceRow({ invoice }: { invoice: PartyInvoiceRef }) {
 }
 
 function ChallanRow({ challan }: { challan: PartyChallanRef }) {
+  const t = useTranslations("parties");
   const items = challan._count?.items ?? 0;
   const invoiced = challan.invoiceId != null;
   return (
@@ -353,7 +357,7 @@ function ChallanRow({ challan }: { challan: PartyChallanRef }) {
       <div className="min-w-0 flex-1">
         <p className="truncate text-body-md text-ink">{challan.challanNo}</p>
         <p className="text-body-sm text-muted">
-          {formatDateTime(challan.createdAt)} · {items} {items === 1 ? "item" : "items"}
+          {formatDateTime(challan.createdAt)} · {t("row.itemCount", { count: items })}
         </p>
       </div>
       <span
@@ -361,7 +365,11 @@ function ChallanRow({ challan }: { challan: PartyChallanRef }) {
           invoiced ? "bg-success-soft text-success" : "bg-surface-tint text-muted"
         }`}
       >
-        {invoiced ? "Invoiced" : challan.status}
+        {invoiced
+          ? t("challanStatus.invoiced")
+          : t.has(`docStatus.${challan.status}`)
+            ? t(`docStatus.${challan.status}`)
+            : challan.status}
       </span>
     </Link>
   );

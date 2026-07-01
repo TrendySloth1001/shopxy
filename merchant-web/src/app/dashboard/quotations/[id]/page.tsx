@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Calculator, Download, ReceiptText, XCircle } from "lucide-react";
 import { BackLink } from "@/shared/ui/page-header";
 import { Divider } from "@/shared/ui/divider";
@@ -28,6 +29,7 @@ import { DetailSkeleton } from "@/shared/ui/skeleton";
 const BACK = "/dashboard/quotations";
 
 export default function QuotationDetailPage() {
+  const t = useTranslations("quotations");
   const params = useParams<{ id: string }>();
   const id = Number(params.id);
 
@@ -52,7 +54,7 @@ export default function QuotationDetailPage() {
         setQuote(q);
         setError(null);
       } catch (e) {
-        if (active) setError(e instanceof Error ? e.message : "Could not load the quotation.");
+        if (active) setError(e instanceof Error ? e.message : t("detail.loadError"));
       } finally {
         if (active) setLoading(false);
       }
@@ -60,7 +62,7 @@ export default function QuotationDetailPage() {
     return () => {
       active = false;
     };
-  }, [id, nonce]);
+  }, [id, nonce, t]);
 
   async function onCancel() {
     setBusy(true);
@@ -70,7 +72,7 @@ export default function QuotationDetailPage() {
       setConfirmCancel(false);
       setNonce((n) => n + 1);
     } catch (e) {
-      setActionError(e instanceof Error ? e.message : "Could not cancel the quotation.");
+      setActionError(e instanceof Error ? e.message : t("detail.cancelError"));
     } finally {
       setBusy(false);
     }
@@ -84,7 +86,7 @@ export default function QuotationDetailPage() {
       setDeclineOpen(false);
       setNonce((n) => n + 1);
     } catch (e) {
-      setActionError(e instanceof Error ? e.message : "Could not decline the request.");
+      setActionError(e instanceof Error ? e.message : t("detail.declineError"));
     } finally {
       setBusy(false);
     }
@@ -96,9 +98,9 @@ export default function QuotationDetailPage() {
   if (error || !quote) {
     return (
       <div className="w-full px-lg py-xxl md:px-xxl">
-        <BackLink href={BACK} label="Quotations" />
+        <BackLink href={BACK} label={t("list.title")} />
         <p className="mt-md rounded-md bg-error-soft px-md py-sm text-body-sm text-error">
-          {error ?? "Quotation not found."}
+          {error ?? t("detail.notFound")}
         </p>
       </div>
     );
@@ -107,12 +109,12 @@ export default function QuotationDetailPage() {
   const isRequested = quote.status === "REQUESTED";
   const isPending = quote.status === "PENDING";
   const meta = isRequested
-    ? `From ${quotationPartyName(quote)} · requested ${formatDateTime(quote.createdAt)}`
-    : `To ${quotationPartyName(quote)} · ${formatDateTime(quote.createdAt)}`;
+    ? t("detail.metaFrom", { party: quotationPartyName(quote), date: formatDateTime(quote.createdAt) })
+    : t("detail.metaTo", { party: quotationPartyName(quote), date: formatDateTime(quote.createdAt) });
 
   return (
     <div className="w-full px-lg py-xxl pb-massive md:px-xxl">
-      <BackLink href={BACK} label="Quotations" />
+      <BackLink href={BACK} label={t("list.title")} />
 
       {/* Header */}
       <div className="mt-md flex flex-wrap items-start justify-between gap-md">
@@ -124,7 +126,7 @@ export default function QuotationDetailPage() {
                 QUOTATION_STATUS_CLASSES[quote.status] ?? "bg-surface-tint text-muted"
               }`}
             >
-              {QUOTATION_STATUS_LABELS[quote.status] ?? quote.status}
+              {QUOTATION_STATUS_LABELS[quote.status] ? t(`status.${quote.status}`) : quote.status}
             </span>
           </div>
           <p className="mt-xs text-body-sm text-muted">{meta}</p>
@@ -133,11 +135,11 @@ export default function QuotationDetailPage() {
               href={`/dashboard/invoices/${quote.invoice.id}`}
               className="mt-sm inline-flex items-center gap-xs rounded-full bg-success-soft px-md py-xs text-body-sm font-semibold text-success transition-colors hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-success-soft"
             >
-              <ReceiptText size={14} /> Invoice {quote.invoice.invoiceNo}
+              <ReceiptText size={14} /> {t("detail.invoiceBadge", { invoiceNo: quote.invoice.invoiceNo })}
             </Link>
           ) : null}
           {quote.status === "DECLINED" && quote.declineNote ? (
-            <p className="mt-xs text-body-sm text-error">Reason: {quote.declineNote}</p>
+            <p className="mt-xs text-body-sm text-error">{t("detail.reason", { reason: quote.declineNote })}</p>
           ) : null}
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-sm">
@@ -145,7 +147,7 @@ export default function QuotationDetailPage() {
             href={`/dashboard/reports?tab=calculator&quotation=${id}`}
             className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
           >
-            <Calculator size={16} /> Open in calculator
+            <Calculator size={16} /> {t("detail.openInCalculator")}
           </Link>
           <a
             href={quotationPdfUrl(id)}
@@ -153,7 +155,7 @@ export default function QuotationDetailPage() {
             rel="noopener noreferrer"
             className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
           >
-            <Download size={16} /> PDF
+            <Download size={16} /> {t("detail.pdf")}
           </a>
         </div>
       </div>
@@ -164,17 +166,19 @@ export default function QuotationDetailPage() {
 
       {/* Items */}
       <Divider className="my-xl" />
-      <h2 className="mb-sm text-label-md uppercase tracking-wide text-subtle">Items ({quote.items.length})</h2>
+      <h2 className="mb-sm text-label-md uppercase tracking-wide text-subtle">
+        {t("detail.itemsHeading", { count: quote.items.length })}
+      </h2>
       {quote.items.map((it, i) => (
         <LineRow key={i} line={it} />
       ))}
 
       {/* Totals */}
       <div className="mt-xl ml-auto w-full max-w-form border-t border-hairline pt-md">
-        <Row label="Subtotal" value={quote.subtotal} />
-        <Row label="GST" value={quote.taxAmount} />
+        <Row label={t("totals.subtotal")} value={quote.subtotal} />
+        <Row label={t("totals.gst")} value={quote.taxAmount} />
         <div className="mt-sm flex items-center justify-between border-t border-hairline pt-sm">
-          <span className="text-title-md text-ink">Total</span>
+          <span className="text-title-md text-ink">{t("totals.total")}</span>
           <span className="text-title-lg font-bold text-ink">{formatINR2(quote.total)}</span>
         </div>
       </div>
@@ -184,7 +188,7 @@ export default function QuotationDetailPage() {
         <>
           <Divider className="my-xl" />
           <h2 className="mb-sm text-label-md uppercase tracking-wide text-subtle">
-            {isRequested ? "Customer's note" : "Note"}
+            {isRequested ? t("detail.customerNote") : t("detail.note")}
           </h2>
           <p className="text-body-md text-muted">{quote.note}</p>
         </>
@@ -199,13 +203,13 @@ export default function QuotationDetailPage() {
             disabled={busy}
             className="inline-flex h-11 items-center gap-sm rounded-button border border-hairline px-lg text-label-md text-error transition-colors hover:bg-error-soft disabled:text-disabled"
           >
-            Decline
+            {t("actions.decline")}
           </button>
           <Link
             href={`/dashboard/quotations/${id}/respond`}
             className="inline-flex h-11 items-center gap-sm rounded-button bg-brand px-lg text-label-md text-white transition-colors hover:bg-brand-strong"
           >
-            Price &amp; send
+            {t("actions.priceAndSend")}
           </Link>
         </div>
       ) : isPending ? (
@@ -216,33 +220,31 @@ export default function QuotationDetailPage() {
             disabled={busy}
             className="inline-flex h-11 items-center gap-sm rounded-button border border-hairline px-lg text-label-md text-error transition-colors hover:bg-error-soft disabled:text-disabled"
           >
-            <XCircle size={16} /> Cancel quotation
+            <XCircle size={16} /> {t("actions.cancel")}
           </button>
         </div>
       ) : null}
 
       {confirmCancel ? (
-        <Modal title="Cancel this quotation?" onClose={() => setConfirmCancel(false)}>
-          <p className="text-body-md text-muted">The customer will no longer be able to accept it.</p>
+        <Modal title={t("cancelModal.title")} onClose={() => setConfirmCancel(false)}>
+          <p className="text-body-md text-muted">{t("cancelModal.body")}</p>
           <ModalActions
             busy={busy}
             danger
-            confirmLabel="Cancel quotation"
+            confirmLabel={t("actions.cancel")}
             onCancel={() => setConfirmCancel(false)}
             onConfirm={onCancel}
           />
         </Modal>
       ) : null}
       {declineOpen ? (
-        <Modal title="Decline this request?" onClose={() => setDeclineOpen(false)}>
-          <p className="text-body-md text-muted">
-            Let the customer know why you can&rsquo;t quote this (optional).
-          </p>
-          <TextAreaField label="Reason (optional)" value={declineNote} onChange={setDeclineNote} rows={2} />
+        <Modal title={t("declineModal.title")} onClose={() => setDeclineOpen(false)}>
+          <p className="text-body-md text-muted">{t("declineModal.body")}</p>
+          <TextAreaField label={t("declineModal.reasonLabel")} value={declineNote} onChange={setDeclineNote} rows={2} />
           <ModalActions
             busy={busy}
             danger
-            confirmLabel="Decline"
+            confirmLabel={t("actions.decline")}
             onCancel={() => setDeclineOpen(false)}
             onConfirm={onDecline}
           />
@@ -253,11 +255,12 @@ export default function QuotationDetailPage() {
 }
 
 function LineRow({ line }: { line: QuotationLine }) {
+  const t = useTranslations("quotations");
   const total = line.lineTotal ?? line.quantity * line.unitPrice * (1 + line.taxPercent / 100);
   return (
     <div className="flex items-start gap-md border-b border-hairline py-md">
       <div className="min-w-0 flex-1">
-        <p className="truncate text-body-md text-ink">{line.name ?? "Product"}</p>
+        <p className="truncate text-body-md text-ink">{line.name ?? t("line.productFallback")}</p>
         <p className="text-body-sm text-muted">
           {line.quantity} × {formatINR2(line.unitPrice)}
           {line.taxPercent > 0 ? ` · ${line.taxPercent}% GST` : ""}

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Search } from "lucide-react";
 import { Divider } from "@/shared/ui/divider";
 import { listOrders, pendingOrderCount } from "@/features/orders/api";
@@ -11,14 +12,15 @@ import { OrderStatusBadge } from "@/features/orders/components/order-status-badg
 
 const PAGE_SIZE = 30;
 
-const TABS: Array<{ label: string; status: string | null }> = [
-  { label: "Pending", status: "PENDING" },
-  { label: "Confirmed", status: "CONFIRMED" },
-  { label: "Rejected", status: "REJECTED" },
-  { label: "All", status: null },
+const TABS: Array<{ key: string; status: string | null }> = [
+  { key: "pending", status: "PENDING" },
+  { key: "confirmed", status: "CONFIRMED" },
+  { key: "rejected", status: "REJECTED" },
+  { key: "all", status: null },
 ];
 
 export default function OrdersInboxPage() {
+  const t = useTranslations("orders");
   const [tab, setTab] = useState(0);
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
@@ -34,11 +36,11 @@ export default function OrdersInboxPage() {
 
   // Debounce the search box.
   useEffect(() => {
-    const t = setTimeout(() => {
+    const handle = setTimeout(() => {
       setSearch(searchInput.trim());
       setPage(1);
     }, 300);
-    return () => clearTimeout(t);
+    return () => clearTimeout(handle);
   }, [searchInput]);
 
   // Pending count for the tab badge — refresh whenever the list reloads.
@@ -75,7 +77,7 @@ export default function OrdersInboxPage() {
         setError(null);
       } catch (e) {
         if (!active) return;
-        setError(e instanceof Error ? e.message : "Could not load orders.");
+        setError(e instanceof Error ? e.message : t("list.loadError"));
       } finally {
         if (active) setLoading(false);
       }
@@ -96,19 +98,19 @@ export default function OrdersInboxPage() {
   return (
     <div className="w-full px-lg py-xxl md:px-xxl">
       <div>
-        <h1 className="text-headline-md text-ink">Orders</h1>
+        <h1 className="text-headline-md text-ink">{t("list.title")}</h1>
         <p className="mt-xs text-body-md text-muted">
-          Review incoming orders, then confirm to raise an invoice or decline.
+          {t("list.subtitle")}
         </p>
       </div>
 
       {/* Status tabs */}
       <div className="mt-xl flex flex-wrap gap-sm">
-        {TABS.map((t, i) => (
+        {TABS.map((tabDef, i) => (
           <TabPill
-            key={t.label}
-            label={t.label}
-            badge={t.status === "PENDING" && pending > 0 ? pending : undefined}
+            key={tabDef.key}
+            label={t(`tabs.${tabDef.key}`)}
+            badge={tabDef.status === "PENDING" && pending > 0 ? pending : undefined}
             active={i === tab}
             onClick={() => {
               setTab(i);
@@ -128,12 +130,12 @@ export default function OrdersInboxPage() {
           <input
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Search by customer, phone, item or #id"
+            placeholder={t("list.searchPlaceholder")}
             className="h-10 w-full rounded-input border border-hairline bg-field pl-massive pr-md text-body-md text-ink outline-none placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
           />
         </div>
         <DateField
-          label="From"
+          label={t("list.fromLabel")}
           value={from}
           max={to || undefined}
           onChange={(v) => {
@@ -142,7 +144,7 @@ export default function OrdersInboxPage() {
           }}
         />
         <DateField
-          label="To"
+          label={t("list.toLabel")}
           value={to}
           min={from || undefined}
           onChange={(v) => {
@@ -162,7 +164,7 @@ export default function OrdersInboxPage() {
             }}
             className="h-10 rounded-button px-md text-label-md text-muted transition-colors hover:text-ink"
           >
-            Clear
+            {t("list.clear")}
           </button>
         ) : null}
       </div>
@@ -180,7 +182,7 @@ export default function OrdersInboxPage() {
             onClick={reload}
             className="inline-flex h-10 items-center rounded-button border border-hairline px-lg text-label-md text-ink transition-colors hover:bg-surface-tint"
           >
-            Try again
+            {t("list.tryAgain")}
           </button>
         </div>
       ) : orders.length === 0 ? (
@@ -197,17 +199,17 @@ export default function OrdersInboxPage() {
       {total > PAGE_SIZE ? (
         <div className="mt-lg flex items-center justify-between">
           <p className="text-body-sm text-muted">
-            Page {page} of {totalPages}
+            {t("list.pageOf", { page, totalPages })}
           </p>
           <div className="flex gap-sm">
             <PagerButton disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-              Previous
+              {t("list.previous")}
             </PagerButton>
             <PagerButton
               disabled={page >= totalPages}
               onClick={() => setPage((p) => p + 1)}
             >
-              Next
+              {t("list.next")}
             </PagerButton>
           </div>
         </div>
@@ -302,7 +304,10 @@ function PagerButton({
 }
 
 /** "3 PCS Solder Wire · 2 PCS Tea Bag (+1 more)" from the inbox preview. */
-function previewText(order: OrderListRow): string | null {
+function previewText(
+  order: OrderListRow,
+  more: (count: number) => string,
+): string | null {
   if (order.itemsPreview.length === 0) return null;
   const parts = order.itemsPreview.map((p) => {
     const q = Number.isInteger(p.quantity) ? p.quantity : p.quantity.toFixed(2);
@@ -311,11 +316,12 @@ function previewText(order: OrderListRow): string | null {
   const itemCount = order._count?.items ?? parts.length;
   const remainder = itemCount - parts.length;
   const body = parts.join(" · ");
-  return remainder > 0 ? `${body} (+${remainder} more)` : body;
+  return remainder > 0 ? `${body} ${more(remainder)}` : body;
 }
 
 function OrderRow({ order }: { order: OrderListRow }) {
-  const preview = previewText(order);
+  const t = useTranslations("orders");
+  const preview = previewText(order, (count) => t("list.moreItems", { count }));
   const itemCount = order._count?.items ?? order.itemsPreview.length;
   return (
     <li>
@@ -334,8 +340,7 @@ function OrderRow({ order }: { order: OrderListRow }) {
             <p className="mt-px truncate text-body-sm text-ink/80">{preview}</p>
           ) : null}
           <p className="mt-px text-body-sm text-muted">
-            {formatDateTime(order.createdAt)} · {itemCount}{" "}
-            {itemCount === 1 ? "item" : "items"}
+            {formatDateTime(order.createdAt)} · {t("list.itemCount", { count: itemCount })}
           </p>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-xs">
@@ -356,22 +361,23 @@ function EmptyInbox({
   isPending: boolean;
   hasFilters: boolean;
 }) {
+  const t = useTranslations("orders");
   const allCaughtUp = isPending && !hasFilters;
   return (
     <div className="flex flex-col items-center gap-sm py-massive text-center">
       <p className="text-title-md text-ink">
         {allCaughtUp
-          ? "You're all caught up"
+          ? t("empty.caughtUpTitle")
           : hasFilters
-            ? "No matching orders"
-            : "No orders yet"}
+            ? t("empty.noMatchTitle")
+            : t("empty.noneTitle")}
       </p>
       <p className="max-w-content text-body-md text-muted">
         {allCaughtUp
-          ? "New orders will land here the moment a customer places one."
+          ? t("empty.caughtUpBody")
           : hasFilters
-            ? "Try a different search or date range."
-            : "New orders will appear here when customers place them."}
+            ? t("empty.noMatchBody")
+            : t("empty.noneBody")}
       </p>
     </div>
   );

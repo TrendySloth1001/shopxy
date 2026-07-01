@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, type ChangeEvent } from "react";
+import { useTranslations } from "next-intl";
 import { ImagePlus, X, ArrowUp, ArrowDown } from "lucide-react";
 import {
   addImage,
@@ -27,6 +28,7 @@ export function ImageManager({
   initial: Item[];
   onChange?: (urls: string[]) => void;
 }) {
+  const t = useTranslations("products");
   const [items, setItems] = useState<Item[]>(initial);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,7 +58,7 @@ export function ImageManager({
       }
       commit(next);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not upload the image.");
+      setError(e instanceof Error ? e.message : t("imageManager.uploadError"));
     } finally {
       setBusy(false);
     }
@@ -71,7 +73,7 @@ export function ImageManager({
       if (productId && item.id) await deleteImage(productId, item.id);
       commit(items.filter((_, i) => i !== index));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not remove the image.");
+      setError(e instanceof Error ? e.message : t("imageManager.removeError"));
     } finally {
       setBusy(false);
     }
@@ -91,7 +93,7 @@ export function ImageManager({
       }
       commit(next);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not reorder images.");
+      setError(e instanceof Error ? e.message : t("imageManager.reorderError"));
     } finally {
       setBusy(false);
     }
@@ -104,12 +106,12 @@ export function ImageManager({
         {items.map((item, i) => (
           <div key={item.id ?? `${item.url}-${i}`} className="flex flex-col items-center gap-xs">
             <div className="relative">
-              <ProductThumb url={item.url} alt={`Image ${i + 1}`} size={88} />
+              <ProductThumb url={item.url} alt={t("imageManager.imageAlt", { index: i + 1 })} size={88} />
               <button
                 type="button"
                 onClick={() => remove(i)}
                 disabled={busy}
-                aria-label="Remove image"
+                aria-label={t("imageManager.removeImage")}
                 className="absolute -right-2 -top-2 flex size-6 items-center justify-center rounded-full bg-inverse-surface text-on-inverse transition-opacity hover:opacity-90 disabled:opacity-50"
               >
                 <X size={14} />
@@ -120,7 +122,7 @@ export function ImageManager({
                 type="button"
                 onClick={() => move(i, -1)}
                 disabled={busy || i === 0}
-                aria-label="Move left"
+                aria-label={t("imageManager.moveLeft")}
                 className="rounded-md p-xs text-muted hover:bg-surface-tint hover:text-ink disabled:text-disabled"
               >
                 <ArrowUp size={14} className="-rotate-90" />
@@ -129,7 +131,7 @@ export function ImageManager({
                 type="button"
                 onClick={() => move(i, 1)}
                 disabled={busy || i === items.length - 1}
-                aria-label="Move right"
+                aria-label={t("imageManager.moveRight")}
                 className="rounded-md p-xs text-muted hover:bg-surface-tint hover:text-ink disabled:text-disabled"
               >
                 <ArrowDown size={14} className="-rotate-90" />
@@ -145,7 +147,7 @@ export function ImageManager({
           className="flex size-[88px] flex-col items-center justify-center gap-xs rounded-md border border-dashed border-hairline text-subtle transition-colors hover:border-brand hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:text-disabled"
         >
           <ImagePlus size={20} />
-          <span className="text-body-sm">{busy ? "…" : "Add"}</span>
+          <span className="text-body-sm">{busy ? "…" : t("imageManager.add")}</span>
         </button>
       </div>
       <input

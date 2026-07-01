@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   ArrowRight,
   BadgeCheck,
@@ -52,6 +53,7 @@ const BALANCE_PUCK: Record<"owe" | "settled" | "advance", string> = {
 };
 
 export default function VendorDetailPage() {
+  const t = useTranslations("vendors");
   const params = useParams<{ id: string }>();
   const id = Number(params.id);
 
@@ -76,7 +78,7 @@ export default function VendorDetailPage() {
         setOverview(o);
         setLedger(l);
       } catch (e) {
-        if (active) setError(e instanceof Error ? e.message : "Could not load the vendor.");
+        if (active) setError(e instanceof Error ? e.message : t("detail.loadError"));
       } finally {
         if (active) setLoading(false);
       }
@@ -84,7 +86,7 @@ export default function VendorDetailPage() {
     return () => {
       active = false;
     };
-  }, [id, nonce]);
+  }, [id, nonce, t]);
 
   if (loading) {
     return <DetailSkeleton />;
@@ -92,9 +94,9 @@ export default function VendorDetailPage() {
   if (error || !overview) {
     return (
       <div className="w-full px-lg py-xxl md:px-xxl">
-        <BackLink href={BACK} label="Vendors" />
+        <BackLink href={BACK} label={t("list.title")} />
         <p className="mt-md rounded-md bg-error-soft px-md py-sm text-body-sm text-error">
-          {error ?? "Vendor not found."}
+          {error ?? t("detail.notFound")}
         </p>
       </div>
     );
@@ -105,7 +107,7 @@ export default function VendorDetailPage() {
 
   return (
     <div className="w-full px-lg py-xxl pb-massive md:px-xxl">
-      <BackLink href={BACK} label="Vendors" />
+      <BackLink href={BACK} label={t("list.title")} />
 
       {/* Header */}
       <div className="mt-md flex flex-wrap items-start justify-between gap-md">
@@ -116,7 +118,7 @@ export default function VendorDetailPage() {
               <h1 className="text-headline-md text-ink">{v.name}</h1>
               {v.linkedUser ? (
                 <span className="inline-flex items-center gap-xs rounded-full bg-success-soft px-sm py-px text-body-sm font-semibold text-success">
-                  <BadgeCheck size={13} /> Linked
+                  <BadgeCheck size={13} /> {t("badge.linked")}
                 </span>
               ) : null}
             </div>
@@ -136,13 +138,13 @@ export default function VendorDetailPage() {
             onClick={() => setPayOpen(true)}
             className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
           >
-            <Wallet size={16} /> Record payment
+            <Wallet size={16} /> {t("detail.recordPayment")}
           </button>
           <Link
             href={`/dashboard/vendors/${id}/edit`}
             className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-md text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
           >
-            <Pencil size={16} /> Edit
+            <Pencil size={16} /> {t("actions.edit")}
           </Link>
         </div>
       </div>
@@ -173,7 +175,7 @@ export default function VendorDetailPage() {
             )}
           </span>
           <div>
-            <p className="text-label-md uppercase tracking-wide text-subtle">Balance</p>
+            <p className="text-label-md uppercase tracking-wide text-subtle">{t("detail.balance")}</p>
             <p className={`text-headline-md font-bold ${BALANCE_TONE_TEXT[balanceView.tone]}`}>
               {formatINR(Math.abs(overview.balance))}
             </p>
@@ -186,21 +188,21 @@ export default function VendorDetailPage() {
       <div className="mt-lg grid grid-cols-1 gap-lg sm:grid-cols-3">
         <StatBlock
           icon={<ShoppingBag size={16} />}
-          label="Net purchased"
+          label={t("detail.stats.netPurchased")}
           value={formatINR(netPurchased(overview))}
-          hint={`${overview.counts.invoices} bills`}
+          hint={t("detail.stats.billsCount", { count: overview.counts.invoices })}
         />
         <StatBlock
           icon={<PackagePlus size={16} />}
-          label="Stock-ins"
+          label={t("detail.stats.stockIns")}
           value={String(overview.counts.stockIns)}
-          hint="ledger rows"
+          hint={t("detail.stats.ledgerRows")}
         />
         <StatBlock
           icon={<RotateCcw size={16} />}
-          label="Returns"
+          label={t("detail.stats.returns")}
           value={formatINR(totalReturns(overview))}
-          hint="purchase returns"
+          hint={t("detail.stats.purchaseReturns")}
         />
       </div>
 
@@ -208,9 +210,9 @@ export default function VendorDetailPage() {
       {ledger && ledger.entries.length > 0 ? (
         <CollapsibleSection
           icon={<BookText size={18} />}
-          title="Ledger"
+          title={t("detail.sections.ledger")}
           count={ledger.entries.length}
-          noun="entries"
+          noun={t("detail.nouns.entries")}
           render={(n) => <LedgerList entries={ledger.entries.slice(0, n)} />}
         />
       ) : null}
@@ -219,9 +221,9 @@ export default function VendorDetailPage() {
       {overview.recentInvoices.length > 0 ? (
         <CollapsibleSection
           icon={<ReceiptText size={18} />}
-          title="Recent bills"
+          title={t("detail.sections.recentBills")}
           count={overview.recentInvoices.length}
-          noun="bills"
+          noun={t("detail.nouns.bills")}
           viewAllHref={`/dashboard/invoices?vendorId=${id}&type=PURCHASE`}
           render={(n) =>
             overview.recentInvoices.slice(0, n).map((inv) => <InvoiceRow key={inv.id} invoice={inv} />)
@@ -233,9 +235,9 @@ export default function VendorDetailPage() {
       {overview.recentStockIns.length > 0 ? (
         <CollapsibleSection
           icon={<ScrollText size={18} />}
-          title="Recent stock-in"
+          title={t("detail.sections.recentStockIn")}
           count={overview.recentStockIns.length}
-          noun="stock-ins"
+          noun={t("detail.nouns.stockIns")}
           render={(n) =>
             overview.recentStockIns.slice(0, n).map((s) => <StockInRow key={s.id} stockIn={s} />)
           }
@@ -247,7 +249,7 @@ export default function VendorDetailPage() {
       (!ledger || ledger.entries.length === 0) ? (
         <>
           <Divider className="my-xl" />
-          <p className="py-xl text-center text-body-sm text-subtle">No activity yet.</p>
+          <p className="py-xl text-center text-body-sm text-subtle">{t("detail.noActivity")}</p>
         </>
       ) : null}
 
@@ -305,6 +307,7 @@ function CollapsibleSection({
   viewAllHref?: string;
   render: (visible: number) => React.ReactNode;
 }) {
+  const t = useTranslations("vendors");
   const [expanded, setExpanded] = useState(false);
   return (
     <>
@@ -318,7 +321,7 @@ function CollapsibleSection({
             onClick={() => setExpanded((v) => !v)}
             className="text-label-md font-semibold text-brand-strong transition-colors hover:text-brand focus-visible:outline-none focus-visible:underline"
           >
-            {expanded ? "Show less" : `Show all ${count} ${noun}`}
+            {expanded ? t("detail.showLess") : t("detail.showAll", { count, noun })}
           </button>
         ) : null}
         {viewAllHref ? (
@@ -326,7 +329,7 @@ function CollapsibleSection({
             href={viewAllHref}
             className="inline-flex items-center gap-xs text-label-md font-semibold text-brand-strong transition-colors hover:text-brand focus-visible:outline-none focus-visible:underline"
           >
-            View all in Invoices <ArrowRight size={14} />
+            {t("detail.viewAllInvoices")} <ArrowRight size={14} />
           </Link>
         ) : null}
       </div>
@@ -367,6 +370,7 @@ function StatBlock({
 }
 
 function InvoiceRow({ invoice }: { invoice: VendorInvoiceRef }) {
+  const t = useTranslations("vendors");
   const items = invoice._count?.items ?? 0;
   return (
     <Link
@@ -379,7 +383,7 @@ function InvoiceRow({ invoice }: { invoice: VendorInvoiceRef }) {
       <div className="min-w-0 flex-1">
         <p className="truncate text-body-md text-ink">{invoice.invoiceNo}</p>
         <p className="text-body-sm text-muted">
-          {formatDateTime(invoice.invoiceDate)} · {items} {items === 1 ? "item" : "items"}
+          {formatDateTime(invoice.invoiceDate)} · {items} {items === 1 ? t("detail.item") : t("detail.items")}
         </p>
       </div>
       <div className="flex shrink-0 items-center gap-sm">
@@ -397,13 +401,14 @@ function InvoiceRow({ invoice }: { invoice: VendorInvoiceRef }) {
 }
 
 function StockInRow({ stockIn }: { stockIn: VendorStockInRef }) {
+  const t = useTranslations("vendors");
   return (
     <div className="flex items-center gap-md border-b border-hairline py-md">
       <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-surface-tint text-muted">
         <ScrollText size={16} />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-body-md text-ink">{stockIn.product?.name ?? "Product"}</p>
+        <p className="truncate text-body-md text-ink">{stockIn.product?.name ?? t("detail.product")}</p>
         <p className="text-body-sm text-muted">
           {stockIn.product?.sku ? `SKU ${stockIn.product.sku} · ` : ""}
           {formatDateTime(stockIn.createdAt)}

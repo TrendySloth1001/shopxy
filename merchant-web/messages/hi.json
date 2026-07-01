@@ -11,14 +11,38 @@
     "currency": "मुद्रा",
     "currencySubtitle": "भारतीय रुपया (₹)",
     "sections": {
-      "account": { "label": "खाता", "blurb": "आपकी प्रोफ़ाइल और साइन-इन ईमेल।" },
-      "shop": { "label": "दुकान संचालन", "blurb": "स्टोरफ़्रंट, टीम और भुगतान।" },
-      "inventory": { "label": "इन्वेंटरी", "blurb": "कैटलॉग कॉन्फ़िगरेशन।" },
-      "notifications": { "label": "सूचनाएँ", "blurb": "हम आपको किस बारे में ईमेल करते हैं।" },
-      "security": { "label": "सुरक्षा", "blurb": "पासवर्ड और खाता सुरक्षा।" },
-      "preferences": { "label": "प्राथमिकताएँ", "blurb": "मुद्रा, थीम और भाषा।" },
-      "privacy": { "label": "डेटा और गोपनीयता", "blurb": "अपना डेटा निर्यात करें और हटाएँ।" },
-      "about": { "label": "परिचय", "blurb": "ऐप जानकारी।" }
+      "account": {
+        "label": "खाता",
+        "blurb": "आपकी प्रोफ़ाइल और साइन-इन ईमेल।"
+      },
+      "shop": {
+        "label": "दुकान संचालन",
+        "blurb": "स्टोरफ़्रंट, टीम और भुगतान।"
+      },
+      "inventory": {
+        "label": "इन्वेंटरी",
+        "blurb": "कैटलॉग कॉन्फ़िगरेशन।"
+      },
+      "notifications": {
+        "label": "सूचनाएँ",
+        "blurb": "हम आपको किस बारे में ईमेल करते हैं।"
+      },
+      "security": {
+        "label": "सुरक्षा",
+        "blurb": "पासवर्ड और खाता सुरक्षा।"
+      },
+      "preferences": {
+        "label": "प्राथमिकताएँ",
+        "blurb": "मुद्रा, थीम और भाषा।"
+      },
+      "privacy": {
+        "label": "डेटा और गोपनीयता",
+        "blurb": "अपना डेटा निर्यात करें और हटाएँ।"
+      },
+      "about": {
+        "label": "परिचय",
+        "blurb": "ऐप जानकारी।"
+      }
     },
     "rows": {
       "editProfile": "प्रोफ़ाइल संपादित करें",
@@ -39,13 +63,983 @@
     }
   },
   "themes": {
-    "light": { "label": "लाइट", "desc": "गर्म कैनवास, गहरा टेक्स्ट — डिफ़ॉल्ट।" },
-    "beige": { "label": "बेज", "desc": "मुलायम सीपिया कागज़ — गर्म, कम चमक।" },
-    "rose": { "label": "रोज़", "desc": "गर्म गुलाबी — आँखों के लिए सुकूनदेह।" },
-    "sage": { "label": "सेज", "desc": "शीतल पुदीना हरा — शांत और सौम्य।" },
-    "dark": { "label": "डार्क", "desc": "गहरे स्लेट सरफेस, आँखों के लिए आरामदेह।" },
-    "oled": { "label": "OLED", "desc": "सच्चा काला — OLED डिस्प्ले के लिए सर्वोत्तम।" },
-    "midnight": { "label": "मिडनाइट", "desc": "गहरा नेवी — इंडिगो रंगत वाला डार्क।" },
-    "nord": { "label": "नॉर्ड", "desc": "मंद आर्कटिक नीला-धूसर — कोमल डार्क।" }
+    "light": {
+      "label": "लाइट",
+      "desc": "गर्म कैनवास, गहरा टेक्स्ट — डिफ़ॉल्ट।"
+    },
+    "beige": {
+      "label": "बेज",
+      "desc": "मुलायम सीपिया कागज़ — गर्म, कम चमक।"
+    },
+    "rose": {
+      "label": "रोज़",
+      "desc": "गर्म गुलाबी — आँखों के लिए सुकूनदेह।"
+    },
+    "sage": {
+      "label": "सेज",
+      "desc": "शीतल पुदीना हरा — शांत और सौम्य।"
+    },
+    "dark": {
+      "label": "डार्क",
+      "desc": "गहरे स्लेट सरफेस, आँखों के लिए आरामदेह।"
+    },
+    "oled": {
+      "label": "OLED",
+      "desc": "सच्चा काला — OLED डिस्प्ले के लिए सर्वोत्तम।"
+    },
+    "midnight": {
+      "label": "मिडनाइट",
+      "desc": "गहरा नेवी — इंडिगो रंगत वाला डार्क।"
+    },
+    "nord": {
+      "label": "नॉर्ड",
+      "desc": "मंद आर्कटिक नीला-धूसर — कोमल डार्क।"
+    }
+  },
+  "products": {
+    "actions": {
+      "newProduct": "नया उत्पाद"
+    },
+    "list": {
+      "title": "उत्पाद",
+      "countOne": "आपके कैटलॉग में {count} उत्पाद।",
+      "countOther": "आपके कैटलॉग में {count} उत्पाद।",
+      "searchPlaceholder": "नाम, SKU या बारकोड से खोजें",
+      "allCategories": "सभी श्रेणियाँ",
+      "sort": {
+        "recentlyUpdated": "हाल ही में अपडेट किए गए",
+        "nameAsc": "नाम A–Z",
+        "priceLowHigh": "कीमत कम–ज़्यादा",
+        "priceHighLow": "कीमत ज़्यादा–कम",
+        "newest": "सबसे नए"
+      },
+      "lowStock": "कम स्टॉक",
+      "outOfStock": "स्टॉक ख़त्म",
+      "loadError": "उत्पाद लोड नहीं हो सके।",
+      "toggleError": "\"{name}\" अपडेट नहीं हो सका।",
+      "tryAgain": "फिर से कोशिश करें",
+      "empty": "आपके फ़िल्टर से कोई उत्पाद मेल नहीं खाता।",
+      "pageOf": "पृष्ठ {page} / {totalPages}",
+      "previous": "पिछला",
+      "next": "अगला",
+      "publishedHint": "प्रकाशित — अप्रकाशित करने के लिए क्लिक करें",
+      "unpublishedHint": "अप्रकाशित — प्रकाशित करने के लिए क्लिक करें",
+      "noAccessHint": "आपके पास पहुँच नहीं है। दुकान मालिक से पूछें।",
+      "saving": "सहेजा जा रहा है…",
+      "published": "प्रकाशित",
+      "draft": "ड्राफ़्ट"
+    },
+    "detail": {
+      "loadError": "उत्पाद लोड नहीं हो सका।",
+      "deleteError": "उत्पाद हटाया नहीं जा सका।",
+      "skuPrefix": "SKU",
+      "ratingOutOf": "5 में से {value}",
+      "ratingCountOne": "{count} रेटिंग",
+      "ratingCountOther": "{count} रेटिंग",
+      "published": "प्रकाशित",
+      "publish": "प्रकाशित करें",
+      "copied": "कॉपी हो गया",
+      "share": "साझा करें",
+      "edit": "संपादित करें",
+      "confirmDelete": "हटाना पक्का करें",
+      "cancel": "रद्द करें",
+      "delete": "हटाएँ",
+      "backToProducts": "उत्पाद",
+      "drafts": {
+        "ariaLabel": "लंबित ड्राफ़्ट इनवॉइस",
+        "countOne": "{count} लंबित ड्राफ़्ट",
+        "countOther": "{count} लंबित ड्राफ़्ट",
+        "hint": "स्टॉक को अपनी इन्वेंट्री में जोड़ने के लिए ड्राफ़्ट खोलें और उसे पक्का करें।",
+        "fallbackLabel": "ड्राफ़्ट #{id}",
+        "confirmError": "ड्राफ़्ट पक्का नहीं हो सका।",
+        "badge": "ड्राफ़्ट",
+        "justCreated": "अभी बनाया गया",
+        "itemCountOne": "{count} वस्तु",
+        "itemCountOther": "{count} वस्तुएँ",
+        "view": "देखें",
+        "confirming": "पक्का किया जा रहा है…",
+        "confirm": "पक्का करें"
+      },
+      "stockIn": "स्टॉक इन",
+      "stockOut": "स्टॉक आउट",
+      "stockLedger": "स्टॉक बही",
+      "facts": {
+        "purchasePrice": "खरीद मूल्य",
+        "profitPerUnit": "लाभ / यूनिट",
+        "margin": "मार्जिन",
+        "gst": "GST",
+        "none": "कोई नहीं",
+        "stock": "स्टॉक",
+        "lowStockAt": "कम स्टॉक पर",
+        "hsn": "HSN",
+        "barcode": "बारकोड"
+      },
+      "gstBreakdownHeading": "कीमत और GST विवरण",
+      "sections": {
+        "supplierPriceHistory": "सप्लायर मूल्य इतिहास",
+        "description": "विवरण",
+        "tags": "टैग",
+        "highlights": "मुख्य बातें",
+        "specifications": "विनिर्देश",
+        "offers": "ऑफ़र",
+        "variants": "वेरिएंट ({count})",
+        "aplusContent": "A+ सामग्री",
+        "reviews": "समीक्षाएँ"
+      },
+      "offerCode": "कोड: {code}",
+      "gallery": {
+        "addPhotos": "फ़ोटो जोड़ें",
+        "noImageYet": "अभी कोई छवि नहीं",
+        "imageLabel": "छवि {index}"
+      }
+    },
+    "form": {
+      "editTitle": "उत्पाद संपादित करें",
+      "newTitle": "नया उत्पाद",
+      "cancel": "रद्द करें",
+      "saving": "सहेजा जा रहा है…",
+      "saveChanges": "बदलाव सहेजें",
+      "createProduct": "उत्पाद बनाएँ",
+      "saveError": "उत्पाद सहेजा नहीं जा सका।",
+      "errors": {
+        "nameRequired": "नाम ज़रूरी है",
+        "skuRequired": "SKU ज़रूरी है",
+        "invalidMrp": "मान्य MRP दर्ज करें",
+        "invalidSellingPrice": "मान्य विक्रय मूल्य दर्ज करें",
+        "invalidPrice": "मान्य कीमत दर्ज करें",
+        "invalidTaxPercent": "कर % 0 और 100 के बीच होना चाहिए",
+        "negativeStock": "स्टॉक ऋणात्मक नहीं हो सकता",
+        "negativeThreshold": "सीमा ऋणात्मक नहीं हो सकती"
+      },
+      "nameLabel": "नाम",
+      "skuLabel": "SKU",
+      "brandLabel": "ब्रांड",
+      "barcodeLabel": "बारकोड",
+      "hsnLabel": "HSN कोड",
+      "descriptionLabel": "विवरण",
+      "mrpLabel": "MRP",
+      "sellingPriceLabel": "विक्रय मूल्य",
+      "purchasePriceLabel": "खरीद मूल्य",
+      "taxPercentLabel": "कर %",
+      "openingStockLabel": "शुरुआती स्टॉक",
+      "lowStockThresholdLabel": "कम-स्टॉक सीमा",
+      "unitLabel": "यूनिट",
+      "categoryLabel": "श्रेणी",
+      "noCategory": "कोई श्रेणी नहीं",
+      "categoriesLoadError": "श्रेणियाँ लोड नहीं हो सकीं —",
+      "retry": "फिर से कोशिश करें",
+      "activeLabel": "सक्रिय (आपके कैटलॉग में दिखाई देगा)",
+      "sections": {
+        "images": {
+          "title": "छवियाँ",
+          "description": "10 तक फ़ोटो जोड़ें।"
+        },
+        "tags": {
+          "title": "टैग",
+          "description": "खोज और बैज के लिए कीवर्ड।",
+          "placeholder": "जैसे बेस्टसेलर"
+        },
+        "highlights": {
+          "title": "मुख्य बातें",
+          "description": "उत्पाद पृष्ठ पर छोटे विक्रय बिंदु।",
+          "placeholder": "जैसे 12-महीने की वारंटी"
+        },
+        "specifications": {
+          "title": "विनिर्देश",
+          "description": "उत्पाद पृष्ठ के लिए समूहबद्ध विनिर्देश शीट।"
+        },
+        "offers": {
+          "title": "ऑफ़र",
+          "description": "बैंक / कूपन / EMI / एक्सचेंज ऑफ़र।"
+        },
+        "aplusContent": {
+          "title": "A+ सामग्री",
+          "description": "उत्पाद पृष्ठ पर समृद्ध सामग्री ब्लॉक (अधिकतम 8)।"
+        },
+        "variants": {
+          "title": "वेरिएंट",
+          "description": "एक ही उत्पाद के अंतर्गत रंग/आकार विकल्प बेचें।"
+        },
+        "customFields": {
+          "title": "कस्टम फ़ील्ड",
+          "description": "इस उत्पाद के लिए आपकी दुकान द्वारा तय किए गए फ़ील्ड।"
+        }
+      }
+    },
+    "imageManager": {
+      "uploadError": "छवि अपलोड नहीं हो सकी।",
+      "removeError": "छवि हटाई नहीं जा सकी।",
+      "reorderError": "छवियों का क्रम बदला नहीं जा सका।",
+      "imageAlt": "छवि {index}",
+      "removeImage": "छवि हटाएँ",
+      "moveLeft": "बाएँ ले जाएँ",
+      "moveRight": "दाएँ ले जाएँ",
+      "add": "जोड़ें"
+    },
+    "variants": {
+      "axesLabel": "अक्ष (जैसे रंग, आकार)",
+      "axisNamePlaceholder": "अक्ष का नाम",
+      "removeAxis": "अक्ष हटाएँ",
+      "valuePlaceholder": "मान",
+      "addAxis": "अक्ष जोड़ें",
+      "generate": "वेरिएंट बनाएँ",
+      "countLabel": "वेरिएंट ({count})",
+      "skuPlaceholder": "SKU",
+      "mrpPlaceholder": "MRP",
+      "sellPlaceholder": "विक्रय",
+      "costPlaceholder": "लागत",
+      "qtyPlaceholder": "मात्रा",
+      "removeVariant": "वेरिएंट हटाएँ",
+      "duplicateSkuOne": "डुप्लिकेट SKU: {skus} — हर वेरिएंट को एक अलग SKU चाहिए।",
+      "duplicateSkuOther": "डुप्लिकेट SKU: {skus} — हर वेरिएंट को एक अलग SKU चाहिए।",
+      "addVariant": "वेरिएंट जोड़ें"
+    },
+    "supplierHistory": {
+      "loadError": "खरीद इतिहास लोड नहीं हो सका।",
+      "loading": "खरीद इतिहास लोड हो रहा है…",
+      "empty": "अभी तक कोई सप्लायर खरीद इतिहास नहीं। सप्लायर के साथ स्टॉक-इन यहाँ दिखाई देंगे।",
+      "vendor": "वेंडर",
+      "latestPrice": "नवीनतम कीमत",
+      "averagePrice": "औसत कीमत",
+      "totalBought": "कुल खरीदा",
+      "buysOne": "{count} खरीद",
+      "buysOther": "{count} खरीद",
+      "lastStockIn": "अंतिम स्टॉक-इन",
+      "pricePolicy": "मूल्य नीति",
+      "recentBuys": "हाल की खरीद",
+      "colDate": "तारीख़",
+      "colQty": "मात्रा",
+      "colUnitPrice": "यूनिट कीमत",
+      "colAmount": "राशि",
+      "showLess": "कम दिखाएँ",
+      "showAll": "सभी {count} खरीद दिखाएँ"
+    },
+    "picker": {
+      "loadError": "उत्पाद लोड नहीं हो सके।",
+      "title": "एक उत्पाद चुनें",
+      "searchPlaceholder": "अपना कैटलॉग खोजें",
+      "searching": "खोजा जा रहा है…",
+      "noResults": "कोई उत्पाद नहीं मिला।",
+      "skuPrefix": "SKU"
+    },
+    "customFields": {
+      "loadError": "कस्टम फ़ील्ड लोड नहीं हो सके।",
+      "saveError": "कस्टम फ़ील्ड सहेजे नहीं जा सके।",
+      "loading": "लोड हो रहा है…",
+      "empty": "अभी तक आपकी दुकान के लिए कोई कस्टम फ़ील्ड तय नहीं किया गया है।",
+      "saved": "सहेजा गया।",
+      "fieldFallback": "फ़ील्ड #{id}",
+      "saving": "सहेजा जा रहा है…",
+      "save": "कस्टम फ़ील्ड सहेजें"
+    },
+    "stringList": {
+      "remove": "हटाएँ",
+      "add": "जोड़ें"
+    },
+    "gstBreakdown": {
+      "noGst": "कोई GST लागू नहीं — पूरा {price} कर योग्य मूल्य है।",
+      "taxableValue": "कर योग्य मूल्य",
+      "taxableHint": "GST से पहले की कीमत",
+      "cgst": "CGST @ {rate}%",
+      "sgst": "SGST @ {rate}%",
+      "totalGst": "कुल GST @ {rate}%",
+      "sellingPriceInclGst": "विक्रय मूल्य (GST सहित)",
+      "explainer": "कीमतों में GST शामिल है। आपके राज्य के भीतर बिक्री के लिए CGST + SGST दिखाया गया है; दूसरे राज्य में बिक्री पर वही कुल IGST के रूप में लगता है।"
+    },
+    "offers": {
+      "headlinePlaceholder": "शीर्षक",
+      "codePlaceholder": "कोड (वैकल्पिक)",
+      "removeOffer": "ऑफ़र हटाएँ",
+      "addOffer": "ऑफ़र जोड़ें"
+    },
+    "stockBadge": {
+      "outOfStock": "स्टॉक ख़त्म"
+    },
+    "specs": {
+      "groupTitlePlaceholder": "समूह शीर्षक (जैसे आयाम)",
+      "tabPlaceholder": "टैब (वैकल्पिक)",
+      "removeGroup": "समूह हटाएँ",
+      "labelPlaceholder": "लेबल",
+      "valuePlaceholder": "मान",
+      "removeRow": "पंक्ति हटाएँ",
+      "addRow": "पंक्ति जोड़ें",
+      "addGroup": "विनिर्देश समूह जोड़ें"
+    },
+    "contentBlocks": {
+      "moveUp": "ऊपर ले जाएँ",
+      "moveDown": "नीचे ले जाएँ",
+      "removeBlock": "ब्लॉक हटाएँ",
+      "heroImage": "हीरो छवि",
+      "headlinePlaceholder": "शीर्षक",
+      "subtextPlaceholder": "उप-पाठ (वैकल्पिक)",
+      "featureImage": "फ़ीचर छवि",
+      "imageSide": "छवि की ओर",
+      "sideLeft": "बाएँ",
+      "sideRight": "दाएँ",
+      "titlePlaceholder": "शीर्षक",
+      "bodyPlaceholder": "मुख्य पाठ",
+      "markdownPlaceholder": "मार्कडाउन पाठ",
+      "captionPlaceholder": "कैप्शन",
+      "remove": "हटाएँ",
+      "addImage": "छवि जोड़ें",
+      "rows": "पंक्तियाँ",
+      "rowLabelPlaceholder": "पंक्ति लेबल",
+      "columnLabelPlaceholder": "स्तंभ लेबल",
+      "removeColumn": "स्तंभ हटाएँ",
+      "valuePlaceholder": "मान",
+      "addColumn": "स्तंभ जोड़ें",
+      "imageAlt": "छवि",
+      "uploading": "अपलोड हो रहा है…",
+      "replace": "बदलें",
+      "upload": "अपलोड करें"
+    }
+  },
+  "orders": {
+    "list": {
+      "title": "ऑर्डर",
+      "subtitle": "आने वाले ऑर्डर देखें, फिर इनवॉइस बनाने के लिए पुष्टि करें या मना करें।",
+      "searchPlaceholder": "ग्राहक, फ़ोन, आइटम या #आईडी से खोजें",
+      "fromLabel": "से",
+      "toLabel": "तक",
+      "clear": "हटाएँ",
+      "loadError": "ऑर्डर लोड नहीं हो सके।",
+      "tryAgain": "फिर से कोशिश करें",
+      "pageOf": "पेज {page} / {totalPages}",
+      "previous": "पिछला",
+      "next": "अगला",
+      "moreItems": "(+{count} और)",
+      "itemCount": "{count, plural, one {# आइटम} other {# आइटम}}"
+    },
+    "tabs": {
+      "pending": "बाकी",
+      "confirmed": "पुष्ट",
+      "rejected": "अस्वीकृत",
+      "all": "सभी"
+    },
+    "empty": {
+      "caughtUpTitle": "सब निपट गया",
+      "caughtUpBody": "जैसे ही कोई ग्राहक ऑर्डर देगा, वह यहाँ आ जाएगा।",
+      "noMatchTitle": "कोई मिलता-जुलता ऑर्डर नहीं",
+      "noMatchBody": "कोई और खोज या तारीख़ सीमा आज़माएँ।",
+      "noneTitle": "अभी कोई ऑर्डर नहीं",
+      "noneBody": "जब ग्राहक ऑर्डर देंगे, वे यहाँ दिखेंगे।"
+    },
+    "detail": {
+      "heading": "ऑर्डर #{id}",
+      "back": "ऑर्डर",
+      "loadError": "ऑर्डर लोड नहीं हो सका।",
+      "tryAgain": "फिर से कोशिश करें",
+      "invoiceCreated": "इनवॉइस {invoiceNo} बन गई।",
+      "confirmError": "ऑर्डर की पुष्टि नहीं हो सकी।",
+      "declined": "ऑर्डर मना कर दिया गया।",
+      "declineError": "ऑर्डर मना नहीं किया जा सका।",
+      "shippingMarked": "{milestone} के रूप में चिह्नित किया गया।",
+      "shippingError": "शिपिंग अपडेट नहीं हो सकी।",
+      "statItems": "आइटम",
+      "statTotalQty": "कुल मात्रा",
+      "statOrderTotal": "ऑर्डर कुल",
+      "shortfallTitle": "{total} में से {short} आइटम का स्टॉक कम है",
+      "shortfallBody": "पुष्टि करने से पहले उन उत्पादों का स्टॉक भरें — वरना इनवॉइस पोस्ट नहीं हो पाएगी।",
+      "customerNote": "ग्राहक का नोट",
+      "decisionNote": "निर्णय नोट:",
+      "itemsHeading": "आइटम",
+      "subtotal": "उप-योग",
+      "tax": "कर",
+      "discount": "छूट",
+      "total": "कुल",
+      "taxDiscountNote": "कर और छूट इनवॉइस पर तय होते हैं।",
+      "shippingHeading": "शिपिंग अपडेट",
+      "updateShipping": "शिपिंग अपडेट करें",
+      "noShippingUpdates": "अभी कोई शिपिंग अपडेट नहीं।",
+      "openInvoice": "इनवॉइस {invoiceNo} खोलें",
+      "linkedParty": "लिंक्ड पार्टी",
+      "call": "कॉल करें",
+      "whatsapp": "WhatsApp",
+      "email": "ईमेल",
+      "whatsappMessage": "नमस्ते {name}, आपके ऑर्डर #{id} के बारे में।",
+      "emailSubject": "ऑर्डर #{id}",
+      "copyHeader": "{name} का ऑर्डर #{id}",
+      "copyTotal": "कुल: {total}",
+      "copied": "कॉपी हो गया",
+      "copySummary": "सारांश कॉपी करें",
+      "restock": "स्टॉक भरें"
+    },
+    "journey": {
+      "placed": "दिया गया",
+      "declined": "मना किया",
+      "cancelled": "रद्द",
+      "confirmed": "पुष्ट",
+      "invoiced": "इनवॉइस बनी",
+      "paid": "भुगतान हुआ"
+    },
+    "stock": {
+      "inactive": "निष्क्रिय उत्पाद",
+      "unknown": "स्टॉक अज्ञात",
+      "ok": "माँगा {asked} · स्टॉक में {stock} {unit}",
+      "short": "माँगा {asked} · स्टॉक में {stock} · कमी {short}"
+    },
+    "shipping": {
+      "title": "शिपिंग अपडेट करें",
+      "milestoneLabel": "चरण",
+      "courierLabel": "कूरियर (वैकल्पिक)",
+      "courierPlaceholder": "जैसे Delhivery",
+      "awbLabel": "AWB / ट्रैकिंग (वैकल्पिक)",
+      "awbPlaceholder": "ट्रैकिंग नंबर",
+      "etaLabel": "अनुमानित समय (वैकल्पिक)",
+      "noteLabel": "नोट (वैकल्पिक)",
+      "save": "अपडेट सहेजें"
+    },
+    "actions": {
+      "decline": "मना करें",
+      "confirmAndInvoice": "पुष्टि करें और इनवॉइस बनाएँ"
+    },
+    "confirm": {
+      "title": "इस ऑर्डर की पुष्टि करें?",
+      "titleShort": "स्टॉक कम लग रहा है — फिर भी पुष्टि करें?",
+      "body": "पुष्टि करने पर एक SALE इनवॉइस बनती है और हर लाइन का स्टॉक घट जाता है।",
+      "bodyShort": "कुछ आइटम का स्टॉक माँगी गई मात्रा से कम है, इसलिए इनवॉइस पोस्ट होने में विफल हो सकती है।",
+      "notYet": "अभी नहीं",
+      "confirming": "पुष्टि हो रही है…",
+      "confirmOrder": "ऑर्डर की पुष्टि करें"
+    },
+    "decline": {
+      "title": "इस ऑर्डर को मना करें?",
+      "subtitle": "ग्राहक को सूचना दी जाती है। कोई कारण चुनें या नोट जोड़ें।",
+      "reasons": {
+        "outOfStock": "स्टॉक खत्म",
+        "shopClosed": "दुकान बंद",
+        "priceChanged": "कीमत बदल गई",
+        "other": "अन्य"
+      },
+      "notePlaceholder": "ग्राहक के लिए वैकल्पिक नोट",
+      "cancel": "रद्द करें",
+      "declining": "मना किया जा रहा है…",
+      "declineOrder": "ऑर्डर मना करें"
+    }
+  },
+  "invoices": {
+    "list": {
+      "title": "इनवॉइस",
+      "subtitle": "बिक्री और खरीद के इनवॉइस। ड्राफ्ट सहेजें, स्टॉक दर्ज करने के लिए कन्फर्म करें, GST PDF साझा करें और भुगतान दर्ज करें।",
+      "refresh": "रीफ़्रेश करें",
+      "searchPlaceholder": "इनवॉइस नंबर, ग्राहक या विक्रेता खोजें",
+      "typeAll": "सभी",
+      "typeSales": "बिक्री",
+      "typePurchases": "खरीद",
+      "statusLabel": "स्थिति",
+      "statusAny": "कोई भी स्थिति",
+      "documentLabel": "दस्तावेज़",
+      "docAll": "सभी दस्तावेज़",
+      "loadError": "इनवॉइस लोड नहीं हो सके।",
+      "empty": "इन फ़िल्टर से कोई इनवॉइस मेल नहीं खाता।",
+      "countOne": "इनवॉइस",
+      "countOther": "इनवॉइस",
+      "itemOne": "आइटम",
+      "itemOther": "आइटम",
+      "openPdf": "PDF खोलें"
+    },
+    "status": {
+      "draft": "ड्राफ्ट",
+      "confirmed": "कन्फर्म",
+      "cancelled": "रद्द",
+      "draftLower": "ड्राफ्ट",
+      "confirmedLower": "कन्फर्म",
+      "cancelledLower": "रद्द"
+    },
+    "docType": {
+      "TAX_INVOICE": "टैक्स इनवॉइस",
+      "BILL_OF_SUPPLY": "बिल ऑफ़ सप्लाई",
+      "ESTIMATE": "एस्टिमेट",
+      "PROFORMA": "प्रोफ़ॉर्मा",
+      "CREDIT_NOTE": "क्रेडिट नोट",
+      "DEBIT_NOTE": "डेबिट नोट"
+    },
+    "scope": {
+      "showingInvoices": "इनके इनवॉइस दिखाए जा रहे हैं",
+      "showingBills": "इनके बिल दिखाए जा रहे हैं",
+      "thisContact": "यह संपर्क",
+      "clearFilter": "फ़िल्टर हटाएँ"
+    },
+    "actions": {
+      "newInvoice": "नया इनवॉइस",
+      "edit": "बदलें",
+      "pdf": "PDF",
+      "markPaid": "भुगतान हुआ चिह्नित करें",
+      "convert": "इनवॉइस में बदलें",
+      "delete": "हटाएँ",
+      "cancelInvoice": "इनवॉइस रद्द करें",
+      "confirmInvoice": "इनवॉइस कन्फर्म करें",
+      "working": "प्रोसेस हो रहा है…"
+    },
+    "detail": {
+      "back": "इनवॉइस",
+      "loadError": "इनवॉइस लोड नहीं हो सका।",
+      "notFound": "इनवॉइस नहीं मिला।",
+      "updateError": "इनवॉइस अपडेट नहीं हो सका।",
+      "deleteError": "इनवॉइस हटाया नहीं जा सका।",
+      "convertError": "इनवॉइस में नहीं बदला जा सका।",
+      "sale": "बिक्री",
+      "purchase": "खरीद",
+      "items": "आइटम",
+      "payments": "भुगतान",
+      "note": "टिप्पणी",
+      "billTo": "बिल किसे",
+      "supplier": "सप्लायर",
+      "productFallback": "प्रोडक्ट"
+    },
+    "totals": {
+      "subtotal": "सबटोटल",
+      "discount": "छूट",
+      "cess": "उपकर (Cess)",
+      "roundOff": "राउंड-ऑफ",
+      "total": "कुल",
+      "received": "प्राप्त",
+      "outstanding": "बकाया"
+    },
+    "cancelModal": {
+      "title": "यह इनवॉइस रद्द करें?",
+      "body": "ड्राफ्ट रद्द हो जाएगा। स्टॉक पर कोई असर नहीं क्योंकि यह कभी दर्ज नहीं हुआ था।"
+    },
+    "deleteModal": {
+      "title": "यह इनवॉइस हटाएँ?",
+      "body": "यह ड्राफ्ट हमेशा के लिए हट जाएगा। इसे वापस नहीं लाया जा सकता।"
+    },
+    "edit": {
+      "backOne": "इनवॉइस",
+      "onlyDraft": "केवल ड्राफ्ट इनवॉइस ही बदले जा सकते हैं। यह इनवॉइस {status} है।"
+    },
+    "form": {
+      "editTitle": "ड्राफ्ट बदलें",
+      "newTitle": "नया इनवॉइस",
+      "typeLabel": "प्रकार",
+      "customer": "ग्राहक",
+      "vendor": "विक्रेता",
+      "selectSavedCustomer": "सहेजा गया ग्राहक चुनें",
+      "walkInName": "वॉक-इन नाम",
+      "walkInDefault": "वॉक-इन ग्राहक",
+      "phone": "फ़ोन",
+      "placeOfSupply": "आपूर्ति का स्थान",
+      "selectState": "राज्य चुनें (आपूर्ति का स्थान)",
+      "selectVendor": "विक्रेता चुनें",
+      "addProduct": "प्रोडक्ट जोड़ें",
+      "noItems": "अभी कोई आइटम नहीं — कोई प्रोडक्ट जोड़ें।",
+      "documentType": "दस्तावेज़ का प्रकार",
+      "discountLabel": "छूट (₹)",
+      "discountHelper": "टैक्स से पहले लागू होती है।",
+      "noteLabel": "टिप्पणी (वैकल्पिक)",
+      "updateDraft": "ड्राफ्ट अपडेट करें",
+      "saveDraft": "ड्राफ्ट के रूप में सहेजें",
+      "saving": "सहेजा जा रहा है…",
+      "updateConfirm": "अपडेट करें और कन्फर्म करें",
+      "saveConfirm": "सहेजें और कन्फर्म करें",
+      "customerFallback": "ग्राहक",
+      "vendorFallback": "विक्रेता",
+      "productFallback": "प्रोडक्ट",
+      "noPhone": "कोई फ़ोन नहीं",
+      "change": "बदलें",
+      "clear": "हटाएँ",
+      "qty": "मात्रा",
+      "rate": "दर ₹",
+      "amountPreTax": "राशि (टैक्स से पहले)",
+      "removeItem": "आइटम हटाएँ"
+    },
+    "picker": {
+      "searchProducts": "नाम या SKU से प्रोडक्ट खोजें",
+      "stock": "स्टॉक",
+      "noProducts": "कोई प्रोडक्ट मेल नहीं खाता।",
+      "selectCustomer": "ग्राहक चुनें",
+      "searchCustomers": "ग्राहक खोजें",
+      "searchVendors": "विक्रेता खोजें"
+    },
+    "errors": {
+      "noItems": "कम से कम एक आइटम जोड़ें।",
+      "needVendor": "खरीद इनवॉइस के लिए एक विक्रेता चुनें।",
+      "qtyPositive": "हर आइटम की मात्रा शून्य से अधिक होनी चाहिए।",
+      "rateNegative": "आइटम की दर ऋणात्मक नहीं हो सकती।",
+      "gstRange": "GST % 0 और 100 के बीच होना चाहिए।",
+      "discountNegative": "छूट ऋणात्मक नहीं हो सकती।",
+      "confirmFailed": "इनवॉइस ड्राफ्ट के रूप में सहेजा गया लेकिन कन्फर्म नहीं हो सका।",
+      "saveFailed": "इनवॉइस सहेजा नहीं जा सका।"
+    }
+  },
+  "quotations": {
+    "list": {
+      "title": "कोटेशन",
+      "subtitle": "एक प्राइस-लगा बकेट बनाएं और लिंक किए गए ग्राहक को भेजें। जब वे स्वीकार करते हैं, तो एक पक्का इनवॉइस अपने आप बन जाता है।",
+      "refresh": "रिफ्रेश करें",
+      "empty": "अभी तक कोई कोटेशन नहीं।",
+      "loadError": "कोटेशन लोड नहीं हो सके।",
+      "itemOne": "आइटम",
+      "itemMany": "आइटम"
+    },
+    "tabs": {
+      "all": "सभी",
+      "requested": "अनुरोधित",
+      "sent": "भेजे गए",
+      "accepted": "स्वीकृत"
+    },
+    "status": {
+      "REQUESTED": "अनुरोधित",
+      "PENDING": "भेजा गया",
+      "ACCEPTED": "स्वीकृत",
+      "DECLINED": "अस्वीकृत",
+      "CANCELLED": "रद्द किया गया",
+      "EXPIRED": "समय समाप्त"
+    },
+    "actions": {
+      "new": "नया कोटेशन",
+      "decline": "अस्वीकार करें",
+      "priceAndSend": "कीमत लगाकर भेजें",
+      "cancel": "कोटेशन रद्द करें"
+    },
+    "detail": {
+      "loadError": "कोटेशन लोड नहीं हो सका।",
+      "cancelError": "कोटेशन रद्द नहीं हो सका।",
+      "declineError": "अनुरोध अस्वीकार नहीं हो सका।",
+      "notFound": "कोटेशन नहीं मिला।",
+      "metaFrom": "{party} की ओर से · अनुरोधित {date}",
+      "metaTo": "{party} के लिए · {date}",
+      "invoiceBadge": "इनवॉइस {invoiceNo}",
+      "reason": "कारण: {reason}",
+      "openInCalculator": "कैलकुलेटर में खोलें",
+      "pdf": "PDF",
+      "itemsHeading": "आइटम ({count})",
+      "customerNote": "ग्राहक का नोट",
+      "note": "नोट"
+    },
+    "totals": {
+      "subtotal": "सबटोटल",
+      "gst": "GST",
+      "total": "कुल"
+    },
+    "line": {
+      "productFallback": "उत्पाद",
+      "noGst": "कोई GST नहीं",
+      "rate": "दर ₹",
+      "decrease": "घटाएं",
+      "increase": "बढ़ाएं",
+      "remove": "हटाएं"
+    },
+    "cancelModal": {
+      "title": "यह कोटेशन रद्द करें?",
+      "body": "ग्राहक अब इसे स्वीकार नहीं कर पाएगा।"
+    },
+    "declineModal": {
+      "title": "यह अनुरोध अस्वीकार करें?",
+      "body": "ग्राहक को बताएं कि आप इसका कोटेशन क्यों नहीं दे सकते (वैकल्पिक)।",
+      "reasonLabel": "कारण (वैकल्पिक)"
+    },
+    "respond": {
+      "backLabel": "कोटेशन",
+      "onlyRequested": "केवल ग्राहक द्वारा अनुरोधित कोटेशन की ही कीमत लगाकर भेजी जा सकती है।"
+    },
+    "editor": {
+      "titleRespond": "कोटेशन की कीमत लगाकर भेजें",
+      "titleNew": "नया कोटेशन",
+      "customer": "ग्राहक",
+      "requestedThisQuote": "इस कोटेशन का अनुरोध किया",
+      "clear": "हटाएं",
+      "selectCustomer": "एक लिंक किया गया ग्राहक चुनें",
+      "items": "आइटम",
+      "addProduct": "उत्पाद जोड़ें",
+      "itemsEmpty": "कोटेशन के लिए उत्पाद खोजें और जोड़ें।",
+      "noteLabel": "नोट (वैकल्पिक)",
+      "sending": "भेजा जा रहा है…",
+      "sendCta": "कोटेशन भेजें · {amount}",
+      "errorNoProducts": "कम से कम एक उत्पाद जोड़ें।",
+      "errorNoCustomer": "यह कोटेशन जिस ग्राहक को भेजना है उसे चुनें।",
+      "sendError": "कोटेशन भेजा नहीं जा सका।"
+    },
+    "productPicker": {
+      "title": "उत्पाद जोड़ें",
+      "placeholder": "नाम या SKU से उत्पाद खोजें",
+      "stock": "स्टॉक {count}"
+    },
+    "partyPicker": {
+      "title": "ग्राहक चुनें",
+      "placeholder": "लिंक किए गए ग्राहक खोजें",
+      "linked": "लिंक किया गया",
+      "emptyHint": "कोई ग्राहक नहीं मिला। कोटेशन केवल लिंक किए गए ग्राहकों को ही भेजे जा सकते हैं।"
+    }
+  },
+  "parties": {
+    "list": {
+      "title": "ग्राहक",
+      "subtitle": "जिन्हें आप बेचते हैं। इनवॉइस, चालान और चालू बकाया राशि पर नज़र रखें।",
+      "searchPlaceholder": "नाम, फ़ोन, ईमेल या GSTIN से खोजें",
+      "empty": "अभी कोई ग्राहक नहीं — अपना पहला ग्राहक जोड़ें।",
+      "emptySearch": "आपकी खोज से कोई ग्राहक मेल नहीं खाता।"
+    },
+    "actions": {
+      "add": "ग्राहक जोड़ें",
+      "refresh": "रीफ़्रेश करें",
+      "edit": "बदलें",
+      "delete": "हटाएँ"
+    },
+    "badges": {
+      "linked": "लिंक किया",
+      "inactive": "निष्क्रिय"
+    },
+    "row": {
+      "noPhone": "कोई फ़ोन नहीं",
+      "challanCount": "{count, plural, one {# चालान} other {# चालान}}",
+      "invoiceCount": "{count, plural, one {# इनवॉइस} other {# इनवॉइस}}",
+      "itemCount": "{count, plural, one {# आइटम} other {# आइटम}}",
+      "noAccess": "आपके पास पहुँच नहीं है। दुकान मालिक से पूछें।"
+    },
+    "delete": {
+      "title": "{name} को हटाएँ?",
+      "bodyWithRecords": "{name} के पास {invoices, plural, one {# इनवॉइस} other {# इनवॉइस}} और {challans, plural, one {# चालान} other {# चालान}} हैं, इसलिए इन्हें हटाने के बजाय निष्क्रिय कर दिया जाएगा — पुराने रिकॉर्ड सुरक्षित रहेंगे।",
+      "bodyEmpty": "ग्राहक को स्थायी रूप से हटा देता है। इनके कोई इनवॉइस या चालान नहीं हैं।",
+      "confirm": "हटाएँ"
+    },
+    "detail": {
+      "back": "ग्राहक",
+      "notFound": "ग्राहक नहीं मिला।",
+      "recordPayment": "भुगतान दर्ज करें",
+      "balance": "बकाया",
+      "balanceTone": {
+        "owe": "आपको देना है",
+        "settled": "कोई बकाया नहीं",
+        "advance": "अग्रिम / जमा"
+      },
+      "ledger": "बही",
+      "recentInvoices": "हाल की इनवॉइस",
+      "recentChallans": "हाल के चालान",
+      "noActivity": "अभी कोई गतिविधि नहीं।"
+    },
+    "stats": {
+      "netBilled": "शुद्ध बिल",
+      "billsCount": "{count, plural, one {# बिल} other {# बिल}}",
+      "sales": "बिक्री",
+      "challansCount": "{count, plural, one {# चालान} other {# चालान}}",
+      "returns": "वापसी",
+      "salesReturns": "बिक्री वापसी"
+    },
+    "docStatus": {
+      "CONFIRMED": "पुष्ट",
+      "CANCELLED": "रद्द",
+      "DRAFT": "ड्राफ़्ट"
+    },
+    "challanStatus": {
+      "invoiced": "इनवॉइस किया"
+    },
+    "editor": {
+      "addTitle": "ग्राहक जोड़ें",
+      "editTitle": "ग्राहक बदलें",
+      "subtitle": "जिन्हें आप बेचते हैं — बिक्री इनवॉइस, चालान और बकाया बही में उपयोग होते हैं।",
+      "nameLabel": "ग्राहक का नाम"
+    },
+    "errors": {
+      "loadList": "ग्राहक लोड नहीं हो सके।",
+      "load": "ग्राहक लोड नहीं हो सका।",
+      "delete": "ग्राहक को हटाया नहीं जा सका।"
+    }
+  },
+  "vendors": {
+    "list": {
+      "title": "विक्रेता",
+      "subtitle": "जिन आपूर्तिकर्ताओं से आप खरीदते हैं। हर एक के लिए खरीद बिल, स्टॉक-इन और बकाया राशि ट्रैक करें।",
+      "searchPlaceholder": "नाम, फ़ोन, ईमेल या GSTIN से खोजें",
+      "empty": "अभी कोई विक्रेता नहीं — अपना पहला आपूर्तिकर्ता जोड़ें।",
+      "emptySearch": "आपकी खोज से कोई विक्रेता मेल नहीं खाता।",
+      "loadError": "विक्रेता लोड नहीं हो सके।"
+    },
+    "actions": {
+      "refresh": "रीफ़्रेश करें",
+      "addVendor": "विक्रेता जोड़ें",
+      "edit": "संपादित करें",
+      "delete": "हटाएं"
+    },
+    "badge": {
+      "linked": "लिंक किया गया",
+      "inactive": "निष्क्रिय"
+    },
+    "row": {
+      "noPhone": "कोई फ़ोन नहीं",
+      "txn": "लेन-देन",
+      "txns": "लेन-देन",
+      "invoice": "इनवॉइस",
+      "invoices": "इनवॉइस",
+      "noAccess": "आपके पास पहुँच नहीं है। दुकान मालिक से पूछें।"
+    },
+    "delete": {
+      "title": "{name} को हटाएं?",
+      "body": "विक्रेता को हटा देता है। अगर उनके बिल या स्टॉक-इन इतिहास है तो उन्हें निष्क्रिय कर दिया जाता है, ताकि पुराने रिकॉर्ड सुरक्षित रहें।",
+      "confirm": "हटाएं",
+      "error": "विक्रेता को हटाया नहीं जा सका।"
+    },
+    "detail": {
+      "loadError": "विक्रेता लोड नहीं हो सका।",
+      "notFound": "विक्रेता नहीं मिला।",
+      "recordPayment": "भुगतान दर्ज करें",
+      "balance": "शेष राशि",
+      "stats": {
+        "netPurchased": "कुल खरीद",
+        "billsCount": "{count} बिल",
+        "stockIns": "स्टॉक-इन",
+        "ledgerRows": "बही पंक्तियाँ",
+        "returns": "वापसी",
+        "purchaseReturns": "खरीद वापसी"
+      },
+      "sections": {
+        "ledger": "बही",
+        "recentBills": "हाल के बिल",
+        "recentStockIn": "हाल का स्टॉक-इन"
+      },
+      "nouns": {
+        "entries": "प्रविष्टियाँ",
+        "bills": "बिल",
+        "stockIns": "स्टॉक-इन"
+      },
+      "showLess": "कम दिखाएं",
+      "showAll": "सभी {count} {noun} दिखाएं",
+      "viewAllInvoices": "इनवॉइस में सभी देखें",
+      "noActivity": "अभी कोई गतिविधि नहीं।",
+      "item": "वस्तु",
+      "items": "वस्तुएं",
+      "product": "उत्पाद"
+    },
+    "editor": {
+      "addTitle": "विक्रेता जोड़ें",
+      "editTitle": "विक्रेता संपादित करें",
+      "subtitle": "जिन आपूर्तिकर्ताओं से आप स्टॉक खरीदते हैं — खरीद बिल और स्टॉक-इन प्रविष्टियों में उपयोग होते हैं।",
+      "nameLabel": "विक्रेता का नाम"
+    }
+  },
+  "coupons": {
+    "list": {
+      "title": "कूपन",
+      "subtitle": "छूट कोड जो ग्राहक चेकआउट पर भुनाते हैं। सार्वजनिक कोड अपने आप लागू होते हैं; निजी कोड टाइप किए जाते हैं या लिंक के रूप में साझा किए जाते हैं।",
+      "empty": "अभी कोई कूपन नहीं — अपना पहला छूट कोड बनाएं।"
+    },
+    "actions": {
+      "new": "नया कूपन",
+      "refresh": "रिफ्रेश करें",
+      "viewRedemptions": "भुनाई देखें",
+      "deactivate": "निष्क्रिय करें",
+      "noAccess": "आपके पास पहुँच नहीं है। दुकान मालिक से पूछें।"
+    },
+    "state": {
+      "live": "सक्रिय",
+      "inactive": "निष्क्रिय",
+      "expired": "समाप्त",
+      "exhausted": "समाप्त हो गया"
+    },
+    "badges": {
+      "publicAutoApplies": "सार्वजनिक · अपने आप लागू",
+      "firstOrderOnly": "केवल पहले ऑर्डर पर"
+    },
+    "row": {
+      "validRange": "मान्य {from} – {until}",
+      "redeemedCount": "{used}{cap} भुनाए गए"
+    },
+    "deactivate": {
+      "title": "{code} निष्क्रिय करें?",
+      "body": "खरीदार अब यह कूपन नहीं देखेंगे। पहले की भुनाई पर कोई असर नहीं होगा।",
+      "confirm": "निष्क्रिय करें"
+    },
+    "redemptions": {
+      "title": "{code} — भुनाई",
+      "count": "{count} भुनाए गए",
+      "given": "{amount} छूट दी गई (आखिरी {last})",
+      "loading": "लोड हो रहा है…",
+      "empty": "अभी कोई भुनाई नहीं।",
+      "customer": "ग्राहक",
+      "order": "ऑर्डर #{id}"
+    },
+    "errors": {
+      "load": "कूपन लोड नहीं हो सके।",
+      "deactivate": "कूपन निष्क्रिय नहीं किया जा सका।",
+      "loadRedemptions": "भुनाई लोड नहीं हो सकी।",
+      "loadOne": "कूपन लोड नहीं हो सका।"
+    },
+    "form": {
+      "newTitle": "नया कूपन",
+      "editTitle": "कूपन संपादित करें",
+      "subtitle": "एक छूट कोड जिसे आपके ग्राहक चेकआउट पर भुनाते हैं — पूर्वावलोकन वह कार्ड दिखाता है जो उन्हें दिखेगा।",
+      "preview": "पूर्वावलोकन",
+      "codeLabel": "कोड",
+      "codeHelper": "अक्षर, संख्याएँ, - और _ · अपने आप बड़े अक्षरों में",
+      "titleLabel": "शीर्षक",
+      "titlePlaceholder": "नए उपयोगकर्ता का ऑफ़र",
+      "descriptionLabel": "विवरण (वैकल्पिक)",
+      "descriptionPlaceholder": "ग्राहक के कूपन कार्ड पर दिखाया जाता है।",
+      "typeLabel": "प्रकार",
+      "percentOffLabel": "% छूट",
+      "rupeeOffLabel": "₹ छूट",
+      "maxDiscountLabel": "अधिकतम छूट (₹) — वैकल्पिक",
+      "maxDiscountHelper": "% छूट की सीमा तय करता है। कोई सीमा न रखने के लिए खाली छोड़ें।",
+      "minOrderLabel": "न्यूनतम ऑर्डर (₹)",
+      "minOrderHelper": "0 = किसी भी कार्ट पर लागू",
+      "validFromLabel": "इससे मान्य",
+      "validUntilLabel": "इस तक मान्य",
+      "perUserLimitLabel": "प्रति उपयोगकर्ता सीमा",
+      "totalCapLabel": "कुल सीमा",
+      "unlimitedHelper": "0 = असीमित",
+      "publicLabel": "सार्वजनिक — अपने आप लागू",
+      "publicDescription": "कोई भी इसे देख और उपयोग कर सकता है; कार्ट मेल खाने पर यह चेकआउट पर अपने आप लागू हो जाता है — कोड टाइप करने की ज़रूरत नहीं। खास लोगों के साथ साझा किए गए निजी कोड के लिए इसे बंद रखें।",
+      "firstOrderLabel": "केवल पहले ऑर्डर पर",
+      "firstOrderDescription": "इसे केवल उन ग्राहकों तक सीमित करता है जिनका पहले कोई पुष्ट ऑर्डर नहीं है। एक बार के स्वागत ऑफ़र के लिए प्रति उपयोगकर्ता सीमा 1 के साथ रखें।",
+      "activeLabel": "सक्रिय",
+      "activeDescription": "बंद होने पर, खरीदार यह कूपन नहीं देखेंगे और इसे भुना नहीं सकते।",
+      "cancel": "रद्द करें",
+      "saving": "सहेजा जा रहा है…",
+      "saveChanges": "बदलाव सहेजें",
+      "create": "कूपन बनाएं",
+      "errors": {
+        "valueAboveZero": "0 से अधिक मान दर्ज करें।",
+        "percentMax": "प्रतिशत छूट 100 से अधिक नहीं हो सकती।",
+        "codeMinLength": "कोड कम से कम 2 अक्षरों का होना चाहिए।",
+        "titleRequired": "कूपन को एक शीर्षक दें।",
+        "discountAboveZero": "0 से अधिक छूट मान दर्ज करें।",
+        "validUntilAfterFrom": "'इस तक मान्य' तिथि 'इससे मान्य' तिथि के बाद होनी चाहिए।",
+        "saveFailed": "सहेजना विफल रहा।"
+      }
+    },
+    "discountType": {
+      "PERCENT": "प्रतिशत छूट",
+      "FLAT": "फ्लैट ₹ छूट"
+    },
+    "preview": {
+      "titleFallback": "कूपन शीर्षक",
+      "codeFallback": "कोड",
+      "minOrder": "न्यूनतम ऑर्डर {amount}",
+      "noMinOrder": "कोई न्यूनतम ऑर्डर नहीं",
+      "validTill": "{date} तक मान्य",
+      "autoApplies": "अपने आप लागू"
+    }
+  },
+  "categories": {
+    "list": {
+      "title": "श्रेणियाँ",
+      "subtitle": "स्टोरफ़्रंट की श्रेणी संरचना देखें और हर श्रेणी में दर्ज उत्पादों में जाएँ। कैटलॉग स्वयं प्लेटफ़ॉर्म द्वारा प्रबंधित होता है।",
+      "empty": "अभी तक कोई श्रेणी नहीं है।",
+      "loadError": "श्रेणियाँ लोड नहीं हो सकीं।"
+    },
+    "actions": {
+      "refresh": "रिफ़्रेश करें"
+    },
+    "card": {
+      "productCount": "{count, plural, one {# उत्पाद} other {# उत्पाद}}",
+      "subCount": "{count} उप-श्रेणी"
+    },
+    "detail": {
+      "back": "श्रेणियाँ",
+      "fallbackName": "श्रेणी",
+      "productCount": "{count, plural, one {# उत्पाद} other {# उत्पाद}}",
+      "subcategoryCount": "{count, plural, one {# उप-श्रेणी} other {# उप-श्रेणियाँ}}",
+      "subcategoriesHeading": "उप-श्रेणियाँ",
+      "productsHeading": "उत्पाद",
+      "searchPlaceholder": "इस श्रेणी में उत्पाद खोजें",
+      "productsLoadError": "उत्पाद लोड नहीं हो सके।",
+      "emptySearch": "“{query}” से मिलता कोई उत्पाद नहीं मिला।",
+      "emptyWithSubcategories": "यहाँ सीधे कोई उत्पाद दर्ज नहीं है — ऊपर दी गई उप-श्रेणियाँ देखें।",
+      "empty": "इस श्रेणी में अभी तक कोई उत्पाद नहीं है।",
+      "previous": "पिछला",
+      "next": "अगला",
+      "pageOf": "पृष्ठ {page} / {pageCount}",
+      "skuLabel": "SKU {sku}"
+    }
   }
 }

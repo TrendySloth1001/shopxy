@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 import { mediaSrc } from "@/features/products/components/product-thumb";
 import { CategoryIcon } from "./category-icon";
 import { categoryProductCount, type CategoryNode } from "./schema";
@@ -7,6 +10,7 @@ import { categoryProductCount, type CategoryNode } from "./schema";
 /** Square taxonomy tile — image (or icon fallback) + name + counts. Shared by
  *  the browse grid and the subcategories section on a category page. */
 export function CategoryCard({ node }: { node: CategoryNode }) {
+  const t = useTranslations("categories");
   const src = mediaSrc(node.imageUrl);
   const count = categoryProductCount(node);
   const childCount = node.children?.length ?? 0;
@@ -31,8 +35,8 @@ export function CategoryCard({ node }: { node: CategoryNode }) {
       <div>
         <p className="truncate text-body-md text-ink group-hover:text-brand-strong">{node.name}</p>
         <p className="text-body-sm text-subtle">
-          {count} {count === 1 ? "product" : "products"}
-          {childCount > 0 ? ` · ${childCount} sub` : ""}
+          {t("card.productCount", { count })}
+          {childCount > 0 ? ` · ${t("card.subCount", { count: childCount })}` : ""}
         </p>
       </div>
     </Link>

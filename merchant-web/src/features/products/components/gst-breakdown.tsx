@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { money } from "../format";
 import { gstFromInclusive } from "../gst";
 
@@ -14,10 +15,11 @@ export function GstBreakdown({
   sellingPrice: number;
   taxPercent: number;
 }) {
+  const t = useTranslations("products");
   if (!taxPercent || taxPercent <= 0) {
     return (
       <p className="text-body-sm text-muted">
-        No GST applied — the full {money(sellingPrice)} is the taxable value.
+        {t("gstBreakdown.noGst", { price: money(sellingPrice) })}
       </p>
     );
   }
@@ -27,21 +29,20 @@ export function GstBreakdown({
 
   return (
     <dl className="flex flex-col gap-xs">
-      <Row label="Taxable value" hint="price before GST" value={money(b.taxable)} />
-      <Row label={`CGST @ ${formatRate(half)}%`} value={money(b.cgst)} />
-      <Row label={`SGST @ ${formatRate(half)}%`} value={money(b.sgst)} />
+      <Row label={t("gstBreakdown.taxableValue")} hint={t("gstBreakdown.taxableHint")} value={money(b.taxable)} />
+      <Row label={t("gstBreakdown.cgst", { rate: formatRate(half) })} value={money(b.cgst)} />
+      <Row label={t("gstBreakdown.sgst", { rate: formatRate(half) })} value={money(b.sgst)} />
       <Row
-        label={`Total GST @ ${formatRate(taxPercent)}%`}
+        label={t("gstBreakdown.totalGst", { rate: formatRate(taxPercent) })}
         value={money(b.gst)}
         strong
       />
       <div className="mt-xs flex items-baseline justify-between gap-md border-t border-hairline pt-sm">
-        <dt className="text-body-md text-ink">Selling price (incl. GST)</dt>
+        <dt className="text-body-md text-ink">{t("gstBreakdown.sellingPriceInclGst")}</dt>
         <dd className="text-title-sm tabular-nums text-ink">{money(sellingPrice)}</dd>
       </div>
       <p className="mt-xs text-body-sm text-subtle">
-        Prices include GST. CGST + SGST shown for a sale within your state; a sale
-        to another state is charged the same total as IGST.
+        {t("gstBreakdown.explainer")}
       </p>
     </dl>
   );
