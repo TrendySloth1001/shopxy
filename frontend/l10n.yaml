@@ -1,0 +1,9 @@
+# flutter gen-l10n config. Generates AppLocalizations from lib/l10n/*.arb into
+# lib/l10n (checked-in, non-synthetic package) so the import is a normal
+# package:shopxy/l10n/app_localizations.dart — robust across Flutter versions.
+arb-dir: lib/l10n
+template-arb-file: app_en.arb
+output-localization-file: app_localizations.dart
+output-class: AppLocalizations
+output-dir: lib/l10n
+nullable-getter: false

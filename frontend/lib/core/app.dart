@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/core/network/api_client.dart';
+import 'package:shopxy/core/prefs/locale_prefs.dart';
 import 'package:shopxy/core/prefs/theme_prefs.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/core/router/app_shell.dart';
 import 'package:shopxy/features/auth/presentation/pages/login_page.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
@@ -20,19 +23,37 @@ class ShopxyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Drive the whole app from the selected theme. Setting AppPalette.active
-    // here (before the subtree builds) keeps the AppColors.* getters in sync
-    // with the ThemeData we hand MaterialApp, so custom-painted widgets and
-    // Material components agree.
-    final themePrefs = context.watch<ThemePrefsProvider>();
-    AppPalette.active = themePrefs.palette;
+    // The locale provider is created here (not in main.dart) so the i18n wiring
+    // stays out of the shared bootstrap file. It loads asynchronously; until
+    // then the app opens in English.
+    return ChangeNotifierProvider<LocalePrefsProvider>(
+      create: (_) => LocalePrefsProvider(const FlutterSecureStorage())..load(),
+      child: Consumer<LocalePrefsProvider>(
+        builder: (context, localePrefs, _) {
+          // Drive the whole app from the selected theme. Setting AppPalette.active
+          // here (before the subtree builds) keeps the AppColors.* getters in sync
+          // with the ThemeData we hand MaterialApp, so custom-painted widgets and
+          // Material components agree.
+          final themePrefs = context.watch<ThemePrefsProvider>();
+          AppPalette.active = themePrefs.palette;
 
-    return MaterialApp(
-      title: AppStrings.appName,
-      theme: AppTheme.fromPalette(themePrefs.palette),
-      themeMode: ThemeMode.light,
-      debugShowCheckedModeBanner: false,
-      home: const _AuthGate(),
+          return MaterialApp(
+            title: AppStrings.appName,
+            // Devanagari languages (Hindi) swap the base font to Noto Sans
+            // Devanagari; English stays on Inter.
+            theme: AppTheme.fromPalette(
+              themePrefs.palette,
+              devanagari: localePrefs.isDevanagari,
+            ),
+            themeMode: ThemeMode.light,
+            debugShowCheckedModeBanner: false,
+            locale: localePrefs.locale,
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            home: const _AuthGate(),
+          );
+        },
+      ),
     );
   }
 }
@@ -113,6 +134,7 @@ class _NoShopScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.canvas,
       body: SafeArea(
@@ -125,13 +147,12 @@ class _NoShopScreen extends StatelessWidget {
                 Icon(Icons.storefront_outlined,
                     size: 48, color: AppColors.muted),
                 const SizedBox(height: AppSizes.lg),
-                Text('No shop linked yet',
+                Text(l10n.noShopTitle,
                     style: theme.textTheme.titleLarge
                         ?.copyWith(fontWeight: FontWeight.w800)),
                 const SizedBox(height: AppSizes.sm),
                 Text(
-                  'Ask a shop owner to invite you to their team, then sign '
-                  'in again to accept.',
+                  l10n.noShopBody,
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodyMedium
                       ?.copyWith(color: AppColors.muted),
@@ -139,7 +160,7 @@ class _NoShopScreen extends StatelessWidget {
                 const SizedBox(height: AppSizes.xl),
                 FilledButton(
                   onPressed: () => context.read<AuthProvider>().logout(),
-                  child: const Text('Sign out'),
+                  child: Text(l10n.commonSignOut),
                 ),
               ],
             ),

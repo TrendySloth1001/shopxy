@@ -1,0 +1,35 @@
+{
+  "@@locale": "hi",
+
+  "settingsPreferences": "प्राथमिकताएँ",
+  "settingsPreferencesSubtitle": "मुद्रा, थीम और भाषा।",
+
+  "theme": "थीम",
+  "themeSubtitle": "चुनें कि इस डिवाइस पर ShopXY कैसा दिखे।",
+  "themeLight": "लाइट",
+  "themeBeige": "बेज",
+  "themeRose": "रोज़",
+  "themeSage": "सेज",
+  "themeDark": "डार्क",
+  "themeOled": "OLED",
+  "themeMidnight": "मिडनाइट",
+  "themeNord": "नॉर्ड",
+  "themeLightDesc": "गर्म कैनवास, गहरा टेक्स्ट (डिफ़ॉल्ट)।",
+  "themeBeigeDesc": "मुलायम सीपिया कागज़ — गर्म, कम चमक।",
+  "themeRoseDesc": "गर्म गुलाबी — आँखों के लिए सुकूनदेह।",
+  "themeSageDesc": "शीतल पुदीना हरा — शांत और सौम्य।",
+  "themeDarkDesc": "गहरे स्लेट सरफेस, आँखों के लिए आरामदेह।",
+  "themeOledDesc": "सच्चा काला — OLED डिस्प्ले के लिए सर्वोत्तम।",
+  "themeMidnightDesc": "गहरा नेवी — इंडिगो रंगत वाला डार्क।",
+  "themeNordDesc": "मंद आर्कटिक नीला-धूसर — कोमल डार्क।",
+
+  "language": "भाषा",
+  "languageSubtitle": "अपनी पसंदीदा भाषा चुनें।",
+
+  "commonSave": "सहेजें",
+  "commonCancel": "रद्द करें",
+  "commonSignOut": "साइन आउट",
+
+  "noShopTitle": "अभी तक कोई दुकान लिंक नहीं है",
+  "noShopBody": "किसी दुकान मालिक से अपनी टीम में आमंत्रित करने को कहें, फिर स्वीकार करने के लिए दोबारा साइन इन करें।"
+}

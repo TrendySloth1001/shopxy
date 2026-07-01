@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   AtSign,
   Bell,
   FileText,
   IndianRupee,
   Info,
-  Languages,
   LogOut,
   Palette,
   ShieldAlert,
@@ -29,6 +29,7 @@ import {
   SettingRow,
 } from "@/features/settings/components";
 import { ThemePicker } from "@/features/theme/theme-picker";
+import { LanguagePicker } from "@/features/i18n/language-picker";
 
 type SectionKey =
   | "account"
@@ -59,6 +60,7 @@ function TileGrid({ children }: { children: React.ReactNode }) {
 export default function SettingsPage() {
   const { user, logout } = useAuth();
   const router = useRouter();
+  const t = useTranslations("settings");
   const [active, setActive] = useState<SectionKey>("account");
   const [signingOut, setSigningOut] = useState(false);
 
@@ -164,15 +166,21 @@ export default function SettingsPage() {
             {active === "preferences" ? (
               <div className="space-y-xxl">
                 <div>
-                  <h3 className="text-title-sm text-ink">Theme</h3>
+                  <h3 className="text-title-sm text-ink">{t("theme")}</h3>
                   <p className="mb-md mt-xs text-body-sm text-muted">
-                    Choose how ShopXY looks on this device.
+                    {t("themeSubtitle")}
                   </p>
                   <ThemePicker />
                 </div>
+                <div>
+                  <h3 className="text-title-sm text-ink">{t("language")}</h3>
+                  <p className="mb-md mt-xs text-body-sm text-muted">
+                    {t("languageSubtitle")}
+                  </p>
+                  <LanguagePicker />
+                </div>
                 <TileGrid>
-                  <SettingRow tile icon={IndianRupee} title="Currency" subtitle="Indian Rupee (₹)" />
-                  <SettingRow tile icon={Languages} title="Language" subtitle="English" trailing={<ComingSoon />} />
+                  <SettingRow tile icon={IndianRupee} title={t("currency")} subtitle="Indian Rupee (₹)" trailing={<ComingSoon />} />
                 </TileGrid>
               </div>
             ) : null}

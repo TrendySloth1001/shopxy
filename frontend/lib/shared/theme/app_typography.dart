@@ -9,11 +9,17 @@ class AppTypography {
   static TextTheme get dark => _build(AppColors.black);
 
   /// Build the type scale tinted to a specific ink colour — used by [AppTheme]
-  /// so each theme (light / dark / OLED) gets text in its own ink.
-  static TextTheme forInk(Color ink) => _build(ink);
+  /// so each theme gets text in its own ink. When [devanagari] is true the base
+  /// face swaps from Inter (Latin-only) to Noto Sans Devanagari so Hindi and
+  /// other Devanagari-script languages actually render instead of showing
+  /// tofu (□) boxes.
+  static TextTheme forInk(Color ink, {bool devanagari = false}) =>
+      _build(ink, devanagari: devanagari);
 
-  static TextTheme _build(Color textColor) {
-    final base = GoogleFonts.interTextTheme();
+  static TextTheme _build(Color textColor, {bool devanagari = false}) {
+    final base = devanagari
+        ? GoogleFonts.notoSansDevanagariTextTheme()
+        : GoogleFonts.interTextTheme();
     return base
         .copyWith(
           displayLarge: base.displayLarge?.copyWith(
