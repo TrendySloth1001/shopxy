@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useAuth } from "../auth-context";
 import { registerSchema } from "../schema";
 import { Field } from "./field";
@@ -19,6 +20,7 @@ type FieldKey =
 export function RegisterForm() {
   const { register, status } = useAuth();
   const router = useRouter();
+  const t = useTranslations("auth");
   const [values, setValues] = useState({
     name: "",
     email: "",
@@ -76,7 +78,7 @@ export function RegisterForm() {
       // Next step: name the shop (or skip if they joined a team via invite).
       router.replace("/onboarding");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not create your account.");
+      setError(err instanceof Error ? err.message : t("register.failed"));
     } finally {
       setSubmitting(false);
     }
@@ -88,7 +90,7 @@ export function RegisterForm() {
     <form onSubmit={onSubmit} noValidate className="flex flex-col gap-lg">
       {error ? <AuthErrorBanner message={error} /> : null}
       <Field
-        label="Your name"
+        label={t("field.yourName")}
         name="name"
         autoComplete="name"
         autoFocus
@@ -97,7 +99,7 @@ export function RegisterForm() {
         error={fieldErrors.name}
       />
       <Field
-        label="Email"
+        label={t("field.email")}
         type="email"
         name="email"
         autoComplete="email"
@@ -107,17 +109,17 @@ export function RegisterForm() {
         error={fieldErrors.email}
       />
       <Field
-        label="Password"
+        label={t("field.password")}
         name="password"
         autoComplete="new-password"
         toggleable
-        helper="At least 8 characters, with a letter and a number."
+        helper={t("field.passwordHelper")}
         value={values.password}
         onChange={(e) => set("password", e.target.value)}
         error={fieldErrors.password}
       />
       <Field
-        label="Confirm password"
+        label={t("field.confirmPassword")}
         name="confirmPassword"
         autoComplete="new-password"
         toggleable
@@ -130,27 +132,23 @@ export function RegisterForm() {
         <ConsentRow
           checked={acceptedTerms}
           onChange={setAcceptedTerms}
-          label={
-            <>
-              I accept the <LegalLink href="/legal/terms">Terms of Service</LegalLink>
-            </>
-          }
+          label={t.rich("register.acceptTerms", {
+            link: (chunks) => <LegalLink href="/legal/terms">{chunks}</LegalLink>,
+          })}
         />
         <ConsentRow
           checked={acceptedPrivacy}
           onChange={setAcceptedPrivacy}
-          label={
-            <>
-              I accept the <LegalLink href="/legal/privacy">Privacy Policy</LegalLink>
-            </>
-          }
+          label={t.rich("register.acceptPrivacy", {
+            link: (chunks) => <LegalLink href="/legal/privacy">{chunks}</LegalLink>,
+          })}
         />
         {consentError ? (
           <p className="text-body-sm text-error">{consentError}</p>
         ) : null}
       </fieldset>
 
-      <SubmitButton loading={submitting} pill>Create account</SubmitButton>
+      <SubmitButton loading={submitting} pill>{t("register.submit")}</SubmitButton>
     </form>
   );
 }

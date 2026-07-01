@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { ChevronRight, X } from "lucide-react";
 import { useAuth } from "../auth-context";
 import {
@@ -21,6 +22,7 @@ import { AuthErrorBanner } from "./auth-shell";
 export function RememberedAccounts() {
   const router = useRouter();
   const { refresh } = useAuth();
+  const t = useTranslations("auth");
   const [accounts, setAccounts] = useState<DesktopAccount[] | null>(null);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -46,7 +48,7 @@ export function RememberedAccounts() {
       router.replace("/dashboard");
       return;
     }
-    setError(r.error ?? "Couldn't sign in. Please use your password.");
+    setError(r.error ?? t("remembered.resumeFailed"));
     if (r.removed) setAccounts((prev) => prev?.filter((a) => a.id !== id) ?? null);
     setBusyId(null);
   };
@@ -58,7 +60,7 @@ export function RememberedAccounts() {
 
   return (
     <div className="mb-xl flex flex-col gap-sm">
-      <p className="text-label-md text-muted">Continue as</p>
+      <p className="text-label-md text-muted">{t("remembered.continueAs")}</p>
       {error ? <AuthErrorBanner message={error} /> : null}
       <ul className="flex flex-col gap-sm">
         {accounts.map((a) => (
@@ -80,7 +82,7 @@ export function RememberedAccounts() {
                 <span className="block truncate text-body-sm text-muted">{a.email}</span>
               </span>
               {busyId === a.id ? (
-                <span className="text-body-sm text-muted">Signing in…</span>
+                <span className="text-body-sm text-muted">{t("remembered.signingIn")}</span>
               ) : (
                 <ChevronRight size={18} className="shrink-0 text-subtle" />
               )}
@@ -88,8 +90,8 @@ export function RememberedAccounts() {
             <button
               type="button"
               onClick={() => void forget(a.id)}
-              title="Remove this account"
-              aria-label={`Remove ${a.email}`}
+              title={t("remembered.removeTitle")}
+              aria-label={t("remembered.removeAria", { email: a.email })}
               className="shrink-0 rounded-button p-xs text-muted transition-colors hover:text-error"
             >
               <X size={16} />
@@ -99,7 +101,7 @@ export function RememberedAccounts() {
       </ul>
       <div className="mt-sm flex items-center gap-md text-label-sm text-subtle">
         <span className="h-px flex-1 bg-hairline" />
-        or sign in
+        {t("remembered.orSignIn")}
         <span className="h-px flex-1 bg-hairline" />
       </div>
     </div>

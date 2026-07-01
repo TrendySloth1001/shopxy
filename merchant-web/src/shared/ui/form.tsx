@@ -1,6 +1,7 @@
 "use client";
 
 import { useId } from "react";
+import { useTranslations } from "next-intl";
 import { isoToLocalInput, localInputToIso } from "@/shared/datetime";
 
 const inputBase =
@@ -170,6 +171,7 @@ export function HexColorField({
   onChange: (v: string) => void;
   helper?: string;
 }) {
+  const t = useTranslations("common");
   // The native colour input only understands #RRGGBB; fall back to a neutral
   // swatch when the merchant has typed a partial/8-digit value.
   const swatch = /^#[0-9a-fA-F]{6}$/.test(value) ? value : "#ffffff";
@@ -178,7 +180,7 @@ export function HexColorField({
       <div className="flex items-center gap-sm">
         <input
           type="color"
-          aria-label={`${label} swatch`}
+          aria-label={t("colorField.swatchLabel", { label })}
           value={swatch}
           onChange={(e) => onChange(e.target.value)}
           className="size-10 shrink-0 cursor-pointer rounded-input border border-hairline bg-field p-px"

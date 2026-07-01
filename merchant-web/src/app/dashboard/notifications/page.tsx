@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   Bell,
   CalendarX2,
@@ -45,6 +46,7 @@ type TabKey = "inbox" | "invites" | "sent";
 
 export default function NotificationsPage() {
   const { unread } = useNotifications();
+  const t = useTranslations("notifications");
   const [tab, setTab] = useState<TabKey>("inbox");
 
   return (
@@ -52,14 +54,14 @@ export default function NotificationsPage() {
       <PageHeader
         icon={Bell}
         tone="indigo"
-        title="Notifications"
-        subtitle="Your inbox, invitations you've received, and invites you've sent."
+        title={t("title")}
+        subtitle={t("subtitle")}
       />
 
       <div className="mt-lg flex flex-wrap items-center gap-sm">
-        <Tab label="Inbox" badge={unread} active={tab === "inbox"} onClick={() => setTab("inbox")} />
-        <Tab label="Invites" active={tab === "invites"} onClick={() => setTab("invites")} />
-        <Tab label="Sent" active={tab === "sent"} onClick={() => setTab("sent")} />
+        <Tab label={t("tabs.inbox")} badge={unread} active={tab === "inbox"} onClick={() => setTab("inbox")} />
+        <Tab label={t("tabs.invites")} active={tab === "invites"} onClick={() => setTab("invites")} />
+        <Tab label={t("tabs.sent")} active={tab === "sent"} onClick={() => setTab("sent")} />
       </div>
 
       <div className="mt-xl">
@@ -128,6 +130,7 @@ function hrefFor(kind: string): string | null {
 
 function InboxTab() {
   const router = useRouter();
+  const t = useTranslations("notifications");
   const { setUnread, refresh } = useNotifications();
 
   const [items, setItems] = useState<AppNotification[]>([]);
@@ -150,13 +153,13 @@ function InboxTab() {
         setPage(p);
         setError(null);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Could not load notifications.");
+        setError(e instanceof Error ? e.message : t("errors.loadNotifications"));
       } finally {
         setLoading(false);
         setLoadingMore(false);
       }
     })();
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     load(1);
@@ -197,8 +200,8 @@ function InboxTab() {
   if (items.length === 0)
     return (
       <EmptyState
-        title="No notifications yet"
-        body="When something happens — an invitation reply, a new order, a quotation update — you’ll see it here."
+        title={t("inbox.emptyTitle")}
+        body={t("inbox.emptyBody")}
       />
     );
 
@@ -211,7 +214,7 @@ function InboxTab() {
           disabled={unread === 0}
           className="inline-flex h-9 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:text-disabled"
         >
-          <CheckCheck size={16} /> Mark all read
+          <CheckCheck size={16} /> {t("inbox.markAllRead")}
         </button>
       </div>
       <ul className="mt-sm border-t border-hairline">
@@ -229,7 +232,7 @@ function InboxTab() {
             disabled={loadingMore}
             className="inline-flex h-10 items-center rounded-button border border-hairline px-lg text-label-md text-ink transition-colors hover:bg-surface-tint disabled:text-disabled"
           >
-            {loadingMore ? "Loading…" : "Load more"}
+            {loadingMore ? t("inbox.loading") : t("inbox.loadMore")}
           </button>
         </div>
       ) : null}
@@ -238,6 +241,7 @@ function InboxTab() {
 }
 
 function InboxRow({ n, onOpen }: { n: AppNotification; onOpen: () => void }) {
+  const t = useTranslations("notifications");
   const { Icon, cls } = accentFor(n.kind);
   const unread = isUnread(n);
   return (
@@ -258,7 +262,7 @@ function InboxRow({ n, onOpen }: { n: AppNotification; onOpen: () => void }) {
         {n.body ? <span className="mt-px block text-body-sm text-muted">{n.body}</span> : null}
         <span className="mt-xs block text-label-md text-subtle">{formatRelativeTime(n.createdAt)}</span>
       </span>
-      {unread ? <span className="mt-sm size-2 shrink-0 rounded-full bg-brand" aria-label="Unread" /> : null}
+      {unread ? <span className="mt-sm size-2 shrink-0 rounded-full bg-brand" aria-label={t("inbox.unread")} /> : null}
     </button>
   );
 }
@@ -271,17 +275,20 @@ function linkAccent(linkType: string): { Icon: LucideIcon; cls: string } {
   return { Icon: Users, cls: "bg-accent-rose-soft text-accent-rose" };
 }
 
-function roleLabel(inv: Invitation): string {
-  if (inv.linkType === "VENDOR") return "supplier";
-  if (inv.linkType === "TEAM") return inv.teamRoleName || "team member";
-  return "customer";
+function roleLabel(inv: Invitation, t: ReturnType<typeof useTranslations>): string {
+  if (inv.linkType === "VENDOR") return t("roles.supplier");
+  if (inv.linkType === "TEAM") return inv.teamRoleName || t("roles.teamMember");
+  return t("roles.customer");
 }
 
 function StatusPill({ status }: { status: string }) {
-  const meta = INVITE_STATUS_META[status] ?? { label: status, classes: "bg-surface-tint text-muted" };
+  const t = useTranslations("notifications");
+  const meta = INVITE_STATUS_META[status];
+  const label = meta ? t(`status.${meta.labelKey}`) : status;
+  const classes = meta?.classes ?? "bg-surface-tint text-muted";
   return (
-    <span className={`inline-flex shrink-0 items-center rounded-full px-sm py-px text-label-md ${meta.classes}`}>
-      {meta.label}
+    <span className={`inline-flex shrink-0 items-center rounded-full px-sm py-px text-label-md ${classes}`}>
+      {label}
     </span>
   );
 }
@@ -289,6 +296,7 @@ function StatusPill({ status }: { status: string }) {
 /* ─────────────────────────── Invites (incoming) ─────────────────────────── */
 
 function InvitesTab() {
+  const t = useTranslations("notifications");
   const [items, setItems] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -301,12 +309,12 @@ function InvitesTab() {
         setItems(await listIncomingInvitations());
         setError(null);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Could not load invitations.");
+        setError(e instanceof Error ? e.message : t("errors.loadInvitations"));
       } finally {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     load();
@@ -320,7 +328,7 @@ function InvitesTab() {
         prev.map((x) => (x.id === inv.id ? { ...x, status: action === "accept" ? "ACCEPTED" : "DECLINED" } : x)),
       );
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not update the invitation.");
+      setError(e instanceof Error ? e.message : t("errors.updateInvitation"));
     } finally {
       setBusyId(null);
     }
@@ -329,13 +337,13 @@ function InvitesTab() {
   if (loading) return <ListRowsSkeleton rows={4} />;
   if (error) return <p className="rounded-md bg-error-soft px-md py-sm text-body-sm text-error">{error}</p>;
   if (items.length === 0)
-    return <EmptyState title="No invitations" body="When another shop invites you to link as a customer, vendor or team member, it appears here." />;
+    return <EmptyState title={t("invites.emptyTitle")} body={t("invites.emptyBody")} />;
 
   return (
     <ul className="border-t border-hairline">
       {items.map((inv) => {
         const { Icon, cls } = linkAccent(inv.linkType);
-        const who = inv.fromShopName || inv.fromUser?.name || "A shop";
+        const who = inv.fromShopName || inv.fromUser?.name || t("invites.aShop");
         const pending = inv.status === "PENDING";
         return (
           <li key={inv.id} className="border-b border-hairline px-md py-md">
@@ -346,7 +354,7 @@ function InvitesTab() {
               <div className="min-w-0 flex-1">
                 <p className="truncate text-body-md font-semibold text-ink">{who}</p>
                 <p className="text-body-sm text-muted">
-                  wants to add you as their {roleLabel(inv)}
+                  {t("invites.wantsToAdd", { role: roleLabel(inv, t) })}
                   {inv.displayName ? ` — “${inv.displayName}”` : ""}
                 </p>
                 {inv.createdAt ? (
@@ -368,7 +376,7 @@ function InvitesTab() {
                   disabled={busyId === inv.id}
                   className="inline-flex h-9 items-center gap-sm rounded-button bg-brand px-md text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:bg-disabled"
                 >
-                  <Check size={16} /> Accept
+                  <Check size={16} /> {t("invites.accept")}
                 </button>
                 <button
                   type="button"
@@ -376,7 +384,7 @@ function InvitesTab() {
                   disabled={busyId === inv.id}
                   className="inline-flex h-9 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint disabled:text-disabled"
                 >
-                  <X size={16} /> Decline
+                  <X size={16} /> {t("invites.decline")}
                 </button>
               </div>
             ) : null}
@@ -390,6 +398,7 @@ function InvitesTab() {
 /* ─────────────────────────── Sent (outgoing) ─────────────────────────── */
 
 function SentTab() {
+  const t = useTranslations("notifications");
   const [items, setItems] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -402,12 +411,12 @@ function SentTab() {
         setItems(await listOutgoingInvitations());
         setError(null);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Could not load invitations.");
+        setError(e instanceof Error ? e.message : t("errors.loadInvitations"));
       } finally {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     load();
@@ -419,7 +428,7 @@ function SentTab() {
       await cancelInvitation(inv.id);
       setItems((prev) => prev.map((x) => (x.id === inv.id ? { ...x, status: "CANCELLED" } : x)));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not cancel the invitation.");
+      setError(e instanceof Error ? e.message : t("errors.cancelInvitation"));
     } finally {
       setBusyId(null);
     }
@@ -428,7 +437,7 @@ function SentTab() {
   if (loading) return <ListRowsSkeleton rows={4} />;
   if (error) return <p className="rounded-md bg-error-soft px-md py-sm text-body-sm text-error">{error}</p>;
   if (items.length === 0)
-    return <EmptyState title="No invites sent" body="Invite a customer or vendor to link their account from their detail page." />;
+    return <EmptyState title={t("sent.emptyTitle")} body={t("sent.emptyBody")} />;
 
   return (
     <ul className="border-t border-hairline">
@@ -443,7 +452,7 @@ function SentTab() {
             <div className="min-w-0 flex-1">
               <p className="truncate text-body-md text-ink">{inv.toEmail}</p>
               <p className="text-body-sm text-muted">
-                {inv.displayName || roleLabel(inv)}
+                {inv.displayName || roleLabel(inv, t)}
                 {inv.createdAt ? ` · ${formatRelativeTime(inv.createdAt)}` : ""}
               </p>
             </div>
@@ -453,8 +462,8 @@ function SentTab() {
                 type="button"
                 onClick={() => cancel(inv)}
                 disabled={busyId === inv.id}
-                aria-label="Cancel invitation"
-                title="Cancel invitation"
+                aria-label={t("sent.cancelInvitation")}
+                title={t("sent.cancelInvitation")}
                 className="inline-flex size-9 shrink-0 items-center justify-center rounded-button text-muted transition-colors hover:bg-surface-tint hover:text-ink disabled:text-disabled"
               >
                 <X size={16} />

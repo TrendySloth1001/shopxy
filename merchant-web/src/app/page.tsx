@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { Divider } from "@/shared/ui/divider";
 import { color, radius, shadow, space, tokens } from "@/shared/ui/tokens";
 
@@ -47,37 +48,37 @@ function swatchesFrom(group: Record<string, string>) {
   ));
 }
 
-export default function TokensPage() {
+export default async function TokensPage() {
+  const t = await getTranslations("auth");
   return (
     <main className="mx-auto max-w-content px-lg pb-massive">
       <header className="py-xxxl">
         <p className="text-label-md uppercase tracking-wide text-brand">
           ShopXY · Merchant
         </p>
-        <h1 className="mt-xs text-display-sm text-ink">Design tokens</h1>
+        <h1 className="mt-xs text-display-sm text-ink">{t("tokens.title")}</h1>
         <p className="mt-sm max-w-form text-body-lg text-muted">
-          The single source of truth ported from the Flutter merchant app. Calm,
-          flat, hairline-grouped — never chunky.
+          {t("tokens.intro")}
         </p>
       </header>
 
       <Divider />
 
-      <Section title="Inks">
+      <Section title={t("tokens.inks")}>
         <div className="grid grid-cols-2 gap-lg sm:grid-cols-3">
           {swatchesFrom(color.ink)}
         </div>
       </Section>
       <Divider />
 
-      <Section title="Surfaces">
+      <Section title={t("tokens.surfaces")}>
         <div className="grid grid-cols-2 gap-lg sm:grid-cols-3">
           {swatchesFrom(color.surface)}
         </div>
       </Section>
       <Divider />
 
-      <Section title="Brand & status">
+      <Section title={t("tokens.brandStatus")}>
         <div className="grid grid-cols-2 gap-lg sm:grid-cols-3">
           {swatchesFrom(color.brand)}
           {swatchesFrom(color.status)}
@@ -85,7 +86,7 @@ export default function TokensPage() {
       </Section>
       <Divider />
 
-      <Section title="Editorial & merchant accents">
+      <Section title={t("tokens.accents")}>
         <div className="grid grid-cols-2 gap-lg sm:grid-cols-3">
           {swatchesFrom(color.accent)}
           {swatchesFrom(color.merchant)}
@@ -93,23 +94,22 @@ export default function TokensPage() {
       </Section>
       <Divider />
 
-      <Section title="Type scale">
+      <Section title={t("tokens.typeScale")}>
         <div className="flex flex-col gap-md">
-          <p className="text-display-sm">Display — invoices, totals</p>
-          <p className="text-headline-md">Headline — section titles</p>
-          <p className="text-title-lg">Title — card headers</p>
+          <p className="text-display-sm">{t("tokens.sampleDisplay")}</p>
+          <p className="text-headline-md">{t("tokens.sampleHeadline")}</p>
+          <p className="text-title-lg">{t("tokens.sampleTitle")}</p>
           <p className="text-body-lg">
-            Body — the quick brown fox jumps over the lazy dog while the ledger
-            reconciles itself.
+            {t("tokens.sampleBody")}
           </p>
           <p className="text-label-md uppercase tracking-wide text-muted">
-            Label — metadata
+            {t("tokens.sampleLabel")}
           </p>
         </div>
       </Section>
       <Divider />
 
-      <Section title="Spacing">
+      <Section title={t("tokens.spacing")}>
         <div className="flex flex-col gap-sm">
           {Object.entries(space).map(([name, px]) => (
             <div key={name} className="flex items-center gap-md">
@@ -123,7 +123,7 @@ export default function TokensPage() {
       </Section>
       <Divider />
 
-      <Section title="Radii">
+      <Section title={t("tokens.radii")}>
         <div className="flex flex-wrap gap-lg">
           {Object.entries(radius).map(([name, px]) => (
             <div key={name} className="flex flex-col items-center gap-sm">
@@ -138,7 +138,7 @@ export default function TokensPage() {
       </Section>
       <Divider />
 
-      <Section title="Elevation">
+      <Section title={t("tokens.elevation")}>
         <div className="flex flex-wrap gap-xl">
           {Object.entries(shadow).map(([name, value]) => (
             <div key={name} className="flex flex-col items-center gap-sm">
@@ -153,7 +153,7 @@ export default function TokensPage() {
       </Section>
       <Divider />
 
-      <Section title="Motion">
+      <Section title={t("tokens.motion")}>
         <div className="flex flex-wrap gap-xl text-body-sm text-muted">
           {Object.entries(tokens.duration).map(([name, ms]) => (
             <span key={name}>

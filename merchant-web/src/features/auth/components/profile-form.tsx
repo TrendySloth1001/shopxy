@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState, type FormEvent } from "react";
+import { useTranslations } from "next-intl";
 import { useAuth } from "../auth-context";
 import { updateProfileSchema } from "../schema";
 import { Field } from "./field";
@@ -17,6 +18,7 @@ const REGISTRATION_TYPES = ["REGULAR", "COMPOSITION", "UNREGISTERED"] as const;
  */
 export function ProfileForm({ onSaved }: { onSaved?: () => void } = {}) {
   const { user, updateProfile } = useAuth();
+  const t = useTranslations("auth");
   const [values, setValues] = useState({
     name: user?.name ?? "",
     shopName: user?.shopName ?? "",
@@ -67,7 +69,7 @@ export function ProfileForm({ onSaved }: { onSaved?: () => void } = {}) {
       setSaved(true);
       onSaved?.();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save your changes.");
+      setError(err instanceof Error ? err.message : t("profile.saveFailed"));
     } finally {
       setSubmitting(false);
     }
@@ -76,57 +78,57 @@ export function ProfileForm({ onSaved }: { onSaved?: () => void } = {}) {
   return (
     <form onSubmit={onSubmit} noValidate className="flex flex-col gap-lg">
       {error ? <Banner variant="error" message={error} /> : null}
-      {saved ? <Banner variant="success" message="Profile saved." /> : null}
+      {saved ? <Banner variant="success" message={t("profile.saved")} /> : null}
 
       <AvatarPicker />
 
       <Field
-        label="Your name"
+        label={t("field.yourName")}
         value={values.name}
         onChange={(e) => set("name", e.target.value)}
         error={fieldErrors.name}
       />
       <Field
-        label="Shop name"
+        label={t("field.shopName")}
         value={values.shopName}
         onChange={(e) => set("shopName", e.target.value)}
         error={fieldErrors.shopName}
       />
       <Field
-        label="Phone number"
+        label={t("field.phoneNumber")}
         type="tel"
         value={values.phoneNumber}
         onChange={(e) => set("phoneNumber", e.target.value)}
         error={fieldErrors.phoneNumber}
       />
       <Field
-        label="Address"
+        label={t("field.address")}
         value={values.shopAddress}
         onChange={(e) => set("shopAddress", e.target.value)}
         error={fieldErrors.shopAddress}
       />
       <div className="grid grid-cols-2 gap-lg">
         <Field
-          label="City"
+          label={t("field.city")}
           value={values.shopCity}
           onChange={(e) => set("shopCity", e.target.value)}
           error={fieldErrors.shopCity}
         />
         <Field
-          label="State"
+          label={t("field.state")}
           value={values.shopState}
           onChange={(e) => set("shopState", e.target.value)}
           error={fieldErrors.shopState}
         />
         <Field
-          label="State code"
-          helper="2-digit GST code"
+          label={t("field.stateCode")}
+          helper={t("field.stateCodeHelper")}
           value={values.shopStateCode}
           onChange={(e) => set("shopStateCode", e.target.value)}
           error={fieldErrors.shopStateCode}
         />
         <Field
-          label="PIN code"
+          label={t("field.pinCode")}
           inputMode="numeric"
           value={values.shopPinCode}
           onChange={(e) => set("shopPinCode", e.target.value)}
@@ -134,14 +136,14 @@ export function ProfileForm({ onSaved }: { onSaved?: () => void } = {}) {
         />
       </div>
       <Field
-        label="GSTIN"
+        label={t("field.gstin")}
         value={values.shopGstin}
         onChange={(e) => set("shopGstin", e.target.value)}
         error={fieldErrors.shopGstin}
       />
       <div className="flex flex-col gap-xs">
         <label htmlFor={regId} className="text-label-md text-muted">
-          GST registration
+          {t("field.gstRegistration")}
         </label>
         <select
           id={regId}
@@ -149,30 +151,30 @@ export function ProfileForm({ onSaved }: { onSaved?: () => void } = {}) {
           onChange={(e) => set("registrationType", e.target.value)}
           className="w-full rounded-input border border-hairline bg-field px-md py-sm text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
         >
-          <option value="">Not set</option>
-          {REGISTRATION_TYPES.map((t) => (
-            <option key={t} value={t}>
-              {t.charAt(0) + t.slice(1).toLowerCase()}
+          <option value="">{t("common.notSet")}</option>
+          {REGISTRATION_TYPES.map((rt) => (
+            <option key={rt} value={rt}>
+              {t(`regType.${rt}`)}
             </option>
           ))}
         </select>
       </div>
       <div className="grid grid-cols-2 gap-lg">
         <Field
-          label="PAN"
+          label={t("field.pan")}
           value={values.shopPan}
           onChange={(e) => set("shopPan", e.target.value)}
           error={fieldErrors.shopPan}
         />
         <Field
-          label="UPI ID"
+          label={t("field.upiId")}
           value={values.upiVpa}
           onChange={(e) => set("upiVpa", e.target.value)}
           error={fieldErrors.upiVpa}
         />
       </div>
       <div className="pt-sm">
-        <SubmitButton loading={submitting}>Save changes</SubmitButton>
+        <SubmitButton loading={submitting}>{t("profile.saveChanges")}</SubmitButton>
       </div>
     </form>
   );

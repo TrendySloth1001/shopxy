@@ -1,12 +1,12 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
   AREAS,
-  AREA_LABELS,
-  AREA_HINTS,
   VIEW_ONLY,
   manageRight,
   viewRight,
+  type Area,
 } from "./permissions";
 
 /**
@@ -28,6 +28,7 @@ export function PermissionMatrix({
    */
   ceiling?: Set<string> | null;
 }) {
+  const t = useTranslations("team");
   const canGrant = (right: string) => !ceiling || ceiling.has(right);
 
   function toggle(right: string, area: string, kind: "view" | "manage") {
@@ -49,13 +50,13 @@ export function PermissionMatrix({
     <div className="flex flex-col">
       <div className="flex items-center gap-md border-b border-hairline pb-xs">
         <span className="flex-1 text-label-md uppercase tracking-wide text-subtle">
-          Area
+          {t("matrix.area")}
         </span>
         <span className="w-14 text-center text-label-md uppercase tracking-wide text-subtle">
-          View
+          {t("matrix.view")}
         </span>
         <span className="w-14 text-center text-label-md uppercase tracking-wide text-subtle">
-          Manage
+          {t("matrix.manage")}
         </span>
       </div>
       {AREAS.map((area) => {
@@ -65,8 +66,12 @@ export function PermissionMatrix({
         return (
           <div key={area} className="flex items-center gap-md border-b border-hairline py-sm">
             <span className="flex-1">
-              <span className="block text-body-md text-ink">{AREA_LABELS[area]}</span>
-              <span className="block text-body-sm text-subtle">{AREA_HINTS[area]}</span>
+              <span className="block text-body-md text-ink">
+                {t(`area.${area}.label` as `area.${Area}.label`)}
+              </span>
+              <span className="block text-body-sm text-subtle">
+                {t(`area.${area}.hint` as `area.${Area}.hint`)}
+              </span>
             </span>
             <span className="flex w-14 justify-center">
               <Check
@@ -102,13 +107,14 @@ function Check({
   onChange: () => void;
   disabled?: boolean;
 }) {
+  const t = useTranslations("team");
   return (
     <input
       type="checkbox"
       checked={checked}
       disabled={disabled}
       onChange={onChange}
-      title={disabled ? "You can't grant access you don't have yourself." : undefined}
+      title={disabled ? t("matrix.grantLocked") : undefined}
       className="size-4 cursor-pointer accent-brand disabled:cursor-not-allowed disabled:opacity-40"
     />
   );

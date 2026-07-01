@@ -89,3 +89,9 @@ export function summariseRights(rights: readonly string[]): string {
   if (labels.length <= 3) return labels.join(", ");
   return `${labels.slice(0, 3).join(", ")} +${labels.length - 3}`;
 }
+
+/** The granted areas (in catalog order) behind {@link summariseRights}, so a
+ *  localized caller can render its own translated labels + overflow count. */
+export function summaryAreas(rights: readonly string[]): Area[] {
+  return AREAS.filter((a) => hasRight(rights, viewRight(a)));
+}

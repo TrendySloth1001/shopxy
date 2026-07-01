@@ -1,6 +1,7 @@
 "use client";
 
-import { ctaHint, CTA_KIND_OPTIONS, type CtaKind } from "@/shared/cta-target";
+import { useTranslations } from "next-intl";
+import { ctaHintKey, CTA_KIND_OPTIONS, type CtaKind } from "@/shared/cta-target";
 import { SelectField, TextField } from "@/shared/ui/form";
 
 /**
@@ -21,26 +22,28 @@ export function CtaTargetField({
   onValueChange: (value: string) => void;
   error?: string | null;
 }) {
+  const t = useTranslations("common");
+  const kindOptions = CTA_KIND_OPTIONS.map((o) => ({ value: o.value, label: t(o.labelKey) }));
   return (
     <div className="grid gap-md sm:grid-cols-[1fr_2fr]">
       <SelectField<CtaKind>
-        label="CTA action"
+        label={t("cta.actionLabel")}
         value={kind}
         onChange={onKindChange}
-        options={CTA_KIND_OPTIONS}
+        options={kindOptions}
       />
       {kind !== "none" ? (
         <TextField
-          label="Target"
+          label={t("cta.targetLabel")}
           value={value}
           onChange={onValueChange}
-          helper={ctaHint(kind)}
+          helper={t(ctaHintKey(kind))}
           error={error}
           inputMode={kind === "product" ? "numeric" : "text"}
         />
       ) : (
         <div className="hidden sm:flex sm:items-end sm:pb-sm">
-          <p className="text-body-sm text-subtle">{ctaHint("none")}</p>
+          <p className="text-body-sm text-subtle">{t(ctaHintKey("none"))}</p>
         </div>
       )}
     </div>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { AuthShell } from "@/features/auth/components/auth-shell";
 import { LoginForm } from "@/features/auth/components/login-form";
 import { RememberedAccounts } from "@/features/auth/components/remembered-accounts";
@@ -7,11 +8,11 @@ export const metadata: Metadata = {
   title: "Sign in · ShopXY Merchant",
 };
 
-const NOTICES: Record<string, string> = {
-  "password-changed": "Password changed. Please sign in again.",
-  "signed-out-everywhere": "Signed out of all devices.",
-  "account-deleted": "Your account has been deleted.",
-  "google-soon": "Google sign-in is coming soon — please use your email for now.",
+const NOTICE_KEYS: Record<string, string> = {
+  "password-changed": "notice.passwordChanged",
+  "signed-out-everywhere": "notice.signedOutEverywhere",
+  "account-deleted": "notice.accountDeleted",
+  "google-soon": "notice.googleSoon",
 };
 
 export default async function LoginPage({
@@ -19,16 +20,18 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<{ reason?: string }>;
 }) {
+  const t = await getTranslations("auth");
   const { reason } = await searchParams;
-  const notice = reason ? NOTICES[reason] : undefined;
+  const noticeKey = reason ? NOTICE_KEYS[reason] : undefined;
+  const notice = noticeKey ? t(noticeKey) : undefined;
 
   return (
     <AuthShell
-      title="Welcome back"
-      subtitle="Sign in to manage your inventory, invoices and customers."
-      footerPrompt="New to ShopXY?"
+      title={t("login.title")}
+      subtitle={t("login.subtitle")}
+      footerPrompt={t("login.footerPrompt")}
       footerHref="/register"
-      footerCta="Create an account"
+      footerCta={t("login.footerCta")}
       notice={notice}
     >
       <RememberedAccounts />

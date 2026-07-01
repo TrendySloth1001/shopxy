@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 import {
   ImageOff,
   ScanLine,
@@ -19,6 +20,7 @@ import { useScanConsole } from "./use-scan-console";
 import type { ConsoleRow, ConsoleStatus } from "./types";
 
 export function ScanConsoleView() {
+  const t = useTranslations("scanConsole");
   const { rows, status, error, clear, totals, presence } = useScanConsole();
   const scannerConnected = status === "live" && presence.scanners > 0;
 
@@ -27,8 +29,8 @@ export function ScanConsoleView() {
       <PageHeader
         icon={ScanLine}
         tone="indigo"
-        title="Scan console"
-        subtitle="Open the scanner on the ShopXY app and scan products — they appear here live."
+        title={t("header.title")}
+        subtitle={t("header.subtitle")}
       >
         <StatusBadge status={status} />
         {status === "live" ? (
@@ -39,8 +41,10 @@ export function ScanConsoleView() {
           >
             <Smartphone size={15} />
             {scannerConnected
-              ? `Scanner connected${presence.scanners > 1 ? ` ×${presence.scanners}` : ""}`
-              : "Waiting for scanner"}
+              ? presence.scanners > 1
+                ? t("presence.scannerConnectedMany", { count: presence.scanners })
+                : t("presence.scannerConnected")
+              : t("presence.waitingForScanner")}
           </span>
         ) : null}
         <button
@@ -49,7 +53,7 @@ export function ScanConsoleView() {
           disabled={rows.length === 0}
           className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint disabled:text-disabled"
         >
-          <Trash2 size={16} /> Clear
+          <Trash2 size={16} /> {t("actions.clear")}
         </button>
       </PageHeader>
 
@@ -80,28 +84,34 @@ export function ScanConsoleView() {
 }
 
 function StatusBadge({ status }: { status: ConsoleStatus }) {
-  const map: Record<ConsoleStatus, { label: string; cls: string; icon: typeof Wifi }> = {
-    live: { label: "Live", cls: "bg-success-soft text-success", icon: Wifi },
-    connecting: { label: "Connecting", cls: "bg-surface-tint text-muted", icon: Loader2 },
-    reconnecting: { label: "Reconnecting", cls: "bg-warning-soft text-warning", icon: Loader2 },
-    error: { label: "Offline", cls: "bg-error-soft text-error", icon: WifiOff },
+  const t = useTranslations("scanConsole");
+  const map: Record<ConsoleStatus, { labelKey: string; cls: string; icon: typeof Wifi }> = {
+    live: { labelKey: "status.live", cls: "bg-success-soft text-success", icon: Wifi },
+    connecting: { labelKey: "status.connecting", cls: "bg-surface-tint text-muted", icon: Loader2 },
+    reconnecting: {
+      labelKey: "status.reconnecting",
+      cls: "bg-warning-soft text-warning",
+      icon: Loader2,
+    },
+    error: { labelKey: "status.offline", cls: "bg-error-soft text-error", icon: WifiOff },
   };
-  const { label, cls, icon: Icon } = map[status];
+  const { labelKey, cls, icon: Icon } = map[status];
   const spin = status === "connecting" || status === "reconnecting";
   return (
     <span className={`inline-flex h-10 items-center gap-xs rounded-button px-md text-label-md ${cls}`}>
       <Icon size={15} className={spin ? "animate-spin" : ""} />
-      {label}
+      {t(labelKey)}
     </span>
   );
 }
 
 function SummaryBar({ distinct, qty, value }: { distinct: number; qty: number; value: number }) {
+  const t = useTranslations("scanConsole");
   return (
     <div className="flex flex-wrap items-center gap-x-xxl gap-y-sm rounded-lg bg-surface-tint px-lg py-md">
-      <Stat label="Products" value={String(distinct)} />
-      <Stat label="Items scanned" value={String(qty)} />
-      <Stat label="Total value" value={formatINR2(value)} />
+      <Stat label={t("summary.products")} value={String(distinct)} />
+      <Stat label={t("summary.itemsScanned")} value={String(qty)} />
+      <Stat label={t("summary.totalValue")} value={formatINR2(value)} />
     </div>
   );
 }
@@ -155,6 +165,7 @@ function EmptyState({
   status: ConsoleStatus;
   scannerConnected: boolean;
 }) {
+  const t = useTranslations("scanConsole");
   return (
     <div className="flex flex-col items-center gap-md py-xxxl text-center">
       <span className="flex size-12 items-center justify-center rounded-full bg-accent-indigo-soft text-accent-indigo">
@@ -162,15 +173,12 @@ function EmptyState({
       </span>
       <p className="text-body-md text-muted">
         {status !== "live"
-          ? "Connecting to the scan feed…"
+          ? t("empty.connecting")
           : scannerConnected
-            ? "Scanner connected — waiting for the first scan."
-            : "Connected — open the scanner on the app to begin."}
+            ? t("empty.waitingFirstScan")
+            : t("empty.openScanner")}
       </p>
-      <p className="max-w-content text-body-sm text-subtle">
-        On the ShopXY app, open the scanner and point it at a product’s barcode or QR.
-        Each scan shows up here instantly.
-      </p>
+      <p className="max-w-content text-body-sm text-subtle">{t("empty.hint")}</p>
     </div>
   );
 }

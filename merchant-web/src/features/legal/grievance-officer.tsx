@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { LegalSection } from "@/features/legal/legal-doc";
 
 /**
@@ -10,39 +11,32 @@ import { LegalSection } from "@/features/legal/legal-doc";
  * legal team can drop in real values before launch. The acknowledgement and
  * resolution timelines below are the committed SLAs.
  */
-export function GrievanceOfficerSection() {
+export async function GrievanceOfficerSection() {
+  const t = await getTranslations("legal");
   return (
-    <LegalSection heading="Grievance Officer">
-      <p>
-        In line with the Information Technology (Intermediary Guidelines) Rules,
-        2021 and India’s Digital Personal Data Protection Act, 2023, you may
-        contact our Grievance Officer with any complaint about the service or your
-        personal data:
-      </p>
+    <LegalSection heading={t("grievance.heading")}>
+      <p>{t("grievance.intro")}</p>
       <ul className="flex flex-col gap-xs">
         <li>
-          <span className="text-ink">Name:</span> [TO FILL: Grievance Officer name]
+          <span className="text-ink">{t("grievance.nameLabel")}</span> {t("grievance.namePlaceholder")}
         </li>
         <li>
-          <span className="text-ink">Designation:</span> [TO FILL: designation]
+          <span className="text-ink">{t("grievance.designationLabel")}</span> {t("grievance.designationPlaceholder")}
         </li>
         <li>
-          <span className="text-ink">Email:</span> grievance@shopxy.app
+          <span className="text-ink">{t("grievance.emailLabel")}</span> grievance@shopxy.app
         </li>
         <li>
-          <span className="text-ink">Phone:</span> [TO FILL: phone number]
+          <span className="text-ink">{t("grievance.phoneLabel")}</span> {t("grievance.phonePlaceholder")}
         </li>
         <li>
-          <span className="text-ink">Postal address:</span> [TO FILL: registered
-          postal address]
+          <span className="text-ink">{t("grievance.addressLabel")}</span> {t("grievance.addressPlaceholder")}
         </li>
       </ul>
       <p>
-        We acknowledge every grievance within <span className="text-ink">48 hours</span>{" "}
-        of receipt and aim to resolve grievances within{" "}
-        <span className="text-ink">one month</span>. Grievances relating to your
-        personal data under the DPDP Act are addressed within{" "}
-        <span className="text-ink">15 days</span>.
+        {t.rich("grievance.sla", {
+          strong: (chunks) => <span className="text-ink">{chunks}</span>,
+        })}
       </p>
     </LegalSection>
   );

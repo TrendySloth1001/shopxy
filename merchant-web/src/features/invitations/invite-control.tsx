@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { UserPlus, X } from "lucide-react";
 import { Modal, ModalActions } from "@/shared/ui/modal";
 import { TextAreaField, TextField } from "@/shared/ui/form";
@@ -33,6 +34,7 @@ export function InviteControl({
   email?: string | null;
   linked: boolean;
 }) {
+  const t = useTranslations("notifications");
   const [invite, setInvite] = useState<Invitation | null>(null);
   const [open, setOpen] = useState(false);
   const [toEmail, setToEmail] = useState(email ?? "");
@@ -83,7 +85,7 @@ export function InviteControl({
       await cancelInvitation(invite.id);
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not cancel.");
+      setError(e instanceof Error ? e.message : t("inviteControl.cancelError"));
     } finally {
       setBusy(false);
     }
@@ -91,7 +93,7 @@ export function InviteControl({
 
   async function send() {
     setError(null);
-    if (!EMAIL_RE.test(toEmail.trim())) return setError("Enter a valid email address.");
+    if (!EMAIL_RE.test(toEmail.trim())) return setError(t("inviteControl.invalidEmail"));
     setBusy(true);
     try {
       await sendInvitation({
@@ -104,7 +106,7 @@ export function InviteControl({
       setMessage("");
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not send the invitation.");
+      setError(e instanceof Error ? e.message : t("inviteControl.sendError"));
     } finally {
       setBusy(false);
     }
@@ -114,12 +116,12 @@ export function InviteControl({
     <>
       {pending ? (
         <span className="inline-flex items-center gap-xs rounded-full bg-accent-amber-soft py-px pl-sm pr-px text-body-sm font-semibold text-accent-amber">
-          Invited
+          {t("inviteControl.invited")}
           <button
             type="button"
             onClick={cancel}
             disabled={busy}
-            aria-label="Cancel invitation"
+            aria-label={t("inviteControl.cancelInvitation")}
             className="inline-flex size-5 items-center justify-center rounded-full transition-colors hover:bg-accent-amber-soft hover:text-error disabled:opacity-50"
           >
             <X size={13} />
@@ -134,25 +136,26 @@ export function InviteControl({
             setOpen(true);
           }}
           disabled={!email}
-          title={email ? undefined : "Add an email to this contact first"}
+          title={email ? undefined : t("inviteControl.addEmailFirst")}
           className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint disabled:text-disabled"
         >
-          <UserPlus size={16} /> Invite
+          <UserPlus size={16} /> {t("inviteControl.invite")}
         </button>
       )}
 
       {open ? (
-        <Modal title={`Invite ${name} to ShopXY`} onClose={() => setOpen(false)}>
+        <Modal title={t("inviteControl.modalTitle", { name })} onClose={() => setOpen(false)}>
           <p className="text-body-md text-muted">
-            We&rsquo;ll email an invite. When they accept, their account links to this{" "}
-            {linkType === "PARTY" ? "customer" : "vendor"} so they can see their ledger with you.
+            {linkType === "PARTY"
+              ? t("inviteControl.explainerParty")
+              : t("inviteControl.explainerVendor")}
           </p>
           {error ? (
             <p className="rounded-md bg-error-soft px-md py-sm text-body-sm text-error">{error}</p>
           ) : null}
-          <TextField label="Email" value={toEmail} onChange={setToEmail} type="email" />
-          <TextAreaField label="Message (optional)" value={message} onChange={setMessage} rows={2} />
-          <ModalActions busy={busy} confirmLabel="Send invite" onCancel={() => setOpen(false)} onConfirm={send} />
+          <TextField label={t("inviteControl.emailLabel")} value={toEmail} onChange={setToEmail} type="email" />
+          <TextAreaField label={t("inviteControl.messageLabel")} value={message} onChange={setMessage} rows={2} />
+          <ModalActions busy={busy} confirmLabel={t("inviteControl.sendInvite")} onCancel={() => setOpen(false)} onConfirm={send} />
         </Modal>
       ) : null}
     </>

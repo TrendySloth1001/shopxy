@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 import {
   ImageOff, Minus, Plus, ScanBarcode, Trash2, Wifi, WifiOff, Loader2, CheckCircle2,
   Banknote, CreditCard, Smartphone, Pause, ListRestart, X, IndianRupee,
@@ -26,6 +27,7 @@ import {
  * last line · "3*<code>" or type 3 then * = quantity multiplier.
  */
 export function PosTillView() {
+  const t = useTranslations("pos");
   const pos = usePosSale();
   const [code, setCode] = useState("");
   const [pendingQty, setPendingQty] = useState<number | null>(null);
@@ -136,8 +138,8 @@ export function PosTillView() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  if (pos.checkout) return <PaidScreen title="Sale complete" sub={`Invoice ${pos.checkout.invoiceNo}`} total={Number(pos.checkout.total)} invoiceId={pos.checkout.invoiceId} />;
-  if (pos.onlinePaid) return <PaidScreen title="Paid online" sub="Razorpay" total={pos.onlinePaid.amount} invoiceId={pos.onlinePaid.invoiceId ?? undefined} />;
+  if (pos.checkout) return <PaidScreen title={t("paid.saleComplete")} sub={t("paid.invoice", { no: pos.checkout.invoiceNo })} total={Number(pos.checkout.total)} invoiceId={pos.checkout.invoiceId} />;
+  if (pos.onlinePaid) return <PaidScreen title={t("paid.paidOnline")} sub="Razorpay" total={pos.onlinePaid.amount} invoiceId={pos.onlinePaid.invoiceId ?? undefined} />;
 
   return (
     <div className="flex h-dvh min-h-[600px] w-full flex-col bg-canvas" onClick={onBgClick}>
@@ -145,12 +147,12 @@ export function PosTillView() {
       <div className="flex items-center justify-between border-b border-hairline px-lg py-sm">
         <div className="flex items-center gap-sm">
           <ScanBarcode size={20} className="text-brand" />
-          <span className="text-title-sm font-bold text-ink">Point of sale</span>
+          <span className="text-title-sm font-bold text-ink">{t("title")}</span>
           <ConnBadge status={pos.status} />
           {shiftReport ? (
             <span className="ml-sm inline-flex items-center gap-xs rounded-button bg-surface-tint px-md py-xs text-label-md text-ink">
               <UserRound size={14} className="text-muted" />
-              <span className="font-semibold">{shiftReport.shift.openedByName ?? "Cashier"}</span>
+              <span className="font-semibold">{shiftReport.shift.openedByName ?? t("topBar.cashier")}</span>
               {shiftReport.shift.openedByEmail ? <span className="hidden text-muted lg:inline">· {shiftReport.shift.openedByEmail}</span> : null}
               <Clock size={13} className="ml-xs text-muted" />
               <ShiftTimer since={shiftReport.shift.openedAt} />
@@ -163,16 +165,16 @@ export function PosTillView() {
             onClick={() => setShiftModal(true)}
             className={`inline-flex h-9 items-center gap-xs rounded-button px-md text-label-md ${shiftReport ? "bg-success-soft text-success" : "bg-warning-soft text-warning"}`}
           >
-            <Calculator size={15} /> {shiftReport ? `Drawer ${formatINR2(shiftReport.cash.expected)}` : "Open shift"}
+            <Calculator size={15} /> {shiftReport ? t("topBar.drawer", { amount: formatINR2(shiftReport.cash.expected) }) : t("topBar.openShift")}
           </button>
           <button type="button" onClick={() => setReturnsModal(true)} className="inline-flex h-9 items-center gap-xs rounded-button border border-hairline px-md text-label-md text-ink hover:bg-surface-tint">
-            <Undo2 size={15} /> Returns
+            <Undo2 size={15} /> {t("topBar.returns")}
           </button>
           <button type="button" onClick={() => void pos.holdAndNew()} className="inline-flex h-9 items-center gap-xs rounded-button border border-hairline px-md text-label-md text-ink hover:bg-surface-tint">
-            <Pause size={15} /> Hold <kbd className="ml-xs text-subtle">F4</kbd>
+            <Pause size={15} /> {t("topBar.hold")} <kbd className="ml-xs text-subtle">F4</kbd>
           </button>
           <button type="button" onClick={() => setHeldOpen(true)} className="inline-flex h-9 items-center gap-xs rounded-button border border-hairline px-md text-label-md text-ink hover:bg-surface-tint">
-            <ListRestart size={15} /> Recall <kbd className="ml-xs text-subtle">F5</kbd>
+            <ListRestart size={15} /> {t("topBar.recall")} <kbd className="ml-xs text-subtle">F5</kbd>
           </button>
         </div>
       </div>
@@ -181,7 +183,7 @@ export function PosTillView() {
         {/* LEFT — the bill */}
         <div className="flex min-w-0 flex-1 flex-col border-r border-hairline">
           <div className="grid grid-cols-[2.5rem_1fr_7rem_6rem_4rem] gap-sm border-b border-hairline px-lg py-xs text-label-sm uppercase tracking-wide text-subtle">
-            <span>#</span><span>Item</span><span className="text-center">Qty</span><span className="text-right">Amount</span><span />
+            <span>#</span><span>{t("bill.item")}</span><span className="text-center">{t("bill.qty")}</span><span className="text-right">{t("bill.amount")}</span><span />
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto">
             {lines.length === 0 ? (
@@ -189,13 +191,13 @@ export function PosTillView() {
                 {noShift ? (
                   <>
                     <Lock size={36} className="text-subtle" />
-                    <p className="text-body-md">Open a shift to start billing</p>
-                    <button type="button" onClick={() => setShiftModal(true)} className="mt-xs inline-flex h-10 items-center gap-sm rounded-button bg-brand px-lg text-label-md text-white hover:bg-brand-strong"><LockOpen size={16} /> Open shift</button>
+                    <p className="text-body-md">{t("bill.openShiftToBill")}</p>
+                    <button type="button" onClick={() => setShiftModal(true)} className="mt-xs inline-flex h-10 items-center gap-sm rounded-button bg-brand px-lg text-label-md text-white hover:bg-brand-strong"><LockOpen size={16} /> {t("topBar.openShift")}</button>
                   </>
                 ) : (
                   <>
                     <ScanBarcode size={40} className="text-subtle" />
-                    <p className="text-body-md">Scan the first item to begin</p>
+                    <p className="text-body-md">{t("bill.scanFirstItem")}</p>
                   </>
                 )}
               </div>
@@ -220,11 +222,11 @@ export function PosTillView() {
         {/* RIGHT — total + scan + pay */}
         <div className="flex w-[380px] shrink-0 flex-col">
           <div className="flex flex-col gap-xs bg-hero-panel px-lg py-lg">
-            <span className="text-label-md uppercase tracking-wide text-muted">Total payable</span>
+            <span className="text-label-md uppercase tracking-wide text-muted">{t("totals.totalPayable")}</span>
             <span className="text-[2.75rem] font-bold leading-none text-ink">{formatINR2(totals?.total ?? 0)}</span>
             <div className="mt-xs flex items-center justify-between text-body-sm text-muted">
-              <span>{itemCount} item{itemCount === 1 ? "" : "s"}</span>
-              {totals && totals.discount > 0 ? <span className="text-success">Saved {formatINR2(totals.discount)}</span> : <span />}
+              <span>{t("totals.itemCount", { count: itemCount })}</span>
+              {totals && totals.discount > 0 ? <span className="text-success">{t("totals.saved", { amount: formatINR2(totals.discount) })}</span> : <span />}
             </div>
           </div>
 
@@ -241,21 +243,21 @@ export function PosTillView() {
                 autoFocus
                 disabled={noShift}
                 inputMode="text"
-                placeholder={noShift ? "Open a shift to start billing" : "Scan / type barcode · 3∗code for qty"}
+                placeholder={noShift ? t("scan.placeholderNoShift") : t("scan.placeholder")}
                 className="h-11 w-full rounded-input border border-hairline bg-canvas px-md text-body-md text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:bg-field-tint"
               />
-              <button type="button" title="Find item (F3)" disabled={noShift} onClick={() => setSearchOpen(true)} className="inline-flex size-11 shrink-0 items-center justify-center rounded-button border border-hairline text-ink hover:bg-surface-tint disabled:text-disabled"><Search size={18} /></button>
+              <button type="button" title={t("scan.findItemTitle")} disabled={noShift} onClick={() => setSearchOpen(true)} className="inline-flex size-11 shrink-0 items-center justify-center rounded-button border border-hairline text-ink hover:bg-surface-tint disabled:text-disabled"><Search size={18} /></button>
             </div>
             {pos.error ? <p className="mt-sm rounded-md bg-error-soft px-md py-xs text-body-sm text-error">{pos.error}</p> : null}
-            {pos.pending > 0 ? <p className="mt-sm text-body-sm text-warning">{pos.pending} scan(s) queued offline</p> : null}
+            {pos.pending > 0 ? <p className="mt-sm text-body-sm text-warning">{t("scan.queuedOffline", { count: pos.pending })}</p> : null}
 
             {/* Customer (optional) + bill discount */}
             <div className="mt-sm grid grid-cols-2 gap-sm">
-              <input value={customer.name} onChange={(e) => setCustomer((c) => ({ ...c, name: e.target.value }))} placeholder="Customer name" className="h-9 rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
-              <input value={customer.phone} onChange={(e) => setCustomer((c) => ({ ...c, phone: e.target.value }))} inputMode="tel" placeholder="Phone" className="h-9 rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
+              <input value={customer.name} onChange={(e) => setCustomer((c) => ({ ...c, name: e.target.value }))} placeholder={t("customer.namePlaceholder")} className="h-9 rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
+              <input value={customer.phone} onChange={(e) => setCustomer((c) => ({ ...c, phone: e.target.value }))} inputMode="tel" placeholder={t("customer.phonePlaceholder")} className="h-9 rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
             </div>
             <div className="mt-sm flex items-center gap-sm">
-              <span className="text-label-md text-muted">Bill discount ₹</span>
+              <span className="text-label-md text-muted">{t("discount.billLabel")}</span>
               <BillDiscountInput
                 key={pos.snapshot?.sale.headerDiscount ?? 0}
                 value={pos.snapshot?.sale.headerDiscount ?? 0}
@@ -275,7 +277,7 @@ export function PosTillView() {
               onClick={() => setTenderOpen(true)}
               className="flex h-16 w-full items-center justify-center gap-sm rounded-lg bg-brand text-headline-sm font-bold text-white hover:bg-brand-strong disabled:bg-disabled"
             >
-              <IndianRupee size={22} /> Pay {formatINR2(totals?.total ?? 0)} <kbd className="text-label-md opacity-80">F2</kbd>
+              <IndianRupee size={22} /> {t("pay.button", { amount: formatINR2(totals?.total ?? 0) })} <kbd className="text-label-md opacity-80">F2</kbd>
             </button>
           </div>
         </div>
@@ -343,6 +345,7 @@ export function PosTillView() {
 /** Shift + cash drawer, in the till. Open a shift, record cash in/out, see the
  *  live X-report, and close with a counted-cash reconciliation. */
 function ShiftModal({ onClose }: { onClose: () => void }) {
+  const t = useTranslations("pos");
   const [report, setReport] = useState<ShiftReport | null>(null);
   const [hasShift, setHasShift] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
@@ -359,10 +362,10 @@ function ShiftModal({ onClose }: { onClose: () => void }) {
       setHasShift(!!shift);
       setReport(report);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not load the shift.");
+      setError(e instanceof Error ? e.message : t("shift.loadError"));
       setHasShift(false);
     }
-  }, []);
+  }, [t]);
   useEffect(() => {
     let active = true;
     (async () => {
@@ -372,15 +375,15 @@ function ShiftModal({ onClose }: { onClose: () => void }) {
         setHasShift(!!shift);
         setReport(report);
       } catch (e) {
-        if (active) { setError(e instanceof Error ? e.message : "Could not load the shift."); setHasShift(false); }
+        if (active) { setError(e instanceof Error ? e.message : t("shift.loadError")); setHasShift(false); }
       }
     })();
     return () => { active = false; };
-  }, []);
+  }, [t]);
 
   const run = async (fn: () => Promise<void>) => {
     setBusy(true); setError(null);
-    try { await fn(); } catch (e) { setError(e instanceof Error ? e.message : "Something went wrong."); } finally { setBusy(false); }
+    try { await fn(); } catch (e) { setError(e instanceof Error ? e.message : t("common.somethingWrong")); } finally { setBusy(false); }
   };
 
   const expected = report?.cash.expected ?? 0;
@@ -391,57 +394,57 @@ function ShiftModal({ onClose }: { onClose: () => void }) {
     <Modal onClose={onClose}>
       <div className="w-[460px] max-w-full">
         <div className="flex items-center justify-between">
-          <h2 className="flex items-center gap-sm text-title-md text-ink"><Calculator size={18} /> Shift &amp; cash drawer</h2>
+          <h2 className="flex items-center gap-sm text-title-md text-ink"><Calculator size={18} /> {t("shift.title")}</h2>
           <button type="button" onClick={onClose} className="text-muted hover:text-ink"><X size={18} /></button>
         </div>
         {error ? <p className="mt-sm rounded-md bg-error-soft px-md py-xs text-body-sm text-error">{error}</p> : null}
 
         {hasShift === null ? (
-          <p className="py-xl text-center text-body-md text-muted">Loading…</p>
+          <p className="py-xl text-center text-body-md text-muted">{t("common.loading")}</p>
         ) : !hasShift ? (
           <div className="mt-lg">
-            <label className="block text-label-md text-muted">Opening float (₹)</label>
+            <label className="block text-label-md text-muted">{t("shift.openingFloat")}</label>
             <input value={float} onChange={(e) => setFloat(e.target.value)} inputMode="decimal" placeholder="0.00" autoFocus className="mt-xs h-11 w-full rounded-input border border-hairline bg-canvas px-md text-body-md text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
-            <button type="button" disabled={busy} onClick={() => run(async () => { await openShift(parseAmount(float) ?? 0); await load(); })} className="mt-md inline-flex h-11 items-center gap-sm rounded-button bg-brand px-lg text-label-md text-white hover:bg-brand-strong disabled:bg-disabled"><LockOpen size={16} /> Open shift</button>
+            <button type="button" disabled={busy} onClick={() => run(async () => { await openShift(parseAmount(float) ?? 0); await load(); })} className="mt-md inline-flex h-11 items-center gap-sm rounded-button bg-brand px-lg text-label-md text-white hover:bg-brand-strong disabled:bg-disabled"><LockOpen size={16} /> {t("topBar.openShift")}</button>
           </div>
         ) : (
           <div className="mt-lg flex flex-col gap-md">
             {report ? (
               <div className="rounded-lg bg-hero-panel p-md">
-                <Row label="Opening float" value={formatINR2(report.cash.openingFloat)} />
-                <Row label="Cash sales" value={formatINR2(report.cash.cashSales)} />
-                <Row label="Pay-ins" value={formatINR2(report.cash.payIns)} />
-                <Row label="Pay-outs" value={`− ${formatINR2(report.cash.payOuts)}`} />
-                <Row label="Drops" value={`− ${formatINR2(report.cash.drops)}`} />
-                <Row label="Refunds" value={`− ${formatINR2(report.cash.refunds)}`} />
+                <Row label={t("shift.openingFloatRow")} value={formatINR2(report.cash.openingFloat)} />
+                <Row label={t("shift.cashSales")} value={formatINR2(report.cash.cashSales)} />
+                <Row label={t("shift.payIns")} value={formatINR2(report.cash.payIns)} />
+                <Row label={t("shift.payOuts")} value={`− ${formatINR2(report.cash.payOuts)}`} />
+                <Row label={t("shift.drops")} value={`− ${formatINR2(report.cash.drops)}`} />
+                <Row label={t("shift.refunds")} value={`− ${formatINR2(report.cash.refunds)}`} />
                 <div className="mt-xs flex items-center justify-between border-t border-hairline pt-xs">
-                  <span className="text-title-sm font-bold text-ink">Expected in drawer</span>
+                  <span className="text-title-sm font-bold text-ink">{t("shift.expectedInDrawer")}</span>
                   <span className="text-title-sm font-bold text-ink">{formatINR2(expected)}</span>
                 </div>
               </div>
             ) : null}
 
             <div>
-              <p className="text-label-md text-muted">Cash drawer</p>
+              <p className="text-label-md text-muted">{t("shift.cashDrawer")}</p>
               <div className="mt-xs flex gap-sm">
-                {(["PAY_IN", "PAY_OUT", "DROP"] as const).map((t) => (
-                  <button key={t} type="button" onClick={() => setMvType(t)} className={`inline-flex h-9 items-center rounded-button px-md text-label-md ${mvType === t ? "bg-brand text-white" : "border border-hairline text-ink hover:bg-surface-tint"}`}>{t === "PAY_IN" ? "Pay in" : t === "PAY_OUT" ? "Pay out" : "Drop"}</button>
+                {(["PAY_IN", "PAY_OUT", "DROP"] as const).map((mv) => (
+                  <button key={mv} type="button" onClick={() => setMvType(mv)} className={`inline-flex h-9 items-center rounded-button px-md text-label-md ${mvType === mv ? "bg-brand text-white" : "border border-hairline text-ink hover:bg-surface-tint"}`}>{mv === "PAY_IN" ? t("shift.payIn") : mv === "PAY_OUT" ? t("shift.payOut") : t("shift.drop")}</button>
                 ))}
               </div>
               <div className="mt-sm flex gap-sm">
-                <input value={mvAmount} onChange={(e) => setMvAmount(e.target.value)} inputMode="decimal" placeholder="Amount ₹" className="h-10 w-28 rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
-                <input value={mvReason} onChange={(e) => setMvReason(e.target.value)} placeholder="Reason" className="h-10 flex-1 rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
-                <button type="button" disabled={busy || !((parseAmount(mvAmount) ?? 0) > 0)} onClick={() => run(async () => { const r = await addCashMovement({ type: mvType, amount: parseAmount(mvAmount) ?? 0, reason: mvReason.trim() || undefined }); setReport(r); setMvAmount(""); setMvReason(""); })} className="inline-flex h-10 items-center rounded-button bg-brand px-md text-label-md text-white hover:bg-brand-strong disabled:bg-disabled">Record</button>
+                <input value={mvAmount} onChange={(e) => setMvAmount(e.target.value)} inputMode="decimal" placeholder={t("shift.amountPlaceholder")} className="h-10 w-28 rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
+                <input value={mvReason} onChange={(e) => setMvReason(e.target.value)} placeholder={t("shift.reasonPlaceholder")} className="h-10 flex-1 rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
+                <button type="button" disabled={busy || !((parseAmount(mvAmount) ?? 0) > 0)} onClick={() => run(async () => { const r = await addCashMovement({ type: mvType, amount: parseAmount(mvAmount) ?? 0, reason: mvReason.trim() || undefined }); setReport(r); setMvAmount(""); setMvReason(""); })} className="inline-flex h-10 items-center rounded-button bg-brand px-md text-label-md text-white hover:bg-brand-strong disabled:bg-disabled">{t("shift.record")}</button>
               </div>
             </div>
 
             <div className="border-t border-hairline pt-md">
-              <p className="flex items-center gap-xs text-label-md text-muted"><Lock size={14} /> Close shift</p>
+              <p className="flex items-center gap-xs text-label-md text-muted"><Lock size={14} /> {t("shift.closeShift")}</p>
               <div className="mt-xs flex gap-sm">
-                <input value={counted} onChange={(e) => setCounted(e.target.value)} inputMode="decimal" placeholder="Counted cash ₹" className="h-10 flex-1 rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
-                <button type="button" disabled={busy || countedNum === null} onClick={() => run(async () => { await closeShift({ countedCash: countedNum ?? 0 }); onClose(); })} className="inline-flex h-10 items-center rounded-button bg-inverse-surface px-md text-label-md text-on-inverse hover:opacity-90 disabled:bg-disabled">Close</button>
+                <input value={counted} onChange={(e) => setCounted(e.target.value)} inputMode="decimal" placeholder={t("shift.countedCashPlaceholder")} className="h-10 flex-1 rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
+                <button type="button" disabled={busy || countedNum === null} onClick={() => run(async () => { await closeShift({ countedCash: countedNum ?? 0 }); onClose(); })} className="inline-flex h-10 items-center rounded-button bg-inverse-surface px-md text-label-md text-on-inverse hover:opacity-90 disabled:bg-disabled">{t("shift.close")}</button>
               </div>
-              {variance !== null ? <p className={`mt-xs text-body-sm ${variance === 0 ? "text-success" : "text-warning"}`}>Variance {variance > 0 ? "+" : ""}{formatINR2(variance)} {variance === 0 ? "(balanced)" : variance > 0 ? "(over)" : "(short)"}</p> : null}
+              {variance !== null ? <p className={`mt-xs text-body-sm ${variance === 0 ? "text-success" : "text-warning"}`}>{t("shift.variance", { sign: variance > 0 ? "+" : "", amount: formatINR2(variance), state: variance === 0 ? t("shift.balanced") : variance > 0 ? t("shift.over") : t("shift.short") })}</p> : null}
             </div>
           </div>
         )}
@@ -452,6 +455,7 @@ function ShiftModal({ onClose }: { onClose: () => void }) {
 
 /** Process a return without leaving the till. */
 function ReturnsModal({ onClose, onNeedManager }: { onClose: () => void; onNeedManager: (retry: (token: string) => void) => void }) {
+  const t = useTranslations("pos");
   const [invoiceId, setInvoiceId] = useState("");
   const [returnable, setReturnable] = useState<Returnable | null>(null);
   const [qty, setQty] = useState<Record<number, string>>({});
@@ -462,22 +466,22 @@ function ReturnsModal({ onClose, onNeedManager }: { onClose: () => void; onNeedM
 
   const run = async (fn: () => Promise<void>) => {
     setBusy(true); setError(null);
-    try { await fn(); } catch (e) { setError(e instanceof Error ? e.message : "Something went wrong."); } finally { setBusy(false); }
+    try { await fn(); } catch (e) { setError(e instanceof Error ? e.message : t("common.somethingWrong")); } finally { setBusy(false); }
   };
 
   // Returns are privileged: on OVERRIDE_REQUIRED, ask for a manager grant + retry.
   const submitReturn = async (token?: string) => {
     if (!returnable) return;
     const lines = returnable.lines.map((l) => ({ productId: l.productId, quantity: Number(qty[l.productId]) || 0 })).filter((l) => l.quantity > 0);
-    if (lines.length === 0) { setError("Enter a quantity to return."); return; }
+    if (lines.length === 0) { setError(t("returns.enterQty")); return; }
     setBusy(true); setError(null);
     try {
       const res = await processReturn({ originalInvoiceId: returnable.invoiceId, refundMode, lines, override: token });
-      setDone(`Credit note ${res.creditNoteNo} · refund ${formatINR2(res.refundAmount)}`);
+      setDone(t("returns.creditNoteDone", { no: res.creditNoteNo, amount: formatINR2(res.refundAmount) }));
       setReturnable(null); setQty({});
     } catch (e) {
       if (isOverrideRequired(e)) onNeedManager((tok) => void submitReturn(tok));
-      else setError(e instanceof Error ? e.message : "Something went wrong.");
+      else setError(e instanceof Error ? e.message : t("common.somethingWrong"));
     } finally {
       setBusy(false);
     }
@@ -487,15 +491,15 @@ function ReturnsModal({ onClose, onNeedManager }: { onClose: () => void; onNeedM
     <Modal onClose={onClose}>
       <div className="w-[460px] max-w-full">
         <div className="flex items-center justify-between">
-          <h2 className="flex items-center gap-sm text-title-md text-ink"><Undo2 size={18} /> Returns</h2>
+          <h2 className="flex items-center gap-sm text-title-md text-ink"><Undo2 size={18} /> {t("topBar.returns")}</h2>
           <button type="button" onClick={onClose} className="text-muted hover:text-ink"><X size={18} /></button>
         </div>
         {error ? <p className="mt-sm rounded-md bg-error-soft px-md py-xs text-body-sm text-error">{error}</p> : null}
         {done ? <p className="mt-sm rounded-md bg-success-soft px-md py-xs text-body-sm text-success">{done}</p> : null}
 
         <div className="mt-md flex gap-sm">
-          <input value={invoiceId} onChange={(e) => setInvoiceId(e.target.value)} inputMode="numeric" placeholder="Original invoice id" autoFocus className="h-10 flex-1 rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
-          <button type="button" disabled={busy || !invoiceId} onClick={() => run(async () => { setDone(null); setReturnable(await fetchReturnable(Number(invoiceId))); setQty({}); })} className="inline-flex h-10 items-center rounded-button border border-hairline px-lg text-label-md text-ink hover:bg-surface-tint disabled:text-disabled">Look up</button>
+          <input value={invoiceId} onChange={(e) => setInvoiceId(e.target.value)} inputMode="numeric" placeholder={t("returns.originalInvoicePlaceholder")} autoFocus className="h-10 flex-1 rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
+          <button type="button" disabled={busy || !invoiceId} onClick={() => run(async () => { setDone(null); setReturnable(await fetchReturnable(Number(invoiceId))); setQty({}); })} className="inline-flex h-10 items-center rounded-button border border-hairline px-lg text-label-md text-ink hover:bg-surface-tint disabled:text-disabled">{t("returns.lookUp")}</button>
         </div>
 
         {returnable ? (
@@ -506,14 +510,14 @@ function ReturnsModal({ onClose, onNeedManager }: { onClose: () => void; onNeedM
                 <li key={l.productId} className="flex items-center gap-sm bg-canvas px-md py-sm">
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-title-sm text-ink">{l.name}</p>
-                    <p className="text-body-sm text-muted">returnable {l.returnableQty} · {formatINR2(l.unitPrice)}</p>
+                    <p className="text-body-sm text-muted">{t("returns.returnableQty", { qty: l.returnableQty, price: formatINR2(l.unitPrice) })}</p>
                   </div>
                   <input value={qty[l.productId] ?? ""} onChange={(e) => setQty((q) => ({ ...q, [l.productId]: e.target.value }))} inputMode="numeric" placeholder="0" disabled={l.returnableQty <= 0} className="h-9 w-16 rounded-input border border-hairline bg-canvas px-sm text-center text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:bg-field-tint" />
                 </li>
               ))}
             </ul>
             <div className="mt-sm flex flex-wrap items-center gap-sm">
-              <span className="text-label-md text-muted">Refund via</span>
+              <span className="text-label-md text-muted">{t("returns.refundVia")}</span>
               {(["CASH", "UPI", "CARD", "OTHER"] as const).map((m) => (
                 <button key={m} type="button" onClick={() => setRefundMode(m)} className={`inline-flex h-9 items-center rounded-button px-md text-label-md ${refundMode === m ? "bg-brand text-white" : "border border-hairline text-ink hover:bg-surface-tint"}`}>{m}</button>
               ))}
@@ -524,7 +528,7 @@ function ReturnsModal({ onClose, onNeedManager }: { onClose: () => void; onNeedM
               onClick={() => void submitReturn()}
               className="mt-sm inline-flex h-10 items-center gap-sm rounded-button bg-brand px-lg text-label-md text-white hover:bg-brand-strong disabled:bg-disabled"
             >
-              <Undo2 size={16} /> Process return
+              <Undo2 size={16} /> {t("returns.processReturn")}
             </button>
           </div>
         ) : null}
@@ -534,6 +538,7 @@ function ReturnsModal({ onClose, onNeedManager }: { onClose: () => void; onNeedM
 }
 
 function BillRow({ index, line, last, onInc, onDec, onSetQty, onDiscount, onRemove }: { index: number; line: SaleLine; last: boolean; onInc: () => void; onDec: () => void; onSetQty: (q: number) => void; onDiscount: () => void; onRemove: () => void }) {
+  const t = useTranslations("pos");
   const src = mediaSrc(line.imageUrl);
   return (
     <div className={`grid grid-cols-[2.5rem_1fr_7rem_6rem_4rem] items-center gap-sm px-lg py-sm ${last ? "bg-brand-soft" : ""}`}>
@@ -548,14 +553,14 @@ function BillRow({ index, line, last, onInc, onDec, onSetQty, onDiscount, onRemo
         </div>
       </div>
       <div className="flex items-center justify-center gap-xs">
-        <button type="button" onClick={onDec} aria-label="Decrease" className="inline-flex size-7 items-center justify-center rounded-button border border-hairline text-ink hover:bg-surface-tint"><Minus size={13} /></button>
+        <button type="button" onClick={onDec} aria-label={t("bill.decrease")} className="inline-flex size-7 items-center justify-center rounded-button border border-hairline text-ink hover:bg-surface-tint"><Minus size={13} /></button>
         <QtyInput key={line.quantity} value={line.quantity} onCommit={onSetQty} />
-        <button type="button" onClick={onInc} aria-label="Increase" className="inline-flex size-7 items-center justify-center rounded-button border border-hairline text-ink hover:bg-surface-tint"><Plus size={13} /></button>
+        <button type="button" onClick={onInc} aria-label={t("bill.increase")} className="inline-flex size-7 items-center justify-center rounded-button border border-hairline text-ink hover:bg-surface-tint"><Plus size={13} /></button>
       </div>
       <span className="text-right text-title-sm font-bold text-ink">{formatINR2(line.total)}</span>
       <div className="flex items-center justify-end gap-xs">
-        <button type="button" onClick={onDiscount} aria-label="Line discount" title="Line discount" className={`inline-flex size-7 items-center justify-center rounded-button ${line.lineDiscount > 0 ? "text-brand" : "text-muted"} hover:bg-surface-tint`}><Percent size={13} /></button>
-        <button type="button" onClick={onRemove} aria-label="Remove" className="inline-flex size-7 items-center justify-center rounded-button text-muted hover:text-error"><Trash2 size={14} /></button>
+        <button type="button" onClick={onDiscount} aria-label={t("discount.lineTitle")} title={t("discount.lineTitle")} className={`inline-flex size-7 items-center justify-center rounded-button ${line.lineDiscount > 0 ? "text-brand" : "text-muted"} hover:bg-surface-tint`}><Percent size={13} /></button>
+        <button type="button" onClick={onRemove} aria-label={t("bill.remove")} className="inline-flex size-7 items-center justify-center rounded-button text-muted hover:text-error"><Trash2 size={14} /></button>
       </div>
     </div>
   );
@@ -564,6 +569,7 @@ function BillRow({ index, line, last, onInc, onDec, onSetQty, onDiscount, onRemo
 /** Directly type a line quantity (0 removes it). Commits on Enter/blur. Remounted
  *  via `key={quantity}` by the parent, so it always seeds from the latest value. */
 function QtyInput({ value, onCommit }: { value: number; onCommit: (q: number) => void }) {
+  const t = useTranslations("pos");
   const [text, setText] = useState(String(value));
   const commit = () => {
     const n = Number(text);
@@ -578,13 +584,14 @@ function QtyInput({ value, onCommit }: { value: number; onCommit: (q: number) =>
       onBlur={commit}
       onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); (e.target as HTMLInputElement).blur(); } }}
       inputMode="decimal"
-      aria-label="Quantity"
+      aria-label={t("bill.qtyLabel")}
       className="w-12 rounded-button border border-hairline bg-canvas py-px text-center text-title-sm font-bold text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
     />
   );
 }
 
 function TenderModal({ total, paying, onClose, onCash, onTender, onOnline }: { total: number; paying: boolean; onClose: () => void; onCash: (received: number) => void; onTender: (m: TenderMode) => void; onOnline: () => void }) {
+  const t = useTranslations("pos");
   const [received, setReceived] = useState("");
   const recv = Number(received);
   // Round the change-due to paise so float subtraction (e.g. 100 - 33.33)
@@ -596,18 +603,18 @@ function TenderModal({ total, paying, onClose, onCash, onTender, onOnline }: { t
     <Modal onClose={onClose}>
       <div className="w-[440px] max-w-full">
         <div className="flex items-center justify-between">
-          <h2 className="text-title-md text-ink">Collect {formatINR2(total)}</h2>
+          <h2 className="text-title-md text-ink">{t("tender.collect", { amount: formatINR2(total) })}</h2>
           <button type="button" onClick={onClose} className="text-muted hover:text-ink"><X size={18} /></button>
         </div>
 
-        <p className="mt-lg text-label-md text-muted">Cash</p>
+        <p className="mt-lg text-label-md text-muted">{t("tender.cash")}</p>
         <input
           value={received}
           onChange={(e) => setReceived(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter" && recv >= total) onCash(recv); }}
           autoFocus
           inputMode="decimal"
-          placeholder="Cash received ₹"
+          placeholder={t("tender.cashReceivedPlaceholder")}
           className="mt-xs h-12 w-full rounded-input border border-hairline bg-canvas px-md text-headline-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
         />
         <div className="mt-sm flex flex-wrap gap-sm">
@@ -617,7 +624,7 @@ function TenderModal({ total, paying, onClose, onCash, onTender, onOnline }: { t
         </div>
         {recv > 0 ? (
           <div className="mt-md flex items-center justify-between rounded-lg bg-hero-panel px-md py-sm">
-            <span className="text-body-md text-muted">Change due</span>
+            <span className="text-body-md text-muted">{t("tender.changeDue")}</span>
             <span className={`text-headline-sm font-bold ${change < 0 ? "text-error" : "text-success"}`}>{formatINR2(Math.max(0, change))}</span>
           </div>
         ) : null}
@@ -627,14 +634,14 @@ function TenderModal({ total, paying, onClose, onCash, onTender, onOnline }: { t
           onClick={() => onCash(recv)}
           className="mt-md flex h-12 w-full items-center justify-center gap-sm rounded-button bg-brand text-title-sm font-bold text-white hover:bg-brand-strong disabled:bg-disabled"
         >
-          <Banknote size={18} /> Cash — done
+          <Banknote size={18} /> {t("tender.cashDone")}
         </button>
 
-        <p className="mt-lg text-label-md text-muted">Other tenders</p>
+        <p className="mt-lg text-label-md text-muted">{t("tender.otherTenders")}</p>
         <div className="mt-xs grid grid-cols-3 gap-sm">
           <button type="button" onClick={() => onTender("UPI")} className="inline-flex h-11 items-center justify-center gap-xs rounded-button border border-hairline text-label-md text-ink hover:bg-surface-tint"><Smartphone size={16} /> UPI</button>
-          <button type="button" onClick={() => onTender("CARD")} className="inline-flex h-11 items-center justify-center gap-xs rounded-button border border-hairline text-label-md text-ink hover:bg-surface-tint"><CreditCard size={16} /> Card</button>
-          <button type="button" disabled={paying} onClick={onOnline} className="inline-flex h-11 items-center justify-center gap-xs rounded-button border border-brand text-label-md text-brand hover:bg-brand-soft disabled:opacity-50"><IndianRupee size={16} /> Online</button>
+          <button type="button" onClick={() => onTender("CARD")} className="inline-flex h-11 items-center justify-center gap-xs rounded-button border border-hairline text-label-md text-ink hover:bg-surface-tint"><CreditCard size={16} /> {t("tender.card")}</button>
+          <button type="button" disabled={paying} onClick={onOnline} className="inline-flex h-11 items-center justify-center gap-xs rounded-button border border-brand text-label-md text-brand hover:bg-brand-soft disabled:opacity-50"><IndianRupee size={16} /> {t("tender.online")}</button>
         </div>
       </div>
     </Modal>
@@ -642,6 +649,7 @@ function TenderModal({ total, paying, onClose, onCash, onTender, onOnline }: { t
 }
 
 function HeldBillsModal({ listOpen, onRecall, onClose }: { listOpen: () => Promise<OpenSaleSummary[]>; onRecall: (id: number) => void; onClose: () => void }) {
+  const t = useTranslations("pos");
   const [bills, setBills] = useState<OpenSaleSummary[] | null>(null);
   useEffect(() => {
     let active = true;
@@ -652,20 +660,20 @@ function HeldBillsModal({ listOpen, onRecall, onClose }: { listOpen: () => Promi
     <Modal onClose={onClose}>
       <div className="w-[440px] max-w-full">
         <div className="flex items-center justify-between">
-          <h2 className="text-title-md text-ink">Held bills</h2>
+          <h2 className="text-title-md text-ink">{t("held.title")}</h2>
           <button type="button" onClick={onClose} className="text-muted hover:text-ink"><X size={18} /></button>
         </div>
         {bills == null ? (
-          <p className="py-xl text-center text-body-md text-muted">Loading…</p>
+          <p className="py-xl text-center text-body-md text-muted">{t("common.loading")}</p>
         ) : bills.length === 0 ? (
-          <p className="py-xl text-center text-body-md text-muted">No held bills.</p>
+          <p className="py-xl text-center text-body-md text-muted">{t("held.empty")}</p>
         ) : (
           <ul className="mt-md flex flex-col gap-px overflow-hidden rounded-lg border border-hairline">
             {bills.map((b) => (
               <li key={b.id}>
                 <button type="button" onClick={() => onRecall(b.id)} className="flex w-full items-center justify-between bg-canvas px-md py-sm text-left hover:bg-surface-tint">
-                  <span className="text-title-sm text-ink">{b.customerName ?? `Bill #${b.id}`}</span>
-                  <span className="text-body-sm text-muted">{b.lineCount} item{b.lineCount === 1 ? "" : "s"}</span>
+                  <span className="text-title-sm text-ink">{b.customerName ?? t("held.billNo", { id: b.id })}</span>
+                  <span className="text-body-sm text-muted">{t("totals.itemCount", { count: b.lineCount })}</span>
                 </button>
               </li>
             ))}
@@ -689,6 +697,7 @@ function Modal({ children, onClose }: { children: React.ReactNode; onClose: () =
  *  cashier lacks the `invoices:override` right for. On success it hands back a
  *  short-lived grant token that the caller replays with the original command. */
 function ManagerAuthModal({ onClose, onAuthorized }: { onClose: () => void; onAuthorized: (token: string) => void }) {
+  const t = useTranslations("pos");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -701,7 +710,7 @@ function ManagerAuthModal({ onClose, onAuthorized }: { onClose: () => void; onAu
       const grant = await authorizeOverride(email.trim(), password);
       onAuthorized(grant.token);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Authorisation failed.");
+      setError(e instanceof Error ? e.message : t("manager.authFailed"));
       setBusy(false);
     }
   };
@@ -710,12 +719,12 @@ function ManagerAuthModal({ onClose, onAuthorized }: { onClose: () => void; onAu
     <Modal onClose={onClose}>
       <div className="w-[400px] max-w-full">
         <div className="flex items-center justify-between gap-md">
-          <h2 className="flex items-center gap-sm text-title-md text-ink"><ShieldCheck size={18} /> Manager authorisation</h2>
+          <h2 className="flex items-center gap-sm text-title-md text-ink"><ShieldCheck size={18} /> {t("manager.title")}</h2>
           <button type="button" onClick={onClose} className="text-muted hover:text-ink"><X size={18} /></button>
         </div>
-        <p className="mt-xs text-body-sm text-muted">A manager must approve this action. Enter manager credentials below.</p>
+        <p className="mt-xs text-body-sm text-muted">{t("manager.description")}</p>
         {error ? <p className="mt-md rounded-button bg-error/10 px-md py-sm text-body-sm text-error">{error}</p> : null}
-        <label className="mt-lg block text-label-md text-muted">Manager email</label>
+        <label className="mt-lg block text-label-md text-muted">{t("manager.emailLabel")}</label>
         <input
           type="email"
           autoFocus
@@ -724,7 +733,7 @@ function ManagerAuthModal({ onClose, onAuthorized }: { onClose: () => void; onAu
           onKeyDown={(e) => { if (e.key === "Enter") void submit(); }}
           className="mt-xs h-10 w-full rounded-button border border-hairline px-md text-body-md text-ink focus-visible:border-brand focus-visible:outline-none"
         />
-        <label className="mt-md block text-label-md text-muted">Password</label>
+        <label className="mt-md block text-label-md text-muted">{t("manager.passwordLabel")}</label>
         <input
           type="password"
           value={password}
@@ -733,14 +742,14 @@ function ManagerAuthModal({ onClose, onAuthorized }: { onClose: () => void; onAu
           className="mt-xs h-10 w-full rounded-button border border-hairline px-md text-body-md text-ink focus-visible:border-brand focus-visible:outline-none"
         />
         <div className="mt-lg flex items-center justify-end gap-sm">
-          <button type="button" onClick={onClose} className="inline-flex h-10 items-center rounded-button border border-hairline px-lg text-label-md text-ink hover:bg-surface-tint">Cancel</button>
+          <button type="button" onClick={onClose} className="inline-flex h-10 items-center rounded-button border border-hairline px-lg text-label-md text-ink hover:bg-surface-tint">{t("common.cancel")}</button>
           <button
             type="button"
             disabled={busy || !email.trim() || !password}
             onClick={() => void submit()}
             className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-lg text-label-md text-white hover:bg-brand-strong disabled:bg-disabled"
           >
-            <ShieldCheck size={16} /> {busy ? "Authorising…" : "Authorise"}
+            <ShieldCheck size={16} /> {busy ? t("manager.authorising") : t("manager.authorise")}
           </button>
         </div>
       </div>
@@ -749,6 +758,7 @@ function ManagerAuthModal({ onClose, onAuthorized }: { onClose: () => void; onAu
 }
 
 function QuickAddForm({ code, onAdd, onCancel }: { code: string; onAdd: (v: { code: string; name: string; sellingPrice: number; taxPercent?: number; openingStock?: number }) => void; onCancel: () => void }) {
+  const t = useTranslations("pos");
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [tax, setTax] = useState("");
@@ -760,17 +770,17 @@ function QuickAddForm({ code, onAdd, onCancel }: { code: string; onAdd: (v: { co
       className="w-[440px] max-w-full"
       onSubmit={(e) => { e.preventDefault(); if (!valid) return; onAdd({ code, name: name.trim(), sellingPrice, taxPercent: tax ? Number(tax) : undefined, openingStock: stock ? Number(stock) : undefined }); }}
     >
-      <h2 className="text-title-md text-ink">New item · {code}</h2>
-      <p className="mt-xs text-body-sm text-muted">Not in the catalogue — add it and ring it up.</p>
+      <h2 className="text-title-md text-ink">{t("quickAdd.title", { code })}</h2>
+      <p className="mt-xs text-body-sm text-muted">{t("quickAdd.subtitle")}</p>
       <div className="mt-md grid grid-cols-2 gap-sm">
-        <input value={name} onChange={(e) => setName(e.target.value)} autoFocus placeholder="Name" className="col-span-2 h-10 rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
-        <input value={price} onChange={(e) => setPrice(e.target.value)} inputMode="decimal" placeholder="Price ₹" className="h-10 rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
-        <input value={tax} onChange={(e) => setTax(e.target.value)} inputMode="decimal" placeholder="GST %" className="h-10 rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
-        <input value={stock} onChange={(e) => setStock(e.target.value)} inputMode="decimal" placeholder="On hand" className="col-span-2 h-10 rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
+        <input value={name} onChange={(e) => setName(e.target.value)} autoFocus placeholder={t("quickAdd.namePlaceholder")} className="col-span-2 h-10 rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
+        <input value={price} onChange={(e) => setPrice(e.target.value)} inputMode="decimal" placeholder={t("quickAdd.pricePlaceholder")} className="h-10 rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
+        <input value={tax} onChange={(e) => setTax(e.target.value)} inputMode="decimal" placeholder={t("quickAdd.gstPlaceholder")} className="h-10 rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
+        <input value={stock} onChange={(e) => setStock(e.target.value)} inputMode="decimal" placeholder={t("quickAdd.onHandPlaceholder")} className="col-span-2 h-10 rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
       </div>
       <div className="mt-md flex items-center gap-sm">
-        <button type="submit" disabled={!valid} className="inline-flex h-10 items-center rounded-button bg-brand px-lg text-label-md text-white hover:bg-brand-strong disabled:bg-disabled">Add to cart</button>
-        <button type="button" onClick={onCancel} className="inline-flex h-10 items-center rounded-button border border-hairline px-lg text-label-md text-ink hover:bg-surface-tint">Cancel</button>
+        <button type="submit" disabled={!valid} className="inline-flex h-10 items-center rounded-button bg-brand px-lg text-label-md text-white hover:bg-brand-strong disabled:bg-disabled">{t("quickAdd.addToCart")}</button>
+        <button type="button" onClick={onCancel} className="inline-flex h-10 items-center rounded-button border border-hairline px-lg text-label-md text-ink hover:bg-surface-tint">{t("common.cancel")}</button>
       </div>
     </form>
   );
@@ -778,6 +788,7 @@ function QuickAddForm({ code, onAdd, onCancel }: { code: string; onAdd: (v: { co
 
 /** Per-line discount (₹ or quick %). Amount caps at the line's gross. */
 function LineDiscountModal({ line, onApply, onClose }: { line: SaleLine; onApply: (amount: number) => void; onClose: () => void }) {
+  const t = useTranslations("pos");
   const gross = line.unitPrice * line.quantity;
   const [text, setText] = useState(line.lineDiscount ? String(line.lineDiscount) : "");
   const apply = () => {
@@ -788,7 +799,7 @@ function LineDiscountModal({ line, onApply, onClose }: { line: SaleLine; onApply
     <Modal onClose={onClose}>
       <div className="w-[360px] max-w-full">
         <div className="flex items-center justify-between">
-          <h2 className="text-title-md text-ink">Line discount</h2>
+          <h2 className="text-title-md text-ink">{t("discount.lineTitle")}</h2>
           <button type="button" onClick={onClose} className="text-muted hover:text-ink"><X size={18} /></button>
         </div>
         <p className="mt-xs truncate text-body-sm text-muted">{line.name} · {formatINR2(gross)}</p>
@@ -798,16 +809,16 @@ function LineDiscountModal({ line, onApply, onClose }: { line: SaleLine; onApply
           onKeyDown={(e) => { if (e.key === "Enter") apply(); }}
           autoFocus
           inputMode="decimal"
-          placeholder="Discount ₹"
+          placeholder={t("discount.amountPlaceholder")}
           className="mt-md h-11 w-full rounded-input border border-hairline bg-canvas px-md text-body-md text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
         />
         <div className="mt-sm flex flex-wrap gap-sm">
           {[5, 10, 20].map((pct) => (
             <button key={pct} type="button" onClick={() => setText((Math.round(gross * pct) / 100).toFixed(2))} className="inline-flex h-9 items-center rounded-button border border-hairline px-md text-label-md text-ink hover:bg-surface-tint">{pct}%</button>
           ))}
-          <button type="button" onClick={() => setText("")} className="inline-flex h-9 items-center rounded-button border border-hairline px-md text-label-md text-muted hover:bg-surface-tint">Clear</button>
+          <button type="button" onClick={() => setText("")} className="inline-flex h-9 items-center rounded-button border border-hairline px-md text-label-md text-muted hover:bg-surface-tint">{t("discount.clear")}</button>
         </div>
-        <button type="button" onClick={apply} className="mt-md inline-flex h-10 items-center rounded-button bg-brand px-lg text-label-md text-white hover:bg-brand-strong">Apply</button>
+        <button type="button" onClick={apply} className="mt-md inline-flex h-10 items-center rounded-button bg-brand px-lg text-label-md text-white hover:bg-brand-strong">{t("discount.apply")}</button>
       </div>
     </Modal>
   );
@@ -838,17 +849,19 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 function ConnBadge({ status }: { status: ConnStatus }) {
-  const map: Record<ConnStatus, { label: string; cls: string; icon: typeof Wifi; spin?: boolean }> = {
-    live: { label: "Live", cls: "bg-success-soft text-success", icon: Wifi },
-    connecting: { label: "Connecting", cls: "bg-surface-tint text-muted", icon: Loader2, spin: true },
-    reconnecting: { label: "Reconnecting", cls: "bg-warning-soft text-warning", icon: Loader2, spin: true },
-    offline: { label: "Offline", cls: "bg-error-soft text-error", icon: WifiOff },
+  const t = useTranslations("pos");
+  const map: Record<ConnStatus, { labelKey: string; cls: string; icon: typeof Wifi; spin?: boolean }> = {
+    live: { labelKey: "conn.live", cls: "bg-success-soft text-success", icon: Wifi },
+    connecting: { labelKey: "conn.connecting", cls: "bg-surface-tint text-muted", icon: Loader2, spin: true },
+    reconnecting: { labelKey: "conn.reconnecting", cls: "bg-warning-soft text-warning", icon: Loader2, spin: true },
+    offline: { labelKey: "conn.offline", cls: "bg-error-soft text-error", icon: WifiOff },
   };
-  const { label, cls, icon: Icon, spin } = map[status];
-  return <span className={`inline-flex h-7 items-center gap-xs rounded-button px-sm text-label-sm ${cls}`}><Icon size={13} className={spin ? "animate-spin" : ""} /> {label}</span>;
+  const { labelKey, cls, icon: Icon, spin } = map[status];
+  return <span className={`inline-flex h-7 items-center gap-xs rounded-button px-sm text-label-sm ${cls}`}><Icon size={13} className={spin ? "animate-spin" : ""} /> {t(labelKey)}</span>;
 }
 
 function PaidScreen({ title, sub, total, invoiceId }: { title: string; sub: string; total: number; invoiceId?: number }) {
+  const t = useTranslations("pos");
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Enter") window.location.reload(); };
     window.addEventListener("keydown", onKey);
@@ -861,9 +874,9 @@ function PaidScreen({ title, sub, total, invoiceId }: { title: string; sub: stri
       <p className="mt-xs text-body-md text-muted">{sub} · {formatINR2(total)}</p>
       <div className="mt-xl flex items-center gap-sm">
         {invoiceId != null ? (
-          <button type="button" onClick={() => window.open(`/api/invoices/${invoiceId}/pdf`, "_blank")} className="inline-flex h-12 items-center gap-sm rounded-button border border-hairline px-lg text-title-sm text-ink hover:bg-surface-tint"><Printer size={18} /> Print receipt</button>
+          <button type="button" onClick={() => window.open(`/api/invoices/${invoiceId}/pdf`, "_blank")} className="inline-flex h-12 items-center gap-sm rounded-button border border-hairline px-lg text-title-sm text-ink hover:bg-surface-tint"><Printer size={18} /> {t("paid.printReceipt")}</button>
         ) : null}
-        <button type="button" onClick={() => window.location.reload()} className="inline-flex h-12 items-center rounded-button bg-brand px-xl text-title-sm font-bold text-white hover:bg-brand-strong">New sale <kbd className="ml-sm opacity-80">Enter</kbd></button>
+        <button type="button" onClick={() => window.location.reload()} className="inline-flex h-12 items-center rounded-button bg-brand px-xl text-title-sm font-bold text-white hover:bg-brand-strong">{t("paid.newSale")} <kbd className="ml-sm opacity-80">Enter</kbd></button>
       </div>
     </div>
   );
@@ -901,6 +914,7 @@ function BillDiscountInput({ value, onCommit, disabled }: { value: number; onCom
 
 /** Add an item without a barcode: type → pick from catalogue search. */
 function SearchModal({ search, onAdd, onClose }: { search: (term: string) => Promise<import("./types").ProductSearchResult[]>; onAdd: (productId: number) => void; onClose: () => void }) {
+  const t = useTranslations("pos");
   const [term, setTerm] = useState("");
   const [results, setResults] = useState<import("./types").ProductSearchResult[]>([]);
   const [searching, setSearching] = useState(false);
@@ -926,22 +940,22 @@ function SearchModal({ search, onAdd, onClose }: { search: (term: string) => Pro
     <Modal onClose={onClose}>
       <div className="w-[460px] max-w-full">
         <div className="flex items-center justify-between">
-          <h2 className="flex items-center gap-sm text-title-md text-ink"><Search size={18} /> Find item</h2>
+          <h2 className="flex items-center gap-sm text-title-md text-ink"><Search size={18} /> {t("search.title")}</h2>
           <button type="button" onClick={onClose} className="text-muted hover:text-ink"><X size={18} /></button>
         </div>
-        <input value={term} onChange={(e) => onTermChange(e.target.value)} autoFocus placeholder="Type a product name or SKU" className="mt-md h-11 w-full rounded-input border border-hairline bg-canvas px-md text-body-md text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
+        <input value={term} onChange={(e) => onTermChange(e.target.value)} autoFocus placeholder={t("search.placeholder")} className="mt-md h-11 w-full rounded-input border border-hairline bg-canvas px-md text-body-md text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
         <ul className="mt-sm flex max-h-72 flex-col gap-px overflow-y-auto overflow-x-hidden rounded-md border border-hairline">
           {searching && results.length === 0 ? (
-            <li className="px-md py-sm text-body-sm text-muted">Searching…</li>
+            <li className="px-md py-sm text-body-sm text-muted">{t("search.searching")}</li>
           ) : results.length === 0 ? (
-            <li className="px-md py-sm text-body-sm text-subtle">{term.trim() ? "No matches." : "Start typing to search."}</li>
+            <li className="px-md py-sm text-body-sm text-subtle">{term.trim() ? t("search.noMatches") : t("search.startTyping")}</li>
           ) : (
             results.map((p) => (
               <li key={p.id}>
                 <button type="button" onClick={() => onAdd(p.id)} className="flex w-full items-center justify-between bg-canvas px-md py-sm text-left hover:bg-surface-tint">
                   <span className="min-w-0">
                     <span className="block truncate text-title-sm text-ink">{p.name}</span>
-                    <span className="block truncate text-body-sm text-muted">{p.sku} · stock {p.stock}</span>
+                    <span className="block truncate text-body-sm text-muted">{p.sku} · {t("search.stock", { stock: p.stock })}</span>
                   </span>
                   <span className="ml-sm shrink-0 text-title-sm font-bold text-ink">{formatINR2(p.sellingPrice)}</span>
                 </button>
@@ -949,7 +963,7 @@ function SearchModal({ search, onAdd, onClose }: { search: (term: string) => Pro
             ))
           )}
         </ul>
-        <p className="mt-sm text-body-sm text-subtle">Tap an item to add it to the bill.</p>
+        <p className="mt-sm text-body-sm text-subtle">{t("search.tapToAdd")}</p>
       </div>
     </Modal>
   );

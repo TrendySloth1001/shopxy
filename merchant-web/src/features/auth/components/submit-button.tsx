@@ -1,6 +1,7 @@
 "use client";
 
 import type { ButtonHTMLAttributes } from "react";
+import { useTranslations } from "next-intl";
 
 /**
  * Primary action button. Brand fill, restrained radius, clear disabled and
@@ -17,6 +18,7 @@ export function SubmitButton({
   /** Fully-rounded pill shape — used on the (curved) auth screens. */
   pill?: boolean;
 }) {
+  const t = useTranslations("auth");
   return (
     <button
       type="submit"
@@ -27,7 +29,7 @@ export function SubmitButton({
       } bg-brand px-lg text-label-lg text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:bg-disabled`}
       {...props}
     >
-      {loading ? "Please wait…" : children}
+      {loading ? t("common.pleaseWait") : children}
     </button>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Plus, Pencil, Trash2, Sparkles, Tag } from "lucide-react";
 import { Divider } from "@/shared/ui/divider";
 import {
@@ -17,7 +18,7 @@ import {
 } from "@/features/custom-fields/api";
 import {
   CUSTOM_FIELD_TYPES,
-  CUSTOM_FIELD_TYPE_LABELS,
+  CUSTOM_FIELD_TYPE_LABEL_KEYS,
   type CustomFieldTree,
   type CustomFieldType,
   type Definition,
@@ -34,6 +35,7 @@ type FieldEditor =
 type SectionEditor = { mode: "create" } | { mode: "edit"; section: Section } | null;
 
 export default function CustomFieldsPage() {
+  const t = useTranslations("customFields");
   const [tree, setTree] = useState<CustomFieldTree | null>(null);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,7 +61,7 @@ export default function CustomFieldsPage() {
         setTemplates(tpl);
         setError(null);
       } catch (e) {
-        if (active) setError(e instanceof Error ? e.message : "Could not load custom fields.");
+        if (active) setError(e instanceof Error ? e.message : t("errors.load"));
       } finally {
         if (active) setLoading(false);
       }
@@ -67,7 +69,7 @@ export default function CustomFieldsPage() {
     return () => {
       active = false;
     };
-  }, [nonce]);
+  }, [nonce, t]);
 
   const sections = tree?.sections ?? [];
 
@@ -78,7 +80,7 @@ export default function CustomFieldsPage() {
       await applyTemplate(id);
       reload();
     } catch (e) {
-      setActionError(e instanceof Error ? e.message : "Could not apply the template.");
+      setActionError(e instanceof Error ? e.message : t("errors.applyTemplate"));
     } finally {
       setBusy(false);
     }
@@ -93,7 +95,7 @@ export default function CustomFieldsPage() {
       setFieldEditor(null);
       reload();
     } catch (e) {
-      setActionError(e instanceof Error ? e.message : "Could not save the field.");
+      setActionError(e instanceof Error ? e.message : t("errors.saveField"));
     } finally {
       setBusy(false);
     }
@@ -106,7 +108,7 @@ export default function CustomFieldsPage() {
       await deleteDefinition(id);
       reload();
     } catch (e) {
-      setActionError(e instanceof Error ? e.message : "Could not delete the field.");
+      setActionError(e instanceof Error ? e.message : t("errors.deleteField"));
     } finally {
       setBusy(false);
     }
@@ -121,7 +123,7 @@ export default function CustomFieldsPage() {
       setSectionEditor(null);
       reload();
     } catch (e) {
-      setActionError(e instanceof Error ? e.message : "Could not save the section.");
+      setActionError(e instanceof Error ? e.message : t("errors.saveSection"));
     } finally {
       setBusy(false);
     }
@@ -134,7 +136,7 @@ export default function CustomFieldsPage() {
       await deleteSection(id);
       reload();
     } catch (e) {
-      setActionError(e instanceof Error ? e.message : "Could not delete the section.");
+      setActionError(e instanceof Error ? e.message : t("errors.deleteSection"));
     } finally {
       setBusy(false);
     }
@@ -147,10 +149,9 @@ export default function CustomFieldsPage() {
     <div className="w-full px-lg py-xxl md:px-xxl">
       <div className="flex flex-wrap items-start justify-between gap-md">
         <div>
-          <h1 className="text-headline-md text-ink">Custom fields</h1>
+          <h1 className="text-headline-md text-ink">{t("list.title")}</h1>
           <p className="mt-xs text-body-md text-muted">
-            Extra product attributes — grouped into sections, reused across your
-            catalogue.
+            {t("list.subtitle")}
           </p>
         </div>
         <div className="flex flex-wrap gap-sm">
@@ -159,14 +160,14 @@ export default function CustomFieldsPage() {
             onClick={() => setSectionEditor({ mode: "create" })}
             className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
           >
-            <Plus size={16} /> Section
+            <Plus size={16} /> {t("actions.section")}
           </button>
           <button
             type="button"
             onClick={() => setFieldEditor({ mode: "create", sectionId: null })}
             className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-lg text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
           >
-            <Plus size={18} /> New field
+            <Plus size={18} /> {t("actions.newField")}
           </button>
         </div>
       </div>
@@ -181,7 +182,7 @@ export default function CustomFieldsPage() {
       {templates.length > 0 ? (
         <div className="mt-xl">
           <p className="text-label-md uppercase tracking-wide text-subtle">
-            Start from a template
+            {t("templates.heading")}
           </p>
           <div className="mt-sm flex flex-wrap gap-sm">
             {templates.map((t) => (
@@ -214,16 +215,15 @@ export default function CustomFieldsPage() {
             onClick={reload}
             className="inline-flex h-10 items-center rounded-button border border-hairline px-lg text-label-md text-ink transition-colors hover:bg-surface-tint"
           >
-            Try again
+            {t("actions.tryAgain")}
           </button>
         </div>
       ) : isEmpty ? (
         <div className="flex flex-col items-center gap-sm py-massive text-center">
           <Tag size={28} className="text-subtle" />
-          <p className="text-title-md text-ink">No custom fields yet</p>
+          <p className="text-title-md text-ink">{t("empty.title")}</p>
           <p className="max-w-content text-body-md text-muted">
-            Apply a template above, or create your first field to capture details
-            like warranty, material or voltage.
+            {t("empty.body")}
           </p>
         </div>
       ) : (
@@ -244,7 +244,7 @@ export default function CustomFieldsPage() {
           ))}
           {(tree?.ungrouped.length ?? 0) > 0 ? (
             <FieldGroup
-              title="Ungrouped"
+              title={t("group.ungrouped")}
               fields={tree?.ungrouped ?? []}
               onAddField={() => setFieldEditor({ mode: "create", sectionId: null })}
               onEditField={(f) => setFieldEditor({ mode: "edit", field: f })}
@@ -299,7 +299,8 @@ function FieldGroup({
   canEdit: boolean;
   busy: boolean;
 }) {
-  const lockTitle = "You don't have access. Ask the shop owner.";
+  const t = useTranslations("customFields");
+  const lockTitle = t("lockedHint");
   return (
     <section>
       <div className="flex items-center justify-between gap-md">
@@ -312,14 +313,14 @@ function FieldGroup({
             title={canEdit ? undefined : lockTitle}
             className="inline-flex h-8 items-center gap-xs rounded-button px-sm text-label-md text-muted transition-colors hover:bg-surface-tint hover:text-ink disabled:text-disabled disabled:hover:bg-transparent"
           >
-            <Plus size={14} /> Field
+            <Plus size={14} /> {t("actions.field")}
           </button>
           {onEditSection ? (
             <button
               type="button"
               onClick={onEditSection}
               disabled={!canEdit}
-              aria-label="Rename section"
+              aria-label={t("actions.renameSection")}
               title={canEdit ? undefined : lockTitle}
               className="rounded-md p-xs text-muted transition-colors hover:bg-surface-tint hover:text-ink disabled:text-disabled disabled:hover:bg-transparent"
             >
@@ -331,7 +332,7 @@ function FieldGroup({
               type="button"
               onClick={onDeleteSection}
               disabled={busy || !canEdit}
-              aria-label="Delete section"
+              aria-label={t("actions.deleteSection")}
               title={canEdit ? undefined : lockTitle}
               className="rounded-md p-xs text-muted transition-colors hover:bg-error-soft hover:text-error disabled:text-disabled disabled:hover:bg-transparent"
             >
@@ -341,7 +342,7 @@ function FieldGroup({
         </div>
       </div>
       {fields.length === 0 ? (
-        <p className="mt-sm text-body-sm text-subtle">No fields in this section.</p>
+        <p className="mt-sm text-body-sm text-subtle">{t("group.noFields")}</p>
       ) : (
         <ul className="mt-sm">
           {fields.map((f) => (
@@ -354,21 +355,25 @@ function FieldGroup({
                   {f.name}
                   {!f.isActive ? (
                     <span className="ml-sm rounded-full bg-surface-tint px-sm py-px text-body-sm text-muted">
-                      Hidden
+                      {t("field.hiddenBadge")}
                     </span>
                   ) : null}
                 </p>
                 <p className="truncate text-body-sm text-muted">
-                  {CUSTOM_FIELD_TYPE_LABELS[f.type as CustomFieldType] ?? f.type}
+                  {CUSTOM_FIELD_TYPE_LABEL_KEYS[f.type as CustomFieldType]
+                    ? t(CUSTOM_FIELD_TYPE_LABEL_KEYS[f.type as CustomFieldType])
+                    : f.type}
                   {f.unitSuffix ? ` · ${f.unitSuffix}` : ""}
-                  {f.options.length > 0 ? ` · ${f.options.length} options` : ""}
+                  {f.options.length > 0
+                    ? ` · ${t("field.optionsCount", { count: f.options.length })}`
+                    : ""}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => onEditField(f)}
                 disabled={!canEdit}
-                aria-label="Edit field"
+                aria-label={t("actions.editField")}
                 title={canEdit ? undefined : lockTitle}
                 className="rounded-md p-xs text-muted transition-colors hover:bg-surface-tint hover:text-ink disabled:text-disabled disabled:hover:bg-transparent"
               >
@@ -378,7 +383,7 @@ function FieldGroup({
                 type="button"
                 onClick={() => onDeleteField(f.id)}
                 disabled={busy || !canEdit}
-                aria-label="Delete field"
+                aria-label={t("actions.deleteField")}
                 title={canEdit ? undefined : lockTitle}
                 className="rounded-md p-xs text-muted transition-colors hover:bg-error-soft hover:text-error disabled:text-disabled disabled:hover:bg-transparent"
               >
@@ -405,6 +410,7 @@ function FieldEditorPanel({
   onCancel: () => void;
   onSave: (input: DefinitionInput, editId?: number) => void;
 }) {
+  const t = useTranslations("customFields");
   const editing = editor.mode === "edit" ? editor.field : null;
   const [name, setName] = useState(editing?.name ?? "");
   const [type, setType] = useState<CustomFieldType>(
@@ -439,28 +445,31 @@ function FieldEditorPanel({
   }
 
   return (
-    <ModalShell title={editing ? "Edit field" : "New field"} onClose={onCancel}>
+    <ModalShell
+      title={editing ? t("fieldForm.editTitle") : t("fieldForm.newTitle")}
+      onClose={onCancel}
+    >
       <label className="flex flex-col gap-xs">
-        <span className="text-label-md text-muted">Field name</span>
+        <span className="text-label-md text-muted">{t("fieldForm.nameLabel")}</span>
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
           autoFocus
-          placeholder="e.g. Warranty period"
+          placeholder={t("fieldForm.namePlaceholder")}
           className="h-10 rounded-input border border-hairline bg-field px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
         />
       </label>
 
       <label className="flex flex-col gap-xs">
-        <span className="text-label-md text-muted">Type</span>
+        <span className="text-label-md text-muted">{t("fieldForm.typeLabel")}</span>
         <select
           value={type}
           onChange={(e) => setType(e.target.value as CustomFieldType)}
           className="h-10 rounded-input border border-hairline bg-field px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
         >
-          {CUSTOM_FIELD_TYPES.map((t) => (
-            <option key={t} value={t}>
-              {CUSTOM_FIELD_TYPE_LABELS[t]}
+          {CUSTOM_FIELD_TYPES.map((ft) => (
+            <option key={ft} value={ft}>
+              {t(CUSTOM_FIELD_TYPE_LABEL_KEYS[ft])}
             </option>
           ))}
         </select>
@@ -468,11 +477,11 @@ function FieldEditorPanel({
 
       {type === "NUMBER" ? (
         <label className="flex flex-col gap-xs">
-          <span className="text-label-md text-muted">Unit suffix (optional)</span>
+          <span className="text-label-md text-muted">{t("fieldForm.unitSuffixLabel")}</span>
           <input
             value={unitSuffix}
             onChange={(e) => setUnitSuffix(e.target.value)}
-            placeholder="e.g. months, kg, V"
+            placeholder={t("fieldForm.unitSuffixPlaceholder")}
             className="h-10 rounded-input border border-hairline bg-field px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
           />
         </label>
@@ -480,25 +489,25 @@ function FieldEditorPanel({
 
       {type === "DROPDOWN" ? (
         <label className="flex flex-col gap-xs">
-          <span className="text-label-md text-muted">Options (one per line)</span>
+          <span className="text-label-md text-muted">{t("fieldForm.optionsLabel")}</span>
           <textarea
             value={optionsText}
             onChange={(e) => setOptionsText(e.target.value)}
             rows={4}
-            placeholder={"Small\nMedium\nLarge"}
+            placeholder={t("fieldForm.optionsPlaceholder")}
             className="rounded-input border border-hairline bg-field px-md py-sm text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
           />
         </label>
       ) : null}
 
       <label className="flex flex-col gap-xs">
-        <span className="text-label-md text-muted">Section</span>
+        <span className="text-label-md text-muted">{t("fieldForm.sectionLabel")}</span>
         <select
           value={sectionId}
           onChange={(e) => setSectionId(e.target.value)}
           className="h-10 rounded-input border border-hairline bg-field px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
         >
-          <option value="">Ungrouped</option>
+          <option value="">{t("group.ungrouped")}</option>
           {sections.map((s) => (
             <option key={s.id} value={s.id}>
               {s.name}
@@ -510,7 +519,7 @@ function FieldEditorPanel({
       <ModalActions
         busy={busy}
         disabled={!name.trim()}
-        confirmLabel={editing ? "Save field" : "Create field"}
+        confirmLabel={editing ? t("fieldForm.saveConfirm") : t("fieldForm.createConfirm")}
         onCancel={onCancel}
         onConfirm={submit}
       />
@@ -529,24 +538,28 @@ function SectionEditorPanel({
   onCancel: () => void;
   onSave: (name: string, editId?: number) => void;
 }) {
+  const t = useTranslations("customFields");
   const editing = editor.mode === "edit" ? editor.section : null;
   const [name, setName] = useState(editing?.name ?? "");
   return (
-    <ModalShell title={editing ? "Rename section" : "New section"} onClose={onCancel}>
+    <ModalShell
+      title={editing ? t("sectionForm.renameTitle") : t("sectionForm.newTitle")}
+      onClose={onCancel}
+    >
       <label className="flex flex-col gap-xs">
-        <span className="text-label-md text-muted">Section name</span>
+        <span className="text-label-md text-muted">{t("sectionForm.nameLabel")}</span>
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
           autoFocus
-          placeholder="e.g. Dimensions"
+          placeholder={t("sectionForm.namePlaceholder")}
           className="h-10 rounded-input border border-hairline bg-field px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
         />
       </label>
       <ModalActions
         busy={busy}
         disabled={!name.trim()}
-        confirmLabel={editing ? "Save" : "Create section"}
+        confirmLabel={editing ? t("sectionForm.saveConfirm") : t("sectionForm.createConfirm")}
         onCancel={onCancel}
         onConfirm={() => name.trim() && onSave(name.trim(), editing?.id)}
       />
@@ -592,6 +605,7 @@ function ModalActions({
   onCancel: () => void;
   onConfirm: () => void;
 }) {
+  const t = useTranslations("customFields");
   return (
     <div className="mt-sm flex justify-end gap-md">
       <button
@@ -600,7 +614,7 @@ function ModalActions({
         disabled={busy}
         className="inline-flex h-10 items-center rounded-button px-md text-label-md text-muted transition-colors hover:text-ink disabled:text-disabled"
       >
-        Cancel
+        {t("actions.cancel")}
       </button>
       <button
         type="button"
@@ -608,7 +622,7 @@ function ModalActions({
         disabled={busy || disabled}
         className="inline-flex h-10 items-center rounded-button bg-brand px-lg text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:bg-disabled"
       >
-        {busy ? "Saving…" : confirmLabel}
+        {busy ? t("actions.saving") : confirmLabel}
       </button>
     </div>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Check, ChevronDown, Search } from "lucide-react";
 
 export type ComboOption = { value: string; label: string; hint?: string };
@@ -17,9 +18,9 @@ export function ComboSelect({
   value,
   onChange,
   options,
-  placeholder = "Select…",
+  placeholder,
   searchable = false,
-  emptyText = "Nothing to choose from.",
+  emptyText,
   helper,
   disabled,
 }: {
@@ -33,6 +34,9 @@ export function ComboSelect({
   helper?: string;
   disabled?: boolean;
 }) {
+  const t = useTranslations("common");
+  const placeholderText = placeholder ?? t("comboSelect.placeholder");
+  const emptyMessage = emptyText ?? t("comboSelect.empty");
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const rootRef = useRef<HTMLDivElement>(null);
@@ -79,7 +83,7 @@ export function ComboSelect({
           }`}
         >
           <span className={`min-w-0 flex-1 truncate ${selected ? "text-ink" : "text-subtle"}`}>
-            {selected ? selected.label : placeholder}
+            {selected ? selected.label : placeholderText}
           </span>
           <ChevronDown
             size={16}
@@ -99,14 +103,14 @@ export function ComboSelect({
                   autoFocus
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search…"
+                  placeholder={t("search")}
                   className="h-8 w-full bg-transparent text-body-sm text-ink outline-none placeholder:text-subtle"
                 />
               </div>
             ) : null}
 
             {filtered.length === 0 ? (
-              <p className="px-md py-sm text-body-sm text-subtle">{emptyText}</p>
+              <p className="px-md py-sm text-body-sm text-subtle">{emptyMessage}</p>
             ) : (
               filtered.map((o) => {
                 const on = o.value === value;

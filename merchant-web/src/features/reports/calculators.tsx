@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Search, X, Plus, Check, FileText, Send, Download } from "lucide-react";
 import { formatINR2 } from "@/shared/money";
 import { gstFromInclusive } from "@/features/products/gst";
@@ -64,6 +65,7 @@ function discountOf(base: number, value: string, unit: Unit): number {
 }
 
 export function CalculatorSuite({ quotationId }: { quotationId?: number } = {}) {
+  const t = useTranslations("reports");
   const topRef = useRef<HTMLDivElement>(null);
   const autoLoaded = useRef(false);
 
@@ -160,7 +162,7 @@ export function CalculatorSuite({ quotationId }: { quotationId?: number } = {}) 
     try {
       await importQuotation(await getQuotation(id));
     } catch (e) {
-      setSendMsg({ err: e instanceof Error ? e.message : "Could not load the quotation." });
+      setSendMsg({ err: e instanceof Error ? e.message : t("calc.loadQuoteError") });
     }
   }
 
@@ -217,12 +219,12 @@ export function CalculatorSuite({ quotationId }: { quotationId?: number } = {}) 
   async function persistQuote(): Promise<Quotation | null> {
     const items = buildItems();
     if (items.length === 0) {
-      setSendMsg({ err: "Add at least one product with a price and quantity." });
+      setSendMsg({ err: t("calc.needProduct") });
       return null;
     }
     const requested = quote?.status === "REQUESTED";
     if (!requested && !party) {
-      setSendMsg({ err: "Choose a customer first." });
+      setSendMsg({ err: t("calc.chooseCustomerFirst") });
       return null;
     }
     setSending(true);
@@ -240,7 +242,7 @@ export function CalculatorSuite({ quotationId }: { quotationId?: number } = {}) 
       setQuote(saved);
       return saved;
     } catch (e) {
-      setSendMsg({ err: e instanceof Error ? e.message : "Could not save the quotation." });
+      setSendMsg({ err: e instanceof Error ? e.message : t("calc.saveError") });
       return null;
     } finally {
       setSending(false);
@@ -250,7 +252,7 @@ export function CalculatorSuite({ quotationId }: { quotationId?: number } = {}) 
   async function send() {
     const saved = await persistQuote();
     if (saved) {
-      setSendMsg({ ok: `Quotation ${saved.quotationNo} sent to ${saved.party?.name ?? "the customer"}.` });
+      setSendMsg({ ok: t("calc.sentMsg", { no: saved.quotationNo, name: saved.party?.name ?? t("calc.theCustomer") }) });
     }
   }
 
@@ -302,26 +304,25 @@ export function CalculatorSuite({ quotationId }: { quotationId?: number } = {}) 
     <div ref={topRef} className="flex flex-col gap-xl lg:flex-row lg:items-start lg:gap-xxl">
       {/* ── Calculator ─────────────────────────────────────────────────── */}
       <section className="min-w-0 lg:flex-1">
-        <h2 className="text-headline-sm text-ink">Pricing &amp; profit calculator</h2>
+        <h2 className="text-headline-sm text-ink">{t("calc.title")}</h2>
         <p className="mt-xs text-body-md text-muted">
-          Add products on the right, then set quantity, GST and discount per line — totals, GST,
-          profit and margin update live.
+          {t("calc.blurb")}
         </p>
 
         {/* Line items */}
         <div className="mt-lg">
           {lines.length === 0 ? (
             <p className="rounded-md border border-dashed border-hairline px-md py-xl text-center text-body-sm text-muted">
-              No products yet — add some from the list on the right.
+              {t("calc.noProductsYet")}
             </p>
           ) : (
             <div>
               <div className="hidden items-center gap-sm border-b border-hairline pb-sm text-label-md uppercase tracking-wide text-subtle md:flex">
-                <span className="flex-1">Product</span>
-                <span className="w-16 text-center">GST</span>
-                <span className="w-16 text-center">Qty</span>
-                <span className="w-20 text-center">Disc</span>
-                <span className="w-24 text-right">Line total</span>
+                <span className="flex-1">{t("calc.colProduct")}</span>
+                <span className="w-16 text-center">{t("calc.colGst")}</span>
+                <span className="w-16 text-center">{t("calc.colQty")}</span>
+                <span className="w-20 text-center">{t("calc.colDisc")}</span>
+                <span className="w-24 text-right">{t("calc.colLineTotal")}</span>
                 <span className="w-6" />
               </div>
               {lines.map((l) => (
@@ -343,18 +344,18 @@ export function CalculatorSuite({ quotationId }: { quotationId?: number } = {}) 
         {/* Controls */}
         <div className="mt-lg flex flex-wrap items-end gap-x-xl gap-y-md">
           <div className="flex flex-col gap-xs">
-            <span className="text-label-md text-muted">Supply</span>
+            <span className="text-label-md text-muted">{t("calc.supply")}</span>
             <Choice
               value={interState ? "inter" : "intra"}
               onChange={(v) => setInterState(v === "inter")}
               options={[
-                { value: "intra", label: "Within state" },
-                { value: "inter", label: "Inter-state" },
+                { value: "intra", label: t("calc.withinState") },
+                { value: "inter", label: t("calc.interState") },
               ]}
             />
           </div>
           <div className="flex flex-col gap-xs">
-            <span className="text-label-md text-muted">Discount in</span>
+            <span className="text-label-md text-muted">{t("calc.discountIn")}</span>
             <Choice
               value={discUnit}
               onChange={(v) => setDiscUnit(v as Unit)}
@@ -365,8 +366,8 @@ export function CalculatorSuite({ quotationId }: { quotationId?: number } = {}) 
             />
           </div>
           <div className="flex flex-col gap-xs">
-            <span className="text-label-md text-muted">Overall discount</span>
-            <DiscInput value={overallStr} onChange={setOverallStr} unit={discUnit} ariaLabel="Overall discount" className="w-28" />
+            <span className="text-label-md text-muted">{t("calc.overallDiscount")}</span>
+            <DiscInput value={overallStr} onChange={setOverallStr} unit={discUnit} ariaLabel={t("calc.overallDiscount")} className="w-28" />
           </div>
         </div>
 
@@ -374,51 +375,51 @@ export function CalculatorSuite({ quotationId }: { quotationId?: number } = {}) 
         <div className="mt-xl border-t border-hairline pt-xl">
           <div className="flex flex-wrap items-end justify-between gap-lg">
             <div className="min-w-0">
-              <p className="text-label-md uppercase tracking-wide text-subtle">Grand total · incl. GST</p>
+              <p className="text-label-md uppercase tracking-wide text-subtle">{t("calc.grandTotalLabel")}</p>
               <p className="mt-xs text-headline-md tabular-nums text-ink">{formatINR2(grandTotal)}</p>
               <p className="mt-xs text-body-sm text-subtle">
-                {lines.length} {lines.length === 1 ? "product" : "products"} · {fmtNum(totalQty)} qty
-                {totalDisc > 0 ? ` · ${formatINR2(totalDisc)} off` : ""}
+                {t("calc.productsQty", { count: lines.length, qty: fmtNum(totalQty) })}
+                {totalDisc > 0 ? t("calc.offSuffix", { amount: formatINR2(totalDisc) }) : ""}
               </p>
             </div>
             <div className="flex flex-wrap gap-x-xl gap-y-md">
-              <Kpi label="Profit" value={formatINR2(totalProfit)} tone={profitTone} />
-              <Kpi label="Margin" value={fmtPct(margin)} tone={profitTone} />
-              <Kpi label="GST" value={formatINR2(finalGst)} />
+              <Kpi label={t("calc.profit")} value={formatINR2(totalProfit)} tone={profitTone} />
+              <Kpi label={t("calc.margin")} value={fmtPct(margin)} tone={profitTone} />
+              <Kpi label={t("calc.gst")} value={formatINR2(finalGst)} />
             </div>
           </div>
 
           <div className="mt-xl grid grid-cols-1 gap-x-xxl gap-y-xl sm:grid-cols-2">
-            <Block label="Total">
-              <R label="Gross subtotal" hint="incl. GST" value={formatINR2(grossIncl)} />
+            <Block label={t("calc.blockTotal")}>
+              <R label={t("calc.grossSubtotal")} hint={t("calc.inclGst")} value={formatINR2(grossIncl)} />
               {lineDiscTotal > 0 ? (
-                <R label="Line discounts" value={`− ${formatINR2(lineDiscTotal)}`} tone="success" />
+                <R label={t("calc.lineDiscounts")} value={`− ${formatINR2(lineDiscTotal)}`} tone="success" />
               ) : null}
               {overallDisc > 0 ? (
-                <R label="Overall discount" value={`− ${formatINR2(overallDisc)}`} tone="success" />
+                <R label={t("calc.overallDiscount")} value={`− ${formatINR2(overallDisc)}`} tone="success" />
               ) : null}
-              <Total label="Grand total (incl. GST)" value={formatINR2(grandTotal)} />
+              <Total label={t("calc.grandTotalInclGst")} value={formatINR2(grandTotal)} />
             </Block>
 
-            <Block label={`GST · ${interState ? "inter-state" : "within state"}`}>
-              <R label="Subtotal" hint="taxable, ex-GST" value={formatINR2(finalTaxable)} />
+            <Block label={interState ? t("calc.blockGstInter") : t("calc.blockGstIntra")}>
+              <R label={t("calc.subtotal")} hint={t("calc.taxableExGst")} value={formatINR2(finalTaxable)} />
               {interState ? (
-                <R label="IGST" value={formatINR2(igst)} />
+                <R label={t("gst.igst")} value={formatINR2(igst)} />
               ) : (
                 <>
-                  <R label="CGST" value={formatINR2(cgst)} />
-                  <R label="SGST" value={formatINR2(cgst)} />
+                  <R label={t("gst.cgst")} value={formatINR2(cgst)} />
+                  <R label={t("gst.sgst")} value={formatINR2(cgst)} />
                 </>
               )}
-              <Total label="GST total" value={formatINR2(finalGst)} />
+              <Total label={t("calc.gstTotal")} value={formatINR2(finalGst)} />
             </Block>
 
-            <Block label="Profit">
-              <R label="Cost of goods" value={formatINR2(totalCost)} />
-              <R label="Revenue" hint="incl. GST" value={formatINR2(grandTotal)} />
-              <R label="Profit" value={formatINR2(totalProfit)} strong tone={profitTone} />
-              <R label="Markup" hint="return on cost" value={fmtPct(markup)} />
-              <Total label="Profit margin" value={fmtPct(margin)} tone={profitTone} />
+            <Block label={t("calc.profit")}>
+              <R label={t("calc.costOfGoods")} value={formatINR2(totalCost)} />
+              <R label={t("calc.revenue")} hint={t("calc.inclGst")} value={formatINR2(grandTotal)} />
+              <R label={t("calc.profit")} value={formatINR2(totalProfit)} strong tone={profitTone} />
+              <R label={t("calc.markup")} hint={t("calc.returnOnCost")} value={fmtPct(markup)} />
+              <Total label={t("calc.profitMargin")} value={fmtPct(margin)} tone={profitTone} />
             </Block>
           </div>
         </div>
@@ -426,7 +427,7 @@ export function CalculatorSuite({ quotationId }: { quotationId?: number } = {}) 
         {/* Quotation round-trip */}
         <div className="mt-xxl border-t border-hairline pt-lg">
           <div className="flex flex-wrap items-baseline justify-between gap-md">
-            <p className="text-label-md uppercase tracking-wide text-subtle">Quotation</p>
+            <p className="text-label-md uppercase tracking-wide text-subtle">{t("calc.quotation")}</p>
             {quote ? (
               <span className="text-body-sm text-muted">
                 {quote.quotationNo} · {QUOTATION_STATUS_LABELS[quote.status] ?? quote.status}
@@ -441,7 +442,7 @@ export function CalculatorSuite({ quotationId }: { quotationId?: number } = {}) 
               onClick={() => setPicker("quotation")}
               className="inline-flex h-10 items-center gap-sm rounded-full border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
             >
-              <FileText size={16} /> Load a quotation
+              <FileText size={16} /> {t("calc.loadQuotation")}
             </button>
 
             {quote?.status === "REQUESTED" ? null : (
@@ -454,7 +455,7 @@ export function CalculatorSuite({ quotationId }: { quotationId?: number } = {}) 
                     : "border-dashed border-hairline text-muted hover:bg-surface-tint"
                 }`}
               >
-                <Plus size={15} /> {party ? party.name : "Choose customer"}
+                <Plus size={15} /> {party ? party.name : t("calc.chooseCustomer")}
               </button>
             )}
 
@@ -465,7 +466,7 @@ export function CalculatorSuite({ quotationId }: { quotationId?: number } = {}) 
                 disabled={sending || lines.length === 0}
                 className="inline-flex h-10 items-center gap-sm rounded-full border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:text-disabled disabled:hover:bg-transparent"
               >
-                <Download size={16} /> Download
+                <Download size={16} /> {t("calc.download")}
               </button>
 
               <button
@@ -474,7 +475,7 @@ export function CalculatorSuite({ quotationId }: { quotationId?: number } = {}) 
                 disabled={sending || lines.length === 0}
                 className="group inline-flex h-10 items-center gap-sm rounded-full bg-brand pl-lg pr-md text-label-md font-semibold text-white shadow-floating transition-all hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft focus-visible:ring-offset-2 focus-visible:ring-offset-canvas disabled:bg-disabled disabled:shadow-none"
               >
-                {sending ? "Sending…" : quote?.status === "REQUESTED" ? "Price & send" : "Send quotation"}
+                {sending ? t("calc.sending") : quote?.status === "REQUESTED" ? t("calc.priceAndSend") : t("calc.sendQuotation")}
                 <span className="flex size-6 items-center justify-center rounded-full bg-white/20 transition-transform group-hover:translate-x-px">
                   <Send size={14} />
                 </span>
@@ -486,19 +487,19 @@ export function CalculatorSuite({ quotationId }: { quotationId?: number } = {}) 
                   onClick={resetQuote}
                   className="inline-flex h-10 items-center rounded-full px-md text-label-md text-muted transition-colors hover:text-ink"
                 >
-                  New
+                  {t("calc.new")}
                 </button>
               ) : null}
             </span>
           </div>
 
           <label className="mt-md flex max-w-content flex-col gap-xs">
-            <span className="text-label-md text-muted">Note (optional)</span>
+            <span className="text-label-md text-muted">{t("calc.noteLabel")}</span>
             <textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
               rows={2}
-              placeholder="Shown on the quotation…"
+              placeholder={t("calc.notePlaceholder")}
               className="w-full rounded-input border border-hairline bg-field px-md py-sm text-body-md text-ink outline-none placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
             />
           </label>
@@ -509,9 +510,7 @@ export function CalculatorSuite({ quotationId }: { quotationId?: number } = {}) 
             </p>
           ) : null}
           <p className="mt-sm text-body-sm text-subtle">
-            Download and Send both save the quotation (the PDF is generated from a saved quote). A
-            customer-requested quote is priced &amp; sent back; otherwise a new one goes to the chosen
-            customer. Totals are GST-inclusive — the customer&apos;s quote matches the grand total above.
+            {t("calc.quotationHelp")}
           </p>
         </div>
       </section>
@@ -519,9 +518,9 @@ export function CalculatorSuite({ quotationId }: { quotationId?: number } = {}) 
       {/* ── Product browser ────────────────────────────────────────────── */}
       <aside className="min-w-0 lg:w-96 lg:shrink-0 lg:border-l lg:border-hairline lg:pl-xl">
         <div className="flex items-baseline justify-between gap-md">
-          <p className="text-label-md uppercase tracking-wide text-subtle">Your products</p>
+          <p className="text-label-md uppercase tracking-wide text-subtle">{t("calc.yourProducts")}</p>
           {lines.length > 0 ? (
-            <span className="text-body-sm tabular-nums text-subtle">{lines.length} added</span>
+            <span className="text-body-sm tabular-nums text-subtle">{t("calc.addedCount", { count: lines.length })}</span>
           ) : null}
         </div>
         <div className="mt-sm flex items-center gap-sm rounded-input border border-hairline bg-field px-md focus-within:border-brand focus-within:ring-2 focus-within:ring-brand-soft">
@@ -530,15 +529,15 @@ export function CalculatorSuite({ quotationId }: { quotationId?: number } = {}) 
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name or SKU…"
-            aria-label="Search products"
+            placeholder={t("calc.searchByNameSku")}
+            aria-label={t("calc.searchProducts")}
             className="h-11 flex-1 bg-transparent text-body-md text-ink outline-none placeholder:text-subtle"
           />
           {search ? (
             <button
               type="button"
               onClick={() => setSearch("")}
-              aria-label="Clear"
+              aria-label={t("calc.clear")}
               className="shrink-0 text-subtle transition-colors hover:text-ink"
             >
               <X size={16} />
@@ -548,9 +547,9 @@ export function CalculatorSuite({ quotationId }: { quotationId?: number } = {}) 
 
         <div className="mt-md">
           {listLoading && products.length === 0 ? (
-            <p className="py-lg text-center text-body-sm text-subtle">Loading your products…</p>
+            <p className="py-lg text-center text-body-sm text-subtle">{t("calc.loadingProducts")}</p>
           ) : products.length === 0 ? (
-            <p className="py-lg text-center text-body-sm text-muted">No products found.</p>
+            <p className="py-lg text-center text-body-sm text-muted">{t("calc.noProductsFound")}</p>
           ) : (
             <ul className="grid grid-cols-1 gap-xs">
               {products.map((p) => (
@@ -565,8 +564,8 @@ export function CalculatorSuite({ quotationId }: { quotationId?: number } = {}) 
 
       {picker === "quotation" ? (
         <PickerModal
-          title="Load a quotation"
-          placeholder="Search by number or customer…"
+          title={t("calc.loadQuotation")}
+          placeholder={t("calc.searchNumberOrCustomer")}
           load={(s) =>
             listQuotations().then((qs) =>
               s
@@ -588,14 +587,14 @@ export function CalculatorSuite({ quotationId }: { quotationId?: number } = {}) 
             void loadQuotationById(q.id);
           }}
           onClose={() => setPicker(null)}
-          emptyHint="No quotations yet."
+          emptyHint={t("calc.noQuotations")}
         />
       ) : null}
 
       {picker === "party" ? (
         <PickerModal
-          title="Choose customer"
-          placeholder="Search customers…"
+          title={t("calc.chooseCustomer")}
+          placeholder={t("calc.searchCustomers")}
           load={(s) => listParties(s ? { search: s } : undefined)}
           rowOf={(pt) => ({ title: pt.name, subtitle: pt.phone ?? undefined })}
           onPick={(pt) => {
@@ -628,6 +627,7 @@ function LineRow({
   onDisc: (v: string) => void;
   onRemove: () => void;
 }) {
+  const t = useTranslations("reports");
   const p = line.product;
   const price = Math.max(0, num(line.priceStr));
   const qty = Math.max(0, num(line.qtyStr));
@@ -639,7 +639,7 @@ function LineRow({
       inputMode="numeric"
       value={line.qtyStr}
       onChange={(e) => onQty(onlyNum(e.target.value))}
-      aria-label={`Quantity for ${p.name}`}
+      aria-label={t("calc.qtyFor", { name: p.name })}
       className="h-9 w-16 rounded-button border border-hairline bg-field px-sm text-center text-body-md tabular-nums text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
     />
   );
@@ -660,17 +660,17 @@ function LineRow({
                 inputMode="decimal"
                 value={line.priceStr}
                 onChange={(e) => onPrice(onlyNum(e.target.value))}
-                aria-label={`Price for ${p.name}`}
+                aria-label={t("calc.priceFor", { name: p.name })}
                 className="h-8 w-24 rounded-button border border-hairline bg-field pl-lg pr-sm text-body-sm tabular-nums text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
               />
             </span>
-            each
+            {t("calc.each")}
           </span>
         </div>
         <div className="hidden items-center gap-sm md:flex">
-          <Suffixed value={line.rateStr} onChange={onRate} suffix="%" ariaLabel={`GST for ${p.name}`} className="w-16" />
+          <Suffixed value={line.rateStr} onChange={onRate} suffix="%" ariaLabel={t("calc.gstFor", { name: p.name })} className="w-16" />
           {qtyInput}
-          <DiscInput value={line.discStr} onChange={onDisc} unit={unit} ariaLabel={`Discount for ${p.name}`} className="w-20" />
+          <DiscInput value={line.discStr} onChange={onDisc} unit={unit} ariaLabel={t("calc.discFor", { name: p.name })} className="w-20" />
           <span className="w-24 text-right text-body-md font-semibold tabular-nums text-ink">
             {formatINR2(net)}
           </span>
@@ -678,7 +678,7 @@ function LineRow({
         <button
           type="button"
           onClick={onRemove}
-          aria-label={`Remove ${p.name}`}
+          aria-label={t("calc.removeName", { name: p.name })}
           className="flex w-6 shrink-0 justify-center text-subtle transition-colors hover:text-error"
         >
           <X size={16} />
@@ -687,12 +687,12 @@ function LineRow({
 
       {/* Mobile controls — labelled, below the product */}
       <div className="mt-sm flex items-end gap-md md:hidden">
-        <FieldCol label="GST">
-          <Suffixed value={line.rateStr} onChange={onRate} suffix="%" ariaLabel={`GST for ${p.name}`} className="w-16" />
+        <FieldCol label={t("calc.colGst")}>
+          <Suffixed value={line.rateStr} onChange={onRate} suffix="%" ariaLabel={t("calc.gstFor", { name: p.name })} className="w-16" />
         </FieldCol>
-        <FieldCol label="Qty">{qtyInput}</FieldCol>
-        <FieldCol label="Disc">
-          <DiscInput value={line.discStr} onChange={onDisc} unit={unit} ariaLabel={`Discount for ${p.name}`} className="w-20" />
+        <FieldCol label={t("calc.colQty")}>{qtyInput}</FieldCol>
+        <FieldCol label={t("calc.colDisc")}>
+          <DiscInput value={line.discStr} onChange={onDisc} unit={unit} ariaLabel={t("calc.discFor", { name: p.name })} className="w-20" />
         </FieldCol>
         <span className="ml-auto text-body-md font-semibold tabular-nums text-ink">{formatINR2(net)}</span>
       </div>

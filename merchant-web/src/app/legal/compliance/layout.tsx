@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { ArrowLeft } from "lucide-react";
 import { ComplianceNav } from "@/features/legal/compliance-nav";
 
@@ -8,11 +9,12 @@ import { ComplianceNav } from "@/features/legal/compliance-nav";
  * Each topic is its own route, so the content stays readable instead of one
  * endless page.
  */
-export default function ComplianceLayout({
+export default async function ComplianceLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const t = await getTranslations("legal");
   return (
     <main className="mx-auto max-w-docs px-lg py-xxxl">
       <Link
@@ -22,9 +24,9 @@ export default function ComplianceLayout({
         <ArrowLeft size={16} /> ShopXY
       </Link>
       <h1 className="mt-md font-display text-headline-md text-ink">
-        Compliance, laws &amp; formulas
+        {t("compliance.layout.title")}
       </h1>
-      <p className="mt-xs text-body-sm text-subtle">Last updated June 2026</p>
+      <p className="mt-xs text-body-sm text-subtle">{t("compliance.layout.updated")}</p>
 
       <div className="mt-xl flex flex-col gap-lg lg:grid lg:grid-cols-4 lg:gap-xxl">
         <aside className="lg:col-span-1 lg:self-start lg:sticky lg:top-xxl">

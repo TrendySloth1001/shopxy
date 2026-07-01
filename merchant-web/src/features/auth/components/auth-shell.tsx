@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { ComponentType, ReactNode } from "react";
+import { getTranslations } from "next-intl/server";
 import { LogIn, UserPlus } from "lucide-react";
 import { Divider } from "@/shared/ui/divider";
 import { Banner } from "./banner";
@@ -19,7 +20,7 @@ const ART = {
  * shade) into the canvas so it merges seamlessly into the form column on the
  * right. On phones the illustration is hidden and the form takes over.
  */
-export function AuthShell({
+export async function AuthShell({
   title,
   subtitle,
   children,
@@ -36,6 +37,7 @@ export function AuthShell({
   footerCta: string;
   notice?: string;
 }) {
+  const t = await getTranslations("auth");
   const art = ART;
 
   return (
@@ -63,24 +65,28 @@ export function AuthShell({
 
           {/* Attribution for the royalty-free artwork (Pixabay). */}
           <p className="absolute inset-x-huge bottom-massive text-body-sm text-subtle xl:inset-x-massive">
-            Illustration by{" "}
-            <a
-              href={art.authorUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline underline-offset-2 hover:text-ink"
-            >
-              {art.author}
-            </a>{" "}
-            on{" "}
-            <a
-              href="https://pixabay.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline underline-offset-2 hover:text-ink"
-            >
-              Pixabay
-            </a>
+            {t.rich("shell.attribution", {
+              author: () => (
+                <a
+                  href={art.authorUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-2 hover:text-ink"
+                >
+                  {art.author}
+                </a>
+              ),
+              pixabay: (chunks) => (
+                <a
+                  href="https://pixabay.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-2 hover:text-ink"
+                >
+                  {chunks}
+                </a>
+              ),
+            })}
           </p>
         </section>
 
@@ -140,7 +146,8 @@ export function AuthShell({
  * account chips on the right. It deliberately does NOT use `useAuth`, so it can
  * render before there's a session.
  */
-function AuthHeader() {
+async function AuthHeader() {
+  const t = await getTranslations("auth");
   return (
     <header className="absolute inset-x-0 top-0 z-20">
       <div className="flex h-16 w-full items-center justify-between px-lg sm:px-xl">
@@ -161,10 +168,10 @@ function AuthHeader() {
         </Link>
         <nav className="flex items-center gap-sm">
           <HeaderChip href="/login" icon={LogIn}>
-            Sign in
+            {t("header.signIn")}
           </HeaderChip>
           <HeaderChip href="/register" icon={UserPlus} variant="ink">
-            Create account
+            {t("header.createAccount")}
           </HeaderChip>
         </nav>
       </div>
