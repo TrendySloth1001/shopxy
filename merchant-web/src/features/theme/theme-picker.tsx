@@ -1,6 +1,7 @@
 "use client";
 
 import { Check } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useTheme } from "./theme-context";
 import { THEME_META, THEMES, type Theme } from "./theme";
 
@@ -14,7 +15,10 @@ function ThemeOption({
   selected: boolean;
   onSelect: (theme: Theme) => void;
 }) {
+  // Swatch colours stay in THEME_META (each tile previews a fixed palette); the
+  // label + description are localized so the picker reads in the active language.
   const meta = THEME_META[value];
+  const t = useTranslations("themes");
   return (
     <button
       type="button"
@@ -49,7 +53,7 @@ function ThemeOption({
       </span>
 
       <span className="flex items-center justify-between gap-sm">
-        <span className="text-body-md text-ink">{meta.label}</span>
+        <span className="text-body-md text-ink">{t(`${value}.label`)}</span>
         <span
           className={`flex size-5 shrink-0 items-center justify-center rounded-full transition-colors ${
             selected ? "bg-brand text-white" : "border border-hairline text-transparent"
@@ -59,7 +63,7 @@ function ThemeOption({
           <Check size={12} strokeWidth={3} />
         </span>
       </span>
-      <span className="text-body-sm text-muted">{meta.description}</span>
+      <span className="text-body-sm text-muted">{t(`${value}.desc`)}</span>
     </button>
   );
 }

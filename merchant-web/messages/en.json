@@ -5,5 +5,15 @@
     "language": "Language",
     "languageSubtitle": "Choose your preferred language.",
     "currency": "Currency"
+  },
+  "themes": {
+    "light": { "label": "Light", "desc": "Warm canvas, dark text — the default." },
+    "beige": { "label": "Beige", "desc": "Soft sepia paper — warm, low glare." },
+    "rose": { "label": "Rose", "desc": "Warm blush — soft and easy on the eye." },
+    "sage": { "label": "Sage", "desc": "Cool mint-green — calm and quiet." },
+    "dark": { "label": "Dark", "desc": "Deep slate surfaces, easy on the eyes." },
+    "oled": { "label": "OLED", "desc": "True black — best for OLED displays." },
+    "midnight": { "label": "Midnight", "desc": "Deep navy — indigo-tinted dark." },
+    "nord": { "label": "Nord", "desc": "Muted arctic blue-grey — soft dark." }
   }
 }
