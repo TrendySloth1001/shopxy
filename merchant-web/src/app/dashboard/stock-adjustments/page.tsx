@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { ArrowDownLeft, ArrowUpRight, ChevronRight, Plus, RefreshCw, SlidersHorizontal } from "lucide-react";
 import { PageHeader } from "@/shared/ui/page-header";
 import { formatDateTime } from "@/shared/datetime";
 import { listAdjustments } from "@/features/stock-adjustments/api";
 import {
   ADJUSTMENT_REASON_CLASSES,
-  ADJUSTMENT_REASON_LABELS,
   adjustmentItemCount,
   type Adjustment,
 } from "@/features/stock-adjustments/schema";
@@ -16,6 +16,7 @@ import { MaybeLocked } from "@/features/auth/components/maybe-locked";
 import { ListRowsSkeleton } from "@/shared/ui/skeleton";
 
 export default function StockAdjustmentsPage() {
+  const t = useTranslations("stockAdjustments");
   const [rows, setRows] = useState<Adjustment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +32,7 @@ export default function StockAdjustmentsPage() {
         setRows(data);
         setError(null);
       } catch (e) {
-        if (active) setError(e instanceof Error ? e.message : "Could not load adjustments.");
+        if (active) setError(e instanceof Error ? e.message : t("list.loadError"));
       } finally {
         if (active) setLoading(false);
       }
@@ -39,31 +40,31 @@ export default function StockAdjustmentsPage() {
     return () => {
       active = false;
     };
-  }, [nonce]);
+  }, [nonce, t]);
 
   return (
     <div className="w-full px-lg py-xxl md:px-xxl">
       <PageHeader
         icon={SlidersHorizontal}
         tone="indigo"
-        title="Stock adjustments"
-        subtitle="Record damage, expiry, shrinkage, recounts and opening balances. Each adjustment posts a movement to the stock ledger."
+        title={t("list.title")}
+        subtitle={t("list.subtitle")}
       >
         <button
           type="button"
           onClick={() => setNonce((n) => n + 1)}
           disabled={loading}
-          aria-label="Refresh"
+          aria-label={t("actions.refresh")}
           className="inline-flex size-10 items-center justify-center rounded-button border border-hairline text-ink transition-colors hover:bg-surface-tint disabled:text-disabled"
         >
           <RefreshCw size={16} />
         </button>
-        <MaybeLocked area="stock" label="New adjustment">
+        <MaybeLocked area="stock" label={t("actions.newAdjustment")}>
           <Link
             href="/dashboard/stock-adjustments/new"
             className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-md text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
           >
-            <Plus size={16} /> New adjustment
+            <Plus size={16} /> {t("actions.newAdjustment")}
           </Link>
         </MaybeLocked>
       </PageHeader>
@@ -80,13 +81,13 @@ export default function StockAdjustmentsPage() {
             <span className="flex size-12 items-center justify-center rounded-full bg-accent-indigo-soft text-accent-indigo">
               <SlidersHorizontal size={22} />
             </span>
-            <p className="text-body-md text-muted">No adjustments yet.</p>
-            <MaybeLocked area="stock" label="New adjustment">
+            <p className="text-body-md text-muted">{t("list.empty")}</p>
+            <MaybeLocked area="stock" label={t("actions.newAdjustment")}>
               <Link
                 href="/dashboard/stock-adjustments/new"
                 className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
               >
-                <Plus size={16} /> New adjustment
+                <Plus size={16} /> {t("actions.newAdjustment")}
               </Link>
             </MaybeLocked>
           </div>
@@ -99,6 +100,7 @@ export default function StockAdjustmentsPage() {
 }
 
 function AdjustmentRow({ adjustment }: { adjustment: Adjustment }) {
+  const t = useTranslations("stockAdjustments");
   const items = adjustmentItemCount(adjustment);
   const isIn = adjustment.direction === "IN";
   return (
@@ -121,11 +123,12 @@ function AdjustmentRow({ adjustment }: { adjustment: Adjustment }) {
               ADJUSTMENT_REASON_CLASSES[adjustment.reasonCode] ?? "bg-surface-tint text-muted"
             }`}
           >
-            {ADJUSTMENT_REASON_LABELS[adjustment.reasonCode] ?? adjustment.reasonCode}
+            {t(`reason.${adjustment.reasonCode}`)}
           </span>
         </div>
         <p className="text-body-sm text-subtle">
-          {formatDateTime(adjustment.createdAt)} · {items} {items === 1 ? "item" : "items"}
+          {formatDateTime(adjustment.createdAt)} · {items}{" "}
+          {items === 1 ? t("list.itemOne") : t("list.itemOther")}
         </p>
       </div>
       <ChevronRight size={18} className="shrink-0 text-subtle" />

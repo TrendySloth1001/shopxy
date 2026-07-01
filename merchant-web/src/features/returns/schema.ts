@@ -19,16 +19,6 @@ export const RETURN_STATUSES = [
 ] as const;
 export type ReturnStatus = (typeof RETURN_STATUSES)[number];
 
-export const RETURN_STATUS_LABELS: Record<string, string> = {
-  REQUESTED: "Requested",
-  APPROVED: "Approved",
-  PICKED_UP: "Picked up",
-  RECEIVED: "Received",
-  REFUNDED: "Refunded",
-  REJECTED: "Rejected",
-  CANCELLED: "Cancelled",
-};
-
 export const RETURN_STATUS_CLASSES: Record<string, string> = {
   REQUESTED: "bg-accent-amber-soft text-accent-amber",
   APPROVED: "bg-accent-indigo-soft text-accent-indigo",
@@ -37,16 +27,6 @@ export const RETURN_STATUS_CLASSES: Record<string, string> = {
   REFUNDED: "bg-success-soft text-success",
   REJECTED: "bg-error-soft text-error",
   CANCELLED: "bg-surface-tint text-muted",
-};
-
-export const RETURN_REASON_LABELS: Record<string, string> = {
-  DAMAGED: "Damaged on arrival",
-  WRONG_ITEM: "Wrong item sent",
-  NOT_AS_DESCRIBED: "Not as described",
-  SIZE_FIT: "Size / fit issue",
-  CHANGED_MIND: "Changed mind",
-  DEFECTIVE: "Defective / not working",
-  OTHER: "Other",
 };
 
 const returnItemSchema = z
@@ -136,23 +116,27 @@ export const refundResultSchema = z.object({
 });
 export type RefundResult = z.infer<typeof refundResultSchema>;
 
-export function refundStatusMessage(r: RefundResult): string {
+/**
+ * Maps a refund result to the i18n key (under the `returns` namespace) that
+ * describes the outcome. The caller resolves it with `t(refundStatusMessageKey(r))`.
+ */
+export function refundStatusMessageKey(r: RefundResult): string {
   switch (r.refundStatus) {
     case "REFUNDED":
-      return `Refund of ${r.refundAmount} issued to the customer's original payment method.`;
+      return "refundMessage.refunded";
     case "NO_PAYMENT":
-      return "No online payment to refund — settle with the customer offline.";
+      return "refundMessage.noPayment";
     case "FAILED":
-      return "The refund could not be processed by the payment gateway. Try again.";
+      return "refundMessage.failed";
     case "NOTHING_TO_REFUND":
-      return "There was nothing to refund.";
+      return "refundMessage.nothing";
     default:
-      return "Refund processed.";
+      return "refundMessage.processed";
   }
 }
 
-export function customerName(r: MerchantReturn): string {
-  return r.request?.customerName ?? `Customer #${r.id}`;
+export function customerName(r: MerchantReturn, fallback: string): string {
+  return r.request?.customerName ?? fallback;
 }
 export function canApprove(r: MerchantReturn): boolean {
   return r.status === "REQUESTED";

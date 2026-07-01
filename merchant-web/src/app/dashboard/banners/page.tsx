@@ -3,17 +3,19 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 import { Images, ImageOff, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { PageHeader } from "@/shared/ui/page-header";
 import { Divider } from "@/shared/ui/divider";
 import { mediaSrc } from "@/features/products/components/product-thumb";
 import { formatDateRange } from "@/shared/datetime";
 import { deleteBanner, listBanners } from "@/features/banners/api";
-import { PLACEMENT_LABELS, type Banner } from "@/features/banners/schema";
+import type { Banner } from "@/features/banners/schema";
 import { MaybeLocked } from "@/features/auth/components/maybe-locked";
 import { ListRowsSkeleton } from "@/shared/ui/skeleton";
 
 export default function BannersPage() {
+  const t = useTranslations("banners");
   const [items, setItems] = useState<Banner[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +33,7 @@ export default function BannersPage() {
         setItems(rows);
         setError(null);
       } catch (e) {
-        if (active) setError(e instanceof Error ? e.message : "Could not load banners.");
+        if (active) setError(e instanceof Error ? e.message : t("errors.load"));
       } finally {
         if (active) setLoading(false);
       }
@@ -39,14 +41,14 @@ export default function BannersPage() {
     return () => {
       active = false;
     };
-  }, [nonce]);
+  }, [nonce, t]);
 
   async function onDelete(id: number) {
     try {
       await deleteBanner(id);
       reload();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not delete the banner.");
+      setError(e instanceof Error ? e.message : t("errors.delete"));
     }
   }
 
@@ -55,24 +57,24 @@ export default function BannersPage() {
       <PageHeader
         icon={Images}
         tone="indigo"
-        title="Banners"
-        subtitle="Upload image banners for the customer home — hero, ad strip, promo, and curated rails."
+        title={t("list.title")}
+        subtitle={t("list.subtitle")}
       >
         <button
           type="button"
           onClick={reload}
           disabled={loading}
-          aria-label="Refresh"
+          aria-label={t("actions.refresh")}
           className="inline-flex size-10 items-center justify-center rounded-button border border-hairline text-ink transition-colors hover:bg-surface-tint disabled:text-disabled"
         >
           <RefreshCw size={16} />
         </button>
-        <MaybeLocked area="marketing" label="New banner">
+        <MaybeLocked area="marketing" label={t("actions.new")}>
           <Link
             href="/dashboard/banners/new"
             className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-md text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
           >
-            <Plus size={16} /> New banner
+            <Plus size={16} /> {t("actions.new")}
           </Link>
         </MaybeLocked>
       </PageHeader>
@@ -90,13 +92,13 @@ export default function BannersPage() {
           <span className="flex size-12 items-center justify-center rounded-full bg-accent-indigo-soft text-accent-indigo">
             <Images size={22} />
           </span>
-          <p className="text-body-md text-muted">No banners yet.</p>
-          <MaybeLocked area="marketing" label="New banner">
+          <p className="text-body-md text-muted">{t("list.empty")}</p>
+          <MaybeLocked area="marketing" label={t("actions.new")}>
             <Link
               href="/dashboard/banners/new"
               className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
             >
-              <Plus size={16} /> New banner
+              <Plus size={16} /> {t("actions.new")}
             </Link>
           </MaybeLocked>
         </div>
@@ -112,6 +114,7 @@ export default function BannersPage() {
 }
 
 function BannerCard({ banner, onDelete }: { banner: Banner; onDelete: () => void }) {
+  const t = useTranslations("banners");
   const src = mediaSrc(banner.imageUrl);
   return (
     <div className="overflow-hidden rounded-lg border border-hairline">
@@ -125,26 +128,28 @@ function BannerCard({ banner, onDelete }: { banner: Banner; onDelete: () => void
         )}
         {!banner.isActive ? (
           <span className="absolute left-sm top-sm rounded-full bg-surface/85 px-sm py-px text-body-sm font-semibold text-muted">
-            Off
+            {t("card.off")}
           </span>
         ) : null}
       </div>
       <div className="flex items-center justify-between gap-md p-md">
         <div className="min-w-0">
-          <p className="truncate text-title-sm font-bold text-ink">{PLACEMENT_LABELS[banner.placement]}</p>
+          <p className="truncate text-title-sm font-bold text-ink">{t(`placement.${banner.placement}`)}</p>
           <p className="truncate text-body-sm text-muted">
             {banner.productCount > 0
-              ? `${banner.productCount} product${banner.productCount === 1 ? "" : "s"}`
+              ? banner.productCount === 1
+                ? t("card.productCountOne", { count: banner.productCount })
+                : t("card.productCountOther", { count: banner.productCount })
               : banner.linkUrl
                 ? banner.linkUrl
-                : "No link"}
+                : t("card.noLink")}
             {banner.startAt || banner.endAt ? ` · ${formatDateRange(banner.startAt, banner.endAt)}` : ""}
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-xs">
           <Link
             href={`/dashboard/banners/${banner.id}`}
-            aria-label="Edit banner"
+            aria-label={t("actions.edit")}
             className="inline-flex size-9 items-center justify-center rounded-button border border-hairline text-ink transition-colors hover:bg-surface-tint"
           >
             <Pencil size={15} />
@@ -152,7 +157,7 @@ function BannerCard({ banner, onDelete }: { banner: Banner; onDelete: () => void
           <button
             type="button"
             onClick={onDelete}
-            aria-label="Delete banner"
+            aria-label={t("actions.delete")}
             className="inline-flex size-9 items-center justify-center rounded-button border border-hairline text-muted transition-colors hover:text-error"
           >
             <Trash2 size={15} />

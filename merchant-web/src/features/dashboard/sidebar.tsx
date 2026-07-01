@@ -3,6 +3,7 @@
 import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { ChevronLeft, ChevronRight, LogOut, Lock, Menu, X } from "lucide-react";
 import { useAuth } from "@/features/auth/auth-context";
 import { Avatar } from "@/features/auth/components/avatar";
@@ -12,6 +13,18 @@ import { Divider } from "@/shared/ui/divider";
 import { NAV_GROUPS, hrefForNav, type NavItem } from "./nav-items";
 
 const STORAGE_KEY = "sx_sidebar_collapsed";
+
+/**
+ * Maps the English group titles from `nav-items.ts` to translation keys under
+ * the `nav` namespace. The labels themselves live in `nav-items.ts` (out of
+ * this file's edit scope), so we translate at the point of use via key.
+ */
+const GROUP_TITLE_KEYS: Record<string, string> = {
+  Manage: "group.manage",
+  "Shop operations": "group.shopOperations",
+  Operations: "group.operations",
+  "Platform admin": "group.platformAdmin",
+};
 
 /**
  * Stable store callbacks for `useSyncExternalStore`. Hoisted to module scope so
@@ -47,6 +60,7 @@ export function Sidebar() {
   const { user, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const t = useTranslations("nav");
   const [collapsed, toggle] = useCollapsed();
   const { unread } = useNotifications();
   // Styled hover tooltip for the collapsed rail. Rendered `fixed` (outside the
@@ -92,7 +106,7 @@ export function Sidebar() {
               gi > 0 ? <Divider className="mx-auto my-sm w-6" /> : null
             ) : (
               <p className="px-sm pb-xs pt-sm text-label-md uppercase tracking-wide text-subtle">
-                {group.title}
+                {GROUP_TITLE_KEYS[group.title] ? t(GROUP_TITLE_KEYS[group.title]) : group.title}
               </p>
             )
           ) : null}
@@ -101,6 +115,7 @@ export function Sidebar() {
               <li key={item.key}>
                 <NavLink
                   item={item}
+                  label={t(`item.${item.key}`)}
                   active={isActive(hrefForNav(item.key))}
                   collapsed={compact}
                   locked={isLocked(item.key)}
@@ -137,8 +152,8 @@ export function Sidebar() {
         <button
           type="button"
           onClick={onSignOut}
-          aria-label="Sign out"
-          title="Sign out"
+          aria-label={t("actions.signOut")}
+          title={t("actions.signOut")}
           className="rounded-md p-xs text-muted transition-colors hover:bg-surface-tint hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
         >
           <LogOut size={18} />
@@ -153,7 +168,7 @@ export function Sidebar() {
         S
       </span>
       <span className="truncate text-label-lg text-ink">
-        ShopXY <span className="text-subtle">· Merchant</span>
+        ShopXY <span className="text-subtle">· {t("brand.merchant")}</span>
       </span>
     </span>
   );
@@ -169,7 +184,7 @@ export function Sidebar() {
         <button
           type="button"
           onClick={toggle}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-label={collapsed ? t("aria.expandSidebar") : t("aria.collapseSidebar")}
           aria-expanded={!collapsed}
           className="absolute -right-3 top-14 z-30 flex size-7 -translate-y-1/2 items-center justify-center rounded-full border border-hairline bg-canvas text-muted shadow-snackbar transition-colors hover:border-brand-soft hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
         >
@@ -204,7 +219,7 @@ export function Sidebar() {
         <button
           type="button"
           onClick={() => setMobileOpen(true)}
-          aria-label="Open menu"
+          aria-label={t("aria.openMenu")}
           aria-expanded={mobileOpen}
           className="rounded-md p-xs text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
         >
@@ -213,7 +228,7 @@ export function Sidebar() {
         <span className="min-w-0 flex-1">{brand}</span>
         <Link
           href={hrefForNav("notifications")}
-          aria-label="Notifications"
+          aria-label={t("item.notifications")}
           className="relative rounded-md p-xs text-muted transition-colors hover:bg-surface-tint hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
         >
           <Avatar url={user?.avatarUrl} name={user?.name ?? ""} size={28} />
@@ -230,7 +245,7 @@ export function Sidebar() {
       >
         <button
           type="button"
-          aria-label="Close menu"
+          aria-label={t("aria.closeMenu")}
           tabIndex={mobileOpen ? 0 : -1}
           onClick={closeMobile}
           className={`absolute inset-0 bg-scrim/40 transition-opacity duration-medium ${mobileOpen ? "opacity-100" : "opacity-0"}`}
@@ -245,7 +260,7 @@ export function Sidebar() {
             <button
               type="button"
               onClick={closeMobile}
-              aria-label="Close menu"
+              aria-label={t("aria.closeMenu")}
               className="rounded-md p-xs text-muted transition-colors hover:bg-surface-tint hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
             >
               <X size={18} />
@@ -265,6 +280,7 @@ type HoverTip = { label: string; y: number } | null;
 
 function NavLink({
   item,
+  label,
   active,
   collapsed,
   locked,
@@ -273,6 +289,7 @@ function NavLink({
   onNavigate,
 }: {
   item: NavItem;
+  label: string;
   active: boolean;
   collapsed: boolean;
   locked: boolean;
@@ -280,6 +297,7 @@ function NavLink({
   onHover: (tip: HoverTip) => void;
   onNavigate?: () => void;
 }) {
+  const t = useTranslations("nav");
   const Icon = item.icon;
   const badgeText = badge > 99 ? "99+" : String(badge);
 
@@ -292,8 +310,8 @@ function NavLink({
         aria-disabled="true"
         title={
           collapsed
-            ? `${item.label} — no access`
-            : "You don’t have access. Ask the shop owner."
+            ? t("locked.tooltipCompact", { label })
+            : t("locked.tooltip")
         }
         className={`flex w-full cursor-not-allowed items-center gap-md rounded-md px-sm py-sm text-left text-body-md text-disabled ${
           collapsed ? "justify-center" : ""
@@ -302,7 +320,7 @@ function NavLink({
         <Icon size={18} className="shrink-0" />
         {!collapsed ? (
           <>
-            <span className="flex-1 truncate">{item.label}</span>
+            <span className="flex-1 truncate">{label}</span>
             <Lock size={14} className="shrink-0" />
           </>
         ) : null}
@@ -314,12 +332,12 @@ function NavLink({
     ? {
         onMouseEnter: (e: React.MouseEvent<HTMLElement>) => {
           const r = e.currentTarget.getBoundingClientRect();
-          onHover({ label: item.label, y: r.top + r.height / 2 });
+          onHover({ label, y: r.top + r.height / 2 });
         },
         onMouseLeave: () => onHover(null),
         onFocus: (e: React.FocusEvent<HTMLElement>) => {
           const r = e.currentTarget.getBoundingClientRect();
-          onHover({ label: item.label, y: r.top + r.height / 2 });
+          onHover({ label, y: r.top + r.height / 2 });
         },
         onBlur: () => onHover(null),
       }
@@ -328,7 +346,7 @@ function NavLink({
   return (
     <Link
       href={hrefForNav(item.key)}
-      aria-label={collapsed ? item.label : undefined}
+      aria-label={collapsed ? label : undefined}
       aria-current={active ? "page" : undefined}
       onClick={onNavigate}
       {...hoverProps}
@@ -342,7 +360,7 @@ function NavLink({
           <span className="absolute -right-1 -top-1 size-2 rounded-full bg-error ring-2 ring-canvas" />
         ) : null}
       </span>
-      {!collapsed ? <span className="flex-1 truncate">{item.label}</span> : null}
+      {!collapsed ? <span className="flex-1 truncate">{label}</span> : null}
       {!collapsed && badge > 0 ? (
         <span className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-error px-xs text-label-md text-white">
           {badgeText}

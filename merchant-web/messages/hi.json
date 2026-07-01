@@ -1041,5 +1041,888 @@
       "pageOf": "पृष्ठ {page} / {pageCount}",
       "skuLabel": "SKU {sku}"
     }
+  },
+  "nav": {
+    "brand": {
+      "merchant": "मर्चेंट"
+    },
+    "actions": {
+      "signOut": "साइन आउट"
+    },
+    "aria": {
+      "expandSidebar": "साइडबार खोलें",
+      "collapseSidebar": "साइडबार समेटें",
+      "openMenu": "मेन्यू खोलें",
+      "closeMenu": "मेन्यू बंद करें"
+    },
+    "locked": {
+      "tooltip": "आपके पास पहुँच नहीं है। दुकान मालिक से पूछें।",
+      "tooltipCompact": "{label} — कोई पहुँच नहीं"
+    },
+    "group": {
+      "manage": "प्रबंधन",
+      "shopOperations": "दुकान संचालन",
+      "operations": "संचालन",
+      "platformAdmin": "प्लेटफ़ॉर्म एडमिन"
+    },
+    "item": {
+      "dashboard": "डैशबोर्ड",
+      "products": "उत्पाद",
+      "orders": "ऑर्डर",
+      "notifications": "सूचनाएँ",
+      "profile": "प्रोफ़ाइल",
+      "settings": "सेटिंग्स",
+      "shop": "मेरी दुकान",
+      "banners": "बैनर",
+      "coupons": "कूपन",
+      "categories": "श्रेणियाँ",
+      "vendors": "विक्रेता",
+      "parties": "पार्टियाँ",
+      "pos": "पॉइंट ऑफ़ सेल",
+      "cashier": "कैशियर",
+      "scan-console": "स्कैन कंसोल",
+      "team": "टीम",
+      "invoices": "इनवॉइस",
+      "quotations": "कोटेशन",
+      "challans": "चालान",
+      "stock-adjustments": "स्टॉक समायोजन",
+      "returns": "रिटर्न",
+      "reports": "रिपोर्ट",
+      "analytics": "एनालिटिक्स",
+      "admin-taxonomy": "श्रेणी वर्गीकरण",
+      "admin-bank-offers": "बैंक ऑफ़र",
+      "admin-shops": "दुकान सत्यापन"
+    }
+  },
+  "banners": {
+    "list": {
+      "title": "बैनर",
+      "subtitle": "ग्राहक होम के लिए इमेज बैनर अपलोड करें — हीरो, ऐड स्ट्रिप, प्रोमो और क्यूरेटेड रेल।",
+      "empty": "अभी तक कोई बैनर नहीं।"
+    },
+    "actions": {
+      "new": "नया बैनर",
+      "refresh": "रिफ्रेश करें",
+      "edit": "बैनर संपादित करें",
+      "delete": "बैनर हटाएं",
+      "cancel": "रद्द करें",
+      "saving": "सहेजा जा रहा है…",
+      "saveChanges": "बदलाव सहेजें",
+      "create": "बैनर बनाएं"
+    },
+    "loading": "लोड हो रहा है…",
+    "placement": {
+      "HERO": "हीरो कैरोसेल",
+      "AD_STRIP": "ऐड स्ट्रिप",
+      "PROMO": "प्रोमो पंक्ति",
+      "CURATED_RAIL": "क्यूरेटेड रेल"
+    },
+    "card": {
+      "off": "बंद",
+      "productCountOne": "{count} उत्पाद",
+      "productCountOther": "{count} उत्पाद",
+      "noLink": "कोई लिंक नहीं"
+    },
+    "errors": {
+      "load": "बैनर लोड नहीं किए जा सके।",
+      "loadOne": "बैनर लोड नहीं किया जा सका।",
+      "delete": "बैनर हटाया नहीं जा सका।"
+    },
+    "form": {
+      "newTitle": "नया बैनर",
+      "editTitle": "बैनर संपादित करें",
+      "subtitle": "एक इमेज अपलोड करें, चुनें कि यह कहां दिखे, और वैकल्पिक रूप से वे उत्पाद पिन करें जो ग्राहक टैप करने पर देखते हैं।",
+      "preview": "पूर्वावलोकन",
+      "noImageYet": "अभी तक कोई इमेज नहीं",
+      "imageLabel": "बैनर इमेज",
+      "imageHelper": "ग्राहक होम पर किनारे से किनारे तक दिखाई जाती है। तैयार आर्टवर्क का उपयोग करें।",
+      "placementLabel": "प्लेसमेंट",
+      "placementHelper": "यह बैनर होम के किस स्लॉट में दिखाई देता है।",
+      "linkLabel": "लिंक (वैकल्पिक)",
+      "linkPlaceholder": "/shop/my-store या https://…",
+      "linkHelper": "केवल तब उपयोग होता है जब कोई उत्पाद पिन नहीं होता। पिन किए गए उत्पाद इसके बजाय एक विवरण पृष्ठ खोलते हैं।",
+      "sortOrderLabel": "क्रम संख्या",
+      "sortOrderHelper": "प्लेसमेंट के भीतर कम संख्या वाले पहले दिखते हैं।",
+      "startsLabel": "शुरू (वैकल्पिक)",
+      "endsLabel": "समाप्त (वैकल्पिक)",
+      "activeLabel": "सक्रिय",
+      "activeDescription": "निष्क्रिय बैनर स्टोरफ्रंट से छिपे रहते हैं।",
+      "discountPercent": "% छूट",
+      "discountAmount": "₹ छूट",
+      "errors": {
+        "imageRequired": "एक बैनर इमेज आवश्यक है।",
+        "invalidLink": "लिंक एक पूर्ण URL या / से शुरू होने वाला पथ होना चाहिए।",
+        "endBeforeStart": "समाप्ति समय प्रारंभ समय के बाद होना चाहिए।",
+        "saveFailed": "सहेजना विफल रहा।"
+      }
+    },
+    "products": {
+      "title": "पिन किए गए उत्पाद",
+      "add": "उत्पाद जोड़ें",
+      "remove": "उत्पाद हटाएं",
+      "empty": "कोई उत्पाद पिन नहीं है। बैनर टैप करने पर ऊपर दिया गया लिंक उपयोग होता है। इसके बजाय उत्पाद शोकेस खोलने के लिए उत्पाद पिन करें, प्रत्येक के साथ वैकल्पिक छूट।"
+    },
+    "picker": {
+      "searchPlaceholder": "नाम या SKU से उत्पाद खोजें",
+      "empty": "कोई उत्पाद मेल नहीं खाता।"
+    }
+  },
+  "challans": {
+    "list": {
+      "title": "चालान",
+      "subtitle": "डिलीवरी नोट (केवल मात्रा)। बनाते ही स्टॉक निकल जाता है; बिल बनाने के लिए इनवॉइस में बदलें, या पलटने के लिए रद्द करें।",
+      "refresh": "रिफ़्रेश करें",
+      "searchPlaceholder": "चालान नंबर या पार्टी खोजें",
+      "empty": "कोई चालान नहीं मिला।",
+      "loadError": "चालान लोड नहीं हो सके।",
+      "item": "आइटम",
+      "items": "आइटम"
+    },
+    "tabs": {
+      "all": "सभी",
+      "pending": "लंबित",
+      "converted": "बदला गया",
+      "cancelled": "रद्द"
+    },
+    "status": {
+      "pending": "लंबित",
+      "converted": "बदला गया",
+      "cancelled": "रद्द"
+    },
+    "actions": {
+      "create": "चालान बनाएं"
+    },
+    "detail": {
+      "loadError": "चालान लोड नहीं हो सका।",
+      "cancelError": "चालान रद्द नहीं हो सका।",
+      "convertError": "चालान बदला नहीं जा सका।",
+      "notFound": "चालान नहीं मिला।",
+      "deliveredTo": "यहां भेजा गया",
+      "invoicePrefix": "इनवॉइस",
+      "items": "आइटम",
+      "product": "प्रोडक्ट",
+      "cancel": "चालान रद्द करें",
+      "convert": "इनवॉइस में बदलें"
+    },
+    "convert": {
+      "title": "इनवॉइस में बदलें",
+      "description": "इस चालान के आइटम और पार्टी से एक ड्राफ्ट SALE इनवॉइस बनाता है। पुष्टि करने से पहले आप सब कुछ बदल सकते हैं।",
+      "discountLabel": "हेडर डिस्काउंट (₹, वैकल्पिक)",
+      "noteLabel": "नोट (वैकल्पिक)",
+      "confirm": "ड्राफ्ट इनवॉइस बनाएं"
+    },
+    "cancelModal": {
+      "title": "इस चालान को रद्द करें?",
+      "description": "भेजा गया स्टॉक इन्वेंट्री में वापस आ जाता है। इसे पूर्ववत नहीं किया जा सकता।",
+      "confirm": "चालान रद्द करें"
+    },
+    "editor": {
+      "title": "चालान बनाएं",
+      "subtitle": "केवल मात्रा वाला डिलीवरी नोट — पार्टी को कीमतें नहीं दिखतीं। बनाते ही स्टॉक निकल जाता है।",
+      "errorNoProduct": "कम से कम एक प्रोडक्ट जोड़ें।",
+      "errorNoParty": "एक ग्राहक चुनें या पार्टी का नाम दर्ज करें।",
+      "createError": "चालान नहीं बन सका।",
+      "party": "पार्टी",
+      "clear": "हटाएं",
+      "selectCustomer": "सहेजा गया ग्राहक चुनें",
+      "partyNameLabel": "पार्टी का नाम",
+      "partyNamePlaceholder": "प्राप्तकर्ता का नाम",
+      "phoneLabel": "फ़ोन",
+      "items": "आइटम",
+      "addProduct": "प्रोडक्ट जोड़ें",
+      "noItems": "अभी कोई आइटम नहीं — एक प्रोडक्ट जोड़ें।",
+      "noteLabel": "नोट (वैकल्पिक)",
+      "creating": "बन रहा है…",
+      "create": "चालान बनाएं",
+      "productSearchPlaceholder": "नाम या SKU से प्रोडक्ट खोजें",
+      "stockMeta": "स्टॉक {count}",
+      "selectCustomerTitle": "ग्राहक चुनें",
+      "customerSearchPlaceholder": "ग्राहक खोजें",
+      "decrease": "घटाएं",
+      "increase": "बढ़ाएं",
+      "remove": "हटाएं"
+    }
+  },
+  "stockAdjustments": {
+    "list": {
+      "title": "स्टॉक समायोजन",
+      "subtitle": "खराबी, एक्सपायरी, कमी, दोबारा गिनती और शुरुआती बैलेंस दर्ज करें। हर समायोजन स्टॉक लेजर में एक मूवमेंट दर्ज करता है।",
+      "empty": "अभी तक कोई समायोजन नहीं।",
+      "itemOne": "आइटम",
+      "itemOther": "आइटम",
+      "loadError": "समायोजन लोड नहीं हो सके।"
+    },
+    "actions": {
+      "newAdjustment": "नया समायोजन",
+      "refresh": "रिफ्रेश करें"
+    },
+    "reason": {
+      "DAMAGE": "खराबी",
+      "EXPIRED": "एक्सपायर्ड",
+      "SHRINKAGE": "कमी",
+      "RECOUNT": "दोबारा गिनती",
+      "OPENING": "शुरुआती स्टॉक"
+    },
+    "detail": {
+      "back": "स्टॉक समायोजन",
+      "notFound": "समायोजन नहीं मिला।",
+      "loadError": "समायोजन लोड नहीं हो सका।",
+      "reverseError": "समायोजन उलटा नहीं जा सका।",
+      "stockAdded": "स्टॉक जोड़ा गया",
+      "stockRemoved": "स्टॉक हटाया गया",
+      "byName": "{name} द्वारा",
+      "reverse": "उलटें",
+      "reversed": "उलट दिया गया",
+      "reversedBanner": "यह समायोजन उलट दिया गया है — लेजर के मूवमेंट रद्द कर दिए गए।",
+      "products": "उत्पाद",
+      "productFallback": "उत्पाद"
+    },
+    "reverseModal": {
+      "title": "यह समायोजन उलटें?",
+      "body": "लेजर में बराबर और विपरीत मूवमेंट दर्ज करता है, जिससे स्टॉक बदलाव रद्द हो जाता है। मूल एंट्री ऑडिट ट्रेल के रूप में रखी जाती है।",
+      "noteLabel": "नोट (वैकल्पिक)",
+      "confirm": "उलटें"
+    },
+    "editor": {
+      "back": "स्टॉक समायोजन",
+      "title": "नया समायोजन",
+      "subtitle": "खराबी, एक्सपायरी, कमी, दोबारा गिनती या शुरुआती बैलेंस के लिए मौजूदा स्टॉक ठीक करें। यह स्टॉक लेजर में एक मूवमेंट दर्ज करता है।",
+      "errorNoProducts": "कम से कम एक उत्पाद जोड़ें।",
+      "errorPost": "समायोजन दर्ज नहीं हो सका।",
+      "reason": "कारण",
+      "direction": "दिशा",
+      "addStock": "स्टॉक जोड़ें",
+      "removeStock": "स्टॉक हटाएं",
+      "products": "उत्पाद",
+      "addProduct": "उत्पाद जोड़ें",
+      "noProducts": "अभी कोई उत्पाद नहीं — समायोजन के लिए एक जोड़ें।",
+      "noteLabel": "नोट (वैकल्पिक)",
+      "posting": "दर्ज हो रहा है…",
+      "post": "समायोजन दर्ज करें",
+      "pickerTitle": "उत्पाद जोड़ें",
+      "pickerPlaceholder": "नाम या SKU से उत्पाद खोजें",
+      "pickerStock": "स्टॉक {count}",
+      "decrease": "घटाएं",
+      "increase": "बढ़ाएं",
+      "remove": "हटाएं"
+    },
+    "stockSheet": {
+      "title": "स्टॉक अपडेट करें",
+      "inStock": "स्टॉक में {qty} {unit}",
+      "purchaseTab": "खरीद (स्टॉक इन)",
+      "saleTab": "बिक्री (स्टॉक आउट)",
+      "quantityLabel": "मात्रा ({unit})",
+      "purchasePriceLabel": "खरीद मूल्य (₹)",
+      "salePriceLabel": "बिक्री मूल्य (₹)",
+      "optional": "वैकल्पिक",
+      "supplierLabel": "सप्लायर",
+      "loadingVendors": "वेंडर लोड हो रहे हैं…",
+      "selectSupplier": "एक सप्लायर चुनें (वैकल्पिक)",
+      "noVendors": "अभी कोई वेंडर नहीं — वेंडर में जाकर एक जोड़ें।",
+      "supplierHelper": "अपने वेंडर में से चुनें — वैकल्पिक।",
+      "customerLabel": "ग्राहक",
+      "loadingCustomers": "ग्राहक लोड हो रहे हैं…",
+      "selectCustomer": "एक ग्राहक चुनें",
+      "noCustomers": "अभी कोई ग्राहक नहीं।",
+      "customerHelper": "डिफ़ॉल्ट रूप से वॉक-इन ग्राहक।",
+      "noteLabel": "नोट (वैकल्पिक)",
+      "draftHint": "इससे एक ड्राफ्ट इनवॉइस बनती है — स्टॉक वास्तव में दर्ज करने के लिए इसे इनवॉइस से कन्फर्म करें।",
+      "createDraft": "ड्राफ्ट बनाएं",
+      "errorQuantity": "शून्य से अधिक मात्रा दर्ज करें।",
+      "errorPrice": "खरीद मूल्य दर्ज करें।",
+      "errorRecord": "स्टॉक मूवमेंट दर्ज नहीं हो सका।"
+    },
+    "ledger": {
+      "title": "स्टॉक लेजर",
+      "loadError": "लेजर लोड नहीं हो सका।",
+      "empty": "इस उत्पाद के लिए अभी तक कोई मूवमेंट दर्ज नहीं है।",
+      "byName": "{name} द्वारा",
+      "reversal": "उलटाव",
+      "balance": "बैलेंस: {value}"
+    },
+    "ledgerReason": {
+      "SALE": "बिक्री",
+      "PURCHASE": "खरीद",
+      "OPENING": "शुरुआती बैलेंस",
+      "DAMAGE": "खराब",
+      "EXPIRED": "एक्सपायर्ड",
+      "SHRINKAGE": "कमी",
+      "RECOUNT": "दोबारा गिनती सुधार",
+      "RETURN_IN": "ग्राहक वापसी",
+      "RETURN_OUT": "वेंडर को वापसी",
+      "TRANSFER_IN": "ट्रांसफर इन",
+      "TRANSFER_OUT": "ट्रांसफर आउट",
+      "movement": "मूवमेंट"
+    }
+  },
+  "returns": {
+    "list": {
+      "title": "रिटर्न",
+      "subtitle": "ग्राहक के रिटर्न अनुरोध। स्वीकार या अस्वीकार करें, पिक-अप और प्राप्त हुआ चिह्नित करें, फिर रिफंड करें — रकम खरीदार की मूल भुगतान विधि में वापस जाती है और स्टॉक फिर से जुड़ जाता है।",
+      "refresh": "रीफ्रेश करें",
+      "empty": "इस दृश्य में कोई रिटर्न नहीं है।",
+      "viewOrders": "ऑर्डर देखें",
+      "loadError": "रिटर्न लोड नहीं हो सके।",
+      "tabs": {
+        "open": "खुले",
+        "approved": "स्वीकृत",
+        "received": "प्राप्त",
+        "refunded": "रिफंड किए गए",
+        "all": "सभी"
+      }
+    },
+    "customerFallback": "ग्राहक #{id}",
+    "itemCountOne": "{count} वस्तु",
+    "itemCountOther": "{count} वस्तुएँ",
+    "status": {
+      "REQUESTED": "अनुरोधित",
+      "APPROVED": "स्वीकृत",
+      "PICKED_UP": "पिक-अप हुआ",
+      "RECEIVED": "प्राप्त हुआ",
+      "REFUNDED": "रिफंड हुआ",
+      "REJECTED": "अस्वीकृत",
+      "CANCELLED": "रद्द किया गया"
+    },
+    "reason": {
+      "DAMAGED": "पहुँचने पर क्षतिग्रस्त",
+      "WRONG_ITEM": "गलत वस्तु भेजी गई",
+      "NOT_AS_DESCRIBED": "विवरण के अनुसार नहीं",
+      "SIZE_FIT": "साइज़ / फिट की समस्या",
+      "CHANGED_MIND": "मन बदल गया",
+      "DEFECTIVE": "खराब / काम नहीं कर रहा",
+      "OTHER": "अन्य"
+    },
+    "actions": {
+      "approve": "स्वीकार करें",
+      "reject": "अस्वीकार करें",
+      "refund": "रिफंड करें",
+      "refundAmount": "{amount} रिफंड करें",
+      "markPickedUp": "पिक-अप हुआ चिह्नित करें",
+      "markReceived": "प्राप्त हुआ चिह्नित करें"
+    },
+    "detail": {
+      "loadError": "रिटर्न लोड नहीं हो सका।",
+      "updateError": "रिटर्न अपडेट नहीं हो सका।",
+      "refundError": "रिटर्न का रिफंड नहीं हो सका।",
+      "notFound": "रिटर्न नहीं मिला।",
+      "orderNo": "ऑर्डर #{id}",
+      "refundLabel": "रिफंड",
+      "refundedToOriginal": "{amount} {name} की मूल भुगतान विधि में रिफंड किया गया।",
+      "itemsHeading": "वस्तुएँ",
+      "buyerNote": "खरीदार का नोट",
+      "yourNote": "आपका नोट",
+      "timeline": "समयरेखा",
+      "productFallback": "उत्पाद"
+    },
+    "noteOptionalLabel": "नोट (वैकल्पिक)",
+    "reasonLabel": "कारण",
+    "approveModal": {
+      "title": "रिटर्न स्वीकार करें?",
+      "body": "ग्राहक को वस्तुएँ वापस भेजने की सूचना दी जाती है। चाहें तो पिक-अप निर्देश जोड़ें।"
+    },
+    "rejectModal": {
+      "title": "रिटर्न अस्वीकार करें?",
+      "body": "ग्राहक को कारण बताएँ — यह कारण उन्हें दिखाया जाता है।"
+    },
+    "refundModal": {
+      "title": "{amount} रिफंड करें?",
+      "body": "इससे खरीदार को उनकी मूल भुगतान विधि में रिफंड मिलता है और लौटाई गई वस्तुएँ फिर से स्टॉक में जुड़ जाती हैं। इसे वापस नहीं किया जा सकता।"
+    },
+    "refundMessage": {
+      "refunded": "{amount} का रिफंड ग्राहक की मूल भुगतान विधि में जारी किया गया।",
+      "noPayment": "रिफंड के लिए कोई ऑनलाइन भुगतान नहीं — ग्राहक के साथ ऑफ़लाइन निपटान करें।",
+      "failed": "भुगतान गेटवे रिफंड प्रोसेस नहीं कर सका। फिर से प्रयास करें।",
+      "nothing": "रिफंड करने के लिए कुछ नहीं था।",
+      "processed": "रिफंड प्रोसेस हो गया।"
+    }
+  },
+  "analytics": {
+    "header": {
+      "title": "एनालिटिक्स",
+      "subtitle": "ग्राहक आपके प्रोडक्ट्स के साथ कैसे जुड़ते हैं — फ़नल और ट्रेंड, और हर प्रोडक्ट के आँकड़े।"
+    },
+    "tabs": {
+      "byProduct": "प्रोडक्ट अनुसार",
+      "overview": "अवलोकन"
+    },
+    "range": {
+      "from": "से",
+      "to": "तक",
+      "last7Days": "पिछले 7 दिन",
+      "last30Days": "पिछले 30 दिन",
+      "thisMonth": "इस महीने"
+    },
+    "kpi": {
+      "impressions": "इम्प्रेशन",
+      "taps": "टैप",
+      "views": "व्यूज़",
+      "addToCart": "कार्ट में जोड़े",
+      "purchases": "खरीदारी",
+      "wishlist": "विशलिस्ट",
+      "ctr": "CTR",
+      "ctrHint": "टैप ÷ इम्प्रेशन",
+      "cvr": "CVR",
+      "cvrHint": "खरीदारी ÷ व्यूज़"
+    },
+    "table": {
+      "byProduct": "प्रोडक्ट अनुसार",
+      "filterPlaceholder": "प्रोडक्ट फ़िल्टर करें",
+      "noMatch": "आपके फ़िल्टर से मेल खाता कोई प्रोडक्ट नहीं।",
+      "noActivity": "इस अवधि में कोई प्रोडक्ट गतिविधि नहीं।",
+      "loadMore": "और प्रोडक्ट लोड करें"
+    },
+    "columns": {
+      "product": "प्रोडक्ट",
+      "imp": "इम्प",
+      "taps": "टैप",
+      "views": "व्यूज़",
+      "atc": "कार्ट",
+      "buys": "खरीद",
+      "ctr": "CTR",
+      "cvr": "CVR"
+    },
+    "common": {
+      "product": "प्रोडक्ट",
+      "loading": "लोड हो रहा है…"
+    },
+    "errors": {
+      "load": "एनालिटिक्स लोड नहीं हो सका।",
+      "noData": "कोई डेटा नहीं।"
+    },
+    "funnel": {
+      "title": "कन्वर्ज़न फ़नल",
+      "impressions": "इम्प्रेशन",
+      "taps": "टैप",
+      "views": "व्यूज़",
+      "addToCart": "कार्ट में जोड़े",
+      "purchases": "खरीदारी",
+      "fromPrevious": "पिछले से {rate}",
+      "barTitle": "{value} (इम्प्रेशन का {pct})"
+    },
+    "leak": {
+      "cartAbandonment": "कार्ट छोड़ना",
+      "cartAbandonmentHint": "जोड़ा पर खरीदा नहीं",
+      "browseToBuy": "ब्राउज़ → खरीद",
+      "browseToBuyHint": "व्यूज़ जो खरीदते हैं",
+      "wishlistToBuy": "विशलिस्ट → खरीद",
+      "wishlistToBuyHint": "विशलिस्ट जो खरीदते हैं"
+    },
+    "act": {
+      "title": "किस पर ध्यान दें",
+      "empty": "कुछ भी चिह्नित नहीं — इस अवधि में आपका फ़नल स्वस्थ दिख रहा है।"
+    },
+    "insight": {
+      "noPurchases": "{views} व्यूज़, कोई खरीदारी नहीं — कीमत या फ़ोटो जाँचें।",
+      "lowConversion": "कम कन्वर्ज़न ({cvr} बनाम दुकान औसत {avg})।",
+      "weakCtr": "कमज़ोर क्लिक-थ्रू ({ctr}) — बेहतर थंबनेल या टाइटल आज़माएँ।",
+      "cartAbandon": "कार्ट छोड़ना — {added} जोड़े, {bought} खरीदे।",
+      "wishlisted": "{count}× विशलिस्ट हुआ पर कभी नहीं खरीदा — एक फ़्लैश डील इसे बदल सकती है।"
+    },
+    "trern_placeholder": "__ignore__",
+    "trend": {
+      "title": "समय के साथ एंगेजमेंट",
+      "views": "व्यूज़",
+      "purchases": "खरीदारी",
+      "impressions": "इम्प्रेशन",
+      "taps": "टैप",
+      "ariaLabel": "समय के साथ {metric}",
+      "hoverHint": "किसी भी दिन के आँकड़ों के लिए लाइन पर होवर करें।"
+    },
+    "opportunity": {
+      "gemsTitle": "छिपे रत्न",
+      "gemsHint": "अधिक कन्वर्ज़न, कम ट्रैफ़िक — प्रमोट करने योग्य।",
+      "attentionTitle": "ध्यान चाहिए",
+      "attentionHint": "बहुत व्यूज़, कम खरीदार — कीमत और फ़ोटो जाँचें।",
+      "empty": "इस अवधि के लिए यहाँ कुछ नहीं।",
+      "viewsCount": "{count} व्यूज़",
+      "cvrValue": "CVR {cvr}"
+    },
+    "leaderboard": {
+      "mostSeen": "सबसे ज़्यादा देखे गए",
+      "bestSellers": "सबसे ज़्यादा बिकने वाले",
+      "unitImpressions": "इम्प्रेशन",
+      "unitSold": "बिके",
+      "empty": "इस अवधि के लिए कोई डेटा नहीं।"
+    },
+    "heatmap": {
+      "title": "ग्राहक कब खरीदते हैं",
+      "subtitle": "दिन और घंटे के अनुसार खरीदारी (आपका स्थानीय समय)।",
+      "error": "हीटमैप लोड नहीं हो सका।",
+      "empty": "इस अवधि में अभी कोई खरीदारी नहीं।",
+      "mon": "सोम",
+      "tue": "मंगल",
+      "wed": "बुध",
+      "thu": "गुरु",
+      "fri": "शुक्र",
+      "sat": "शनि",
+      "sun": "रवि",
+      "cellTitle": "{day} {hour}:00 — {count, plural, one {# खरीद} other {# खरीद}}",
+      "less": "कम",
+      "more": "ज़्यादा"
+    },
+    "customers": {
+      "title": "ग्राहक",
+      "error": "ग्राहक लोड नहीं हो सके।",
+      "empty": "इस अवधि में किसी ग्राहक ने नहीं खरीदा।",
+      "total": "ग्राहक",
+      "new": "नए",
+      "returning": "दोबारा आए",
+      "repeatRate": "रिपीट दर",
+      "repeatRateHint": "पहले खरीदा",
+      "topTitle": "शीर्ष ग्राहक",
+      "walkIn": "वॉक-इन",
+      "ordersCount": "{count, plural, one {# ऑर्डर} other {# ऑर्डर}}"
+    },
+    "stock": {
+      "title": "स्टॉक पूर्वानुमान",
+      "error": "पूर्वानुमान नहीं बन सका।",
+      "empty": "स्टॉक पूर्वानुमान के लिए पिछले 30 दिनों में पर्याप्त बिक्री नहीं।",
+      "subtitle": "पिछले 30 दिनों की बिक्री गति पर बचे स्टॉक के अनुमानित दिन — सबसे तेज़ बिकने वाले पहले।",
+      "outOfStock": "स्टॉक ख़त्म",
+      "daysLeft": "≈ {days, plural, one {# दिन} other {# दिन}} बचे",
+      "meta": "{perDay}/दिन · {stock} स्टॉक में",
+      "metaWithSku": "{perDay}/दिन · {stock} स्टॉक में · {sku}"
+    }
+  },
+  "shop": {
+    "errors": {
+      "load": "आपकी दुकान लोड नहीं हो सकी।",
+      "saveImage": "छवि सहेजी नहीं जा सकी।",
+      "publish": "प्रकाशन स्थिति अपडेट नहीं हो सकी।",
+      "save": "आपकी दुकान सहेजी नहीं जा सकी।",
+      "upload": "अपलोड विफल रहा।",
+      "returnWindow": "रिटर्न अवधि 0 और 365 के बीच पूरे दिनों की संख्या होनी चाहिए।",
+      "returnNoteLength": "रिटर्न नीति टिप्पणी 2048 अक्षर या उससे कम होनी चाहिए।"
+    },
+    "actions": {
+      "tryAgain": "फिर से प्रयास करें",
+      "save": "बदलाव सहेजें",
+      "saving": "सहेजा जा रहा है…"
+    },
+    "savedMessage": "दुकान सहेजी गई।",
+    "tabs": {
+      "ariaLabel": "दुकान सेटिंग्स",
+      "storefront": "स्टोरफ़्रंट",
+      "hours": "समय",
+      "policies": "नीतियाँ",
+      "returns": "रिटर्न",
+      "more": "और"
+    },
+    "branding": {
+      "title": "ब्रांडिंग",
+      "desc": "लोगो, बैनर और वे मूल बातें जो ग्राहक सबसे पहले देखते हैं।",
+      "banner": "बैनर",
+      "logo": "लोगो",
+      "shopName": "दुकान का नाम",
+      "tagline": "टैगलाइन",
+      "taglinePlaceholder": "आपके नाम के नीचे दिखने वाली एक छोटी पंक्ति",
+      "city": "शहर",
+      "state": "राज्य"
+    },
+    "vacation": {
+      "title": "अवकाश मोड",
+      "desc": "नए ऑर्डर रोकें और ग्राहकों को एक सूचना दिखाएँ।",
+      "toggleLabel": "अवकाश मोड",
+      "toggleDesc": "चालू होने पर, आपका स्टोरफ़्रंट दिखाता है कि आप उपलब्ध नहीं हैं और नए ऑर्डर रोक दिए जाते हैं।",
+      "messageLabel": "अनुपस्थिति संदेश",
+      "messagePlaceholder": "सोमवार को वापस — तब तक ऑर्डर रोके गए हैं।"
+    },
+    "hours": {
+      "title": "कार्य समय",
+      "desc": "जिन दिनों आप खुले रहते हैं और आपके कारोबार का समय।",
+      "to": "से",
+      "closed": "बंद"
+    },
+    "days": {
+      "mon": "सोमवार",
+      "tue": "मंगलवार",
+      "wed": "बुधवार",
+      "thu": "गुरुवार",
+      "fri": "शुक्रवार",
+      "sat": "शनिवार",
+      "sun": "रविवार"
+    },
+    "policies": {
+      "title": "नीतियाँ",
+      "desc": "आपके स्टोरफ़्रंट और ऑर्डर पृष्ठों पर दिखाया जाता है।",
+      "returnPolicy": "रिटर्न नीति",
+      "shippingPolicy": "शिपिंग नीति",
+      "refundPolicy": "रिफ़ंड नीति"
+    },
+    "returns": {
+      "title": "रिटर्न और रद्दीकरण",
+      "desc": "आप रिटर्न स्वीकार करते हैं या नहीं, रिफ़ंड कैसे जारी होते हैं, और ग्राहक कब तक रद्द कर सकते हैं।",
+      "acceptLabel": "रिटर्न स्वीकार करें",
+      "acceptDesc": "बंद होने पर, ग्राहक डिलीवरी के बाद रिटर्न का अनुरोध नहीं कर सकते।",
+      "windowLabel": "रिटर्न अवधि (दिन)",
+      "windowHint": "0 का अर्थ है कोई समय सीमा नहीं।",
+      "refundMethodLabel": "रिफ़ंड का तरीका",
+      "noteLabel": "रिटर्न नीति टिप्पणी",
+      "notePlaceholder": "जो ग्राहकों को पता होना चाहिए — स्थिति संबंधी आवश्यकताएँ, रिटर्न शिपिंग कौन चुकाता है…",
+      "cancelLabel": "ग्राहक रद्द कर सकते हैं",
+      "cancelHint": "इस चरण के बाद, ग्राहकों को इसके बजाय डिलीवरी के बाद रिटर्न का उपयोग करना होगा।"
+    },
+    "refundModes": {
+      "ORIGINAL": "मूल भुगतान विधि",
+      "REPLACEMENT": "केवल प्रतिस्थापन"
+    },
+    "cancellationPolicies": {
+      "UNTIL_CONFIRMED": "जब तक मैं ऑर्डर की पुष्टि न करूँ",
+      "UNTIL_PACKED": "पैक होने तक",
+      "UNTIL_SHIPPED": "शिप होने तक (अनुशंसित)",
+      "UNTIL_DELIVERED": "डिलीवर होने तक"
+    },
+    "more": {
+      "title": "और",
+      "desc": "टीम एक्सेस और भुगतान।",
+      "teamTitle": "टीम",
+      "teamSubtitle": "कर्मचारियों को आमंत्रित करें और अनुमतियाँ सेट करें",
+      "payoutsTitle": "भुगतान",
+      "payoutsSubtitle": "बैंक निपटान और KYC"
+    },
+    "hero": {
+      "fallbackName": "आपकी दुकान",
+      "verified": "सत्यापित",
+      "live": "लाइव",
+      "draft": "ड्राफ़्ट",
+      "unpublish": "अप्रकाशित करें",
+      "publish": "दुकान प्रकाशित करें",
+      "onVacation": "अवकाश पर",
+      "vacationPaused": "। नए ऑर्डर रोके गए हैं।"
+    },
+    "image": {
+      "uploading": "अपलोड हो रहा है…",
+      "replace": "बदलें",
+      "upload": "अपलोड करें",
+      "remove": "हटाएँ"
+    }
+  },
+  "payouts": {
+    "title": "पेआउट",
+    "subtitle": "ग्राहक ऑनलाइन जो पैसा देते हैं, ShopXY उसे यहाँ सेटल करता है।",
+    "backToShop": "मेरी दुकान",
+    "refresh": "रिफ्रेश करें",
+    "tryAgain": "फिर से कोशिश करें",
+    "cancel": "रद्द करें",
+    "linkedAccount": "लिंक किया गया खाता",
+    "settlementAccount": "Razorpay Route सेटलमेंट खाता",
+    "errors": {
+      "loadStatus": "पेआउट स्थिति लोड नहीं हो सकी।"
+    },
+    "badge": {
+      "payoutsEnabled": "पेआउट चालू"
+    },
+    "fact": {
+      "accountId": "खाता ID",
+      "name": "नाम",
+      "email": "ईमेल",
+      "businessType": "व्यवसाय प्रकार",
+      "kycStatus": "KYC स्थिति",
+      "payouts": "पेआउट"
+    },
+    "value": {
+      "enabled": "चालू",
+      "notEnabledYet": "अभी चालू नहीं",
+      "notYetEnabled": "अभी चालू नहीं"
+    },
+    "notEnabled": {
+      "prefix": "यह खाता अभी पेआउट के लिए सक्षम नहीं है (Razorpay स्थिति:",
+      "suffix": ")। Razorpay डैशबोर्ड में इसकी Route KYC पूरी करें, फिर लाइव दोबारा जाँचने के लिए रिफ्रेश करें। काउंटर पर UPI तभी चालू होगा जब Razorpay पेआउट सक्रिय कर देगा।"
+    },
+    "notStarted": {
+      "title": "पेआउट ऑनबोर्डिंग शुरू नहीं हुई",
+      "body": "यह सेट करें कि ShopXY आपकी ऑनलाइन + UPI बिक्री कहाँ सेटल करे। Razorpay पर नए हैं? नीचे KYC पूरी करें। पहले से Razorpay खाता है? उसे जोड़ें।"
+    },
+    "connect": {
+      "title": "मौजूदा खाता जोड़ें",
+      "subtitle": "पहले से Razorpay लिंक किया गया खाता है? ऑनबोर्डिंग छोड़ने के लिए उसकी id पेस्ट करें।",
+      "verify": "सत्यापित करें",
+      "confirmPrompt": "पुष्टि करें कि यह आपका खाता है:",
+      "linkThisAccount": "यह खाता जोड़ें",
+      "payoutsNotEnabledWarning": "इस खाते पर पेआउट अभी चालू नहीं हैं — आप इसे जोड़ सकते हैं, पर काउंटर पर UPI तब तक बंद रहेगा जब तक Razorpay इसे सक्रिय नहीं करता।",
+      "errors": {
+        "verify": "वह खाता सत्यापित नहीं हो सका।",
+        "link": "वह खाता जोड़ा नहीं जा सका।"
+      },
+      "fact": {
+        "account": "खाता",
+        "business": "व्यवसाय",
+        "contact": "संपर्क",
+        "email": "ईमेल",
+        "kycStatus": "KYC स्थिति",
+        "payouts": "पेआउट"
+      }
+    },
+    "onboarding": {
+      "title": "पेआउट सेट करें (KYC)",
+      "subtitle": "Razorpay पर नए हैं? यहाँ ऑनबोर्ड करें। PAN और बैंक सीधे प्रोवाइडर को जाते हैं — हम इन्हें कभी स्टोर नहीं करते।",
+      "back": "पीछे",
+      "next": "आगे",
+      "submit": "KYC के लिए सबमिट करें",
+      "errors": {
+        "start": "ऑनबोर्डिंग शुरू नहीं हो सकी।"
+      },
+      "step": {
+        "business": "व्यवसाय",
+        "identity": "पहचान",
+        "address": "पता",
+        "bank": "बैंक"
+      },
+      "field": {
+        "legalBusinessName": "कानूनी व्यवसाय नाम",
+        "displayName": "प्रदर्शन नाम (वैकल्पिक)",
+        "contactName": "संपर्क नाम",
+        "email": "ईमेल",
+        "phone": "फ़ोन",
+        "businessType": "व्यवसाय प्रकार",
+        "category": "श्रेणी",
+        "pan": "PAN",
+        "gstin": "GSTIN (वैकल्पिक)",
+        "streetAddress": "गली का पता",
+        "streetLine2": "गली की दूसरी पंक्ति (वैकल्पिक)",
+        "city": "शहर",
+        "state": "राज्य",
+        "pinCode": "पिन कोड",
+        "accountHolderName": "खाताधारक का नाम",
+        "bankAccountNumber": "बैंक खाता संख्या",
+        "ifsc": "IFSC"
+      },
+      "helper": {
+        "pan": "10 अक्षर, जैसे AAACL1234C",
+        "ifsc": "जैसे HDFC0001234"
+      },
+      "businessType": {
+        "proprietorship": "स्वामित्व (प्रोप्राइटरशिप)",
+        "partnership": "साझेदारी",
+        "private_limited": "प्राइवेट लिमिटेड",
+        "public_limited": "पब्लिक लिमिटेड",
+        "llp": "LLP",
+        "trust": "ट्रस्ट",
+        "society": "सोसाइटी",
+        "ngo": "NGO",
+        "individual": "व्यक्तिगत",
+        "not_yet_registered": "अभी पंजीकृत नहीं"
+      },
+      "category": {
+        "ecommerce": "ई-कॉमर्स",
+        "retail": "रिटेल",
+        "services": "सेवाएँ",
+        "food_and_beverage": "खाद्य एवं पेय",
+        "education": "शिक्षा",
+        "healthcare": "स्वास्थ्य सेवा",
+        "others": "अन्य"
+      }
+    }
+  },
+  "cashier": {
+    "metaTitle": "कैशियर · ShopXY",
+    "title": "कैशियर",
+    "subtitle": "टिल शिफ्ट खोलें, कैश ड्रॉअर संभालें, मिलान करें और रिटर्न निपटाएं।",
+    "loading": "लोड हो रहा है…",
+    "cashierRole": "कैशियर",
+    "actions": {
+      "refresh": "रिफ्रेश",
+      "print": "प्रिंट"
+    },
+    "banner": {
+      "shiftOpenFor": "शिफ्ट खुली है"
+    },
+    "errors": {
+      "loadTill": "टिल लोड नहीं हो सका।",
+      "generic": "कुछ गड़बड़ हो गई।",
+      "loadHistory": "शिफ्ट इतिहास लोड नहीं हो सका।",
+      "loadZReport": "Z-रिपोर्ट लोड नहीं हो सकी।"
+    },
+    "open": {
+      "title": "शिफ्ट खोलें",
+      "help": "ड्रॉअर में मौजूद कैश गिनें और उसे ओपनिंग फ्लोट के रूप में दर्ज करें।",
+      "floatLabel": "ओपनिंग फ्लोट (₹)",
+      "submit": "शिफ्ट खोलें"
+    },
+    "report": {
+      "title": "शिफ्ट रिपोर्ट (X)",
+      "salesSummary": "{count, plural, one {# बिक्री} other {# बिक्रियां}} · {gross} सकल",
+      "cashDrawer": "कैश ड्रॉअर",
+      "openingFloat": "ओपनिंग फ्लोट",
+      "cashSales": "कैश बिक्री",
+      "payIns": "पे-इन",
+      "payOuts": "पे-आउट",
+      "drops": "ड्रॉप",
+      "refunds": "रिफंड",
+      "expectedInDrawer": "ड्रॉअर में अपेक्षित",
+      "tenders": "टेंडर",
+      "noSales": "अभी तक कोई बिक्री नहीं।",
+      "gstCollected": "GST वसूला गया",
+      "taxable": "कर योग्य",
+      "cess": "सेस",
+      "rateTaxable": "@ {rate}% — कर योग्य",
+      "rateTaxValue": "{taxable} · कर {tax}",
+      "returns": "रिटर्न ({count})"
+    },
+    "movement": {
+      "title": "कैश ड्रॉअर",
+      "payIn": "पे इन",
+      "payOut": "पे आउट",
+      "drop": "ड्रॉप",
+      "amountPlaceholder": "राशि ₹",
+      "reasonPlaceholder": "कारण (वैकल्पिक)",
+      "record": "दर्ज करें"
+    },
+    "close": {
+      "title": "शिफ्ट बंद करें",
+      "expectedInDrawer": "ड्रॉअर में अपेक्षित:",
+      "countedLabel": "गिना गया कैश (₹)",
+      "variance": "अंतर:",
+      "balanced": "(संतुलित)",
+      "over": "(अधिक)",
+      "short": "(कम)",
+      "notePlaceholder": "नोट (वैकल्पिक)",
+      "submit": "बंद करें और Z-रिपोर्ट प्रिंट करें"
+    },
+    "returns": {
+      "title": "रिटर्न",
+      "invoiceIdPlaceholder": "मूल इनवॉइस आईडी",
+      "lookUp": "खोजें",
+      "lineDetail": "बिका {sold} · रिटर्न योग्य {returnable} · {price}",
+      "refundVia": "रिफंड इसके ज़रिए",
+      "enterQty": "रिटर्न करने के लिए मात्रा दर्ज करें।",
+      "done": "क्रेडिट नोट {creditNote} · रिफंड {refund}{drawer}",
+      "drawerAdjusted": " (ड्रॉअर समायोजित)",
+      "process": "रिटर्न प्रोसेस करें"
+    },
+    "history": {
+      "title": "पिछली शिफ्ट · Z-रसीदें",
+      "subtitleAll": "हर कैशियर की शिफ्ट, किसने खोली इसके अनुसार चिह्नित।",
+      "subtitleOwn": "आपकी अपनी शिफ्ट। मालिक और मैनेजर पूरी टीम की देख सकते हैं।",
+      "empty": "अभी तक कोई शिफ्ट नहीं।",
+      "colOpened": "खोली गई",
+      "colCashier": "कैशियर",
+      "colStatus": "स्थिति",
+      "colExpected": "अपेक्षित",
+      "colCounted": "गिना गया",
+      "colVariance": "अंतर",
+      "viewZReport": "Z-रिपोर्ट देखें"
+    },
+    "status": {
+      "open": "खुली",
+      "closed": "बंद"
+    },
+    "zReport": {
+      "title": "Z-रिपोर्ट",
+      "printHeading": "Z-रिपोर्ट",
+      "openingFloat": "ओपनिंग फ्लोट",
+      "cashSales": "कैश बिक्री",
+      "payIns": "पे-इन",
+      "payOuts": "पे-आउट",
+      "drops": "ड्रॉप",
+      "refunds": "रिफंड",
+      "expectedInDrawer": "ड्रॉअर में अपेक्षित",
+      "counted": "गिना गया",
+      "variance": "अंतर",
+      "sales": "बिक्री",
+      "gstCgst": "GST CGST",
+      "gstSgst": "GST SGST",
+      "gstIgst": "GST IGST"
+    }
   }
 }

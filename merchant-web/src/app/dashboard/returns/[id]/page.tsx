@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   BadgeIndianRupee,
   CheckCircle2,
@@ -26,16 +27,15 @@ import {
   rejectReturn,
 } from "@/features/returns/api";
 import {
-  RETURN_REASON_LABELS,
   RETURN_STATUS_CLASSES,
-  RETURN_STATUS_LABELS,
   canApprove,
   canMarkPickedUp,
   canMarkReceived,
   canRefund,
   customerName,
-  refundStatusMessage,
+  refundStatusMessageKey,
   type MerchantReturn,
+  type RefundResult,
   type ReturnEvent,
   type ReturnItem,
 } from "@/features/returns/schema";
@@ -44,6 +44,7 @@ import { DetailSkeleton } from "@/shared/ui/skeleton";
 const BACK = "/dashboard/returns";
 
 export default function ReturnDetailPage() {
+  const t = useTranslations("returns");
   const params = useParams<{ id: string }>();
   const id = Number(params.id);
 
@@ -55,7 +56,7 @@ export default function ReturnDetailPage() {
 
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [refundNotice, setRefundNotice] = useState<string | null>(null);
+  const [refundResult, setRefundResult] = useState<RefundResult | null>(null);
   const [modal, setModal] = useState<"approve" | "reject" | "refund" | null>(null);
   const [note, setNote] = useState("");
 
@@ -69,7 +70,7 @@ export default function ReturnDetailPage() {
         setRet(r);
         setError(null);
       } catch (e) {
-        if (active) setError(e instanceof Error ? e.message : "Could not load the return.");
+        if (active) setError(e instanceof Error ? e.message : t("detail.loadError"));
       } finally {
         if (active) setLoading(false);
       }
@@ -77,7 +78,7 @@ export default function ReturnDetailPage() {
     return () => {
       active = false;
     };
-  }, [id, nonce]);
+  }, [id, nonce, t]);
 
   async function run(fn: () => Promise<void>) {
     setBusy(true);
@@ -88,7 +89,7 @@ export default function ReturnDetailPage() {
       setNote("");
       reload();
     } catch (e) {
-      setActionError(e instanceof Error ? e.message : "Could not update the return.");
+      setActionError(e instanceof Error ? e.message : t("detail.updateError"));
     } finally {
       setBusy(false);
     }
@@ -99,12 +100,12 @@ export default function ReturnDetailPage() {
     setActionError(null);
     try {
       const result = await refundReturn(id, note.trim() || undefined);
-      setRefundNotice(refundStatusMessage(result));
+      setRefundResult(result);
       setModal(null);
       setNote("");
       reload();
     } catch (e) {
-      setActionError(e instanceof Error ? e.message : "Could not refund the return.");
+      setActionError(e instanceof Error ? e.message : t("detail.refundError"));
     } finally {
       setBusy(false);
     }
@@ -116,19 +117,19 @@ export default function ReturnDetailPage() {
   if (error || !ret) {
     return (
       <div className="w-full px-lg py-xxl md:px-xxl">
-        <BackLink href={BACK} label="Returns" />
+        <BackLink href={BACK} label={t("list.title")} />
         <p className="mt-md rounded-md bg-error-soft px-md py-sm text-body-sm text-error">
-          {error ?? "Return not found."}
+          {error ?? t("detail.notFound")}
         </p>
       </div>
     );
   }
 
-  const name = customerName(ret);
+  const name = customerName(ret, t("customerFallback", { id: ret.id }));
 
   return (
     <div className="w-full px-lg py-xxl pb-massive md:px-xxl">
-      <BackLink href={BACK} label="Returns" />
+      <BackLink href={BACK} label={t("list.title")} />
 
       {/* Header */}
       <div className="mt-md flex flex-wrap items-start justify-between gap-md">
@@ -140,11 +141,11 @@ export default function ReturnDetailPage() {
                 RETURN_STATUS_CLASSES[ret.status] ?? "bg-surface-tint text-muted"
               }`}
             >
-              {RETURN_STATUS_LABELS[ret.status] ?? ret.status}
+              {t(`status.${ret.status}`)}
             </span>
           </div>
           <p className="mt-xs text-body-sm text-muted">
-            {ret.request?.customerOrderId ? `Order #${ret.request.customerOrderId} · ` : ""}
+            {ret.request?.customerOrderId ? `${t("detail.orderNo", { id: ret.request.customerOrderId })} · ` : ""}
             {formatDateTime(ret.createdAt)}
           </p>
           {ret.request?.customerAddress ? (
@@ -154,7 +155,7 @@ export default function ReturnDetailPage() {
           ) : null}
         </div>
         <div className="text-right">
-          <p className="text-label-md uppercase tracking-wide text-subtle">Refund</p>
+          <p className="text-label-md uppercase tracking-wide text-subtle">{t("detail.refundLabel")}</p>
           <p className="text-headline-md font-bold text-ink">{formatINR2(ret.refundAmount)}</p>
         </div>
       </div>
@@ -163,20 +164,21 @@ export default function ReturnDetailPage() {
         <p className="mt-md rounded-md bg-error-soft px-md py-sm text-body-sm text-error">{actionError}</p>
       ) : null}
 
-      {refundNotice ? (
+      {refundResult ? (
         <p className="mt-lg flex items-center gap-sm rounded-md bg-success-soft px-md py-sm text-body-sm text-success">
-          <BadgeIndianRupee size={15} /> {refundNotice}
+          <BadgeIndianRupee size={15} />{" "}
+          {t(refundStatusMessageKey(refundResult), { amount: formatINR2(refundResult.refundAmount) })}
         </p>
       ) : ret.refundMethod ? (
         <p className="mt-lg flex items-center gap-sm rounded-md bg-success-soft px-md py-sm text-body-sm text-success">
-          <BadgeIndianRupee size={15} /> Refunded {formatINR2(ret.refundAmount)} to {name}&rsquo;s original payment
-          method.
+          <BadgeIndianRupee size={15} />{" "}
+          {t("detail.refundedToOriginal", { amount: formatINR2(ret.refundAmount), name })}
         </p>
       ) : null}
 
       {/* Items */}
       <Divider className="my-xl" />
-      <h2 className="mb-sm text-label-md uppercase tracking-wide text-subtle">Items</h2>
+      <h2 className="mb-sm text-label-md uppercase tracking-wide text-subtle">{t("detail.itemsHeading")}</h2>
       {ret.items.map((it) => (
         <ItemRow key={it.id} item={it} />
       ))}
@@ -186,7 +188,7 @@ export default function ReturnDetailPage() {
         <>
           <Divider className="my-xl" />
           <h2 className="mb-sm flex items-center gap-sm text-label-md uppercase tracking-wide text-subtle">
-            <MessageSquare size={14} /> Buyer note
+            <MessageSquare size={14} /> {t("detail.buyerNote")}
           </h2>
           <p className="text-body-md text-muted">{ret.note}</p>
         </>
@@ -194,7 +196,7 @@ export default function ReturnDetailPage() {
       {ret.decisionNote ? (
         <>
           <Divider className="my-xl" />
-          <h2 className="mb-sm text-label-md uppercase tracking-wide text-subtle">Your note</h2>
+          <h2 className="mb-sm text-label-md uppercase tracking-wide text-subtle">{t("detail.yourNote")}</h2>
           <p className="text-body-md text-muted">{ret.decisionNote}</p>
         </>
       ) : null}
@@ -203,7 +205,7 @@ export default function ReturnDetailPage() {
       {ret.events.length > 0 ? (
         <>
           <Divider className="my-xl" />
-          <h2 className="mb-sm text-label-md uppercase tracking-wide text-subtle">Timeline</h2>
+          <h2 className="mb-sm text-label-md uppercase tracking-wide text-subtle">{t("detail.timeline")}</h2>
           {ret.events.map((e) => (
             <EventRow key={e.id} event={e} />
           ))}
@@ -223,7 +225,7 @@ export default function ReturnDetailPage() {
               disabled={busy}
               className="inline-flex h-11 items-center gap-sm rounded-button border border-hairline px-lg text-label-md text-error transition-colors hover:bg-error-soft disabled:text-disabled"
             >
-              Reject
+              {t("actions.reject")}
             </button>
             <button
               type="button"
@@ -234,7 +236,7 @@ export default function ReturnDetailPage() {
               disabled={busy}
               className="inline-flex h-11 items-center gap-sm rounded-button bg-brand px-lg text-label-md text-white transition-colors hover:bg-brand-strong disabled:bg-disabled"
             >
-              <CheckCircle2 size={16} /> Approve
+              <CheckCircle2 size={16} /> {t("actions.approve")}
             </button>
           </>
         ) : null}
@@ -245,7 +247,7 @@ export default function ReturnDetailPage() {
             disabled={busy}
             className="inline-flex h-11 items-center gap-sm rounded-button border border-hairline px-lg text-label-md text-ink transition-colors hover:bg-surface-tint disabled:text-disabled"
           >
-            <Truck size={16} /> Mark picked up
+            <Truck size={16} /> {t("actions.markPickedUp")}
           </button>
         ) : null}
         {canMarkReceived(ret) ? (
@@ -255,7 +257,7 @@ export default function ReturnDetailPage() {
             disabled={busy}
             className="inline-flex h-11 items-center gap-sm rounded-button border border-hairline px-lg text-label-md text-ink transition-colors hover:bg-surface-tint disabled:text-disabled"
           >
-            <PackageCheck size={16} /> Mark received
+            <PackageCheck size={16} /> {t("actions.markReceived")}
           </button>
         ) : null}
         {canRefund(ret) ? (
@@ -268,50 +270,45 @@ export default function ReturnDetailPage() {
             disabled={busy}
             className="inline-flex h-11 items-center gap-sm rounded-button bg-brand px-lg text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:bg-disabled"
           >
-            <BadgeIndianRupee size={16} /> Refund {formatINR2(ret.refundAmount)}
+            <BadgeIndianRupee size={16} /> {t("actions.refundAmount", { amount: formatINR2(ret.refundAmount) })}
           </button>
         ) : null}
       </div>
 
       {/* Modals */}
       {modal === "approve" ? (
-        <Modal title="Approve return?" onClose={() => setModal(null)}>
-          <p className="text-body-md text-muted">
-            The customer is notified to send the items back. Add pickup instructions if you like.
-          </p>
-          <TextAreaField label="Note (optional)" value={note} onChange={setNote} rows={2} />
+        <Modal title={t("approveModal.title")} onClose={() => setModal(null)}>
+          <p className="text-body-md text-muted">{t("approveModal.body")}</p>
+          <TextAreaField label={t("noteOptionalLabel")} value={note} onChange={setNote} rows={2} />
           <ModalActions
             busy={busy}
-            confirmLabel="Approve"
+            confirmLabel={t("actions.approve")}
             onCancel={() => setModal(null)}
             onConfirm={() => run(() => approveReturn(id, note.trim() || undefined))}
           />
         </Modal>
       ) : null}
       {modal === "reject" ? (
-        <Modal title="Reject return?" onClose={() => setModal(null)}>
-          <p className="text-body-md text-muted">Tell the customer why — this reason is shown to them.</p>
-          <TextAreaField label="Reason" value={note} onChange={setNote} rows={2} />
+        <Modal title={t("rejectModal.title")} onClose={() => setModal(null)}>
+          <p className="text-body-md text-muted">{t("rejectModal.body")}</p>
+          <TextAreaField label={t("reasonLabel")} value={note} onChange={setNote} rows={2} />
           <ModalActions
             busy={busy}
             danger
             disabled={!note.trim()}
-            confirmLabel="Reject"
+            confirmLabel={t("actions.reject")}
             onCancel={() => setModal(null)}
             onConfirm={() => run(() => rejectReturn(id, note.trim()))}
           />
         </Modal>
       ) : null}
       {modal === "refund" ? (
-        <Modal title={`Refund ${formatINR2(ret.refundAmount)}?`} onClose={() => setModal(null)}>
-          <p className="text-body-md text-muted">
-            This refunds the buyer to their original payment method and restocks the returned items. It can&rsquo;t be
-            undone.
-          </p>
-          <TextAreaField label="Note (optional)" value={note} onChange={setNote} rows={2} />
+        <Modal title={t("refundModal.title", { amount: formatINR2(ret.refundAmount) })} onClose={() => setModal(null)}>
+          <p className="text-body-md text-muted">{t("refundModal.body")}</p>
+          <TextAreaField label={t("noteOptionalLabel")} value={note} onChange={setNote} rows={2} />
           <ModalActions
             busy={busy}
-            confirmLabel="Refund"
+            confirmLabel={t("actions.refund")}
             onCancel={() => setModal(null)}
             onConfirm={() => void runRefund()}
           />
@@ -322,17 +319,18 @@ export default function ReturnDetailPage() {
 }
 
 function ItemRow({ item }: { item: ReturnItem }) {
+  const t = useTranslations("returns");
   const pri = item.purchaseRequestItem;
   return (
     <div className="flex items-start gap-md border-b border-hairline py-md">
       <div className="min-w-0 flex-1">
-        <p className="truncate text-body-md text-ink">{pri?.productName ?? "Product"}</p>
+        <p className="truncate text-body-md text-ink">{pri?.productName ?? t("detail.productFallback")}</p>
         <p className="text-body-sm text-muted">
           {item.quantity} {pri?.unit ?? ""} × {formatINR2(pri?.unitPrice ?? 0)}
         </p>
         {item.reason ? (
           <span className="mt-xs inline-flex items-center rounded-full bg-surface-tint px-sm py-px text-body-sm text-muted">
-            {RETURN_REASON_LABELS[item.reason] ?? item.reason}
+            {t(`reason.${item.reason}`)}
           </span>
         ) : null}
       </div>
@@ -342,11 +340,12 @@ function ItemRow({ item }: { item: ReturnItem }) {
 }
 
 function EventRow({ event }: { event: ReturnEvent }) {
+  const t = useTranslations("returns");
   return (
     <div className="flex items-center gap-md border-b border-hairline py-sm">
       <CircleDot size={14} className="shrink-0 text-subtle" />
       <div className="min-w-0 flex-1">
-        <p className="text-body-md text-ink">{RETURN_STATUS_LABELS[event.type] ?? event.type}</p>
+        <p className="text-body-md text-ink">{t(`status.${event.type}`)}</p>
         {event.note ? <p className="text-body-sm text-muted">{event.note}</p> : null}
       </div>
       <span className="shrink-0 text-body-sm text-subtle">{formatDateTime(event.occurredAt)}</span>

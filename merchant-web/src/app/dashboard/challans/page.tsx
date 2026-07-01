@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { ChevronRight, ClipboardList, Plus, RefreshCw, Search } from "lucide-react";
 import { PageHeader } from "@/shared/ui/page-header";
 import { formatDateTime } from "@/shared/datetime";
@@ -15,14 +16,20 @@ import {
 import { MaybeLocked } from "@/features/auth/components/maybe-locked";
 import { ListRowsSkeleton } from "@/shared/ui/skeleton";
 
-const TABS: { key: string; label: string }[] = [
-  { key: "", label: "All" },
-  { key: "PENDING", label: "Pending" },
-  { key: "CONVERTED", label: "Converted" },
-  { key: "CANCELLED", label: "Cancelled" },
+const TABS: { key: string; labelKey: string }[] = [
+  { key: "", labelKey: "tabs.all" },
+  { key: "PENDING", labelKey: "tabs.pending" },
+  { key: "CONVERTED", labelKey: "tabs.converted" },
+  { key: "CANCELLED", labelKey: "tabs.cancelled" },
 ];
 
+function statusLabel(t: ReturnType<typeof useTranslations>, status: string): string {
+  const key = { PENDING: "status.pending", CONVERTED: "status.converted", CANCELLED: "status.cancelled" }[status];
+  return key ? t(key) : (CHALLAN_STATUS_LABELS[status] ?? status);
+}
+
 export default function ChallansPage() {
+  const t = useTranslations("challans");
   const [rows, setRows] = useState<Challan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -46,7 +53,7 @@ export default function ChallansPage() {
         setRows(data);
         setError(null);
       } catch (e) {
-        if (active) setError(e instanceof Error ? e.message : "Could not load challans.");
+        if (active) setError(e instanceof Error ? e.message : t("list.loadError"));
       } finally {
         if (active) setLoading(false);
       }
@@ -54,31 +61,31 @@ export default function ChallansPage() {
     return () => {
       active = false;
     };
-  }, [status, search, nonce]);
+  }, [status, search, nonce, t]);
 
   return (
     <div className="w-full px-lg py-xxl md:px-xxl">
       <PageHeader
         icon={ClipboardList}
         tone="amber"
-        title="Challans"
-        subtitle="Delivery notes (quantities only). Stock leaves on creation; convert to an invoice to bill, or cancel to reverse."
+        title={t("list.title")}
+        subtitle={t("list.subtitle")}
       >
         <button
           type="button"
           onClick={() => setNonce((n) => n + 1)}
           disabled={loading}
-          aria-label="Refresh"
+          aria-label={t("list.refresh")}
           className="inline-flex size-10 items-center justify-center rounded-button border border-hairline text-ink transition-colors hover:bg-surface-tint disabled:text-disabled"
         >
           <RefreshCw size={16} />
         </button>
-        <MaybeLocked area="invoices" label="Create challan">
+        <MaybeLocked area="invoices" label={t("actions.create")}>
           <Link
             href="/dashboard/challans/new"
             className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-md text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
           >
-            <Plus size={16} /> Create challan
+            <Plus size={16} /> {t("actions.create")}
           </Link>
         </MaybeLocked>
       </PageHeader>
@@ -89,22 +96,22 @@ export default function ChallansPage() {
         <input
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          placeholder="Search challan no or party"
+          placeholder={t("list.searchPlaceholder")}
           className="h-10 w-full bg-transparent text-body-md text-ink outline-none placeholder:text-subtle"
         />
       </div>
 
       <div className="mt-md flex flex-wrap items-center gap-sm">
-        {TABS.map((t) => (
+        {TABS.map((tab) => (
           <button
-            key={t.key}
+            key={tab.key}
             type="button"
-            onClick={() => setStatus(t.key)}
+            onClick={() => setStatus(tab.key)}
             className={`inline-flex h-9 items-center rounded-button px-md text-label-md transition-colors ${
-              status === t.key ? "bg-brand text-white" : "border border-hairline text-ink hover:bg-surface-tint"
+              status === tab.key ? "bg-brand text-white" : "border border-hairline text-ink hover:bg-surface-tint"
             }`}
           >
-            {t.label}
+            {t(tab.labelKey)}
           </button>
         ))}
       </div>
@@ -121,13 +128,13 @@ export default function ChallansPage() {
             <span className="flex size-12 items-center justify-center rounded-full bg-accent-amber-soft text-accent-amber">
               <ClipboardList size={22} />
             </span>
-            <p className="text-body-md text-muted">No challans found.</p>
-            <MaybeLocked area="invoices" label="Create challan">
+            <p className="text-body-md text-muted">{t("list.empty")}</p>
+            <MaybeLocked area="invoices" label={t("actions.create")}>
               <Link
                 href="/dashboard/challans/new"
                 className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
               >
-                <Plus size={16} /> Create challan
+                <Plus size={16} /> {t("actions.create")}
               </Link>
             </MaybeLocked>
           </div>
@@ -140,6 +147,7 @@ export default function ChallansPage() {
 }
 
 function ChallanRow({ challan }: { challan: Challan }) {
+  const t = useTranslations("challans");
   const items = challanItemCount(challan);
   return (
     <Link
@@ -157,12 +165,12 @@ function ChallanRow({ challan }: { challan: Challan }) {
               CHALLAN_STATUS_CLASSES[challan.status] ?? "bg-surface-tint text-muted"
             }`}
           >
-            {CHALLAN_STATUS_LABELS[challan.status] ?? challan.status}
+            {statusLabel(t, challan.status)}
           </span>
         </div>
         <p className="truncate text-body-sm text-muted">{challan.partyName ?? "—"}</p>
         <p className="text-body-sm text-subtle">
-          {formatDateTime(challan.createdAt)} · {items} {items === 1 ? "item" : "items"}
+          {formatDateTime(challan.createdAt)} · {items} {items === 1 ? t("list.item") : t("list.items")}
         </p>
       </div>
       <ChevronRight size={18} className="shrink-0 text-subtle" />

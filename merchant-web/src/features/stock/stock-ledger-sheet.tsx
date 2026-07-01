@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { ArrowDown, ArrowUp, ChevronRight } from "lucide-react";
 import { Modal } from "@/shared/ui/modal";
 import { qty as fmtQty } from "@/features/products/format";
@@ -11,7 +12,6 @@ import {
   hasSourceDocument,
   isReversal,
   isStockIn,
-  reasonCodeLabel,
   type StockTxn,
 } from "./schema";
 
@@ -33,6 +33,7 @@ export function StockLedgerSheet({
   productUnit?: string | null;
   onClose: () => void;
 }) {
+  const t = useTranslations("stockAdjustments");
   const [entries, setEntries] = useState<StockTxn[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,7 +48,7 @@ export function StockLedgerSheet({
         }
       } catch (e) {
         if (active) {
-          setError(e instanceof Error ? e.message : "Could not load the ledger.");
+          setError(e instanceof Error ? e.message : t("ledger.loadError"));
           setEntries([]);
         }
       }
@@ -55,10 +56,10 @@ export function StockLedgerSheet({
     return () => {
       active = false;
     };
-  }, [productId]);
+  }, [productId, t]);
 
   return (
-    <Modal title="Stock ledger" onClose={onClose} wide>
+    <Modal title={t("ledger.title")} onClose={onClose} wide>
       <p className="text-body-sm text-muted">{productName}</p>
 
       {error ? (
@@ -67,7 +68,7 @@ export function StockLedgerSheet({
         <LedgerSkeleton />
       ) : entries.length === 0 ? (
         <p className="py-xl text-center text-body-md text-muted">
-          No movements recorded for this product yet.
+          {t("ledger.empty")}
         </p>
       ) : (
         <ul className="-mx-sm divide-y divide-hairline">
@@ -80,6 +81,20 @@ export function StockLedgerSheet({
   );
 }
 
+const LEDGER_REASON_KEYS = new Set([
+  "SALE",
+  "PURCHASE",
+  "OPENING",
+  "DAMAGE",
+  "EXPIRED",
+  "SHRINKAGE",
+  "RECOUNT",
+  "RETURN_IN",
+  "RETURN_OUT",
+  "TRANSFER_IN",
+  "TRANSFER_OUT",
+]);
+
 function LedgerEntry({
   entry,
   unit,
@@ -89,6 +104,7 @@ function LedgerEntry({
   unit?: string | null;
   onNavigate: () => void;
 }) {
+  const t = useTranslations("stockAdjustments");
   const stockIn = isStockIn(entry);
   const accent = stockIn ? "text-success" : "text-error";
   const iconBg = stockIn ? "bg-success-soft" : "bg-error-soft";
@@ -96,12 +112,16 @@ function LedgerEntry({
   const unitStr = unit ?? entry.productUnit ?? "";
   const unitText = unitStr ? ` ${unitLabel(unitStr)}` : "";
   const href = sourceLink(entry);
+  const reasonLabel =
+    entry.reasonCode && LEDGER_REASON_KEYS.has(entry.reasonCode)
+      ? t(`ledgerReason.${entry.reasonCode}`)
+      : t("ledgerReason.movement");
 
   // "27 Jun 2026, 11:09 am · Acme traders · by Nikhil Kumawat"
   const meta = [
     formatDateTime(entry.createdAt),
     entry.vendor?.name ?? entry.supplierName ?? null,
-    entry.createdBy?.name ? `by ${entry.createdBy.name}` : null,
+    entry.createdBy?.name ? t("ledger.byName", { name: entry.createdBy.name }) : null,
   ]
     .filter(Boolean)
     .join(" · ");
@@ -117,11 +137,11 @@ function LedgerEntry({
         <div className="flex items-baseline justify-between gap-md">
           <span className="flex min-w-0 items-center gap-sm">
             <span className="truncate text-body-md font-semibold text-ink">
-              {reasonCodeLabel(entry.reasonCode)}
+              {reasonLabel}
             </span>
             {isReversal(entry) ? (
               <span className="shrink-0 rounded-full bg-surface-tint px-sm py-px text-label-md text-muted">
-                Reversal
+                {t("ledger.reversal")}
               </span>
             ) : null}
           </span>
@@ -136,7 +156,7 @@ function LedgerEntry({
           <span className="truncate text-body-sm text-muted">{meta}</span>
           {entry.stockAfter != null ? (
             <span className="shrink-0 text-body-sm tabular-nums text-muted">
-              Bal: {fmtQty(entry.stockAfter)}
+              {t("ledger.balance", { value: fmtQty(entry.stockAfter) })}
             </span>
           ) : null}
         </div>

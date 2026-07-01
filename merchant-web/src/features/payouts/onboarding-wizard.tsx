@@ -2,30 +2,31 @@
 
 import { useState } from "react";
 import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, ShieldCheck } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { TextField, SelectField } from "@/shared/ui/form";
 import { onboardingSchema, startOnboarding, type OnboardingInput } from "./api";
 
-const BUSINESS_TYPES = [
-  { value: "proprietorship", label: "Proprietorship" },
-  { value: "partnership", label: "Partnership" },
-  { value: "private_limited", label: "Private Limited" },
-  { value: "public_limited", label: "Public Limited" },
-  { value: "llp", label: "LLP" },
-  { value: "trust", label: "Trust" },
-  { value: "society", label: "Society" },
-  { value: "ngo", label: "NGO" },
-  { value: "individual", label: "Individual" },
-  { value: "not_yet_registered", label: "Not yet registered" },
+const BUSINESS_TYPE_VALUES = [
+  "proprietorship",
+  "partnership",
+  "private_limited",
+  "public_limited",
+  "llp",
+  "trust",
+  "society",
+  "ngo",
+  "individual",
+  "not_yet_registered",
 ] as const;
 
-const CATEGORIES = [
-  { value: "ecommerce", label: "E-commerce" },
-  { value: "retail", label: "Retail" },
-  { value: "services", label: "Services" },
-  { value: "food_and_beverage", label: "Food & beverage" },
-  { value: "education", label: "Education" },
-  { value: "healthcare", label: "Healthcare" },
-  { value: "others", label: "Others" },
+const CATEGORY_VALUES = [
+  "ecommerce",
+  "retail",
+  "services",
+  "food_and_beverage",
+  "education",
+  "healthcare",
+  "others",
 ] as const;
 
 type Field =
@@ -34,11 +35,11 @@ type Field =
   | "street1" | "street2" | "city" | "state" | "postalCode"
   | "beneficiaryName" | "bankAccountNumber" | "bankIfsc";
 
-const STEPS: { title: string; fields: Field[] }[] = [
-  { title: "Business", fields: ["legalBusinessName", "customerFacingBusinessName", "contactName", "email", "phone", "businessType", "category"] },
-  { title: "Identity", fields: ["pan", "gst"] },
-  { title: "Address", fields: ["street1", "street2", "city", "state", "postalCode"] },
-  { title: "Bank", fields: ["beneficiaryName", "bankAccountNumber", "bankIfsc"] },
+const STEPS: { key: string; fields: Field[] }[] = [
+  { key: "business", fields: ["legalBusinessName", "customerFacingBusinessName", "contactName", "email", "phone", "businessType", "category"] },
+  { key: "identity", fields: ["pan", "gst"] },
+  { key: "address", fields: ["street1", "street2", "city", "state", "postalCode"] },
+  { key: "bank", fields: ["beneficiaryName", "bankAccountNumber", "bankIfsc"] },
 ];
 
 const EMPTY: Record<Field, string> = {
@@ -91,11 +92,15 @@ function validate(v: Record<Field, string>): Partial<Record<Field, string>> {
  * to Razorpay by the backend and never stored on the web.
  */
 export function OnboardingWizard({ onLinked }: { onLinked: () => void }) {
+  const t = useTranslations("payouts");
   const [v, setV] = useState<Record<Field, string>>(EMPTY);
   const [step, setStep] = useState(0);
   const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
   const [busy, setBusy] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const businessTypeOptions = BUSINESS_TYPE_VALUES.map((value) => ({ value, label: t(`onboarding.businessType.${value}`) }));
+  const categoryOptions = CATEGORY_VALUES.map((value) => ({ value, label: t(`onboarding.category.${value}`) }));
 
   const set = (f: Field) => (val: string) => setV((prev) => ({ ...prev, [f]: val }));
   const stepFields = STEPS[step].fields;
@@ -127,7 +132,7 @@ export function OnboardingWizard({ onLinked }: { onLinked: () => void }) {
       await startOnboarding(toPayload(v));
       onLinked();
     } catch (e) {
-      setSubmitError(e instanceof Error ? e.message : "Could not start onboarding.");
+      setSubmitError(e instanceof Error ? e.message : t("onboarding.errors.start"));
     } finally {
       setBusy(false);
     }
@@ -138,19 +143,19 @@ export function OnboardingWizard({ onLinked }: { onLinked: () => void }) {
       <div className="flex items-center gap-sm">
         <span className="flex size-9 items-center justify-center rounded-md bg-surface-tint text-ink"><ShieldCheck size={18} /></span>
         <div>
-          <p className="text-title-sm font-semibold text-ink">Set up payouts (KYC)</p>
-          <p className="text-body-sm text-muted">New to Razorpay? Onboard here. PAN & bank go straight to the provider — never stored by us.</p>
+          <p className="text-title-sm font-semibold text-ink">{t("onboarding.title")}</p>
+          <p className="text-body-sm text-muted">{t("onboarding.subtitle")}</p>
         </div>
       </div>
 
       {/* Stepper header */}
       <div className="mt-lg flex items-center gap-xs">
         {STEPS.map((s, i) => (
-          <div key={s.title} className="flex flex-1 items-center gap-xs">
+          <div key={s.key} className="flex flex-1 items-center gap-xs">
             <span className={`flex size-6 shrink-0 items-center justify-center rounded-full text-body-sm ${i < step ? "bg-success text-white" : i === step ? "bg-brand text-white" : "bg-surface-tint text-muted"}`}>
               {i < step ? <CheckCircle2 size={14} /> : i + 1}
             </span>
-            <span className={`text-label-md ${i === step ? "text-ink" : "text-muted"}`}>{s.title}</span>
+            <span className={`text-label-md ${i === step ? "text-ink" : "text-muted"}`}>{t(`onboarding.step.${s.key}`)}</span>
             {i < STEPS.length - 1 ? <span className="h-px flex-1 bg-hairline" /> : null}
           </div>
         ))}
@@ -159,35 +164,35 @@ export function OnboardingWizard({ onLinked }: { onLinked: () => void }) {
       <div className="mt-lg grid grid-cols-1 gap-md sm:grid-cols-2">
         {step === 0 ? (
           <>
-            <TextField label="Legal business name" value={v.legalBusinessName} onChange={set("legalBusinessName")} error={errors.legalBusinessName} />
-            <TextField label="Display name (optional)" value={v.customerFacingBusinessName} onChange={set("customerFacingBusinessName")} />
-            <TextField label="Contact name" value={v.contactName} onChange={set("contactName")} error={errors.contactName} />
-            <TextField label="Email" value={v.email} onChange={set("email")} type="email" error={errors.email} />
-            <TextField label="Phone" value={v.phone} onChange={set("phone")} inputMode="numeric" error={errors.phone} />
-            <SelectField label="Business type" value={v.businessType} onChange={set("businessType")} options={BUSINESS_TYPES} />
-            <SelectField label="Category" value={v.category} onChange={set("category")} options={CATEGORIES} />
+            <TextField label={t("onboarding.field.legalBusinessName")} value={v.legalBusinessName} onChange={set("legalBusinessName")} error={errors.legalBusinessName} />
+            <TextField label={t("onboarding.field.displayName")} value={v.customerFacingBusinessName} onChange={set("customerFacingBusinessName")} />
+            <TextField label={t("onboarding.field.contactName")} value={v.contactName} onChange={set("contactName")} error={errors.contactName} />
+            <TextField label={t("onboarding.field.email")} value={v.email} onChange={set("email")} type="email" error={errors.email} />
+            <TextField label={t("onboarding.field.phone")} value={v.phone} onChange={set("phone")} inputMode="numeric" error={errors.phone} />
+            <SelectField label={t("onboarding.field.businessType")} value={v.businessType} onChange={set("businessType")} options={businessTypeOptions} />
+            <SelectField label={t("onboarding.field.category")} value={v.category} onChange={set("category")} options={categoryOptions} />
           </>
         ) : null}
         {step === 1 ? (
           <>
-            <TextField label="PAN" value={v.pan} onChange={set("pan")} error={errors.pan} helper="10 chars, e.g. AAACL1234C" />
-            <TextField label="GSTIN (optional)" value={v.gst} onChange={set("gst")} error={errors.gst} />
+            <TextField label={t("onboarding.field.pan")} value={v.pan} onChange={set("pan")} error={errors.pan} helper={t("onboarding.helper.pan")} />
+            <TextField label={t("onboarding.field.gstin")} value={v.gst} onChange={set("gst")} error={errors.gst} />
           </>
         ) : null}
         {step === 2 ? (
           <>
-            <TextField label="Street address" value={v.street1} onChange={set("street1")} error={errors.street1} />
-            <TextField label="Street line 2 (optional)" value={v.street2} onChange={set("street2")} />
-            <TextField label="City" value={v.city} onChange={set("city")} error={errors.city} />
-            <TextField label="State" value={v.state} onChange={set("state")} error={errors.state} />
-            <TextField label="PIN code" value={v.postalCode} onChange={set("postalCode")} inputMode="numeric" error={errors.postalCode} />
+            <TextField label={t("onboarding.field.streetAddress")} value={v.street1} onChange={set("street1")} error={errors.street1} />
+            <TextField label={t("onboarding.field.streetLine2")} value={v.street2} onChange={set("street2")} />
+            <TextField label={t("onboarding.field.city")} value={v.city} onChange={set("city")} error={errors.city} />
+            <TextField label={t("onboarding.field.state")} value={v.state} onChange={set("state")} error={errors.state} />
+            <TextField label={t("onboarding.field.pinCode")} value={v.postalCode} onChange={set("postalCode")} inputMode="numeric" error={errors.postalCode} />
           </>
         ) : null}
         {step === 3 ? (
           <>
-            <TextField label="Account holder name" value={v.beneficiaryName} onChange={set("beneficiaryName")} error={errors.beneficiaryName} />
-            <TextField label="Bank account number" value={v.bankAccountNumber} onChange={set("bankAccountNumber")} inputMode="numeric" error={errors.bankAccountNumber} />
-            <TextField label="IFSC" value={v.bankIfsc} onChange={set("bankIfsc")} error={errors.bankIfsc} helper="e.g. HDFC0001234" />
+            <TextField label={t("onboarding.field.accountHolderName")} value={v.beneficiaryName} onChange={set("beneficiaryName")} error={errors.beneficiaryName} />
+            <TextField label={t("onboarding.field.bankAccountNumber")} value={v.bankAccountNumber} onChange={set("bankAccountNumber")} inputMode="numeric" error={errors.bankAccountNumber} />
+            <TextField label={t("onboarding.field.ifsc")} value={v.bankIfsc} onChange={set("bankIfsc")} error={errors.bankIfsc} helper={t("onboarding.helper.ifsc")} />
           </>
         ) : null}
       </div>
@@ -197,16 +202,16 @@ export function OnboardingWizard({ onLinked }: { onLinked: () => void }) {
       <div className="mt-lg flex items-center gap-sm">
         {step > 0 ? (
           <button type="button" onClick={() => setStep((s) => s - 1)} disabled={busy} className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink hover:bg-surface-tint">
-            <ArrowLeft size={15} /> Back
+            <ArrowLeft size={15} /> {t("onboarding.back")}
           </button>
         ) : null}
         {step < STEPS.length - 1 ? (
           <button type="button" onClick={next} className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-lg text-label-md text-white hover:bg-brand-strong">
-            Next <ArrowRight size={15} />
+            {t("onboarding.next")} <ArrowRight size={15} />
           </button>
         ) : (
           <button type="button" onClick={() => void submit()} disabled={busy} className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-lg text-label-md text-white hover:bg-brand-strong disabled:bg-disabled">
-            {busy ? <Loader2 size={15} className="animate-spin" /> : <ShieldCheck size={15} />} Submit for KYC
+            {busy ? <Loader2 size={15} className="animate-spin" /> : <ShieldCheck size={15} />} {t("onboarding.submit")}
           </button>
         )}
       </div>
