@@ -41,15 +41,17 @@ type SectionKey =
   | "privacy"
   | "about";
 
-const SECTIONS: { key: SectionKey; label: string; icon: LucideIcon; blurb: string }[] = [
-  { key: "account", label: "Account", icon: UserPen, blurb: "Your profile and sign-in email." },
-  { key: "shop", label: "Shop operations", icon: Store, blurb: "Storefront, team and payouts." },
-  { key: "inventory", label: "Inventory", icon: SlidersHorizontal, blurb: "Catalogue configuration." },
-  { key: "notifications", label: "Notifications", icon: Bell, blurb: "What we email you about." },
-  { key: "security", label: "Security", icon: ShieldCheck, blurb: "Password and account safety." },
-  { key: "preferences", label: "Preferences", icon: Palette, blurb: "Currency, theme and language." },
-  { key: "privacy", label: "Data & privacy", icon: ShieldAlert, blurb: "Export and delete your data." },
-  { key: "about", label: "About", icon: Info, blurb: "App information." },
+// Labels + blurbs come from the message catalog (settings.sections.<key>); the
+// array carries only the stable key + icon.
+const SECTIONS: { key: SectionKey; icon: LucideIcon }[] = [
+  { key: "account", icon: UserPen },
+  { key: "shop", icon: Store },
+  { key: "inventory", icon: SlidersHorizontal },
+  { key: "notifications", icon: Bell },
+  { key: "security", icon: ShieldCheck },
+  { key: "preferences", icon: Palette },
+  { key: "privacy", icon: ShieldAlert },
+  { key: "about", icon: Info },
 ];
 
 /** Responsive tile grid — fills the pane, gaining columns as width grows. */
@@ -78,10 +80,8 @@ export default function SettingsPage() {
 
   return (
     <div className="w-full px-lg py-xxl md:px-xxl">
-      <h1 className="text-headline-md text-ink">Settings</h1>
-      <p className="mt-xs text-body-md text-muted">
-        Manage your account, security, preferences and data.
-      </p>
+      <h1 className="text-headline-md text-ink">{t("title")}</h1>
+      <p className="mt-xs text-body-md text-muted">{t("subtitle")}</p>
 
       <div className="mt-xl flex flex-col gap-xl md:flex-row md:gap-xxl">
         {/* Category rail */}
@@ -99,7 +99,7 @@ export default function SettingsPage() {
                 }`}
               >
                 <Icon size={18} className="shrink-0" />
-                {s.label}
+                {t(`sections.${s.key}.label`)}
               </button>
             );
           })}
@@ -112,7 +112,7 @@ export default function SettingsPage() {
               className="inline-flex w-full items-center gap-sm rounded-md px-md py-sm text-left text-label-md text-error transition-colors hover:bg-error-soft disabled:opacity-60"
             >
               <LogOut size={18} className="shrink-0" />
-              {signingOut ? "Signing out…" : "Sign out"}
+              {signingOut ? t("signingOut") : t("signOut")}
             </button>
           </div>
         </nav>
@@ -124,30 +124,30 @@ export default function SettingsPage() {
               <current.icon size={20} />
             </span>
             <div>
-              <h2 className="text-title-md text-ink">{current.label}</h2>
-              <p className="text-body-sm text-muted">{current.blurb}</p>
+              <h2 className="text-title-md text-ink">{t(`sections.${current.key}.label`)}</h2>
+              <p className="text-body-sm text-muted">{t(`sections.${current.key}.blurb`)}</p>
             </div>
           </div>
 
           <div className="mt-lg">
             {active === "account" ? (
               <TileGrid>
-                <SettingRow tile icon={UserPen} title="Edit profile" subtitle={user?.name ?? "—"} href="/dashboard/profile" />
-                <SettingRow tile icon={AtSign} title="Email" subtitle={user?.email ?? "—"} />
+                <SettingRow tile icon={UserPen} title={t("rows.editProfile")} subtitle={user?.name ?? "—"} href="/dashboard/profile" />
+                <SettingRow tile icon={AtSign} title={t("rows.email")} subtitle={user?.email ?? "—"} />
               </TileGrid>
             ) : null}
 
             {active === "shop" ? (
               <TileGrid>
-                <SettingRow tile icon={Store} title="Shop" subtitle="Storefront, hours, vacation mode and policies" href="/dashboard/shop" />
-                <SettingRow tile icon={Users} title="Team" subtitle="Invite staff and set permissions" href="/dashboard/team" />
-                <SettingRow tile icon={Wallet} title="Payouts" subtitle="Bank settlement & KYC status" href="/dashboard/payouts" />
+                <SettingRow tile icon={Store} title={t("rows.shop")} subtitle={t("rows.shopSub")} href="/dashboard/shop" />
+                <SettingRow tile icon={Users} title={t("rows.team")} subtitle={t("rows.teamSub")} href="/dashboard/team" />
+                <SettingRow tile icon={Wallet} title={t("rows.payouts")} subtitle={t("rows.payoutsSub")} href="/dashboard/payouts" />
               </TileGrid>
             ) : null}
 
             {active === "inventory" ? (
               <TileGrid>
-                <SettingRow tile icon={SlidersHorizontal} title="Custom fields" subtitle="Extra product attributes and sections" href="/dashboard/custom-fields" />
+                <SettingRow tile icon={SlidersHorizontal} title={t("rows.customFields")} subtitle={t("rows.customFieldsSub")} href="/dashboard/custom-fields" />
               </TileGrid>
             ) : null}
 
@@ -180,7 +180,7 @@ export default function SettingsPage() {
                   <LanguagePicker />
                 </div>
                 <TileGrid>
-                  <SettingRow tile icon={IndianRupee} title={t("currency")} subtitle="Indian Rupee (₹)" trailing={<ComingSoon />} />
+                  <SettingRow tile icon={IndianRupee} title={t("currency")} subtitle={t("currencySubtitle")} trailing={<ComingSoon />} />
                 </TileGrid>
               </div>
             ) : null}
@@ -193,9 +193,9 @@ export default function SettingsPage() {
 
             {active === "about" ? (
               <TileGrid>
-                <SettingRow tile icon={Info} title="App version" subtitle={process.env.NEXT_PUBLIC_APP_VERSION ?? "—"} />
-                <SettingRow tile icon={ShieldAlert} title="Privacy Policy" subtitle="How we handle your data" href="/legal/privacy" />
-                <SettingRow tile icon={FileText} title="Terms of Service" subtitle="The rules for using ShopXY" href="/legal/terms" />
+                <SettingRow tile icon={Info} title={t("rows.appVersion")} subtitle={process.env.NEXT_PUBLIC_APP_VERSION ?? "—"} />
+                <SettingRow tile icon={ShieldAlert} title={t("rows.privacyPolicy")} subtitle={t("rows.privacyPolicySub")} href="/legal/privacy" />
+                <SettingRow tile icon={FileText} title={t("rows.terms")} subtitle={t("rows.termsSub")} href="/legal/terms" />
               </TileGrid>
             ) : null}
           </div>
