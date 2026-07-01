@@ -5,6 +5,7 @@ import 'package:shopxy/features/invoices/presentation/pages/invoices_page.dart';
 import 'package:shopxy/features/parties/presentation/pages/parties_page.dart';
 import 'package:shopxy/features/products/presentation/pages/products_page.dart';
 import 'package:shopxy/features/shop/presentation/widgets/payout_setup_sheet.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
@@ -32,33 +33,34 @@ class OnboardingChecklist extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final steps = <_Step>[
       _Step(
         onboarding.totalProducts > 0,
-        'Add your first product',
-        'Build your catalogue so you can bill and track stock.',
-        'Add product',
+        l10n.dashboardAddFirstProductTitle,
+        l10n.dashboardAddFirstProductDesc,
+        l10n.dashboardAddProduct,
         () => dashPush(context, const ProductsPage()),
       ),
       _Step(
         onboarding.hasInvoices,
-        'Create your first invoice',
-        'Bill a sale — GST is handled for you.',
-        'New invoice',
+        l10n.dashboardCreateFirstInvoiceTitle,
+        l10n.dashboardCreateFirstInvoiceDesc,
+        l10n.dashboardNewInvoice,
         () => dashPush(context, const InvoicesPage()),
       ),
       _Step(
         onboarding.hasParties,
-        'Add a customer',
-        'Track who owes you and send them invoices.',
-        'Add customer',
+        l10n.dashboardAddCustomerTitle,
+        l10n.dashboardAddCustomerDesc,
+        l10n.dashboardAddCustomer,
         () => dashPush(context, const PartiesPage()),
       ),
       _Step(
         payoutsEnabled,
-        'Set up payouts',
-        'Receive settlements for online orders.',
-        'Set up',
+        l10n.dashboardSetUpPayoutsTitle,
+        l10n.dashboardSetUpPayoutsDesc,
+        l10n.dashboardSetUp,
         () => showPayoutSetupSheet(context),
       ),
     ];
@@ -76,10 +78,11 @@ class OnboardingChecklist extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Let’s get your shop ready', style: DashText.headlineSm),
+                    Text(l10n.dashboardGetShopReady,
+                        style: DashText.headlineSm),
                     const SizedBox(height: AppSizes.xs),
                     Text(
-                      'Finish these steps and your dashboard fills with live numbers.',
+                      l10n.dashboardOnboardingSubtitle,
                       style: DashText.bodyMd.copyWith(color: AppColors.muted),
                     ),
                   ],
@@ -87,7 +90,7 @@ class OnboardingChecklist extends StatelessWidget {
               ),
               const SizedBox(width: AppSizes.md),
               Text(
-                '$completed/${steps.length} done',
+                l10n.dashboardStepsDone('$completed', '${steps.length}'),
                 style: DashText.labelMd.copyWith(fontFeatures: tabularFigures),
               ),
             ],

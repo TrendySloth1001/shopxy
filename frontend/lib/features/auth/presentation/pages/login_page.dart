@@ -7,8 +7,8 @@ import 'package:shopxy/features/auth/presentation/pages/register_page.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/auth/presentation/widgets/auth_scaffold.dart';
 import 'package:shopxy/features/profile/presentation/pages/legal_page.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
-import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
@@ -62,26 +62,26 @@ class _LoginPageState extends State<LoginPage> {
       );
 
   void _googleSoon() {
+    final l10n = AppLocalizations.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Google sign-in is coming soon — please use your email for now.',
-        ),
+      SnackBar(
+        content: Text(l10n.authGoogleComingSoon),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Form(
       key: _formKey,
       child: AuthScaffold(
-        title: AppStrings.welcomeBack,
-        subtitle: 'Sign in to manage your inventory, invoices and customers.',
+        title: l10n.authWelcomeBack,
+        subtitle: l10n.authLoginSubtitle,
         onSignIn: () {},
         onCreateAccount: _goToRegister,
-        footerPrompt: 'New to ShopXY?',
-        footerCta: 'Create an account',
+        footerPrompt: l10n.authLoginFooterPrompt,
+        footerCta: l10n.authCreateAccountCta,
         onFooterTap: _goToRegister,
         children: [
           const _RememberedAccountsSection(),
@@ -94,31 +94,31 @@ class _LoginPageState extends State<LoginPage> {
             const SizedBox(height: AppSizes.lg),
           ],
           AuthField(
-            label: AppStrings.email,
+            label: l10n.authEmail,
             controller: _email,
             keyboardType: TextInputType.emailAddress,
             textInputAction: TextInputAction.next,
             autofocus: true,
             autocorrect: false,
             validator: (v) {
-              if (v == null || v.trim().isEmpty) return AppStrings.fieldRequired;
-              if (!v.contains('@')) return AppStrings.invalidEmail;
+              if (v == null || v.trim().isEmpty) return l10n.authFieldRequired;
+              if (!v.contains('@')) return l10n.authInvalidEmail;
               return null;
             },
           ),
           const SizedBox(height: AppSizes.lg),
           AuthField(
-            label: AppStrings.password,
+            label: l10n.authPassword,
             controller: _password,
             obscure: true,
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => _submit(),
             validator: (v) =>
-                v == null || v.isEmpty ? AppStrings.fieldRequired : null,
+                v == null || v.isEmpty ? l10n.authFieldRequired : null,
           ),
           const SizedBox(height: AppSizes.lg),
           AuthSubmitButton(
-            label: 'Sign in',
+            label: l10n.authSignIn,
             loading: _isLoading,
             onPressed: _submit,
           ),
@@ -171,6 +171,7 @@ class _LegalFooterState extends State<_LegalFooter> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final muted = theme.textTheme.bodySmall?.copyWith(color: AppColors.muted);
     final subtle = theme.textTheme.bodySmall?.copyWith(color: AppColors.subtle);
@@ -185,15 +186,14 @@ class _LegalFooterState extends State<_LegalFooter> {
           TextSpan(
             style: muted,
             children: [
-              const TextSpan(text: 'By signing in you agree to our '),
-              TextSpan(text: 'Terms', style: link, recognizer: _terms),
-              const TextSpan(text: ' and acknowledge our '),
+              TextSpan(text: l10n.authLegalAgreePrefix),
+              TextSpan(text: l10n.authLegalTerms, style: link, recognizer: _terms),
+              TextSpan(text: l10n.authLegalAcknowledgeMid),
               TextSpan(
-                  text: 'Privacy Policy', style: link, recognizer: _privacy),
-              const TextSpan(
-                text:
-                    '. We use a strictly-necessary session cookie to keep you signed in.',
-              ),
+                  text: l10n.authLegalPrivacyPolicy,
+                  style: link,
+                  recognizer: _privacy),
+              TextSpan(text: l10n.authLegalCookieSuffix),
             ],
           ),
           textAlign: TextAlign.center,
@@ -205,9 +205,9 @@ class _LegalFooterState extends State<_LegalFooter> {
             TextSpan(
               style: subtle,
               children: [
-                const TextSpan(text: 'Trouble signing in? '),
+                TextSpan(text: l10n.authTroubleSigningIn),
                 TextSpan(
-                  text: 'Contact support',
+                  text: l10n.authContactSupport,
                   style: subtle?.copyWith(
                     color: AppColors.muted,
                     decoration: TextDecoration.underline,
@@ -225,7 +225,7 @@ class _LegalFooterState extends State<_LegalFooter> {
             MaterialPageRoute(builder: (_) => const LegalPage.terms()),
           ),
           child: Text(
-            'Compliance, laws & formulas',
+            l10n.authComplianceLawsFormulas,
             style: subtle?.copyWith(
               color: AppColors.muted,
               decoration: TextDecoration.underline,
@@ -289,6 +289,7 @@ class _RememberedAccountsSectionState
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final accounts = _accounts;
     if (accounts == null || accounts.isEmpty) return const SizedBox.shrink();
     final theme = Theme.of(context);
@@ -302,7 +303,7 @@ class _RememberedAccountsSectionState
         Align(
           alignment: Alignment.centerLeft,
           child: Text(
-            'Continue as',
+            l10n.authContinueAs,
             style:
                 theme.textTheme.labelMedium?.copyWith(color: AppColors.muted),
           ),
@@ -338,6 +339,7 @@ class _AccountCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     return Container(
       decoration: ShapeDecoration(
@@ -408,7 +410,7 @@ class _AccountCard extends StatelessWidget {
             onPressed: busy ? null : onForget,
             icon: Icon(Icons.close_rounded,
                 size: AppSizes.iconSm, color: AppColors.muted),
-            tooltip: 'Remove this account',
+            tooltip: l10n.authRemoveThisAccount,
           ),
         ],
       ),

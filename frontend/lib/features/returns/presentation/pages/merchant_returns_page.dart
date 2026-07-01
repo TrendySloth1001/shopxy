@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/features/returns/data/datasources/merchant_returns_remote_data_source.dart';
 import 'package:shopxy/features/returns/domain/merchant_return.dart';
 import 'package:shopxy/features/returns/presentation/pages/merchant_return_detail_page.dart';
@@ -24,14 +25,29 @@ class MerchantReturnsPage extends StatefulWidget {
 }
 
 class _MerchantReturnsPageState extends State<MerchantReturnsPage> {
-  static const _tabs = [
-    (label: 'Open', status: 'REQUESTED'),
-    (label: 'Approved', status: 'APPROVED'),
-    (label: 'Received', status: 'RECEIVED'),
-    (label: 'Refunded', status: 'REFUNDED'),
-    (label: 'All', status: null),
+  static const _tabs = <({String? status})>[
+    (status: 'REQUESTED'),
+    (status: 'APPROVED'),
+    (status: 'RECEIVED'),
+    (status: 'REFUNDED'),
+    (status: null),
   ];
   int _index = 0;
+
+  String _tabLabel(AppLocalizations l10n, int i) {
+    switch (_tabs[i].status) {
+      case 'REQUESTED':
+        return l10n.returnsTabOpen;
+      case 'APPROVED':
+        return l10n.returnsTabApproved;
+      case 'RECEIVED':
+        return l10n.returnsTabReceived;
+      case 'REFUNDED':
+        return l10n.returnsTabRefunded;
+      default:
+        return l10n.returnsTabAll;
+    }
+  }
   List<MerchantReturn> _rows = const [];
   bool _loading = true;
   String? _error;
@@ -68,8 +84,9 @@ class _MerchantReturnsPageState extends State<MerchantReturnsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Returns')),
+      appBar: AppBar(title: Text(l10n.returnsTitle)),
       body: Column(
         children: [
           Padding(
@@ -83,7 +100,7 @@ class _MerchantReturnsPageState extends State<MerchantReturnsPage> {
                     Padding(
                       padding: const EdgeInsets.only(right: AppSizes.sm),
                       child: ChoiceChip(
-                        label: Text(_tabs[i].label),
+                        label: Text(_tabLabel(l10n, i)),
                         selected: _index == i,
                         onSelected: (_) {
                           setState(() => _index = i);
@@ -141,6 +158,7 @@ class _ReturnRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final itemCount = row.items.length;
     return Padding(
@@ -160,14 +178,14 @@ class _ReturnRow extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        'Return #${row.id} · ${row.customerName}',
+                        l10n.returnsRowTitle(row.id, row.customerName),
                         style: theme.textTheme.bodyLarge?.copyWith(
                           fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),
                     AppStatusBadge(
-                      label: _statusLabel(row.status),
+                      label: _statusLabel(l10n, row.status),
                       tone: _toneFor(row.status),
                       weight: AppStatusWeight.soft,
                     ),
@@ -175,8 +193,8 @@ class _ReturnRow extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSizes.xs),
                 Text(
-                  '$itemCount item${itemCount == 1 ? '' : 's'} · '
-                  'Refund ${_currency.format(row.refundAmount)} · '
+                  '${itemCount == 1 ? l10n.returnsItemCountOne : l10n.returnsItemCountOther(itemCount)} · '
+                  '${l10n.returnsRefundLabel} ${_currency.format(row.refundAmount)} · '
                   '${_date.format(row.createdAt)}',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: AppColors.muted,
@@ -215,22 +233,22 @@ class _ReturnRow extends StatelessWidget {
     }
   }
 
-  static String _statusLabel(String s) {
+  static String _statusLabel(AppLocalizations l10n, String s) {
     switch (s) {
       case 'REQUESTED':
-        return 'Requested';
+        return l10n.returnsStatusRequested;
       case 'APPROVED':
-        return 'Approved';
+        return l10n.returnsStatusApproved;
       case 'REJECTED':
-        return 'Rejected';
+        return l10n.returnsStatusRejected;
       case 'CANCELLED':
-        return 'Cancelled';
+        return l10n.returnsStatusCancelled;
       case 'PICKED_UP':
-        return 'Picked up';
+        return l10n.returnsStatusPickedUp;
       case 'RECEIVED':
-        return 'Received';
+        return l10n.returnsStatusReceived;
       case 'REFUNDED':
-        return 'Refunded';
+        return l10n.returnsStatusRefunded;
       default:
         return s;
     }
@@ -312,7 +330,7 @@ class _EmptyBlock extends StatelessWidget {
                 size: AppSizes.iconHuge, color: AppColors.subtle),
             const SizedBox(height: AppSizes.md),
             Text(
-              'No returns in this view yet.',
+              AppLocalizations.of(context).returnsEmpty,
               style: Theme.of(context)
                   .textTheme
                   .bodyMedium
@@ -339,7 +357,9 @@ class _ErrorBlock extends StatelessWidget {
           children: [
             Text(message, textAlign: TextAlign.center),
             const SizedBox(height: AppSizes.md),
-            FilledButton(onPressed: onRetry, child: const Text('Retry')),
+            FilledButton(
+                onPressed: onRetry,
+                child: Text(AppLocalizations.of(context).returnsRetry)),
           ],
         ),
       ),

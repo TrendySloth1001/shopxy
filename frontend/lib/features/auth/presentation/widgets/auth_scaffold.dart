@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
@@ -245,6 +246,7 @@ class _AuthHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -268,13 +270,13 @@ class _AuthHeader extends StatelessWidget {
           children: [
             _HeaderChip(
               icon: Icons.login_rounded,
-              label: 'Sign in',
+              label: l10n.authSignIn,
               onTap: onSignIn,
             ),
             const SizedBox(width: AppSizes.sm),
             _HeaderChip(
               icon: Icons.person_add_alt_1_rounded,
-              label: 'Create account',
+              label: l10n.authCreateAccount,
               filled: true,
               onTap: onCreateAccount,
             ),
@@ -345,6 +347,7 @@ class GoogleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     return Material(
       color: AppColors.surface,
@@ -367,7 +370,7 @@ class GoogleButton extends StatelessWidget {
               ),
               const SizedBox(width: AppSizes.sm),
               Text(
-                'Continue with Google',
+                l10n.authContinueWithGoogle,
                 style: theme.textTheme.titleSmall?.copyWith(
                   color: AppColors.black,
                   fontWeight: FontWeight.w600,
@@ -435,11 +438,12 @@ class _GoogleGPainter extends CustomPainter {
 
 /// "── or continue with email ──" rule.
 class AuthOrDivider extends StatelessWidget {
-  const AuthOrDivider({super.key, this.label = 'or continue with email'});
-  final String label;
+  const AuthOrDivider({super.key, this.label});
+  final String? label;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     return Row(
       children: [
@@ -447,7 +451,7 @@ class AuthOrDivider extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSizes.md),
           child: Text(
-            label,
+            label ?? l10n.authOrContinueWithEmail,
             style: theme.textTheme.bodySmall?.copyWith(color: AppColors.subtle),
           ),
         ),
@@ -497,6 +501,7 @@ class _AuthFieldState extends State<AuthField> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -531,7 +536,7 @@ class _AuthFieldState extends State<AuthField> {
                           const EdgeInsets.symmetric(horizontal: AppSizes.md),
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
-                    child: Text(_revealed ? 'Hide' : 'Show'),
+                    child: Text(_revealed ? l10n.authHide : l10n.authShow),
                   )
                 : null,
             suffixIconConstraints:

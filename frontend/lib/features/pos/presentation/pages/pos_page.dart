@@ -14,6 +14,7 @@ import 'package:shopxy/features/invoices/data/datasources/invoices_remote_data_s
 import 'package:shopxy/features/payments/razorpay_checkout.dart';
 import 'package:shopxy/features/pos/data/pos_models.dart';
 import 'package:shopxy/features/pos/presentation/pos_sale_client.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
@@ -126,8 +127,9 @@ class _PosPageState extends State<PosPage> {
       } else {
         await _client.cancelOnline();
         if (result.outcome == RazorpayOutcome.failed && mounted) {
+          final l10n = AppLocalizations.of(context);
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(result.message ?? 'Payment failed. Please retry.')),
+            SnackBar(content: Text(result.message ?? l10n.posPaymentFailedRetry)),
           );
         }
       }
@@ -137,6 +139,7 @@ class _PosPageState extends State<PosPage> {
   }
 
   Future<void> _showQuickAdd(String code) async {
+    final l10n = AppLocalizations.of(context);
     final nameCtrl = TextEditingController();
     final priceCtrl = TextEditingController();
     final taxCtrl = TextEditingController();
@@ -144,21 +147,21 @@ class _PosPageState extends State<PosPage> {
     final added = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('New item · $code'),
+        title: Text('${l10n.posNewItem} · $code'),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Name')),
-              TextField(controller: priceCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Selling price ₹')),
-              TextField(controller: taxCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'GST % (optional)')),
-              TextField(controller: stockCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'On hand')),
+              TextField(controller: nameCtrl, decoration: InputDecoration(labelText: l10n.posName)),
+              TextField(controller: priceCtrl, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: l10n.posSellingPrice)),
+              TextField(controller: taxCtrl, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: l10n.posGstPercentOptional)),
+              TextField(controller: stockCtrl, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: l10n.posOnHand)),
             ],
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Add')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.posCancel)),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.posAdd)),
         ],
       ),
     );
@@ -201,26 +204,27 @@ class _PosPageState extends State<PosPage> {
 
   Future<void> _showReceipt(String invoiceNo) async {
     if (!mounted) return;
+    final l10n = AppLocalizations.of(context);
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
         icon: Icon(Icons.check_circle_rounded, color: AppColors.success, size: AppSizes.iconHuge),
-        title: const Text('Sale complete'),
-        content: Text('Invoice $invoiceNo'),
+        title: Text(l10n.posSaleComplete),
+        content: Text('${l10n.posInvoice} $invoiceNo'),
         actions: [
           if (_client.checkoutInvoiceId != null)
             TextButton.icon(
               onPressed: () => _printReceipt(_client.checkoutInvoiceId!, _client.checkoutInvoiceNo ?? 'receipt'),
               icon: const Icon(Icons.print_outlined),
-              label: const Text('Print'),
+              label: Text(l10n.posPrint),
             ),
           FilledButton(
             onPressed: () {
               Navigator.pop(ctx);
               Navigator.pop(context); // leave the till; reopen for a fresh sale
             },
-            child: const Text('Done'),
+            child: Text(l10n.posDone),
           ),
         ],
       ),
@@ -230,10 +234,11 @@ class _PosPageState extends State<PosPage> {
   /// Fetch the invoice PDF (authed) and open it in the device viewer (print/share).
   Future<void> _printReceipt(int invoiceId, String invoiceNo) async {
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context);
     try {
       final ds = context.read<InvoicesRemoteDataSource>();
       final response = await ds.downloadPdf(invoiceId);
-      if (response.statusCode != 200) throw Exception('Could not generate the receipt');
+      if (response.statusCode != 200) throw Exception(l10n.posCouldNotGenerateReceipt);
       final dir = await getApplicationDocumentsDirectory();
       final safe = invoiceNo.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
       final file = File('${dir.path}/$safe.pdf');
@@ -245,6 +250,7 @@ class _PosPageState extends State<PosPage> {
   }
 
   Future<void> _editLineDiscount(SaleLine line) async {
+    final l10n = AppLocalizations.of(context);
     final gross = line.unitPrice * line.quantity;
     final ctrl = TextEditingController(text: line.lineDiscount > 0 ? line.lineDiscount.toStringAsFixed(2) : '');
     final amount = await showDialog<double>(
@@ -254,7 +260,7 @@ class _PosPageState extends State<PosPage> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: ctrl, autofocus: true, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'Discount ₹ (max ${gross.toStringAsFixed(2)})', border: const OutlineInputBorder())),
+            TextField(controller: ctrl, autofocus: true, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: l10n.posDiscountMax(gross.toStringAsFixed(2)), border: const OutlineInputBorder())),
             const SizedBox(height: AppSizes.sm),
             Wrap(spacing: AppSizes.sm, children: [
               for (final pct in const [5, 10, 20])
@@ -263,8 +269,8 @@ class _PosPageState extends State<PosPage> {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, double.tryParse(ctrl.text.trim()) ?? 0), child: const Text('Apply')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.posCancel)),
+          FilledButton(onPressed: () => Navigator.pop(ctx, double.tryParse(ctrl.text.trim()) ?? 0), child: Text(l10n.posApply)),
         ],
       ),
     );
@@ -274,16 +280,17 @@ class _PosPageState extends State<PosPage> {
   }
 
   Future<void> _editBillDiscount() async {
+    final l10n = AppLocalizations.of(context);
     final current = _client.snapshot?.headerDiscount ?? 0;
     final ctrl = TextEditingController(text: current > 0 ? current.toStringAsFixed(2) : '');
     final amount = await showDialog<double>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Bill discount'),
-        content: TextField(controller: ctrl, autofocus: true, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Discount ₹', border: OutlineInputBorder())),
+        title: Text(l10n.posBillDiscount),
+        content: TextField(controller: ctrl, autofocus: true, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: l10n.posDiscount, border: const OutlineInputBorder())),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, double.tryParse(ctrl.text.trim()) ?? 0), child: const Text('Apply')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.posCancel)),
+          FilledButton(onPressed: () => Navigator.pop(ctx, double.tryParse(ctrl.text.trim()) ?? 0), child: Text(l10n.posApply)),
         ],
       ),
     );
@@ -291,6 +298,7 @@ class _PosPageState extends State<PosPage> {
   }
 
   void _openCheckoutSheet() {
+    final l10n = AppLocalizations.of(context);
     final total = _client.snapshot?.totals.total ?? 0;
     final cashCtrl = TextEditingController();
     final nameCtrl = TextEditingController();
@@ -316,27 +324,27 @@ class _PosPageState extends State<PosPage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text('Collect ₹${total.toStringAsFixed(2)}',
+                Text('${l10n.posCollect} ₹${total.toStringAsFixed(2)}',
                     textAlign: TextAlign.center,
                     style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
                 const SizedBox(height: AppSizes.lg),
                 Row(children: [
-                  Expanded(child: TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Customer (optional)', border: OutlineInputBorder()))),
+                  Expanded(child: TextField(controller: nameCtrl, decoration: InputDecoration(labelText: l10n.posCustomerOptional, border: const OutlineInputBorder()))),
                   const SizedBox(width: AppSizes.sm),
-                  Expanded(child: TextField(controller: phoneCtrl, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'Phone', border: OutlineInputBorder()))),
+                  Expanded(child: TextField(controller: phoneCtrl, keyboardType: TextInputType.phone, decoration: InputDecoration(labelText: l10n.posPhone, border: const OutlineInputBorder()))),
                 ]),
                 const SizedBox(height: AppSizes.md),
                 TextField(
                   controller: cashCtrl,
                   keyboardType: TextInputType.number,
                   onChanged: (_) => setSheet(() {}),
-                  decoration: const InputDecoration(labelText: 'Cash received ₹', border: OutlineInputBorder()),
+                  decoration: InputDecoration(labelText: l10n.posCashReceived, border: const OutlineInputBorder()),
                 ),
                 if (change != null)
                   Padding(
                     padding: const EdgeInsets.only(top: AppSizes.sm),
                     child: Text(
-                      'Change due: ₹${(change < 0 ? 0 : change).toStringAsFixed(2)}',
+                      '${l10n.posChangeDue}: ₹${(change < 0 ? 0 : change).toStringAsFixed(2)}',
                       textAlign: TextAlign.center,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
@@ -353,10 +361,10 @@ class _PosPageState extends State<PosPage> {
                         }
                       : null,
                   icon: const Icon(Icons.payments_outlined),
-                  label: const Text('Cash — done'),
+                  label: Text(l10n.posCashDone),
                 ),
                 const SizedBox(height: AppSizes.lg),
-                Text('Other tenders', textAlign: TextAlign.center, style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted)),
+                Text(l10n.posOtherTenders, textAlign: TextAlign.center, style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted)),
                 const SizedBox(height: AppSizes.sm),
                 Wrap(
                   spacing: AppSizes.sm,
@@ -377,7 +385,7 @@ class _PosPageState extends State<PosPage> {
                         _payOnline();
                       },
                       icon: const Icon(Icons.smartphone_rounded),
-                      label: const Text('Online'),
+                      label: Text(l10n.posOnline),
                     ),
                   ],
                 ),
@@ -402,6 +410,7 @@ class _PosPageState extends State<PosPage> {
   }
 
   Future<void> _openHeldBills() async {
+    final l10n = AppLocalizations.of(context);
     final bills = await _client.listOpen();
     if (!mounted) return;
     await showModalBottomSheet<void>(
@@ -410,15 +419,15 @@ class _PosPageState extends State<PosPage> {
       shape: AppShapes.squircleTop(AppSizes.bottomSheetRadius),
       builder: (ctx) => SafeArea(
         child: bills.isEmpty
-            ? const Padding(padding: EdgeInsets.all(AppSizes.xl), child: Text('No held bills.', textAlign: TextAlign.center))
+            ? Padding(padding: const EdgeInsets.all(AppSizes.xl), child: Text(l10n.posNoHeldBills, textAlign: TextAlign.center))
             : Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Padding(padding: EdgeInsets.all(AppSizes.lg), child: Text('Held bills', style: TextStyle(fontWeight: FontWeight.w700))),
+                  Padding(padding: const EdgeInsets.all(AppSizes.lg), child: Text(l10n.posHeldBills, style: const TextStyle(fontWeight: FontWeight.w700))),
                   for (final b in bills)
                     ListTile(
-                      title: Text((b['customerName'] as String?) ?? 'Bill #${b['id']}'),
-                      subtitle: Text('${b['lineCount']} item(s)'),
+                      title: Text((b['customerName'] as String?) ?? '${l10n.posBill} #${b['id']}'),
+                      subtitle: Text(l10n.posItemCount('${b['lineCount']}')),
                       trailing: const Icon(Icons.chevron_right_rounded),
                       onTap: () {
                         Navigator.pop(ctx);
@@ -433,6 +442,7 @@ class _PosPageState extends State<PosPage> {
 
   /// Tap a line's quantity to type it directly (0 removes the line).
   Future<void> _editQty(SaleLine line) async {
+    final l10n = AppLocalizations.of(context);
     final ctrl = TextEditingController(text: line.quantity.toStringAsFixed(line.quantity % 1 == 0 ? 0 : 2));
     final qty = await showDialog<double>(
       context: context,
@@ -442,12 +452,12 @@ class _PosPageState extends State<PosPage> {
           controller: ctrl,
           autofocus: true,
           keyboardType: TextInputType.number,
-          decoration: const InputDecoration(labelText: 'Quantity', border: OutlineInputBorder()),
+          decoration: InputDecoration(labelText: l10n.posQuantity, border: const OutlineInputBorder()),
           onSubmitted: (v) => Navigator.pop(ctx, double.tryParse(v.trim())),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, double.tryParse(ctrl.text.trim())), child: const Text('Set')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.posCancel)),
+          FilledButton(onPressed: () => Navigator.pop(ctx, double.tryParse(ctrl.text.trim())), child: Text(l10n.posSet)),
         ],
       ),
     );
@@ -457,6 +467,7 @@ class _PosPageState extends State<PosPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final snap = _client.snapshot;
     final lines = snap?.lines ?? const <SaleLine>[];
     final total = snap?.totals.total ?? 0;
@@ -464,22 +475,22 @@ class _PosPageState extends State<PosPage> {
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
-        title: const Text('Point of sale'),
+        title: Text(l10n.posTitle),
         actions: [
           IconButton(
-            tooltip: 'Find item',
+            tooltip: l10n.posFindItem,
             onPressed: _shiftOpen ? _openSearch : null,
             icon: const Icon(Icons.search_rounded),
           ),
           IconButton(
-            tooltip: 'Cashier (shift · drawer · returns)',
+            tooltip: l10n.posCashierTooltip,
             onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CashierPage())).then((_) => _loadShift()),
             icon: const Icon(Icons.calculate_outlined),
           ),
-          IconButton(tooltip: 'Hold', onPressed: () => _client.holdAndNew(), icon: const Icon(Icons.pause_circle_outline_rounded)),
-          IconButton(tooltip: 'Recall', onPressed: _openHeldBills, icon: const Icon(Icons.restore_rounded)),
+          IconButton(tooltip: l10n.posHold, onPressed: () => _client.holdAndNew(), icon: const Icon(Icons.pause_circle_outline_rounded)),
+          IconButton(tooltip: l10n.posRecall, onPressed: _openHeldBills, icon: const Icon(Icons.restore_rounded)),
           if (widget.kiosk)
-            IconButton(tooltip: 'Log out', onPressed: () => context.read<AuthProvider>().logout(), icon: const Icon(Icons.logout_rounded)),
+            IconButton(tooltip: l10n.posLogOut, onPressed: () => context.read<AuthProvider>().logout(), icon: const Icon(Icons.logout_rounded)),
           _StatusChip(status: _client.status),
         ],
       ),
@@ -496,7 +507,7 @@ class _PosPageState extends State<PosPage> {
                   const SizedBox(width: AppSizes.xs),
                   Expanded(
                     child: Text(
-                      '${_shift!['openedByName'] ?? 'Cashier'}'
+                      '${_shift!['openedByName'] ?? l10n.posCashier}'
                       '${_shift!['openedByEmail'] != null ? ' · ${_shift!['openedByEmail']}' : ''}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -518,10 +529,10 @@ class _PosPageState extends State<PosPage> {
                 children: [
                   Icon(Icons.lock_outline_rounded, size: AppSizes.iconSm, color: AppColors.warning),
                   const SizedBox(width: AppSizes.sm),
-                  Expanded(child: Text('Open a shift to start billing', style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.warning))),
+                  Expanded(child: Text(l10n.posOpenShiftToBill, style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.warning))),
                   FilledButton(
                     onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CashierPage())).then((_) => _loadShift()),
-                    child: const Text('Open shift'),
+                    child: Text(l10n.posOpenShift),
                   ),
                 ],
               ),
@@ -554,7 +565,7 @@ class _PosPageState extends State<PosPage> {
             ),
           Expanded(
             child: lines.isEmpty
-                ? Center(child: Text('Scan the first item.', style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted)))
+                ? Center(child: Text(l10n.posScanFirstItem, style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted)))
                 : ListView.separated(
                     padding: const EdgeInsets.all(AppSizes.lg),
                     itemCount: lines.length,
@@ -579,21 +590,21 @@ class _PosPageState extends State<PosPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Total', style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted)),
+                        Text(l10n.posTotal, style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted)),
                         Text('₹${total.toStringAsFixed(2)}', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
                       ],
                     ),
                   ),
                   if (lines.isNotEmpty)
                     IconButton(
-                      tooltip: 'Bill discount',
+                      tooltip: l10n.posBillDiscount,
                       onPressed: _editBillDiscount,
                       icon: const Icon(Icons.percent_rounded),
                     ),
                   FilledButton.icon(
                     onPressed: lines.isEmpty ? null : _openCheckoutSheet,
                     icon: const Icon(Icons.point_of_sale_rounded),
-                    label: const Text('Checkout'),
+                    label: Text(l10n.posCheckout),
                   ),
                 ],
               ),
@@ -617,6 +628,7 @@ class _CartTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return Row(
       children: [
         Expanded(
@@ -631,7 +643,7 @@ class _CartTile extends StatelessWidget {
             ],
           ),
         ),
-        IconButton(onPressed: onDiscount, tooltip: 'Line discount', icon: Icon(Icons.percent_rounded, color: line.lineDiscount > 0 ? AppColors.brand : AppColors.muted), iconSize: AppSizes.iconSm),
+        IconButton(onPressed: onDiscount, tooltip: l10n.posLineDiscount, icon: Icon(Icons.percent_rounded, color: line.lineDiscount > 0 ? AppColors.brand : AppColors.muted), iconSize: AppSizes.iconSm),
         IconButton(onPressed: onDec, icon: const Icon(Icons.remove_circle_outline), iconSize: AppSizes.iconMd),
         // Tap the quantity to type it directly.
         InkWell(
@@ -694,6 +706,7 @@ class _ProductSearchSheetState extends State<_ProductSearchSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(AppSizes.lg),
@@ -704,15 +717,15 @@ class _ProductSearchSheetState extends State<_ProductSearchSheet> {
               controller: _ctrl,
               autofocus: true,
               onChanged: _onChanged,
-              decoration: const InputDecoration(labelText: 'Find item by name / SKU', prefixIcon: Icon(Icons.search_rounded), border: OutlineInputBorder()),
+              decoration: InputDecoration(labelText: l10n.posFindItemByNameSku, prefixIcon: const Icon(Icons.search_rounded), border: const OutlineInputBorder()),
             ),
             const SizedBox(height: AppSizes.sm),
             ConstrainedBox(
               constraints: const BoxConstraints(maxHeight: 320),
               child: _searching && _results.isEmpty
-                  ? const Padding(padding: EdgeInsets.all(AppSizes.lg), child: Text('Searching…'))
+                  ? Padding(padding: const EdgeInsets.all(AppSizes.lg), child: Text(l10n.posSearching))
                   : _results.isEmpty
-                      ? const Padding(padding: EdgeInsets.all(AppSizes.lg), child: Text('Type to search the catalogue.'))
+                      ? Padding(padding: const EdgeInsets.all(AppSizes.lg), child: Text(l10n.posTypeToSearch))
                       : ListView.builder(
                           shrinkWrap: true,
                           itemCount: _results.length,
@@ -721,11 +734,11 @@ class _ProductSearchSheetState extends State<_ProductSearchSheet> {
                             return ListTile(
                               contentPadding: EdgeInsets.zero,
                               title: Text('${p['name']}', maxLines: 1, overflow: TextOverflow.ellipsis),
-                              subtitle: Text('${p['sku']} · stock ${_i(p['stock'])}', style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted)),
+                              subtitle: Text('${p['sku']} · ${l10n.posStock} ${_i(p['stock'])}', style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted)),
                               trailing: Text('₹${_d(p['sellingPrice']).toStringAsFixed(2)}', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
                               onTap: () {
                                 widget.client.addItem(_i(p['id']));
-                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Added ${p['name']}'), duration: const Duration(milliseconds: 700)));
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.posAddedItem('${p['name']}')), duration: const Duration(milliseconds: 700)));
                               },
                             );
                           },
@@ -744,21 +757,22 @@ class _StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     late final Color color;
     late final String label;
     switch (status) {
       case PosConnStatus.live:
         color = AppColors.success;
-        label = 'Live';
+        label = l10n.posStatusLive;
       case PosConnStatus.connecting:
         color = AppColors.muted;
-        label = 'Connecting';
+        label = l10n.posStatusConnecting;
       case PosConnStatus.reconnecting:
         color = AppColors.warning;
-        label = 'Reconnecting';
+        label = l10n.posStatusReconnecting;
       case PosConnStatus.offline:
         color = AppColors.error;
-        label = 'Offline';
+        label = l10n.posStatusOffline;
     }
     return Center(
       child: Padding(

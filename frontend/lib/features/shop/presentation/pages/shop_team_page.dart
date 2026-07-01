@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/core/auth/permission_widgets.dart';
 import 'package:shopxy/core/auth/shop_capabilities.dart';
 import 'package:shopxy/core/network/api_client.dart';
@@ -88,63 +89,66 @@ class _ShopTeamPageState extends State<ShopTeamPage> {
 
   // ── Member actions ────────────────────────────────────────────────
   Future<void> _invite() async {
+    final l10n = AppLocalizations.of(context);
     final email = await _InviteSheet.show(context);
     if (email == null || !mounted) return;
     final access = await Navigator.push<PermissionResult>(
       context,
       MaterialPageRoute(
         builder: (_) => PermissionEditorPage(
-          title: 'Invite access',
-          submitLabel: 'Send invite',
+          title: l10n.shopInviteAccessTitle,
+          submitLabel: l10n.shopSendInvite,
           roles: _roles,
           initialRoleName: _roles.isNotEmpty ? _roles.first.name : null,
-          subtitle: 'Choose what $email can view and manage. You can change '
-              'this anytime.',
+          subtitle: l10n.shopInviteAccessSubtitle(email),
         ),
       ),
     );
     if (access == null) return;
+    if (!mounted) return;
     await _run(
       () => _service.invite(
           email: email, roleName: access.roleName, permissions: access.permissions),
-      'Invitation sent to $email',
+      AppLocalizations.of(context).shopInvitationSentTo(email),
     );
   }
 
   Future<void> _editAccess(TeamMember m) async {
+    final l10n = AppLocalizations.of(context);
     final access = await Navigator.push<PermissionResult>(
       context,
       MaterialPageRoute(
         builder: (_) => PermissionEditorPage(
-          title: 'Edit access',
-          submitLabel: 'Save',
+          title: l10n.shopEditAccessTitle,
+          submitLabel: l10n.shopSave,
           roles: _roles,
           initialRoleName: m.roleName,
           initialPermissions: m.permissions,
-          subtitle: 'Set exactly what ${m.name.isEmpty ? m.email : m.name} can '
-              'view and manage.',
+          subtitle: l10n.shopEditAccessSubtitle(m.name.isEmpty ? m.email : m.name),
         ),
       ),
     );
     if (access == null) return;
+    if (!mounted) return;
     await _run(
       () => _service.setPermissions(
           userId: m.userId, roleName: access.roleName, permissions: access.permissions),
-      'Access updated',
+      AppLocalizations.of(context).shopAccessUpdated,
     );
   }
 
   Future<void> _remove(TeamMember m) async {
+    final l10n = AppLocalizations.of(context);
     final ok = await AppConfirmDialog.show(
       context,
-      title: 'Remove from team?',
-      message: '${m.name.isEmpty ? m.email : m.name} will lose access to this '
-          'shop immediately. You can invite them again later.',
-      confirmLabel: 'Remove',
+      title: l10n.shopRemoveFromTeamTitle,
+      message: l10n.shopRemoveFromTeamMessage(m.name.isEmpty ? m.email : m.name),
+      confirmLabel: l10n.shopRemove,
       danger: true,
     );
     if (!ok) return;
-    await _run(() => _service.removeMember(m.userId), 'Removed from team');
+    if (!mounted) return;
+    await _run(() => _service.removeMember(m.userId), AppLocalizations.of(context).shopRemovedFromTeam);
   }
 
   // ── Role actions ──────────────────────────────────────────────────
@@ -154,7 +158,8 @@ class _ShopTeamPageState extends State<ShopTeamPage> {
       MaterialPageRoute(builder: (_) => const RoleEditorPage(isNew: true)),
     );
     if (r == null) return;
-    await _run(() => _service.createRole(r.name, r.permissions), 'Role created');
+    if (!mounted) return;
+    await _run(() => _service.createRole(r.name, r.permissions), AppLocalizations.of(context).shopRoleCreated);
   }
 
   Future<void> _editRole(TeamRole role) async {
@@ -169,36 +174,39 @@ class _ShopTeamPageState extends State<ShopTeamPage> {
       ),
     );
     if (r == null) return;
-    await _run(() => _service.updateRole(role.id, r.name, r.permissions), 'Role saved');
+    if (!mounted) return;
+    await _run(() => _service.updateRole(role.id, r.name, r.permissions), AppLocalizations.of(context).shopRoleSaved);
   }
 
   Future<void> _deleteRole(TeamRole role) async {
+    final l10n = AppLocalizations.of(context);
     final ok = await AppConfirmDialog.show(
       context,
-      title: 'Delete “${role.name}”?',
-      message: 'This removes the role from the picker. Teammates who already '
-          'have it keep their current access.',
-      confirmLabel: 'Delete',
+      title: l10n.shopDeleteRoleTitle(role.name),
+      message: l10n.shopDeleteRoleMessage,
+      confirmLabel: l10n.shopDelete,
       danger: true,
     );
     if (!ok) return;
-    await _run(() => _service.deleteRole(role.id), 'Role deleted');
+    if (!mounted) return;
+    await _run(() => _service.deleteRole(role.id), AppLocalizations.of(context).shopRoleDeleted);
   }
 
   Future<void> _cancelInvite(TeamInvite i) =>
-      _run(() => _service.cancelInvite(i.id), 'Invitation cancelled');
+      _run(() => _service.cancelInvite(i.id), AppLocalizations.of(context).shopInvitationCancelled);
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
-        title: const Text('Team & roles'),
+        title: Text(l10n.shopTeamTitle),
         actions: [
           AccessReloadButton(onReload: _load),
           if (_canManage)
             IconButton(
-              tooltip: 'Invite a teammate',
+              tooltip: l10n.shopInviteTeammate,
               onPressed: _loading ? null : _invite,
               icon: const Icon(Icons.person_add_outlined),
             ),
@@ -213,6 +221,7 @@ class _ShopTeamPageState extends State<ShopTeamPage> {
   }
 
   Widget _content() {
+    final l10n = AppLocalizations.of(context);
     return ListView(
       padding: const EdgeInsets.only(top: AppSizes.md, bottom: AppSizes.huge),
       children: [
@@ -221,13 +230,12 @@ class _ShopTeamPageState extends State<ShopTeamPage> {
             padding: const EdgeInsets.fromLTRB(
                 AppSizes.lg, 0, AppSizes.lg, AppSizes.md),
             child: _InfoBanner(
-              'You can view the team but not change it. Ask an owner to invite '
-              'people or adjust who does what.',
+              l10n.shopTeamViewOnlyBanner,
             ),
           ),
 
         // ── Team ──
-        _SectionHeader('TEAM · ${_members.length}'),
+        _SectionHeader(l10n.shopTeamSectionHeader(_members.length)),
         for (var i = 0; i < _members.length; i++)
           _MemberRow(
             member: _members[i],
@@ -240,7 +248,7 @@ class _ShopTeamPageState extends State<ShopTeamPage> {
         // ── Pending invites ──
         if (_invites.isNotEmpty) ...[
           const SizedBox(height: AppSizes.xl),
-          _SectionHeader('PENDING INVITES · ${_invites.length}'),
+          _SectionHeader(l10n.shopPendingInvitesHeader(_invites.length)),
           for (var i = 0; i < _invites.length; i++)
             _InviteRow(
               invite: _invites[i],
@@ -253,9 +261,9 @@ class _ShopTeamPageState extends State<ShopTeamPage> {
         // ── Roles ──
         const SizedBox(height: AppSizes.xl),
         _SectionHeader(
-          'ROLES · ${_roles.length}',
+          l10n.shopRolesHeader(_roles.length),
           action: _canManage
-              ? _HeaderAction(label: 'New role', icon: Icons.add_rounded, onTap: _createRole)
+              ? _HeaderAction(label: l10n.shopNewRole, icon: Icons.add_rounded, onTap: _createRole)
               : null,
         ),
         for (var i = 0; i < _roles.length; i++)
@@ -489,6 +497,7 @@ class _MemberRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final name = member.name.isEmpty ? member.email : member.name;
     final row = Padding(
       padding: const EdgeInsets.symmetric(
@@ -522,10 +531,10 @@ class _MemberRow extends StatelessWidget {
               icon: Icon(Icons.more_vert, color: AppColors.subtle),
               onSelected: (v) => v == 'edit' ? onEdit() : onRemove(),
               itemBuilder: (_) => [
-                const PopupMenuItem(value: 'edit', child: Text('Edit access')),
+                PopupMenuItem(value: 'edit', child: Text(l10n.shopEditAccessMenu)),
                 PopupMenuItem(
                     value: 'remove',
-                    child: Text('Remove from team',
+                    child: Text(l10n.shopRemoveFromTeamMenu,
                         style: TextStyle(color: AppColors.error))),
               ],
             )
@@ -553,6 +562,7 @@ class _InviteRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return _Divided(
       first: first,
       child: Padding(
@@ -572,7 +582,7 @@ class _InviteRow extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 2),
-                  Text('Invited as ${invite.roleName} · awaiting reply',
+                  Text(l10n.shopInvitedAsAwaitingReply(invite.roleName),
                       style: theme.textTheme.bodySmall
                           ?.copyWith(color: AppColors.muted)),
                 ],
@@ -582,7 +592,7 @@ class _InviteRow extends StatelessWidget {
               TextButton(
                 onPressed: onCancel,
                 style: TextButton.styleFrom(foregroundColor: AppColors.error),
-                child: const Text('Cancel'),
+                child: Text(l10n.shopCancel),
               ),
           ],
         ),
@@ -608,6 +618,7 @@ class _RoleRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final manage = manageableAreaCount(role.permissions);
     final row = Padding(
       padding: const EdgeInsets.symmetric(
@@ -631,15 +642,17 @@ class _RoleRow extends StatelessWidget {
                     ),
                     if (role.builtin) ...[
                       const SizedBox(width: AppSizes.sm),
-                      _MiniTag('Built-in'),
+                      _MiniTag(l10n.shopBuiltIn),
                     ],
                   ],
                 ),
                 const SizedBox(height: 2),
                 Text(
                   manage == 0
-                      ? 'View-only'
-                      : '$manage area${manage == 1 ? '' : 's'} manageable',
+                      ? l10n.shopRoleViewOnly
+                      : (manage == 1
+                          ? l10n.shopRoleAreaManageable(manage)
+                          : l10n.shopRoleAreasManageable(manage)),
                   style:
                       theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
                 ),
@@ -651,10 +664,10 @@ class _RoleRow extends StatelessWidget {
               icon: Icon(Icons.more_vert, color: AppColors.subtle),
               onSelected: (v) => v == 'edit' ? onEdit() : onDelete(),
               itemBuilder: (_) => [
-                const PopupMenuItem(value: 'edit', child: Text('Edit role')),
+                PopupMenuItem(value: 'edit', child: Text(l10n.shopEditRoleMenu)),
                 PopupMenuItem(
                     value: 'delete',
-                    child: Text('Delete role',
+                    child: Text(l10n.shopDeleteRoleMenu,
                         style: TextStyle(color: AppColors.error))),
               ],
             ),
@@ -827,7 +840,7 @@ class _ErrorState extends StatelessWidget {
               const SizedBox(height: AppSizes.md),
               Text(message, textAlign: TextAlign.center),
               const SizedBox(height: AppSizes.md),
-              FilledButton(onPressed: onRetry, child: const Text('Try again')),
+              FilledButton(onPressed: onRetry, child: Text(AppLocalizations.of(context).shopTryAgain)),
             ],
           ),
         ),
@@ -869,6 +882,7 @@ class _InviteSheetState extends State<_InviteSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: EdgeInsets.only(
         left: AppSizes.lg,
@@ -882,13 +896,12 @@ class _InviteSheetState extends State<_InviteSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Invite a teammate',
+            Text(l10n.shopInviteTeammate,
                 style: theme.textTheme.titleLarge
                     ?.copyWith(fontWeight: FontWeight.w800)),
             const SizedBox(height: 4),
             Text(
-              "Use a dedicated work email — shopper accounts can't be staff. "
-              "You'll pick their access next.",
+              l10n.shopInviteSheetSubtitle,
               style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
             ),
             const SizedBox(height: AppSizes.lg),
@@ -896,15 +909,15 @@ class _InviteSheetState extends State<_InviteSheet> {
               controller: _email,
               keyboardType: TextInputType.emailAddress,
               autofillHints: const [AutofillHints.email],
-              decoration: const InputDecoration(
-                labelText: 'Email',
+              decoration: InputDecoration(
+                labelText: l10n.shopEmail,
                 hintText: 'teammate@example.com',
               ),
               validator: (v) {
                 final s = (v ?? '').trim();
-                if (s.isEmpty) return 'Enter an email';
+                if (s.isEmpty) return l10n.shopEnterEmail;
                 if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(s)) {
-                  return 'Enter a valid email';
+                  return l10n.shopEnterValidEmail;
                 }
                 return null;
               },
@@ -915,7 +928,7 @@ class _InviteSheetState extends State<_InviteSheet> {
               child: FilledButton.icon(
                 onPressed: _next,
                 icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-                label: const Text('Choose access'),
+                label: Text(l10n.shopChooseAccess),
               ),
             ),
           ],

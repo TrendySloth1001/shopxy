@@ -1228,5 +1228,1104 @@
   "couponsFirstOrderTitle": "First-order only",
   "couponsFirstOrderSubtitle": "Restricts redemption to customers with no prior confirmed orders. Pair with \"per-user limit = 1\" for a single-shot welcome offer.",
   "couponsActiveTitle": "Active",
-  "couponsActiveSubtitle": "When off, buyers won't see this coupon and can't redeem it."
+  "couponsActiveSubtitle": "When off, buyers won't see this coupon and can't redeem it.",
+  "authWelcomeBack": "Welcome back",
+  "authLoginSubtitle": "Sign in to manage your inventory, invoices and customers.",
+  "authLoginFooterPrompt": "New to ShopXY?",
+  "authCreateAccountCta": "Create an account",
+  "authGoogleComingSoon": "Google sign-in is coming soon — please use your email for now.",
+  "authEmail": "Email",
+  "authPassword": "Password",
+  "authFieldRequired": "This field is required",
+  "authInvalidEmail": "Enter a valid email address",
+  "authSignIn": "Sign in",
+  "authLegalAgreePrefix": "By signing in you agree to our ",
+  "authLegalTerms": "Terms",
+  "authLegalAcknowledgeMid": " and acknowledge our ",
+  "authLegalPrivacyPolicy": "Privacy Policy",
+  "authLegalCookieSuffix": ". We use a strictly-necessary session cookie to keep you signed in.",
+  "authTroubleSigningIn": "Trouble signing in? ",
+  "authContactSupport": "Contact support",
+  "authComplianceLawsFormulas": "Compliance, laws & formulas",
+  "authContinueAs": "Continue as",
+  "authRemoveThisAccount": "Remove this account",
+  "authRegisterTitle": "Create your account",
+  "authRegisterSubtitle": "Set up your merchant account to start managing your inventory, invoices and customers.",
+  "authRegisterFooterPrompt": "Already have an account?",
+  "authAcceptTermsPrompt": "Please accept the Terms of Service and Privacy Policy to continue.",
+  "authYourName": "Your name",
+  "authNameTooShort": "Name must be at least 2 characters",
+  "authShopName": "Shop name",
+  "authShopNameHelper": "Shown to customers in the marketplace. You can rename it later.",
+  "authPasswordHelper": "At least 8 characters, with a letter and a number.",
+  "authConfirmPassword": "Confirm Password",
+  "authPasswordsDoNotMatch": "Passwords do not match",
+  "authIAcceptThe": "I accept the",
+  "authTermsOfService": "Terms of Service",
+  "authPrivacyPolicy": "Privacy Policy",
+  "authCreateAccount": "Create account",
+  "authContinueWithGoogle": "Continue with Google",
+  "authOrContinueWithEmail": "or continue with email",
+  "authHide": "Hide",
+  "authShow": "Show",
+  "dashboardHiddenTitle": "Dashboard hidden",
+  "dashboardHiddenMessage": "Your role doesn't include the dashboard overview. Ask an owner if you need it.",
+  "dashboardGreetingMorning": "Good morning",
+  "dashboardGreetingAfternoon": "Good afternoon",
+  "dashboardGreetingEvening": "Good evening",
+  "dashboardGreetingWithName": "{greeting}, {name}",
+  "@dashboardGreetingWithName": {
+    "placeholders": {
+      "greeting": {
+        "type": "Object"
+      },
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "dashboardYourShop": "your shop",
+  "dashboardShopStatus": "Here's how {shop} is doing.",
+  "@dashboardShopStatus": {
+    "placeholders": {
+      "shop": {
+        "type": "Object"
+      }
+    }
+  },
+  "dashboardPendingInviteOne": "You have 1 pending invitation — review and accept.",
+  "dashboardPendingInviteMany": "You have {count} pending invitations — review and accept.",
+  "@dashboardPendingInviteMany": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "dashboardView": "View",
+  "dashboardOperations": "Operations",
+  "dashboardGstThisMonth": "GST this month",
+  "dashboardOutputTaxCollected": "{amount} output tax collected",
+  "@dashboardOutputTaxCollected": {
+    "placeholders": {
+      "amount": {
+        "type": "Object"
+      }
+    }
+  },
+  "dashboardInventoryValue": "Inventory value",
+  "dashboardCostBasisOfStock": "Cost basis of stock on hand",
+  "dashboardOneSale": "1 sale",
+  "dashboardSalesCount": "{count} sales",
+  "@dashboardSalesCount": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "dashboardOpenTillSince": "Open till · since {time}",
+  "@dashboardOpenTillSince": {
+    "placeholders": {
+      "time": {
+        "type": "Object"
+      }
+    }
+  },
+  "dashboardNeedsAttention": "Needs attention",
+  "dashboardAllCaughtUp": "You're all caught up — nothing needs action right now.",
+  "dashboardOrdersToConfirm": "Orders to confirm",
+  "dashboardReturnsToReview": "Returns to review",
+  "dashboardQuotesToPrice": "Quotes to price",
+  "dashboardDraftsToConfirm": "Drafts to confirm",
+  "dashboardOutOfStock": "Out of stock",
+  "dashboardLowStock": "Low stock",
+  "dashboardSales": "Sales",
+  "dashboardNetProfit": "Net profit",
+  "dashboardMarginPct": "{pct}% margin",
+  "@dashboardMarginPct": {
+    "placeholders": {
+      "pct": {
+        "type": "Object"
+      }
+    }
+  },
+  "dashboardReceivables": "Receivables",
+  "dashboardOnePartyOwesYou": "1 party owes you",
+  "dashboardPartiesOweYou": "{count} parties owe you",
+  "@dashboardPartiesOweYou": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "dashboardPayables": "Payables",
+  "dashboardOneVendorToPay": "1 vendor to pay",
+  "dashboardVendorsToPay": "{count} vendors to pay",
+  "@dashboardVendorsToPay": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "dashboardSalesTrend": "Sales trend",
+  "dashboardPrevious": "Previous",
+  "dashboardPurchases": "Purchases",
+  "dashboardReturns": "Returns",
+  "dashboardGetShopReady": "Let's get your shop ready",
+  "dashboardOnboardingSubtitle": "Finish these steps and your dashboard fills with live numbers.",
+  "dashboardStepsDone": "{done}/{total} done",
+  "@dashboardStepsDone": {
+    "placeholders": {
+      "done": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "dashboardAddFirstProductTitle": "Add your first product",
+  "dashboardAddFirstProductDesc": "Build your catalogue so you can bill and track stock.",
+  "dashboardAddProduct": "Add product",
+  "dashboardCreateFirstInvoiceTitle": "Create your first invoice",
+  "dashboardCreateFirstInvoiceDesc": "Bill a sale — GST is handled for you.",
+  "dashboardNewInvoice": "New invoice",
+  "dashboardAddCustomerTitle": "Add a customer",
+  "dashboardAddCustomerDesc": "Track who owes you and send them invoices.",
+  "dashboardAddCustomer": "Add customer",
+  "dashboardSetUpPayoutsTitle": "Set up payouts",
+  "dashboardSetUpPayoutsDesc": "Receive settlements for online orders.",
+  "dashboardSetUp": "Set up",
+  "dashboardAlertReorder": "Reorder",
+  "dashboardAlertFileGst": "File GST",
+  "dashboardAlertViewReport": "View report",
+  "dashboardAlertOpenTill": "Open till",
+  "dashboardDismiss": "Dismiss",
+  "dashboardRecentActivity": "Recent activity",
+  "dashboardNoRecentMovements": "No recent stock movements.",
+  "dashboardProductFallback": "Product #{id}",
+  "@dashboardProductFallback": {
+    "placeholders": {
+      "id": {
+        "type": "Object"
+      }
+    }
+  },
+  "dashboardTopCategories": "Top categories",
+  "dashboardTopProducts": "Top products",
+  "dashboardSlowMovers": "Slow movers",
+  "dashboardSlowMoversHint": "Share of idle in-stock units — capital that isn't moving.",
+  "dashboardUnitsValue": "{count} units",
+  "@dashboardUnitsValue": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "dashboardSubjectCategorySales": "category sales",
+  "dashboardSubjectProductSales": "product sales",
+  "dashboardSubjectIdleStock": "idle stock",
+  "dashboardNounCategories": "categories",
+  "dashboardNounProducts": "products",
+  "dashboardPieOther": "Other",
+  "dashboardNoDataInPeriod": "No data in this period yet.",
+  "dashboardAboutThisChart": "About this chart",
+  "dashboardTapSliceHint": "Tap a slice for its breakdown.",
+  "dashboardPieSummaryBase": "{total} across {count} {noun} (avg {avg} each).",
+  "@dashboardPieSummaryBase": {
+    "placeholders": {
+      "total": {
+        "type": "Object"
+      },
+      "count": {
+        "type": "Object"
+      },
+      "noun": {
+        "type": "Object"
+      },
+      "avg": {
+        "type": "Object"
+      }
+    }
+  },
+  "dashboardPieSummaryLead": "{label} leads with {pct}% ({value})",
+  "@dashboardPieSummaryLead": {
+    "placeholders": {
+      "label": {
+        "type": "Object"
+      },
+      "pct": {
+        "type": "Object"
+      },
+      "value": {
+        "type": "Object"
+      }
+    }
+  },
+  "dashboardPieSummaryAheadOf": ", ahead of {label} at {pct}%",
+  "@dashboardPieSummaryAheadOf": {
+    "placeholders": {
+      "label": {
+        "type": "Object"
+      },
+      "pct": {
+        "type": "Object"
+      }
+    }
+  },
+  "dashboardPieSummaryTopK": "The top {k} make up {pct}% of {subject}",
+  "@dashboardPieSummaryTopK": {
+    "placeholders": {
+      "k": {
+        "type": "Object"
+      },
+      "pct": {
+        "type": "Object"
+      },
+      "subject": {
+        "type": "Object"
+      }
+    }
+  },
+  "dashboardPieSummaryTrails": ", while {label} trails at {pct}%",
+  "@dashboardPieSummaryTrails": {
+    "placeholders": {
+      "label": {
+        "type": "Object"
+      },
+      "pct": {
+        "type": "Object"
+      }
+    }
+  },
+  "dashboardPieDetailTail": ", {pct}% of {subject}.",
+  "@dashboardPieDetailTail": {
+    "placeholders": {
+      "pct": {
+        "type": "Object"
+      },
+      "subject": {
+        "type": "Object"
+      }
+    }
+  },
+  "dashboardPeriodToday": "Today",
+  "dashboardPeriodWeek": "7 days",
+  "dashboardPeriodMonth": "30 days",
+  "dashboardDeltaNew": "New",
+  "shopSave": "Save",
+  "shopSaving": "Saving…",
+  "shopSaveFailed": "Save failed",
+  "shopCancel": "Cancel",
+  "shopDelete": "Delete",
+  "shopRemove": "Remove",
+  "shopContinue": "Continue",
+  "shopBack": "Back",
+  "shopRetry": "Retry",
+  "shopTryAgain": "Try again",
+  "shopDismiss": "Dismiss",
+  "shopEnabled": "Enabled",
+  "shopNotYetEnabled": "Not yet enabled",
+  "shopNotEnabledYet": "Not enabled yet",
+  "shopHoursTitle": "Hours & vacation mode",
+  "shopHoursSaved": "Hours saved",
+  "shopVacationMode": "Vacation mode",
+  "shopVacationModeSubtitle": "Blocks new orders. Existing orders, stock, and invoices stay editable as usual.",
+  "shopVacationMessageLabel": "Message shown to customers (optional)",
+  "shopVacationMessageHint": "e.g. Back on Jun 5. Thanks for your patience!",
+  "shopOpeningHours": "OPENING HOURS",
+  "shopHoursHint": "Hours are a hint to customers — orders outside hours still go through.",
+  "shopDayClosed": "Closed",
+  "shopDayMonday": "Monday",
+  "shopDayTuesday": "Tuesday",
+  "shopDayWednesday": "Wednesday",
+  "shopDayThursday": "Thursday",
+  "shopDayFriday": "Friday",
+  "shopDaySaturday": "Saturday",
+  "shopDaySunday": "Sunday",
+  "shopOperationsTitle": "Shop operations",
+  "shopOpsHoursOnVacation": "On vacation — new orders blocked",
+  "shopOpsHoursSubtitle": "Set opening hours and pause new orders.",
+  "shopOnVacationBadge": "On vacation",
+  "shopPayoutsTitle": "Payouts & settlement",
+  "shopKycTitle": "KYC documents",
+  "shopOpsKycSubtitle": "PAN, GSTIN certificate, cancelled cheque. Required before payouts go live.",
+  "shopComingSoonBadge": "Coming soon",
+  "shopTeamTitle": "Team & roles",
+  "shopOpsTeamSubtitle": "Invite staff and scope exactly what each person can view and manage.",
+  "shopOpsPayoutsLinkBank": "Link a bank account to receive your sales settlements.",
+  "shopOpsPayoutsResume": "Resume your payout setup — you have a saved draft.",
+  "shopOpsPayoutsSetUp": "Set up your bank account to start receiving settlements.",
+  "shopOpsPayoutsActive": "Active — your sales settle to your linked bank account.",
+  "shopOpsPayoutsSubmitted": "Submitted — Razorpay is verifying your account.",
+  "shopInProgressBadge": "In progress",
+  "shopSetUpBadge": "Set up",
+  "shopActiveBadge": "Active",
+  "shopUnderReviewBadge": "Under review",
+  "shopKycIntro": "Document uploads launch with the verified-seller badge. Until then, this lists what you'll be asked for so you can prepare ahead. Your payout KYC is handled in Payouts & settlement.",
+  "shopKycPanTitle": "PAN card",
+  "shopKycPanSubtitle": "Owner or business PAN. Required for payouts.",
+  "shopKycGstinTitle": "GSTIN certificate",
+  "shopKycGstinSubtitle": "If your shop has a GSTIN, upload the registration certificate.",
+  "shopKycChequeTitle": "Cancelled cheque",
+  "shopKycChequeSubtitle": "Bank-issued cheque with account holder name visible. Confirms settlement-account ownership.",
+  "shopKycAadhaarTitle": "Aadhaar / address proof",
+  "shopKycAadhaarSubtitle": "For sole-proprietor shops. Skip if you already have GSTIN on file.",
+  "shopKycPhotoTitle": "Shop / business photo",
+  "shopKycPhotoSubtitle": "Optional. Front-of-store photo helps trust + verification reviews.",
+  "shopKycNotUploaded": "Not uploaded",
+  "shopKycUploadComingSoon": "Upload (coming soon)",
+  "shopConnectExistingAccountTitle": "Connect existing account",
+  "shopConnectIntro": "Already have a Razorpay linked account? Paste its id to link it — no need to re-do KYC.",
+  "shopConnectAccountIdLabel": "Account id",
+  "shopConnectVerify": "Verify",
+  "shopConnectConfirmTitle": "Confirm this is your account",
+  "shopConnectFactAccount": "Account",
+  "shopConnectFactBusiness": "Business",
+  "shopConnectFactContact": "Contact",
+  "shopConnectFactEmail": "Email",
+  "shopConnectFactKycStatus": "KYC status",
+  "shopConnectFactPayouts": "Payouts",
+  "shopConnectPayoutsNotEnabledWarning": "Payouts aren't enabled yet — you can link it, but UPI at the till stays off until Razorpay activates the account.",
+  "shopConnectLinkAccount": "Link this account",
+  "shopPermissionView": "View",
+  "shopPermissionManage": "Manage",
+  "shopStartFromRole": "START FROM A ROLE",
+  "shopCustomRole": "Custom",
+  "shopAccessManageable": "ACCESS · {count} manageable",
+  "@shopAccessManageable": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "shopPermissionTrustHint": "Manage includes view. Payouts & KYC and Team are sensitive — grant them only to people you trust.",
+  "shopGiveRoleName": "Give the role a name",
+  "shopNewRole": "New role",
+  "shopEditRole": "Edit role",
+  "shopRoleNameLabel": "Role name",
+  "shopRoleNameHint": "e.g. Warehouse Lead",
+  "shopRoleTemplatesHint": "Members keep their current access when a role changes — roles are templates you assign, not live links.",
+  "shopPayoutsSubmittedSnack": "Submitted — Razorpay will verify your account.",
+  "shopConnectExisting": "Connect existing",
+  "shopStepBusiness": "Business",
+  "shopStepIdentity": "Identity",
+  "shopStepAddress": "Address",
+  "shopStepBank": "Bank",
+  "shopStepProgress": "Step {current} of {total} · {title}",
+  "@shopStepProgress": {
+    "placeholders": {
+      "current": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      },
+      "title": {
+        "type": "Object"
+      }
+    }
+  },
+  "shopSetUpPayouts": "Set up payouts",
+  "shopFieldRequired": "Required",
+  "shopInvalidEmail": "Invalid email",
+  "shopBusinessStepTitle": "Your business",
+  "shopBusinessStepSubtitle": "The legal entity that receives settlements.",
+  "shopLegalBusinessName": "Legal business name",
+  "shopDisplayName": "Display name (optional)",
+  "shopDisplayNameHelper": "Shown to customers. Defaults to the legal name.",
+  "shopContactPersonName": "Contact person name",
+  "shopEmail": "Email",
+  "shopPhone": "Phone",
+  "shopEnter10DigitNumber": "Enter a 10-digit number",
+  "shopBusinessType": "Business type",
+  "shopBusinessTypeProprietorship": "Proprietorship",
+  "shopBusinessTypePartnership": "Partnership",
+  "shopBusinessTypePrivateLimited": "Private Limited",
+  "shopBusinessTypePublicLimited": "Public Limited",
+  "shopBusinessTypeLlp": "LLP",
+  "shopBusinessTypeIndividual": "Individual",
+  "shopBusinessTypeTrust": "Trust",
+  "shopBusinessTypeSociety": "Society",
+  "shopBusinessTypeNgo": "NGO",
+  "shopBusinessCategory": "Business category",
+  "shopCategoryEcommerce": "E-commerce / Retail",
+  "shopCategoryFood": "Food & Beverage",
+  "shopCategoryServices": "Services",
+  "shopCategoryHealthcare": "Healthcare",
+  "shopCategoryEducation": "Education",
+  "shopCategoryOthers": "Others",
+  "shopIdentityStepTitle": "Identity & tax",
+  "shopIdentityStepSubtitle": "Verified with the tax authority. Sent to Razorpay, never stored by this app.",
+  "shopPanHelper": "Business or proprietor PAN (e.g. AAACL1234C).",
+  "shopInvalidPan": "Invalid PAN",
+  "shopGstinOptional": "GSTIN (optional)",
+  "shopGstinHelper": "Add if your business is GST-registered.",
+  "shopInvalidGstin": "Invalid GSTIN",
+  "shopAddressStepTitle": "Registered address",
+  "shopAddressStepSubtitle": "The address on your business registration.",
+  "shopAddressLine1": "Address line 1",
+  "shopAddressLine2": "Address line 2 (optional)",
+  "shopCity": "City",
+  "shopState": "State",
+  "shopSelectState": "Select a state",
+  "shopPinCode": "PIN code",
+  "shopEnter6DigitPin": "Enter a 6-digit PIN",
+  "shopCountryIndia": "Country: India",
+  "shopBankStepTitle": "Settlement bank account",
+  "shopBankStepSubtitle": "Where your payouts land. Sent securely to Razorpay; this app never stores your bank details.",
+  "shopAccountHolderName": "Account holder name",
+  "shopBankAccountNumber": "Bank account number",
+  "shopEnterValidAccountNumber": "Enter a valid account number",
+  "shopInvalidIfsc": "Invalid IFSC",
+  "shopResumeTitle": "Continue where you left off?",
+  "shopResumeDraftUpTo": "You had a saved draft up to the {step} step.",
+  "@shopResumeDraftUpTo": {
+    "placeholders": {
+      "step": {
+        "type": "Object"
+      }
+    }
+  },
+  "shopStartOver": "Start over",
+  "shopResume": "Resume",
+  "shopStatusActive": "Active — payouts enabled",
+  "shopStatusNeedsClarification": "Action needed — Razorpay needs more info",
+  "shopStatusSuspended": "Suspended — contact support",
+  "shopStatusUnderReview": "Under review by Razorpay",
+  "shopStatusNotActivated": "Not activated yet — finish KYC at Razorpay",
+  "shopStatusActivatedDesc": "Your settlement account is verified. Order + UPI payouts will land in your bank.",
+  "shopStatusNotEnabledDesc": "This account is not payout-enabled yet (Razorpay status: {status}). Finish its Route KYC in the Razorpay dashboard, then tap refresh to re-check live.",
+  "@shopStatusNotEnabledDesc": {
+    "placeholders": {
+      "status": {
+        "type": "Object"
+      }
+    }
+  },
+  "shopDetailAccountId": "Account ID",
+  "shopDetailName": "Name",
+  "shopDetailEmail": "Email",
+  "shopDetailBusinessType": "Business type",
+  "shopDetailKycStatus": "KYC status",
+  "shopDetailPayouts": "Payouts",
+  "shopRefreshFromRazorpay": "Refresh from Razorpay",
+  "shopImageTooLarge": "Image is larger than 5 MB. Pick a smaller image or crop tighter.",
+  "shopImageUploadFailed": "Image upload failed",
+  "shopProfileSaved": "Shop profile saved",
+  "shopUnpublishTitle": "Unpublish shop?",
+  "shopUnpublishMessage": "Customers will stop seeing your shop on the marketplace. Your inventory and orders are unaffected.",
+  "shopUnpublish": "Unpublish",
+  "shopNowLive": "Shop is now live on the marketplace",
+  "shopHiddenFromMarketplace": "Shop hidden from marketplace",
+  "shopPublishUpdateFailed": "Failed to update publish state",
+  "shopDiscardChangesTitle": "Discard changes?",
+  "shopDiscardChangesMessage": "You have unsaved edits. Leaving now drops them.",
+  "shopKeepEditing": "Keep editing",
+  "shopDiscard": "Discard",
+  "shopMyShopTitle": "My Shop",
+  "shopNotFound": "Shop not found",
+  "shopLiveOnMarketplaceSlug": "Live on marketplace · /{slug}",
+  "@shopLiveOnMarketplaceSlug": {
+    "placeholders": {
+      "slug": {
+        "type": "Object"
+      }
+    }
+  },
+  "shopNotPublished": "Not published",
+  "shopNameLabel": "Shop name",
+  "shopNameHelper": "Shown on the marketplace. Renaming updates the public URL slug.",
+  "shopMin2Chars": "Min 2 characters",
+  "shopMax80Chars": "Max 80 characters",
+  "shopTaglineLabel": "Tagline (optional)",
+  "shopTaglineHelper": "One-liner shown below your shop name.",
+  "shopLocationSection": "Location",
+  "shopLocationSectionSubtitle": "Optional. Surfaces a \"Based in …\" line on your public shop page.",
+  "shopPoliciesSection": "Policies",
+  "shopPoliciesSectionSubtitle": "Customers see these on your shop page and as a \"Policies\" pill on every PDP. Plain text. Up to 4 KB each.",
+  "shopReturnPolicyLabel": "Return policy",
+  "shopReturnPolicyHint": "e.g. 7-day return on unused items. Original packaging required.",
+  "shopShippingPolicyLabel": "Shipping policy",
+  "shopShippingPolicyHint": "e.g. Ships within 24 hours from Bengaluru. 3–5 business days delivery.",
+  "shopRefundPolicyLabel": "Refund policy",
+  "shopRefundPolicyHint": "e.g. Refunds processed within 5 business days to the original payment method.",
+  "shopReturnsCancellationSection": "Returns & cancellation",
+  "shopReturnsCancellationSubtitle": "Whether customers can return orders, how refunds are issued, and how late an order can be cancelled.",
+  "shopAcceptReturns": "Accept returns",
+  "shopAcceptReturnsSubtitle": "When off, customers can't request post-delivery returns.",
+  "shopReturnWindowLabel": "Return window (days)",
+  "shopReturnWindowHelper": "0 means no time limit.",
+  "shopReturnWindowError": "Enter a whole number between 0 and 365",
+  "shopRefundMethodLabel": "Refund method",
+  "shopRefundMethodOriginal": "Original payment method",
+  "shopRefundMethodReplacement": "Replacement only",
+  "shopReturnPolicyNoteLabel": "Return policy note (optional)",
+  "shopReturnPolicyNoteHint": "e.g. Items must be unused and in original packaging. Buyer pays return shipping.",
+  "shopCustomersCanCancelLabel": "Customers can cancel",
+  "shopCustomersCanCancelHelper": "After this stage they must use a post-delivery return instead.",
+  "shopCancelUntilConfirmed": "Until I confirm the order",
+  "shopCancelUntilPacked": "Until packed",
+  "shopCancelUntilShipped": "Until shipped (recommended)",
+  "shopCancelUntilDelivered": "Until delivered",
+  "shopAddBanner": "Add banner",
+  "shopReplace": "Replace",
+  "shopLiveOnMarketplace": "Live on marketplace",
+  "shopNotPublishedYet": "Not published yet",
+  "shopPublishCardLiveDesc": "Customers can find your shop and your published products.",
+  "shopPublishCardHiddenDesc": "Toggle on once your logo, banner and at least one product are ready.",
+  "shopInviteTeammate": "Invite a teammate",
+  "shopInviteAccessTitle": "Invite access",
+  "shopSendInvite": "Send invite",
+  "shopInviteAccessSubtitle": "Choose what {email} can view and manage. You can change this anytime.",
+  "@shopInviteAccessSubtitle": {
+    "placeholders": {
+      "email": {
+        "type": "Object"
+      }
+    }
+  },
+  "shopInvitationSentTo": "Invitation sent to {email}",
+  "@shopInvitationSentTo": {
+    "placeholders": {
+      "email": {
+        "type": "Object"
+      }
+    }
+  },
+  "shopEditAccessTitle": "Edit access",
+  "shopEditAccessSubtitle": "Set exactly what {name} can view and manage.",
+  "@shopEditAccessSubtitle": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "shopAccessUpdated": "Access updated",
+  "shopRemoveFromTeamTitle": "Remove from team?",
+  "shopRemoveFromTeamMessage": "{name} will lose access to this shop immediately. You can invite them again later.",
+  "@shopRemoveFromTeamMessage": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "shopRemovedFromTeam": "Removed from team",
+  "shopRoleCreated": "Role created",
+  "shopRoleSaved": "Role saved",
+  "shopDeleteRoleTitle": "Delete “{name}”?",
+  "@shopDeleteRoleTitle": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "shopDeleteRoleMessage": "This removes the role from the picker. Teammates who already have it keep their current access.",
+  "shopRoleDeleted": "Role deleted",
+  "shopInvitationCancelled": "Invitation cancelled",
+  "shopTeamViewOnlyBanner": "You can view the team but not change it. Ask an owner to invite people or adjust who does what.",
+  "shopTeamSectionHeader": "TEAM · {count}",
+  "@shopTeamSectionHeader": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "shopPendingInvitesHeader": "PENDING INVITES · {count}",
+  "@shopPendingInvitesHeader": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "shopRolesHeader": "ROLES · {count}",
+  "@shopRolesHeader": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "shopEditAccessMenu": "Edit access",
+  "shopRemoveFromTeamMenu": "Remove from team",
+  "shopInvitedAsAwaitingReply": "Invited as {role} · awaiting reply",
+  "@shopInvitedAsAwaitingReply": {
+    "placeholders": {
+      "role": {
+        "type": "Object"
+      }
+    }
+  },
+  "shopBuiltIn": "Built-in",
+  "shopRoleViewOnly": "View-only",
+  "shopRoleAreaManageable": "{count} area manageable",
+  "@shopRoleAreaManageable": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "shopRoleAreasManageable": "{count} areas manageable",
+  "@shopRoleAreasManageable": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "shopEditRoleMenu": "Edit role",
+  "shopDeleteRoleMenu": "Delete role",
+  "shopInviteSheetSubtitle": "Use a dedicated work email — shopper accounts can't be staff. You'll pick their access next.",
+  "shopEnterEmail": "Enter an email",
+  "shopEnterValidEmail": "Enter a valid email",
+  "shopChooseAccess": "Choose access",
+  "shopNotNow": "Not now",
+  "shopJoinFallbackShop": "A shop",
+  "shopStaffRole": "Staff",
+  "shopYoureInvitedToJoin": "You're invited to join",
+  "shopAsA": "as a ",
+  "shopWhatYoullBeAbleToDo": "WHAT YOU'LL BE ABLE TO DO",
+  "shopLimitedAccess": "Limited access — ask the owner for details.",
+  "shopJoinTheTeam": "Join the team",
+  "shopJoinNamed": "Join {shop}",
+  "@shopJoinNamed": {
+    "placeholders": {
+      "shop": {
+        "type": "Object"
+      }
+    }
+  },
+  "shopDeclineInvitation": "Decline invitation",
+  "shopSheetFinishTitle": "Finish setting up payouts",
+  "shopSheetSetupTitle": "Set up payouts to get paid",
+  "shopSheetFinishBody": "You started setting up payouts — pick up right where you left off. Your saved details are kept securely on this device.",
+  "shopSheetSetupBody": "Add your settlement bank account so your share of each order can reach you. Your money is held until the order is delivered, then settled to your bank — usually within a few days.",
+  "shopSetUpNow": "Set up now",
+  "shopLater": "Later",
+  "cashierTitle": "Cashier",
+  "cashierRoleCashier": "Cashier",
+  "cashierShiftClosedVariance": "Shift closed · variance {variance}",
+  "@cashierShiftClosedVariance": {
+    "placeholders": {
+      "variance": {
+        "type": "Object"
+      }
+    }
+  },
+  "cashierPastShiftsTitle": "Past shifts · Z-receipts",
+  "cashierLoading": "Loading…",
+  "cashierNoShiftsYet": "No shifts yet.",
+  "cashierVarianceLabel": "variance {amount}",
+  "@cashierVarianceLabel": {
+    "placeholders": {
+      "amount": {
+        "type": "Object"
+      }
+    }
+  },
+  "cashierShiftReportTitle": "Shift report (X)",
+  "cashierSalesSummary": "{count} sales · {gross} gross",
+  "@cashierSalesSummary": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      },
+      "gross": {
+        "type": "Object"
+      }
+    }
+  },
+  "cashierOpeningFloat": "Opening float",
+  "cashierCashSales": "Cash sales",
+  "cashierPayIns": "Pay-ins",
+  "cashierPayOuts": "Pay-outs",
+  "cashierDrops": "Drops",
+  "cashierRefunds": "Refunds",
+  "cashierExpectedInDrawer": "Expected in drawer",
+  "cashierGstTaxable": "GST taxable",
+  "cashierReturnsCount": "Returns ({count})",
+  "@cashierReturnsCount": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "cashierOpenShiftTitle": "Open a shift",
+  "cashierOpenShiftHint": "Count the drawer and enter the opening float.",
+  "cashierOpeningFloatField": "Opening float ₹",
+  "cashierOpenShiftButton": "Open shift",
+  "cashierCashDrawerTitle": "Cash drawer",
+  "cashierPayIn": "Pay in",
+  "cashierPayOut": "Pay out",
+  "cashierDrop": "Drop",
+  "cashierAmountField": "Amount ₹",
+  "cashierReasonField": "Reason (optional)",
+  "cashierRecordButton": "Record",
+  "cashierCloseShiftTitle": "Close shift",
+  "cashierExpectedInDrawerValue": "Expected in drawer: {amount}",
+  "@cashierExpectedInDrawerValue": {
+    "placeholders": {
+      "amount": {
+        "type": "Object"
+      }
+    }
+  },
+  "cashierCountedCashField": "Counted cash ₹",
+  "cashierVarianceValue": "Variance: {amount} {status}",
+  "@cashierVarianceValue": {
+    "placeholders": {
+      "amount": {
+        "type": "Object"
+      },
+      "status": {
+        "type": "Object"
+      }
+    }
+  },
+  "cashierVarianceBalanced": "(balanced)",
+  "cashierVarianceOver": "(over)",
+  "cashierVarianceShort": "(short)",
+  "cashierNoteField": "Note (optional)",
+  "cashierCloseZReportButton": "Close & Z-report",
+  "cashierReturnsTitle": "Returns",
+  "cashierOriginalInvoiceIdField": "Original invoice id",
+  "cashierLookUpButton": "Look up",
+  "cashierReturnableLine": "returnable {qty} · {price}",
+  "@cashierReturnableLine": {
+    "placeholders": {
+      "qty": {
+        "type": "Object"
+      },
+      "price": {
+        "type": "Object"
+      }
+    }
+  },
+  "cashierEnterQuantityError": "Enter a quantity to return.",
+  "cashierCreditNoteCreated": "Credit note {no} · {amount}",
+  "@cashierCreditNoteCreated": {
+    "placeholders": {
+      "no": {
+        "type": "Object"
+      },
+      "amount": {
+        "type": "Object"
+      }
+    }
+  },
+  "cashierProcessReturnButton": "Process return",
+  "posTitle": "Point of sale",
+  "posFindItem": "Find item",
+  "posCashierTooltip": "Cashier (shift · drawer · returns)",
+  "posHold": "Hold",
+  "posRecall": "Recall",
+  "posLogOut": "Log out",
+  "posCashier": "Cashier",
+  "posOpenShiftToBill": "Open a shift to start billing",
+  "posOpenShift": "Open shift",
+  "posScanFirstItem": "Scan the first item.",
+  "posTotal": "Total",
+  "posBillDiscount": "Bill discount",
+  "posCheckout": "Checkout",
+  "posLineDiscount": "Line discount",
+  "posNewItem": "New item",
+  "posName": "Name",
+  "posSellingPrice": "Selling price ₹",
+  "posGstPercentOptional": "GST % (optional)",
+  "posOnHand": "On hand",
+  "posCancel": "Cancel",
+  "posAdd": "Add",
+  "posSaleComplete": "Sale complete",
+  "posInvoice": "Invoice",
+  "posPrint": "Print",
+  "posDone": "Done",
+  "posCouldNotGenerateReceipt": "Could not generate the receipt",
+  "posDiscountMax": "Discount ₹ (max {max})",
+  "@posDiscountMax": {
+    "placeholders": {
+      "max": {
+        "type": "Object"
+      }
+    }
+  },
+  "posApply": "Apply",
+  "posDiscount": "Discount ₹",
+  "posCollect": "Collect",
+  "posCustomerOptional": "Customer (optional)",
+  "posPhone": "Phone",
+  "posCashReceived": "Cash received ₹",
+  "posChangeDue": "Change due",
+  "posCashDone": "Cash — done",
+  "posOtherTenders": "Other tenders",
+  "posOnline": "Online",
+  "posPaymentFailedRetry": "Payment failed. Please retry.",
+  "posNoHeldBills": "No held bills.",
+  "posHeldBills": "Held bills",
+  "posBill": "Bill",
+  "posItemCount": "{count} item(s)",
+  "@posItemCount": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "posQuantity": "Quantity",
+  "posSet": "Set",
+  "posFindItemByNameSku": "Find item by name / SKU",
+  "posSearching": "Searching…",
+  "posTypeToSearch": "Type to search the catalogue.",
+  "posStock": "stock",
+  "posAddedItem": "Added {name}",
+  "@posAddedItem": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "posStatusLive": "Live",
+  "posStatusConnecting": "Connecting",
+  "posStatusReconnecting": "Reconnecting",
+  "posStatusOffline": "Offline",
+  "bannersTitle": "Banners",
+  "bannersRefresh": "Refresh",
+  "bannersNewBanner": "New banner",
+  "bannersDeleteTitle": "Delete banner?",
+  "bannersDeleteMessage": "This banner will be removed from {placement}.",
+  "@bannersDeleteMessage": {
+    "placeholders": {
+      "placement": {
+        "type": "Object"
+      }
+    }
+  },
+  "bannersCancel": "Cancel",
+  "bannersDelete": "Delete",
+  "bannersEmptyPlacement": "No banners in this placement yet",
+  "bannersStatusLive": "Live",
+  "bannersStatusScheduled": "Scheduled",
+  "bannersStatusExpired": "Expired",
+  "bannersStatusOff": "Off",
+  "bannersSortOrder": "Sort {order}",
+  "@bannersSortOrder": {
+    "placeholders": {
+      "order": {
+        "type": "Object"
+      }
+    }
+  },
+  "bannersProductCountOne": "{count} product",
+  "@bannersProductCountOne": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "bannersProductCountOther": "{count} products",
+  "@bannersProductCountOther": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "bannersWindowFrom": "from {date}",
+  "@bannersWindowFrom": {
+    "placeholders": {
+      "date": {
+        "type": "Object"
+      }
+    }
+  },
+  "bannersWindowUntil": "until {date}",
+  "@bannersWindowUntil": {
+    "placeholders": {
+      "date": {
+        "type": "Object"
+      }
+    }
+  },
+  "bannersImageUploadFailed": "Image upload failed",
+  "bannersImageTooLarge": "Image is larger than 5 MB. Pick a smaller image or crop tighter.",
+  "bannersImageRequired": "An image is required",
+  "bannersSaveFailed": "Save failed",
+  "bannersProductsSaveFailed": "Banner saved, but products failed: {error}",
+  "@bannersProductsSaveFailed": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "bannersAlreadyPinned": "Already pinned to this banner",
+  "bannersEditBanner": "Edit banner",
+  "bannersPlacement": "Placement",
+  "bannersLink": "Link",
+  "bannersSort": "Sort",
+  "bannersActive": "Active",
+  "bannersActiveSubtitle": "When off, hidden regardless of schedule",
+  "bannersSaving": "Saving…",
+  "bannersSaveChanges": "Save changes",
+  "bannersCreateBanner": "Create banner",
+  "bannersUploadImage": "Upload image *",
+  "bannersReplaceImage": "Replace image",
+  "bannersStarts": "Starts",
+  "bannersEnds": "Ends",
+  "bannersProducts": "Products",
+  "bannersAdd": "Add",
+  "bannersSaveFirstHint": "Save the banner first to add products.",
+  "bannersAddProductsHint": "Tap “Add” to pin products with an optional discount.",
+  "bannersNotSet": "Not set",
+  "bannersSearchProduct": "Search product name or SKU",
+  "bannersSearchHint": "Type 2+ characters to search",
+  "challansTitle": "Challans",
+  "challansSearchHint": "Search challans...",
+  "challansFilterAll": "All",
+  "challansEmptyTitle": "No challans found",
+  "challansEmptySubtitle": "Tap + to create a challan",
+  "challansCreate": "Create Challan",
+  "challansItemsLabel": "items",
+  "challansCancel": "Cancel Challan",
+  "challansCancelConfirm": "Cancel this challan? This cannot be undone.",
+  "challansYes": "Yes",
+  "challansNo": "No",
+  "challansError": "Something went wrong",
+  "challansPartyName": "Party Name",
+  "challansPhone": "Phone",
+  "challansNote": "Note",
+  "challansLinkedInvoice": "Invoice",
+  "challansItemsHeader": "Challan Items",
+  "challansEmptyItems": "No items added yet",
+  "challansConvertToInvoice": "Convert to Invoice",
+  "challansAddAtLeastOne": "Add at least one product",
+  "challansDiscardTitle": "Discard changes?",
+  "challansDiscardMessage": "Your edits will be lost.",
+  "challansKeepEditing": "Keep editing",
+  "challansDiscard": "Discard",
+  "challansSubmit": "Submit",
+  "challansPartyInfo": "Party Info",
+  "challansSelectParty": "Select party",
+  "challansFieldRequired": "This field is required",
+  "challansAddProducts": "Add Products",
+  "challansNoPricesHint": "Prices are not visible to the party",
+  "challansSearchProducts": "Search products...",
+  "challansChange": "Change",
+  "returnsTitle": "Returns",
+  "returnsTabOpen": "Open",
+  "returnsTabApproved": "Approved",
+  "returnsTabReceived": "Received",
+  "returnsTabRefunded": "Refunded",
+  "returnsTabAll": "All",
+  "returnsRowTitle": "Return #{id} · {name}",
+  "@returnsRowTitle": {
+    "placeholders": {
+      "id": {
+        "type": "Object"
+      },
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "returnsItemCountOne": "1 item",
+  "returnsItemCountOther": "{count} items",
+  "@returnsItemCountOther": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "returnsRefundLabel": "Refund",
+  "returnsEmpty": "No returns in this view yet.",
+  "returnsRetry": "Retry",
+  "returnsStatusRequested": "Requested",
+  "returnsStatusApproved": "Approved",
+  "returnsStatusRejected": "Rejected",
+  "returnsStatusCancelled": "Cancelled",
+  "returnsStatusPickedUp": "Picked up",
+  "returnsStatusReceived": "Received",
+  "returnsStatusRefunded": "Refunded",
+  "returnsDetailTitle": "Return #{id}",
+  "@returnsDetailTitle": {
+    "placeholders": {
+      "id": {
+        "type": "Object"
+      }
+    }
+  },
+  "returnsNoteOptional": "Note (optional)",
+  "returnsNoteRequired": "Note required",
+  "returnsCancel": "Cancel",
+  "returnsBuyerNote": "Buyer note",
+  "returnsYourNote": "Your note",
+  "returnsRefundedToOriginal": "Refunded {amount} to {name}'s original payment method",
+  "@returnsRefundedToOriginal": {
+    "placeholders": {
+      "amount": {
+        "type": "Object"
+      },
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "returnsApproveTitle": "Approve return",
+  "returnsApprove": "Approve",
+  "returnsApproveHint": "Pickup instructions for the buyer (optional)",
+  "returnsApprovedToast": "Return approved",
+  "returnsRejectTitle": "Reject return",
+  "returnsReject": "Reject",
+  "returnsRejectHint": "Why? Shown to the buyer",
+  "returnsRejectedToast": "Return rejected",
+  "returnsPickedUpToast": "Marked as picked up",
+  "returnsReceivedToast": "Marked as received",
+  "returnsRefundConfirmTitle": "Refund {amount}?",
+  "@returnsRefundConfirmTitle": {
+    "placeholders": {
+      "amount": {
+        "type": "Object"
+      }
+    }
+  },
+  "returnsRefundConfirmBody": "This refunds the buyer to their original payment method. The action can't be undone.",
+  "returnsRefund": "Refund",
+  "returnsRefundIssuedToast": "Refund issued to original payment method",
+  "returnsOrderSlice": "Order #{orderId} · Slice #{sliceId}",
+  "@returnsOrderSlice": {
+    "placeholders": {
+      "orderId": {
+        "type": "Object"
+      },
+      "sliceId": {
+        "type": "Object"
+      }
+    }
+  },
+  "returnsRefundPreview": "Refund preview: ",
+  "returnsItems": "Items",
+  "returnsReasonDamaged": "Damaged on arrival",
+  "returnsReasonWrongItem": "Wrong item sent",
+  "returnsReasonNotAsDescribed": "Not as described",
+  "returnsReasonSizeFit": "Size / fit issue",
+  "returnsReasonChangedMind": "Buyer changed mind",
+  "returnsReasonDefective": "Defective / not working",
+  "returnsReasonOther": "Other",
+  "returnsTimeline": "Timeline",
+  "returnsMarkPickedUp": "Mark as picked up",
+  "returnsMarkReceived": "Mark as received"
 }

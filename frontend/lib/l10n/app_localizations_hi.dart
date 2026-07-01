@@ -2808,4 +2808,2072 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get couponsActiveSubtitle =>
       'बंद होने पर खरीदारों को यह कूपन नहीं दिखेगा और वे इसे इस्तेमाल नहीं कर पाएंगे।';
+
+  @override
+  String get authWelcomeBack => 'वापसी पर स्वागत है';
+
+  @override
+  String get authLoginSubtitle =>
+      'अपनी इन्वेंट्री, इनवॉइस और ग्राहकों को प्रबंधित करने के लिए साइन इन करें।';
+
+  @override
+  String get authLoginFooterPrompt => 'ShopXY पर नए हैं?';
+
+  @override
+  String get authCreateAccountCta => 'खाता बनाएं';
+
+  @override
+  String get authGoogleComingSoon =>
+      'Google साइन-इन जल्द ही आ रहा है — अभी कृपया अपने ईमेल का उपयोग करें।';
+
+  @override
+  String get authEmail => 'ईमेल';
+
+  @override
+  String get authPassword => 'पासवर्ड';
+
+  @override
+  String get authFieldRequired => 'यह फ़ील्ड आवश्यक है';
+
+  @override
+  String get authInvalidEmail => 'एक मान्य ईमेल पता दर्ज करें';
+
+  @override
+  String get authSignIn => 'साइन इन करें';
+
+  @override
+  String get authLegalAgreePrefix => 'साइन इन करके आप हमारी ';
+
+  @override
+  String get authLegalTerms => 'शर्तों';
+
+  @override
+  String get authLegalAcknowledgeMid => ' से सहमत होते हैं और हमारी ';
+
+  @override
+  String get authLegalPrivacyPolicy => 'गोपनीयता नीति';
+
+  @override
+  String get authLegalCookieSuffix =>
+      ' को स्वीकार करते हैं। आपको साइन इन रखने के लिए हम एक सख्ती से आवश्यक सेशन कुकी का उपयोग करते हैं।';
+
+  @override
+  String get authTroubleSigningIn => 'साइन इन करने में परेशानी? ';
+
+  @override
+  String get authContactSupport => 'सहायता से संपर्क करें';
+
+  @override
+  String get authComplianceLawsFormulas => 'अनुपालन, कानून और सूत्र';
+
+  @override
+  String get authContinueAs => 'इस रूप में जारी रखें';
+
+  @override
+  String get authRemoveThisAccount => 'इस खाते को हटाएं';
+
+  @override
+  String get authRegisterTitle => 'अपना खाता बनाएं';
+
+  @override
+  String get authRegisterSubtitle =>
+      'अपनी इन्वेंट्री, इनवॉइस और ग्राहकों को प्रबंधित करना शुरू करने के लिए अपना मर्चेंट खाता सेट करें।';
+
+  @override
+  String get authRegisterFooterPrompt => 'पहले से खाता है?';
+
+  @override
+  String get authAcceptTermsPrompt =>
+      'जारी रखने के लिए कृपया सेवा की शर्तें और गोपनीयता नीति स्वीकार करें।';
+
+  @override
+  String get authYourName => 'आपका नाम';
+
+  @override
+  String get authNameTooShort => 'नाम कम से कम 2 अक्षरों का होना चाहिए';
+
+  @override
+  String get authShopName => 'दुकान का नाम';
+
+  @override
+  String get authShopNameHelper =>
+      'मार्केटप्लेस में ग्राहकों को दिखाया जाता है। आप इसे बाद में बदल सकते हैं।';
+
+  @override
+  String get authPasswordHelper =>
+      'कम से कम 8 अक्षर, जिनमें एक अक्षर और एक संख्या हो।';
+
+  @override
+  String get authConfirmPassword => 'पासवर्ड की पुष्टि करें';
+
+  @override
+  String get authPasswordsDoNotMatch => 'पासवर्ड मेल नहीं खाते';
+
+  @override
+  String get authIAcceptThe => 'मैं स्वीकार करता/करती हूं';
+
+  @override
+  String get authTermsOfService => 'सेवा की शर्तें';
+
+  @override
+  String get authPrivacyPolicy => 'गोपनीयता नीति';
+
+  @override
+  String get authCreateAccount => 'खाता बनाएं';
+
+  @override
+  String get authContinueWithGoogle => 'Google के साथ जारी रखें';
+
+  @override
+  String get authOrContinueWithEmail => 'या ईमेल के साथ जारी रखें';
+
+  @override
+  String get authHide => 'छिपाएं';
+
+  @override
+  String get authShow => 'दिखाएं';
+
+  @override
+  String get dashboardHiddenTitle => 'डैशबोर्ड छिपा हुआ है';
+
+  @override
+  String get dashboardHiddenMessage =>
+      'आपकी भूमिका में डैशबोर्ड अवलोकन शामिल नहीं है। यदि आपको इसकी आवश्यकता है तो किसी मालिक से पूछें।';
+
+  @override
+  String get dashboardGreetingMorning => 'सुप्रभात';
+
+  @override
+  String get dashboardGreetingAfternoon => 'नमस्कार';
+
+  @override
+  String get dashboardGreetingEvening => 'शुभ संध्या';
+
+  @override
+  String dashboardGreetingWithName(Object greeting, Object name) {
+    return '$greeting, $name';
+  }
+
+  @override
+  String get dashboardYourShop => 'आपकी दुकान';
+
+  @override
+  String dashboardShopStatus(Object shop) {
+    return 'यहाँ देखें $shop कैसा चल रहा है।';
+  }
+
+  @override
+  String get dashboardPendingInviteOne =>
+      'आपके पास 1 लंबित निमंत्रण है — समीक्षा करें और स्वीकार करें।';
+
+  @override
+  String dashboardPendingInviteMany(Object count) {
+    return 'आपके पास $count लंबित निमंत्रण हैं — समीक्षा करें और स्वीकार करें।';
+  }
+
+  @override
+  String get dashboardView => 'देखें';
+
+  @override
+  String get dashboardOperations => 'संचालन';
+
+  @override
+  String get dashboardGstThisMonth => 'इस महीने GST';
+
+  @override
+  String dashboardOutputTaxCollected(Object amount) {
+    return '$amount आउटपुट कर एकत्र किया गया';
+  }
+
+  @override
+  String get dashboardInventoryValue => 'इन्वेंट्री मूल्य';
+
+  @override
+  String get dashboardCostBasisOfStock => 'उपलब्ध स्टॉक का लागत आधार';
+
+  @override
+  String get dashboardOneSale => '1 बिक्री';
+
+  @override
+  String dashboardSalesCount(Object count) {
+    return '$count बिक्री';
+  }
+
+  @override
+  String dashboardOpenTillSince(Object time) {
+    return 'खुला गल्ला · $time से';
+  }
+
+  @override
+  String get dashboardNeedsAttention => 'ध्यान देने योग्य';
+
+  @override
+  String get dashboardAllCaughtUp =>
+      'सब कुछ पूरा हो गया — अभी किसी कार्रवाई की आवश्यकता नहीं है।';
+
+  @override
+  String get dashboardOrdersToConfirm => 'पुष्टि करने योग्य ऑर्डर';
+
+  @override
+  String get dashboardReturnsToReview => 'समीक्षा योग्य वापसी';
+
+  @override
+  String get dashboardQuotesToPrice => 'मूल्य तय करने योग्य कोटेशन';
+
+  @override
+  String get dashboardDraftsToConfirm => 'पुष्टि करने योग्य ड्राफ्ट';
+
+  @override
+  String get dashboardOutOfStock => 'स्टॉक समाप्त';
+
+  @override
+  String get dashboardLowStock => 'कम स्टॉक';
+
+  @override
+  String get dashboardSales => 'बिक्री';
+
+  @override
+  String get dashboardNetProfit => 'शुद्ध लाभ';
+
+  @override
+  String dashboardMarginPct(Object pct) {
+    return '$pct% मार्जिन';
+  }
+
+  @override
+  String get dashboardReceivables => 'प्राप्य राशि';
+
+  @override
+  String get dashboardOnePartyOwesYou => '1 पार्टी पर आपका बकाया है';
+
+  @override
+  String dashboardPartiesOweYou(Object count) {
+    return '$count पार्टियों पर आपका बकाया है';
+  }
+
+  @override
+  String get dashboardPayables => 'देय राशि';
+
+  @override
+  String get dashboardOneVendorToPay => '1 विक्रेता को भुगतान करना है';
+
+  @override
+  String dashboardVendorsToPay(Object count) {
+    return '$count विक्रेताओं को भुगतान करना है';
+  }
+
+  @override
+  String get dashboardSalesTrend => 'बिक्री रुझान';
+
+  @override
+  String get dashboardPrevious => 'पिछला';
+
+  @override
+  String get dashboardPurchases => 'खरीद';
+
+  @override
+  String get dashboardReturns => 'वापसी';
+
+  @override
+  String get dashboardGetShopReady => 'आइए आपकी दुकान तैयार करें';
+
+  @override
+  String get dashboardOnboardingSubtitle =>
+      'ये चरण पूरे करें और आपका डैशबोर्ड लाइव आँकड़ों से भर जाएगा।';
+
+  @override
+  String dashboardStepsDone(Object done, Object total) {
+    return '$done/$total पूर्ण';
+  }
+
+  @override
+  String get dashboardAddFirstProductTitle => 'अपना पहला उत्पाद जोड़ें';
+
+  @override
+  String get dashboardAddFirstProductDesc =>
+      'अपनी सूची बनाएं ताकि आप बिल बना सकें और स्टॉक ट्रैक कर सकें।';
+
+  @override
+  String get dashboardAddProduct => 'उत्पाद जोड़ें';
+
+  @override
+  String get dashboardCreateFirstInvoiceTitle => 'अपना पहला इनवॉइस बनाएं';
+
+  @override
+  String get dashboardCreateFirstInvoiceDesc =>
+      'बिक्री का बिल बनाएं — GST आपके लिए संभाल लिया जाता है।';
+
+  @override
+  String get dashboardNewInvoice => 'नया इनवॉइस';
+
+  @override
+  String get dashboardAddCustomerTitle => 'ग्राहक जोड़ें';
+
+  @override
+  String get dashboardAddCustomerDesc =>
+      'जानें किस पर आपका बकाया है और उन्हें इनवॉइस भेजें।';
+
+  @override
+  String get dashboardAddCustomer => 'ग्राहक जोड़ें';
+
+  @override
+  String get dashboardSetUpPayoutsTitle => 'भुगतान सेट अप करें';
+
+  @override
+  String get dashboardSetUpPayoutsDesc =>
+      'ऑनलाइन ऑर्डर के लिए सेटलमेंट प्राप्त करें।';
+
+  @override
+  String get dashboardSetUp => 'सेट अप करें';
+
+  @override
+  String get dashboardAlertReorder => 'पुनः ऑर्डर करें';
+
+  @override
+  String get dashboardAlertFileGst => 'GST दाखिल करें';
+
+  @override
+  String get dashboardAlertViewReport => 'रिपोर्ट देखें';
+
+  @override
+  String get dashboardAlertOpenTill => 'गल्ला खोलें';
+
+  @override
+  String get dashboardDismiss => 'खारिज करें';
+
+  @override
+  String get dashboardRecentActivity => 'हाल की गतिविधि';
+
+  @override
+  String get dashboardNoRecentMovements => 'कोई हालिया स्टॉक गतिविधि नहीं।';
+
+  @override
+  String dashboardProductFallback(Object id) {
+    return 'उत्पाद #$id';
+  }
+
+  @override
+  String get dashboardTopCategories => 'शीर्ष श्रेणियाँ';
+
+  @override
+  String get dashboardTopProducts => 'शीर्ष उत्पाद';
+
+  @override
+  String get dashboardSlowMovers => 'धीमी बिकने वाली वस्तुएँ';
+
+  @override
+  String get dashboardSlowMoversHint =>
+      'निष्क्रिय स्टॉक इकाइयों का हिस्सा — पूँजी जो नहीं चल रही।';
+
+  @override
+  String dashboardUnitsValue(Object count) {
+    return '$count इकाइयाँ';
+  }
+
+  @override
+  String get dashboardSubjectCategorySales => 'श्रेणी बिक्री';
+
+  @override
+  String get dashboardSubjectProductSales => 'उत्पाद बिक्री';
+
+  @override
+  String get dashboardSubjectIdleStock => 'निष्क्रिय स्टॉक';
+
+  @override
+  String get dashboardNounCategories => 'श्रेणियाँ';
+
+  @override
+  String get dashboardNounProducts => 'उत्पाद';
+
+  @override
+  String get dashboardPieOther => 'अन्य';
+
+  @override
+  String get dashboardNoDataInPeriod => 'इस अवधि में अभी तक कोई डेटा नहीं है।';
+
+  @override
+  String get dashboardAboutThisChart => 'इस चार्ट के बारे में';
+
+  @override
+  String get dashboardTapSliceHint => 'विवरण के लिए किसी टुकड़े पर टैप करें।';
+
+  @override
+  String dashboardPieSummaryBase(
+    Object total,
+    Object count,
+    Object noun,
+    Object avg,
+  ) {
+    return '$count $noun में कुल $total (औसत $avg प्रत्येक)।';
+  }
+
+  @override
+  String dashboardPieSummaryLead(Object label, Object pct, Object value) {
+    return '$label $pct% ($value) के साथ अग्रणी है';
+  }
+
+  @override
+  String dashboardPieSummaryAheadOf(Object label, Object pct) {
+    return ', जो $label के $pct% से आगे है';
+  }
+
+  @override
+  String dashboardPieSummaryTopK(Object k, Object pct, Object subject) {
+    return 'शीर्ष $k $subject का $pct% बनाते हैं';
+  }
+
+  @override
+  String dashboardPieSummaryTrails(Object label, Object pct) {
+    return ', जबकि $label $pct% पर सबसे पीछे है';
+  }
+
+  @override
+  String dashboardPieDetailTail(Object pct, Object subject) {
+    return ', $subject का $pct%।';
+  }
+
+  @override
+  String get dashboardPeriodToday => 'आज';
+
+  @override
+  String get dashboardPeriodWeek => '7 दिन';
+
+  @override
+  String get dashboardPeriodMonth => '30 दिन';
+
+  @override
+  String get dashboardDeltaNew => 'नया';
+
+  @override
+  String get shopSave => 'सहेजें';
+
+  @override
+  String get shopSaving => 'सहेजा जा रहा है…';
+
+  @override
+  String get shopSaveFailed => 'सहेजना विफल';
+
+  @override
+  String get shopCancel => 'रद्द करें';
+
+  @override
+  String get shopDelete => 'हटाएँ';
+
+  @override
+  String get shopRemove => 'हटाएँ';
+
+  @override
+  String get shopContinue => 'जारी रखें';
+
+  @override
+  String get shopBack => 'पीछे';
+
+  @override
+  String get shopRetry => 'पुनः प्रयास करें';
+
+  @override
+  String get shopTryAgain => 'फिर से प्रयास करें';
+
+  @override
+  String get shopDismiss => 'खारिज करें';
+
+  @override
+  String get shopEnabled => 'सक्षम';
+
+  @override
+  String get shopNotYetEnabled => 'अभी सक्षम नहीं';
+
+  @override
+  String get shopNotEnabledYet => 'अभी सक्षम नहीं';
+
+  @override
+  String get shopHoursTitle => 'समय और अवकाश मोड';
+
+  @override
+  String get shopHoursSaved => 'समय सहेजा गया';
+
+  @override
+  String get shopVacationMode => 'अवकाश मोड';
+
+  @override
+  String get shopVacationModeSubtitle =>
+      'नए ऑर्डर रोकता है। मौजूदा ऑर्डर, स्टॉक और चालान हमेशा की तरह संपादित करने योग्य रहते हैं।';
+
+  @override
+  String get shopVacationMessageLabel =>
+      'ग्राहकों को दिखाया जाने वाला संदेश (वैकल्पिक)';
+
+  @override
+  String get shopVacationMessageHint =>
+      'उदा. 5 जून को वापस आएँगे। आपके धैर्य के लिए धन्यवाद!';
+
+  @override
+  String get shopOpeningHours => 'खुलने का समय';
+
+  @override
+  String get shopHoursHint =>
+      'समय ग्राहकों के लिए एक संकेत है — समय के बाहर के ऑर्डर भी स्वीकार होते हैं।';
+
+  @override
+  String get shopDayClosed => 'बंद';
+
+  @override
+  String get shopDayMonday => 'सोमवार';
+
+  @override
+  String get shopDayTuesday => 'मंगलवार';
+
+  @override
+  String get shopDayWednesday => 'बुधवार';
+
+  @override
+  String get shopDayThursday => 'गुरुवार';
+
+  @override
+  String get shopDayFriday => 'शुक्रवार';
+
+  @override
+  String get shopDaySaturday => 'शनिवार';
+
+  @override
+  String get shopDaySunday => 'रविवार';
+
+  @override
+  String get shopOperationsTitle => 'दुकान संचालन';
+
+  @override
+  String get shopOpsHoursOnVacation => 'अवकाश पर — नए ऑर्डर रोके गए';
+
+  @override
+  String get shopOpsHoursSubtitle => 'खुलने का समय तय करें और नए ऑर्डर रोकें।';
+
+  @override
+  String get shopOnVacationBadge => 'अवकाश पर';
+
+  @override
+  String get shopPayoutsTitle => 'भुगतान और निपटान';
+
+  @override
+  String get shopKycTitle => 'KYC दस्तावेज़';
+
+  @override
+  String get shopOpsKycSubtitle =>
+      'PAN, GSTIN प्रमाणपत्र, रद्द किया गया चेक। भुगतान शुरू होने से पहले आवश्यक।';
+
+  @override
+  String get shopComingSoonBadge => 'जल्द आ रहा है';
+
+  @override
+  String get shopTeamTitle => 'टीम और भूमिकाएँ';
+
+  @override
+  String get shopOpsTeamSubtitle =>
+      'स्टाफ़ को आमंत्रित करें और तय करें कि हर व्यक्ति क्या देख और प्रबंधित कर सकता है।';
+
+  @override
+  String get shopOpsPayoutsLinkBank =>
+      'अपनी बिक्री का निपटान पाने के लिए बैंक खाता जोड़ें।';
+
+  @override
+  String get shopOpsPayoutsResume =>
+      'अपना भुगतान सेटअप फिर से शुरू करें — आपके पास एक सहेजा गया ड्राफ़्ट है।';
+
+  @override
+  String get shopOpsPayoutsSetUp =>
+      'निपटान पाना शुरू करने के लिए अपना बैंक खाता सेट करें।';
+
+  @override
+  String get shopOpsPayoutsActive =>
+      'सक्रिय — आपकी बिक्री आपके जुड़े बैंक खाते में निपटती है।';
+
+  @override
+  String get shopOpsPayoutsSubmitted =>
+      'जमा किया गया — Razorpay आपके खाते की पुष्टि कर रहा है।';
+
+  @override
+  String get shopInProgressBadge => 'प्रगति पर';
+
+  @override
+  String get shopSetUpBadge => 'सेट करें';
+
+  @override
+  String get shopActiveBadge => 'सक्रिय';
+
+  @override
+  String get shopUnderReviewBadge => 'समीक्षाधीन';
+
+  @override
+  String get shopKycIntro =>
+      'दस्तावेज़ अपलोड सत्यापित-विक्रेता बैज के साथ शुरू होंगे। तब तक, यहाँ सूचीबद्ध है कि आपसे क्या माँगा जाएगा ताकि आप पहले से तैयारी कर सकें। आपका भुगतान KYC \'भुगतान और निपटान\' में संभाला जाता है।';
+
+  @override
+  String get shopKycPanTitle => 'PAN कार्ड';
+
+  @override
+  String get shopKycPanSubtitle =>
+      'मालिक या व्यवसाय का PAN। भुगतान के लिए आवश्यक।';
+
+  @override
+  String get shopKycGstinTitle => 'GSTIN प्रमाणपत्र';
+
+  @override
+  String get shopKycGstinSubtitle =>
+      'यदि आपकी दुकान का GSTIN है, तो पंजीकरण प्रमाणपत्र अपलोड करें।';
+
+  @override
+  String get shopKycChequeTitle => 'रद्द किया गया चेक';
+
+  @override
+  String get shopKycChequeSubtitle =>
+      'खाताधारक का नाम दिखाई देने वाला बैंक-जारी चेक। निपटान-खाते के स्वामित्व की पुष्टि करता है।';
+
+  @override
+  String get shopKycAadhaarTitle => 'आधार / पते का प्रमाण';
+
+  @override
+  String get shopKycAadhaarSubtitle =>
+      'एकल-स्वामित्व वाली दुकानों के लिए। यदि आपके पास पहले से GSTIN है तो छोड़ दें।';
+
+  @override
+  String get shopKycPhotoTitle => 'दुकान / व्यवसाय की तस्वीर';
+
+  @override
+  String get shopKycPhotoSubtitle =>
+      'वैकल्पिक। दुकान के सामने की तस्वीर विश्वास और सत्यापन समीक्षा में मदद करती है।';
+
+  @override
+  String get shopKycNotUploaded => 'अपलोड नहीं किया गया';
+
+  @override
+  String get shopKycUploadComingSoon => 'अपलोड (जल्द आ रहा है)';
+
+  @override
+  String get shopConnectExistingAccountTitle => 'मौजूदा खाता जोड़ें';
+
+  @override
+  String get shopConnectIntro =>
+      'पहले से Razorpay से जुड़ा खाता है? उसे जोड़ने के लिए उसकी id पेस्ट करें — KYC दोबारा करने की ज़रूरत नहीं।';
+
+  @override
+  String get shopConnectAccountIdLabel => 'खाता id';
+
+  @override
+  String get shopConnectVerify => 'सत्यापित करें';
+
+  @override
+  String get shopConnectConfirmTitle => 'पुष्टि करें कि यह आपका खाता है';
+
+  @override
+  String get shopConnectFactAccount => 'खाता';
+
+  @override
+  String get shopConnectFactBusiness => 'व्यवसाय';
+
+  @override
+  String get shopConnectFactContact => 'संपर्क';
+
+  @override
+  String get shopConnectFactEmail => 'ईमेल';
+
+  @override
+  String get shopConnectFactKycStatus => 'KYC स्थिति';
+
+  @override
+  String get shopConnectFactPayouts => 'भुगतान';
+
+  @override
+  String get shopConnectPayoutsNotEnabledWarning =>
+      'भुगतान अभी सक्षम नहीं हैं — आप इसे जोड़ सकते हैं, लेकिन जब तक Razorpay खाता सक्रिय नहीं करता, बिलिंग पर UPI बंद रहेगा।';
+
+  @override
+  String get shopConnectLinkAccount => 'यह खाता जोड़ें';
+
+  @override
+  String get shopPermissionView => 'देखें';
+
+  @override
+  String get shopPermissionManage => 'प्रबंधित करें';
+
+  @override
+  String get shopStartFromRole => 'किसी भूमिका से शुरू करें';
+
+  @override
+  String get shopCustomRole => 'कस्टम';
+
+  @override
+  String shopAccessManageable(Object count) {
+    return 'पहुँच · $count प्रबंधित करने योग्य';
+  }
+
+  @override
+  String get shopPermissionTrustHint =>
+      'प्रबंधन में देखना शामिल है। भुगतान व KYC और टीम संवेदनशील हैं — इन्हें केवल भरोसेमंद लोगों को ही दें।';
+
+  @override
+  String get shopGiveRoleName => 'भूमिका को एक नाम दें';
+
+  @override
+  String get shopNewRole => 'नई भूमिका';
+
+  @override
+  String get shopEditRole => 'भूमिका संपादित करें';
+
+  @override
+  String get shopRoleNameLabel => 'भूमिका का नाम';
+
+  @override
+  String get shopRoleNameHint => 'उदा. वेयरहाउस लीड';
+
+  @override
+  String get shopRoleTemplatesHint =>
+      'भूमिका बदलने पर सदस्यों की मौजूदा पहुँच बनी रहती है — भूमिकाएँ आपके द्वारा सौंपे गए टेम्पलेट हैं, लाइव लिंक नहीं।';
+
+  @override
+  String get shopPayoutsSubmittedSnack =>
+      'जमा किया गया — Razorpay आपके खाते की पुष्टि करेगा।';
+
+  @override
+  String get shopConnectExisting => 'मौजूदा जोड़ें';
+
+  @override
+  String get shopStepBusiness => 'व्यवसाय';
+
+  @override
+  String get shopStepIdentity => 'पहचान';
+
+  @override
+  String get shopStepAddress => 'पता';
+
+  @override
+  String get shopStepBank => 'बैंक';
+
+  @override
+  String shopStepProgress(Object current, Object total, Object title) {
+    return 'चरण $current / $total · $title';
+  }
+
+  @override
+  String get shopSetUpPayouts => 'भुगतान सेट करें';
+
+  @override
+  String get shopFieldRequired => 'आवश्यक';
+
+  @override
+  String get shopInvalidEmail => 'अमान्य ईमेल';
+
+  @override
+  String get shopBusinessStepTitle => 'आपका व्यवसाय';
+
+  @override
+  String get shopBusinessStepSubtitle =>
+      'वह कानूनी इकाई जो निपटान प्राप्त करती है।';
+
+  @override
+  String get shopLegalBusinessName => 'कानूनी व्यवसाय का नाम';
+
+  @override
+  String get shopDisplayName => 'प्रदर्शित नाम (वैकल्पिक)';
+
+  @override
+  String get shopDisplayNameHelper =>
+      'ग्राहकों को दिखाया जाता है। डिफ़ॉल्ट रूप से कानूनी नाम।';
+
+  @override
+  String get shopContactPersonName => 'संपर्क व्यक्ति का नाम';
+
+  @override
+  String get shopEmail => 'ईमेल';
+
+  @override
+  String get shopPhone => 'फ़ोन';
+
+  @override
+  String get shopEnter10DigitNumber => '10 अंकों का नंबर दर्ज करें';
+
+  @override
+  String get shopBusinessType => 'व्यवसाय का प्रकार';
+
+  @override
+  String get shopBusinessTypeProprietorship => 'स्वामित्व';
+
+  @override
+  String get shopBusinessTypePartnership => 'साझेदारी';
+
+  @override
+  String get shopBusinessTypePrivateLimited => 'प्राइवेट लिमिटेड';
+
+  @override
+  String get shopBusinessTypePublicLimited => 'पब्लिक लिमिटेड';
+
+  @override
+  String get shopBusinessTypeLlp => 'LLP';
+
+  @override
+  String get shopBusinessTypeIndividual => 'व्यक्तिगत';
+
+  @override
+  String get shopBusinessTypeTrust => 'ट्रस्ट';
+
+  @override
+  String get shopBusinessTypeSociety => 'सोसाइटी';
+
+  @override
+  String get shopBusinessTypeNgo => 'NGO';
+
+  @override
+  String get shopBusinessCategory => 'व्यवसाय श्रेणी';
+
+  @override
+  String get shopCategoryEcommerce => 'ई-कॉमर्स / खुदरा';
+
+  @override
+  String get shopCategoryFood => 'खाद्य और पेय';
+
+  @override
+  String get shopCategoryServices => 'सेवाएँ';
+
+  @override
+  String get shopCategoryHealthcare => 'स्वास्थ्य सेवा';
+
+  @override
+  String get shopCategoryEducation => 'शिक्षा';
+
+  @override
+  String get shopCategoryOthers => 'अन्य';
+
+  @override
+  String get shopIdentityStepTitle => 'पहचान और कर';
+
+  @override
+  String get shopIdentityStepSubtitle =>
+      'कर प्राधिकरण से सत्यापित। Razorpay को भेजा जाता है, इस ऐप में कभी संग्रहीत नहीं।';
+
+  @override
+  String get shopPanHelper => 'व्यवसाय या मालिक का PAN (उदा. AAACL1234C)।';
+
+  @override
+  String get shopInvalidPan => 'अमान्य PAN';
+
+  @override
+  String get shopGstinOptional => 'GSTIN (वैकल्पिक)';
+
+  @override
+  String get shopGstinHelper => 'यदि आपका व्यवसाय GST-पंजीकृत है तो जोड़ें।';
+
+  @override
+  String get shopInvalidGstin => 'अमान्य GSTIN';
+
+  @override
+  String get shopAddressStepTitle => 'पंजीकृत पता';
+
+  @override
+  String get shopAddressStepSubtitle => 'आपके व्यवसाय पंजीकरण पर दर्ज पता।';
+
+  @override
+  String get shopAddressLine1 => 'पता पंक्ति 1';
+
+  @override
+  String get shopAddressLine2 => 'पता पंक्ति 2 (वैकल्पिक)';
+
+  @override
+  String get shopCity => 'शहर';
+
+  @override
+  String get shopState => 'राज्य';
+
+  @override
+  String get shopSelectState => 'राज्य चुनें';
+
+  @override
+  String get shopPinCode => 'पिन कोड';
+
+  @override
+  String get shopEnter6DigitPin => '6 अंकों का पिन दर्ज करें';
+
+  @override
+  String get shopCountryIndia => 'देश: भारत';
+
+  @override
+  String get shopBankStepTitle => 'निपटान बैंक खाता';
+
+  @override
+  String get shopBankStepSubtitle =>
+      'जहाँ आपके भुगतान पहुँचते हैं। सुरक्षित रूप से Razorpay को भेजा जाता है; यह ऐप आपके बैंक विवरण कभी संग्रहीत नहीं करता।';
+
+  @override
+  String get shopAccountHolderName => 'खाताधारक का नाम';
+
+  @override
+  String get shopBankAccountNumber => 'बैंक खाता संख्या';
+
+  @override
+  String get shopEnterValidAccountNumber => 'एक मान्य खाता संख्या दर्ज करें';
+
+  @override
+  String get shopInvalidIfsc => 'अमान्य IFSC';
+
+  @override
+  String get shopResumeTitle => 'जहाँ छोड़ा था वहीं से जारी रखें?';
+
+  @override
+  String shopResumeDraftUpTo(Object step) {
+    return 'आपके पास $step चरण तक का सहेजा गया ड्राफ़्ट था।';
+  }
+
+  @override
+  String get shopStartOver => 'फिर से शुरू करें';
+
+  @override
+  String get shopResume => 'जारी रखें';
+
+  @override
+  String get shopStatusActive => 'सक्रिय — भुगतान सक्षम';
+
+  @override
+  String get shopStatusNeedsClarification =>
+      'कार्रवाई आवश्यक — Razorpay को और जानकारी चाहिए';
+
+  @override
+  String get shopStatusSuspended => 'निलंबित — सहायता से संपर्क करें';
+
+  @override
+  String get shopStatusUnderReview => 'Razorpay द्वारा समीक्षाधीन';
+
+  @override
+  String get shopStatusNotActivated =>
+      'अभी सक्रिय नहीं — Razorpay पर KYC पूरा करें';
+
+  @override
+  String get shopStatusActivatedDesc =>
+      'आपका निपटान खाता सत्यापित है। ऑर्डर और UPI भुगतान आपके बैंक में पहुँचेंगे।';
+
+  @override
+  String shopStatusNotEnabledDesc(Object status) {
+    return 'यह खाता अभी भुगतान-सक्षम नहीं है (Razorpay स्थिति: $status)। Razorpay डैशबोर्ड में इसका Route KYC पूरा करें, फिर लाइव दोबारा जाँचने के लिए रिफ़्रेश दबाएँ।';
+  }
+
+  @override
+  String get shopDetailAccountId => 'खाता ID';
+
+  @override
+  String get shopDetailName => 'नाम';
+
+  @override
+  String get shopDetailEmail => 'ईमेल';
+
+  @override
+  String get shopDetailBusinessType => 'व्यवसाय का प्रकार';
+
+  @override
+  String get shopDetailKycStatus => 'KYC स्थिति';
+
+  @override
+  String get shopDetailPayouts => 'भुगतान';
+
+  @override
+  String get shopRefreshFromRazorpay => 'Razorpay से रिफ़्रेश करें';
+
+  @override
+  String get shopImageTooLarge =>
+      'छवि 5 MB से बड़ी है। छोटी छवि चुनें या अधिक क्रॉप करें।';
+
+  @override
+  String get shopImageUploadFailed => 'छवि अपलोड विफल';
+
+  @override
+  String get shopProfileSaved => 'दुकान प्रोफ़ाइल सहेजी गई';
+
+  @override
+  String get shopUnpublishTitle => 'दुकान अप्रकाशित करें?';
+
+  @override
+  String get shopUnpublishMessage =>
+      'ग्राहक मार्केटप्लेस पर आपकी दुकान देखना बंद कर देंगे। आपका इन्वेंट्री और ऑर्डर अप्रभावित रहेंगे।';
+
+  @override
+  String get shopUnpublish => 'अप्रकाशित करें';
+
+  @override
+  String get shopNowLive => 'दुकान अब मार्केटप्लेस पर लाइव है';
+
+  @override
+  String get shopHiddenFromMarketplace => 'दुकान मार्केटप्लेस से छिपाई गई';
+
+  @override
+  String get shopPublishUpdateFailed => 'प्रकाशन स्थिति अपडेट करने में विफल';
+
+  @override
+  String get shopDiscardChangesTitle => 'परिवर्तन छोड़ें?';
+
+  @override
+  String get shopDiscardChangesMessage =>
+      'आपके पास असहेजे संपादन हैं। अभी छोड़ने पर वे हट जाएँगे।';
+
+  @override
+  String get shopKeepEditing => 'संपादन जारी रखें';
+
+  @override
+  String get shopDiscard => 'छोड़ें';
+
+  @override
+  String get shopMyShopTitle => 'मेरी दुकान';
+
+  @override
+  String get shopNotFound => 'दुकान नहीं मिली';
+
+  @override
+  String shopLiveOnMarketplaceSlug(Object slug) {
+    return 'मार्केटप्लेस पर लाइव · /$slug';
+  }
+
+  @override
+  String get shopNotPublished => 'प्रकाशित नहीं';
+
+  @override
+  String get shopNameLabel => 'दुकान का नाम';
+
+  @override
+  String get shopNameHelper =>
+      'मार्केटप्लेस पर दिखाया जाता है। नाम बदलने पर सार्वजनिक URL स्लग अपडेट होता है।';
+
+  @override
+  String get shopMin2Chars => 'कम से कम 2 अक्षर';
+
+  @override
+  String get shopMax80Chars => 'अधिकतम 80 अक्षर';
+
+  @override
+  String get shopTaglineLabel => 'टैगलाइन (वैकल्पिक)';
+
+  @override
+  String get shopTaglineHelper =>
+      'आपकी दुकान के नाम के नीचे दिखने वाली एक पंक्ति।';
+
+  @override
+  String get shopLocationSection => 'स्थान';
+
+  @override
+  String get shopLocationSectionSubtitle =>
+      'वैकल्पिक। आपके सार्वजनिक दुकान पेज पर \"यहाँ स्थित …\" पंक्ति दिखाता है।';
+
+  @override
+  String get shopPoliciesSection => 'नीतियाँ';
+
+  @override
+  String get shopPoliciesSectionSubtitle =>
+      'ग्राहक इन्हें आपके दुकान पेज पर और हर उत्पाद पेज पर \"नीतियाँ\" पिल के रूप में देखते हैं। सादा टेक्स्ट। प्रत्येक अधिकतम 4 KB।';
+
+  @override
+  String get shopReturnPolicyLabel => 'वापसी नीति';
+
+  @override
+  String get shopReturnPolicyHint =>
+      'उदा. अप्रयुक्त वस्तुओं पर 7-दिन की वापसी। मूल पैकेजिंग आवश्यक।';
+
+  @override
+  String get shopShippingPolicyLabel => 'शिपिंग नीति';
+
+  @override
+  String get shopShippingPolicyHint =>
+      'उदा. बेंगलुरु से 24 घंटे में शिप। 3–5 कार्यदिवसों में डिलीवरी।';
+
+  @override
+  String get shopRefundPolicyLabel => 'धनवापसी नीति';
+
+  @override
+  String get shopRefundPolicyHint =>
+      'उदा. धनवापसी 5 कार्यदिवसों के भीतर मूल भुगतान माध्यम में की जाती है।';
+
+  @override
+  String get shopReturnsCancellationSection => 'वापसी और रद्दीकरण';
+
+  @override
+  String get shopReturnsCancellationSubtitle =>
+      'क्या ग्राहक ऑर्डर लौटा सकते हैं, धनवापसी कैसे की जाती है, और ऑर्डर कब तक रद्द किया जा सकता है।';
+
+  @override
+  String get shopAcceptReturns => 'वापसी स्वीकार करें';
+
+  @override
+  String get shopAcceptReturnsSubtitle =>
+      'बंद होने पर, ग्राहक डिलीवरी के बाद वापसी का अनुरोध नहीं कर सकते।';
+
+  @override
+  String get shopReturnWindowLabel => 'वापसी अवधि (दिन)';
+
+  @override
+  String get shopReturnWindowHelper => '0 का अर्थ है कोई समय सीमा नहीं।';
+
+  @override
+  String get shopReturnWindowError =>
+      '0 और 365 के बीच एक पूर्ण संख्या दर्ज करें';
+
+  @override
+  String get shopRefundMethodLabel => 'धनवापसी माध्यम';
+
+  @override
+  String get shopRefundMethodOriginal => 'मूल भुगतान माध्यम';
+
+  @override
+  String get shopRefundMethodReplacement => 'केवल प्रतिस्थापन';
+
+  @override
+  String get shopReturnPolicyNoteLabel => 'वापसी नीति टिप्पणी (वैकल्पिक)';
+
+  @override
+  String get shopReturnPolicyNoteHint =>
+      'उदा. वस्तुएँ अप्रयुक्त और मूल पैकेजिंग में होनी चाहिए। वापसी शिपिंग खरीदार वहन करेगा।';
+
+  @override
+  String get shopCustomersCanCancelLabel => 'ग्राहक रद्द कर सकते हैं';
+
+  @override
+  String get shopCustomersCanCancelHelper =>
+      'इस चरण के बाद उन्हें इसके बजाय डिलीवरी-पश्चात वापसी का उपयोग करना होगा।';
+
+  @override
+  String get shopCancelUntilConfirmed => 'जब तक मैं ऑर्डर की पुष्टि न करूँ';
+
+  @override
+  String get shopCancelUntilPacked => 'पैक होने तक';
+
+  @override
+  String get shopCancelUntilShipped => 'शिप होने तक (अनुशंसित)';
+
+  @override
+  String get shopCancelUntilDelivered => 'डिलीवर होने तक';
+
+  @override
+  String get shopAddBanner => 'बैनर जोड़ें';
+
+  @override
+  String get shopReplace => 'बदलें';
+
+  @override
+  String get shopLiveOnMarketplace => 'मार्केटप्लेस पर लाइव';
+
+  @override
+  String get shopNotPublishedYet => 'अभी प्रकाशित नहीं';
+
+  @override
+  String get shopPublishCardLiveDesc =>
+      'ग्राहक आपकी दुकान और आपके प्रकाशित उत्पाद ढूँढ सकते हैं।';
+
+  @override
+  String get shopPublishCardHiddenDesc =>
+      'अपना लोगो, बैनर और कम से कम एक उत्पाद तैयार होने पर इसे चालू करें।';
+
+  @override
+  String get shopInviteTeammate => 'एक साथी को आमंत्रित करें';
+
+  @override
+  String get shopInviteAccessTitle => 'आमंत्रण पहुँच';
+
+  @override
+  String get shopSendInvite => 'आमंत्रण भेजें';
+
+  @override
+  String shopInviteAccessSubtitle(Object email) {
+    return 'चुनें कि $email क्या देख और प्रबंधित कर सकता है। आप इसे कभी भी बदल सकते हैं।';
+  }
+
+  @override
+  String shopInvitationSentTo(Object email) {
+    return '$email को आमंत्रण भेजा गया';
+  }
+
+  @override
+  String get shopEditAccessTitle => 'पहुँच संपादित करें';
+
+  @override
+  String shopEditAccessSubtitle(Object name) {
+    return 'तय करें कि $name वास्तव में क्या देख और प्रबंधित कर सकता है।';
+  }
+
+  @override
+  String get shopAccessUpdated => 'पहुँच अपडेट की गई';
+
+  @override
+  String get shopRemoveFromTeamTitle => 'टीम से हटाएँ?';
+
+  @override
+  String shopRemoveFromTeamMessage(Object name) {
+    return '$name की इस दुकान तक पहुँच तुरंत समाप्त हो जाएगी। आप उन्हें बाद में फिर से आमंत्रित कर सकते हैं।';
+  }
+
+  @override
+  String get shopRemovedFromTeam => 'टीम से हटाया गया';
+
+  @override
+  String get shopRoleCreated => 'भूमिका बनाई गई';
+
+  @override
+  String get shopRoleSaved => 'भूमिका सहेजी गई';
+
+  @override
+  String shopDeleteRoleTitle(Object name) {
+    return '“$name” हटाएँ?';
+  }
+
+  @override
+  String get shopDeleteRoleMessage =>
+      'यह भूमिका को पिकर से हटा देता है। जिन साथियों के पास यह पहले से है, उनकी मौजूदा पहुँच बनी रहती है।';
+
+  @override
+  String get shopRoleDeleted => 'भूमिका हटाई गई';
+
+  @override
+  String get shopInvitationCancelled => 'आमंत्रण रद्द किया गया';
+
+  @override
+  String get shopTeamViewOnlyBanner =>
+      'आप टीम देख सकते हैं लेकिन बदल नहीं सकते। लोगों को आमंत्रित करने या कौन क्या करता है यह तय करने के लिए किसी मालिक से कहें।';
+
+  @override
+  String shopTeamSectionHeader(Object count) {
+    return 'टीम · $count';
+  }
+
+  @override
+  String shopPendingInvitesHeader(Object count) {
+    return 'लंबित आमंत्रण · $count';
+  }
+
+  @override
+  String shopRolesHeader(Object count) {
+    return 'भूमिकाएँ · $count';
+  }
+
+  @override
+  String get shopEditAccessMenu => 'पहुँच संपादित करें';
+
+  @override
+  String get shopRemoveFromTeamMenu => 'टीम से हटाएँ';
+
+  @override
+  String shopInvitedAsAwaitingReply(Object role) {
+    return '$role के रूप में आमंत्रित · उत्तर की प्रतीक्षा';
+  }
+
+  @override
+  String get shopBuiltIn => 'अंतर्निहित';
+
+  @override
+  String get shopRoleViewOnly => 'केवल देखें';
+
+  @override
+  String shopRoleAreaManageable(Object count) {
+    return '$count क्षेत्र प्रबंधित करने योग्य';
+  }
+
+  @override
+  String shopRoleAreasManageable(Object count) {
+    return '$count क्षेत्र प्रबंधित करने योग्य';
+  }
+
+  @override
+  String get shopEditRoleMenu => 'भूमिका संपादित करें';
+
+  @override
+  String get shopDeleteRoleMenu => 'भूमिका हटाएँ';
+
+  @override
+  String get shopInviteSheetSubtitle =>
+      'एक समर्पित कार्य ईमेल का उपयोग करें — खरीदार खाते स्टाफ़ नहीं बन सकते। आप आगे उनकी पहुँच चुनेंगे।';
+
+  @override
+  String get shopEnterEmail => 'एक ईमेल दर्ज करें';
+
+  @override
+  String get shopEnterValidEmail => 'एक मान्य ईमेल दर्ज करें';
+
+  @override
+  String get shopChooseAccess => 'पहुँच चुनें';
+
+  @override
+  String get shopNotNow => 'अभी नहीं';
+
+  @override
+  String get shopJoinFallbackShop => 'एक दुकान';
+
+  @override
+  String get shopStaffRole => 'स्टाफ़';
+
+  @override
+  String get shopYoureInvitedToJoin =>
+      'आपको जुड़ने के लिए आमंत्रित किया गया है';
+
+  @override
+  String get shopAsA => 'इस रूप में ';
+
+  @override
+  String get shopWhatYoullBeAbleToDo => 'आप क्या कर पाएँगे';
+
+  @override
+  String get shopLimitedAccess => 'सीमित पहुँच — विवरण के लिए मालिक से पूछें।';
+
+  @override
+  String get shopJoinTheTeam => 'टीम में शामिल हों';
+
+  @override
+  String shopJoinNamed(Object shop) {
+    return '$shop में शामिल हों';
+  }
+
+  @override
+  String get shopDeclineInvitation => 'आमंत्रण अस्वीकार करें';
+
+  @override
+  String get shopSheetFinishTitle => 'भुगतान सेटअप पूरा करें';
+
+  @override
+  String get shopSheetSetupTitle => 'भुगतान पाने के लिए भुगतान सेट करें';
+
+  @override
+  String get shopSheetFinishBody =>
+      'आपने भुगतान सेट करना शुरू किया था — जहाँ छोड़ा था वहीं से जारी रखें। आपके सहेजे गए विवरण इस डिवाइस पर सुरक्षित रखे गए हैं।';
+
+  @override
+  String get shopSheetSetupBody =>
+      'अपना निपटान बैंक खाता जोड़ें ताकि प्रत्येक ऑर्डर में आपका हिस्सा आप तक पहुँच सके। आपका पैसा ऑर्डर डिलीवर होने तक रोका जाता है, फिर आपके बैंक में निपटाया जाता है — आमतौर पर कुछ दिनों के भीतर।';
+
+  @override
+  String get shopSetUpNow => 'अभी सेट करें';
+
+  @override
+  String get shopLater => 'बाद में';
+
+  @override
+  String get cashierTitle => 'कैशियर';
+
+  @override
+  String get cashierRoleCashier => 'कैशियर';
+
+  @override
+  String cashierShiftClosedVariance(Object variance) {
+    return 'शिफ्ट बंद · अंतर $variance';
+  }
+
+  @override
+  String get cashierPastShiftsTitle => 'पिछली शिफ्ट · Z-रसीदें';
+
+  @override
+  String get cashierLoading => 'लोड हो रहा है…';
+
+  @override
+  String get cashierNoShiftsYet => 'अभी तक कोई शिफ्ट नहीं।';
+
+  @override
+  String cashierVarianceLabel(Object amount) {
+    return 'अंतर $amount';
+  }
+
+  @override
+  String get cashierShiftReportTitle => 'शिफ्ट रिपोर्ट (X)';
+
+  @override
+  String cashierSalesSummary(Object count, Object gross) {
+    return '$count बिक्री · $gross सकल';
+  }
+
+  @override
+  String get cashierOpeningFloat => 'शुरुआती फ्लोट';
+
+  @override
+  String get cashierCashSales => 'नकद बिक्री';
+
+  @override
+  String get cashierPayIns => 'जमा';
+
+  @override
+  String get cashierPayOuts => 'निकासी';
+
+  @override
+  String get cashierDrops => 'ड्रॉप';
+
+  @override
+  String get cashierRefunds => 'रिफंड';
+
+  @override
+  String get cashierExpectedInDrawer => 'दराज में अपेक्षित';
+
+  @override
+  String get cashierGstTaxable => 'GST कर योग्य';
+
+  @override
+  String cashierReturnsCount(Object count) {
+    return 'वापसी ($count)';
+  }
+
+  @override
+  String get cashierOpenShiftTitle => 'शिफ्ट खोलें';
+
+  @override
+  String get cashierOpenShiftHint => 'दराज गिनें और शुरुआती फ्लोट दर्ज करें।';
+
+  @override
+  String get cashierOpeningFloatField => 'शुरुआती फ्लोट ₹';
+
+  @override
+  String get cashierOpenShiftButton => 'शिफ्ट खोलें';
+
+  @override
+  String get cashierCashDrawerTitle => 'नकद दराज';
+
+  @override
+  String get cashierPayIn => 'जमा';
+
+  @override
+  String get cashierPayOut => 'निकासी';
+
+  @override
+  String get cashierDrop => 'ड्रॉप';
+
+  @override
+  String get cashierAmountField => 'राशि ₹';
+
+  @override
+  String get cashierReasonField => 'कारण (वैकल्पिक)';
+
+  @override
+  String get cashierRecordButton => 'दर्ज करें';
+
+  @override
+  String get cashierCloseShiftTitle => 'शिफ्ट बंद करें';
+
+  @override
+  String cashierExpectedInDrawerValue(Object amount) {
+    return 'दराज में अपेक्षित: $amount';
+  }
+
+  @override
+  String get cashierCountedCashField => 'गिनी गई नकदी ₹';
+
+  @override
+  String cashierVarianceValue(Object amount, Object status) {
+    return 'अंतर: $amount $status';
+  }
+
+  @override
+  String get cashierVarianceBalanced => '(संतुलित)';
+
+  @override
+  String get cashierVarianceOver => '(अधिक)';
+
+  @override
+  String get cashierVarianceShort => '(कम)';
+
+  @override
+  String get cashierNoteField => 'नोट (वैकल्पिक)';
+
+  @override
+  String get cashierCloseZReportButton => 'बंद करें और Z-रिपोर्ट';
+
+  @override
+  String get cashierReturnsTitle => 'वापसी';
+
+  @override
+  String get cashierOriginalInvoiceIdField => 'मूल इनवॉइस आईडी';
+
+  @override
+  String get cashierLookUpButton => 'खोजें';
+
+  @override
+  String cashierReturnableLine(Object qty, Object price) {
+    return 'वापसी योग्य $qty · $price';
+  }
+
+  @override
+  String get cashierEnterQuantityError => 'वापस करने के लिए मात्रा दर्ज करें।';
+
+  @override
+  String cashierCreditNoteCreated(Object no, Object amount) {
+    return 'क्रेडिट नोट $no · $amount';
+  }
+
+  @override
+  String get cashierProcessReturnButton => 'वापसी संसाधित करें';
+
+  @override
+  String get posTitle => 'पॉइंट ऑफ सेल';
+
+  @override
+  String get posFindItem => 'आइटम खोजें';
+
+  @override
+  String get posCashierTooltip => 'कैशियर (शिफ्ट · ड्रॉअर · रिटर्न)';
+
+  @override
+  String get posHold => 'होल्ड करें';
+
+  @override
+  String get posRecall => 'वापस लाएँ';
+
+  @override
+  String get posLogOut => 'लॉग आउट';
+
+  @override
+  String get posCashier => 'कैशियर';
+
+  @override
+  String get posOpenShiftToBill => 'बिलिंग शुरू करने के लिए शिफ्ट खोलें';
+
+  @override
+  String get posOpenShift => 'शिफ्ट खोलें';
+
+  @override
+  String get posScanFirstItem => 'पहला आइटम स्कैन करें।';
+
+  @override
+  String get posTotal => 'कुल';
+
+  @override
+  String get posBillDiscount => 'बिल छूट';
+
+  @override
+  String get posCheckout => 'चेकआउट';
+
+  @override
+  String get posLineDiscount => 'लाइन छूट';
+
+  @override
+  String get posNewItem => 'नया आइटम';
+
+  @override
+  String get posName => 'नाम';
+
+  @override
+  String get posSellingPrice => 'बिक्री मूल्य ₹';
+
+  @override
+  String get posGstPercentOptional => 'GST % (वैकल्पिक)';
+
+  @override
+  String get posOnHand => 'उपलब्ध स्टॉक';
+
+  @override
+  String get posCancel => 'रद्द करें';
+
+  @override
+  String get posAdd => 'जोड़ें';
+
+  @override
+  String get posSaleComplete => 'बिक्री पूर्ण';
+
+  @override
+  String get posInvoice => 'चालान';
+
+  @override
+  String get posPrint => 'प्रिंट करें';
+
+  @override
+  String get posDone => 'हो गया';
+
+  @override
+  String get posCouldNotGenerateReceipt => 'रसीद नहीं बनाई जा सकी';
+
+  @override
+  String posDiscountMax(Object max) {
+    return 'छूट ₹ (अधिकतम $max)';
+  }
+
+  @override
+  String get posApply => 'लागू करें';
+
+  @override
+  String get posDiscount => 'छूट ₹';
+
+  @override
+  String get posCollect => 'वसूल करें';
+
+  @override
+  String get posCustomerOptional => 'ग्राहक (वैकल्पिक)';
+
+  @override
+  String get posPhone => 'फ़ोन';
+
+  @override
+  String get posCashReceived => 'नकद प्राप्त ₹';
+
+  @override
+  String get posChangeDue => 'वापस देने योग्य';
+
+  @override
+  String get posCashDone => 'नकद — हो गया';
+
+  @override
+  String get posOtherTenders => 'अन्य भुगतान विकल्प';
+
+  @override
+  String get posOnline => 'ऑनलाइन';
+
+  @override
+  String get posPaymentFailedRetry =>
+      'भुगतान विफल रहा। कृपया पुनः प्रयास करें।';
+
+  @override
+  String get posNoHeldBills => 'कोई होल्ड किया बिल नहीं।';
+
+  @override
+  String get posHeldBills => 'होल्ड किए बिल';
+
+  @override
+  String get posBill => 'बिल';
+
+  @override
+  String posItemCount(Object count) {
+    return '$count आइटम';
+  }
+
+  @override
+  String get posQuantity => 'मात्रा';
+
+  @override
+  String get posSet => 'सेट करें';
+
+  @override
+  String get posFindItemByNameSku => 'नाम / SKU से आइटम खोजें';
+
+  @override
+  String get posSearching => 'खोज रहे हैं…';
+
+  @override
+  String get posTypeToSearch => 'कैटलॉग खोजने के लिए टाइप करें।';
+
+  @override
+  String get posStock => 'स्टॉक';
+
+  @override
+  String posAddedItem(Object name) {
+    return '$name जोड़ा गया';
+  }
+
+  @override
+  String get posStatusLive => 'लाइव';
+
+  @override
+  String get posStatusConnecting => 'कनेक्ट हो रहा है';
+
+  @override
+  String get posStatusReconnecting => 'पुनः कनेक्ट हो रहा है';
+
+  @override
+  String get posStatusOffline => 'ऑफ़लाइन';
+
+  @override
+  String get bannersTitle => 'बैनर';
+
+  @override
+  String get bannersRefresh => 'रिफ़्रेश करें';
+
+  @override
+  String get bannersNewBanner => 'नया बैनर';
+
+  @override
+  String get bannersDeleteTitle => 'बैनर हटाएँ?';
+
+  @override
+  String bannersDeleteMessage(Object placement) {
+    return 'यह बैनर $placement से हटा दिया जाएगा।';
+  }
+
+  @override
+  String get bannersCancel => 'रद्द करें';
+
+  @override
+  String get bannersDelete => 'हटाएँ';
+
+  @override
+  String get bannersEmptyPlacement =>
+      'इस प्लेसमेंट में अभी तक कोई बैनर नहीं है';
+
+  @override
+  String get bannersStatusLive => 'लाइव';
+
+  @override
+  String get bannersStatusScheduled => 'शेड्यूल किया गया';
+
+  @override
+  String get bannersStatusExpired => 'समाप्त';
+
+  @override
+  String get bannersStatusOff => 'बंद';
+
+  @override
+  String bannersSortOrder(Object order) {
+    return 'क्रम $order';
+  }
+
+  @override
+  String bannersProductCountOne(Object count) {
+    return '$count उत्पाद';
+  }
+
+  @override
+  String bannersProductCountOther(Object count) {
+    return '$count उत्पाद';
+  }
+
+  @override
+  String bannersWindowFrom(Object date) {
+    return '$date से';
+  }
+
+  @override
+  String bannersWindowUntil(Object date) {
+    return '$date तक';
+  }
+
+  @override
+  String get bannersImageUploadFailed => 'इमेज अपलोड विफल रहा';
+
+  @override
+  String get bannersImageTooLarge =>
+      'इमेज 5 MB से बड़ी है। कोई छोटी इमेज चुनें या ज़्यादा कसकर क्रॉप करें।';
+
+  @override
+  String get bannersImageRequired => 'एक इमेज आवश्यक है';
+
+  @override
+  String get bannersSaveFailed => 'सेव विफल रहा';
+
+  @override
+  String bannersProductsSaveFailed(Object error) {
+    return 'बैनर सेव हो गया, लेकिन उत्पाद विफल रहे: $error';
+  }
+
+  @override
+  String get bannersAlreadyPinned => 'पहले से ही इस बैनर पर पिन किया गया है';
+
+  @override
+  String get bannersEditBanner => 'बैनर संपादित करें';
+
+  @override
+  String get bannersPlacement => 'प्लेसमेंट';
+
+  @override
+  String get bannersLink => 'लिंक';
+
+  @override
+  String get bannersSort => 'क्रम';
+
+  @override
+  String get bannersActive => 'सक्रिय';
+
+  @override
+  String get bannersActiveSubtitle =>
+      'बंद होने पर, शेड्यूल की परवाह किए बिना छिपा रहता है';
+
+  @override
+  String get bannersSaving => 'सेव हो रहा है…';
+
+  @override
+  String get bannersSaveChanges => 'बदलाव सेव करें';
+
+  @override
+  String get bannersCreateBanner => 'बैनर बनाएँ';
+
+  @override
+  String get bannersUploadImage => 'इमेज अपलोड करें *';
+
+  @override
+  String get bannersReplaceImage => 'इमेज बदलें';
+
+  @override
+  String get bannersStarts => 'शुरू';
+
+  @override
+  String get bannersEnds => 'समाप्त';
+
+  @override
+  String get bannersProducts => 'उत्पाद';
+
+  @override
+  String get bannersAdd => 'जोड़ें';
+
+  @override
+  String get bannersSaveFirstHint => 'उत्पाद जोड़ने के लिए पहले बैनर सेव करें।';
+
+  @override
+  String get bannersAddProductsHint =>
+      'वैकल्पिक छूट के साथ उत्पाद पिन करने के लिए “जोड़ें” पर टैप करें।';
+
+  @override
+  String get bannersNotSet => 'सेट नहीं है';
+
+  @override
+  String get bannersSearchProduct => 'उत्पाद का नाम या SKU खोजें';
+
+  @override
+  String get bannersSearchHint => 'खोजने के लिए 2 या अधिक अक्षर टाइप करें';
+
+  @override
+  String get challansTitle => 'चालान';
+
+  @override
+  String get challansSearchHint => 'चालान खोजें...';
+
+  @override
+  String get challansFilterAll => 'सभी';
+
+  @override
+  String get challansEmptyTitle => 'कोई चालान नहीं मिला';
+
+  @override
+  String get challansEmptySubtitle => 'चालान बनाने के लिए + दबाएँ';
+
+  @override
+  String get challansCreate => 'चालान बनाएँ';
+
+  @override
+  String get challansItemsLabel => 'आइटम';
+
+  @override
+  String get challansCancel => 'चालान रद्द करें';
+
+  @override
+  String get challansCancelConfirm =>
+      'इस चालान को रद्द करें? इसे वापस नहीं किया जा सकता।';
+
+  @override
+  String get challansYes => 'हाँ';
+
+  @override
+  String get challansNo => 'नहीं';
+
+  @override
+  String get challansError => 'कुछ गलत हो गया';
+
+  @override
+  String get challansPartyName => 'पक्ष का नाम';
+
+  @override
+  String get challansPhone => 'फ़ोन';
+
+  @override
+  String get challansNote => 'टिप्पणी';
+
+  @override
+  String get challansLinkedInvoice => 'इनवॉइस';
+
+  @override
+  String get challansItemsHeader => 'चालान आइटम';
+
+  @override
+  String get challansEmptyItems => 'अभी तक कोई आइटम नहीं जोड़ा गया';
+
+  @override
+  String get challansConvertToInvoice => 'इनवॉइस में बदलें';
+
+  @override
+  String get challansAddAtLeastOne => 'कम से कम एक उत्पाद जोड़ें';
+
+  @override
+  String get challansDiscardTitle => 'बदलाव रद्द करें?';
+
+  @override
+  String get challansDiscardMessage => 'आपके बदलाव खो जाएँगे।';
+
+  @override
+  String get challansKeepEditing => 'संपादन जारी रखें';
+
+  @override
+  String get challansDiscard => 'रद्द करें';
+
+  @override
+  String get challansSubmit => 'जमा करें';
+
+  @override
+  String get challansPartyInfo => 'पक्ष की जानकारी';
+
+  @override
+  String get challansSelectParty => 'पक्ष चुनें';
+
+  @override
+  String get challansFieldRequired => 'यह फ़ील्ड आवश्यक है';
+
+  @override
+  String get challansAddProducts => 'उत्पाद जोड़ें';
+
+  @override
+  String get challansNoPricesHint => 'कीमतें पक्ष को दिखाई नहीं देतीं';
+
+  @override
+  String get challansSearchProducts => 'उत्पाद खोजें...';
+
+  @override
+  String get challansChange => 'बदलें';
+
+  @override
+  String get returnsTitle => 'रिटर्न';
+
+  @override
+  String get returnsTabOpen => 'खुले';
+
+  @override
+  String get returnsTabApproved => 'स्वीकृत';
+
+  @override
+  String get returnsTabReceived => 'प्राप्त';
+
+  @override
+  String get returnsTabRefunded => 'रिफंड किया';
+
+  @override
+  String get returnsTabAll => 'सभी';
+
+  @override
+  String returnsRowTitle(Object id, Object name) {
+    return 'रिटर्न #$id · $name';
+  }
+
+  @override
+  String get returnsItemCountOne => '1 वस्तु';
+
+  @override
+  String returnsItemCountOther(Object count) {
+    return '$count वस्तुएं';
+  }
+
+  @override
+  String get returnsRefundLabel => 'रिफंड';
+
+  @override
+  String get returnsEmpty => 'इस दृश्य में अभी कोई रिटर्न नहीं है।';
+
+  @override
+  String get returnsRetry => 'पुनः प्रयास करें';
+
+  @override
+  String get returnsStatusRequested => 'अनुरोधित';
+
+  @override
+  String get returnsStatusApproved => 'स्वीकृत';
+
+  @override
+  String get returnsStatusRejected => 'अस्वीकृत';
+
+  @override
+  String get returnsStatusCancelled => 'रद्द किया गया';
+
+  @override
+  String get returnsStatusPickedUp => 'उठा लिया गया';
+
+  @override
+  String get returnsStatusReceived => 'प्राप्त';
+
+  @override
+  String get returnsStatusRefunded => 'रिफंड किया गया';
+
+  @override
+  String returnsDetailTitle(Object id) {
+    return 'रिटर्न #$id';
+  }
+
+  @override
+  String get returnsNoteOptional => 'नोट (वैकल्पिक)';
+
+  @override
+  String get returnsNoteRequired => 'नोट आवश्यक है';
+
+  @override
+  String get returnsCancel => 'रद्द करें';
+
+  @override
+  String get returnsBuyerNote => 'खरीदार का नोट';
+
+  @override
+  String get returnsYourNote => 'आपका नोट';
+
+  @override
+  String returnsRefundedToOriginal(Object amount, Object name) {
+    return '$name की मूल भुगतान विधि में $amount रिफंड किया गया';
+  }
+
+  @override
+  String get returnsApproveTitle => 'रिटर्न स्वीकृत करें';
+
+  @override
+  String get returnsApprove => 'स्वीकृत करें';
+
+  @override
+  String get returnsApproveHint => 'खरीदार के लिए पिकअप निर्देश (वैकल्पिक)';
+
+  @override
+  String get returnsApprovedToast => 'रिटर्न स्वीकृत किया गया';
+
+  @override
+  String get returnsRejectTitle => 'रिटर्न अस्वीकृत करें';
+
+  @override
+  String get returnsReject => 'अस्वीकृत करें';
+
+  @override
+  String get returnsRejectHint => 'क्यों? खरीदार को दिखाया जाएगा';
+
+  @override
+  String get returnsRejectedToast => 'रिटर्न अस्वीकृत किया गया';
+
+  @override
+  String get returnsPickedUpToast => 'उठा लिया गया के रूप में चिह्नित';
+
+  @override
+  String get returnsReceivedToast => 'प्राप्त के रूप में चिह्नित';
+
+  @override
+  String returnsRefundConfirmTitle(Object amount) {
+    return '$amount रिफंड करें?';
+  }
+
+  @override
+  String get returnsRefundConfirmBody =>
+      'यह खरीदार को उनकी मूल भुगतान विधि में रिफंड करता है। इस कार्रवाई को वापस नहीं लिया जा सकता।';
+
+  @override
+  String get returnsRefund => 'रिफंड करें';
+
+  @override
+  String get returnsRefundIssuedToast =>
+      'मूल भुगतान विधि में रिफंड जारी किया गया';
+
+  @override
+  String returnsOrderSlice(Object orderId, Object sliceId) {
+    return 'ऑर्डर #$orderId · स्लाइस #$sliceId';
+  }
+
+  @override
+  String get returnsRefundPreview => 'रिफंड पूर्वावलोकन: ';
+
+  @override
+  String get returnsItems => 'वस्तुएं';
+
+  @override
+  String get returnsReasonDamaged => 'पहुंचने पर क्षतिग्रस्त';
+
+  @override
+  String get returnsReasonWrongItem => 'गलत वस्तु भेजी गई';
+
+  @override
+  String get returnsReasonNotAsDescribed => 'वर्णन के अनुसार नहीं';
+
+  @override
+  String get returnsReasonSizeFit => 'आकार / फिट की समस्या';
+
+  @override
+  String get returnsReasonChangedMind => 'खरीदार ने मन बदला';
+
+  @override
+  String get returnsReasonDefective => 'दोषपूर्ण / काम नहीं कर रहा';
+
+  @override
+  String get returnsReasonOther => 'अन्य';
+
+  @override
+  String get returnsTimeline => 'समयरेखा';
+
+  @override
+  String get returnsMarkPickedUp => 'उठा लिया गया के रूप में चिह्नित करें';
+
+  @override
+  String get returnsMarkReceived => 'प्राप्त के रूप में चिह्नित करें';
 }

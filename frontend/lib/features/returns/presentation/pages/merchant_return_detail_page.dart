@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/features/returns/data/datasources/merchant_returns_remote_data_source.dart';
 import 'package:shopxy/features/returns/domain/merchant_return.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
@@ -96,6 +97,7 @@ class _MerchantReturnDetailPageState extends State<MerchantReturnDetailPage> {
     String? hint,
     bool noteRequired = false,
   }) {
+    final l10n = AppLocalizations.of(context);
     final ctrl = TextEditingController();
     return showModalBottomSheet<String?>(
       context: context,
@@ -121,7 +123,7 @@ class _MerchantReturnDetailPageState extends State<MerchantReturnDetailPage> {
               minLines: 2,
               maxLines: 4,
               decoration: InputDecoration(
-                hintText: hint ?? 'Note (optional)',
+                hintText: hint ?? l10n.returnsNoteOptional,
                 border: const OutlineInputBorder(),
               ),
             ),
@@ -131,7 +133,7 @@ class _MerchantReturnDetailPageState extends State<MerchantReturnDetailPage> {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () => Navigator.of(ctx).pop(null),
-                    child: const Text('Cancel'),
+                    child: Text(l10n.returnsCancel),
                   ),
                 ),
                 const SizedBox(width: AppSizes.md),
@@ -141,7 +143,7 @@ class _MerchantReturnDetailPageState extends State<MerchantReturnDetailPage> {
                       final v = ctrl.text.trim();
                       if (noteRequired && v.isEmpty) {
                         ScaffoldMessenger.of(ctx).showSnackBar(
-                          const SnackBar(content: Text('Note required')),
+                          SnackBar(content: Text(l10n.returnsNoteRequired)),
                         );
                         return;
                       }
@@ -169,9 +171,10 @@ class _MerchantReturnDetailPageState extends State<MerchantReturnDetailPage> {
         body: Center(child: Text(_error!)),
       );
     }
+    final l10n = AppLocalizations.of(context);
     final row = _row!;
     return Scaffold(
-      appBar: AppBar(title: Text('Return #${row.id}')),
+      appBar: AppBar(title: Text(l10n.returnsDetailTitle(row.id))),
       body: SafeArea(
         child: Column(
           children: [
@@ -187,7 +190,7 @@ class _MerchantReturnDetailPageState extends State<MerchantReturnDetailPage> {
                   if (row.note != null && row.note!.isNotEmpty) ...[
                     const SizedBox(height: AppSizes.md),
                     _NoteCard(
-                      title: 'Buyer note',
+                      title: l10n.returnsBuyerNote,
                       body: row.note!,
                       icon: Icons.chat_bubble_outline,
                     ),
@@ -196,7 +199,7 @@ class _MerchantReturnDetailPageState extends State<MerchantReturnDetailPage> {
                       row.decisionNote!.isNotEmpty) ...[
                     const SizedBox(height: AppSizes.md),
                     _NoteCard(
-                      title: 'Your note',
+                      title: l10n.returnsYourNote,
                       body: row.decisionNote!,
                       icon: Icons.assignment_outlined,
                     ),
@@ -218,8 +221,10 @@ class _MerchantReturnDetailPageState extends State<MerchantReturnDetailPage> {
                           const SizedBox(width: AppSizes.sm),
                           Expanded(
                             child: Text(
-                              'Refunded ${_currency.format(row.refundAmount)} '
-                              'to ${row.customerName}\'s original payment method',
+                              l10n.returnsRefundedToOriginal(
+                                _currency.format(row.refundAmount),
+                                row.customerName,
+                              ),
                               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
@@ -237,56 +242,55 @@ class _MerchantReturnDetailPageState extends State<MerchantReturnDetailPage> {
               busy: _busy,
               onApprove: () async {
                 final note = await _askForNote(
-                  title: 'Approve return',
-                  confirmLabel: 'Approve',
-                  hint: 'Pickup instructions for the buyer (optional)',
+                  title: l10n.returnsApproveTitle,
+                  confirmLabel: l10n.returnsApprove,
+                  hint: l10n.returnsApproveHint,
                 );
                 if (note == null) return;
                 await _run(
                   (ds) => ds.approve(row.id, note: note.isEmpty ? null : note),
-                  'Return approved',
+                  l10n.returnsApprovedToast,
                 );
               },
               onReject: () async {
                 final note = await _askForNote(
-                  title: 'Reject return',
-                  confirmLabel: 'Reject',
-                  hint: 'Why? Shown to the buyer',
+                  title: l10n.returnsRejectTitle,
+                  confirmLabel: l10n.returnsReject,
+                  hint: l10n.returnsRejectHint,
                   noteRequired: true,
                 );
                 if (note == null) return;
                 await _run(
                   (ds) => ds.reject(row.id, note: note),
-                  'Return rejected',
+                  l10n.returnsRejectedToast,
                 );
               },
               onPickedUp: () => _run(
                 (ds) => ds.markPickedUp(row.id),
-                'Marked as picked up',
+                l10n.returnsPickedUpToast,
               ),
               onReceived: () => _run(
                 (ds) => ds.markReceived(row.id),
-                'Marked as received',
+                l10n.returnsReceivedToast,
               ),
               onRefund: () async {
                 final ok = await showDialog<bool>(
                   context: context,
                   builder: (ctx) => AlertDialog(
                     title: Text(
-                      'Refund ${_currency.format(row.refundAmount)}?',
+                      l10n.returnsRefundConfirmTitle(
+                        _currency.format(row.refundAmount),
+                      ),
                     ),
-                    content: Text(
-                      'This refunds the buyer to their original payment '
-                      'method. The action can\'t be undone.',
-                    ),
+                    content: Text(l10n.returnsRefundConfirmBody),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.of(ctx).pop(false),
-                        child: const Text('Cancel'),
+                        child: Text(l10n.returnsCancel),
                       ),
                       FilledButton(
                         onPressed: () => Navigator.of(ctx).pop(true),
-                        child: const Text('Refund'),
+                        child: Text(l10n.returnsRefund),
                       ),
                     ],
                   ),
@@ -296,7 +300,7 @@ class _MerchantReturnDetailPageState extends State<MerchantReturnDetailPage> {
                   (ds) async {
                     await ds.refund(row.id);
                   },
-                  'Refund issued to original payment method',
+                  l10n.returnsRefundIssuedToast,
                 );
               },
             ),
@@ -526,6 +530,7 @@ class _HeaderCard extends StatelessWidget {
   final MerchantReturn row;
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(AppSizes.lg),
@@ -547,7 +552,7 @@ class _HeaderCard extends StatelessWidget {
                 ),
               ),
               AppStatusBadge(
-                label: row.status,
+                label: _statusLabel(l10n, row.status),
                 tone: row.canRefund
                     ? AppStatusTone.warning
                     : row.status == 'REFUNDED'
@@ -561,7 +566,7 @@ class _HeaderCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSizes.xs),
           Text(
-            'Order #${row.parentOrderId} · Slice #${row.shopOrderId}',
+            l10n.returnsOrderSlice(row.parentOrderId, row.shopOrderId),
             style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
           ),
           if (row.customerAddress != null && row.customerAddress!.isNotEmpty) ...[
@@ -578,7 +583,7 @@ class _HeaderCard extends StatelessWidget {
                   size: AppSizes.iconSm, color: AppColors.muted),
               const SizedBox(width: AppSizes.xs),
               Text(
-                'Refund preview: ',
+                l10n.returnsRefundPreview,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: AppColors.muted,
                 ),
@@ -603,6 +608,7 @@ class _ItemsCard extends StatelessWidget {
   final List<MerchantReturnItem> items;
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(AppSizes.md),
@@ -613,7 +619,7 @@ class _ItemsCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Items', style: theme.textTheme.titleSmall?.copyWith(
+          Text(l10n.returnsItems, style: theme.textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.w800,
           )),
           const SizedBox(height: AppSizes.sm),
@@ -653,7 +659,7 @@ class _ItemsCard extends StatelessWidget {
                             )),
                         Text(
                           '${it.quantity.toStringAsFixed(0)} ${it.unit} · '
-                          'Refund ₹${it.refundAmount.toStringAsFixed(2)}',
+                          '${l10n.returnsRefundLabel} ₹${it.refundAmount.toStringAsFixed(2)}',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: AppColors.muted,
                           ),
@@ -668,7 +674,7 @@ class _ItemsCard extends StatelessWidget {
                             shape: AppShapes.squircle(AppSizes.radiusSm),
                           ),
                           child: Text(
-                            reasonLabel(it.reason),
+                            _reasonLabel(l10n, it.reason),
                             style: theme.textTheme.labelSmall?.copyWith(
                               fontWeight: FontWeight.w700,
                               color: AppColors.brandStrong,
@@ -695,6 +701,7 @@ class _TimelineCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(AppSizes.md),
@@ -705,7 +712,7 @@ class _TimelineCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Timeline', style: theme.textTheme.titleSmall?.copyWith(
+          Text(l10n.returnsTimeline, style: theme.textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.w800,
           )),
           const SizedBox(height: AppSizes.sm),
@@ -716,7 +723,7 @@ class _TimelineCard extends StatelessWidget {
                 children: [
                   Icon(_iconFor(e.type), size: AppSizes.iconSm, color: AppColors.brand),
                   const SizedBox(width: AppSizes.sm),
-                  Expanded(child: Text(_label(e.type))),
+                  Expanded(child: Text(_statusLabel(l10n, e.type))),
                   Text(_date.format(e.occurredAt),
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: AppColors.muted,
@@ -750,25 +757,50 @@ class _TimelineCard extends StatelessWidget {
     }
   }
 
-  static String _label(String type) {
-    switch (type) {
-      case 'REQUESTED':
-        return 'Requested';
-      case 'APPROVED':
-        return 'Approved';
-      case 'REJECTED':
-        return 'Rejected';
-      case 'CANCELLED':
-        return 'Cancelled';
-      case 'PICKED_UP':
-        return 'Picked up';
-      case 'RECEIVED':
-        return 'Received';
-      case 'REFUNDED':
-        return 'Refunded';
-      default:
-        return type;
-    }
+}
+
+/// Localised label for a return status / timeline event code. Lives at
+/// file scope so both the header badge and the timeline can share it.
+String _statusLabel(AppLocalizations l10n, String code) {
+  switch (code) {
+    case 'REQUESTED':
+      return l10n.returnsStatusRequested;
+    case 'APPROVED':
+      return l10n.returnsStatusApproved;
+    case 'REJECTED':
+      return l10n.returnsStatusRejected;
+    case 'CANCELLED':
+      return l10n.returnsStatusCancelled;
+    case 'PICKED_UP':
+      return l10n.returnsStatusPickedUp;
+    case 'RECEIVED':
+      return l10n.returnsStatusReceived;
+    case 'REFUNDED':
+      return l10n.returnsStatusRefunded;
+    default:
+      return code;
+  }
+}
+
+/// Localised label for a return reason code (mirrors [reasonLabel] in the
+/// domain layer, but resolved against the active locale).
+String _reasonLabel(AppLocalizations l10n, String code) {
+  switch (code) {
+    case 'DAMAGED':
+      return l10n.returnsReasonDamaged;
+    case 'WRONG_ITEM':
+      return l10n.returnsReasonWrongItem;
+    case 'NOT_AS_DESCRIBED':
+      return l10n.returnsReasonNotAsDescribed;
+    case 'SIZE_FIT':
+      return l10n.returnsReasonSizeFit;
+    case 'CHANGED_MIND':
+      return l10n.returnsReasonChangedMind;
+    case 'DEFECTIVE':
+      return l10n.returnsReasonDefective;
+    case 'OTHER':
+    default:
+      return l10n.returnsReasonOther;
   }
 }
 
@@ -834,6 +866,7 @@ class _ActionBar extends StatelessWidget {
     if (row.isClosed) {
       return const SizedBox.shrink();
     }
+    final l10n = AppLocalizations.of(context);
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -851,14 +884,14 @@ class _ActionBar extends StatelessWidget {
                   foregroundColor: AppColors.error,
                   side: BorderSide(color: AppColors.error),
                 ),
-                child: const Text('Reject'),
+                child: Text(l10n.returnsReject),
               ),
             ),
             const SizedBox(width: AppSizes.md),
             Expanded(
               child: FilledButton(
                 onPressed: busy ? null : onApprove,
-                child: const Text('Approve'),
+                child: Text(l10n.returnsApprove),
               ),
             ),
           ] else if (row.canMarkPickedUp && !row.canMarkReceived) ...[
@@ -866,7 +899,7 @@ class _ActionBar extends StatelessWidget {
               child: FilledButton.icon(
                 onPressed: busy ? null : onPickedUp,
                 icon: const Icon(Icons.local_shipping_outlined),
-                label: const Text('Mark as picked up'),
+                label: Text(l10n.returnsMarkPickedUp),
               ),
             ),
           ] else if (row.canMarkReceived && !row.canRefund) ...[
@@ -874,7 +907,7 @@ class _ActionBar extends StatelessWidget {
               child: FilledButton.icon(
                 onPressed: busy ? null : onReceived,
                 icon: const Icon(Icons.inventory_2_outlined),
-                label: const Text('Mark as received'),
+                label: Text(l10n.returnsMarkReceived),
               ),
             ),
           ] else if (row.canRefund) ...[
@@ -882,7 +915,7 @@ class _ActionBar extends StatelessWidget {
               Expanded(
                 child: OutlinedButton(
                   onPressed: busy ? null : onPickedUp,
-                  child: const Text('Picked up'),
+                  child: Text(l10n.returnsStatusPickedUp),
                 ),
               ),
             if (row.canMarkReceived) ...[
@@ -890,7 +923,7 @@ class _ActionBar extends StatelessWidget {
               Expanded(
                 child: OutlinedButton(
                   onPressed: busy ? null : onReceived,
-                  child: const Text('Received'),
+                  child: Text(l10n.returnsStatusReceived),
                 ),
               ),
             ],
@@ -900,7 +933,7 @@ class _ActionBar extends StatelessWidget {
               child: FilledButton.icon(
                 onPressed: busy ? null : onRefund,
                 icon: const Icon(Icons.account_balance_wallet_outlined),
-                label: const Text('Refund'),
+                label: Text(l10n.returnsRefund),
               ),
             ),
           ],

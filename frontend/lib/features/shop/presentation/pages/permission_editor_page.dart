@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/features/shop/data/team_service.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
@@ -23,6 +24,7 @@ class _PermissionMatrix extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return Column(
       children: [
         // Column headers
@@ -32,9 +34,9 @@ class _PermissionMatrix extends StatelessWidget {
           child: Row(
             children: [
               const Spacer(),
-              _hdr(theme, 'View'),
+              _hdr(theme, l10n.shopPermissionView),
               const SizedBox(width: AppSizes.sm),
-              _hdr(theme, 'Manage'),
+              _hdr(theme, l10n.shopPermissionManage),
             ],
           ),
         ),
@@ -224,6 +226,7 @@ class _PermissionEditorPageState extends State<PermissionEditorPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final match = _matchingRole;
     final manageCount = manageableAreaCount(_granted.toList());
 
@@ -254,7 +257,7 @@ class _PermissionEditorPageState extends State<PermissionEditorPage> {
                       ?.copyWith(color: AppColors.muted)),
             ),
           const SizedBox(height: AppSizes.lg),
-          _Eyebrow('START FROM A ROLE'),
+          _Eyebrow(l10n.shopStartFromRole),
           const SizedBox(height: AppSizes.sm),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
@@ -269,19 +272,18 @@ class _PermissionEditorPageState extends State<PermissionEditorPage> {
                     onTap: () => _applyRole(r),
                   ),
                 if (match == null && _granted.isNotEmpty)
-                  _RoleChip(label: 'Custom', selected: true, custom: true),
+                  _RoleChip(label: l10n.shopCustomRole, selected: true, custom: true),
               ],
             ),
           ),
           const SizedBox(height: AppSizes.xl),
-          _Eyebrow('ACCESS · $manageCount manageable'),
+          _Eyebrow(l10n.shopAccessManageable(manageCount)),
           _PermissionMatrix(granted: _granted, onToggle: _toggle),
           const SizedBox(height: AppSizes.md),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
             child: Text(
-              'Manage includes view. Payouts & KYC and Team are sensitive — '
-              'grant them only to people you trust.',
+              l10n.shopPermissionTrustHint,
               style:
                   theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
             ),
@@ -337,7 +339,7 @@ class _RoleEditorPageState extends State<RoleEditorPage> {
     final name = _name.text.trim();
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Give the role a name')),
+        SnackBar(content: Text(AppLocalizations.of(context).shopGiveRoleName)),
       );
       return;
     }
@@ -350,15 +352,16 @@ class _RoleEditorPageState extends State<RoleEditorPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final manageCount = manageableAreaCount(_granted.toList());
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
-        title: Text(widget.isNew ? 'New role' : 'Edit role'),
+        title: Text(widget.isNew ? l10n.shopNewRole : l10n.shopEditRole),
         actions: [
           TextButton(
             onPressed: _save,
-            child: Text('Save',
+            child: Text(l10n.shopSave,
                 style: Theme.of(context)
                     .textTheme
                     .labelLarge
@@ -375,21 +378,20 @@ class _RoleEditorPageState extends State<RoleEditorPage> {
             child: TextField(
               controller: _name,
               textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(
-                labelText: 'Role name',
-                hintText: 'e.g. Warehouse Lead',
+              decoration: InputDecoration(
+                labelText: l10n.shopRoleNameLabel,
+                hintText: l10n.shopRoleNameHint,
               ),
             ),
           ),
           const SizedBox(height: AppSizes.xl),
-          _Eyebrow('ACCESS · $manageCount manageable'),
+          _Eyebrow(l10n.shopAccessManageable(manageCount)),
           _PermissionMatrix(granted: _granted, onToggle: _toggle),
           const SizedBox(height: AppSizes.md),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
             child: Text(
-              'Members keep their current access when a role changes — '
-              'roles are templates you assign, not live links.',
+              l10n.shopRoleTemplatesHint,
               style:
                   theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
             ),

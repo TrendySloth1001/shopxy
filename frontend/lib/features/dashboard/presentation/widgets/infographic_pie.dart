@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:shopxy/features/dashboard/presentation/widgets/dashboard_ui.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 
@@ -75,13 +76,13 @@ Offset _polar(double r, double angleDeg) {
   return Offset(_cx + r * math.cos(a), _cy + r * math.sin(a));
 }
 
-List<PieRow> _collapse(List<PieRow> rows, int maxSlices) {
+List<PieRow> _collapse(List<PieRow> rows, int maxSlices, String otherLabel) {
   final sorted = rows.where((r) => r.value > 0).toList()
     ..sort((a, b) => b.value.compareTo(a.value));
   if (sorted.length <= maxSlices) return sorted;
   final head = sorted.sublist(0, maxSlices - 1);
   final rest = sorted.sublist(maxSlices - 1).fold<double>(0, (s, r) => s + r.value);
-  return [...head, PieRow(label: 'Other', value: rest)];
+  return [...head, PieRow(label: otherLabel, value: rest)];
 }
 
 String _trim(String s, [int n = 18]) =>
@@ -115,10 +116,12 @@ class _InfographicPieState extends State<InfographicPie> {
 
   @override
   Widget build(BuildContext context) {
-    final slices = _collapse(widget.rows, widget.palette.length);
+    final l10n = AppLocalizations.of(context);
+    final otherLabel = l10n.dashboardPieOther;
+    final slices = _collapse(widget.rows, widget.palette.length, otherLabel);
     final total = slices.fold<double>(0, (s, r) => s + r.value);
     if (total <= 0) {
-      return Text('No data in this period yet.', style: DashText.bodySm);
+      return Text(l10n.dashboardNoDataInPeriod, style: DashText.bodySm);
     }
     final maxVal = slices.map((s) => s.value).reduce(math.max);
     final single = slices.length == 1;
@@ -170,6 +173,7 @@ class _InfographicPieState extends State<InfographicPie> {
       formatValue: widget.formatValue,
       subject: widget.subject,
       itemNoun: widget.itemNoun,
+      otherLabel: otherLabel,
     );
 
     return Column(
@@ -416,6 +420,7 @@ class _Sidebar extends StatelessWidget {
     required this.formatValue,
     required this.subject,
     required this.itemNoun,
+    required this.otherLabel,
   });
 
   final List<_Seg> segs;
@@ -424,33 +429,41 @@ class _Sidebar extends StatelessWidget {
   final String Function(double) formatValue;
   final String subject;
   final String itemNoun;
+  final String otherLabel;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final top = segs.first;
     final second =
-        segs.length > 1 && segs[1].label != 'Other' ? segs[1] : null;
+        segs.length > 1 && segs[1].label != otherLabel ? segs[1] : null;
     final smallest = segs.length > 2 ? segs.last : null;
     final topK = math.min(2, segs.length);
     final topKpct =
         segs.take(topK).fold<int>(0, (a, s) => a + s.pct);
     final avg = total / segs.length;
-    final noun = segs.length == 1
-        ? itemNoun.replaceAll(RegExp(r's$'), '')
-        : itemNoun;
 
     final summary = StringBuffer()
-      ..write('${formatValue(total)} across ${segs.length} $noun '
-          '(avg ${formatValue(avg.round().toDouble())} each). ')
-      ..write('${top.label} leads with ${top.pct}% (${formatValue(top.value)})');
+      ..write(l10n.dashboardPieSummaryBase(
+          formatValue(total),
+          '${segs.length}',
+          itemNoun,
+          formatValue(avg.round().toDouble())))
+      ..write(' ')
+      ..write(l10n.dashboardPieSummaryLead(
+          top.label, '${top.pct}', formatValue(top.value)));
     if (second != null) {
-      summary.write(', ahead of ${second.label} at ${second.pct}%');
+      summary.write(
+          l10n.dashboardPieSummaryAheadOf(second.label, '${second.pct}'));
     }
     summary.write('.');
     if (segs.length > 2) {
-      summary.write(' The top $topK make up $topKpct% of $subject');
+      summary.write(' ');
+      summary.write(
+          l10n.dashboardPieSummaryTopK('$topK', '$topKpct', subject));
       if (smallest != null) {
-        summary.write(', while ${smallest.label} trails at ${smallest.pct}%');
+        summary.write(l10n.dashboardPieSummaryTrails(
+            smallest.label, '${smallest.pct}'));
       }
       summary.write('.');
     }
@@ -458,7 +471,7 @@ class _Sidebar extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Eyebrow('About this chart'),
+        Eyebrow(l10n.dashboardAboutThisChart),
         const SizedBox(height: AppSizes.sm),
         Text(summary.toString(),
             style: DashText.bodyMd.copyWith(height: 1.5)),
@@ -498,7 +511,7 @@ class _Sidebar extends StatelessWidget {
             ),
           ),
         const SizedBox(height: AppSizes.sm),
-        Text('Tap a slice for its breakdown.',
+        Text(l10n.dashboardTapSliceHint,
             style: DashText.bodySm.copyWith(
                 color: AppColors.subtle, fontStyle: FontStyle.italic)),
       ],
@@ -518,6 +531,7 @@ class _DetailStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(
@@ -546,7 +560,9 @@ class _DetailStrip extends StatelessWidget {
                   TextSpan(
                       text: formatValue(seg.value),
                       style: const TextStyle(fontWeight: FontWeight.w700)),
-                  TextSpan(text: ', ${seg.pct}% of $subject.'),
+                  TextSpan(
+                      text: l10n.dashboardPieDetailTail(
+                          '${seg.pct}', subject)),
                 ],
               ),
             ),

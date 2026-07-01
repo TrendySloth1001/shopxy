@@ -22,6 +22,7 @@ import 'package:shopxy/features/notifications/presentation/widgets/notification_
 import 'package:shopxy/features/orders/presentation/providers/orders_provider.dart';
 import 'package:shopxy/features/shop/presentation/providers/linked_account_provider.dart';
 import 'package:shopxy/features/shop/presentation/widgets/payout_setup_sheet.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
@@ -75,6 +76,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final provider = context.watch<DashboardProvider>();
     final stats = provider.stats;
     final canViewDashboard = context.select<AuthProvider, bool>(
@@ -93,11 +95,9 @@ class _DashboardPageState extends State<DashboardPage> {
         ],
       ),
       body: !canViewDashboard
-          ? const NoAccessView(
-              title: 'Dashboard hidden',
-              message:
-                  'Your role doesn\'t include the dashboard overview. Ask an '
-                  'owner if you need it.',
+          ? NoAccessView(
+              title: l10n.dashboardHiddenTitle,
+              message: l10n.dashboardHiddenMessage,
             )
           : stats == null
               ? (provider.error != null
@@ -149,30 +149,34 @@ class _Header extends StatelessWidget {
   final DashboardProvider provider;
   final double width;
 
-  String _greeting() {
+  String _greeting(AppLocalizations l10n) {
     final h = DateTime.now().hour;
-    if (h < 12) return AppStrings.greetingMorning;
-    if (h < 17) return AppStrings.greetingAfternoon;
-    return AppStrings.greetingEvening;
+    if (h < 12) return l10n.dashboardGreetingMorning;
+    if (h < 17) return l10n.dashboardGreetingAfternoon;
+    return l10n.dashboardGreetingEvening;
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final user = context.select<AuthProvider, ({String? name, String? shop})>(
         (a) => (name: a.user?.name, shop: a.user?.shopName));
-    final firstName =
-        (user.name != null && user.name!.trim().isNotEmpty)
-            ? ', ${user.name!.trim().split(' ').first}'
-            : '';
+    final greeting = _greeting(l10n);
+    final hasName = user.name != null && user.name!.trim().isNotEmpty;
+    final greetingLine = hasName
+        ? l10n.dashboardGreetingWithName(
+            greeting, user.name!.trim().split(' ').first)
+        : greeting;
+    final shopName = user.shop ?? l10n.dashboardYourShop;
 
     final greetingBlock = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('${_greeting()}$firstName', style: DashText.headlineMd),
+        Text(greetingLine, style: DashText.headlineMd),
         const SizedBox(height: AppSizes.xs),
         Text(
-          'Here’s how ${user.shop ?? 'your shop'} is doing.',
+          l10n.dashboardShopStatus(shopName),
           style: DashText.bodyMd.copyWith(color: AppColors.muted),
         ),
       ],
@@ -373,6 +377,7 @@ class _PendingInviteCallout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final n = context.watch<NotificationsProvider>();
     final pending = n.pendingIncoming;
     if (pending.isEmpty) return const SizedBox.shrink();
@@ -399,14 +404,15 @@ class _PendingInviteCallout extends StatelessWidget {
                 const SizedBox(width: AppSizes.md),
                 Expanded(
                   child: Text(
-                    'You have $count pending invitation${count == 1 ? '' : 's'} '
-                    '— review and accept.',
+                    count == 1
+                        ? l10n.dashboardPendingInviteOne
+                        : l10n.dashboardPendingInviteMany('$count'),
                     style:
                         DashText.bodyMd.copyWith(color: AppColors.brandStrong),
                   ),
                 ),
                 const SizedBox(width: AppSizes.sm),
-                Text('View',
+                Text(l10n.dashboardView,
                     style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,

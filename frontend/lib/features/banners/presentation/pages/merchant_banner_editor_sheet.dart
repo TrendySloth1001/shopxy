@@ -14,6 +14,7 @@ import 'package:shopxy/features/banners/presentation/providers/merchant_banners_
 import 'package:shopxy/features/products/data/datasources/products_remote_data_source.dart';
 import 'package:shopxy/features/products/domain/entities/product.dart';
 import 'package:shopxy/features/shop/presentation/providers/shop_provider.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_durations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
@@ -112,6 +113,7 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
   }
 
   Future<void> _pickImage() async {
+    final l10n = AppLocalizations.of(context);
     final picker = ImagePicker();
     final picked = await picker.pickImage(source: ImageSource.gallery, maxWidth: 1600);
     if (picked == null || !mounted) return;
@@ -124,7 +126,7 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
     setState(() => _busy = false);
     if (url == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(shop.error ?? 'Image upload failed')),
+        SnackBar(content: Text(shop.error ?? l10n.bannersImageUploadFailed)),
       );
       return;
     }
@@ -138,10 +140,8 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
     const maxBytes = 5 * 1024 * 1024;
     if (file.lengthSync() > maxBytes) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Image is larger than 5 MB. Pick a smaller image or crop tighter.',
-          ),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).bannersImageTooLarge),
         ),
       );
       return false;
@@ -175,9 +175,10 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
   }
 
   Future<void> _save() async {
+    final l10n = AppLocalizations.of(context);
     if (_imageUrl == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('An image is required')),
+        SnackBar(content: Text(l10n.bannersImageRequired)),
       );
       return;
     }
@@ -199,7 +200,7 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
     if (result == null) {
       setState(() => _busy = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(provider.error ?? 'Save failed')),
+        SnackBar(content: Text(provider.error ?? l10n.bannersSaveFailed)),
       );
       return;
     }
@@ -223,7 +224,7 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
         if (!mounted) return;
         setState(() => _busy = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Banner saved, but products failed: $e')),
+          SnackBar(content: Text(l10n.bannersProductsSaveFailed('$e'))),
         );
         return;
       }
@@ -234,6 +235,7 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
   }
 
   Future<void> _addProduct() async {
+    final l10n = AppLocalizations.of(context);
     final picked = await showModalBottomSheet<Product>(
       context: context,
       isScrollControlled: true,
@@ -253,7 +255,7 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
     if (picked == null || !mounted) return;
     if (_products.any((p) => p.product.id == picked.id)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Already pinned to this banner')),
+        SnackBar(content: Text(l10n.bannersAlreadyPinned)),
       );
       return;
     }
@@ -265,6 +267,7 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -274,7 +277,7 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
           child: Row(
             children: [
               Text(
-                _isEdit ? 'Edit banner' : 'New banner',
+                _isEdit ? l10n.bannersEditBanner : l10n.bannersNewBanner,
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const Spacer(),
@@ -298,7 +301,7 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
               const SizedBox(height: AppSizes.md),
               DropdownButtonFormField<BannerPlacement>(
                 initialValue: _placement,
-                decoration: const InputDecoration(labelText: 'Placement'),
+                decoration: InputDecoration(labelText: l10n.bannersPlacement),
                 items: BannerPlacement.values
                     .map((p) => DropdownMenuItem(value: p, child: Text(p.label)))
                     .toList(),
@@ -310,8 +313,8 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
                   Expanded(
                     child: TextField(
                       controller: _linkUrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Link',
+                      decoration: InputDecoration(
+                        labelText: l10n.bannersLink,
                         helperText: 'category:slug | product:id | url:https://…',
                       ),
                     ),
@@ -321,7 +324,7 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
                     width: 80,
                     child: TextField(
                       controller: _sortOrder,
-                      decoration: const InputDecoration(labelText: 'Sort'),
+                      decoration: InputDecoration(labelText: l10n.bannersSort),
                       keyboardType: TextInputType.number,
                     ),
                   ),
@@ -334,15 +337,19 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
                 value: _isActive,
                 onChanged: (v) => setState(() => _isActive = v),
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Active'),
-                subtitle: const Text('When off, hidden regardless of schedule'),
+                title: Text(l10n.bannersActive),
+                subtitle: Text(l10n.bannersActiveSubtitle),
               ),
               const SizedBox(height: AppSizes.lg),
               _productsSection(),
               const SizedBox(height: AppSizes.lg),
               FilledButton(
                 onPressed: _busy ? null : _save,
-                child: Text(_busy ? 'Saving…' : (_isEdit ? 'Save changes' : 'Create banner')),
+                child: Text(_busy
+                    ? l10n.bannersSaving
+                    : (_isEdit
+                        ? l10n.bannersSaveChanges
+                        : l10n.bannersCreateBanner)),
               ),
             ],
           ),
@@ -352,6 +359,7 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
   }
 
   Widget _imageRow() {
+    final l10n = AppLocalizations.of(context);
     return Row(
       children: [
         Container(
@@ -374,7 +382,8 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
         Expanded(
           child: OutlinedButton.icon(
             icon: const Icon(Icons.upload_outlined),
-            label: Text(_imageUrl == null ? 'Upload image *' : 'Replace image'),
+            label: Text(
+                _imageUrl == null ? l10n.bannersUploadImage : l10n.bannersReplaceImage),
             onPressed: _busy ? null : _pickImage,
           ),
         ),
@@ -383,12 +392,13 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
   }
 
   Widget _scheduleRow() {
+    final l10n = AppLocalizations.of(context);
     final df = DateFormat.yMMMd().add_jm();
     return Row(
       children: [
         Expanded(
           child: _DateField(
-            label: 'Starts',
+            label: l10n.bannersStarts,
             value: _startAt,
             formatter: df,
             onTap: () => _pickDate(isStart: true),
@@ -400,7 +410,7 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
         const SizedBox(width: AppSizes.md),
         Expanded(
           child: _DateField(
-            label: 'Ends',
+            label: l10n.bannersEnds,
             value: _endAt,
             formatter: df,
             onTap: () => _pickDate(isStart: false),
@@ -412,13 +422,14 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
   }
 
   Widget _productsSection() {
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
             Text(
-              'Products',
+              l10n.bannersProducts,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const Spacer(),
@@ -426,14 +437,14 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
               TextButton.icon(
                 onPressed: _busy ? null : _addProduct,
                 icon: const Icon(Icons.add),
-                label: const Text('Add'),
+                label: Text(l10n.bannersAdd),
               ),
           ],
         ),
         const SizedBox(height: AppSizes.sm),
         if (!_isEdit)
-          const _Hint(
-            text: 'Save the banner first to add products.',
+          _Hint(
+            text: l10n.bannersSaveFirstHint,
           )
         else if (_loadingProducts)
           const Padding(
@@ -441,8 +452,8 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
             child: Center(child: CircularProgressIndicator()),
           )
         else if (_products.isEmpty)
-          const _Hint(
-            text: 'Tap “Add” to pin products with an optional discount.',
+          _Hint(
+            text: l10n.bannersAddProductsHint,
           )
         else
           ..._products.asMap().entries.map(
@@ -508,7 +519,9 @@ class _DateField extends StatelessWidget {
                   size: AppSizes.iconMd),
         ),
         child: Text(
-          value == null ? 'Not set' : formatter.format(value!),
+          value == null
+              ? AppLocalizations.of(context).bannersNotSet
+              : formatter.format(value!),
           style: TextStyle(
             color: value == null ? AppColors.muted : AppColors.black,
           ),
@@ -779,6 +792,7 @@ class _BannerProductPickerSheetState extends State<_BannerProductPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -788,9 +802,9 @@ class _BannerProductPickerSheetState extends State<_BannerProductPickerSheet> {
           child: TextField(
             controller: _controller,
             autofocus: true,
-            decoration: const InputDecoration(
-              labelText: 'Search product name or SKU',
-              prefixIcon: Icon(Icons.search),
+            decoration: InputDecoration(
+              labelText: l10n.bannersSearchProduct,
+              prefixIcon: const Icon(Icons.search),
             ),
             onChanged: _onChanged,
           ),
@@ -801,7 +815,7 @@ class _BannerProductPickerSheetState extends State<_BannerProductPickerSheet> {
           child: _results.isEmpty
               ? Center(
                   child: Text(
-                    'Type 2+ characters to search',
+                    l10n.bannersSearchHint,
                     style: TextStyle(color: AppColors.muted),
                   ),
                 )

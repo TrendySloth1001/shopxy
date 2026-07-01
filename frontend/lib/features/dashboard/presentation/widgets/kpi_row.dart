@@ -4,6 +4,7 @@ import 'package:shopxy/features/dashboard/presentation/widgets/dashboard_ui.dart
 import 'package:shopxy/features/parties/presentation/pages/parties_page.dart';
 import 'package:shopxy/features/reports/presentation/pages/reports_page.dart';
 import 'package:shopxy/features/vendors/presentation/pages/vendors_page.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 
@@ -15,6 +16,7 @@ class KpiRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return LayoutBuilder(
       builder: (context, c) {
         final cols = responsiveCols(c.maxWidth, base: 2, lg: 4);
@@ -24,7 +26,7 @@ class KpiRow extends StatelessWidget {
             _KpiCard(
               icon: Icons.currency_rupee_rounded,
               iconColor: AppColors.brandStrong,
-              label: 'Sales',
+              label: l10n.dashboardSales,
               value: inr.format(kpis.sales.value),
               footer: DeltaChip(value: kpis.sales.deltaPct),
               onTap: () => dashPush(context, const ReportsPage()),
@@ -32,7 +34,7 @@ class KpiRow extends StatelessWidget {
             _KpiCard(
               icon: Icons.trending_up_rounded,
               iconColor: AppColors.success,
-              label: 'Net profit',
+              label: l10n.dashboardNetProfit,
               value: inr.format(kpis.profit.value),
               footer: Row(
                 children: [
@@ -40,7 +42,7 @@ class KpiRow extends StatelessWidget {
                   const SizedBox(width: AppSizes.sm),
                   Flexible(
                     child: Text(
-                      '${kpis.profit.margin}% margin',
+                      l10n.dashboardMarginPct('${kpis.profit.margin}'),
                       style: DashText.labelMd,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -52,12 +54,12 @@ class KpiRow extends StatelessWidget {
             _KpiCard(
               icon: Icons.south_west_rounded,
               iconColor: AppColors.accentIndigo,
-              label: 'Receivables',
+              label: l10n.dashboardReceivables,
               value: inr.format(kpis.receivables.outstanding),
               footer: Text(
                 kpis.receivables.count == 1
-                    ? '1 party owes you'
-                    : '${kpis.receivables.count} parties owe you',
+                    ? l10n.dashboardOnePartyOwesYou
+                    : l10n.dashboardPartiesOweYou('${kpis.receivables.count}'),
                 style: DashText.labelMd,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -66,12 +68,12 @@ class KpiRow extends StatelessWidget {
             _KpiCard(
               icon: Icons.north_east_rounded,
               iconColor: AppColors.accentAmber,
-              label: 'Payables',
+              label: l10n.dashboardPayables,
               value: inr.format(kpis.payables.outstanding),
               footer: Text(
                 kpis.payables.count == 1
-                    ? '1 vendor to pay'
-                    : '${kpis.payables.count} vendors to pay',
+                    ? l10n.dashboardOneVendorToPay
+                    : l10n.dashboardVendorsToPay('${kpis.payables.count}'),
                 style: DashText.labelMd,
                 overflow: TextOverflow.ellipsis,
               ),
