@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Modal, ModalActions } from "@/shared/ui/modal";
 import { TextAreaField, TextField } from "@/shared/ui/form";
 import { ComboSelect } from "@/shared/ui/combo-select";
@@ -37,6 +38,7 @@ export function StockSheet({
   onClose: () => void;
   onDone: (draftInvoiceId: number) => void;
 }) {
+  const t = useTranslations("stockAdjustments");
   const [type, setType] = useState<StockType>(initialType);
   const [quantity, setQuantity] = useState("");
   const [unitPrice, setUnitPrice] = useState(
@@ -107,8 +109,8 @@ export function StockSheet({
 
   async function submit() {
     setError(null);
-    if (!quantityOk) return setError("Enter a quantity greater than zero.");
-    if (!priceOk) return setError("Enter the purchase price.");
+    if (!quantityOk) return setError(t("stockSheet.errorQuantity"));
+    if (!priceOk) return setError(t("stockSheet.errorPrice"));
     setBusy(true);
     try {
       const res = await createStockTransaction({
@@ -122,7 +124,7 @@ export function StockSheet({
       });
       onDone(res.draftInvoice.id);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not record the stock movement.");
+      setError(e instanceof Error ? e.message : t("stockSheet.errorRecord"));
     } finally {
       setBusy(false);
     }
@@ -131,15 +133,15 @@ export function StockSheet({
   const unit = unitLabel(product.unit);
 
   return (
-    <Modal title="Update stock" onClose={onClose}>
+    <Modal title={t("stockSheet.title")} onClose={onClose}>
       <p className="text-body-md text-muted">
-        {product.name} · in stock {qty(product.stockQuantity)} {unit}
+        {product.name} · {t("stockSheet.inStock", { qty: qty(product.stockQuantity), unit })}
       </p>
 
       {/* Purchase / Sale toggle */}
       <div className="flex items-center gap-sm">
-        <TypeTab label="Purchase (Stock in)" active={type === "STOCK_IN"} onClick={() => switchType("STOCK_IN")} />
-        <TypeTab label="Sale (Stock out)" active={type === "STOCK_OUT"} onClick={() => switchType("STOCK_OUT")} />
+        <TypeTab label={t("stockSheet.purchaseTab")} active={type === "STOCK_IN"} onClick={() => switchType("STOCK_IN")} />
+        <TypeTab label={t("stockSheet.saleTab")} active={type === "STOCK_OUT"} onClick={() => switchType("STOCK_OUT")} />
       </div>
 
       {error ? (
@@ -148,31 +150,31 @@ export function StockSheet({
 
       <div className="grid grid-cols-2 gap-md">
         <TextField
-          label={`Quantity (${unit})`}
+          label={t("stockSheet.quantityLabel", { unit })}
           value={quantity}
           onChange={setQuantity}
           inputMode="decimal"
           placeholder="0"
         />
         <TextField
-          label={type === "STOCK_IN" ? "Purchase price (₹)" : "Sale price (₹)"}
+          label={type === "STOCK_IN" ? t("stockSheet.purchasePriceLabel") : t("stockSheet.salePriceLabel")}
           value={unitPrice}
           onChange={setUnitPrice}
           inputMode="decimal"
           placeholder="0.00"
-          helper={type === "STOCK_OUT" ? "Optional" : undefined}
+          helper={type === "STOCK_OUT" ? t("stockSheet.optional") : undefined}
         />
       </div>
 
       {type === "STOCK_IN" ? (
         <ComboSelect
-          label="Supplier"
+          label={t("stockSheet.supplierLabel")}
           value={vendorId}
           onChange={setVendorId}
-          placeholder={loadingOpts ? "Loading vendors…" : "Select a supplier (optional)"}
+          placeholder={loadingOpts ? t("stockSheet.loadingVendors") : t("stockSheet.selectSupplier")}
           searchable={vendors.length > 6}
-          emptyText="No vendors yet — add one under Vendors."
-          helper="Pick from your vendors — optional."
+          emptyText={t("stockSheet.noVendors")}
+          helper={t("stockSheet.supplierHelper")}
           options={vendors.map((v) => ({
             value: String(v.id),
             label: v.name,
@@ -181,27 +183,27 @@ export function StockSheet({
         />
       ) : (
         <ComboSelect
-          label="Customer"
+          label={t("stockSheet.customerLabel")}
           value={partyId}
           onChange={setPartyId}
-          placeholder={loadingOpts ? "Loading customers…" : "Select a customer"}
+          placeholder={loadingOpts ? t("stockSheet.loadingCustomers") : t("stockSheet.selectCustomer")}
           searchable={parties.length > 6}
-          emptyText="No customers yet."
-          helper="Defaults to Walk-in Customer."
+          emptyText={t("stockSheet.noCustomers")}
+          helper={t("stockSheet.customerHelper")}
           options={parties.map((p) => ({ value: String(p.id), label: p.name }))}
         />
       )}
 
-      <TextAreaField label="Note (optional)" value={note} onChange={setNote} rows={2} />
+      <TextAreaField label={t("stockSheet.noteLabel")} value={note} onChange={setNote} rows={2} />
 
       <p className="text-body-sm text-subtle">
-        This creates a draft invoice — confirm it from Invoices to actually post the stock.
+        {t("stockSheet.draftHint")}
       </p>
 
       <ModalActions
         busy={busy}
         disabled={!valid || loadingOpts}
-        confirmLabel="Create draft"
+        confirmLabel={t("stockSheet.createDraft")}
         onCancel={onClose}
         onConfirm={submit}
       />

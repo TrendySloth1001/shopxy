@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { ArrowDown, ArrowUp, Search } from "lucide-react";
 import { Divider } from "@/shared/ui/divider";
 import { CardsSkeleton, ListRowsSkeleton } from "@/shared/ui/skeleton";
@@ -13,6 +14,7 @@ const PAGE = 100;
 
 export default function AnalyticsTablePage() {
   const { iso } = useAnalyticsRange();
+  const t = useTranslations("analytics");
 
   const [data, setData] = useState<ProductAnalytics | null>(null);
   const [extra, setExtra] = useState<AnalyticsRow[]>([]);
@@ -38,7 +40,7 @@ export default function AnalyticsTablePage() {
         setError(null);
       } catch (e) {
         if (active) {
-          setError(e instanceof Error ? e.message : "Could not load analytics.");
+          setError(e instanceof Error ? e.message : t("errors.load"));
           setData(null);
         }
       } finally {
@@ -48,7 +50,7 @@ export default function AnalyticsTablePage() {
     return () => {
       active = false;
     };
-  }, [iso]);
+  }, [iso, t]);
 
   const loadMore = useCallback(async () => {
     if (!cursor || loadingMore) return;
@@ -92,7 +94,7 @@ export default function AnalyticsTablePage() {
     );
   }
   if (error || !data) {
-    return <p className="mt-lg rounded-md bg-error-soft px-md py-sm text-body-sm text-error">{error ?? "No data."}</p>;
+    return <p className="mt-lg rounded-md bg-error-soft px-md py-sm text-body-sm text-error">{error ?? t("errors.noData")}</p>;
   }
 
   return (
@@ -103,13 +105,13 @@ export default function AnalyticsTablePage() {
 
       <Divider className="my-xxl" />
       <div className="flex flex-wrap items-center justify-between gap-sm">
-        <SectionHeading>By product</SectionHeading>
+        <SectionHeading>{t("table.byProduct")}</SectionHeading>
         <div className="flex w-full items-center gap-sm rounded-input border border-hairline bg-field px-md focus-within:border-brand focus-within:ring-2 focus-within:ring-brand-soft sm:w-64">
           <Search size={15} className="shrink-0 text-subtle" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Filter products"
+            placeholder={t("table.filterPlaceholder")}
             className="h-9 w-full bg-transparent text-body-md text-ink outline-none placeholder:text-subtle"
           />
         </div>
@@ -117,26 +119,26 @@ export default function AnalyticsTablePage() {
 
       {rows.length === 0 ? (
         <p className="py-xl text-center text-body-sm text-subtle">
-          {search ? "No products match your filter." : "No product activity in this range."}
+          {search ? t("table.noMatch") : t("table.noActivity")}
         </p>
       ) : (
         <div className="mt-sm overflow-x-auto">
           <table className="w-full min-w-[44rem] border-collapse">
             <thead>
               <tr className="border-b border-hairline text-left">
-                <Th label="Product" col="productName" sortKey={sortKey} sortAsc={sortAsc} onSort={toggleSort} align="left" />
-                <Th label="Imp" col="impressions" sortKey={sortKey} sortAsc={sortAsc} onSort={toggleSort} />
-                <Th label="Taps" col="taps" sortKey={sortKey} sortAsc={sortAsc} onSort={toggleSort} />
-                <Th label="Views" col="views" sortKey={sortKey} sortAsc={sortAsc} onSort={toggleSort} />
-                <Th label="ATC" col="addToCart" sortKey={sortKey} sortAsc={sortAsc} onSort={toggleSort} />
-                <Th label="Buys" col="purchases" sortKey={sortKey} sortAsc={sortAsc} onSort={toggleSort} />
-                <Th label="CTR" col="ctr" sortKey={sortKey} sortAsc={sortAsc} onSort={toggleSort} />
-                <Th label="CVR" col="cvr" sortKey={sortKey} sortAsc={sortAsc} onSort={toggleSort} />
+                <Th label={t("columns.product")} col="productName" sortKey={sortKey} sortAsc={sortAsc} onSort={toggleSort} align="left" />
+                <Th label={t("columns.imp")} col="impressions" sortKey={sortKey} sortAsc={sortAsc} onSort={toggleSort} />
+                <Th label={t("columns.taps")} col="taps" sortKey={sortKey} sortAsc={sortAsc} onSort={toggleSort} />
+                <Th label={t("columns.views")} col="views" sortKey={sortKey} sortAsc={sortAsc} onSort={toggleSort} />
+                <Th label={t("columns.atc")} col="addToCart" sortKey={sortKey} sortAsc={sortAsc} onSort={toggleSort} />
+                <Th label={t("columns.buys")} col="purchases" sortKey={sortKey} sortAsc={sortAsc} onSort={toggleSort} />
+                <Th label={t("columns.ctr")} col="ctr" sortKey={sortKey} sortAsc={sortAsc} onSort={toggleSort} />
+                <Th label={t("columns.cvr")} col="cvr" sortKey={sortKey} sortAsc={sortAsc} onSort={toggleSort} />
               </tr>
             </thead>
             <tbody>
               {rows.map((r) => (
-                <Row key={r.productId} row={r} />
+                <Row key={r.productId} row={r} productFallback={t("common.product")} />
               ))}
             </tbody>
           </table>
@@ -151,7 +153,7 @@ export default function AnalyticsTablePage() {
             disabled={loadingMore}
             className="inline-flex h-10 items-center rounded-button border border-hairline px-lg text-label-md text-ink transition-colors hover:bg-surface-tint disabled:text-disabled"
           >
-            {loadingMore ? "Loading…" : "Load more products"}
+            {loadingMore ? t("common.loading") : t("table.loadMore")}
           </button>
         </div>
       ) : null}
@@ -191,10 +193,10 @@ function Th({
   );
 }
 
-function Row({ row }: { row: AnalyticsRow }) {
+function Row({ row, productFallback }: { row: AnalyticsRow; productFallback: string }) {
   return (
     <tr className="border-b border-hairline transition-colors hover:bg-surface-tint">
-      <td className="max-w-xs truncate py-sm pr-md text-body-md text-ink">{row.productName ?? "Product"}</td>
+      <td className="max-w-xs truncate py-sm pr-md text-body-md text-ink">{row.productName ?? productFallback}</td>
       <Td value={aInt(row.impressions)} />
       <Td value={aInt(row.taps)} />
       <Td value={aInt(row.views)} />

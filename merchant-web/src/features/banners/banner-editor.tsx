@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { ImageOff, Plus, Trash2 } from "lucide-react";
 import { BackLink } from "@/shared/ui/page-header";
 import { DateTimeField, SelectField, TextField, ToggleField } from "@/shared/ui/form";
@@ -22,19 +23,12 @@ import {
 import {
   DISCOUNT_TYPES,
   PLACEMENTS,
-  PLACEMENT_LABELS,
   type Banner,
   type DiscountType,
   type Placement,
 } from "./schema";
 
 const BACK = "/dashboard/banners";
-
-const PLACEMENT_OPTIONS = PLACEMENTS.map((p) => ({ value: p, label: PLACEMENT_LABELS[p] }));
-const DISCOUNT_OPTIONS = DISCOUNT_TYPES.map((t) => ({
-  value: t,
-  label: t === "PERCENT" ? "% off" : "₹ off",
-}));
 
 /** A pinned product being edited in the form. */
 type PinnedRow = {
@@ -67,7 +61,14 @@ function salePreview(sellingPrice: number, type: DiscountType, raw: string): num
 /** Create / edit a single image banner + its pinned products. */
 export function BannerEditor({ banner }: { banner?: Banner }) {
   const router = useRouter();
+  const t = useTranslations("banners");
   const editing = banner != null;
+
+  const placementOptions = PLACEMENTS.map((p) => ({ value: p, label: t(`placement.${p}`) }));
+  const discountOptions = DISCOUNT_TYPES.map((d) => ({
+    value: d,
+    label: d === "PERCENT" ? t("form.discountPercent") : t("form.discountAmount"),
+  }));
 
   const [placement, setPlacement] = useState<Placement>(banner?.placement ?? "HERO");
   const [imageUrl, setImageUrl] = useState<string | null>(banner?.imageUrl ?? null);
@@ -136,13 +137,13 @@ export function BannerEditor({ banner }: { banner?: Banner }) {
 
   async function save() {
     setError(null);
-    if (!imageUrl) return setError("A banner image is required.");
+    if (!imageUrl) return setError(t("form.errors.imageRequired"));
     const link = linkUrl.trim();
     if (link && !/^https?:\/\//i.test(link) && !link.startsWith("/")) {
-      return setError("Link must be an absolute URL or a path starting with /.");
+      return setError(t("form.errors.invalidLink"));
     }
     if (startAt && endAt && new Date(endAt) <= new Date(startAt)) {
-      return setError("End time must be after the start time.");
+      return setError(t("form.errors.endBeforeStart"));
     }
     const order = Number.parseInt(sortOrder, 10);
     const payload: BannerInput = {
@@ -168,7 +169,7 @@ export function BannerEditor({ banner }: { banner?: Banner }) {
       );
       router.push(BACK);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Save failed.");
+      setError(e instanceof Error ? e.message : t("form.errors.saveFailed"));
       setBusy(false);
     }
   }
@@ -177,10 +178,10 @@ export function BannerEditor({ banner }: { banner?: Banner }) {
 
   return (
     <div className="w-full px-lg py-xxl pb-massive md:px-xxl">
-      <BackLink href={BACK} label="Banners" />
-      <h1 className="mt-md text-headline-md text-ink">{editing ? "Edit banner" : "New banner"}</h1>
+      <BackLink href={BACK} label={t("list.title")} />
+      <h1 className="mt-md text-headline-md text-ink">{editing ? t("form.editTitle") : t("form.newTitle")}</h1>
       <p className="mt-xs text-body-md text-muted">
-        Upload an image, choose where it shows, and optionally pin products shoppers see when they tap it.
+        {t("form.subtitle")}
       </p>
 
       {error ? (
@@ -190,14 +191,14 @@ export function BannerEditor({ banner }: { banner?: Banner }) {
       <div className="mt-xl grid gap-xl lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] xl:grid-cols-[440px_minmax(0,1fr)]">
         {/* Preview */}
         <div className="lg:sticky lg:top-lg lg:self-start">
-          <p className="mb-sm text-label-md uppercase tracking-wide text-subtle">Preview</p>
+          <p className="mb-sm text-label-md uppercase tracking-wide text-subtle">{t("form.preview")}</p>
           <div className="relative aspect-[16/10] w-full overflow-hidden rounded-lg border border-hairline bg-hero-panel">
             {previewSrc ? (
               <Image src={previewSrc} alt="" fill unoptimized className="object-cover" sizes="440px" />
             ) : (
               <div className="flex size-full flex-col items-center justify-center gap-sm text-subtle">
                 <ImageOff size={28} />
-                <span className="text-body-sm">No image yet</span>
+                <span className="text-body-sm">{t("form.noImageYet")}</span>
               </div>
             )}
           </div>
@@ -206,40 +207,40 @@ export function BannerEditor({ banner }: { banner?: Banner }) {
         {/* Form */}
         <div className="flex max-w-content flex-col gap-lg">
           <ImageUploadField
-            label="Banner image"
+            label={t("form.imageLabel")}
             aspect="banner"
             url={imageUrl}
             onChange={setImageUrl}
-            helper="Shown edge-to-edge on the customer home. Use ready-made artwork."
+            helper={t("form.imageHelper")}
           />
           <SelectField
-            label="Placement"
+            label={t("form.placementLabel")}
             value={placement}
             onChange={setPlacement}
-            options={PLACEMENT_OPTIONS}
-            helper="Which home slot this banner appears in."
+            options={placementOptions}
+            helper={t("form.placementHelper")}
           />
           <TextField
-            label="Link (optional)"
+            label={t("form.linkLabel")}
             value={linkUrl}
             onChange={setLinkUrl}
-            placeholder="/shop/my-store or https://…"
-            helper="Used only when no products are pinned. Pinned products open a detail page instead."
+            placeholder={t("form.linkPlaceholder")}
+            helper={t("form.linkHelper")}
           />
           <TextField
-            label="Sort order"
+            label={t("form.sortOrderLabel")}
             value={sortOrder}
             onChange={setSortOrder}
             inputMode="numeric"
-            helper="Lower numbers show first within the placement."
+            helper={t("form.sortOrderHelper")}
           />
           <div className="grid grid-cols-1 gap-md sm:grid-cols-2">
-            <DateTimeField label="Starts (optional)" value={startAt} onChange={setStartAt} />
-            <DateTimeField label="Ends (optional)" value={endAt} onChange={setEndAt} />
+            <DateTimeField label={t("form.startsLabel")} value={startAt} onChange={setStartAt} />
+            <DateTimeField label={t("form.endsLabel")} value={endAt} onChange={setEndAt} />
           </div>
           <ToggleField
-            label="Active"
-            description="Inactive banners are hidden from the storefront."
+            label={t("form.activeLabel")}
+            description={t("form.activeDescription")}
             checked={isActive}
             onChange={setIsActive}
           />
@@ -247,19 +248,18 @@ export function BannerEditor({ banner }: { banner?: Banner }) {
           {/* Pinned products */}
           <div className="flex flex-col gap-sm">
             <div className="flex items-center justify-between">
-              <span className="text-label-md text-muted">Pinned products</span>
+              <span className="text-label-md text-muted">{t("products.title")}</span>
               <button
                 type="button"
                 onClick={() => setPickerOpen(true)}
                 className="inline-flex h-9 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
               >
-                <Plus size={15} /> Add product
+                <Plus size={15} /> {t("products.add")}
               </button>
             </div>
             {products.length === 0 ? (
               <p className="rounded-md bg-surface-tint px-md py-sm text-body-sm text-muted">
-                No products pinned. Tapping the banner uses the link above. Pin products to open a
-                product showcase instead, each with an optional discount.
+                {t("products.empty")}
               </p>
             ) : (
               <div className="flex flex-col gap-sm">
@@ -288,7 +288,7 @@ export function BannerEditor({ banner }: { banner?: Banner }) {
                           label=""
                           value={r.discountType}
                           onChange={(v) => patchRow(r.productId, { discountType: v })}
-                          options={DISCOUNT_OPTIONS}
+                          options={discountOptions}
                         />
                       </div>
                       <div className="w-[88px] shrink-0">
@@ -303,7 +303,7 @@ export function BannerEditor({ banner }: { banner?: Banner }) {
                       <button
                         type="button"
                         onClick={() => removeRow(r.productId)}
-                        aria-label="Remove product"
+                        aria-label={t("products.remove")}
                         className="inline-flex size-9 shrink-0 items-center justify-center rounded-button border border-hairline text-muted transition-colors hover:text-error"
                       >
                         <Trash2 size={15} />
@@ -323,7 +323,7 @@ export function BannerEditor({ banner }: { banner?: Banner }) {
           href={BACK}
           className="inline-flex h-11 items-center rounded-button px-md text-label-md text-muted transition-colors hover:text-ink"
         >
-          Cancel
+          {t("actions.cancel")}
         </Link>
         <button
           type="button"
@@ -331,14 +331,14 @@ export function BannerEditor({ banner }: { banner?: Banner }) {
           disabled={busy}
           className="inline-flex h-11 items-center rounded-button bg-brand px-xl text-label-lg text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:bg-disabled"
         >
-          {busy ? "Saving…" : editing ? "Save changes" : "Create banner"}
+          {busy ? t("actions.saving") : editing ? t("actions.saveChanges") : t("actions.create")}
         </button>
       </div>
 
       {pickerOpen ? (
         <PickerModal<Product>
-          title="Add product"
-          placeholder="Search products by name or SKU"
+          title={t("products.add")}
+          placeholder={t("picker.searchPlaceholder")}
           load={loadProducts}
           rowOf={(p) => ({
             title: p.name,
@@ -347,7 +347,7 @@ export function BannerEditor({ banner }: { banner?: Banner }) {
           })}
           onPick={addProduct}
           onClose={() => setPickerOpen(false)}
-          emptyHint="No products match."
+          emptyHint={t("picker.empty")}
         />
       ) : null}
     </div>

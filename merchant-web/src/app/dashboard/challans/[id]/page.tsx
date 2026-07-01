@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { ClipboardList, FileUp, Phone, ReceiptText, XCircle } from "lucide-react";
 import { BackLink } from "@/shared/ui/page-header";
 import { Divider } from "@/shared/ui/divider";
@@ -19,7 +20,13 @@ import { DetailSkeleton } from "@/shared/ui/skeleton";
 
 const BACK = "/dashboard/challans";
 
+function statusLabel(t: ReturnType<typeof useTranslations>, status: string): string {
+  const key = { PENDING: "status.pending", CONVERTED: "status.converted", CANCELLED: "status.cancelled" }[status];
+  return key ? t(key) : (CHALLAN_STATUS_LABELS[status] ?? status);
+}
+
 export default function ChallanDetailPage() {
+  const t = useTranslations("challans");
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const id = Number(params.id);
@@ -46,7 +53,7 @@ export default function ChallanDetailPage() {
         setChallan(c);
         setError(null);
       } catch (e) {
-        if (active) setError(e instanceof Error ? e.message : "Could not load the challan.");
+        if (active) setError(e instanceof Error ? e.message : t("detail.loadError"));
       } finally {
         if (active) setLoading(false);
       }
@@ -54,7 +61,7 @@ export default function ChallanDetailPage() {
     return () => {
       active = false;
     };
-  }, [id, nonce]);
+  }, [id, nonce, t]);
 
   async function onCancel() {
     setBusy(true);
@@ -64,7 +71,7 @@ export default function ChallanDetailPage() {
       setConfirmCancel(false);
       setNonce((n) => n + 1);
     } catch (e) {
-      setActionError(e instanceof Error ? e.message : "Could not cancel the challan.");
+      setActionError(e instanceof Error ? e.message : t("detail.cancelError"));
     } finally {
       setBusy(false);
     }
@@ -82,7 +89,7 @@ export default function ChallanDetailPage() {
       router.push(`/dashboard/invoices/${created.id}`);
       router.refresh();
     } catch (e) {
-      setActionError(e instanceof Error ? e.message : "Could not convert the challan.");
+      setActionError(e instanceof Error ? e.message : t("detail.convertError"));
       setBusy(false);
     }
   }
@@ -93,9 +100,9 @@ export default function ChallanDetailPage() {
   if (error || !challan) {
     return (
       <div className="w-full px-lg py-xxl md:px-xxl">
-        <BackLink href={BACK} label="Challans" />
+        <BackLink href={BACK} label={t("list.title")} />
         <p className="mt-md rounded-md bg-error-soft px-md py-sm text-body-sm text-error">
-          {error ?? "Challan not found."}
+          {error ?? t("detail.notFound")}
         </p>
       </div>
     );
@@ -105,7 +112,7 @@ export default function ChallanDetailPage() {
 
   return (
     <div className="w-full px-lg py-xxl pb-massive md:px-xxl">
-      <BackLink href={BACK} label="Challans" />
+      <BackLink href={BACK} label={t("list.title")} />
 
       {/* Header */}
       <div className="mt-md flex flex-wrap items-start justify-between gap-md">
@@ -121,7 +128,7 @@ export default function ChallanDetailPage() {
                   CHALLAN_STATUS_CLASSES[challan.status] ?? "bg-surface-tint text-muted"
                 }`}
               >
-                {CHALLAN_STATUS_LABELS[challan.status] ?? challan.status}
+                {statusLabel(t, challan.status)}
               </span>
             </div>
             <p className="mt-xs text-body-sm text-muted">{formatDateTime(challan.createdAt)}</p>
@@ -135,7 +142,7 @@ export default function ChallanDetailPage() {
 
       {/* Party / meta */}
       <div className="mt-xl">
-        <p className="text-label-md uppercase tracking-wide text-subtle">Delivered to</p>
+        <p className="text-label-md uppercase tracking-wide text-subtle">{t("detail.deliveredTo")}</p>
         <p className="mt-xs text-title-md text-ink">{challan.partyName ?? "—"}</p>
         {challan.partyPhone ? (
           <p className="mt-sm flex items-center gap-sm text-body-sm text-muted">
@@ -148,14 +155,14 @@ export default function ChallanDetailPage() {
             href={`/dashboard/invoices/${challan.invoice.id}`}
             className="mt-sm inline-flex items-center gap-xs rounded-full bg-success-soft px-md py-xs text-body-sm font-semibold text-success transition-colors hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-success-soft"
           >
-            <ReceiptText size={14} /> Invoice {challan.invoice.invoiceNo}
+            <ReceiptText size={14} /> {t("detail.invoicePrefix")} {challan.invoice.invoiceNo}
           </Link>
         ) : null}
       </div>
 
       {/* Items */}
       <Divider className="my-xl" />
-      <h2 className="mb-sm text-label-md uppercase tracking-wide text-subtle">Items</h2>
+      <h2 className="mb-sm text-label-md uppercase tracking-wide text-subtle">{t("detail.items")}</h2>
       {challan.items.map((it, i) => (
         <ItemRow key={it.id ?? i} item={it} />
       ))}
@@ -169,7 +176,7 @@ export default function ChallanDetailPage() {
             disabled={busy}
             className="inline-flex h-11 items-center gap-sm rounded-button border border-hairline px-lg text-label-md text-error transition-colors hover:bg-error-soft disabled:text-disabled"
           >
-            <XCircle size={16} /> Cancel challan
+            <XCircle size={16} /> {t("detail.cancel")}
           </button>
           <button
             type="button"
@@ -180,19 +187,18 @@ export default function ChallanDetailPage() {
             disabled={busy}
             className="inline-flex h-11 items-center gap-sm rounded-button bg-brand px-lg text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:bg-disabled"
           >
-            <FileUp size={16} /> Convert to invoice
+            <FileUp size={16} /> {t("detail.convert")}
           </button>
         </div>
       ) : null}
 
       {convertOpen ? (
-        <Modal title="Convert to invoice" onClose={() => setConvertOpen(false)}>
+        <Modal title={t("convert.title")} onClose={() => setConvertOpen(false)}>
           <p className="text-body-md text-muted">
-            Creates a draft SALE invoice from this challan&rsquo;s items and party. You can edit
-            everything before confirming.
+            {t("convert.description")}
           </p>
           <label className="flex flex-col gap-xs">
-            <span className="text-label-md text-muted">Header discount (₹, optional)</span>
+            <span className="text-label-md text-muted">{t("convert.discountLabel")}</span>
             <input
               value={convertDiscount}
               onChange={(e) => setConvertDiscount(e.target.value)}
@@ -202,7 +208,7 @@ export default function ChallanDetailPage() {
             />
           </label>
           <label className="flex flex-col gap-xs">
-            <span className="text-label-md text-muted">Note (optional)</span>
+            <span className="text-label-md text-muted">{t("convert.noteLabel")}</span>
             <textarea
               value={convertNote}
               onChange={(e) => setConvertNote(e.target.value)}
@@ -212,7 +218,7 @@ export default function ChallanDetailPage() {
           </label>
           <ModalActions
             busy={busy}
-            confirmLabel="Create draft invoice"
+            confirmLabel={t("convert.confirm")}
             onCancel={() => setConvertOpen(false)}
             onConfirm={onConvert}
           />
@@ -220,14 +226,14 @@ export default function ChallanDetailPage() {
       ) : null}
 
       {confirmCancel ? (
-        <Modal title="Cancel this challan?" onClose={() => setConfirmCancel(false)}>
+        <Modal title={t("cancelModal.title")} onClose={() => setConfirmCancel(false)}>
           <p className="text-body-md text-muted">
-            The delivered stock is returned to inventory. This can&rsquo;t be undone.
+            {t("cancelModal.description")}
           </p>
           <ModalActions
             busy={busy}
             danger
-            confirmLabel="Cancel challan"
+            confirmLabel={t("cancelModal.confirm")}
             onCancel={() => setConfirmCancel(false)}
             onConfirm={onCancel}
           />
@@ -238,10 +244,11 @@ export default function ChallanDetailPage() {
 }
 
 function ItemRow({ item }: { item: ChallanItem }) {
+  const t = useTranslations("challans");
   return (
     <div className="flex items-center gap-md border-b border-hairline py-md">
       <div className="min-w-0 flex-1">
-        <p className="truncate text-body-md text-ink">{item.productName ?? "Product"}</p>
+        <p className="truncate text-body-md text-ink">{item.productName ?? t("detail.product")}</p>
         {item.productSku ? <p className="text-body-sm text-muted">{item.productSku}</p> : null}
       </div>
       <span className="shrink-0 text-body-md font-semibold text-ink">

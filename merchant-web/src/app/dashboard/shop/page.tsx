@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 import { BadgeCheck, Check, ChevronRight, ImagePlus, Plane, Star, Trash2, Users, Wallet } from "lucide-react";
 import { mediaSrc } from "@/features/products/components/product-thumb";
 import {
@@ -14,11 +15,8 @@ import {
 } from "@/features/shop/api";
 import {
   CANCELLATION_POLICIES,
-  CANCELLATION_POLICY_LABELS,
   DAYS,
-  DAY_LABELS,
   REFUND_MODES_SELECTABLE,
-  REFUND_MODE_LABELS,
   returnWindowDaysSchema,
   type CancellationPolicy,
   type Day,
@@ -41,6 +39,7 @@ function initHours(shop: Shop): Record<Day, DayHours> {
 }
 
 export default function ShopPage() {
+  const t = useTranslations("shop");
   const [shop, setShop] = useState<Shop | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -103,7 +102,7 @@ export default function ShopPage() {
         });
         setError(null);
       } catch (e) {
-        if (active) setError(e instanceof Error ? e.message : "Could not load your shop.");
+        if (active) setError(e instanceof Error ? e.message : t("errors.load"));
       } finally {
         if (active) setLoading(false);
       }
@@ -111,7 +110,7 @@ export default function ShopPage() {
     return () => {
       active = false;
     };
-  }, [nonce]);
+  }, [nonce, t]);
 
   function patch(p: Partial<NonNullable<typeof form>>) {
     setForm((f) => (f ? { ...f, ...p } : f));
@@ -127,7 +126,7 @@ export default function ShopPage() {
       const updated = await updateShop({ [field]: url });
       setShop(updated);
     } catch (e) {
-      setActionError(e instanceof Error ? e.message : "Could not save the image.");
+      setActionError(e instanceof Error ? e.message : t("errors.saveImage"));
     }
   }
 
@@ -139,7 +138,7 @@ export default function ShopPage() {
       const updated = await setShopPublished(!shop.isPublished);
       setShop(updated);
     } catch (e) {
-      setActionError(e instanceof Error ? e.message : "Could not update publish state.");
+      setActionError(e instanceof Error ? e.message : t("errors.publish"));
     } finally {
       setPublishing(false);
     }
@@ -149,11 +148,11 @@ export default function ShopPage() {
     if (!form) return;
     const windowDays = returnWindowDaysSchema.safeParse(form.returnWindowDays.trim() || undefined);
     if (!windowDays.success) {
-      setActionError("Return window must be a whole number of days between 0 and 365.");
+      setActionError(t("errors.returnWindow"));
       return;
     }
     if (form.returnPolicyNote.length > 2048) {
-      setActionError("Return policy note must be 2048 characters or fewer.");
+      setActionError(t("errors.returnNoteLength"));
       return;
     }
     setSaving(true);
@@ -188,7 +187,7 @@ export default function ShopPage() {
       setShop(updated);
       setSaved(true);
     } catch (e) {
-      setActionError(e instanceof Error ? e.message : "Could not save your shop.");
+      setActionError(e instanceof Error ? e.message : t("errors.save"));
     } finally {
       setSaving(false);
     }
@@ -205,13 +204,13 @@ export default function ShopPage() {
     return (
       <div className="w-full px-lg py-xxl md:px-xxl">
         <div className="flex flex-col items-start gap-md py-xxl">
-          <p className="text-body-md text-muted">{error ?? "Could not load your shop."}</p>
+          <p className="text-body-md text-muted">{error ?? t("errors.load")}</p>
           <button
             type="button"
             onClick={reload}
             className="inline-flex h-10 items-center rounded-button border border-hairline px-lg text-label-md text-ink transition-colors hover:bg-surface-tint"
           >
-            Try again
+            {t("actions.tryAgain")}
           </button>
         </div>
       </div>
@@ -237,23 +236,23 @@ export default function ShopPage() {
 
       {/* Section tabs */}
       <div className="mt-xl overflow-x-auto">
-        <div role="tablist" aria-label="Shop settings" className="inline-flex gap-xs border-b border-hairline">
-          {TABS.map((t) => {
-            const selected = tab === t.key;
+        <div role="tablist" aria-label={t("tabs.ariaLabel")} className="inline-flex gap-xs border-b border-hairline">
+          {TABS.map((item) => {
+            const selected = tab === item.key;
             return (
               <button
-                key={t.key}
+                key={item.key}
                 type="button"
                 role="tab"
                 aria-selected={selected}
-                onClick={() => setTab(t.key)}
+                onClick={() => setTab(item.key)}
                 className={`-mb-px whitespace-nowrap border-b-2 px-md py-sm text-label-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft ${
                   selected
                     ? "border-brand text-brand-strong"
                     : "border-transparent text-muted hover:text-ink"
                 }`}
               >
-                {t.label}
+                {t(`tabs.${item.key}`)}
               </button>
             );
           })}
@@ -265,7 +264,7 @@ export default function ShopPage() {
       ) : null}
       {saved ? (
         <p className="mt-lg flex items-center gap-sm rounded-md bg-success-soft px-md py-sm text-body-sm text-success">
-          <Check size={16} /> Shop saved.
+          <Check size={16} /> {t("savedMessage")}
         </p>
       ) : null}
 
@@ -273,40 +272,40 @@ export default function ShopPage() {
         {tab === "storefront" ? (
           <div className="grid items-start gap-xl lg:grid-cols-3">
             <Card
-              title="Branding"
-              desc="Logo, banner and the basics customers see first."
+              title={t("branding.title")}
+              desc={t("branding.desc")}
               className="lg:col-span-2"
             >
               <div className="grid items-start gap-lg md:grid-cols-2">
                 <div className="flex flex-col gap-lg">
-                  <ImageField label="Banner" aspect="aspect-[3/1]" url={form.bannerUrl} onChange={(url) => saveImage("bannerUrl", url)} />
-                  <ImageField label="Logo" aspect="size-24" rounded url={form.logoUrl} onChange={(url) => saveImage("logoUrl", url)} />
+                  <ImageField label={t("branding.banner")} aspect="aspect-[3/1]" url={form.bannerUrl} onChange={(url) => saveImage("bannerUrl", url)} />
+                  <ImageField label={t("branding.logo")} aspect="size-24" rounded url={form.logoUrl} onChange={(url) => saveImage("logoUrl", url)} />
                 </div>
                 <div className="flex flex-col gap-lg">
-                  <TextInput label="Shop name" value={form.name} onChange={(v) => patch({ name: v })} />
-                  <TextInput label="Tagline" value={form.tagline} onChange={(v) => patch({ tagline: v })} placeholder="A short line shown under your name" />
+                  <TextInput label={t("branding.shopName")} value={form.name} onChange={(v) => patch({ name: v })} />
+                  <TextInput label={t("branding.tagline")} value={form.tagline} onChange={(v) => patch({ tagline: v })} placeholder={t("branding.taglinePlaceholder")} />
                   <div className="grid grid-cols-2 gap-lg">
-                    <TextInput label="City" value={form.locationCity} onChange={(v) => patch({ locationCity: v })} />
-                    <TextInput label="State" value={form.locationState} onChange={(v) => patch({ locationState: v })} />
+                    <TextInput label={t("branding.city")} value={form.locationCity} onChange={(v) => patch({ locationCity: v })} />
+                    <TextInput label={t("branding.state")} value={form.locationState} onChange={(v) => patch({ locationState: v })} />
                   </div>
                 </div>
               </div>
             </Card>
 
-            <Card title="Vacation mode" desc="Pause new orders and show customers a note.">
+            <Card title={t("vacation.title")} desc={t("vacation.desc")}>
               <ToggleRow
-                label="Vacation mode"
-                desc="When on, your storefront shows you're away and new orders are paused."
+                label={t("vacation.toggleLabel")}
+                desc={t("vacation.toggleDesc")}
                 checked={form.vacationMode}
                 onChange={() => patch({ vacationMode: !form.vacationMode })}
               />
               {form.vacationMode ? (
                 <div className="mt-md">
                   <TextInput
-                    label="Away message"
+                    label={t("vacation.messageLabel")}
                     value={form.vacationMessage}
                     onChange={(v) => patch({ vacationMessage: v })}
-                    placeholder="Back on Monday — orders paused until then."
+                    placeholder={t("vacation.messagePlaceholder")}
                   />
                 </div>
               ) : null}
@@ -315,34 +314,34 @@ export default function ShopPage() {
         ) : null}
 
         {tab === "hours" ? (
-          <Card title="Operating hours" desc="Days you're open and your trading times.">
+          <Card title={t("hours.title")} desc={t("hours.desc")}>
             <div className="grid gap-x-xxl sm:grid-cols-2 xl:grid-cols-3">
               {DAYS.map((d) => (
-                <HoursRow key={d} label={DAY_LABELS[d]} value={form.hours[d]} onChange={(h) => patch({ hours: { ...form.hours, [d]: h } })} />
+                <HoursRow key={d} label={t(`days.${d}`)} value={form.hours[d]} onChange={(h) => patch({ hours: { ...form.hours, [d]: h } })} />
               ))}
             </div>
           </Card>
         ) : null}
 
         {tab === "policies" ? (
-          <Card title="Policies" desc="Shown on your storefront and order pages.">
+          <Card title={t("policies.title")} desc={t("policies.desc")}>
             <div className="grid gap-lg md:grid-cols-2 xl:grid-cols-3">
-              <TextArea label="Return policy" value={form.returnPolicy} onChange={(v) => patch({ returnPolicy: v })} />
-              <TextArea label="Shipping policy" value={form.shippingPolicy} onChange={(v) => patch({ shippingPolicy: v })} />
-              <TextArea label="Refund policy" value={form.refundPolicy} onChange={(v) => patch({ refundPolicy: v })} />
+              <TextArea label={t("policies.returnPolicy")} value={form.returnPolicy} onChange={(v) => patch({ returnPolicy: v })} />
+              <TextArea label={t("policies.shippingPolicy")} value={form.shippingPolicy} onChange={(v) => patch({ shippingPolicy: v })} />
+              <TextArea label={t("policies.refundPolicy")} value={form.refundPolicy} onChange={(v) => patch({ refundPolicy: v })} />
             </div>
           </Card>
         ) : null}
 
         {tab === "returns" ? (
           <Card
-            title="Returns & cancellation"
-            desc="Whether you accept returns, how refunds are issued, and how late customers can cancel."
+            title={t("returns.title")}
+            desc={t("returns.desc")}
           >
             <div className="flex flex-col gap-lg">
               <ToggleRow
-                label="Accept returns"
-                desc="When off, customers can't request post-delivery returns."
+                label={t("returns.acceptLabel")}
+                desc={t("returns.acceptDesc")}
                 checked={form.returnsEnabled}
                 onChange={() => patch({ returnsEnabled: !form.returnsEnabled })}
               />
@@ -350,7 +349,7 @@ export default function ShopPage() {
                 <>
                   <div className="grid grid-cols-1 gap-lg sm:grid-cols-2">
                     <label className="flex flex-col gap-xs">
-                      <span className="text-label-md text-muted">Return window (days)</span>
+                      <span className="text-label-md text-muted">{t("returns.windowLabel")}</span>
                       <input
                         type="number"
                         min={0}
@@ -361,23 +360,23 @@ export default function ShopPage() {
                         onChange={(e) => patch({ returnWindowDays: e.target.value })}
                         className="h-10 rounded-input border border-hairline bg-field px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
                       />
-                      <span className="text-body-sm text-subtle">0 means no time limit.</span>
+                      <span className="text-body-sm text-subtle">{t("returns.windowHint")}</span>
                     </label>
                     <SelectField
-                      label="Refund method"
+                      label={t("returns.refundMethodLabel")}
                       value={form.refundMode}
-                      options={REFUND_MODES_SELECTABLE.map((m) => ({ value: m, label: REFUND_MODE_LABELS[m] }))}
+                      options={REFUND_MODES_SELECTABLE.map((m) => ({ value: m, label: t(`refundModes.${m}`) }))}
                       onChange={(v) => patch({ refundMode: v })}
                     />
                   </div>
                   <label className="flex flex-col gap-xs">
-                    <span className="text-label-md text-muted">Return policy note</span>
+                    <span className="text-label-md text-muted">{t("returns.noteLabel")}</span>
                     <textarea
                       value={form.returnPolicyNote}
                       onChange={(e) => patch({ returnPolicyNote: e.target.value })}
                       rows={3}
                       maxLength={2048}
-                      placeholder="Anything customers should know — condition requirements, who pays return shipping…"
+                      placeholder={t("returns.notePlaceholder")}
                       className="rounded-input border border-hairline bg-field px-md py-sm text-body-md text-ink outline-none placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
                     />
                   </label>
@@ -385,11 +384,11 @@ export default function ShopPage() {
               ) : null}
               <div className="grid grid-cols-1 gap-lg sm:grid-cols-2">
                 <SelectField
-                  label="Customers can cancel"
+                  label={t("returns.cancelLabel")}
                   value={form.cancellationPolicy}
-                  options={CANCELLATION_POLICIES.map((p) => ({ value: p, label: CANCELLATION_POLICY_LABELS[p] }))}
+                  options={CANCELLATION_POLICIES.map((p) => ({ value: p, label: t(`cancellationPolicies.${p}`) }))}
                   onChange={(v) => patch({ cancellationPolicy: v })}
-                  hint="After this stage, customers must use a post-delivery return instead."
+                  hint={t("returns.cancelHint")}
                 />
               </div>
             </div>
@@ -397,10 +396,10 @@ export default function ShopPage() {
         ) : null}
 
         {tab === "more" ? (
-          <Card title="More" desc="Team access and payouts.">
+          <Card title={t("more.title")} desc={t("more.desc")}>
             <div className="grid gap-md sm:grid-cols-2">
-              <LinkRow icon={Users} title="Team" subtitle="Invite staff and set permissions" href="/dashboard/team" />
-              <LinkRow icon={Wallet} title="Payouts" subtitle="Bank settlement & KYC" href="/dashboard/payouts" />
+              <LinkRow icon={Users} title={t("more.teamTitle")} subtitle={t("more.teamSubtitle")} href="/dashboard/team" />
+              <LinkRow icon={Wallet} title={t("more.payoutsTitle")} subtitle={t("more.payoutsSubtitle")} href="/dashboard/payouts" />
             </div>
           </Card>
         ) : null}
@@ -415,7 +414,7 @@ export default function ShopPage() {
             disabled={saving}
             className="inline-flex h-11 items-center gap-sm rounded-button bg-brand px-xl text-label-lg text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:bg-disabled"
           >
-            {saving ? "Saving…" : "Save changes"}
+            {saving ? t("actions.saving") : t("actions.save")}
           </button>
         </div>
       ) : null}
@@ -424,12 +423,12 @@ export default function ShopPage() {
 }
 
 type TabKey = "storefront" | "hours" | "policies" | "returns" | "more";
-const TABS: { key: TabKey; label: string }[] = [
-  { key: "storefront", label: "Storefront" },
-  { key: "hours", label: "Hours" },
-  { key: "policies", label: "Policies" },
-  { key: "returns", label: "Returns" },
-  { key: "more", label: "More" },
+const TABS: { key: TabKey }[] = [
+  { key: "storefront" },
+  { key: "hours" },
+  { key: "policies" },
+  { key: "returns" },
+  { key: "more" },
 ];
 
 /** Card shell for a settings section. */
@@ -479,6 +478,7 @@ function ShopHero({
   publishing: boolean;
   onTogglePublish: () => void;
 }) {
+  const t = useTranslations("shop");
   const location = [city, state].filter(Boolean).join(", ");
   const rating = shop.rating != null ? Number(shop.rating) : null;
   const banner = bannerUrl ? mediaSrc(bannerUrl) : null;
@@ -505,10 +505,10 @@ function ShopHero({
         <div className="mt-md flex flex-wrap items-start justify-between gap-md">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-sm">
-              <h1 className="truncate text-headline-sm text-ink">{name || "Your shop"}</h1>
+              <h1 className="truncate text-headline-sm text-ink">{name || t("hero.fallbackName")}</h1>
               {shop.isVerified ? (
                 <span className="inline-flex items-center gap-xs rounded-full bg-success-soft px-sm py-px text-label-md text-success">
-                  <BadgeCheck size={13} /> Verified
+                  <BadgeCheck size={13} /> {t("hero.verified")}
                 </span>
               ) : null}
               <span
@@ -516,7 +516,7 @@ function ShopHero({
                   shop.isPublished ? "bg-brand-soft text-brand-strong" : "bg-surface-tint text-muted"
                 }`}
               >
-                {shop.isPublished ? "Live" : "Draft"}
+                {shop.isPublished ? t("hero.live") : t("hero.draft")}
               </span>
             </div>
             {tagline ? <p className="mt-xs truncate text-body-sm text-muted">{tagline}</p> : null}
@@ -540,13 +540,13 @@ function ShopHero({
                 : "bg-brand text-white hover:bg-brand-strong"
             }`}
           >
-            {publishing ? "…" : shop.isPublished ? "Unpublish" : "Publish shop"}
+            {publishing ? "…" : shop.isPublished ? t("hero.unpublish") : t("hero.publish")}
           </button>
         </div>
 
         {vacationMode ? (
           <p className="mt-md flex items-center gap-sm rounded-md bg-accent-amber-soft px-md py-sm text-body-sm text-accent-amber">
-            <Plane size={15} /> On vacation{vacationMessage ? ` — ${vacationMessage}` : ". New orders are paused."}
+            <Plane size={15} /> {t("hero.onVacation")}{vacationMessage ? ` — ${vacationMessage}` : t("hero.vacationPaused")}
           </p>
         ) : null}
       </div>
@@ -678,6 +678,7 @@ function HoursRow({
   value: DayHours;
   onChange: (h: DayHours) => void;
 }) {
+  const t = useTranslations("shop");
   return (
     <div className="flex flex-wrap items-center gap-md border-t border-hairline py-sm">
       <label className="flex w-32 items-center gap-sm">
@@ -697,7 +698,7 @@ function HoursRow({
             onChange={(e) => onChange({ ...value, from: e.target.value })}
             className="h-9 rounded-input border border-hairline bg-field px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
           />
-          <span className="text-body-sm text-muted">to</span>
+          <span className="text-body-sm text-muted">{t("hours.to")}</span>
           <input
             type="time"
             value={value.to}
@@ -706,7 +707,7 @@ function HoursRow({
           />
         </div>
       ) : (
-        <span className="text-body-sm text-subtle">Closed</span>
+        <span className="text-body-sm text-subtle">{t("hours.closed")}</span>
       )}
     </div>
   );
@@ -753,6 +754,7 @@ function ImageField({
   rounded?: boolean;
   onChange: (url: string | null) => void;
 }) {
+  const t = useTranslations("shop");
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -765,7 +767,7 @@ function ImageField({
       const stored = await uploadShopImage(file);
       onChange(stored);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Upload failed.");
+      setErr(e instanceof Error ? e.message : t("errors.upload"));
     } finally {
       setUploading(false);
     }
@@ -790,7 +792,7 @@ function ImageField({
         disabled={uploading}
         className="inline-flex h-9 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint disabled:text-disabled"
       >
-        <ImagePlus size={16} /> {uploading ? "Uploading…" : url ? "Replace" : "Upload"}
+        <ImagePlus size={16} /> {uploading ? t("image.uploading") : url ? t("image.replace") : t("image.upload")}
       </button>
       {url ? (
         <button
@@ -798,7 +800,7 @@ function ImageField({
           onClick={() => onChange(null)}
           className="inline-flex h-9 items-center gap-sm rounded-button px-md text-label-md text-muted transition-colors hover:text-error"
         >
-          <Trash2 size={16} /> Remove
+          <Trash2 size={16} /> {t("image.remove")}
         </button>
       ) : null}
       {err ? <span className="text-body-sm text-error">{err}</span> : null}

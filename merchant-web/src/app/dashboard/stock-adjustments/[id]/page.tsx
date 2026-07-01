@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { ArrowDownLeft, ArrowUpRight, Undo2 } from "lucide-react";
 import { BackLink } from "@/shared/ui/page-header";
 import { Divider } from "@/shared/ui/divider";
@@ -11,7 +12,6 @@ import { formatDateTime } from "@/shared/datetime";
 import { getAdjustment, reverseAdjustment } from "@/features/stock-adjustments/api";
 import {
   ADJUSTMENT_REASON_CLASSES,
-  ADJUSTMENT_REASON_LABELS,
   type Adjustment,
   type AdjustmentItem,
 } from "@/features/stock-adjustments/schema";
@@ -20,6 +20,7 @@ import { DetailSkeleton } from "@/shared/ui/skeleton";
 const BACK = "/dashboard/stock-adjustments";
 
 export default function AdjustmentDetailPage() {
+  const t = useTranslations("stockAdjustments");
   const params = useParams<{ id: string }>();
   const id = Number(params.id);
 
@@ -44,7 +45,7 @@ export default function AdjustmentDetailPage() {
         setAdjustment(a);
         setError(null);
       } catch (e) {
-        if (active) setError(e instanceof Error ? e.message : "Could not load the adjustment.");
+        if (active) setError(e instanceof Error ? e.message : t("detail.loadError"));
       } finally {
         if (active) setLoading(false);
       }
@@ -52,7 +53,7 @@ export default function AdjustmentDetailPage() {
     return () => {
       active = false;
     };
-  }, [id, nonce]);
+  }, [id, nonce, t]);
 
   async function onReverse() {
     setBusy(true);
@@ -63,7 +64,7 @@ export default function AdjustmentDetailPage() {
       setReversed(true);
       setNonce((n) => n + 1);
     } catch (e) {
-      setActionError(e instanceof Error ? e.message : "Could not reverse the adjustment.");
+      setActionError(e instanceof Error ? e.message : t("detail.reverseError"));
     } finally {
       setBusy(false);
     }
@@ -75,9 +76,9 @@ export default function AdjustmentDetailPage() {
   if (error || !adjustment) {
     return (
       <div className="w-full px-lg py-xxl md:px-xxl">
-        <BackLink href={BACK} label="Stock adjustments" />
+        <BackLink href={BACK} label={t("detail.back")} />
         <p className="mt-md rounded-md bg-error-soft px-md py-sm text-body-sm text-error">
-          {error ?? "Adjustment not found."}
+          {error ?? t("detail.notFound")}
         </p>
       </div>
     );
@@ -87,7 +88,7 @@ export default function AdjustmentDetailPage() {
 
   return (
     <div className="w-full px-lg py-xxl pb-massive md:px-xxl">
-      <BackLink href={BACK} label="Stock adjustments" />
+      <BackLink href={BACK} label={t("detail.back")} />
 
       {/* Header */}
       <div className="mt-md flex flex-wrap items-start justify-between gap-md">
@@ -107,12 +108,12 @@ export default function AdjustmentDetailPage() {
                   ADJUSTMENT_REASON_CLASSES[adjustment.reasonCode] ?? "bg-surface-tint text-muted"
                 }`}
               >
-                {ADJUSTMENT_REASON_LABELS[adjustment.reasonCode] ?? adjustment.reasonCode}
+                {t(`reason.${adjustment.reasonCode}`)}
               </span>
             </div>
             <p className="mt-xs text-body-sm text-muted">
-              {isIn ? "Stock added" : "Stock removed"}
-              {adjustment.createdBy?.name ? ` · by ${adjustment.createdBy.name}` : ""}
+              {isIn ? t("detail.stockAdded") : t("detail.stockRemoved")}
+              {adjustment.createdBy?.name ? ` · ${t("detail.byName", { name: adjustment.createdBy.name })}` : ""}
               {" · "}
               {formatDateTime(adjustment.createdAt)}
             </p>
@@ -124,7 +125,7 @@ export default function AdjustmentDetailPage() {
           disabled={busy || reversed}
           className="inline-flex h-10 shrink-0 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint disabled:text-disabled"
         >
-          <Undo2 size={16} /> {reversed ? "Reversed" : "Reverse"}
+          <Undo2 size={16} /> {reversed ? t("detail.reversed") : t("detail.reverse")}
         </button>
       </div>
 
@@ -133,7 +134,7 @@ export default function AdjustmentDetailPage() {
       ) : null}
       {reversed ? (
         <p className="mt-md rounded-md bg-success-soft px-md py-sm text-body-sm text-success">
-          This adjustment has been reversed — the ledger movements were undone.
+          {t("detail.reversedBanner")}
         </p>
       ) : null}
 
@@ -141,22 +142,21 @@ export default function AdjustmentDetailPage() {
 
       {/* Items */}
       <Divider className="my-xl" />
-      <h2 className="mb-sm text-label-md uppercase tracking-wide text-subtle">Products</h2>
+      <h2 className="mb-sm text-label-md uppercase tracking-wide text-subtle">{t("detail.products")}</h2>
       {adjustment.items.map((it, i) => (
         <ItemRow key={it.id ?? i} item={it} isIn={isIn} />
       ))}
 
       {reverseOpen ? (
-        <Modal title="Reverse this adjustment?" onClose={() => setReverseOpen(false)}>
+        <Modal title={t("reverseModal.title")} onClose={() => setReverseOpen(false)}>
           <p className="text-body-md text-muted">
-            Posts an equal and opposite movement to the ledger, undoing the stock change. The original entry is
-            kept as an audit trail.
+            {t("reverseModal.body")}
           </p>
-          <TextAreaField label="Note (optional)" value={reverseNote} onChange={setReverseNote} rows={2} />
+          <TextAreaField label={t("reverseModal.noteLabel")} value={reverseNote} onChange={setReverseNote} rows={2} />
           <ModalActions
             busy={busy}
             danger
-            confirmLabel="Reverse"
+            confirmLabel={t("reverseModal.confirm")}
             onCancel={() => setReverseOpen(false)}
             onConfirm={onReverse}
           />
@@ -167,10 +167,11 @@ export default function AdjustmentDetailPage() {
 }
 
 function ItemRow({ item, isIn }: { item: AdjustmentItem; isIn: boolean }) {
+  const t = useTranslations("stockAdjustments");
   return (
     <div className="flex items-center gap-md border-b border-hairline py-md">
       <div className="min-w-0 flex-1">
-        <p className="truncate text-body-md text-ink">{item.productName ?? "Product"}</p>
+        <p className="truncate text-body-md text-ink">{item.productName ?? t("detail.productFallback")}</p>
         {item.productSku ? <p className="text-body-sm text-muted">{item.productSku}</p> : null}
       </div>
       <span className={`shrink-0 text-body-md font-semibold ${isIn ? "text-success" : "text-error"}`}>

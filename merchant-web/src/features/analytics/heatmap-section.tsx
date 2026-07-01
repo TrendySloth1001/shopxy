@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { getPurchaseHeatmap } from "./api";
 import type { Heatmap } from "./schema";
 
-const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const DAY_KEYS = ["heatmap.mon", "heatmap.tue", "heatmap.wed", "heatmap.thu", "heatmap.fri", "heatmap.sat", "heatmap.sun"];
 // Postgres DOW: 0=Sun..6=Sat → Mon-first row order.
 const DOW_TO_ROW = [6, 0, 1, 2, 3, 4, 5];
 
@@ -14,6 +15,7 @@ const DOW_TO_ROW = [6, 0, 1, 2, 3, 4, 5];
  * scrolled into view.
  */
 export function HeatmapSection({ from, to }: { from: string; to: string }) {
+  const t = useTranslations("analytics");
   const [heat, setHeat] = useState<Heatmap | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +30,7 @@ export function HeatmapSection({ from, to }: { from: string; to: string }) {
         setHeat(h);
         setError(null);
       } catch (e) {
-        if (active) setError(e instanceof Error ? e.message : "Could not load the heatmap.");
+        if (active) setError(e instanceof Error ? e.message : t("heatmap.error"));
       } finally {
         if (active) setLoading(false);
       }
@@ -36,26 +38,28 @@ export function HeatmapSection({ from, to }: { from: string; to: string }) {
     return () => {
       active = false;
     };
-  }, [from, to]);
+  }, [from, to, t]);
 
   return (
     <>
-      <h2 className="text-label-md uppercase tracking-wide text-subtle">When customers buy</h2>
-      <p className="mb-md text-body-sm text-subtle">Purchases by day &amp; hour (your local time).</p>
+      <h2 className="text-label-md uppercase tracking-wide text-subtle">{t("heatmap.title")}</h2>
+      <p className="mb-md text-body-sm text-subtle">{t("heatmap.subtitle")}</p>
       {loading ? (
         <div className="h-40 animate-pulse rounded-xs bg-hairline" />
       ) : error ? (
         <p className="rounded-md bg-error-soft px-md py-sm text-body-sm text-error">{error}</p>
       ) : !heat || heat.cells.length === 0 ? (
-        <p className="py-md text-body-sm text-subtle">No purchases in this range yet.</p>
+        <p className="py-md text-body-sm text-subtle">{t("heatmap.empty")}</p>
       ) : (
-        <HeatGrid heat={heat} />
+        <HeatGrid heat={heat} t={t} />
       )}
     </>
   );
 }
 
-function HeatGrid({ heat }: { heat: Heatmap }) {
+type Translate = (key: string, values?: Record<string, string | number>) => string;
+
+function HeatGrid({ heat, t }: { heat: Heatmap; t: Translate }) {
   const grid = Array.from({ length: 7 }, () => Array(24).fill(0) as number[]);
   let max = 0;
   for (const c of heat.cells) {
@@ -84,23 +88,23 @@ function HeatGrid({ heat }: { heat: Heatmap }) {
         </div>
         {grid.map((rowVals, r) => (
           <div key={r} className="mt-px flex items-center gap-px">
-            <span className="w-10 shrink-0 pr-sm text-right text-body-sm text-subtle">{DAY_LABELS[r]}</span>
+            <span className="w-10 shrink-0 pr-sm text-right text-body-sm text-subtle">{t(DAY_KEYS[r])}</span>
             {rowVals.map((v, h) => (
               <span
                 key={h}
-                title={`${DAY_LABELS[r]} ${h}:00 — ${v} ${v === 1 ? "purchase" : "purchases"}`}
+                title={t("heatmap.cellTitle", { day: t(DAY_KEYS[r]), hour: h, count: v })}
                 className={`h-4 flex-1 rounded-xs sm:h-5 ${level(v)}`}
               />
             ))}
           </div>
         ))}
         <div className="mt-sm flex items-center justify-end gap-xs text-body-sm text-subtle">
-          <span>Less</span>
+          <span>{t("heatmap.less")}</span>
           <span className="size-3 rounded-xs bg-surface-tint" />
           <span className="size-3 rounded-xs bg-brand/30" />
           <span className="size-3 rounded-xs bg-brand/60" />
           <span className="size-3 rounded-xs bg-brand" />
-          <span>More</span>
+          <span>{t("heatmap.more")}</span>
         </div>
       </div>
     </div>

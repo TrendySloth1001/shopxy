@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { PackageX } from "lucide-react";
 import { dateInputToIso, inputDateDaysAgo, todayInputDate } from "@/shared/datetime";
 import { getSalesReport } from "@/features/reports/api";
@@ -25,6 +26,7 @@ type Forecast = {
  * (the Sales report's top products), which are the SKUs most at stock-out risk.
  */
 export function StockForecast() {
+  const t = useTranslations("analytics");
   const [rows, setRows] = useState<Forecast[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +52,7 @@ export function StockForecast() {
           const stock = prod?.stockQuantity ?? 0;
           out.push({
             id: tp.productId,
-            name: tp.productName ?? prod?.name ?? "Product",
+            name: tp.productName ?? prod?.name ?? t("common.product"),
             sku: tp.productSku || prod?.sku,
             stock,
             perDay,
@@ -61,7 +63,7 @@ export function StockForecast() {
         setRows(out);
         setError(null);
       } catch (e) {
-        if (active) setError(e instanceof Error ? e.message : "Could not build the forecast.");
+        if (active) setError(e instanceof Error ? e.message : t("stock.error"));
       } finally {
         if (active) setLoading(false);
       }
@@ -69,7 +71,7 @@ export function StockForecast() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [t]);
 
   if (loading) {
     return <div className="mt-md h-24 animate-pulse rounded-xs bg-hairline" />;
@@ -78,28 +80,28 @@ export function StockForecast() {
     return <p className="mt-sm rounded-md bg-error-soft px-md py-sm text-body-sm text-error">{error}</p>;
   }
   if (!rows || rows.length === 0) {
-    return <p className="py-md text-body-sm text-subtle">Not enough sales in the last 30 days to forecast stock.</p>;
+    return <p className="py-md text-body-sm text-subtle">{t("stock.empty")}</p>;
   }
 
   return (
     <div className="mt-md">
-      <p className="mb-sm text-body-sm text-subtle">
-        Estimated days of stock left at the last 30 days&rsquo; sales pace — your fastest movers first.
-      </p>
+      <p className="mb-sm text-body-sm text-subtle">{t("stock.subtitle")}</p>
       {rows.map((f) => (
-        <ForecastRow key={f.id} f={f} />
+        <ForecastRow key={f.id} f={f} t={t} />
       ))}
     </div>
   );
 }
 
-function ForecastRow({ f }: { f: Forecast }) {
+type Translate = (key: string, values?: Record<string, string | number>) => string;
+
+function ForecastRow({ f, t }: { f: Forecast; t: Translate }) {
   const out = f.stock <= 0;
   const days = Math.floor(f.daysLeft);
   const tone = out || days < 7 ? "error" : days < 14 ? "amber" : "ok";
   const toneClass =
     tone === "error" ? "bg-error-soft text-error" : tone === "amber" ? "bg-accent-amber-soft text-accent-amber" : "bg-success-soft text-success";
-  const label = out ? "Out of stock" : `≈ ${days} ${days === 1 ? "day" : "days"} left`;
+  const label = out ? t("stock.outOfStock") : t("stock.daysLeft", { days });
   const perDay = f.perDay >= 1 ? f.perDay.toFixed(1) : f.perDay.toFixed(2);
   return (
     <div className="flex items-center gap-md border-b border-hairline py-md">
@@ -107,7 +109,7 @@ function ForecastRow({ f }: { f: Forecast }) {
       <div className="min-w-0 flex-1">
         <p className="truncate text-body-md text-ink">{f.name}</p>
         <p className="text-body-sm text-muted">
-          {perDay}/day · {f.stock} in stock{f.sku ? ` · ${f.sku}` : ""}
+          {f.sku ? t("stock.metaWithSku", { perDay, stock: f.stock, sku: f.sku }) : t("stock.meta", { perDay, stock: f.stock })}
         </p>
       </div>
       <span className={`shrink-0 rounded-full px-sm py-px text-body-sm font-semibold ${toneClass}`}>{label}</span>

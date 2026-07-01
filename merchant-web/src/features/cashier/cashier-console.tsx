@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Calculator, RefreshCw, LockOpen, Lock, ArrowDownToLine, ArrowUpFromLine, Banknote, Undo2, History, Printer, X } from "lucide-react";
 import { PageHeader } from "@/shared/ui/page-header";
 import { Divider } from "@/shared/ui/divider";
@@ -23,6 +24,7 @@ import {
 } from "./api";
 
 export function CashierConsole() {
+  const t = useTranslations("cashier");
   const [shift, setShift] = useState<Shift | null>(null);
   const [report, setReport] = useState<ShiftReport | null>(null);
   const [loading, setLoading] = useState(true);
@@ -36,11 +38,11 @@ export function CashierConsole() {
       setShift(shift);
       setReport(report);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not load the till.");
+      setError(e instanceof Error ? e.message : t("errors.loadTill"));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   // Initial load via an inline IIFE (state is only set after the await, so the
   // effect never sets state synchronously). `load` stays for buttons/mutations.
@@ -53,7 +55,7 @@ export function CashierConsole() {
         setShift(shift);
         setReport(report);
       } catch (e) {
-        if (active) setError(e instanceof Error ? e.message : "Could not load the till.");
+        if (active) setError(e instanceof Error ? e.message : t("errors.loadTill"));
       } finally {
         if (active) setLoading(false);
       }
@@ -61,7 +63,7 @@ export function CashierConsole() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [t]);
 
   const run = useCallback(async (fn: () => Promise<unknown>) => {
     setBusy(true);
@@ -69,21 +71,21 @@ export function CashierConsole() {
     try {
       await fn();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong.");
+      setError(e instanceof Error ? e.message : t("errors.generic"));
     } finally {
       setBusy(false);
     }
-  }, []);
+  }, [t]);
 
   return (
     <div className="w-full px-lg py-xxl md:px-xxl">
-      <PageHeader icon={Calculator} tone="indigo" title="Cashier" subtitle="Open a till shift, manage the cash drawer, reconcile, and handle returns.">
+      <PageHeader icon={Calculator} tone="indigo" title={t("title")} subtitle={t("subtitle")}>
         <button
           type="button"
           onClick={() => void load()}
           className="inline-flex h-10 items-center gap-xs rounded-button border border-hairline px-md text-label-md text-ink hover:bg-surface-tint"
         >
-          <RefreshCw size={15} /> Refresh
+          <RefreshCw size={15} /> {t("actions.refresh")}
         </button>
       </PageHeader>
 
@@ -91,15 +93,15 @@ export function CashierConsole() {
 
       {shift && shift.status === "OPEN" ? (
         <div className="mt-md flex flex-wrap items-center gap-sm rounded-lg bg-surface-tint px-md py-sm text-body-sm">
-          <span className="font-semibold text-ink">{shift.openedByName ?? "Cashier"}</span>
+          <span className="font-semibold text-ink">{shift.openedByName ?? t("cashierRole")}</span>
           {shift.openedByEmail ? <span className="text-muted">· {shift.openedByEmail}</span> : null}
-          <span className="text-muted">· shift open for</span>
+          <span className="text-muted">· {t("banner.shiftOpenFor")}</span>
           <ConsoleTimer since={shift.openedAt} />
         </div>
       ) : null}
 
       {loading ? (
-        <p className="py-xxxl text-center text-body-md text-muted">Loading…</p>
+        <p className="py-xxxl text-center text-body-md text-muted">{t("loading")}</p>
       ) : !shift || shift.status !== "OPEN" ? (
         <OpenShiftCard
           busy={busy}
@@ -155,6 +157,7 @@ function ConsoleTimer({ since }: { since: string }) {
 
 /** Past shifts = the Z-receipt archive. Tap one to view/print its Z-report. */
 function ShiftHistory() {
+  const t = useTranslations("cashier");
   const { user } = useAuth();
   // Owners + managers (the override right) see every employee's Z-reports;
   // a plain cashier sees only their own. The backend enforces this scope —
@@ -172,45 +175,45 @@ function ShiftHistory() {
         const s = await listShifts();
         if (active) setShifts(s);
       } catch (e) {
-        if (active) setErr(e instanceof Error ? e.message : "Could not load shift history.");
+        if (active) setErr(e instanceof Error ? e.message : t("errors.loadHistory"));
       }
     })();
     return () => { active = false; };
-  }, []);
+  }, [t]);
 
   const view = async (id: number) => {
     setErr(null);
     try {
       setViewing(await fetchShiftReport(id));
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Could not load the Z-report.");
+      setErr(e instanceof Error ? e.message : t("errors.loadZReport"));
     }
   };
 
   return (
     <div className="mt-xl rounded-lg border border-hairline p-lg">
-      <h2 className="flex items-center gap-sm text-title-md text-ink"><History size={18} /> Past shifts · Z-receipts</h2>
+      <h2 className="flex items-center gap-sm text-title-md text-ink"><History size={18} /> {t("history.title")}</h2>
       <p className="mt-xs text-body-sm text-muted">
         {seesAll
-          ? "Every cashier's shifts, labelled by who opened them."
-          : "Your own shifts. Owners and managers can see the whole team's."}
+          ? t("history.subtitleAll")
+          : t("history.subtitleOwn")}
       </p>
       {err ? <p className="mt-sm rounded-md bg-error-soft px-md py-xs text-body-sm text-error">{err}</p> : null}
       {shifts == null ? (
-        <p className="mt-md text-body-sm text-muted">Loading…</p>
+        <p className="mt-md text-body-sm text-muted">{t("loading")}</p>
       ) : shifts.length === 0 ? (
-        <p className="mt-md text-body-sm text-subtle">No shifts yet.</p>
+        <p className="mt-md text-body-sm text-subtle">{t("history.empty")}</p>
       ) : (
         <div className="mt-md overflow-x-auto">
           <table className="w-full text-body-sm">
             <thead>
               <tr className="text-left text-label-sm uppercase tracking-wide text-subtle">
-                <th className="py-xs pr-md font-normal">Opened</th>
-                <th className="py-xs pr-md font-normal">Cashier</th>
-                <th className="py-xs pr-md font-normal">Status</th>
-                <th className="py-xs pr-md text-right font-normal">Expected</th>
-                <th className="py-xs pr-md text-right font-normal">Counted</th>
-                <th className="py-xs pr-md text-right font-normal">Variance</th>
+                <th className="py-xs pr-md font-normal">{t("history.colOpened")}</th>
+                <th className="py-xs pr-md font-normal">{t("history.colCashier")}</th>
+                <th className="py-xs pr-md font-normal">{t("history.colStatus")}</th>
+                <th className="py-xs pr-md text-right font-normal">{t("history.colExpected")}</th>
+                <th className="py-xs pr-md text-right font-normal">{t("history.colCounted")}</th>
+                <th className="py-xs pr-md text-right font-normal">{t("history.colVariance")}</th>
                 <th />
               </tr>
             </thead>
@@ -222,11 +225,11 @@ function ShiftHistory() {
                     <span className="block">{s.openedByName ?? "—"}</span>
                     {s.openedByEmail ? <span className="block text-label-sm text-subtle">{s.openedByEmail}</span> : null}
                   </td>
-                  <td className="py-sm pr-md"><span className={s.status === "OPEN" ? "text-success" : "text-muted"}>{s.status}</span></td>
+                  <td className="py-sm pr-md"><span className={s.status === "OPEN" ? "text-success" : "text-muted"}>{s.status === "OPEN" ? t("status.open") : s.status === "CLOSED" ? t("status.closed") : s.status}</span></td>
                   <td className="py-sm pr-md text-right text-ink">{s.expectedCash == null ? "—" : formatINR2(s.expectedCash)}</td>
                   <td className="py-sm pr-md text-right text-ink">{s.closingCounted == null ? "—" : formatINR2(s.closingCounted)}</td>
                   <td className={`py-sm pr-md text-right ${s.variance == null ? "text-subtle" : s.variance === 0 ? "text-success" : "text-warning"}`}>{s.variance == null ? "—" : formatINR2(s.variance)}</td>
-                  <td className="py-sm text-right"><button type="button" onClick={() => void view(s.id)} className="inline-flex h-8 items-center rounded-button border border-hairline px-md text-label-md text-ink hover:bg-surface-tint">View Z-report</button></td>
+                  <td className="py-sm text-right"><button type="button" onClick={() => void view(s.id)} className="inline-flex h-8 items-center rounded-button border border-hairline px-md text-label-md text-ink hover:bg-surface-tint">{t("history.viewZReport")}</button></td>
                 </tr>
               ))}
             </tbody>
@@ -239,13 +242,14 @@ function ShiftHistory() {
 }
 
 function ZReportModal({ report, onClose }: { report: ShiftReport; onClose: () => void }) {
+  const t = useTranslations("cashier");
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim/50 px-lg" onClick={onClose}>
       <div className="max-h-[85vh] w-[460px] max-w-full overflow-y-auto rounded-lg border border-hairline bg-canvas p-lg" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <h2 className="text-title-md text-ink">Z-report</h2>
+          <h2 className="text-title-md text-ink">{t("zReport.title")}</h2>
           <div className="flex items-center gap-sm">
-            <button type="button" onClick={() => printZReport(report)} className="inline-flex h-9 items-center gap-xs rounded-button border border-hairline px-md text-label-md text-ink hover:bg-surface-tint"><Printer size={15} /> Print</button>
+            <button type="button" onClick={() => printZReport(report, t)} className="inline-flex h-9 items-center gap-xs rounded-button border border-hairline px-md text-label-md text-ink hover:bg-surface-tint"><Printer size={15} /> {t("actions.print")}</button>
             <button type="button" onClick={onClose} className="text-muted hover:text-ink"><X size={18} /></button>
           </div>
         </div>
@@ -258,35 +262,36 @@ function ZReportModal({ report, onClose }: { report: ShiftReport; onClose: () =>
 }
 
 /** Open a print-friendly Z-receipt in a new window and trigger print. */
-function printZReport(r: ShiftReport) {
+function printZReport(r: ShiftReport, t: (key: string) => string) {
   const rows: Array<[string, string]> = [
-    ["Opening float", formatINR2(r.cash.openingFloat)],
-    ["Cash sales", formatINR2(r.cash.cashSales)],
-    ["Pay-ins", formatINR2(r.cash.payIns)],
-    ["Pay-outs", "-" + formatINR2(r.cash.payOuts)],
-    ["Drops", "-" + formatINR2(r.cash.drops)],
-    ["Refunds", "-" + formatINR2(r.cash.refunds)],
-    ["Expected in drawer", formatINR2(r.cash.expected)],
-    ["Counted", r.cash.counted == null ? "—" : formatINR2(r.cash.counted)],
-    ["Variance", r.cash.variance == null ? "—" : formatINR2(r.cash.variance)],
-    ["Sales", `${r.sales.count} · ${formatINR2(r.sales.gross)}`],
-    ["GST CGST", formatINR2(r.gst.cgst)],
-    ["GST SGST", formatINR2(r.gst.sgst)],
-    ["GST IGST", formatINR2(r.gst.igst)],
+    [t("zReport.openingFloat"), formatINR2(r.cash.openingFloat)],
+    [t("zReport.cashSales"), formatINR2(r.cash.cashSales)],
+    [t("zReport.payIns"), formatINR2(r.cash.payIns)],
+    [t("zReport.payOuts"), "-" + formatINR2(r.cash.payOuts)],
+    [t("zReport.drops"), "-" + formatINR2(r.cash.drops)],
+    [t("zReport.refunds"), "-" + formatINR2(r.cash.refunds)],
+    [t("zReport.expectedInDrawer"), formatINR2(r.cash.expected)],
+    [t("zReport.counted"), r.cash.counted == null ? "—" : formatINR2(r.cash.counted)],
+    [t("zReport.variance"), r.cash.variance == null ? "—" : formatINR2(r.cash.variance)],
+    [t("zReport.sales"), `${r.sales.count} · ${formatINR2(r.sales.gross)}`],
+    [t("zReport.gstCgst"), formatINR2(r.gst.cgst)],
+    [t("zReport.gstSgst"), formatINR2(r.gst.sgst)],
+    [t("zReport.gstIgst"), formatINR2(r.gst.igst)],
   ];
   const body = rows.map(([k, v]) => `<tr><td>${k}</td><td style="text-align:right">${v}</td></tr>`).join("");
-  const html = `<html><head><title>Z-report</title><style>body{font-family:monospace;padding:16px;max-width:320px}h3{text-align:center}table{width:100%;border-collapse:collapse}td{padding:2px 0}</style></head><body><h3>Z-REPORT</h3><table>${body}</table><script>window.onload=function(){window.print()}</script></body></html>`;
+  const html = `<html><head><title>${t("zReport.title")}</title><style>body{font-family:monospace;padding:16px;max-width:320px}h3{text-align:center}table{width:100%;border-collapse:collapse}td{padding:2px 0}</style></head><body><h3>${t("zReport.printHeading")}</h3><table>${body}</table><script>window.onload=function(){window.print()}</script></body></html>`;
   const w = window.open("", "_blank", "width=380,height=600");
   if (w) { w.document.write(html); w.document.close(); }
 }
 
 function OpenShiftCard({ busy, onOpen }: { busy: boolean; onOpen: (float: number) => void }) {
+  const t = useTranslations("cashier");
   const [float, setFloat] = useState("");
   return (
     <div className="mt-lg max-w-form rounded-lg border border-hairline p-xl">
-      <h2 className="flex items-center gap-sm text-title-md text-ink"><LockOpen size={18} /> Open a shift</h2>
-      <p className="mt-xs text-body-sm text-muted">Count the cash in the drawer and enter it as the opening float.</p>
-      <label className="mt-lg block text-label-md text-muted">Opening float (₹)</label>
+      <h2 className="flex items-center gap-sm text-title-md text-ink"><LockOpen size={18} /> {t("open.title")}</h2>
+      <p className="mt-xs text-body-sm text-muted">{t("open.help")}</p>
+      <label className="mt-lg block text-label-md text-muted">{t("open.floatLabel")}</label>
       <input
         value={float}
         onChange={(e) => setFloat(e.target.value)}
@@ -300,63 +305,64 @@ function OpenShiftCard({ busy, onOpen }: { busy: boolean; onOpen: (float: number
         onClick={() => onOpen(parseAmount(float) ?? 0)}
         className="mt-lg inline-flex h-11 items-center gap-sm rounded-button bg-brand px-lg text-label-md text-white hover:bg-brand-strong disabled:bg-disabled"
       >
-        <LockOpen size={16} /> Open shift
+        <LockOpen size={16} /> {t("open.submit")}
       </button>
     </div>
   );
 }
 
 function ReportPanel({ report }: { report: ShiftReport }) {
+  const t = useTranslations("cashier");
   const c = report.cash;
   return (
     <div className="rounded-lg border border-hairline p-lg">
-      <h2 className="text-title-md text-ink">Shift report (X)</h2>
+      <h2 className="text-title-md text-ink">{t("report.title")}</h2>
       <p className="mt-xs text-body-sm text-muted">
-        {report.sales.count} sale{report.sales.count === 1 ? "" : "s"} · {formatINR2(report.sales.gross)} gross
+        {t("report.salesSummary", { count: report.sales.count, gross: formatINR2(report.sales.gross) })}
       </p>
 
       <Divider className="my-md" />
-      <h3 className="text-label-md text-muted">Cash drawer</h3>
+      <h3 className="text-label-md text-muted">{t("report.cashDrawer")}</h3>
       <div className="mt-sm flex flex-col gap-xs">
-        <Row label="Opening float" value={formatINR2(c.openingFloat)} />
-        <Row label="Cash sales" value={formatINR2(c.cashSales)} />
-        <Row label="Pay-ins" value={formatINR2(c.payIns)} />
-        <Row label="Pay-outs" value={`− ${formatINR2(c.payOuts)}`} />
-        <Row label="Drops" value={`− ${formatINR2(c.drops)}`} />
-        <Row label="Refunds" value={`− ${formatINR2(c.refunds)}`} />
+        <Row label={t("report.openingFloat")} value={formatINR2(c.openingFloat)} />
+        <Row label={t("report.cashSales")} value={formatINR2(c.cashSales)} />
+        <Row label={t("report.payIns")} value={formatINR2(c.payIns)} />
+        <Row label={t("report.payOuts")} value={`− ${formatINR2(c.payOuts)}`} />
+        <Row label={t("report.drops")} value={`− ${formatINR2(c.drops)}`} />
+        <Row label={t("report.refunds")} value={`− ${formatINR2(c.refunds)}`} />
         <div className="flex items-center justify-between border-t border-hairline pt-xs">
-          <span className="text-title-sm font-bold text-ink">Expected in drawer</span>
+          <span className="text-title-sm font-bold text-ink">{t("report.expectedInDrawer")}</span>
           <span className="text-title-sm font-bold text-ink">{formatINR2(c.expected)}</span>
         </div>
       </div>
 
       <Divider className="my-md" />
-      <h3 className="text-label-md text-muted">Tenders</h3>
+      <h3 className="text-label-md text-muted">{t("report.tenders")}</h3>
       <div className="mt-sm flex flex-col gap-xs">
         {report.tenders.length === 0 ? (
-          <p className="text-body-sm text-subtle">No sales yet.</p>
+          <p className="text-body-sm text-subtle">{t("report.noSales")}</p>
         ) : (
-          report.tenders.map((t) => <Row key={t.mode} label={`${t.mode} (${t.count})`} value={formatINR2(t.amount)} />)
+          report.tenders.map((tender) => <Row key={tender.mode} label={`${tender.mode} (${tender.count})`} value={formatINR2(tender.amount)} />)
         )}
       </div>
 
       <Divider className="my-md" />
-      <h3 className="text-label-md text-muted">GST collected</h3>
+      <h3 className="text-label-md text-muted">{t("report.gstCollected")}</h3>
       <div className="mt-sm flex flex-col gap-xs">
-        <Row label="Taxable" value={formatINR2(report.gst.taxable)} />
+        <Row label={t("report.taxable")} value={formatINR2(report.gst.taxable)} />
         {report.gst.cgst > 0 ? <Row label="CGST" value={formatINR2(report.gst.cgst)} /> : null}
         {report.gst.sgst > 0 ? <Row label="SGST" value={formatINR2(report.gst.sgst)} /> : null}
         {report.gst.igst > 0 ? <Row label="IGST" value={formatINR2(report.gst.igst)} /> : null}
-        {report.gst.cess > 0 ? <Row label="Cess" value={formatINR2(report.gst.cess)} /> : null}
+        {report.gst.cess > 0 ? <Row label={t("report.cess")} value={formatINR2(report.gst.cess)} /> : null}
         {report.gstByRate.map((r) => (
-          <Row key={r.rate} label={`@ ${r.rate}% — taxable`} value={`${formatINR2(r.taxable)} · tax ${formatINR2(r.tax)}`} />
+          <Row key={r.rate} label={t("report.rateTaxable", { rate: r.rate })} value={t("report.rateTaxValue", { taxable: formatINR2(r.taxable), tax: formatINR2(r.tax) })} />
         ))}
       </div>
 
       {report.returns.count > 0 ? (
         <>
           <Divider className="my-md" />
-          <Row label={`Returns (${report.returns.count})`} value={`− ${formatINR2(report.returns.amount)}`} />
+          <Row label={t("report.returns", { count: report.returns.count })} value={`− ${formatINR2(report.returns.amount)}`} />
         </>
       ) : null}
     </div>
@@ -364,6 +370,7 @@ function ReportPanel({ report }: { report: ShiftReport }) {
 }
 
 function CashMovementForm({ busy, onSubmit }: { busy: boolean; onSubmit: (i: { type: "PAY_IN" | "PAY_OUT" | "DROP"; amount: number; reason?: string }) => void }) {
+  const t = useTranslations("cashier");
   const [type, setType] = useState<"PAY_IN" | "PAY_OUT" | "DROP">("PAY_IN");
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
@@ -371,63 +378,65 @@ function CashMovementForm({ busy, onSubmit }: { busy: boolean; onSubmit: (i: { t
   const Icon = icons[type];
   return (
     <div className="rounded-lg border border-hairline p-lg">
-      <h2 className="text-title-md text-ink">Cash drawer</h2>
+      <h2 className="text-title-md text-ink">{t("movement.title")}</h2>
       <div className="mt-sm flex flex-wrap gap-sm">
-        {(["PAY_IN", "PAY_OUT", "DROP"] as const).map((t) => (
+        {(["PAY_IN", "PAY_OUT", "DROP"] as const).map((mt) => (
           <button
-            key={t}
+            key={mt}
             type="button"
-            onClick={() => setType(t)}
-            className={`inline-flex h-9 items-center rounded-button px-md text-label-md ${type === t ? "bg-brand text-white" : "border border-hairline text-ink hover:bg-surface-tint"}`}
+            onClick={() => setType(mt)}
+            className={`inline-flex h-9 items-center rounded-button px-md text-label-md ${type === mt ? "bg-brand text-white" : "border border-hairline text-ink hover:bg-surface-tint"}`}
           >
-            {t === "PAY_IN" ? "Pay in" : t === "PAY_OUT" ? "Pay out" : "Drop"}
+            {mt === "PAY_IN" ? t("movement.payIn") : mt === "PAY_OUT" ? t("movement.payOut") : t("movement.drop")}
           </button>
         ))}
       </div>
-      <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" placeholder="Amount ₹" className="mt-sm h-10 w-full rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
-      <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason (optional)" className="mt-sm h-10 w-full rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
+      <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" placeholder={t("movement.amountPlaceholder")} className="mt-sm h-10 w-full rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
+      <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder={t("movement.reasonPlaceholder")} className="mt-sm h-10 w-full rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
       <button
         type="button"
         disabled={busy || !((parseAmount(amount) ?? 0) > 0)}
         onClick={() => { onSubmit({ type, amount: parseAmount(amount) ?? 0, reason: reason.trim() || undefined }); setAmount(""); setReason(""); }}
         className="mt-sm inline-flex h-10 items-center gap-sm rounded-button bg-brand px-lg text-label-md text-white hover:bg-brand-strong disabled:bg-disabled"
       >
-        <Icon size={16} /> Record
+        <Icon size={16} /> {t("movement.record")}
       </button>
     </div>
   );
 }
 
 function CloseShiftForm({ expected, busy, onClose }: { expected: number; busy: boolean; onClose: (counted: number, note?: string) => void }) {
+  const t = useTranslations("cashier");
   const [counted, setCounted] = useState("");
   const [note, setNote] = useState("");
   const parsed = parseAmount(counted);
   const variance = parsed === null ? null : parsed - expected;
   return (
     <div className="rounded-lg border border-hairline p-lg">
-      <h2 className="flex items-center gap-sm text-title-md text-ink"><Lock size={18} /> Close shift</h2>
-      <p className="mt-xs text-body-sm text-muted">Expected in drawer: <span className="font-semibold text-ink">{formatINR2(expected)}</span></p>
-      <label className="mt-md block text-label-md text-muted">Counted cash (₹)</label>
+      <h2 className="flex items-center gap-sm text-title-md text-ink"><Lock size={18} /> {t("close.title")}</h2>
+      <p className="mt-xs text-body-sm text-muted">{t("close.expectedInDrawer")} <span className="font-semibold text-ink">{formatINR2(expected)}</span></p>
+      <label className="mt-md block text-label-md text-muted">{t("close.countedLabel")}</label>
       <input value={counted} onChange={(e) => setCounted(e.target.value)} inputMode="decimal" placeholder="0.00" className="mt-xs h-10 w-full rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
       {variance !== null ? (
         <p className={`mt-sm text-body-sm ${variance === 0 ? "text-success" : "text-warning"}`}>
-          Variance: {variance > 0 ? "+" : ""}{formatINR2(variance)} {variance === 0 ? "(balanced)" : variance > 0 ? "(over)" : "(short)"}
+          {t("close.variance")} {variance > 0 ? "+" : ""}{formatINR2(variance)} {variance === 0 ? t("close.balanced") : variance > 0 ? t("close.over") : t("close.short")}
         </p>
       ) : null}
-      <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note (optional)" className="mt-sm h-10 w-full rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
+      <input value={note} onChange={(e) => setNote(e.target.value)} placeholder={t("close.notePlaceholder")} className="mt-sm h-10 w-full rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
       <button
         type="button"
         disabled={busy || parsed === null}
         onClick={() => onClose(parsed ?? 0, note.trim() || undefined)}
         className="mt-sm inline-flex h-10 items-center gap-sm rounded-button bg-inverse-surface px-lg text-label-md text-on-inverse hover:opacity-90 disabled:bg-disabled"
       >
-        <Lock size={16} /> Close &amp; print Z-report
+        <Lock size={16} /> {t("close.submit")}
       </button>
     </div>
   );
 }
 
 function ReturnsPanel({ busy, run, onChanged }: { busy: boolean; run: (fn: () => Promise<unknown>) => Promise<void>; onChanged: () => Promise<void> }) {
+  const t = useTranslations("cashier");
   const [invoiceId, setInvoiceId] = useState("");
   const [returnable, setReturnable] = useState<Returnable | null>(null);
   const [qty, setQty] = useState<Record<number, string>>({});
@@ -436,16 +445,16 @@ function ReturnsPanel({ busy, run, onChanged }: { busy: boolean; run: (fn: () =>
 
   return (
     <div className="rounded-lg border border-hairline p-lg">
-      <h2 className="flex items-center gap-sm text-title-md text-ink"><Undo2 size={18} /> Returns</h2>
+      <h2 className="flex items-center gap-sm text-title-md text-ink"><Undo2 size={18} /> {t("returns.title")}</h2>
       <div className="mt-sm flex gap-sm">
-        <input value={invoiceId} onChange={(e) => setInvoiceId(e.target.value)} inputMode="numeric" placeholder="Original invoice id" className="h-10 flex-1 rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
+        <input value={invoiceId} onChange={(e) => setInvoiceId(e.target.value)} inputMode="numeric" placeholder={t("returns.invoiceIdPlaceholder")} className="h-10 flex-1 rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
         <button
           type="button"
           disabled={busy || !invoiceId}
           onClick={() => run(async () => { setDone(null); setReturnable(await fetchReturnable(Number(invoiceId))); setQty({}); })}
           className="inline-flex h-10 items-center rounded-button border border-hairline px-lg text-label-md text-ink hover:bg-surface-tint disabled:text-disabled"
         >
-          Look up
+          {t("returns.lookUp")}
         </button>
       </div>
 
@@ -459,7 +468,7 @@ function ReturnsPanel({ busy, run, onChanged }: { busy: boolean; run: (fn: () =>
               <li key={l.productId} className="flex items-center gap-sm bg-canvas px-md py-sm">
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-title-sm text-ink">{l.name}</p>
-                  <p className="text-body-sm text-muted">sold {l.soldQty} · returnable {l.returnableQty} · {formatINR2(l.unitPrice)}</p>
+                  <p className="text-body-sm text-muted">{t("returns.lineDetail", { sold: l.soldQty, returnable: l.returnableQty, price: formatINR2(l.unitPrice) })}</p>
                 </div>
                 <input
                   value={qty[l.productId] ?? ""}
@@ -473,7 +482,7 @@ function ReturnsPanel({ busy, run, onChanged }: { busy: boolean; run: (fn: () =>
             ))}
           </ul>
           <div className="mt-sm flex flex-wrap items-center gap-sm">
-            <span className="text-label-md text-muted">Refund via</span>
+            <span className="text-label-md text-muted">{t("returns.refundVia")}</span>
             {(["CASH", "UPI", "CARD", "OTHER"] as const).map((m) => (
               <button key={m} type="button" onClick={() => setRefundMode(m)} className={`inline-flex h-9 items-center rounded-button px-md text-label-md ${refundMode === m ? "bg-brand text-white" : "border border-hairline text-ink hover:bg-surface-tint"}`}>{m}</button>
             ))}
@@ -485,16 +494,16 @@ function ReturnsPanel({ busy, run, onChanged }: { busy: boolean; run: (fn: () =>
               const lines = returnable.lines
                 .map((l) => ({ productId: l.productId, quantity: Number(qty[l.productId]) || 0 }))
                 .filter((l) => l.quantity > 0);
-              if (lines.length === 0) throw new Error("Enter a quantity to return.");
+              if (lines.length === 0) throw new Error(t("returns.enterQty"));
               const res = await processReturn({ originalInvoiceId: returnable.invoiceId, refundMode, lines });
-              setDone(`Credit note ${res.creditNoteNo} · refund ${formatINR2(res.refundAmount)}${res.cashDrawerAdjusted ? " (drawer adjusted)" : ""}`);
+              setDone(t("returns.done", { creditNote: res.creditNoteNo, refund: formatINR2(res.refundAmount), drawer: res.cashDrawerAdjusted ? t("returns.drawerAdjusted") : "" }));
               setReturnable(null);
               setQty({});
               await onChanged();
             })}
             className="mt-sm inline-flex h-10 items-center gap-sm rounded-button bg-brand px-lg text-label-md text-white hover:bg-brand-strong disabled:bg-disabled"
           >
-            <Undo2 size={16} /> Process return
+            <Undo2 size={16} /> {t("returns.process")}
           </button>
         </div>
       ) : null}

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
   Eye,
   Heart,
@@ -36,16 +37,17 @@ export function Kpi({ icon: Icon, label, value, hint }: { icon: LucideIcon; labe
 
 /** The 8-tile engagement headline, shared by both analytics tabs. */
 export function KpiStrip({ totals }: { totals: AnalyticsTotals }) {
+  const t = useTranslations("analytics");
   return (
     <div className="grid grid-cols-2 gap-x-lg gap-y-xl sm:grid-cols-4">
-      <Kpi icon={Eye} label="Impressions" value={aInt(totals.impressions)} />
-      <Kpi icon={MousePointerClick} label="Taps" value={aInt(totals.taps)} />
-      <Kpi icon={ScanEye} label="Views" value={aInt(totals.views)} />
-      <Kpi icon={ShoppingCart} label="Add to cart" value={aInt(totals.addToCart)} />
-      <Kpi icon={ShoppingBag} label="Purchases" value={aInt(totals.purchases)} />
-      <Kpi icon={Heart} label="Wishlist" value={aInt(totals.wishlistAdd)} />
-      <Kpi icon={Percent} label="CTR" value={aPct(totals.ctr)} hint="Taps ÷ impressions" />
-      <Kpi icon={Target} label="CVR" value={aPct(totals.cvr)} hint="Purchases ÷ views" />
+      <Kpi icon={Eye} label={t("kpi.impressions")} value={aInt(totals.impressions)} />
+      <Kpi icon={MousePointerClick} label={t("kpi.taps")} value={aInt(totals.taps)} />
+      <Kpi icon={ScanEye} label={t("kpi.views")} value={aInt(totals.views)} />
+      <Kpi icon={ShoppingCart} label={t("kpi.addToCart")} value={aInt(totals.addToCart)} />
+      <Kpi icon={ShoppingBag} label={t("kpi.purchases")} value={aInt(totals.purchases)} />
+      <Kpi icon={Heart} label={t("kpi.wishlist")} value={aInt(totals.wishlistAdd)} />
+      <Kpi icon={Percent} label={t("kpi.ctr")} value={aPct(totals.ctr)} hint={t("kpi.ctrHint")} />
+      <Kpi icon={Target} label={t("kpi.cvr")} value={aPct(totals.cvr)} hint={t("kpi.cvrHint")} />
     </div>
   );
 }

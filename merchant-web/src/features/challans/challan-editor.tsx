@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Minus, Package, Plus, Trash2, UserRound, X } from "lucide-react";
 import { BackLink } from "@/shared/ui/page-header";
 import { TextAreaField, TextField } from "@/shared/ui/form";
@@ -20,6 +21,7 @@ type Line = { productId: number; productName: string; productSku: string; unit: 
 type PartyRef = { id: number; name: string; phone?: string | null };
 
 export function ChallanEditor() {
+  const t = useTranslations("challans");
   const router = useRouter();
 
   const [party, setParty] = useState<PartyRef | null>(null);
@@ -50,8 +52,8 @@ export function ChallanEditor() {
 
   async function save() {
     setError(null);
-    if (lines.length === 0) return setError("Add at least one product.");
-    if (!party && !partyName.trim()) return setError("Select a customer or enter a party name.");
+    if (lines.length === 0) return setError(t("editor.errorNoProduct"));
+    if (!party && !partyName.trim()) return setError(t("editor.errorNoParty"));
     setSaving(true);
     try {
       const created = await createChallan({
@@ -64,17 +66,17 @@ export function ChallanEditor() {
       router.push(`/dashboard/challans/${created.id}`);
       router.refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not create the challan.");
+      setError(e instanceof Error ? e.message : t("editor.createError"));
       setSaving(false);
     }
   }
 
   return (
     <div className="w-full px-lg py-xxl pb-massive md:px-xxl">
-      <BackLink href={BACK} label="Challans" />
-      <h1 className="mt-md text-headline-md text-ink">Create challan</h1>
+      <BackLink href={BACK} label={t("list.title")} />
+      <h1 className="mt-md text-headline-md text-ink">{t("editor.title")}</h1>
       <p className="mt-xs max-w-content text-body-md text-muted">
-        A delivery note with quantities only — prices are not shown to the party. Stock leaves on creation.
+        {t("editor.subtitle")}
       </p>
 
       {error ? (
@@ -83,7 +85,7 @@ export function ChallanEditor() {
 
       {/* Party */}
       <div className="mt-xl">
-        <p className="text-label-md uppercase tracking-wide text-subtle">Party</p>
+        <p className="text-label-md uppercase tracking-wide text-subtle">{t("editor.party")}</p>
         {party ? (
           <div className="mt-sm flex items-center gap-md border-b border-hairline pb-md">
             <Monogram name={party.name} size={40} />
@@ -94,7 +96,7 @@ export function ChallanEditor() {
             <button
               type="button"
               onClick={() => setParty(null)}
-              aria-label="Clear"
+              aria-label={t("editor.clear")}
               className="inline-flex size-8 items-center justify-center rounded-button text-muted transition-colors hover:bg-surface-tint hover:text-ink"
             >
               <X size={15} />
@@ -107,11 +109,11 @@ export function ChallanEditor() {
               onClick={() => setPicker("party")}
               className="inline-flex h-10 w-fit items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
             >
-              <UserRound size={16} /> Select a saved customer
+              <UserRound size={16} /> {t("editor.selectCustomer")}
             </button>
             <div className="grid grid-cols-1 gap-md sm:grid-cols-2">
-              <TextField label="Party name" value={partyName} onChange={setPartyName} placeholder="Recipient name" />
-              <TextField label="Phone" value={partyPhone} onChange={setPartyPhone} type="tel" />
+              <TextField label={t("editor.partyNameLabel")} value={partyName} onChange={setPartyName} placeholder={t("editor.partyNamePlaceholder")} />
+              <TextField label={t("editor.phoneLabel")} value={partyPhone} onChange={setPartyPhone} type="tel" />
             </div>
           </div>
         )}
@@ -120,20 +122,20 @@ export function ChallanEditor() {
       {/* Items */}
       <div className="mt-xl">
         <div className="flex flex-wrap items-center justify-between gap-sm">
-          <p className="text-label-md uppercase tracking-wide text-subtle">Items</p>
+          <p className="text-label-md uppercase tracking-wide text-subtle">{t("editor.items")}</p>
           <button
             type="button"
             onClick={() => setPicker("product")}
             className="inline-flex h-9 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
           >
-            <Plus size={15} /> Add product
+            <Plus size={15} /> {t("editor.addProduct")}
           </button>
         </div>
 
         {lines.length === 0 ? (
           <div className="mt-md flex flex-col items-center gap-sm py-xl text-center">
             <Package size={22} className="text-subtle" />
-            <p className="text-body-sm text-subtle">No items yet — add a product.</p>
+            <p className="text-body-sm text-subtle">{t("editor.noItems")}</p>
           </div>
         ) : (
           <div className="mt-md">
@@ -151,7 +153,7 @@ export function ChallanEditor() {
 
       {/* Note */}
       <div className="mt-xl max-w-content">
-        <TextAreaField label="Note (optional)" value={note} onChange={setNote} rows={2} />
+        <TextAreaField label={t("editor.noteLabel")} value={note} onChange={setNote} rows={2} />
       </div>
 
       {/* Action */}
@@ -162,24 +164,24 @@ export function ChallanEditor() {
           disabled={saving}
           className="inline-flex h-11 items-center gap-sm rounded-button bg-brand px-lg text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:bg-disabled"
         >
-          {saving ? "Creating…" : "Create challan"}
+          {saving ? t("editor.creating") : t("editor.create")}
         </button>
       </div>
 
       {picker === "product" ? (
         <PickerModal
-          title="Add product"
-          placeholder="Search products by name or SKU"
+          title={t("editor.addProduct")}
+          placeholder={t("editor.productSearchPlaceholder")}
           load={loadProducts}
-          rowOf={(p) => ({ title: p.name, subtitle: `${p.sku}${p.unit ? ` · ${p.unit}` : ""}`, meta: `stock ${p.stockQuantity}` })}
+          rowOf={(p) => ({ title: p.name, subtitle: `${p.sku}${p.unit ? ` · ${p.unit}` : ""}`, meta: t("editor.stockMeta", { count: p.stockQuantity }) })}
           onPick={addProduct}
           onClose={() => setPicker(null)}
         />
       ) : null}
       {picker === "party" ? (
         <PickerModal
-          title="Select customer"
-          placeholder="Search customers"
+          title={t("editor.selectCustomerTitle")}
+          placeholder={t("editor.customerSearchPlaceholder")}
           load={loadParties}
           rowOf={(p) => ({ title: p.name, subtitle: p.phone ?? p.gstin ?? undefined })}
           onPick={(p) => {
@@ -197,6 +199,7 @@ const qtyInput =
   "h-9 w-20 rounded-input border border-hairline bg-field px-sm text-right text-body-sm text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft";
 
 function LineRow({ line, onQty, onRemove }: { line: Line; onQty: (v: number) => void; onRemove: () => void }) {
+  const t = useTranslations("challans");
   return (
     <div className="flex flex-wrap items-end gap-md border-b border-hairline py-md">
       <div className="min-w-0 flex-1">
@@ -207,7 +210,7 @@ function LineRow({ line, onQty, onRemove }: { line: Line; onQty: (v: number) => 
         <button
           type="button"
           onClick={() => onQty(Math.max(1, line.quantity - 1))}
-          aria-label="Decrease"
+          aria-label={t("editor.decrease")}
           className="inline-flex size-8 items-center justify-center rounded-button border border-hairline text-ink transition-colors hover:bg-surface-tint"
         >
           <Minus size={14} />
@@ -222,7 +225,7 @@ function LineRow({ line, onQty, onRemove }: { line: Line; onQty: (v: number) => 
         <button
           type="button"
           onClick={() => onQty(line.quantity + 1)}
-          aria-label="Increase"
+          aria-label={t("editor.increase")}
           className="inline-flex size-8 items-center justify-center rounded-button border border-hairline text-ink transition-colors hover:bg-surface-tint"
         >
           <Plus size={14} />
@@ -231,7 +234,7 @@ function LineRow({ line, onQty, onRemove }: { line: Line; onQty: (v: number) => 
       <button
         type="button"
         onClick={onRemove}
-        aria-label="Remove"
+        aria-label={t("editor.remove")}
         className="inline-flex size-9 items-center justify-center rounded-button text-muted transition-colors hover:bg-error-soft hover:text-error"
       >
         <Trash2 size={16} />

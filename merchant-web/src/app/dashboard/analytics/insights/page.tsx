@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { AlertTriangle, Lightbulb, Sparkles, type LucideIcon } from "lucide-react";
 import { Divider } from "@/shared/ui/divider";
 import { LineChart } from "@/shared/ui/charts";
@@ -16,15 +17,16 @@ import type { AnalyticsRow, ProductAnalytics } from "@/features/analytics/schema
 
 type Totals = ProductAnalytics["totals"];
 type TrendMetric = "views" | "purchases" | "impressions" | "taps";
-const TREND_METRICS: { key: TrendMetric; label: string }[] = [
-  { key: "views", label: "Views" },
-  { key: "purchases", label: "Purchases" },
-  { key: "impressions", label: "Impressions" },
-  { key: "taps", label: "Taps" },
+const TREND_METRICS: { key: TrendMetric; labelKey: string }[] = [
+  { key: "views", labelKey: "trend.views" },
+  { key: "purchases", labelKey: "trend.purchases" },
+  { key: "impressions", labelKey: "trend.impressions" },
+  { key: "taps", labelKey: "trend.taps" },
 ];
 
 export default function AnalyticsOverviewPage() {
   const { iso } = useAnalyticsRange();
+  const t = useTranslations("analytics");
   const [data, setData] = useState<ProductAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +43,7 @@ export default function AnalyticsOverviewPage() {
         setError(null);
       } catch (e) {
         if (active) {
-          setError(e instanceof Error ? e.message : "Could not load analytics.");
+          setError(e instanceof Error ? e.message : t("errors.load"));
           setData(null);
         }
       } finally {
@@ -51,9 +53,9 @@ export default function AnalyticsOverviewPage() {
     return () => {
       active = false;
     };
-  }, [iso]);
+  }, [iso, t]);
 
-  const insights = useMemo(() => (data ? computeInsights(data.products, data.totals) : []), [data]);
+  const insights = useMemo(() => (data ? computeInsights(data.products, data.totals, t) : []), [data, t]);
   const opportunity = useMemo(() => (data ? computeOpportunity(data.products, data.totals) : null), [data]);
 
   if (loading) {
@@ -65,28 +67,28 @@ export default function AnalyticsOverviewPage() {
     );
   }
   if (error || !data) {
-    return <p className="mt-lg rounded-md bg-error-soft px-md py-sm text-body-sm text-error">{error ?? "No data."}</p>;
+    return <p className="mt-lg rounded-md bg-error-soft px-md py-sm text-body-sm text-error">{error ?? t("errors.noData")}</p>;
   }
 
-  const t = data.totals;
+  const totals = data.totals;
 
   return (
     <>
       <div className="mt-xl">
-        <KpiStrip totals={t} />
+        <KpiStrip totals={totals} />
       </div>
 
       {/* Funnel */}
       <Divider className="my-xxl" />
-      <SectionHeading>Conversion funnel</SectionHeading>
-      <Funnel totals={t} />
+      <SectionHeading>{t("funnel.title")}</SectionHeading>
+      <Funnel totals={totals} t={t} />
 
       {/* What to act on */}
       <Divider className="my-xxl" />
-      <SectionHeading>What to act on</SectionHeading>
+      <SectionHeading>{t("act.title")}</SectionHeading>
       {insights.length === 0 ? (
         <p className="flex items-center gap-sm py-md text-body-md text-muted">
-          <Sparkles size={16} className="text-success" /> Nothing flagged — your funnel looks healthy for this range.
+          <Sparkles size={16} className="text-success" /> {t("act.empty")}
         </p>
       ) : (
         <div className="mt-sm">
@@ -101,7 +103,7 @@ export default function AnalyticsOverviewPage() {
         <>
           <Divider className="my-xxl" />
           <div className="flex flex-wrap items-center justify-between gap-sm">
-            <SectionHeading>Engagement over time</SectionHeading>
+            <SectionHeading>{t("trend.title")}</SectionHeading>
             <div className="flex flex-wrap items-center gap-xs">
               {TREND_METRICS.map((m) => (
                 <button
@@ -112,7 +114,7 @@ export default function AnalyticsOverviewPage() {
                     trend === m.key ? "bg-brand text-white" : "border border-hairline text-ink hover:bg-surface-tint"
                   }`}
                 >
-                  {m.label}
+                  {t(m.labelKey)}
                 </button>
               ))}
             </div>
@@ -121,10 +123,10 @@ export default function AnalyticsOverviewPage() {
             <LineChart
               points={data.daily.map((d) => ({ label: labelDay(d.day), value: d[trend] }))}
               heightClass="h-40 sm:h-52"
-              ariaLabel={`${trend} over time`}
+              ariaLabel={t("trend.ariaLabel", { metric: t(`trend.${trend}`) })}
               formatValue={aInt}
             />
-            <p className="mt-xs text-center text-body-sm text-subtle">Hover the line for any day&rsquo;s numbers.</p>
+            <p className="mt-xs text-center text-body-sm text-subtle">{t("trend.hoverHint")}</p>
           </div>
         </>
       ) : null}
@@ -134,8 +136,8 @@ export default function AnalyticsOverviewPage() {
         <>
           <Divider className="my-xxl" />
           <div className="grid grid-cols-1 gap-xxl lg:grid-cols-2">
-            <OpportunityList icon={Sparkles} title="Hidden gems" hint="High conversion, low traffic — worth promoting." rows={opportunity.gems} />
-            <OpportunityList icon={AlertTriangle} title="Needs attention" hint="Lots of views, few buyers — check price & photos." rows={opportunity.attention} />
+            <OpportunityList icon={Sparkles} title={t("opportunity.gemsTitle")} hint={t("opportunity.gemsHint")} rows={opportunity.gems} t={t} />
+            <OpportunityList icon={AlertTriangle} title={t("opportunity.attentionTitle")} hint={t("opportunity.attentionHint")} rows={opportunity.attention} t={t} />
           </div>
         </>
       ) : null}
@@ -143,8 +145,8 @@ export default function AnalyticsOverviewPage() {
       {/* Leaderboards */}
       <Divider className="my-xxl" />
       <div className="grid grid-cols-1 gap-xxl lg:grid-cols-2">
-        <Leaderboard title="Most seen" rows={topBy(data.products, "impressions")} unit="impressions" />
-        <Leaderboard title="Best sellers" rows={topBy(data.products, "purchases")} unit="sold" />
+        <Leaderboard title={t("leaderboard.mostSeen")} rows={topBy(data.products, "impressions")} unit="impressions" unitLabel={t("leaderboard.unitImpressions")} emptyLabel={t("leaderboard.empty")} productFallback={t("common.product")} />
+        <Leaderboard title={t("leaderboard.bestSellers")} rows={topBy(data.products, "purchases")} unit="sold" unitLabel={t("leaderboard.unitSold")} emptyLabel={t("leaderboard.empty")} productFallback={t("common.product")} />
       </div>
 
       {/* Lazy heavy sections */}
@@ -159,7 +161,7 @@ export default function AnalyticsOverviewPage() {
       </LazySection>
 
       <Divider className="my-xxl" />
-      <SectionHeading>Stock forecast</SectionHeading>
+      <SectionHeading>{t("stock.title")}</SectionHeading>
       <LazySection>
         <StockForecast />
       </LazySection>
@@ -171,23 +173,25 @@ export default function AnalyticsOverviewPage() {
 
 type Insight = { tone: "error" | "amber" | "indigo"; product: string; message: string };
 
-function computeInsights(products: AnalyticsRow[], totals: Totals): Insight[] {
+type Translate = (key: string, values?: Record<string, string | number>) => string;
+
+function computeInsights(products: AnalyticsRow[], totals: Totals, t: Translate): Insight[] {
   const out: (Insight & { score: number })[] = [];
   for (const p of products) {
-    const name = p.productName ?? "Product";
+    const name = p.productName ?? t("common.product");
     if (p.views >= 4 && p.purchases === 0) {
-      out.push({ tone: "error", product: name, message: `${p.views} views, no purchases — review price or photos.`, score: p.views });
+      out.push({ tone: "error", product: name, message: t("insight.noPurchases", { views: p.views }), score: p.views });
     } else if (p.views >= 4 && p.cvr > 0 && p.cvr < totals.cvr * 0.5) {
-      out.push({ tone: "amber", product: name, message: `Low conversion (${aPct(p.cvr)} vs ${aPct(totals.cvr)} shop avg).`, score: p.views });
+      out.push({ tone: "amber", product: name, message: t("insight.lowConversion", { cvr: aPct(p.cvr), avg: aPct(totals.cvr) }), score: p.views });
     }
     if (p.impressions >= 20 && p.ctr < totals.ctr * 0.5) {
-      out.push({ tone: "amber", product: name, message: `Weak click-through (${aPct(p.ctr)}) — try a better thumbnail or title.`, score: p.impressions });
+      out.push({ tone: "amber", product: name, message: t("insight.weakCtr", { ctr: aPct(p.ctr) }), score: p.impressions });
     }
     if (p.addToCart >= 3 && p.purchases / p.addToCart < 0.5) {
-      out.push({ tone: "error", product: name, message: `Cart abandonment — ${p.addToCart} added, ${p.purchases} bought.`, score: p.addToCart * 2 });
+      out.push({ tone: "error", product: name, message: t("insight.cartAbandon", { added: p.addToCart, bought: p.purchases }), score: p.addToCart * 2 });
     }
     if (p.wishlistAdd >= 3 && p.purchases === 0) {
-      out.push({ tone: "indigo", product: name, message: `Wishlisted ${p.wishlistAdd}× but never bought — a flash deal could convert it.`, score: p.wishlistAdd });
+      out.push({ tone: "indigo", product: name, message: t("insight.wishlisted", { count: p.wishlistAdd }), score: p.wishlistAdd });
     }
   }
   return out
@@ -230,15 +234,15 @@ function labelDay(iso?: string): string {
 
 /* ---------------- presentation ---------------- */
 
-const FUNNEL_STAGES: { key: keyof Totals; label: string }[] = [
-  { key: "impressions", label: "Impressions" },
-  { key: "taps", label: "Taps" },
-  { key: "views", label: "Views" },
-  { key: "addToCart", label: "Add to cart" },
-  { key: "purchases", label: "Purchases" },
+const FUNNEL_STAGES: { key: keyof Totals; labelKey: string }[] = [
+  { key: "impressions", labelKey: "funnel.impressions" },
+  { key: "taps", labelKey: "funnel.taps" },
+  { key: "views", labelKey: "funnel.views" },
+  { key: "addToCart", labelKey: "funnel.addToCart" },
+  { key: "purchases", labelKey: "funnel.purchases" },
 ];
 
-function Funnel({ totals }: { totals: Totals }) {
+function Funnel({ totals, t }: { totals: Totals; t: Translate }) {
   const top = totals.impressions || 1;
   return (
     <div className="mt-md space-y-sm">
@@ -250,9 +254,9 @@ function Funnel({ totals }: { totals: Totals }) {
         return (
           <div key={s.key} className="group">
             <div className="flex items-center justify-between text-body-sm">
-              <span className="text-ink">{s.label}</span>
+              <span className="text-ink">{t(s.labelKey)}</span>
               <span className="flex items-center gap-md">
-                {stepRate != null ? <span className="tabular-nums text-subtle">{aPct(stepRate)} from previous</span> : null}
+                {stepRate != null ? <span className="tabular-nums text-subtle">{t("funnel.fromPrevious", { rate: aPct(stepRate) })}</span> : null}
                 <span className="tabular-nums font-semibold text-ink">{aInt(value)}</span>
               </span>
             </div>
@@ -260,26 +264,26 @@ function Funnel({ totals }: { totals: Totals }) {
               <span
                 className="block h-full rounded-full bg-brand transition-[filter] group-hover:brightness-110"
                 style={{ width: `${width}%` }}
-                title={`${aInt(value)} (${aPct(value / top)} of impressions)`}
+                title={t("funnel.barTitle", { value: aInt(value), pct: aPct(value / top) })}
               />
             </div>
           </div>
         );
       })}
-      <LeakKpis totals={totals} />
+      <LeakKpis totals={totals} t={t} />
     </div>
   );
 }
 
-function LeakKpis({ totals }: { totals: Totals }) {
+function LeakKpis({ totals, t }: { totals: Totals; t: Translate }) {
   const abandon = totals.addToCart > 0 ? 1 - totals.purchases / totals.addToCart : 0;
   const browseToBuy = totals.views > 0 ? totals.purchases / totals.views : 0;
   const wishlistBuy = totals.wishlistAdd > 0 ? totals.purchases / totals.wishlistAdd : 0;
   return (
     <div className="grid grid-cols-1 gap-x-lg gap-y-md pt-md sm:grid-cols-3">
-      <MiniStat label="Cart abandonment" value={aPct(abandon)} hint="Added but not bought" />
-      <MiniStat label="Browse → buy" value={aPct(browseToBuy)} hint="Views that purchase" />
-      <MiniStat label="Wishlist → buy" value={aPct(wishlistBuy)} hint="Wishlists that purchase" />
+      <MiniStat label={t("leak.cartAbandonment")} value={aPct(abandon)} hint={t("leak.cartAbandonmentHint")} />
+      <MiniStat label={t("leak.browseToBuy")} value={aPct(browseToBuy)} hint={t("leak.browseToBuyHint")} />
+      <MiniStat label={t("leak.wishlistToBuy")} value={aPct(wishlistBuy)} hint={t("leak.wishlistToBuyHint")} />
     </div>
   );
 }
@@ -314,7 +318,7 @@ function InsightRow({ insight }: { insight: Insight }) {
   );
 }
 
-function OpportunityList({ icon: Icon, title, hint, rows }: { icon: LucideIcon; title: string; hint: string; rows: AnalyticsRow[] }) {
+function OpportunityList({ icon: Icon, title, hint, rows, t }: { icon: LucideIcon; title: string; hint: string; rows: AnalyticsRow[]; t: Translate }) {
   return (
     <section className="min-w-0">
       <h3 className="flex items-center gap-sm text-title-md text-ink">
@@ -323,13 +327,13 @@ function OpportunityList({ icon: Icon, title, hint, rows }: { icon: LucideIcon; 
       <p className="mt-xs text-body-sm text-subtle">{hint}</p>
       <div className="mt-sm">
         {rows.length === 0 ? (
-          <p className="py-md text-body-sm text-subtle">Nothing here for this range.</p>
+          <p className="py-md text-body-sm text-subtle">{t("opportunity.empty")}</p>
         ) : (
           rows.map((p) => (
             <div key={p.productId} className="flex items-center justify-between gap-md border-b border-hairline py-sm transition-colors hover:bg-surface-tint">
-              <span className="min-w-0 flex-1 truncate text-body-md text-ink">{p.productName ?? "Product"}</span>
-              <span className="shrink-0 text-body-sm text-subtle">{p.views} views</span>
-              <span className="shrink-0 text-body-md font-semibold tabular-nums text-ink">CVR {aPct(p.cvr)}</span>
+              <span className="min-w-0 flex-1 truncate text-body-md text-ink">{p.productName ?? t("common.product")}</span>
+              <span className="shrink-0 text-body-sm text-subtle">{t("opportunity.viewsCount", { count: p.views })}</span>
+              <span className="shrink-0 text-body-md font-semibold tabular-nums text-ink">{t("opportunity.cvrValue", { cvr: aPct(p.cvr) })}</span>
             </div>
           ))
         )}
@@ -338,7 +342,7 @@ function OpportunityList({ icon: Icon, title, hint, rows }: { icon: LucideIcon; 
   );
 }
 
-function Leaderboard({ title, rows, unit }: { title: string; rows: AnalyticsRow[]; unit: string }) {
+function Leaderboard({ title, rows, unit, unitLabel, emptyLabel, productFallback }: { title: string; rows: AnalyticsRow[]; unit: string; unitLabel: string; emptyLabel: string; productFallback: string }) {
   const key = unit === "sold" ? "purchases" : "impressions";
   const max = Math.max(...rows.map((r) => r[key] as number), 0);
   return (
@@ -346,7 +350,7 @@ function Leaderboard({ title, rows, unit }: { title: string; rows: AnalyticsRow[
       <SectionHeading>{title}</SectionHeading>
       <div className="mt-sm">
         {rows.length === 0 ? (
-          <p className="py-md text-body-sm text-subtle">No data for this range.</p>
+          <p className="py-md text-body-sm text-subtle">{emptyLabel}</p>
         ) : (
           rows.map((r) => {
             const value = r[key] as number;
@@ -354,9 +358,9 @@ function Leaderboard({ title, rows, unit }: { title: string; rows: AnalyticsRow[
             return (
               <div key={r.productId} className="group border-b border-hairline py-sm">
                 <div className="flex items-center justify-between gap-md">
-                  <span className="min-w-0 flex-1 truncate text-body-md text-ink">{r.productName ?? "Product"}</span>
+                  <span className="min-w-0 flex-1 truncate text-body-md text-ink">{r.productName ?? productFallback}</span>
                   <span className="shrink-0 text-body-sm tabular-nums text-muted">
-                    {aInt(value)} {unit}
+                    {aInt(value)} {unitLabel}
                   </span>
                 </div>
                 <div className="mt-xs h-1.5 w-full overflow-hidden rounded-full bg-hairline">

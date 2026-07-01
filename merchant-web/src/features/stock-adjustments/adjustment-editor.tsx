@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { ArrowDownLeft, ArrowUpRight, Minus, Package, Plus, Trash2 } from "lucide-react";
 import { BackLink } from "@/shared/ui/page-header";
 import { TextAreaField } from "@/shared/ui/form";
@@ -10,7 +11,6 @@ import { listProducts } from "@/features/products/api";
 import { createAdjustment } from "./api";
 import {
   ADJUSTMENT_REASONS,
-  ADJUSTMENT_REASON_LABELS,
   defaultDirection,
   directionIsEditable,
 } from "./schema";
@@ -22,6 +22,7 @@ type Line = { productId: number; productName: string; productSku: string; unit: 
 
 export function AdjustmentEditor() {
   const router = useRouter();
+  const t = useTranslations("stockAdjustments");
 
   const [reason, setReason] = useState<string>("DAMAGE");
   const [direction, setDirection] = useState<"IN" | "OUT">(defaultDirection("DAMAGE"));
@@ -55,7 +56,7 @@ export function AdjustmentEditor() {
 
   async function save() {
     setError(null);
-    if (lines.length === 0) return setError("Add at least one product.");
+    if (lines.length === 0) return setError(t("editor.errorNoProducts"));
     setSaving(true);
     try {
       await createAdjustment({
@@ -67,18 +68,17 @@ export function AdjustmentEditor() {
       router.push(BACK);
       router.refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not post the adjustment.");
+      setError(e instanceof Error ? e.message : t("editor.errorPost"));
       setSaving(false);
     }
   }
 
   return (
     <div className="w-full px-lg py-xxl pb-massive md:px-xxl">
-      <BackLink href={BACK} label="Stock adjustments" />
-      <h1 className="mt-md text-headline-md text-ink">New adjustment</h1>
+      <BackLink href={BACK} label={t("editor.back")} />
+      <h1 className="mt-md text-headline-md text-ink">{t("editor.title")}</h1>
       <p className="mt-xs max-w-content text-body-md text-muted">
-        Correct on-hand stock for damage, expiry, shrinkage, a recount or an opening balance. This posts a
-        movement to the stock ledger.
+        {t("editor.subtitle")}
       </p>
 
       {error ? (
@@ -87,7 +87,7 @@ export function AdjustmentEditor() {
 
       {/* Reason */}
       <div className="mt-xl">
-        <p className="text-label-md uppercase tracking-wide text-subtle">Reason</p>
+        <p className="text-label-md uppercase tracking-wide text-subtle">{t("editor.reason")}</p>
         <div className="mt-sm flex flex-wrap items-center gap-sm">
           {ADJUSTMENT_REASONS.map((r) => (
             <button
@@ -98,7 +98,7 @@ export function AdjustmentEditor() {
                 reason === r ? "bg-brand text-white" : "border border-hairline text-ink hover:bg-surface-tint"
               }`}
             >
-              {ADJUSTMENT_REASON_LABELS[r]}
+              {t(`reason.${r}`)}
             </button>
           ))}
         </div>
@@ -107,7 +107,7 @@ export function AdjustmentEditor() {
       {/* Direction (only when the reason can go either way) */}
       {directionIsEditable(reason) ? (
         <div className="mt-lg">
-          <p className="text-label-md uppercase tracking-wide text-subtle">Direction</p>
+          <p className="text-label-md uppercase tracking-wide text-subtle">{t("editor.direction")}</p>
           <div className="mt-sm flex flex-wrap items-center gap-sm">
             <button
               type="button"
@@ -116,7 +116,7 @@ export function AdjustmentEditor() {
                 direction === "IN" ? "bg-brand text-white" : "border border-hairline text-ink hover:bg-surface-tint"
               }`}
             >
-              <ArrowDownLeft size={15} /> Add stock
+              <ArrowDownLeft size={15} /> {t("editor.addStock")}
             </button>
             <button
               type="button"
@@ -125,7 +125,7 @@ export function AdjustmentEditor() {
                 direction === "OUT" ? "bg-brand text-white" : "border border-hairline text-ink hover:bg-surface-tint"
               }`}
             >
-              <ArrowUpRight size={15} /> Remove stock
+              <ArrowUpRight size={15} /> {t("editor.removeStock")}
             </button>
           </div>
         </div>
@@ -134,20 +134,20 @@ export function AdjustmentEditor() {
       {/* Items */}
       <div className="mt-xl">
         <div className="flex flex-wrap items-center justify-between gap-sm">
-          <p className="text-label-md uppercase tracking-wide text-subtle">Products</p>
+          <p className="text-label-md uppercase tracking-wide text-subtle">{t("editor.products")}</p>
           <button
             type="button"
             onClick={() => setPicker(true)}
             className="inline-flex h-9 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
           >
-            <Plus size={15} /> Add product
+            <Plus size={15} /> {t("editor.addProduct")}
           </button>
         </div>
 
         {lines.length === 0 ? (
           <div className="mt-md flex flex-col items-center gap-sm py-xl text-center">
             <Package size={22} className="text-subtle" />
-            <p className="text-body-sm text-subtle">No products yet — add one to adjust.</p>
+            <p className="text-body-sm text-subtle">{t("editor.noProducts")}</p>
           </div>
         ) : (
           <div className="mt-md">
@@ -165,7 +165,7 @@ export function AdjustmentEditor() {
 
       {/* Note */}
       <div className="mt-xl max-w-content">
-        <TextAreaField label="Note (optional)" value={note} onChange={setNote} rows={2} />
+        <TextAreaField label={t("editor.noteLabel")} value={note} onChange={setNote} rows={2} />
       </div>
 
       {/* Action */}
@@ -176,16 +176,16 @@ export function AdjustmentEditor() {
           disabled={saving}
           className="inline-flex h-11 items-center gap-sm rounded-button bg-brand px-lg text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:bg-disabled"
         >
-          {saving ? "Posting…" : "Post adjustment"}
+          {saving ? t("editor.posting") : t("editor.post")}
         </button>
       </div>
 
       {picker ? (
         <PickerModal
-          title="Add product"
-          placeholder="Search products by name or SKU"
+          title={t("editor.pickerTitle")}
+          placeholder={t("editor.pickerPlaceholder")}
           load={loadProducts}
-          rowOf={(p) => ({ title: p.name, subtitle: `${p.sku}${p.unit ? ` · ${p.unit}` : ""}`, meta: `stock ${p.stockQuantity}` })}
+          rowOf={(p) => ({ title: p.name, subtitle: `${p.sku}${p.unit ? ` · ${p.unit}` : ""}`, meta: t("editor.pickerStock", { count: p.stockQuantity }) })}
           onPick={addProduct}
           onClose={() => setPicker(false)}
         />
@@ -198,6 +198,7 @@ const qtyInput =
   "h-9 w-20 rounded-input border border-hairline bg-field px-sm text-right text-body-sm text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft";
 
 function LineRow({ line, onQty, onRemove }: { line: Line; onQty: (v: number) => void; onRemove: () => void }) {
+  const t = useTranslations("stockAdjustments");
   return (
     <div className="flex flex-wrap items-end gap-md border-b border-hairline py-md">
       <div className="min-w-0 flex-1">
@@ -208,7 +209,7 @@ function LineRow({ line, onQty, onRemove }: { line: Line; onQty: (v: number) => 
         <button
           type="button"
           onClick={() => onQty(Math.max(1, line.quantity - 1))}
-          aria-label="Decrease"
+          aria-label={t("editor.decrease")}
           className="inline-flex size-8 items-center justify-center rounded-button border border-hairline text-ink transition-colors hover:bg-surface-tint"
         >
           <Minus size={14} />
@@ -223,7 +224,7 @@ function LineRow({ line, onQty, onRemove }: { line: Line; onQty: (v: number) => 
         <button
           type="button"
           onClick={() => onQty(line.quantity + 1)}
-          aria-label="Increase"
+          aria-label={t("editor.increase")}
           className="inline-flex size-8 items-center justify-center rounded-button border border-hairline text-ink transition-colors hover:bg-surface-tint"
         >
           <Plus size={14} />
@@ -232,7 +233,7 @@ function LineRow({ line, onQty, onRemove }: { line: Line; onQty: (v: number) => 
       <button
         type="button"
         onClick={onRemove}
-        aria-label="Remove"
+        aria-label={t("editor.remove")}
         className="inline-flex size-9 items-center justify-center rounded-button text-muted transition-colors hover:bg-error-soft hover:text-error"
       >
         <Trash2 size={16} />
