@@ -1,10 +1,42 @@
 {
   "settings": {
+    "title": "Settings",
+    "subtitle": "Manage your account, security, preferences and data.",
+    "signOut": "Sign out",
+    "signingOut": "Signing out…",
     "theme": "Theme",
     "themeSubtitle": "Choose how ShopXY looks on this device.",
     "language": "Language",
     "languageSubtitle": "Choose your preferred language.",
-    "currency": "Currency"
+    "currency": "Currency",
+    "currencySubtitle": "Indian Rupee (₹)",
+    "sections": {
+      "account": { "label": "Account", "blurb": "Your profile and sign-in email." },
+      "shop": { "label": "Shop operations", "blurb": "Storefront, team and payouts." },
+      "inventory": { "label": "Inventory", "blurb": "Catalogue configuration." },
+      "notifications": { "label": "Notifications", "blurb": "What we email you about." },
+      "security": { "label": "Security", "blurb": "Password and account safety." },
+      "preferences": { "label": "Preferences", "blurb": "Currency, theme and language." },
+      "privacy": { "label": "Data & privacy", "blurb": "Export and delete your data." },
+      "about": { "label": "About", "blurb": "App information." }
+    },
+    "rows": {
+      "editProfile": "Edit profile",
+      "email": "Email",
+      "shop": "Shop",
+      "shopSub": "Storefront, hours, vacation mode and policies",
+      "team": "Team",
+      "teamSub": "Invite staff and set permissions",
+      "payouts": "Payouts",
+      "payoutsSub": "Bank settlement & KYC status",
+      "customFields": "Custom fields",
+      "customFieldsSub": "Extra product attributes and sections",
+      "appVersion": "App version",
+      "privacyPolicy": "Privacy Policy",
+      "privacyPolicySub": "How we handle your data",
+      "terms": "Terms of Service",
+      "termsSub": "The rules for using ShopXY"
+    }
   },
   "themes": {
     "light": { "label": "Light", "desc": "Warm canvas, dark text — the default." },
