@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Plus, X } from "lucide-react";
 import type { ProductOffer } from "../schema";
 import { MiniButton } from "./form-controls";
@@ -16,6 +17,7 @@ export function OffersEditor({
   offers: ProductOffer[];
   onChange: (next: ProductOffer[]) => void;
 }) {
+  const t = useTranslations("products");
   function patch(i: number, p: Partial<ProductOffer>) {
     onChange(offers.map((o, idx) => (idx === i ? { ...o, ...p } : o)));
   }
@@ -36,20 +38,20 @@ export function OffersEditor({
           </select>
           <input
             value={o.headline}
-            placeholder="Headline"
+            placeholder={t("offers.headlinePlaceholder")}
             onChange={(e) => patch(i, { headline: e.target.value })}
             className={`${cell} min-w-[200px] flex-1`}
           />
           <input
             value={o.code ?? ""}
-            placeholder="Code (optional)"
+            placeholder={t("offers.codePlaceholder")}
             onChange={(e) => patch(i, { code: e.target.value })}
             className={`${cell} w-40`}
           />
           <button
             type="button"
             onClick={() => onChange(offers.filter((_, idx) => idx !== i))}
-            aria-label="Remove offer"
+            aria-label={t("offers.removeOffer")}
             className="rounded-md p-sm text-muted hover:bg-surface-tint hover:text-ink"
           >
             <X size={16} />
@@ -59,7 +61,7 @@ export function OffersEditor({
       <MiniButton
         onClick={() => onChange([...offers, { kind: "COUPON", headline: "", code: "" }])}
       >
-        <Plus size={16} /> Add offer
+        <Plus size={16} /> {t("offers.addOffer")}
       </MiniButton>
     </div>
   );

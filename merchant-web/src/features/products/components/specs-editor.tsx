@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Plus, X } from "lucide-react";
 import type { SpecGroup } from "../schema";
 import { MiniButton } from "./form-controls";
@@ -15,6 +16,7 @@ export function SpecsEditor({
   groups: SpecGroup[];
   onChange: (next: SpecGroup[]) => void;
 }) {
+  const t = useTranslations("products");
   function patch(i: number, p: Partial<SpecGroup>) {
     onChange(groups.map((g, idx) => (idx === i ? { ...g, ...p } : g)));
   }
@@ -29,20 +31,20 @@ export function SpecsEditor({
           <div className="flex items-center gap-sm">
             <input
               value={g.title}
-              placeholder="Group title (e.g. Dimensions)"
+              placeholder={t("specs.groupTitlePlaceholder")}
               onChange={(e) => patch(gi, { title: e.target.value })}
               className={`${cell} flex-1`}
             />
             <input
               value={g.tab ?? ""}
-              placeholder="Tab (optional)"
+              placeholder={t("specs.tabPlaceholder")}
               onChange={(e) => patch(gi, { tab: e.target.value || null })}
               className={`${cell} w-40`}
             />
             <button
               type="button"
               onClick={() => onChange(groups.filter((_, idx) => idx !== gi))}
-              aria-label="Remove group"
+              aria-label={t("specs.removeGroup")}
               className="rounded-md p-sm text-muted hover:bg-surface-tint hover:text-ink"
             >
               <X size={16} />
@@ -53,7 +55,7 @@ export function SpecsEditor({
               <div key={ri} className="flex items-center gap-sm">
                 <input
                   value={r.label}
-                  placeholder="Label"
+                  placeholder={t("specs.labelPlaceholder")}
                   onChange={(e) =>
                     patch(gi, {
                       rows: g.rows.map((x, idx) =>
@@ -65,7 +67,7 @@ export function SpecsEditor({
                 />
                 <input
                   value={r.value}
-                  placeholder="Value"
+                  placeholder={t("specs.valuePlaceholder")}
                   onChange={(e) =>
                     patch(gi, {
                       rows: g.rows.map((x, idx) =>
@@ -80,7 +82,7 @@ export function SpecsEditor({
                   onClick={() =>
                     patch(gi, { rows: g.rows.filter((_, idx) => idx !== ri) })
                   }
-                  aria-label="Remove row"
+                  aria-label={t("specs.removeRow")}
                   className="rounded-md p-sm text-muted hover:bg-surface-tint hover:text-ink"
                 >
                   <X size={16} />
@@ -90,13 +92,13 @@ export function SpecsEditor({
             <MiniButton
               onClick={() => patch(gi, { rows: [...g.rows, { label: "", value: "" }] })}
             >
-              <Plus size={16} /> Add row
+              <Plus size={16} /> {t("specs.addRow")}
             </MiniButton>
           </div>
         </div>
       ))}
       <MiniButton onClick={addGroup}>
-        <Plus size={16} /> Add spec group
+        <Plus size={16} /> {t("specs.addGroup")}
       </MiniButton>
     </div>
   );

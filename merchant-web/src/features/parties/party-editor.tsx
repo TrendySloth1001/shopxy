@@ -1,18 +1,20 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { ContactEditor, type ContactWrite } from "@/shared/ui/contact-editor";
 import { createParty, updateParty } from "./api";
 import type { Party } from "./schema";
 
 export function PartyEditor({ existing }: { existing: Party | null }) {
+  const t = useTranslations("parties");
   const isEdit = existing != null;
   return (
     <ContactEditor
-      title={isEdit ? "Edit customer" : "Add customer"}
-      subtitle="Customers you sell to — used on sale invoices, challans and the receivable ledger."
-      nameLabel="Customer name"
+      title={isEdit ? t("editor.editTitle") : t("editor.addTitle")}
+      subtitle={t("editor.subtitle")}
+      nameLabel={t("editor.nameLabel")}
       backHref="/dashboard/parties"
-      backLabel="Customers"
+      backLabel={t("detail.back")}
       isEdit={isEdit}
       initial={existing ?? {}}
       onSubmit={async (values: ContactWrite) => {

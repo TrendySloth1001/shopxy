@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Ticket } from "lucide-react";
 import { BackLink } from "@/shared/ui/page-header";
 import { DateTimeField, SelectField, TextAreaField, TextField, ToggleField } from "@/shared/ui/form";
@@ -10,7 +11,7 @@ import { Divider } from "@/shared/ui/divider";
 import { formatDateTime, isoFromNow, nowIso } from "@/shared/datetime";
 import { createCoupon, updateCoupon, type CouponWrite } from "./api";
 import { discountLabel, rupees } from "./format";
-import { DISCOUNT_TYPE_LABELS, DISCOUNT_TYPES, type Coupon, type DiscountType } from "./schema";
+import { DISCOUNT_TYPES, type Coupon, type DiscountType } from "./schema";
 
 const BACK = "/dashboard/coupons";
 
@@ -27,6 +28,7 @@ function toInt(v: string): number {
 
 /** Full-page coupon editor with a live customer-card preview. */
 export function CouponEditor({ existing }: { existing: Coupon | null }) {
+  const t = useTranslations("coupons");
   const router = useRouter();
   const isEdit = existing != null;
 
@@ -57,20 +59,20 @@ export function CouponEditor({ existing }: { existing: Coupon | null }) {
   const percentTooHigh = discountType === "PERCENT" && discountValue !== "" && valueNum > 100;
   const valueError =
     discountValue !== "" && (!Number.isFinite(valueNum) || valueNum <= 0)
-      ? "Enter a value above 0."
+      ? t("form.errors.valueAboveZero")
       : percentTooHigh
-        ? "Percent off can't exceed 100."
+        ? t("form.errors.percentMax")
         : null;
 
   async function save() {
     setError(null);
     const cleanCode = canonCode(code);
-    if (cleanCode.length < 2) return setError("Code must be at least 2 characters.");
-    if (!title.trim()) return setError("Give the coupon a title.");
-    if (!Number.isFinite(valueNum) || valueNum <= 0) return setError("Enter a discount value above 0.");
-    if (discountType === "PERCENT" && valueNum > 100) return setError("Percent off can't exceed 100.");
+    if (cleanCode.length < 2) return setError(t("form.errors.codeMinLength"));
+    if (!title.trim()) return setError(t("form.errors.titleRequired"));
+    if (!Number.isFinite(valueNum) || valueNum <= 0) return setError(t("form.errors.discountAboveZero"));
+    if (discountType === "PERCENT" && valueNum > 100) return setError(t("form.errors.percentMax"));
     if (!validFrom || !validUntil || new Date(validUntil) <= new Date(validFrom)) {
-      return setError("Valid-until must be after valid-from.");
+      return setError(t("form.errors.validUntilAfterFrom"));
     }
 
     const maxNum = maxDiscount.trim() === "" ? null : Number(maxDiscount);
@@ -100,17 +102,17 @@ export function CouponEditor({ existing }: { existing: Coupon | null }) {
       }
       router.push(BACK);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Save failed.");
+      setError(e instanceof Error ? e.message : t("form.errors.saveFailed"));
       setBusy(false);
     }
   }
 
   return (
     <div className="w-full px-lg py-xxl pb-massive md:px-xxl">
-      <BackLink href={BACK} label="Coupons" />
-      <h1 className="mt-md text-headline-md text-ink">{isEdit ? "Edit coupon" : "New coupon"}</h1>
+      <BackLink href={BACK} label={t("list.title")} />
+      <h1 className="mt-md text-headline-md text-ink">{isEdit ? t("form.editTitle") : t("form.newTitle")}</h1>
       <p className="mt-xs text-body-md text-muted">
-        A discount code your customers redeem at checkout — the preview shows the card they&rsquo;ll see.
+        {t("form.subtitle")}
       </p>
 
       {error ? (
@@ -120,7 +122,7 @@ export function CouponEditor({ existing }: { existing: Coupon | null }) {
       <div className="mt-xl grid gap-xl lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] xl:grid-cols-[380px_minmax(0,1fr)]">
         {/* Preview */}
         <div className="lg:sticky lg:top-lg lg:self-start">
-          <p className="mb-sm text-label-md uppercase tracking-wide text-subtle">Preview</p>
+          <p className="mb-sm text-label-md uppercase tracking-wide text-subtle">{t("form.preview")}</p>
           <CouponPreview
             code={canonCode(code)}
             title={title}
@@ -138,37 +140,37 @@ export function CouponEditor({ existing }: { existing: Coupon | null }) {
         <div className="flex max-w-content flex-col gap-lg">
           <div className="grid grid-cols-1 gap-md sm:grid-cols-2">
             <TextField
-              label="Code"
+              label={t("form.codeLabel")}
               value={code}
               onChange={(v) => setCode(canonCode(v))}
               placeholder="WELCOME10"
-              helper="Letters, numbers, - and _ · auto-uppercased"
+              helper={t("form.codeHelper")}
             />
             <TextField
-              label="Title"
+              label={t("form.titleLabel")}
               value={title}
               onChange={setTitle}
-              placeholder="New user offer"
+              placeholder={t("form.titlePlaceholder")}
             />
           </div>
 
           <TextAreaField
-            label="Description (optional)"
+            label={t("form.descriptionLabel")}
             value={description ?? ""}
             onChange={setDescription}
             rows={2}
-            placeholder="Shown on the customer's coupon card."
+            placeholder={t("form.descriptionPlaceholder")}
           />
 
           <div className="grid grid-cols-1 gap-md sm:grid-cols-2">
             <SelectField<DiscountType>
-              label="Type"
+              label={t("form.typeLabel")}
               value={discountType}
               onChange={setDiscountType}
-              options={DISCOUNT_TYPES.map((t) => ({ value: t, label: DISCOUNT_TYPE_LABELS[t] }))}
+              options={DISCOUNT_TYPES.map((dt) => ({ value: dt, label: t(`discountType.${dt}`) }))}
             />
             <TextField
-              label={discountType === "PERCENT" ? "% off" : "₹ off"}
+              label={discountType === "PERCENT" ? t("form.percentOffLabel") : t("form.rupeeOffLabel")}
               value={discountValue}
               onChange={setDiscountValue}
               inputMode="decimal"
@@ -178,41 +180,41 @@ export function CouponEditor({ existing }: { existing: Coupon | null }) {
 
           {discountType === "PERCENT" ? (
             <TextField
-              label="Max discount (₹) — optional"
+              label={t("form.maxDiscountLabel")}
               value={maxDiscount}
               onChange={setMaxDiscount}
               inputMode="decimal"
-              helper="Caps the % off. Leave blank for no ceiling."
+              helper={t("form.maxDiscountHelper")}
             />
           ) : null}
 
           <TextField
-            label="Minimum order (₹)"
+            label={t("form.minOrderLabel")}
             value={minOrder}
             onChange={setMinOrder}
             inputMode="decimal"
-            helper="0 = applies to any cart"
+            helper={t("form.minOrderHelper")}
           />
 
           <div className="grid grid-cols-1 gap-md sm:grid-cols-2">
-            <DateTimeField label="Valid from" value={validFrom} onChange={setValidFrom} />
-            <DateTimeField label="Valid until" value={validUntil} onChange={setValidUntil} />
+            <DateTimeField label={t("form.validFromLabel")} value={validFrom} onChange={setValidFrom} />
+            <DateTimeField label={t("form.validUntilLabel")} value={validUntil} onChange={setValidUntil} />
           </div>
 
           <div className="grid grid-cols-1 gap-md sm:grid-cols-2">
             <TextField
-              label="Per-user limit"
+              label={t("form.perUserLimitLabel")}
               value={perUserLimit}
               onChange={setPerUserLimit}
               inputMode="numeric"
-              helper="0 = unlimited"
+              helper={t("form.unlimitedHelper")}
             />
             <TextField
-              label="Total cap"
+              label={t("form.totalCapLabel")}
               value={totalCap}
               onChange={setTotalCap}
               inputMode="numeric"
-              helper="0 = unlimited"
+              helper={t("form.unlimitedHelper")}
             />
           </div>
 
@@ -220,20 +222,20 @@ export function CouponEditor({ existing }: { existing: Coupon | null }) {
 
           <div className="flex flex-col gap-lg">
             <ToggleField
-              label="Public — auto-applies"
-              description="Anyone can see and use it; it auto-applies at checkout when the cart matches — no code typing. Keep off for private codes shared with specific people."
+              label={t("form.publicLabel")}
+              description={t("form.publicDescription")}
               checked={isPublic}
               onChange={setIsPublic}
             />
             <ToggleField
-              label="First-order only"
-              description="Restricts redemption to customers with no prior confirmed orders. Pair with a per-user limit of 1 for a single-shot welcome offer."
+              label={t("form.firstOrderLabel")}
+              description={t("form.firstOrderDescription")}
               checked={firstOrderOnly}
               onChange={setFirstOrderOnly}
             />
             <ToggleField
-              label="Active"
-              description="When off, buyers won't see this coupon and can't redeem it."
+              label={t("form.activeLabel")}
+              description={t("form.activeDescription")}
               checked={isActive}
               onChange={setIsActive}
             />
@@ -247,7 +249,7 @@ export function CouponEditor({ existing }: { existing: Coupon | null }) {
           href={BACK}
           className="inline-flex h-11 items-center rounded-button px-md text-label-md text-muted transition-colors hover:text-ink"
         >
-          Cancel
+          {t("form.cancel")}
         </Link>
         <button
           type="button"
@@ -255,7 +257,7 @@ export function CouponEditor({ existing }: { existing: Coupon | null }) {
           disabled={busy}
           className="inline-flex h-11 items-center rounded-button bg-brand px-xl text-label-lg text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:bg-disabled"
         >
-          {busy ? "Saving…" : isEdit ? "Save changes" : "Create coupon"}
+          {busy ? t("form.saving") : isEdit ? t("form.saveChanges") : t("form.create")}
         </button>
       </div>
     </div>
@@ -284,6 +286,7 @@ function CouponPreview({
   isPublic: boolean;
   firstOrderOnly: boolean;
 }) {
+  const t = useTranslations("coupons");
   const headline = discountValue > 0 ? discountLabel({ discountType, discountValue }).toUpperCase() : "—";
   return (
     <div className="overflow-hidden rounded-lg border border-hairline bg-surface shadow-floating">
@@ -295,27 +298,27 @@ function CouponPreview({
         </div>
         {/* Detail */}
         <div className="min-w-0 flex-1 border-l border-dashed border-hairline p-lg">
-          <p className="truncate text-body-md font-bold text-ink">{title || "Coupon title"}</p>
+          <p className="truncate text-body-md font-bold text-ink">{title || t("preview.titleFallback")}</p>
           <span className="mt-xs inline-flex items-center rounded-md bg-surface-tint px-sm py-px text-body-sm font-semibold tracking-wide text-ink">
-            {code || "CODE"}
+            {code || t("preview.codeFallback")}
           </span>
           {description ? (
             <p className="mt-sm line-clamp-2 text-body-sm text-muted">{description}</p>
           ) : null}
           <p className="mt-sm text-body-sm text-muted">
-            {minOrder > 0 ? `Min. order ${rupees(minOrder)}` : "No minimum order"}
+            {minOrder > 0 ? t("preview.minOrder", { amount: rupees(minOrder) }) : t("preview.noMinOrder")}
           </p>
-          <p className="text-body-sm text-subtle">Valid till {formatDateTime(validUntil)}</p>
+          <p className="text-body-sm text-subtle">{t("preview.validTill", { date: formatDateTime(validUntil) })}</p>
           {isPublic || firstOrderOnly ? (
             <div className="mt-sm flex flex-wrap gap-xs">
               {isPublic ? (
                 <span className="inline-flex items-center rounded-full bg-info-soft px-sm py-px text-body-sm font-semibold text-info">
-                  Auto-applies
+                  {t("preview.autoApplies")}
                 </span>
               ) : null}
               {firstOrderOnly ? (
                 <span className="inline-flex items-center rounded-full bg-accent-amber-soft px-sm py-px text-body-sm font-semibold text-accent-amber">
-                  First order only
+                  {t("badges.firstOrderOnly")}
                 </span>
               ) : null}
             </div>

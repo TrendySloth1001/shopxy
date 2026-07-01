@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { X, Plus } from "lucide-react";
 
 /** Editable list of short strings (used for tags and highlights). */
@@ -14,6 +15,7 @@ export function StringListEditor({
   placeholder?: string;
   max?: number;
 }) {
+  const t = useTranslations("products");
   function set(i: number, v: string) {
     onChange(items.map((it, idx) => (idx === i ? v : it)));
   }
@@ -38,7 +40,7 @@ export function StringListEditor({
           <button
             type="button"
             onClick={() => remove(i)}
-            aria-label="Remove"
+            aria-label={t("stringList.remove")}
             className="rounded-md p-sm text-muted transition-colors hover:bg-surface-tint hover:text-ink"
           >
             <X size={16} />
@@ -51,7 +53,7 @@ export function StringListEditor({
           onClick={add}
           className="inline-flex h-9 w-fit items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
         >
-          <Plus size={16} /> Add
+          <Plus size={16} /> {t("stringList.add")}
         </button>
       ) : null}
     </div>

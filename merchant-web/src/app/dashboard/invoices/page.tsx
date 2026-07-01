@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -21,35 +22,37 @@ import { invoicePdfUrl, listInvoices } from "@/features/invoices/api";
 import { getVendor } from "@/features/vendors/api";
 import { getParty } from "@/features/parties/api";
 import {
-  DOCUMENT_TYPE_LABELS,
   counterpartyName,
   invoiceItemCount,
   isSale,
   type Invoice,
 } from "@/features/invoices/schema";
-import { INVOICE_STATUS_CLASSES, INVOICE_STATUS_LABELS } from "@/features/invoices/format";
+import { INVOICE_STATUS_CLASSES } from "@/features/invoices/format";
 import { MaybeLocked } from "@/features/auth/components/maybe-locked";
 import { ListRowsSkeleton } from "@/shared/ui/skeleton";
 
-const TYPE_TABS: { key: string; label: string }[] = [
-  { key: "", label: "All" },
-  { key: "SALE", label: "Sales" },
-  { key: "PURCHASE", label: "Purchases" },
+// Labels come from the message catalog (invoices.*) at render time; the arrays
+// carry only stable keys.
+const TYPE_TABS: { key: string; labelKey: string }[] = [
+  { key: "", labelKey: "list.typeAll" },
+  { key: "SALE", labelKey: "list.typeSales" },
+  { key: "PURCHASE", labelKey: "list.typePurchases" },
 ];
 
-const STATUS_OPTIONS = [
-  { value: "", label: "Any status" },
-  { value: "DRAFT", label: "Draft" },
-  { value: "CONFIRMED", label: "Confirmed" },
-  { value: "CANCELLED", label: "Cancelled" },
+const STATUS_OPTION_KEYS: { value: string; labelKey: string }[] = [
+  { value: "", labelKey: "list.statusAny" },
+  { value: "DRAFT", labelKey: "status.draft" },
+  { value: "CONFIRMED", labelKey: "status.confirmed" },
+  { value: "CANCELLED", labelKey: "status.cancelled" },
 ];
 
-const DOC_OPTIONS = [
-  { value: "", label: "All documents" },
-  ...["TAX_INVOICE", "BILL_OF_SUPPLY", "ESTIMATE", "PROFORMA", "CREDIT_NOTE", "DEBIT_NOTE"].map((d) => ({
-    value: d,
-    label: DOCUMENT_TYPE_LABELS[d],
-  })),
+const DOC_OPTION_VALUES = [
+  "TAX_INVOICE",
+  "BILL_OF_SUPPLY",
+  "ESTIMATE",
+  "PROFORMA",
+  "CREDIT_NOTE",
+  "DEBIT_NOTE",
 ];
 
 export default function InvoicesPage() {
@@ -62,7 +65,13 @@ export default function InvoicesPage() {
 }
 
 function InvoicesPageInner() {
+  const t = useTranslations("invoices");
   const searchParams = useSearchParams();
+  const statusOptions = STATUS_OPTION_KEYS.map((o) => ({ value: o.value, label: t(o.labelKey) }));
+  const docOptions = [
+    { value: "", label: t("list.docAll") },
+    ...DOC_OPTION_VALUES.map((d) => ({ value: d, label: t(`docType.${d}`) })),
+  ];
   // Deep-link filters (e.g. "View all bills" from a vendor) — read once on mount.
   const vendorId = toId(searchParams.get("vendorId"));
   const partyId = toId(searchParams.get("partyId"));
@@ -113,7 +122,7 @@ function InvoicesPageInner() {
         setRows(data);
         setError(null);
       } catch (e) {
-        if (active) setError(e instanceof Error ? e.message : "Could not load invoices.");
+        if (active) setError(e instanceof Error ? e.message : t("list.loadError"));
       } finally {
         if (active) setLoading(false);
       }
@@ -121,7 +130,7 @@ function InvoicesPageInner() {
     return () => {
       active = false;
     };
-  }, [nonce, type, status, documentType, search, vendorId, partyId]);
+  }, [nonce, type, status, documentType, search, vendorId, partyId, t]);
 
   const scoped = vendorId != null || partyId != null;
 
@@ -129,40 +138,40 @@ function InvoicesPageInner() {
     <div className="w-full px-lg py-xxl md:px-xxl">
       <PageHeader
         icon={ReceiptText}
-        title="Invoices"
-        subtitle="Sales and purchase invoices. Save drafts, confirm to post stock, share the GST PDF and record payments."
+        title={t("list.title")}
+        subtitle={t("list.subtitle")}
       >
         <button
           type="button"
           onClick={() => setNonce((n) => n + 1)}
           disabled={loading}
-          aria-label="Refresh"
+          aria-label={t("list.refresh")}
           className="inline-flex size-10 items-center justify-center rounded-button border border-hairline text-ink transition-colors hover:bg-surface-tint disabled:text-disabled"
         >
           <RefreshCw size={16} />
         </button>
-        <MaybeLocked area="invoices" label="Estimate">
+        <MaybeLocked area="invoices" label={t("docType.ESTIMATE")}>
           <Link
             href="/dashboard/invoices/new?doc=ESTIMATE"
             className="inline-flex h-10 items-center rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
           >
-            Estimate
+            {t("docType.ESTIMATE")}
           </Link>
         </MaybeLocked>
-        <MaybeLocked area="invoices" label="Proforma">
+        <MaybeLocked area="invoices" label={t("docType.PROFORMA")}>
           <Link
             href="/dashboard/invoices/new?doc=PROFORMA"
             className="inline-flex h-10 items-center rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
           >
-            Proforma
+            {t("docType.PROFORMA")}
           </Link>
         </MaybeLocked>
-        <MaybeLocked area="invoices" label="New invoice">
+        <MaybeLocked area="invoices" label={t("actions.newInvoice")}>
           <Link
             href="/dashboard/invoices/new"
             className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-md text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
           >
-            <Plus size={16} /> New invoice
+            <Plus size={16} /> {t("actions.newInvoice")}
           </Link>
         </MaybeLocked>
       </PageHeader>
@@ -171,14 +180,14 @@ function InvoicesPageInner() {
       {scoped ? (
         <div className="mt-lg flex flex-wrap items-center gap-sm rounded-md bg-brand-soft px-md py-sm text-body-sm text-brand-strong">
           <span>
-            Showing {vendorId ? "bills" : "invoices"} for{" "}
-            <span className="font-semibold">{scopeName ?? "this contact"}</span>
+            {vendorId ? t("scope.showingBills") : t("scope.showingInvoices")}{" "}
+            <span className="font-semibold">{scopeName ?? t("scope.thisContact")}</span>
           </span>
           <Link
             href="/dashboard/invoices"
             className="inline-flex items-center gap-xs rounded-button px-sm py-px text-label-md text-brand-strong underline-offset-2 transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
           >
-            <X size={14} /> Clear filter
+            <X size={14} /> {t("scope.clearFilter")}
           </Link>
         </div>
       ) : null}
@@ -189,7 +198,7 @@ function InvoicesPageInner() {
         <input
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          placeholder="Search invoice no, customer or vendor"
+          placeholder={t("list.searchPlaceholder")}
           className="h-10 w-full bg-transparent text-body-md text-ink outline-none placeholder:text-subtle"
         />
       </div>
@@ -197,24 +206,24 @@ function InvoicesPageInner() {
       {/* Filters */}
       <div className="mt-md flex flex-wrap items-end gap-md">
         <div className="flex flex-wrap items-center gap-sm">
-          {TYPE_TABS.map((t) => (
+          {TYPE_TABS.map((tab) => (
             <button
-              key={t.key}
+              key={tab.key}
               type="button"
-              onClick={() => setType(t.key)}
+              onClick={() => setType(tab.key)}
               className={`inline-flex h-9 items-center rounded-button px-md text-label-md transition-colors ${
-                type === t.key ? "bg-brand text-white" : "border border-hairline text-ink hover:bg-surface-tint"
+                type === tab.key ? "bg-brand text-white" : "border border-hairline text-ink hover:bg-surface-tint"
               }`}
             >
-              {t.label}
+              {t(tab.labelKey)}
             </button>
           ))}
         </div>
         <div className="min-w-40 flex-1 sm:max-w-48">
-          <SelectField label="Status" value={status} onChange={setStatus} options={STATUS_OPTIONS} />
+          <SelectField label={t("list.statusLabel")} value={status} onChange={setStatus} options={statusOptions} />
         </div>
         <div className="min-w-40 flex-1 sm:max-w-56">
-          <SelectField label="Document" value={documentType} onChange={setDocumentType} options={DOC_OPTIONS} />
+          <SelectField label={t("list.documentLabel")} value={documentType} onChange={setDocumentType} options={docOptions} />
         </div>
       </div>
 
@@ -225,7 +234,7 @@ function InvoicesPageInner() {
       <div className="mt-lg">
         {!loading && rows.length > 0 ? (
           <p className="mb-sm text-body-sm text-muted">
-            {rows.length} {rows.length === 1 ? "invoice" : "invoices"}
+            {rows.length} {rows.length === 1 ? t("list.countOne") : t("list.countOther")}
           </p>
         ) : null}
         {loading ? (
@@ -235,13 +244,13 @@ function InvoicesPageInner() {
             <span className="flex size-12 items-center justify-center rounded-full bg-brand-soft text-brand-strong">
               <ReceiptText size={22} />
             </span>
-            <p className="text-body-md text-muted">No invoices match these filters.</p>
-            <MaybeLocked area="invoices" label="New invoice">
+            <p className="text-body-md text-muted">{t("list.empty")}</p>
+            <MaybeLocked area="invoices" label={t("actions.newInvoice")}>
               <Link
                 href="/dashboard/invoices/new"
                 className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
               >
-                <Plus size={16} /> New invoice
+                <Plus size={16} /> {t("actions.newInvoice")}
               </Link>
             </MaybeLocked>
           </div>
@@ -264,7 +273,14 @@ function normalizeType(raw: string | null): string {
   return raw === "SALE" || raw === "PURCHASE" ? raw : "";
 }
 
+/** Localized status badge label; falls back to the raw status for unknowns. */
+function statusLabel(t: ReturnType<typeof useTranslations>, status: string): string {
+  const key = { DRAFT: "status.draft", CONFIRMED: "status.confirmed", CANCELLED: "status.cancelled" }[status];
+  return key ? t(key) : status;
+}
+
 function InvoiceRow({ invoice }: { invoice: Invoice }) {
+  const t = useTranslations("invoices");
   const sale = isSale(invoice);
   const items = invoiceItemCount(invoice);
   return (
@@ -285,12 +301,12 @@ function InvoiceRow({ invoice }: { invoice: Invoice }) {
                 INVOICE_STATUS_CLASSES[invoice.status] ?? "bg-surface-tint text-muted"
               }`}
             >
-              {INVOICE_STATUS_LABELS[invoice.status] ?? invoice.status}
+              {statusLabel(t, invoice.status)}
             </span>
           </div>
           <p className="truncate text-body-sm text-muted">{counterpartyName(invoice)}</p>
           <p className="text-body-sm text-subtle">
-            {formatDateTime(invoice.invoiceDate)} · {items} {items === 1 ? "item" : "items"}
+            {formatDateTime(invoice.invoiceDate)} · {items} {items === 1 ? t("list.itemOne") : t("list.itemOther")}
           </p>
         </div>
       </Link>
@@ -300,7 +316,7 @@ function InvoiceRow({ invoice }: { invoice: Invoice }) {
           href={invoicePdfUrl(invoice.id)}
           target="_blank"
           rel="noopener noreferrer"
-          aria-label="Open PDF"
+          aria-label={t("list.openPdf")}
           className="inline-flex size-9 items-center justify-center rounded-button text-muted transition-colors hover:bg-surface-tint hover:text-ink"
         >
           <Download size={16} />

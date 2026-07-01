@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { VendorEditor } from "@/features/vendors/vendor-editor";
 import { getVendor } from "@/features/vendors/api";
 import type { Vendor } from "@/features/vendors/schema";
 import { FormSkeleton } from "@/shared/ui/skeleton";
 
 export default function EditVendorPage() {
+  const t = useTranslations("vendors");
   const params = useParams<{ id: string }>();
   const id = Number(params.id);
   const [vendor, setVendor] = useState<Vendor | null>(null);
@@ -20,13 +22,13 @@ export default function EditVendorPage() {
         const v = await getVendor(id);
         if (active) setVendor(v);
       } catch (e) {
-        if (active) setError(e instanceof Error ? e.message : "Could not load the vendor.");
+        if (active) setError(e instanceof Error ? e.message : t("detail.loadError"));
       }
     })();
     return () => {
       active = false;
     };
-  }, [id]);
+  }, [id, t]);
 
   if (error) return <p className="w-full px-lg py-xxl text-body-sm text-error md:px-xxl">{error}</p>;
   if (!vendor) return <FormSkeleton />;

@@ -3,6 +3,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Plus, Search } from "lucide-react";
 import { Divider } from "@/shared/ui/divider";
 import {
@@ -19,12 +20,12 @@ import { useCanManage } from "@/features/auth/use-can";
 
 const PAGE_SIZE = 20;
 
-const SORTS: Array<{ label: string; sortBy: string; sortOrder: string }> = [
-  { label: "Recently updated", sortBy: "updatedAt", sortOrder: "desc" },
-  { label: "Name A–Z", sortBy: "name", sortOrder: "asc" },
-  { label: "Price low–high", sortBy: "sellingPrice", sortOrder: "asc" },
-  { label: "Price high–low", sortBy: "sellingPrice", sortOrder: "desc" },
-  { label: "Newest", sortBy: "createdAt", sortOrder: "desc" },
+const SORTS: Array<{ key: string; sortBy: string; sortOrder: string }> = [
+  { key: "recentlyUpdated", sortBy: "updatedAt", sortOrder: "desc" },
+  { key: "nameAsc", sortBy: "name", sortOrder: "asc" },
+  { key: "priceLowHigh", sortBy: "sellingPrice", sortOrder: "asc" },
+  { key: "priceHighLow", sortBy: "sellingPrice", sortOrder: "desc" },
+  { key: "newest", sortBy: "createdAt", sortOrder: "desc" },
 ];
 
 export default function ProductsListPage() {
@@ -46,6 +47,7 @@ function ProductsListInner() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const canEdit = useCanManage("products");
+  const t = useTranslations("products");
 
   // Initialise filter state from the URL so the view deep-links and survives refresh.
   const [searchInput, setSearchInput] = useState(() => searchParams.get("q") ?? "");
@@ -129,7 +131,7 @@ function ProductsListInner() {
         setError(null);
       } catch (e) {
         if (!active) return;
-        setError(e instanceof Error ? e.message : "Could not load products.");
+        setError(e instanceof Error ? e.message : t("list.loadError"));
       } finally {
         if (active) setLoading(false);
       }
@@ -158,7 +160,7 @@ function ProductsListInner() {
       await setPublished(p.id, !p.isPublished);
     } catch (e) {
       setToggleError(
-        e instanceof Error ? e.message : `Could not update "${p.name}".`,
+        e instanceof Error ? e.message : t("list.toggleError", { name: p.name }),
       );
     } finally {
       setTogglingId(null);
@@ -174,17 +176,17 @@ function ProductsListInner() {
     <div className="w-full px-lg py-xxl md:px-xxl">
       <div className="flex flex-wrap items-center justify-between gap-md">
         <div>
-          <h1 className="text-headline-md text-ink">Products</h1>
+          <h1 className="text-headline-md text-ink">{t("list.title")}</h1>
           <p className="mt-xs text-body-md text-muted">
-            {total} {total === 1 ? "product" : "products"} in your catalogue.
+            {total === 1 ? t("list.countOne") : t("list.countOther", { count: total })}
           </p>
         </div>
-        <MaybeLocked area="products" label="New product">
+        <MaybeLocked area="products" label={t("actions.newProduct")}>
           <Link
             href="/dashboard/products/new"
             className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-lg text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
           >
-            <Plus size={18} /> New product
+            <Plus size={18} /> {t("actions.newProduct")}
           </Link>
         </MaybeLocked>
       </div>
@@ -199,7 +201,7 @@ function ProductsListInner() {
           <input
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Search by name, SKU or barcode"
+            placeholder={t("list.searchPlaceholder")}
             className="h-10 w-full rounded-input border border-hairline bg-field pl-massive pr-md text-body-md text-ink outline-none placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
           />
         </div>
@@ -211,7 +213,7 @@ function ProductsListInner() {
           }}
           className="h-10 rounded-input border border-hairline bg-field px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
         >
-          <option value="">All categories</option>
+          <option value="">{t("list.allCategories")}</option>
           {categories.map((c) => (
             <option key={c.id} value={c.id}>
               {c.name}
@@ -224,8 +226,8 @@ function ProductsListInner() {
           className="h-10 rounded-input border border-hairline bg-field px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
         >
           {SORTS.map((s, i) => (
-            <option key={s.label} value={i}>
-              {s.label}
+            <option key={s.key} value={i}>
+              {t(`list.sort.${s.key}`)}
             </option>
           ))}
         </select>
@@ -236,7 +238,7 @@ function ProductsListInner() {
             setPage(1);
           }}
         >
-          Low stock
+          {t("list.lowStock")}
         </FilterChip>
         <FilterChip
           active={outOfStock}
@@ -245,7 +247,7 @@ function ProductsListInner() {
             setPage(1);
           }}
         >
-          Out of stock
+          {t("list.outOfStock")}
         </FilterChip>
       </div>
 
@@ -268,12 +270,12 @@ function ProductsListInner() {
             onClick={reload}
             className="inline-flex h-10 items-center rounded-button border border-hairline px-lg text-label-md text-ink transition-colors hover:bg-surface-tint"
           >
-            Try again
+            {t("list.tryAgain")}
           </button>
         </div>
       ) : products.length === 0 ? (
         <p className="py-xxxl text-body-md text-muted">
-          No products match your filters.
+          {t("list.empty")}
         </p>
       ) : (
         <ul>
@@ -294,17 +296,17 @@ function ProductsListInner() {
       {total > PAGE_SIZE ? (
         <div className="mt-lg flex items-center justify-between">
           <p className="text-body-sm text-muted">
-            Page {page} of {totalPages}
+            {t("list.pageOf", { page, totalPages })}
           </p>
           <div className="flex gap-sm">
             <PagerButton disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-              Previous
+              {t("list.previous")}
             </PagerButton>
             <PagerButton
               disabled={page >= totalPages}
               onClick={() => setPage((p) => p + 1)}
             >
-              Next
+              {t("list.next")}
             </PagerButton>
           </div>
         </div>
@@ -372,6 +374,7 @@ function ProductRow({
   toggling: boolean;
   onTogglePublish: () => void;
 }) {
+  const t = useTranslations("products");
   const showStrike = product.mrp > product.sellingPrice;
   return (
     <li className="flex items-center gap-md border-t border-hairline py-md">
@@ -409,9 +412,9 @@ function ProductRow({
         title={
           canEdit
             ? product.isPublished
-              ? "Published — click to unpublish"
-              : "Unpublished — click to publish"
-            : "You don't have access. Ask the shop owner."
+              ? t("list.publishedHint")
+              : t("list.unpublishedHint")
+            : t("list.noAccessHint")
         }
         className={`shrink-0 rounded-full px-sm py-px text-body-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:text-disabled disabled:hover:bg-transparent ${
           toggling ? "opacity-60" : ""
@@ -421,7 +424,7 @@ function ProductRow({
             : "bg-surface-tint text-muted hover:text-ink"
         }`}
       >
-        {toggling ? "Saving…" : product.isPublished ? "Published" : "Draft"}
+        {toggling ? t("list.saving") : product.isPublished ? t("list.published") : t("list.draft")}
       </button>
     </li>
   );

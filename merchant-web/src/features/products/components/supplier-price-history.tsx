@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Building2 } from "lucide-react";
 import { listStockTransactions } from "@/features/stock/api";
 import {
@@ -26,6 +27,7 @@ export function SupplierPriceHistory({
   productId: number;
   unit?: string | null;
 }) {
+  const t = useTranslations("products");
   const [txns, setTxns] = useState<StockTxn[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,27 +43,27 @@ export function SupplierPriceHistory({
         if (active) setTxns(rows);
       } catch (e) {
         if (active) {
-          setError(e instanceof Error ? e.message : "Could not load purchase history.");
+          setError(e instanceof Error ? e.message : t("supplierHistory.loadError"));
         }
       }
     })();
     return () => {
       active = false;
     };
-  }, [productId]);
+  }, [productId, t]);
 
   if (error) {
     return <p className="text-body-sm text-error">{error}</p>;
   }
   if (txns === null) {
-    return <p className="text-body-sm text-muted">Loading purchase history…</p>;
+    return <p className="text-body-sm text-muted">{t("supplierHistory.loading")}</p>;
   }
 
   const groups = groupBySupplier(txns);
   if (groups.length === 0) {
     return (
       <p className="text-body-md text-muted">
-        No supplier purchase history yet. Stock-ins with a supplier will appear here.
+        {t("supplierHistory.empty")}
       </p>
     );
   }
@@ -101,6 +103,7 @@ function groupBySupplier(source: StockTxn[]): SupplierGroup[] {
 const RECENT_BUYS_PREVIEW = 6;
 
 function SupplierBlock({ group, unit }: { group: SupplierGroup; unit?: string | null }) {
+  const t = useTranslations("products");
   const { supplier, txns, isVendor } = group;
   const [expanded, setExpanded] = useState(false);
   const priced = txns.filter((t) => t.unitPrice != null).map((t) => t.unitPrice as number);
@@ -116,33 +119,37 @@ function SupplierBlock({ group, unit }: { group: SupplierGroup; unit?: string | 
         <h3 className="min-w-0 truncate text-title-sm text-ink">{supplier}</h3>
         {isVendor ? (
           <span className="inline-flex shrink-0 items-center gap-xs rounded-full bg-surface-tint px-sm py-px text-label-md text-muted">
-            <Building2 size={13} /> Vendor
+            <Building2 size={13} /> {t("supplierHistory.vendor")}
           </span>
         ) : null}
       </div>
 
       <dl className="mt-md grid grid-cols-2 gap-x-xl gap-y-md sm:grid-cols-3 lg:grid-cols-5">
-        <Metric label="Latest price" value={latest == null ? "—" : money(latest)} />
-        <Metric label="Average price" value={average == null ? "—" : money(average)} />
+        <Metric label={t("supplierHistory.latestPrice")} value={latest == null ? "—" : money(latest)} />
+        <Metric label={t("supplierHistory.averagePrice")} value={average == null ? "—" : money(average)} />
         <Metric
-          label="Total bought"
-          value={`${fmtQty(totalQty)}${unitText} · ${txns.length} ${txns.length === 1 ? "buy" : "buys"}`}
+          label={t("supplierHistory.totalBought")}
+          value={`${fmtQty(totalQty)}${unitText} · ${
+            txns.length === 1
+              ? t("supplierHistory.buysOne", { count: txns.length })
+              : t("supplierHistory.buysOther", { count: txns.length })
+          }`}
         />
-        <Metric label="Last stock-in" value={formatDateTime(txns[0].createdAt)} />
-        <Metric label="Price policy" value={purchasePolicyLabel(txns[0].purchasePriceMode)} />
+        <Metric label={t("supplierHistory.lastStockIn")} value={formatDateTime(txns[0].createdAt)} />
+        <Metric label={t("supplierHistory.pricePolicy")} value={purchasePolicyLabel(txns[0].purchasePriceMode)} />
       </dl>
 
       <div className="mt-lg">
         <p className="text-label-md uppercase tracking-wide text-subtle">
-          Recent buys{txns.length > 1 ? ` · ${txns.length}` : ""}
+          {t("supplierHistory.recentBuys")}{txns.length > 1 ? ` · ${txns.length}` : ""}
         </p>
         <table className="mt-sm w-full max-w-content text-body-sm">
           <thead>
             <tr className="border-b border-hairline text-label-md uppercase tracking-wide text-subtle">
-              <th className="py-xs pr-lg text-left font-normal">Date</th>
-              <th className="py-xs pr-lg text-right font-normal">Qty</th>
-              <th className="py-xs pr-lg text-right font-normal">Unit price</th>
-              <th className="py-xs text-right font-normal">Amount</th>
+              <th className="py-xs pr-lg text-left font-normal">{t("supplierHistory.colDate")}</th>
+              <th className="py-xs pr-lg text-right font-normal">{t("supplierHistory.colQty")}</th>
+              <th className="py-xs pr-lg text-right font-normal">{t("supplierHistory.colUnitPrice")}</th>
+              <th className="py-xs text-right font-normal">{t("supplierHistory.colAmount")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-hairline">
@@ -170,7 +177,7 @@ function SupplierBlock({ group, unit }: { group: SupplierGroup; unit?: string | 
             onClick={() => setExpanded((v) => !v)}
             className="mt-sm text-label-md font-semibold text-brand-strong transition-colors hover:text-brand focus-visible:outline-none focus-visible:underline"
           >
-            {expanded ? "Show less" : `Show all ${txns.length} buys`}
+            {expanded ? t("supplierHistory.showLess") : t("supplierHistory.showAll", { count: txns.length })}
           </button>
         ) : null}
       </div>

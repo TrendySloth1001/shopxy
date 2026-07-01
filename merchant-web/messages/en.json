@@ -11,14 +11,38 @@
     "currency": "Currency",
     "currencySubtitle": "Indian Rupee (₹)",
     "sections": {
-      "account": { "label": "Account", "blurb": "Your profile and sign-in email." },
-      "shop": { "label": "Shop operations", "blurb": "Storefront, team and payouts." },
-      "inventory": { "label": "Inventory", "blurb": "Catalogue configuration." },
-      "notifications": { "label": "Notifications", "blurb": "What we email you about." },
-      "security": { "label": "Security", "blurb": "Password and account safety." },
-      "preferences": { "label": "Preferences", "blurb": "Currency, theme and language." },
-      "privacy": { "label": "Data & privacy", "blurb": "Export and delete your data." },
-      "about": { "label": "About", "blurb": "App information." }
+      "account": {
+        "label": "Account",
+        "blurb": "Your profile and sign-in email."
+      },
+      "shop": {
+        "label": "Shop operations",
+        "blurb": "Storefront, team and payouts."
+      },
+      "inventory": {
+        "label": "Inventory",
+        "blurb": "Catalogue configuration."
+      },
+      "notifications": {
+        "label": "Notifications",
+        "blurb": "What we email you about."
+      },
+      "security": {
+        "label": "Security",
+        "blurb": "Password and account safety."
+      },
+      "preferences": {
+        "label": "Preferences",
+        "blurb": "Currency, theme and language."
+      },
+      "privacy": {
+        "label": "Data & privacy",
+        "blurb": "Export and delete your data."
+      },
+      "about": {
+        "label": "About",
+        "blurb": "App information."
+      }
     },
     "rows": {
       "editProfile": "Edit profile",
@@ -39,13 +63,983 @@
     }
   },
   "themes": {
-    "light": { "label": "Light", "desc": "Warm canvas, dark text — the default." },
-    "beige": { "label": "Beige", "desc": "Soft sepia paper — warm, low glare." },
-    "rose": { "label": "Rose", "desc": "Warm blush — soft and easy on the eye." },
-    "sage": { "label": "Sage", "desc": "Cool mint-green — calm and quiet." },
-    "dark": { "label": "Dark", "desc": "Deep slate surfaces, easy on the eyes." },
-    "oled": { "label": "OLED", "desc": "True black — best for OLED displays." },
-    "midnight": { "label": "Midnight", "desc": "Deep navy — indigo-tinted dark." },
-    "nord": { "label": "Nord", "desc": "Muted arctic blue-grey — soft dark." }
+    "light": {
+      "label": "Light",
+      "desc": "Warm canvas, dark text — the default."
+    },
+    "beige": {
+      "label": "Beige",
+      "desc": "Soft sepia paper — warm, low glare."
+    },
+    "rose": {
+      "label": "Rose",
+      "desc": "Warm blush — soft and easy on the eye."
+    },
+    "sage": {
+      "label": "Sage",
+      "desc": "Cool mint-green — calm and quiet."
+    },
+    "dark": {
+      "label": "Dark",
+      "desc": "Deep slate surfaces, easy on the eyes."
+    },
+    "oled": {
+      "label": "OLED",
+      "desc": "True black — best for OLED displays."
+    },
+    "midnight": {
+      "label": "Midnight",
+      "desc": "Deep navy — indigo-tinted dark."
+    },
+    "nord": {
+      "label": "Nord",
+      "desc": "Muted arctic blue-grey — soft dark."
+    }
+  },
+  "products": {
+    "actions": {
+      "newProduct": "New product"
+    },
+    "list": {
+      "title": "Products",
+      "countOne": "{count} product in your catalogue.",
+      "countOther": "{count} products in your catalogue.",
+      "searchPlaceholder": "Search by name, SKU or barcode",
+      "allCategories": "All categories",
+      "sort": {
+        "recentlyUpdated": "Recently updated",
+        "nameAsc": "Name A–Z",
+        "priceLowHigh": "Price low–high",
+        "priceHighLow": "Price high–low",
+        "newest": "Newest"
+      },
+      "lowStock": "Low stock",
+      "outOfStock": "Out of stock",
+      "loadError": "Could not load products.",
+      "toggleError": "Could not update \"{name}\".",
+      "tryAgain": "Try again",
+      "empty": "No products match your filters.",
+      "pageOf": "Page {page} of {totalPages}",
+      "previous": "Previous",
+      "next": "Next",
+      "publishedHint": "Published — click to unpublish",
+      "unpublishedHint": "Unpublished — click to publish",
+      "noAccessHint": "You don't have access. Ask the shop owner.",
+      "saving": "Saving…",
+      "published": "Published",
+      "draft": "Draft"
+    },
+    "detail": {
+      "loadError": "Could not load the product.",
+      "deleteError": "Could not delete the product.",
+      "skuPrefix": "SKU",
+      "ratingOutOf": "{value} out of 5",
+      "ratingCountOne": "{count} rating",
+      "ratingCountOther": "{count} ratings",
+      "published": "Published",
+      "publish": "Publish",
+      "copied": "Copied",
+      "share": "Share",
+      "edit": "Edit",
+      "confirmDelete": "Confirm delete",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "backToProducts": "Products",
+      "drafts": {
+        "ariaLabel": "Pending draft invoices",
+        "countOne": "{count} pending draft",
+        "countOther": "{count} pending drafts",
+        "hint": "Open a draft and confirm it to post the stock to your inventory.",
+        "fallbackLabel": "Draft #{id}",
+        "confirmError": "Could not confirm the draft.",
+        "badge": "Draft",
+        "justCreated": "Just created",
+        "itemCountOne": "{count} item",
+        "itemCountOther": "{count} items",
+        "view": "View",
+        "confirming": "Confirming…",
+        "confirm": "Confirm"
+      },
+      "stockIn": "Stock in",
+      "stockOut": "Stock out",
+      "stockLedger": "Stock ledger",
+      "facts": {
+        "purchasePrice": "Purchase price",
+        "profitPerUnit": "Profit / unit",
+        "margin": "Margin",
+        "gst": "GST",
+        "none": "None",
+        "stock": "Stock",
+        "lowStockAt": "Low-stock at",
+        "hsn": "HSN",
+        "barcode": "Barcode"
+      },
+      "gstBreakdownHeading": "Price & GST breakdown",
+      "sections": {
+        "supplierPriceHistory": "Supplier price history",
+        "description": "Description",
+        "tags": "Tags",
+        "highlights": "Highlights",
+        "specifications": "Specifications",
+        "offers": "Offers",
+        "variants": "Variants ({count})",
+        "aplusContent": "A+ content",
+        "reviews": "Reviews"
+      },
+      "offerCode": "Code: {code}",
+      "gallery": {
+        "addPhotos": "Add photos",
+        "noImageYet": "No image yet",
+        "imageLabel": "Image {index}"
+      }
+    },
+    "form": {
+      "editTitle": "Edit product",
+      "newTitle": "New product",
+      "cancel": "Cancel",
+      "saving": "Saving…",
+      "saveChanges": "Save changes",
+      "createProduct": "Create product",
+      "saveError": "Could not save the product.",
+      "errors": {
+        "nameRequired": "Name is required",
+        "skuRequired": "SKU is required",
+        "invalidMrp": "Enter a valid MRP",
+        "invalidSellingPrice": "Enter a valid selling price",
+        "invalidPrice": "Enter a valid price",
+        "invalidTaxPercent": "Tax % must be between 0 and 100",
+        "negativeStock": "Stock can't be negative",
+        "negativeThreshold": "Threshold can't be negative"
+      },
+      "nameLabel": "Name",
+      "skuLabel": "SKU",
+      "brandLabel": "Brand",
+      "barcodeLabel": "Barcode",
+      "hsnLabel": "HSN code",
+      "descriptionLabel": "Description",
+      "mrpLabel": "MRP",
+      "sellingPriceLabel": "Selling price",
+      "purchasePriceLabel": "Purchase price",
+      "taxPercentLabel": "Tax %",
+      "openingStockLabel": "Opening stock",
+      "lowStockThresholdLabel": "Low-stock threshold",
+      "unitLabel": "Unit",
+      "categoryLabel": "Category",
+      "noCategory": "No category",
+      "categoriesLoadError": "Couldn't load categories —",
+      "retry": "retry",
+      "activeLabel": "Active (visible in your catalogue)",
+      "sections": {
+        "images": {
+          "title": "Images",
+          "description": "Add up to 10 photos."
+        },
+        "tags": {
+          "title": "Tags",
+          "description": "Keywords for search and badges.",
+          "placeholder": "e.g. Bestseller"
+        },
+        "highlights": {
+          "title": "Highlights",
+          "description": "Short selling points on the product page.",
+          "placeholder": "e.g. 12-month warranty"
+        },
+        "specifications": {
+          "title": "Specifications",
+          "description": "Grouped spec sheet for the product page."
+        },
+        "offers": {
+          "title": "Offers",
+          "description": "Bank / coupon / EMI / exchange offers."
+        },
+        "aplusContent": {
+          "title": "A+ content",
+          "description": "Rich content blocks on the product page (max 8)."
+        },
+        "variants": {
+          "title": "Variants",
+          "description": "Sell colour/size options under one product."
+        },
+        "customFields": {
+          "title": "Custom fields",
+          "description": "Your shop-defined fields for this product."
+        }
+      }
+    },
+    "imageManager": {
+      "uploadError": "Could not upload the image.",
+      "removeError": "Could not remove the image.",
+      "reorderError": "Could not reorder images.",
+      "imageAlt": "Image {index}",
+      "removeImage": "Remove image",
+      "moveLeft": "Move left",
+      "moveRight": "Move right",
+      "add": "Add"
+    },
+    "variants": {
+      "axesLabel": "Axes (e.g. Colour, Size)",
+      "axisNamePlaceholder": "Axis name",
+      "removeAxis": "Remove axis",
+      "valuePlaceholder": "Value",
+      "addAxis": "Add axis",
+      "generate": "Generate variants",
+      "countLabel": "Variants ({count})",
+      "skuPlaceholder": "SKU",
+      "mrpPlaceholder": "MRP",
+      "sellPlaceholder": "Sell",
+      "costPlaceholder": "Cost",
+      "qtyPlaceholder": "Qty",
+      "removeVariant": "Remove variant",
+      "duplicateSkuOne": "Duplicate SKU: {skus} — each variant needs a unique SKU.",
+      "duplicateSkuOther": "Duplicate SKUs: {skus} — each variant needs a unique SKU.",
+      "addVariant": "Add variant"
+    },
+    "supplierHistory": {
+      "loadError": "Could not load purchase history.",
+      "loading": "Loading purchase history…",
+      "empty": "No supplier purchase history yet. Stock-ins with a supplier will appear here.",
+      "vendor": "Vendor",
+      "latestPrice": "Latest price",
+      "averagePrice": "Average price",
+      "totalBought": "Total bought",
+      "buysOne": "{count} buy",
+      "buysOther": "{count} buys",
+      "lastStockIn": "Last stock-in",
+      "pricePolicy": "Price policy",
+      "recentBuys": "Recent buys",
+      "colDate": "Date",
+      "colQty": "Qty",
+      "colUnitPrice": "Unit price",
+      "colAmount": "Amount",
+      "showLess": "Show less",
+      "showAll": "Show all {count} buys"
+    },
+    "picker": {
+      "loadError": "Could not load products.",
+      "title": "Pick a product",
+      "searchPlaceholder": "Search your catalog",
+      "searching": "Searching…",
+      "noResults": "No products found.",
+      "skuPrefix": "SKU"
+    },
+    "customFields": {
+      "loadError": "Could not load custom fields.",
+      "saveError": "Could not save custom fields.",
+      "loading": "Loading…",
+      "empty": "No custom fields defined for your shop yet.",
+      "saved": "Saved.",
+      "fieldFallback": "Field #{id}",
+      "saving": "Saving…",
+      "save": "Save custom fields"
+    },
+    "stringList": {
+      "remove": "Remove",
+      "add": "Add"
+    },
+    "gstBreakdown": {
+      "noGst": "No GST applied — the full {price} is the taxable value.",
+      "taxableValue": "Taxable value",
+      "taxableHint": "price before GST",
+      "cgst": "CGST @ {rate}%",
+      "sgst": "SGST @ {rate}%",
+      "totalGst": "Total GST @ {rate}%",
+      "sellingPriceInclGst": "Selling price (incl. GST)",
+      "explainer": "Prices include GST. CGST + SGST shown for a sale within your state; a sale to another state is charged the same total as IGST."
+    },
+    "offers": {
+      "headlinePlaceholder": "Headline",
+      "codePlaceholder": "Code (optional)",
+      "removeOffer": "Remove offer",
+      "addOffer": "Add offer"
+    },
+    "stockBadge": {
+      "outOfStock": "Out of stock"
+    },
+    "specs": {
+      "groupTitlePlaceholder": "Group title (e.g. Dimensions)",
+      "tabPlaceholder": "Tab (optional)",
+      "removeGroup": "Remove group",
+      "labelPlaceholder": "Label",
+      "valuePlaceholder": "Value",
+      "removeRow": "Remove row",
+      "addRow": "Add row",
+      "addGroup": "Add spec group"
+    },
+    "contentBlocks": {
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "removeBlock": "Remove block",
+      "heroImage": "Hero image",
+      "headlinePlaceholder": "Headline",
+      "subtextPlaceholder": "Subtext (optional)",
+      "featureImage": "Feature image",
+      "imageSide": "Image side",
+      "sideLeft": "Left",
+      "sideRight": "Right",
+      "titlePlaceholder": "Title",
+      "bodyPlaceholder": "Body",
+      "markdownPlaceholder": "Markdown text",
+      "captionPlaceholder": "Caption",
+      "remove": "Remove",
+      "addImage": "Add image",
+      "rows": "Rows",
+      "rowLabelPlaceholder": "Row label",
+      "columnLabelPlaceholder": "Column label",
+      "removeColumn": "Remove column",
+      "valuePlaceholder": "Value",
+      "addColumn": "Add column",
+      "imageAlt": "image",
+      "uploading": "Uploading…",
+      "replace": "Replace",
+      "upload": "Upload"
+    }
+  },
+  "orders": {
+    "list": {
+      "title": "Orders",
+      "subtitle": "Review incoming orders, then confirm to raise an invoice or decline.",
+      "searchPlaceholder": "Search by customer, phone, item or #id",
+      "fromLabel": "From",
+      "toLabel": "To",
+      "clear": "Clear",
+      "loadError": "Could not load orders.",
+      "tryAgain": "Try again",
+      "pageOf": "Page {page} of {totalPages}",
+      "previous": "Previous",
+      "next": "Next",
+      "moreItems": "(+{count} more)",
+      "itemCount": "{count, plural, one {# item} other {# items}}"
+    },
+    "tabs": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "rejected": "Rejected",
+      "all": "All"
+    },
+    "empty": {
+      "caughtUpTitle": "You're all caught up",
+      "caughtUpBody": "New orders will land here the moment a customer places one.",
+      "noMatchTitle": "No matching orders",
+      "noMatchBody": "Try a different search or date range.",
+      "noneTitle": "No orders yet",
+      "noneBody": "New orders will appear here when customers place them."
+    },
+    "detail": {
+      "heading": "Order #{id}",
+      "back": "Orders",
+      "loadError": "Could not load the order.",
+      "tryAgain": "Try again",
+      "invoiceCreated": "Invoice {invoiceNo} created.",
+      "confirmError": "Could not confirm the order.",
+      "declined": "Order declined.",
+      "declineError": "Could not decline the order.",
+      "shippingMarked": "Marked {milestone}.",
+      "shippingError": "Could not update shipping.",
+      "statItems": "Items",
+      "statTotalQty": "Total qty",
+      "statOrderTotal": "Order total",
+      "shortfallTitle": "{short} of {total} {total, plural, one {item} other {items}} short on stock",
+      "shortfallBody": "Restock those products before confirming — the invoice will fail to post otherwise.",
+      "customerNote": "Customer note",
+      "decisionNote": "Decision note:",
+      "itemsHeading": "Items",
+      "subtotal": "Subtotal",
+      "tax": "Tax",
+      "discount": "Discount",
+      "total": "Total",
+      "taxDiscountNote": "Tax and discount are finalised on the invoice.",
+      "shippingHeading": "Shipping updates",
+      "updateShipping": "Update shipping",
+      "noShippingUpdates": "No shipping updates yet.",
+      "openInvoice": "Open invoice {invoiceNo}",
+      "linkedParty": "Linked party",
+      "call": "Call",
+      "whatsapp": "WhatsApp",
+      "email": "Email",
+      "whatsappMessage": "Hi {name}, regarding your order #{id}.",
+      "emailSubject": "Order #{id}",
+      "copyHeader": "Order #{id} from {name}",
+      "copyTotal": "Total: {total}",
+      "copied": "Copied",
+      "copySummary": "Copy summary",
+      "restock": "Restock"
+    },
+    "journey": {
+      "placed": "Placed",
+      "declined": "Declined",
+      "cancelled": "Cancelled",
+      "confirmed": "Confirmed",
+      "invoiced": "Invoiced",
+      "paid": "Paid"
+    },
+    "stock": {
+      "inactive": "Inactive product",
+      "unknown": "Stock unknown",
+      "ok": "Asked {asked} · {stock} {unit} in stock",
+      "short": "Asked {asked} · in stock {stock} · short {short}"
+    },
+    "shipping": {
+      "title": "Update shipping",
+      "milestoneLabel": "Milestone",
+      "courierLabel": "Courier (optional)",
+      "courierPlaceholder": "e.g. Delhivery",
+      "awbLabel": "AWB / tracking (optional)",
+      "awbPlaceholder": "Tracking number",
+      "etaLabel": "ETA (optional)",
+      "noteLabel": "Note (optional)",
+      "save": "Save update"
+    },
+    "actions": {
+      "decline": "Decline",
+      "confirmAndInvoice": "Confirm & create invoice"
+    },
+    "confirm": {
+      "title": "Confirm this order?",
+      "titleShort": "Stock looks short — confirm anyway?",
+      "body": "Confirming creates a SALE invoice and decrements stock for each line.",
+      "bodyShort": "Some items have less stock than requested, so the invoice may fail to post.",
+      "notYet": "Not yet",
+      "confirming": "Confirming…",
+      "confirmOrder": "Confirm order"
+    },
+    "decline": {
+      "title": "Decline this order?",
+      "subtitle": "The customer is notified. Pick a reason or add a note.",
+      "reasons": {
+        "outOfStock": "Out of stock",
+        "shopClosed": "Shop closed",
+        "priceChanged": "Price changed",
+        "other": "Other"
+      },
+      "notePlaceholder": "Optional note to the customer",
+      "cancel": "Cancel",
+      "declining": "Declining…",
+      "declineOrder": "Decline order"
+    }
+  },
+  "invoices": {
+    "list": {
+      "title": "Invoices",
+      "subtitle": "Sales and purchase invoices. Save drafts, confirm to post stock, share the GST PDF and record payments.",
+      "refresh": "Refresh",
+      "searchPlaceholder": "Search invoice no, customer or vendor",
+      "typeAll": "All",
+      "typeSales": "Sales",
+      "typePurchases": "Purchases",
+      "statusLabel": "Status",
+      "statusAny": "Any status",
+      "documentLabel": "Document",
+      "docAll": "All documents",
+      "loadError": "Could not load invoices.",
+      "empty": "No invoices match these filters.",
+      "countOne": "invoice",
+      "countOther": "invoices",
+      "itemOne": "item",
+      "itemOther": "items",
+      "openPdf": "Open PDF"
+    },
+    "status": {
+      "draft": "Draft",
+      "confirmed": "Confirmed",
+      "cancelled": "Cancelled",
+      "draftLower": "draft",
+      "confirmedLower": "confirmed",
+      "cancelledLower": "cancelled"
+    },
+    "docType": {
+      "TAX_INVOICE": "Tax invoice",
+      "BILL_OF_SUPPLY": "Bill of supply",
+      "ESTIMATE": "Estimate",
+      "PROFORMA": "Proforma",
+      "CREDIT_NOTE": "Credit note",
+      "DEBIT_NOTE": "Debit note"
+    },
+    "scope": {
+      "showingInvoices": "Showing invoices for",
+      "showingBills": "Showing bills for",
+      "thisContact": "this contact",
+      "clearFilter": "Clear filter"
+    },
+    "actions": {
+      "newInvoice": "New invoice",
+      "edit": "Edit",
+      "pdf": "PDF",
+      "markPaid": "Mark as paid",
+      "convert": "Convert to invoice",
+      "delete": "Delete",
+      "cancelInvoice": "Cancel invoice",
+      "confirmInvoice": "Confirm invoice",
+      "working": "Working…"
+    },
+    "detail": {
+      "back": "Invoices",
+      "loadError": "Could not load the invoice.",
+      "notFound": "Invoice not found.",
+      "updateError": "Could not update the invoice.",
+      "deleteError": "Could not delete the invoice.",
+      "convertError": "Could not convert to an invoice.",
+      "sale": "Sale",
+      "purchase": "Purchase",
+      "items": "Items",
+      "payments": "Payments",
+      "note": "Note",
+      "billTo": "Bill to",
+      "supplier": "Supplier",
+      "productFallback": "Product"
+    },
+    "totals": {
+      "subtotal": "Subtotal",
+      "discount": "Discount",
+      "cess": "Cess",
+      "roundOff": "Round-off",
+      "total": "Total",
+      "received": "Received",
+      "outstanding": "Outstanding"
+    },
+    "cancelModal": {
+      "title": "Cancel this invoice?",
+      "body": "The draft is voided. Stock isn’t affected because it was never posted."
+    },
+    "deleteModal": {
+      "title": "Delete this invoice?",
+      "body": "Permanently removes this draft. This can’t be undone."
+    },
+    "edit": {
+      "backOne": "Invoice",
+      "onlyDraft": "Only draft invoices can be edited. This invoice is {status}."
+    },
+    "form": {
+      "editTitle": "Edit draft",
+      "newTitle": "New invoice",
+      "typeLabel": "Type",
+      "customer": "Customer",
+      "vendor": "Vendor",
+      "selectSavedCustomer": "Select a saved customer",
+      "walkInName": "Walk-in name",
+      "walkInDefault": "Walk-in customer",
+      "phone": "Phone",
+      "placeOfSupply": "Place of supply",
+      "selectState": "Select state (place of supply)",
+      "selectVendor": "Select vendor",
+      "addProduct": "Add product",
+      "noItems": "No items yet — add a product.",
+      "documentType": "Document type",
+      "discountLabel": "Discount (₹)",
+      "discountHelper": "Applied before tax.",
+      "noteLabel": "Note (optional)",
+      "updateDraft": "Update draft",
+      "saveDraft": "Save as draft",
+      "saving": "Saving…",
+      "updateConfirm": "Update & confirm",
+      "saveConfirm": "Save & confirm",
+      "customerFallback": "Customer",
+      "vendorFallback": "Vendor",
+      "productFallback": "Product",
+      "noPhone": "No phone",
+      "change": "Change",
+      "clear": "Clear",
+      "qty": "Qty",
+      "rate": "Rate ₹",
+      "amountPreTax": "Amount (pre-tax)",
+      "removeItem": "Remove item"
+    },
+    "picker": {
+      "searchProducts": "Search products by name or SKU",
+      "stock": "stock",
+      "noProducts": "No products match.",
+      "selectCustomer": "Select customer",
+      "searchCustomers": "Search customers",
+      "searchVendors": "Search vendors"
+    },
+    "errors": {
+      "noItems": "Add at least one item.",
+      "needVendor": "Select a vendor for a purchase invoice.",
+      "qtyPositive": "Every item needs a quantity above zero.",
+      "rateNegative": "Item rates can't be negative.",
+      "gstRange": "GST % must be between 0 and 100.",
+      "discountNegative": "The discount can't be negative.",
+      "confirmFailed": "The invoice was saved as a draft but could not be confirmed.",
+      "saveFailed": "Could not save the invoice."
+    }
+  },
+  "quotations": {
+    "list": {
+      "title": "Quotations",
+      "subtitle": "Build a priced bucket and send it to a linked customer. When they accept, a confirmed invoice is created automatically.",
+      "refresh": "Refresh",
+      "empty": "No quotations yet.",
+      "loadError": "Could not load quotations.",
+      "itemOne": "item",
+      "itemMany": "items"
+    },
+    "tabs": {
+      "all": "All",
+      "requested": "Requested",
+      "sent": "Sent",
+      "accepted": "Accepted"
+    },
+    "status": {
+      "REQUESTED": "Requested",
+      "PENDING": "Sent",
+      "ACCEPTED": "Accepted",
+      "DECLINED": "Declined",
+      "CANCELLED": "Cancelled",
+      "EXPIRED": "Expired"
+    },
+    "actions": {
+      "new": "New quotation",
+      "decline": "Decline",
+      "priceAndSend": "Price & send",
+      "cancel": "Cancel quotation"
+    },
+    "detail": {
+      "loadError": "Could not load the quotation.",
+      "cancelError": "Could not cancel the quotation.",
+      "declineError": "Could not decline the request.",
+      "notFound": "Quotation not found.",
+      "metaFrom": "From {party} · requested {date}",
+      "metaTo": "To {party} · {date}",
+      "invoiceBadge": "Invoice {invoiceNo}",
+      "reason": "Reason: {reason}",
+      "openInCalculator": "Open in calculator",
+      "pdf": "PDF",
+      "itemsHeading": "Items ({count})",
+      "customerNote": "Customer's note",
+      "note": "Note"
+    },
+    "totals": {
+      "subtotal": "Subtotal",
+      "gst": "GST",
+      "total": "Total"
+    },
+    "line": {
+      "productFallback": "Product",
+      "noGst": "No GST",
+      "rate": "Rate ₹",
+      "decrease": "Decrease",
+      "increase": "Increase",
+      "remove": "Remove"
+    },
+    "cancelModal": {
+      "title": "Cancel this quotation?",
+      "body": "The customer will no longer be able to accept it."
+    },
+    "declineModal": {
+      "title": "Decline this request?",
+      "body": "Let the customer know why you can't quote this (optional).",
+      "reasonLabel": "Reason (optional)"
+    },
+    "respond": {
+      "backLabel": "Quotation",
+      "onlyRequested": "Only a customer's requested quote can be priced and sent."
+    },
+    "editor": {
+      "titleRespond": "Price & send quote",
+      "titleNew": "New quotation",
+      "customer": "Customer",
+      "requestedThisQuote": "Requested this quote",
+      "clear": "Clear",
+      "selectCustomer": "Select a linked customer",
+      "items": "Items",
+      "addProduct": "Add product",
+      "itemsEmpty": "Search and add the products to quote.",
+      "noteLabel": "Note (optional)",
+      "sending": "Sending…",
+      "sendCta": "Send quotation · {amount}",
+      "errorNoProducts": "Add at least one product.",
+      "errorNoCustomer": "Select the customer to send this quote to.",
+      "sendError": "Could not send the quotation."
+    },
+    "productPicker": {
+      "title": "Add product",
+      "placeholder": "Search products by name or SKU",
+      "stock": "stock {count}"
+    },
+    "partyPicker": {
+      "title": "Select customer",
+      "placeholder": "Search linked customers",
+      "linked": "Linked",
+      "emptyHint": "No customers found. Quotes can only be sent to linked customers."
+    }
+  },
+  "parties": {
+    "list": {
+      "title": "Customers",
+      "subtitle": "The parties you sell to. Track invoices, challans and the running receivable.",
+      "searchPlaceholder": "Search by name, phone, email or GSTIN",
+      "empty": "No customers yet — add your first one.",
+      "emptySearch": "No customers match your search."
+    },
+    "actions": {
+      "add": "Add customer",
+      "refresh": "Refresh",
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "badges": {
+      "linked": "Linked",
+      "inactive": "Inactive"
+    },
+    "row": {
+      "noPhone": "No phone",
+      "challanCount": "{count, plural, one {# challan} other {# challans}}",
+      "invoiceCount": "{count, plural, one {# invoice} other {# invoices}}",
+      "itemCount": "{count, plural, one {# item} other {# items}}",
+      "noAccess": "You don't have access. Ask the shop owner."
+    },
+    "delete": {
+      "title": "Delete {name}?",
+      "bodyWithRecords": "{name} has {invoices, plural, one {# invoice} other {# invoices}} and {challans, plural, one {# challan} other {# challans}}, so they'll be deactivated instead of deleted — past records stay intact.",
+      "bodyEmpty": "Removes the customer permanently. They have no invoices or challans.",
+      "confirm": "Delete"
+    },
+    "detail": {
+      "back": "Customers",
+      "notFound": "Customer not found.",
+      "recordPayment": "Record payment",
+      "balance": "Balance",
+      "balanceTone": {
+        "owe": "Owes you",
+        "settled": "No outstanding",
+        "advance": "Advance / credit"
+      },
+      "ledger": "Ledger",
+      "recentInvoices": "Recent invoices",
+      "recentChallans": "Recent challans",
+      "noActivity": "No activity yet."
+    },
+    "stats": {
+      "netBilled": "Net billed",
+      "billsCount": "{count, plural, one {# bill} other {# bills}}",
+      "sales": "Sales",
+      "challansCount": "{count, plural, one {# challan} other {# challans}}",
+      "returns": "Returns",
+      "salesReturns": "sales returns"
+    },
+    "docStatus": {
+      "CONFIRMED": "CONFIRMED",
+      "CANCELLED": "CANCELLED",
+      "DRAFT": "DRAFT"
+    },
+    "challanStatus": {
+      "invoiced": "Invoiced"
+    },
+    "editor": {
+      "addTitle": "Add customer",
+      "editTitle": "Edit customer",
+      "subtitle": "Customers you sell to — used on sale invoices, challans and the receivable ledger.",
+      "nameLabel": "Customer name"
+    },
+    "errors": {
+      "loadList": "Could not load customers.",
+      "load": "Could not load the customer.",
+      "delete": "Could not delete the customer."
+    }
+  },
+  "vendors": {
+    "list": {
+      "title": "Vendors",
+      "subtitle": "Suppliers you buy from. Track purchase bills, stock-in and the running payable for each.",
+      "searchPlaceholder": "Search by name, phone, email or GSTIN",
+      "empty": "No vendors yet — add your first supplier.",
+      "emptySearch": "No vendors match your search.",
+      "loadError": "Could not load vendors."
+    },
+    "actions": {
+      "refresh": "Refresh",
+      "addVendor": "Add vendor",
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "badge": {
+      "linked": "Linked",
+      "inactive": "Inactive"
+    },
+    "row": {
+      "noPhone": "No phone",
+      "txn": "txn",
+      "txns": "txns",
+      "invoice": "invoice",
+      "invoices": "invoices",
+      "noAccess": "You don't have access. Ask the shop owner."
+    },
+    "delete": {
+      "title": "Delete {name}?",
+      "body": "Removes the vendor. If they have bills or stock-in history they're deactivated instead, so past records stay intact.",
+      "confirm": "Delete",
+      "error": "Could not delete the vendor."
+    },
+    "detail": {
+      "loadError": "Could not load the vendor.",
+      "notFound": "Vendor not found.",
+      "recordPayment": "Record payment",
+      "balance": "Balance",
+      "stats": {
+        "netPurchased": "Net purchased",
+        "billsCount": "{count} bills",
+        "stockIns": "Stock-ins",
+        "ledgerRows": "ledger rows",
+        "returns": "Returns",
+        "purchaseReturns": "purchase returns"
+      },
+      "sections": {
+        "ledger": "Ledger",
+        "recentBills": "Recent bills",
+        "recentStockIn": "Recent stock-in"
+      },
+      "nouns": {
+        "entries": "entries",
+        "bills": "bills",
+        "stockIns": "stock-ins"
+      },
+      "showLess": "Show less",
+      "showAll": "Show all {count} {noun}",
+      "viewAllInvoices": "View all in Invoices",
+      "noActivity": "No activity yet.",
+      "item": "item",
+      "items": "items",
+      "product": "Product"
+    },
+    "editor": {
+      "addTitle": "Add vendor",
+      "editTitle": "Edit vendor",
+      "subtitle": "Suppliers you buy stock from — used on purchase bills and stock-in entries.",
+      "nameLabel": "Vendor name"
+    }
+  },
+  "coupons": {
+    "list": {
+      "title": "Coupons",
+      "subtitle": "Discount codes customers redeem at checkout. Public codes auto-apply; private codes are typed in or shared as a link.",
+      "empty": "No coupons yet — create your first discount code."
+    },
+    "actions": {
+      "new": "New coupon",
+      "refresh": "Refresh",
+      "viewRedemptions": "View redemptions",
+      "deactivate": "Deactivate",
+      "noAccess": "You don't have access. Ask the shop owner."
+    },
+    "state": {
+      "live": "Live",
+      "inactive": "Inactive",
+      "expired": "Expired",
+      "exhausted": "Exhausted"
+    },
+    "badges": {
+      "publicAutoApplies": "Public · auto-applies",
+      "firstOrderOnly": "First order only"
+    },
+    "row": {
+      "validRange": "Valid {from} – {until}",
+      "redeemedCount": "{used}{cap} redeemed"
+    },
+    "deactivate": {
+      "title": "Deactivate {code}?",
+      "body": "Buyers won't see this coupon anymore. Existing redemptions are unaffected.",
+      "confirm": "Deactivate"
+    },
+    "redemptions": {
+      "title": "{code} — redemptions",
+      "count": "{count} redeemed",
+      "given": "{amount} discount given (last {last})",
+      "loading": "Loading…",
+      "empty": "No redemptions yet.",
+      "customer": "Customer",
+      "order": "order #{id}"
+    },
+    "errors": {
+      "load": "Could not load coupons.",
+      "deactivate": "Could not deactivate the coupon.",
+      "loadRedemptions": "Could not load redemptions.",
+      "loadOne": "Could not load the coupon."
+    },
+    "form": {
+      "newTitle": "New coupon",
+      "editTitle": "Edit coupon",
+      "subtitle": "A discount code your customers redeem at checkout — the preview shows the card they'll see.",
+      "preview": "Preview",
+      "codeLabel": "Code",
+      "codeHelper": "Letters, numbers, - and _ · auto-uppercased",
+      "titleLabel": "Title",
+      "titlePlaceholder": "New user offer",
+      "descriptionLabel": "Description (optional)",
+      "descriptionPlaceholder": "Shown on the customer's coupon card.",
+      "typeLabel": "Type",
+      "percentOffLabel": "% off",
+      "rupeeOffLabel": "₹ off",
+      "maxDiscountLabel": "Max discount (₹) — optional",
+      "maxDiscountHelper": "Caps the % off. Leave blank for no ceiling.",
+      "minOrderLabel": "Minimum order (₹)",
+      "minOrderHelper": "0 = applies to any cart",
+      "validFromLabel": "Valid from",
+      "validUntilLabel": "Valid until",
+      "perUserLimitLabel": "Per-user limit",
+      "totalCapLabel": "Total cap",
+      "unlimitedHelper": "0 = unlimited",
+      "publicLabel": "Public — auto-applies",
+      "publicDescription": "Anyone can see and use it; it auto-applies at checkout when the cart matches — no code typing. Keep off for private codes shared with specific people.",
+      "firstOrderLabel": "First-order only",
+      "firstOrderDescription": "Restricts redemption to customers with no prior confirmed orders. Pair with a per-user limit of 1 for a single-shot welcome offer.",
+      "activeLabel": "Active",
+      "activeDescription": "When off, buyers won't see this coupon and can't redeem it.",
+      "cancel": "Cancel",
+      "saving": "Saving…",
+      "saveChanges": "Save changes",
+      "create": "Create coupon",
+      "errors": {
+        "valueAboveZero": "Enter a value above 0.",
+        "percentMax": "Percent off can't exceed 100.",
+        "codeMinLength": "Code must be at least 2 characters.",
+        "titleRequired": "Give the coupon a title.",
+        "discountAboveZero": "Enter a discount value above 0.",
+        "validUntilAfterFrom": "Valid-until must be after valid-from.",
+        "saveFailed": "Save failed."
+      }
+    },
+    "discountType": {
+      "PERCENT": "Percent off",
+      "FLAT": "Flat ₹ off"
+    },
+    "preview": {
+      "titleFallback": "Coupon title",
+      "codeFallback": "CODE",
+      "minOrder": "Min. order {amount}",
+      "noMinOrder": "No minimum order",
+      "validTill": "Valid till {date}",
+      "autoApplies": "Auto-applies"
+    }
+  },
+  "categories": {
+    "list": {
+      "title": "Categories",
+      "subtitle": "Browse the storefront taxonomy and drill into the products filed under each category. The catalogue itself is platform-managed.",
+      "empty": "No categories in the taxonomy yet.",
+      "loadError": "Could not load categories."
+    },
+    "actions": {
+      "refresh": "Refresh"
+    },
+    "card": {
+      "productCount": "{count, plural, one {# product} other {# products}}",
+      "subCount": "{count} sub"
+    },
+    "detail": {
+      "back": "Categories",
+      "fallbackName": "Category",
+      "productCount": "{count, plural, one {# product} other {# products}}",
+      "subcategoryCount": "{count, plural, one {# subcategory} other {# subcategories}}",
+      "subcategoriesHeading": "Subcategories",
+      "productsHeading": "Products",
+      "searchPlaceholder": "Search products in this category",
+      "productsLoadError": "Could not load products.",
+      "emptySearch": "No products match “{query}”.",
+      "emptyWithSubcategories": "No products filed directly here — check the subcategories above.",
+      "empty": "No products in this category yet.",
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {page} of {pageCount}",
+      "skuLabel": "SKU {sku}"
+    }
   }
 }

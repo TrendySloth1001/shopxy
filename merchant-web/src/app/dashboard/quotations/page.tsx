@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { ChevronRight, FileText, Plus, RefreshCw } from "lucide-react";
 import { PageHeader } from "@/shared/ui/page-header";
 import { formatDateTime } from "@/shared/datetime";
@@ -16,14 +17,15 @@ import {
 import { MaybeLocked } from "@/features/auth/components/maybe-locked";
 import { ListRowsSkeleton } from "@/shared/ui/skeleton";
 
-const TABS: { key: string; label: string }[] = [
-  { key: "", label: "All" },
-  { key: "REQUESTED", label: "Requested" },
-  { key: "PENDING", label: "Sent" },
-  { key: "ACCEPTED", label: "Accepted" },
+const TABS: { key: string; labelKey: string }[] = [
+  { key: "", labelKey: "tabs.all" },
+  { key: "REQUESTED", labelKey: "tabs.requested" },
+  { key: "PENDING", labelKey: "tabs.sent" },
+  { key: "ACCEPTED", labelKey: "tabs.accepted" },
 ];
 
 export default function QuotationsPage() {
+  const t = useTranslations("quotations");
   const [rows, setRows] = useState<Quotation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +42,7 @@ export default function QuotationsPage() {
         setRows(data);
         setError(null);
       } catch (e) {
-        if (active) setError(e instanceof Error ? e.message : "Could not load quotations.");
+        if (active) setError(e instanceof Error ? e.message : t("list.loadError"));
       } finally {
         if (active) setLoading(false);
       }
@@ -48,46 +50,46 @@ export default function QuotationsPage() {
     return () => {
       active = false;
     };
-  }, [status, nonce]);
+  }, [status, nonce, t]);
 
   return (
     <div className="w-full px-lg py-xxl md:px-xxl">
       <PageHeader
         icon={FileText}
         tone="teal"
-        title="Quotations"
-        subtitle="Build a priced bucket and send it to a linked customer. When they accept, a confirmed invoice is created automatically."
+        title={t("list.title")}
+        subtitle={t("list.subtitle")}
       >
         <button
           type="button"
           onClick={() => setNonce((n) => n + 1)}
           disabled={loading}
-          aria-label="Refresh"
+          aria-label={t("list.refresh")}
           className="inline-flex size-10 items-center justify-center rounded-button border border-hairline text-ink transition-colors hover:bg-surface-tint disabled:text-disabled"
         >
           <RefreshCw size={16} />
         </button>
-        <MaybeLocked area="invoices" label="New quotation">
+        <MaybeLocked area="invoices" label={t("actions.new")}>
           <Link
             href="/dashboard/quotations/new"
             className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-md text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
           >
-            <Plus size={16} /> New quotation
+            <Plus size={16} /> {t("actions.new")}
           </Link>
         </MaybeLocked>
       </PageHeader>
 
       <div className="mt-xl flex flex-wrap items-center gap-sm">
-        {TABS.map((t) => (
+        {TABS.map((tab) => (
           <button
-            key={t.key}
+            key={tab.key}
             type="button"
-            onClick={() => setStatus(t.key)}
+            onClick={() => setStatus(tab.key)}
             className={`inline-flex h-9 items-center rounded-button px-md text-label-md transition-colors ${
-              status === t.key ? "bg-brand text-white" : "border border-hairline text-ink hover:bg-surface-tint"
+              status === tab.key ? "bg-brand text-white" : "border border-hairline text-ink hover:bg-surface-tint"
             }`}
           >
-            {t.label}
+            {t(tab.labelKey)}
           </button>
         ))}
       </div>
@@ -104,13 +106,13 @@ export default function QuotationsPage() {
             <span className="flex size-12 items-center justify-center rounded-full bg-accent-teal-soft text-accent-teal">
               <FileText size={22} />
             </span>
-            <p className="text-body-md text-muted">No quotations yet.</p>
-            <MaybeLocked area="invoices" label="New quotation">
+            <p className="text-body-md text-muted">{t("list.empty")}</p>
+            <MaybeLocked area="invoices" label={t("actions.new")}>
               <Link
                 href="/dashboard/quotations/new"
                 className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
               >
-                <Plus size={16} /> New quotation
+                <Plus size={16} /> {t("actions.new")}
               </Link>
             </MaybeLocked>
           </div>
@@ -123,6 +125,7 @@ export default function QuotationsPage() {
 }
 
 function QuotationRow({ quotation }: { quotation: Quotation }) {
+  const t = useTranslations("quotations");
   const items = quotation.items.length;
   return (
     <Link
@@ -137,12 +140,14 @@ function QuotationRow({ quotation }: { quotation: Quotation }) {
               QUOTATION_STATUS_CLASSES[quotation.status] ?? "bg-surface-tint text-muted"
             }`}
           >
-            {QUOTATION_STATUS_LABELS[quotation.status] ?? quotation.status}
+            {QUOTATION_STATUS_LABELS[quotation.status]
+              ? t(`status.${quotation.status}`)
+              : quotation.status}
           </span>
         </div>
         <p className="truncate text-body-sm text-muted">{quotationPartyName(quotation)}</p>
         <p className="text-body-sm text-subtle">
-          {formatDateTime(quotation.createdAt)} · {items} {items === 1 ? "item" : "items"}
+          {formatDateTime(quotation.createdAt)} · {items} {items === 1 ? t("list.itemOne") : t("list.itemMany")}
         </p>
       </div>
       <span className="shrink-0 text-body-md font-semibold text-ink">{formatINR2(quotation.total)}</span>

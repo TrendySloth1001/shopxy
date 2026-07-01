@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   createProduct,
   listCategories,
@@ -63,6 +64,7 @@ function num(s: string): number | undefined {
 
 export function ProductForm({ product }: { product?: Product }) {
   const router = useRouter();
+  const t = useTranslations("products");
   const isEdit = Boolean(product);
 
   const [name, setName] = useState(product?.name ?? "");
@@ -134,20 +136,20 @@ export function ProductForm({ product }: { product?: Product }) {
 
   function validate(): boolean {
     const e: Record<string, string> = {};
-    if (!name.trim()) e.name = "Name is required";
-    if (!sku.trim()) e.sku = "SKU is required";
-    if (num(mrp) === undefined || num(mrp)! <= 0) e.mrp = "Enter a valid MRP";
+    if (!name.trim()) e.name = t("form.errors.nameRequired");
+    if (!sku.trim()) e.sku = t("form.errors.skuRequired");
+    if (num(mrp) === undefined || num(mrp)! <= 0) e.mrp = t("form.errors.invalidMrp");
     if (num(sellingPrice) === undefined || num(sellingPrice)! <= 0)
-      e.sellingPrice = "Enter a valid selling price";
+      e.sellingPrice = t("form.errors.invalidSellingPrice");
     if (purchasePrice && (num(purchasePrice) === undefined || num(purchasePrice)! < 0))
-      e.purchasePrice = "Enter a valid price";
+      e.purchasePrice = t("form.errors.invalidPrice");
     const tax = num(taxPercent);
     if (taxPercent && (tax === undefined || tax < 0 || tax > 100))
-      e.taxPercent = "Tax % must be between 0 and 100";
+      e.taxPercent = t("form.errors.invalidTaxPercent");
     if (!isEdit && stockQuantity && (num(stockQuantity) === undefined || num(stockQuantity)! < 0))
-      e.stockQuantity = "Stock can't be negative";
+      e.stockQuantity = t("form.errors.negativeStock");
     if (lowStockThreshold && (num(lowStockThreshold) === undefined || num(lowStockThreshold)! < 0))
-      e.lowStockThreshold = "Threshold can't be negative";
+      e.lowStockThreshold = t("form.errors.negativeThreshold");
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -248,7 +250,7 @@ export function ProductForm({ product }: { product?: Product }) {
         : await createProduct(payload);
       router.replace(`/dashboard/products/${saved.id}`);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not save the product.");
+      setError(e instanceof Error ? e.message : t("form.saveError"));
       setSubmitting(false);
     }
   }
@@ -257,7 +259,7 @@ export function ProductForm({ product }: { product?: Product }) {
     <form onSubmit={onSubmit} noValidate className="w-full px-lg py-xxl md:px-xxl">
       <div className="flex flex-wrap items-center justify-between gap-md">
         <h1 className="text-headline-md text-ink">
-          {isEdit ? "Edit product" : "New product"}
+          {isEdit ? t("form.editTitle") : t("form.newTitle")}
         </h1>
         <div className="flex gap-sm">
           <button
@@ -265,14 +267,14 @@ export function ProductForm({ product }: { product?: Product }) {
             onClick={() => router.back()}
             className="h-10 rounded-button px-lg text-label-md text-muted hover:text-ink"
           >
-            Cancel
+            {t("form.cancel")}
           </button>
           <button
             type="submit"
             disabled={submitting}
             className="inline-flex h-10 items-center rounded-button bg-brand px-lg text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:bg-disabled"
           >
-            {submitting ? "Saving…" : isEdit ? "Save changes" : "Create product"}
+            {submitting ? t("form.saving") : isEdit ? t("form.saveChanges") : t("form.createProduct")}
           </button>
         </div>
       </div>
@@ -287,22 +289,22 @@ export function ProductForm({ product }: { product?: Product }) {
         {/* Core */}
         <div className="grid gap-lg sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <TextField label="Name" value={name} onChange={setName} error={errors.name} />
+            <TextField label={t("form.nameLabel")} value={name} onChange={setName} error={errors.name} />
           </div>
-          <TextField label="SKU" value={sku} onChange={setSku} error={errors.sku} />
-          <TextField label="Brand" value={brand} onChange={setBrand} />
-          <TextField label="Barcode" value={barcode} onChange={setBarcode} />
-          <TextField label="HSN code" value={hsnCode} onChange={setHsnCode} />
+          <TextField label={t("form.skuLabel")} value={sku} onChange={setSku} error={errors.sku} />
+          <TextField label={t("form.brandLabel")} value={brand} onChange={setBrand} />
+          <TextField label={t("form.barcodeLabel")} value={barcode} onChange={setBarcode} />
+          <TextField label={t("form.hsnLabel")} value={hsnCode} onChange={setHsnCode} />
           <div className="sm:col-span-2">
-            <TextArea label="Description" value={description} onChange={setDescription} />
+            <TextArea label={t("form.descriptionLabel")} value={description} onChange={setDescription} />
           </div>
         </div>
 
         {/* Pricing */}
         <div className="mt-lg grid gap-lg sm:grid-cols-3">
-          <NumberField label="MRP" value={mrp} onChange={setMrp} error={errors.mrp} min={0} step={0.01} />
+          <NumberField label={t("form.mrpLabel")} value={mrp} onChange={setMrp} error={errors.mrp} min={0} step={0.01} />
           <NumberField
-            label="Selling price"
+            label={t("form.sellingPriceLabel")}
             value={sellingPrice}
             onChange={setSellingPrice}
             error={errors.sellingPrice}
@@ -310,7 +312,7 @@ export function ProductForm({ product }: { product?: Product }) {
             step={0.01}
           />
           <NumberField
-            label="Purchase price"
+            label={t("form.purchasePriceLabel")}
             value={purchasePrice}
             onChange={setPurchasePrice}
             error={errors.purchasePrice}
@@ -318,7 +320,7 @@ export function ProductForm({ product }: { product?: Product }) {
             step={0.01}
           />
           <NumberField
-            label="Tax %"
+            label={t("form.taxPercentLabel")}
             value={taxPercent}
             onChange={setTaxPercent}
             error={errors.taxPercent}
@@ -328,7 +330,7 @@ export function ProductForm({ product }: { product?: Product }) {
           />
           {!isEdit ? (
             <NumberField
-              label="Opening stock"
+              label={t("form.openingStockLabel")}
               value={stockQuantity}
               onChange={setStockQuantity}
               error={errors.stockQuantity}
@@ -337,7 +339,7 @@ export function ProductForm({ product }: { product?: Product }) {
             />
           ) : null}
           <NumberField
-            label="Low-stock threshold"
+            label={t("form.lowStockThresholdLabel")}
             value={lowStockThreshold}
             onChange={setLowStockThreshold}
             error={errors.lowStockThreshold}
@@ -349,30 +351,30 @@ export function ProductForm({ product }: { product?: Product }) {
         {/* Classification */}
         <div className="mt-lg grid gap-lg sm:grid-cols-2">
           <SelectField
-            label="Unit"
+            label={t("form.unitLabel")}
             value={unit}
             onChange={setUnit}
             options={UNITS.map((u) => ({ value: u, label: unitLabel(u) }))}
           />
           <div className="flex flex-col gap-xs">
             <SelectField
-              label="Category"
+              label={t("form.categoryLabel")}
               value={categoryId}
               onChange={setCategoryId}
               options={[
-                { value: "", label: "No category" },
+                { value: "", label: t("form.noCategory") },
                 ...categories.map((c) => ({ value: String(c.id), label: c.name })),
               ]}
             />
             {categoriesError ? (
               <p className="text-body-sm text-error">
-                Couldn&rsquo;t load categories —{" "}
+                {t("form.categoriesLoadError")}{" "}
                 <button
                   type="button"
                   onClick={() => setCategoriesNonce((n) => n + 1)}
                   className="underline underline-offset-2 hover:text-ink"
                 >
-                  retry
+                  {t("form.retry")}
                 </button>
               </p>
             ) : null}
@@ -382,7 +384,7 @@ export function ProductForm({ product }: { product?: Product }) {
         {isEdit ? (
           <div className="mt-lg">
             <CheckboxField
-              label="Active (visible in your catalogue)"
+              label={t("form.activeLabel")}
               checked={isActive}
               onChange={setIsActive}
             />
@@ -391,7 +393,7 @@ export function ProductForm({ product }: { product?: Product }) {
 
         {/* Images */}
         <div className="mt-xl">
-          <FormSection title="Images" description="Add up to 10 photos." defaultOpen>
+          <FormSection title={t("form.sections.images.title")} description={t("form.sections.images.description")} defaultOpen>
             <ImageManager
               productId={product?.id}
               initial={
@@ -403,32 +405,32 @@ export function ProductForm({ product }: { product?: Product }) {
             />
           </FormSection>
 
-          <FormSection title="Tags" description="Keywords for search and badges.">
-            <StringListEditor items={tags} onChange={setTags} placeholder="e.g. Bestseller" max={20} />
+          <FormSection title={t("form.sections.tags.title")} description={t("form.sections.tags.description")}>
+            <StringListEditor items={tags} onChange={setTags} placeholder={t("form.sections.tags.placeholder")} max={20} />
           </FormSection>
 
-          <FormSection title="Highlights" description="Short selling points on the product page.">
+          <FormSection title={t("form.sections.highlights.title")} description={t("form.sections.highlights.description")}>
             <StringListEditor
               items={highlights}
               onChange={setHighlights}
-              placeholder="e.g. 12-month warranty"
+              placeholder={t("form.sections.highlights.placeholder")}
               max={8}
             />
           </FormSection>
 
-          <FormSection title="Specifications" description="Grouped spec sheet for the product page.">
+          <FormSection title={t("form.sections.specifications.title")} description={t("form.sections.specifications.description")}>
             <SpecsEditor groups={specs} onChange={setSpecs} />
           </FormSection>
 
-          <FormSection title="Offers" description="Bank / coupon / EMI / exchange offers.">
+          <FormSection title={t("form.sections.offers.title")} description={t("form.sections.offers.description")}>
             <OffersEditor offers={offers} onChange={setOffers} />
           </FormSection>
 
-          <FormSection title="A+ content" description="Rich content blocks on the product page (max 8).">
+          <FormSection title={t("form.sections.aplusContent.title")} description={t("form.sections.aplusContent.description")}>
             <ContentBlocksEditor blocks={contentBlocks} onChange={setContentBlocks} />
           </FormSection>
 
-          <FormSection title="Variants" description="Sell colour/size options under one product.">
+          <FormSection title={t("form.sections.variants.title")} description={t("form.sections.variants.description")}>
             <VariantsEditor
               axes={variantAxes}
               variants={variants}
@@ -438,7 +440,7 @@ export function ProductForm({ product }: { product?: Product }) {
           </FormSection>
 
           {isEdit && product ? (
-            <FormSection title="Custom fields" description="Your shop-defined fields for this product.">
+            <FormSection title={t("form.sections.customFields.title")} description={t("form.sections.customFields.description")}>
               <CustomFieldsEditor productId={product.id} />
             </FormSection>
           ) : null}

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { ChevronRight, FolderTree, Package, Search } from "lucide-react";
 import { BackLink } from "@/shared/ui/page-header";
 import { Divider } from "@/shared/ui/divider";
@@ -25,6 +26,7 @@ const BACK = "/dashboard/categories";
 const PAGE_SIZE = 20;
 
 export default function CategoryProductsPage() {
+  const t = useTranslations("categories");
   const params = useParams<{ id: string }>();
   const id = Number(params.id);
 
@@ -92,7 +94,7 @@ export default function CategoryProductsPage() {
         setTotal(result.pagination.total);
         setError(null);
       } catch (e) {
-        if (active) setError(e instanceof Error ? e.message : "Could not load products.");
+        if (active) setError(e instanceof Error ? e.message : t("detail.productsLoadError"));
       } finally {
         if (active) setLoading(false);
       }
@@ -100,7 +102,7 @@ export default function CategoryProductsPage() {
     return () => {
       active = false;
     };
-  }, [id, page, search]);
+  }, [id, page, search, t]);
 
   const header = node ?? fallback;
   const children = node?.children ?? [];
@@ -112,7 +114,7 @@ export default function CategoryProductsPage() {
 
   return (
     <div className="w-full px-lg py-xxl md:px-xxl">
-      <BackLink href={BACK} label="Categories" />
+      <BackLink href={BACK} label={t("detail.back")} />
 
       {/* Breadcrumb of ancestor categories */}
       {ancestors.length > 0 ? (
@@ -125,7 +127,7 @@ export default function CategoryProductsPage() {
               <ChevronRight size={13} className="text-subtle" />
             </span>
           ))}
-          <span className="text-ink">{header?.name ?? "Category"}</span>
+          <span className="text-ink">{header?.name ?? t("detail.fallbackName")}</span>
         </nav>
       ) : null}
 
@@ -135,14 +137,14 @@ export default function CategoryProductsPage() {
           <CategoryIcon name={header?.iconName} size={24} />
         </span>
         <div className="min-w-0">
-          <h1 className="text-headline-md text-ink">{header?.name ?? "Category"}</h1>
+          <h1 className="text-headline-md text-ink">{header?.name ?? t("detail.fallbackName")}</h1>
           {header?.description ? (
             <p className="mt-xs max-w-content text-body-md text-muted">{header.description}</p>
           ) : null}
           <p className="mt-xs text-body-sm text-subtle">
-            {headerCount} {headerCount === 1 ? "product" : "products"}
+            {t("detail.productCount", { count: headerCount })}
             {children.length > 0
-              ? ` · ${children.length} ${children.length === 1 ? "subcategory" : "subcategories"}`
+              ? ` · ${t("detail.subcategoryCount", { count: children.length })}`
               : ""}
           </p>
         </div>
@@ -152,7 +154,7 @@ export default function CategoryProductsPage() {
       {children.length > 0 ? (
         <>
           <h2 className="mt-xl mb-md flex items-center gap-sm text-title-md text-ink">
-            <FolderTree size={18} className="text-subtle" /> Subcategories
+            <FolderTree size={18} className="text-subtle" /> {t("detail.subcategoriesHeading")}
           </h2>
           <div className="grid grid-cols-2 gap-lg sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
             {children.map((c) => (
@@ -165,7 +167,7 @@ export default function CategoryProductsPage() {
 
       {/* Products */}
       <h2 className="mt-xl mb-md flex items-center gap-sm text-title-md text-ink">
-        <Package size={18} className="text-subtle" /> Products
+        <Package size={18} className="text-subtle" /> {t("detail.productsHeading")}
       </h2>
 
       <div className="flex items-center gap-sm rounded-input border border-hairline bg-field px-md focus-within:border-brand focus-within:ring-2 focus-within:ring-brand-soft">
@@ -173,7 +175,7 @@ export default function CategoryProductsPage() {
         <input
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          placeholder="Search products in this category"
+          placeholder={t("detail.searchPlaceholder")}
           className="h-10 w-full bg-transparent text-body-md text-ink outline-none placeholder:text-subtle"
         />
       </div>
@@ -192,10 +194,10 @@ export default function CategoryProductsPage() {
             </span>
             <p className="text-body-md text-muted">
               {search
-                ? `No products match “${search}”.`
+                ? t("detail.emptySearch", { query: search })
                 : children.length > 0
-                  ? "No products filed directly here — check the subcategories above."
-                  : "No products in this category yet."}
+                  ? t("detail.emptyWithSubcategories")
+                  : t("detail.empty")}
             </p>
           </div>
         ) : (
@@ -211,10 +213,10 @@ export default function CategoryProductsPage() {
             disabled={page <= 1}
             className="inline-flex h-9 items-center rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint disabled:text-disabled"
           >
-            Previous
+            {t("detail.previous")}
           </button>
           <span className="text-body-sm text-muted">
-            Page {page} of {pageCount}
+            {t("detail.pageOf", { page, pageCount })}
           </span>
           <button
             type="button"
@@ -222,7 +224,7 @@ export default function CategoryProductsPage() {
             disabled={page >= pageCount}
             className="inline-flex h-9 items-center rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint disabled:text-disabled"
           >
-            Next
+            {t("detail.next")}
           </button>
         </div>
       ) : null}
@@ -231,6 +233,7 @@ export default function CategoryProductsPage() {
 }
 
 function ProductRow({ product }: { product: Product }) {
+  const t = useTranslations("categories");
   return (
     <Link
       href={`/dashboard/products/${product.id}`}
@@ -239,7 +242,7 @@ function ProductRow({ product }: { product: Product }) {
       <ProductThumb url={product.images[0]?.url} alt={product.name} size={48} />
       <div className="min-w-0 flex-1">
         <p className="truncate text-body-md text-ink">{product.name}</p>
-        <p className="text-body-sm text-subtle">SKU {product.sku}</p>
+        <p className="text-body-sm text-subtle">{t("detail.skuLabel", { sku: product.sku })}</p>
       </div>
       <div className="shrink-0 text-right">
         <p className="text-body-md font-semibold text-ink">{money(product.sellingPrice)}</p>

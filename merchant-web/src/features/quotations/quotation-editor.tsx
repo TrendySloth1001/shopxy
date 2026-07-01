@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Minus, Package, Plus, Trash2, UserRound, X } from "lucide-react";
 import { BackLink } from "@/shared/ui/page-header";
 import { TextAreaField } from "@/shared/ui/form";
@@ -31,6 +32,7 @@ type QuoteLine = {
 type PartyRef = { id: number; name: string; stateCode?: string | null };
 
 export function QuotationEditor({ existing }: { existing?: Quotation }) {
+  const t = useTranslations("quotations");
   const router = useRouter();
   const respond = existing != null;
 
@@ -40,7 +42,7 @@ export function QuotationEditor({ existing }: { existing?: Quotation }) {
   const [lines, setLines] = useState<QuoteLine[]>(
     existing?.items.map((it) => ({
       productId: it.productId,
-      name: it.name ?? "Product",
+      name: it.name ?? t("line.productFallback"),
       sku: it.sku ?? null,
       quantity: it.quantity || 1,
       unitPrice: it.unitPrice,
@@ -99,8 +101,8 @@ export function QuotationEditor({ existing }: { existing?: Quotation }) {
 
   async function send() {
     setError(null);
-    if (lines.length === 0) return setError("Add at least one product.");
-    if (!respond && !party) return setError("Select the customer to send this quote to.");
+    if (lines.length === 0) return setError(t("editor.errorNoProducts"));
+    if (!respond && !party) return setError(t("editor.errorNoCustomer"));
     const items: QuotationItemWrite[] = lines.map((l) => ({
       productId: l.productId,
       name: l.name,
@@ -124,15 +126,17 @@ export function QuotationEditor({ existing }: { existing?: Quotation }) {
       router.push(`/dashboard/quotations/${result.id}`);
       router.refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not send the quotation.");
+      setError(e instanceof Error ? e.message : t("editor.sendError"));
       setSaving(false);
     }
   }
 
   return (
     <div className="w-full px-lg py-xxl pb-massive md:px-xxl">
-      <BackLink href={BACK} label="Quotations" />
-      <h1 className="mt-md text-headline-md text-ink">{respond ? "Price & send quote" : "New quotation"}</h1>
+      <BackLink href={BACK} label={t("list.title")} />
+      <h1 className="mt-md text-headline-md text-ink">
+        {respond ? t("editor.titleRespond") : t("editor.titleNew")}
+      </h1>
 
       {error ? (
         <p className="mt-md rounded-md bg-error-soft px-md py-sm text-body-sm text-error">{error}</p>
@@ -140,19 +144,19 @@ export function QuotationEditor({ existing }: { existing?: Quotation }) {
 
       {/* Customer */}
       <div className="mt-xl">
-        <p className="text-label-md uppercase tracking-wide text-subtle">Customer</p>
+        <p className="text-label-md uppercase tracking-wide text-subtle">{t("editor.customer")}</p>
         {party ? (
           <div className="mt-sm flex items-center gap-md border-b border-hairline pb-md">
             <Monogram name={party.name} size={40} />
             <div className="min-w-0 flex-1">
               <p className="truncate text-body-md text-ink">{party.name}</p>
-              {respond ? <p className="text-body-sm text-muted">Requested this quote</p> : null}
+              {respond ? <p className="text-body-sm text-muted">{t("editor.requestedThisQuote")}</p> : null}
             </div>
             {!respond ? (
               <button
                 type="button"
                 onClick={() => setParty(null)}
-                aria-label="Clear"
+                aria-label={t("editor.clear")}
                 className="inline-flex size-8 items-center justify-center rounded-button text-muted transition-colors hover:bg-surface-tint hover:text-ink"
               >
                 <X size={15} />
@@ -165,7 +169,7 @@ export function QuotationEditor({ existing }: { existing?: Quotation }) {
             onClick={() => setPicker("party")}
             className="mt-sm inline-flex h-10 w-fit items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
           >
-            <UserRound size={16} /> Select a linked customer
+            <UserRound size={16} /> {t("editor.selectCustomer")}
           </button>
         )}
       </div>
@@ -173,20 +177,20 @@ export function QuotationEditor({ existing }: { existing?: Quotation }) {
       {/* Items */}
       <div className="mt-xl">
         <div className="flex flex-wrap items-center justify-between gap-sm">
-          <p className="text-label-md uppercase tracking-wide text-subtle">Items</p>
+          <p className="text-label-md uppercase tracking-wide text-subtle">{t("editor.items")}</p>
           <button
             type="button"
             onClick={() => setPicker("product")}
             className="inline-flex h-9 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
           >
-            <Plus size={15} /> Add product
+            <Plus size={15} /> {t("editor.addProduct")}
           </button>
         </div>
 
         {lines.length === 0 ? (
           <div className="mt-md flex flex-col items-center gap-sm py-xl text-center">
             <Package size={22} className="text-subtle" />
-            <p className="text-body-sm text-subtle">Search and add the products to quote.</p>
+            <p className="text-body-sm text-subtle">{t("editor.itemsEmpty")}</p>
           </div>
         ) : (
           <div className="mt-md">
@@ -206,12 +210,12 @@ export function QuotationEditor({ existing }: { existing?: Quotation }) {
       {/* Totals + note */}
       {lines.length > 0 ? (
         <div className="mt-xl grid grid-cols-1 gap-xl lg:grid-cols-2">
-          <TextAreaField label="Note (optional)" value={note} onChange={setNote} rows={3} />
+          <TextAreaField label={t("editor.noteLabel")} value={note} onChange={setNote} rows={3} />
           <div className="border-t border-hairline pt-md lg:border-t-0 lg:pt-0">
-            <Row label="Subtotal" value={totals.subtotal} />
-            <Row label="GST" value={totals.tax} />
+            <Row label={t("totals.subtotal")} value={totals.subtotal} />
+            <Row label={t("totals.gst")} value={totals.tax} />
             <div className="mt-sm flex items-center justify-between border-t border-hairline pt-sm">
-              <span className="text-title-md text-ink">Total</span>
+              <span className="text-title-md text-ink">{t("totals.total")}</span>
               <span className="text-title-lg font-bold text-ink">{formatINR2(totals.total)}</span>
             </div>
           </div>
@@ -226,32 +230,32 @@ export function QuotationEditor({ existing }: { existing?: Quotation }) {
           disabled={saving}
           className="inline-flex h-11 items-center gap-sm rounded-button bg-brand px-lg text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:bg-disabled"
         >
-          {saving ? "Sending…" : `Send quotation · ${formatINR2(totals.total)}`}
+          {saving ? t("editor.sending") : t("editor.sendCta", { amount: formatINR2(totals.total) })}
         </button>
       </div>
 
       {picker === "product" ? (
         <PickerModal
-          title="Add product"
-          placeholder="Search products by name or SKU"
+          title={t("productPicker.title")}
+          placeholder={t("productPicker.placeholder")}
           load={loadProducts}
-          rowOf={(p) => ({ title: p.name, subtitle: `${p.sku} · stock ${p.stockQuantity}`, meta: formatINR2(p.sellingPrice) })}
+          rowOf={(p) => ({ title: p.name, subtitle: `${p.sku} · ${t("productPicker.stock", { count: p.stockQuantity })}`, meta: formatINR2(p.sellingPrice) })}
           onPick={addProduct}
           onClose={() => setPicker(null)}
         />
       ) : null}
       {picker === "party" ? (
         <PickerModal
-          title="Select customer"
-          placeholder="Search linked customers"
+          title={t("partyPicker.title")}
+          placeholder={t("partyPicker.placeholder")}
           load={loadParties}
-          rowOf={(p) => ({ title: p.name, subtitle: p.linkedUserId ? "Linked" : p.phone ?? undefined })}
+          rowOf={(p) => ({ title: p.name, subtitle: p.linkedUserId ? t("partyPicker.linked") : p.phone ?? undefined })}
           onPick={(p) => {
             setParty({ id: p.id, name: p.name, stateCode: p.stateCode });
             setPicker(null);
           }}
           onClose={() => setPicker(null)}
-          emptyHint="No customers found. Quotes can only be sent to linked customers."
+          emptyHint={t("partyPicker.emptyHint")}
         />
       ) : null}
     </div>
@@ -272,18 +276,19 @@ function QuoteLineRow({
   onStep: (delta: number) => void;
   onRemove: () => void;
 }) {
+  const t = useTranslations("quotations");
   const lineTotal = line.quantity * line.unitPrice * (1 + line.taxPercent / 100);
   return (
     <div className="flex flex-wrap items-end gap-md border-b border-hairline py-md">
       <div className="min-w-0 flex-1">
         <p className="truncate text-body-md text-ink">{line.name}</p>
         <p className="truncate text-body-sm text-muted">
-          {line.taxPercent > 0 ? `${line.taxPercent}% GST` : "No GST"}
+          {line.taxPercent > 0 ? `${line.taxPercent}% GST` : t("line.noGst")}
           {line.sku ? ` · ${line.sku}` : ""}
         </p>
       </div>
       <label className="flex flex-col gap-xs">
-        <span className="text-label-md text-subtle">Rate ₹</span>
+        <span className="text-label-md text-subtle">{t("line.rate")}</span>
         <input
           inputMode="decimal"
           value={line.unitPrice}
@@ -295,7 +300,7 @@ function QuoteLineRow({
         <button
           type="button"
           onClick={() => onStep(-1)}
-          aria-label="Decrease"
+          aria-label={t("line.decrease")}
           className="inline-flex size-8 items-center justify-center rounded-button border border-hairline text-ink transition-colors hover:bg-surface-tint"
         >
           <Minus size={14} />
@@ -304,7 +309,7 @@ function QuoteLineRow({
         <button
           type="button"
           onClick={() => onStep(1)}
-          aria-label="Increase"
+          aria-label={t("line.increase")}
           className="inline-flex size-8 items-center justify-center rounded-button border border-hairline text-ink transition-colors hover:bg-surface-tint"
         >
           <Plus size={14} />
@@ -314,7 +319,7 @@ function QuoteLineRow({
       <button
         type="button"
         onClick={onRemove}
-        aria-label="Remove"
+        aria-label={t("line.remove")}
         className="inline-flex size-9 items-center justify-center rounded-button text-muted transition-colors hover:bg-error-soft hover:text-error"
       >
         <Trash2 size={16} />
