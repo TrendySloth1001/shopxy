@@ -9,8 +9,8 @@ import 'package:shopxy/features/notifications/presentation/providers/notificatio
 import 'package:shopxy/features/parties/domain/entities/party.dart';
 import 'package:shopxy/features/parties/presentation/pages/party_detail_page.dart';
 import 'package:shopxy/features/parties/presentation/providers/parties_provider.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
-import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/constants/indian.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
@@ -57,6 +57,7 @@ class _PartiesPageState extends State<PartiesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final provider = context.watch<PartiesProvider>();
     final outgoing = context.watch<NotificationsProvider>().outgoing;
     final canManage = context.select<AuthProvider, bool>(
@@ -64,14 +65,14 @@ class _PartiesPageState extends State<PartiesPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(AppStrings.navParties),
+        title: Text(l10n.partiesTitle),
         actions: [
           AccessReloadButton(
               onReload: () => provider.loadParties(refresh: true)),
           LockedIconButton(
             allowed: canManage,
             icon: Icons.add_rounded,
-            tooltip: AppStrings.addParty,
+            tooltip: l10n.partiesAddParty,
             what: 'add customers',
             onPressed: () => _showPartySheet(context),
           ),
@@ -87,7 +88,7 @@ class _PartiesPageState extends State<PartiesPage> {
               0,
             ),
             child: AppSearchBar(
-              hint: AppStrings.searchParties,
+              hint: l10n.partiesSearchParties,
               onChanged: context.read<PartiesProvider>().updateSearch,
             ),
           ),
@@ -103,13 +104,13 @@ class _PartiesPageState extends State<PartiesPage> {
                     : provider.parties.isEmpty
                         ? EmptyState.line(
                             kind: LineArt.customers,
-                            title: AppStrings.noParties,
-                            subtitle: AppStrings.noPartiesHint,
+                            title: l10n.partiesNoParties,
+                            subtitle: l10n.partiesNoPartiesHint,
                             action: MaybeLocked(
                               allowed: canManage,
                               what: 'add customers',
                               child: AppButton.primary(
-                                label: AppStrings.addParty,
+                                label: l10n.partiesAddParty,
                                 icon: Icons.add_rounded,
                                 onPressed: () => _showPartySheet(context),
                               ),
@@ -172,10 +173,13 @@ class _PartiesPageState extends State<PartiesPage> {
       builder: (_) => PartyFormSheet(party: party),
     );
     if (saved == null || !context.mounted) return;
+    final l10n = AppLocalizations.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          isEditing ? '${saved.name} updated' : '${saved.name} added',
+          isEditing
+              ? l10n.partiesPartyUpdated(saved.name)
+              : l10n.partiesPartyAdded(saved.name),
         ),
       ),
     );
@@ -195,11 +199,12 @@ class _PartiesPageState extends State<PartiesPage> {
   }
 
   Future<void> _cancelInvite(BuildContext context, int invitationId) async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await AppConfirmDialog.show(
       context,
-      title: 'Cancel invitation',
-      message: 'Cancel this pending invitation? You can send a new one later.',
-      confirmLabel: AppStrings.confirm,
+      title: l10n.partiesCancelInvitationTitle,
+      message: l10n.partiesCancelInvitationBody,
+      confirmLabel: l10n.partiesConfirm,
       danger: true,
     );
     if (!confirmed || !context.mounted) return;
@@ -207,7 +212,7 @@ class _PartiesPageState extends State<PartiesPage> {
       await context.read<NotificationsProvider>().cancel(invitationId);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Invitation cancelled')),
+          SnackBar(content: Text(l10n.partiesInvitationCancelled)),
         );
       }
     } catch (e) {
@@ -219,11 +224,12 @@ class _PartiesPageState extends State<PartiesPage> {
   }
 
   Future<void> _confirmDelete(BuildContext context, Party party) async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await AppConfirmDialog.show(
       context,
-      title: AppStrings.deleteParty,
-      message: '${AppStrings.deletePartyConfirm} "${party.name}"?',
-      confirmLabel: AppStrings.delete,
+      title: l10n.partiesDeleteParty,
+      message: l10n.partiesDeletePartyConfirm(party.name),
+      confirmLabel: l10n.partiesDelete,
       danger: true,
     );
     if (!confirmed || !context.mounted) return;
@@ -231,7 +237,7 @@ class _PartiesPageState extends State<PartiesPage> {
       await context.read<PartiesProvider>().deleteParty(party.id);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text(AppStrings.partyDeleted)),
+          SnackBar(content: Text(l10n.partiesPartyDeleted)),
         );
       }
     } catch (e) {
@@ -336,6 +342,7 @@ class _PartyTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return Material(
       color: AppColors.surface,
       child: InkWell(
@@ -370,7 +377,7 @@ class _PartyTile extends StatelessWidget {
                       ),
                     if (party.gstin != null)
                       Text(
-                        'GSTIN: ${party.gstin}',
+                        '${l10n.partiesGstinLabel}: ${party.gstin}',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: AppColors.muted,
                         ),
@@ -381,12 +388,12 @@ class _PartyTile extends StatelessWidget {
                       runSpacing: AppSizes.xs,
                       children: [
                         AppStatusBadge(
-                          label: '${party.challanCount} challan${party.challanCount == 1 ? '' : 's'}',
+                          label: '${party.challanCount} ${l10n.partiesChallansUnit}',
                           icon: Icons.description_outlined,
                           dense: true,
                         ),
                         AppStatusBadge(
-                          label: '${party.invoiceCount} invoice${party.invoiceCount == 1 ? '' : 's'}',
+                          label: '${party.invoiceCount} ${l10n.partiesInvoicesUnit}',
                           icon: Icons.receipt_outlined,
                           dense: true,
                         ),
@@ -411,6 +418,7 @@ class _PartyTile extends StatelessWidget {
 
   void _showMenu(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.surface,
@@ -420,7 +428,7 @@ class _PartyTile extends StatelessWidget {
           children: [
             ListTile(
               leading: const Icon(Icons.edit_outlined),
-              title: const Text(AppStrings.edit),
+              title: Text(l10n.partiesEdit),
               onTap: () {
                 Navigator.pop(context);
                 onEdit();
@@ -436,7 +444,7 @@ class _PartyTile extends StatelessWidget {
                   color: AppColors.success,
                 ),
                 title: Text(
-                  'Already linked',
+                  l10n.partiesAlreadyLinked,
                   style: theme.textTheme.titleMedium
                       ?.copyWith(color: AppColors.success),
                 ),
@@ -455,7 +463,7 @@ class _PartyTile extends StatelessWidget {
                 ),
                 enabled: _canInvite,
                 title: Text(
-                  'Invite to Shopxy',
+                  l10n.partiesInviteToShopxy,
                   style: theme.textTheme.titleMedium
                       ?.copyWith(color: AppColors.brandStrong),
                 ),
@@ -463,7 +471,7 @@ class _PartyTile extends StatelessWidget {
                     ? Text(party.email!,
                         style: theme.textTheme.bodySmall
                             ?.copyWith(color: AppColors.muted))
-                    : Text('Add an email first',
+                    : Text(l10n.partiesAddEmailFirst,
                         style: theme.textTheme.bodySmall
                             ?.copyWith(color: AppColors.muted)),
                 onTap: () {
@@ -478,11 +486,11 @@ class _PartyTile extends StatelessWidget {
                   color: AppColors.warning,
                 ),
                 title: Text(
-                  'Cancel invitation',
+                  l10n.partiesCancelInvitationTitle,
                   style: theme.textTheme.titleMedium
                       ?.copyWith(color: AppColors.warning),
                 ),
-                subtitle: Text('Sent to ${invite!.toEmail}',
+                subtitle: Text(l10n.partiesSentTo(invite!.toEmail),
                     style: theme.textTheme.bodySmall
                         ?.copyWith(color: AppColors.muted)),
                 onTap: () {
@@ -496,7 +504,7 @@ class _PartyTile extends StatelessWidget {
                 color: AppColors.error,
               ),
               title: Text(
-                AppStrings.delete,
+                l10n.partiesDelete,
                 style: theme.textTheme.titleMedium
                     ?.copyWith(color: AppColors.error),
               ),
@@ -520,33 +528,34 @@ class _InviteChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final (label, icon, fg, bg) = switch (invite.status) {
       InviteStatus.pending => (
-          'Invited',
+          l10n.partiesInviteStatusInvited,
           Icons.mark_email_unread_outlined,
           AppColors.brandStrong,
           AppColors.brandSoft,
         ),
       InviteStatus.accepted => (
-          'Linked',
+          l10n.partiesInviteStatusLinked,
           Icons.verified_rounded,
           AppColors.success,
           AppColors.successSoft,
         ),
       InviteStatus.declined => (
-          'Declined',
+          l10n.partiesInviteStatusDeclined,
           Icons.cancel_outlined,
           AppColors.muted,
           AppColors.heroPanel,
         ),
       InviteStatus.cancelled => (
-          'Cancelled',
+          l10n.partiesInviteStatusCancelled,
           Icons.cancel_schedule_send_outlined,
           AppColors.muted,
           AppColors.heroPanel,
         ),
       InviteStatus.expired => (
-          'Expired',
+          l10n.partiesInviteStatusExpired,
           Icons.timer_off_outlined,
           AppColors.error,
           AppColors.errorSoft,
@@ -688,6 +697,7 @@ class _PartyFormSheetState extends State<PartyFormSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -710,7 +720,7 @@ class _PartyFormSheetState extends State<PartyFormSheet> {
               ),
               const SizedBox(height: AppSizes.sm),
               Text(
-                isEditing ? AppStrings.editParty : AppStrings.addParty,
+                isEditing ? l10n.partiesEditParty : l10n.partiesAddParty,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
@@ -719,19 +729,19 @@ class _PartyFormSheetState extends State<PartyFormSheet> {
               const SizedBox(height: AppSizes.lg),
               TextFormField(
                 controller: _name,
-                decoration: const InputDecoration(
-                  labelText: AppStrings.partyName,
+                decoration: InputDecoration(
+                  labelText: l10n.partiesPartyName,
                 ),
                 validator: (v) => v == null || v.trim().isEmpty
-                    ? AppStrings.fieldRequired
+                    ? l10n.partiesFieldRequired
                     : null,
                 textCapitalization: TextCapitalization.words,
               ),
               const SizedBox(height: AppSizes.md),
               TextFormField(
                 controller: _contactName,
-                decoration: const InputDecoration(
-                  labelText: AppStrings.contactName,
+                decoration: InputDecoration(
+                  labelText: l10n.partiesContactName,
                 ),
                 textCapitalization: TextCapitalization.words,
               ),
@@ -741,8 +751,8 @@ class _PartyFormSheetState extends State<PartyFormSheet> {
                   Expanded(
                     child: TextFormField(
                       controller: _phone,
-                      decoration: const InputDecoration(
-                        labelText: AppStrings.phone,
+                      decoration: InputDecoration(
+                        labelText: l10n.partiesPhone,
                       ),
                       keyboardType: TextInputType.phone,
                     ),
@@ -751,8 +761,8 @@ class _PartyFormSheetState extends State<PartyFormSheet> {
                   Expanded(
                     child: TextFormField(
                       controller: _email,
-                      decoration: const InputDecoration(
-                        labelText: AppStrings.email,
+                      decoration: InputDecoration(
+                        labelText: l10n.partiesEmail,
                       ),
                       keyboardType: TextInputType.emailAddress,
                     ),
@@ -765,8 +775,8 @@ class _PartyFormSheetState extends State<PartyFormSheet> {
                   Expanded(
                     child: TextFormField(
                       controller: _gstin,
-                      decoration: const InputDecoration(
-                        labelText: AppStrings.gstin,
+                      decoration: InputDecoration(
+                        labelText: l10n.partiesGstin,
                       ),
                       textCapitalization: TextCapitalization.characters,
                       validator: IndianValidators.gstin,
@@ -786,8 +796,8 @@ class _PartyFormSheetState extends State<PartyFormSheet> {
               const SizedBox(height: AppSizes.md),
               TextFormField(
                 controller: _address,
-                decoration: const InputDecoration(
-                  labelText: AppStrings.address,
+                decoration: InputDecoration(
+                  labelText: l10n.partiesAddress,
                 ),
                 maxLines: 2,
                 textCapitalization: TextCapitalization.sentences,
@@ -798,7 +808,7 @@ class _PartyFormSheetState extends State<PartyFormSheet> {
                   Expanded(
                     child: TextFormField(
                       controller: _city,
-                      decoration: const InputDecoration(labelText: 'City'),
+                      decoration: InputDecoration(labelText: l10n.partiesCity),
                       textCapitalization: TextCapitalization.words,
                     ),
                   ),
@@ -806,7 +816,8 @@ class _PartyFormSheetState extends State<PartyFormSheet> {
                   Expanded(
                     child: TextFormField(
                       controller: _pinCode,
-                      decoration: const InputDecoration(labelText: 'PIN code'),
+                      decoration:
+                          InputDecoration(labelText: l10n.partiesPinCode),
                       keyboardType: TextInputType.number,
                       validator: IndianValidators.pincode,
                     ),
@@ -817,11 +828,11 @@ class _PartyFormSheetState extends State<PartyFormSheet> {
               DropdownButtonFormField<String>(
                 initialValue: _stateCode,
                 isExpanded: true,
-                decoration: const InputDecoration(labelText: 'State'),
+                decoration: InputDecoration(labelText: l10n.partiesState),
                 items: [
-                  const DropdownMenuItem<String>(
+                  DropdownMenuItem<String>(
                     value: null,
-                    child: Text('— Select —'),
+                    child: Text(l10n.partiesSelectPlaceholder),
                   ),
                   for (final s in IndianStates.all)
                     DropdownMenuItem<String>(
@@ -833,7 +844,7 @@ class _PartyFormSheetState extends State<PartyFormSheet> {
               ),
               const SizedBox(height: AppSizes.xl),
               AppButton.primary(
-                label: AppStrings.save,
+                label: l10n.partiesSave,
                 onPressed: _save,
                 isLoading: _isSaving,
                 size: AppButtonSize.lg,

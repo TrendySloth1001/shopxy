@@ -15,6 +15,7 @@ import 'package:shopxy/features/profile/presentation/pages/settings_page.dart';
 import 'package:shopxy/features/reports/presentation/pages/reports_page.dart';
 import 'package:shopxy/features/stock_adjustments/presentation/pages/stock_adjustments_page.dart';
 import 'package:shopxy/features/vendors/presentation/pages/vendors_page.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
@@ -31,15 +32,16 @@ class ProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().user;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
         leading: const ShellMenuButton(),
-        title: const Text(AppStrings.navProfile),
+        title: Text(l10n.profileNavProfile),
         actions: [
           IconButton(
-            tooltip: AppStrings.settings,
+            tooltip: l10n.profileSettings,
             icon: const Icon(Icons.settings_outlined),
             onPressed: () => Navigator.push(
               context,
@@ -89,7 +91,7 @@ class ProfilePage extends StatelessWidget {
           const SizedBox(height: AppSizes.huge),
           Center(
             child: Text(
-              '${AppStrings.appName} · ${AppStrings.appTagline}',
+              '${AppStrings.appName} · ${l10n.profileAppTagline}',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     color: AppColors.muted,
                   ),
@@ -114,14 +116,15 @@ class ProfilePage extends StatelessWidget {
   /// section header is dropped entirely if the role has none of them.
   static List<Widget> _businessSection(BuildContext context, AuthUser? user) {
     if (user == null) return const [];
+    final l10n = AppLocalizations.of(context);
     final tiles = <Widget>[
       if (user.canView('products'))
         _ManageTile(
           icon: Icons.category_outlined,
           accent: AppColors.accentTeal,
           accentSoft: AppColors.accentTealSoft,
-          title: AppStrings.navCategories,
-          subtitle: 'Product categories and grouping',
+          title: l10n.profileNavCategories,
+          subtitle: l10n.profileCategoriesSubtitle,
           onTap: () => Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const CategoriesPage()),
@@ -132,8 +135,8 @@ class ProfilePage extends StatelessWidget {
           icon: Icons.storefront_outlined,
           accent: AppColors.accentIndigo,
           accentSoft: AppColors.accentIndigoSoft,
-          title: AppStrings.navVendors,
-          subtitle: 'Suppliers you buy from',
+          title: l10n.profileNavVendors,
+          subtitle: l10n.profileVendorsSubtitle,
           onTap: () => Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const VendorsPage()),
@@ -144,8 +147,8 @@ class ProfilePage extends StatelessWidget {
           icon: Icons.groups_outlined,
           accent: AppColors.accentRose,
           accentSoft: AppColors.accentRoseSoft,
-          title: AppStrings.navParties,
-          subtitle: 'Customers you sell to',
+          title: l10n.profileNavParties,
+          subtitle: l10n.profilePartiesSubtitle,
           onTap: () => Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const PartiesPage()),
@@ -154,7 +157,7 @@ class ProfilePage extends StatelessWidget {
     ];
     if (tiles.isEmpty) return const [];
     return [
-      const _SectionLabel(text: 'Manage your business'),
+      _SectionLabel(text: l10n.profileManageBusiness),
       const SizedBox(height: AppSizes.sm),
       _ManageCard(children: tiles),
       const SizedBox(height: AppSizes.lg),
@@ -165,14 +168,15 @@ class ProfilePage extends StatelessWidget {
   /// Reports stays for everyone (it's a read-only insight surface).
   static List<Widget> _operationsSection(BuildContext context, AuthUser? user) {
     if (user == null) return const [];
+    final l10n = AppLocalizations.of(context);
     final tiles = <Widget>[
       if (user.canView('invoices'))
         _ManageTile(
           icon: Icons.receipt_long_outlined,
           accent: AppColors.brandStrong,
           accentSoft: AppColors.brandSoft,
-          title: AppStrings.navInvoices,
-          subtitle: 'Sales, purchase and credit notes',
+          title: l10n.profileNavInvoices,
+          subtitle: l10n.profileInvoicesSubtitle,
           onTap: () => Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const InvoicesPage()),
@@ -183,8 +187,8 @@ class ProfilePage extends StatelessWidget {
           icon: Icons.assignment_outlined,
           accent: AppColors.accentAmber,
           accentSoft: AppColors.accentAmberSoft,
-          title: AppStrings.navChallans,
-          subtitle: 'Delivery notes without prices',
+          title: l10n.profileNavChallans,
+          subtitle: l10n.profileChallansSubtitle,
           onTap: () => Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const ChallansPage()),
@@ -195,8 +199,8 @@ class ProfilePage extends StatelessWidget {
           icon: Icons.tune_rounded,
           accent: AppColors.brand,
           accentSoft: AppColors.brandSoft,
-          title: 'Stock adjustments',
-          subtitle: 'Damage, expiry, shrinkage corrections',
+          title: l10n.profileStockAdjustments,
+          subtitle: l10n.profileStockAdjustmentsSubtitle,
           onTap: () => Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const StockAdjustmentsPage()),
@@ -207,8 +211,8 @@ class ProfilePage extends StatelessWidget {
           icon: Icons.insights_outlined,
           accent: AppColors.brandStrong,
           accentSoft: AppColors.brandSoft,
-          title: 'Reports',
-          subtitle: 'Sales, purchases, GST and P&L',
+          title: l10n.profileReports,
+          subtitle: l10n.profileReportsSubtitle,
           onTap: () => Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const ReportsPage()),
@@ -217,7 +221,7 @@ class ProfilePage extends StatelessWidget {
     ];
     if (tiles.isEmpty) return const [];
     return [
-      const _SectionLabel(text: 'Operations'),
+      _SectionLabel(text: l10n.profileOperations),
       const SizedBox(height: AppSizes.sm),
       _ManageCard(children: tiles),
     ];
@@ -236,6 +240,7 @@ class _ProfileHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final name = user?.name ?? '—';
     final email = user?.email ?? '';
     // The chip reflects the *shop* role (Owner/Manager/Stockist/Cashier),
@@ -334,7 +339,7 @@ class _ProfileHero extends StatelessWidget {
                           _MetaChip(
                             icon: Icons.calendar_today_outlined,
                             label:
-                                'Since ${DateFormat('MMM yyyy').format(memberSince)}',
+                                '${l10n.profileMemberSince} ${DateFormat('MMM yyyy').format(memberSince)}',
                           ),
                       ],
                     ),
@@ -355,7 +360,7 @@ class _ProfileHero extends StatelessWidget {
                 MaterialPageRoute(builder: (_) => const EditProfilePage()),
               ),
               icon: const Icon(Icons.edit_outlined, size: AppSizes.iconSm),
-              label: const Text(AppStrings.editProfile),
+              label: Text(l10n.profileEditProfile),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.brandStrong,
                 backgroundColor: AppColors.surface,
@@ -388,6 +393,7 @@ class _ShopSetupCallout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return Material(
       color: AppColors.tileBg(AppColors.accentAmberSoft),
       shape: AppShapes.squircle(AppSizes.radiusMd),
@@ -418,7 +424,7 @@ class _ShopSetupCallout extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Finish setting up your shop',
+                      l10n.profileFinishShopSetup,
                       style: theme.textTheme.bodyLarge?.copyWith(
                         fontWeight: FontWeight.w700,
                         color: AppColors.black,
@@ -426,7 +432,7 @@ class _ShopSetupCallout extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Add your shop name, GSTIN and state so invoices print correctly.',
+                      l10n.profileFinishShopSetupBody,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: AppColors.muted,
                       ),
@@ -458,29 +464,32 @@ class _ProfileCompletion extends StatelessWidget {
 
   /// Fields that make an invoice look professional + let a customer reach
   /// the shop. Kept in lockstep with the web `profileCompletion` helper so
-  /// both apps show the same percentage.
-  static List<({String label, bool filled})> _fields(AuthUser u) {
+  /// both apps show the same percentage. [label] is a localized display
+  /// string resolved from [l10n] at build time.
+  static List<({String label, bool filled})> _fields(
+      AuthUser u, AppLocalizations l10n) {
     bool ok(String? v) => v != null && v.trim().isNotEmpty;
     return [
-      (label: 'Name', filled: ok(u.name)),
-      (label: 'Photo', filled: ok(u.avatarUrl)),
-      (label: 'Phone', filled: ok(u.phoneNumber)),
-      (label: 'Shop name', filled: ok(u.shopName)),
-      (label: 'Address', filled: ok(u.shopAddress)),
-      (label: 'City', filled: ok(u.shopCity)),
-      (label: 'State', filled: ok(u.shopState)),
-      (label: 'State code', filled: ok(u.shopStateCode)),
-      (label: 'PIN code', filled: ok(u.shopPinCode)),
-      (label: 'GSTIN', filled: ok(u.shopGstin)),
-      (label: 'PAN', filled: ok(u.shopPan)),
-      (label: 'UPI ID', filled: ok(u.upiVpa)),
+      (label: l10n.profileFieldName, filled: ok(u.name)),
+      (label: l10n.profileFieldPhoto, filled: ok(u.avatarUrl)),
+      (label: l10n.profileFieldPhone, filled: ok(u.phoneNumber)),
+      (label: l10n.profileFieldShopName, filled: ok(u.shopName)),
+      (label: l10n.profileFieldAddress, filled: ok(u.shopAddress)),
+      (label: l10n.profileFieldCity, filled: ok(u.shopCity)),
+      (label: l10n.profileFieldState, filled: ok(u.shopState)),
+      (label: l10n.profileFieldStateCode, filled: ok(u.shopStateCode)),
+      (label: l10n.profileFieldPinCode, filled: ok(u.shopPinCode)),
+      (label: l10n.profileFieldGstin, filled: ok(u.shopGstin)),
+      (label: l10n.profileFieldPan, filled: ok(u.shopPan)),
+      (label: l10n.profileFieldUpiId, filled: ok(u.upiVpa)),
     ];
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final fields = _fields(user);
+    final l10n = AppLocalizations.of(context);
+    final fields = _fields(user, l10n);
     final total = fields.length;
     final filled = fields.where((f) => f.filled).length;
     final percent = ((filled / total) * 100).round();
@@ -509,13 +518,13 @@ class _ProfileCompletion extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Profile $percent% complete',
+                      '${l10n.profileCompletionTitle} $percent%',
                       style: theme.textTheme.titleSmall
                           ?.copyWith(fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '$filled of $total details added.',
+                      '$filled / $total ${l10n.profileCompletionDetailsAdded}',
                       style: theme.textTheme.bodySmall
                           ?.copyWith(color: AppColors.muted),
                     ),
@@ -528,7 +537,7 @@ class _ProfileCompletion extends StatelessWidget {
                   foregroundColor: AppColors.brandStrong,
                   visualDensity: VisualDensity.compact,
                 ),
-                child: const Text('Complete it'),
+                child: Text(l10n.profileCompleteIt),
               ),
             ],
           ),
@@ -546,7 +555,7 @@ class _ProfileCompletion extends StatelessWidget {
           if (missing.isNotEmpty) ...[
             const SizedBox(height: AppSizes.md),
             Text(
-              "WHAT'S LEFT",
+              l10n.profileWhatsLeft,
               style: theme.textTheme.labelSmall?.copyWith(
                 color: AppColors.muted,
                 fontWeight: FontWeight.w700,
@@ -719,26 +728,27 @@ class _RoleChip extends StatelessWidget {
   const _RoleChip({this.shopRole});
   final String? shopRole;
 
-  static String _label(String? role) {
+  static String _label(AppLocalizations l10n, String? role) {
     switch (role) {
       case 'OWNER':
-        return AppStrings.roleOwner;
+        return l10n.profileRoleOwner;
       case 'MANAGER':
-        return 'Manager';
+        return l10n.profileRoleManager;
       case 'STOCKIST':
-        return 'Stockist';
+        return l10n.profileRoleStockist;
       case 'CASHIER':
-        return 'Cashier';
+        return l10n.profileRoleCashier;
       default:
-        return AppStrings.roleStaff;
+        return l10n.profileRoleStaff;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final isOwner = shopRole == 'OWNER';
-    final label = _label(shopRole);
+    final label = _label(l10n, shopRole);
     final bg = isOwner ? AppColors.brandSoft : AppColors.accentIndigoSoft;
     final fg = isOwner ? AppColors.brandStrong : AppColors.accentIndigo;
     return Container(

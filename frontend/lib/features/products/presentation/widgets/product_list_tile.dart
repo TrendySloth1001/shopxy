@@ -4,6 +4,7 @@ import 'package:shopxy/core/prefs/navigation_prefs.dart';
 import 'package:shopxy/features/categories/presentation/widgets/category_icon_catalog.dart';
 import 'package:shopxy/features/products/domain/entities/product.dart';
 import 'package:shopxy/features/products/presentation/widgets/product_thumbnail.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
@@ -61,17 +62,17 @@ class ProductListTile extends StatelessWidget {
   bool get _isAboveMrp =>
       product.mrp > 0 && product.sellingPrice > product.mrp + 0.005;
 
-  String _stockLabel() {
+  String _stockLabel(AppLocalizations l10n) {
     final qty = _formatQty(product.stockQuantity);
     final unit = product.unit;
     if (product.isOutOfStock) {
-      return 'Out of stock';
+      return l10n.productsOutOfStockLabel;
     }
     if (product.isLowStock) {
       final threshold = _formatQty(product.lowStockThreshold);
-      return '$qty $unit · reorder at $threshold';
+      return '$qty $unit · ${l10n.productsReorderAt} $threshold';
     }
-    return '$qty $unit in stock';
+    return '$qty $unit ${l10n.productsInStockSuffix}';
   }
 
   ({Color fg, Color bg, IconData icon}) _stockPalette() {
@@ -87,6 +88,7 @@ class ProductListTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final compact = context.watch<NavigationPrefsProvider>().isCompact;
     // Card mode (comfortable) is the richer layout — bigger thumb, more
     // breathing room, name wraps to 2 lines, description visible.
@@ -100,7 +102,7 @@ class ProductListTile extends StatelessWidget {
         : theme.textTheme.titleLarge;
     final margin = _marginPct;
     final stock = _stockPalette();
-    final activity = _activityHint();
+    final activity = _activityHint(l10n);
     final hasVendor =
         (product.lastVendorName != null && product.lastVendorName!.isNotEmpty);
     final showMetaLine = activity != null || hasVendor;
@@ -181,7 +183,7 @@ class ProductListTile extends StatelessWidget {
                           Icon(stock.icon, size: 12, color: stock.fg),
                           const SizedBox(width: 4),
                           Text(
-                            _stockLabel(),
+                            _stockLabel(l10n),
                             style: theme.textTheme.labelSmall?.copyWith(
                               color: stock.fg,
                               fontWeight: FontWeight.w700,
@@ -279,14 +281,15 @@ class ProductListTile extends StatelessWidget {
   ///     wins. STOCK_OUT framed as "Sold Xago", STOCK_IN as "Stocked in Xago"
   ///     (within 7d) or "Last in: Xago" when older.
   ///   • Nothing if there's no ledger movement at all.
-  ({IconData icon, String label, Color fg, Color bg})? _activityHint() {
+  ({IconData icon, String label, Color fg, Color bg})? _activityHint(
+      AppLocalizations l10n) {
     final lastIn = product.lastStockInAt;
     final lastOut = product.lastStockOutAt;
 
     if (product.isOutOfStock && lastOut != null) {
       return (
         icon: Icons.event_busy_outlined,
-        label: 'Out since ${_relativeTime(lastOut)}',
+        label: '${l10n.productsOutSince} ${_relativeTime(lastOut)}',
         fg: AppColors.error,
         bg: AppColors.errorSoft,
       );
@@ -297,7 +300,7 @@ class ProductListTile extends StatelessWidget {
     if (lastOut != null && (lastIn == null || lastOut.isAfter(lastIn))) {
       return (
         icon: Icons.point_of_sale_outlined,
-        label: 'Sold ${_relativeTime(lastOut)}',
+        label: '${l10n.productsSold} ${_relativeTime(lastOut)}',
         fg: AppColors.muted,
         bg: AppColors.surfaceTint,
       );
@@ -306,8 +309,8 @@ class ProductListTile extends StatelessWidget {
     if (lastIn != null) {
       final ageDays = DateTime.now().difference(lastIn).inDays;
       final label = ageDays <= 7
-          ? 'Stocked in ${_relativeTime(lastIn)}'
-          : 'Last in: ${_relativeTime(lastIn)}';
+          ? '${l10n.productsStockedIn} ${_relativeTime(lastIn)}'
+          : '${l10n.productsLastIn} ${_relativeTime(lastIn)}';
       return (
         icon: Icons.south_west_rounded,
         label: label,
@@ -407,6 +410,7 @@ class _MerchantPriceLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return Wrap(
       crossAxisAlignment: WrapCrossAlignment.center,
       spacing: AppSizes.sm,
@@ -426,7 +430,7 @@ class _MerchantPriceLine extends StatelessWidget {
         // Cost — secondary (always shown if non-zero)
         if (cost > 0)
           Text(
-            'cost ${AppStrings.currencySymbol}${_fmt(cost)}',
+            '${l10n.productsCostPrefix} ${AppStrings.currencySymbol}${_fmt(cost)}',
             style: theme.textTheme.bodySmall?.copyWith(
               color: AppColors.muted,
               fontFeatures: const [FontFeature.tabularFigures()],
@@ -467,7 +471,7 @@ class _MerchantPriceLine extends StatelessWidget {
                 ),
                 const SizedBox(width: 3),
                 Text(
-                  'above M.R.P.',
+                  l10n.productsAboveMrp,
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: AppColors.warning,
                     fontWeight: FontWeight.w700,

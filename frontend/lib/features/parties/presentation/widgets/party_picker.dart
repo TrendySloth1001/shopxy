@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:shopxy/features/parties/data/datasources/parties_remote_data_source.dart';
 import 'package:shopxy/features/parties/domain/entities/party.dart';
 import 'package:shopxy/features/parties/presentation/pages/parties_page.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
-import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
@@ -84,6 +84,7 @@ class _PartyPickerSheetState extends State<_PartyPickerSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final height = MediaQuery.of(context).size.height * 0.8;
 
     return SizedBox(
@@ -108,14 +109,14 @@ class _PartyPickerSheetState extends State<_PartyPickerSheet> {
               child: Row(
                 children: [
                   Text(
-                    AppStrings.selectParty,
+                    l10n.partiesSelectParty,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                   const Spacer(),
                   AppButton.ghost(
-                    label: AppStrings.newParty,
+                    label: l10n.partiesNewParty,
                     icon: Icons.add_rounded,
                     onPressed: _addNew,
                     size: AppButtonSize.sm,
@@ -128,9 +129,9 @@ class _PartyPickerSheetState extends State<_PartyPickerSheet> {
               child: TextField(
                 controller: _search,
                 autofocus: true,
-                decoration: const InputDecoration(
-                  hintText: AppStrings.searchParties,
-                  prefixIcon: Icon(Icons.search_rounded),
+                decoration: InputDecoration(
+                  hintText: l10n.partiesSearchParties,
+                  prefixIcon: const Icon(Icons.search_rounded),
                 ),
                 onChanged: _load,
               ),
@@ -155,12 +156,12 @@ class _PartyPickerSheetState extends State<_PartyPickerSheet> {
                                     ),
                                     const SizedBox(height: AppSizes.md),
                                     Text(
-                                      AppStrings.noParties,
+                                      l10n.partiesNoParties,
                                       style: theme.textTheme.bodyMedium,
                                     ),
                                     const SizedBox(height: AppSizes.md),
                                     AppButton.primary(
-                                      label: AppStrings.addParty,
+                                      label: l10n.partiesAddParty,
                                       icon: Icons.add_rounded,
                                       onPressed: _addNew,
                                     ),

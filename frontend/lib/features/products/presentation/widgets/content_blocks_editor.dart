@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shopxy/core/network/image_url.dart';
 import 'package:shopxy/features/products/domain/entities/product.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
@@ -37,14 +38,24 @@ class _ContentBlocksEditorState extends State<ContentBlocksEditor> {
 
   // Friendly metadata for the "add a block" menu — plain-language label
   // + a one-liner so the merchant knows what each block does without
-  // having to guess from an acronym.
-  static const _kinds = <(String, IconData, String, String)>[
-    ('HERO', Icons.wallpaper_rounded, 'Hero banner', 'A big image with a headline'),
-    ('FEATURE', Icons.view_sidebar_rounded, 'Feature', 'Image beside a title + description'),
-    ('COMPARISON', Icons.table_chart_rounded, 'Comparison table', 'Compare this vs other options'),
-    ('GALLERY', Icons.collections_rounded, 'Gallery', 'A row of images with captions'),
-    ('TEXT', Icons.notes_rounded, 'Text', 'A paragraph of rich text'),
+  // having to guess from an acronym. Labels/hints resolved via l10n at
+  // render time; only the kind + icon are static.
+  static const _kinds = <(String, IconData)>[
+    ('HERO', Icons.wallpaper_rounded),
+    ('FEATURE', Icons.view_sidebar_rounded),
+    ('COMPARISON', Icons.table_chart_rounded),
+    ('GALLERY', Icons.collections_rounded),
+    ('TEXT', Icons.notes_rounded),
   ];
+
+  (String, String) _kindLabelHint(AppLocalizations l10n, String kind) =>
+      switch (kind) {
+        'HERO' => (l10n.productsBlockHeroLabel, l10n.productsBlockHeroHint),
+        'FEATURE' => (l10n.productsBlockFeatureLabel, l10n.productsBlockFeatureHint),
+        'COMPARISON' => (l10n.productsBlockComparisonLabel, l10n.productsBlockComparisonHint),
+        'GALLERY' => (l10n.productsBlockGalleryLabel, l10n.productsBlockGalleryHint),
+        'TEXT' || _ => (l10n.productsBlockTextLabel, l10n.productsBlockTextHint),
+      };
 
   void _add(String kind) {
     if (widget.blocks.length >= _maxBlocks) return;
@@ -102,6 +113,7 @@ class _ContentBlocksEditorState extends State<ContentBlocksEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -109,8 +121,7 @@ class _ContentBlocksEditorState extends State<ContentBlocksEditor> {
           Padding(
             padding: const EdgeInsets.only(bottom: AppSizes.sm),
             child: Text(
-              'Build a rich product story shoppers scroll through — add a '
-              'block to start.',
+              l10n.productsBlocksEmptyHint,
               style: Theme.of(context)
                   .textTheme
                   .bodySmall
@@ -130,16 +141,19 @@ class _ContentBlocksEditorState extends State<ContentBlocksEditor> {
           ),
         if (widget.blocks.length < _maxBlocks) ...[
           const SizedBox(height: AppSizes.sm),
-          for (final (kind, icon, label, hint) in _kinds)
-            Padding(
-              padding: const EdgeInsets.only(bottom: AppSizes.sm),
-              child: _AddBlockTile(
-                icon: icon,
-                label: label,
-                hint: hint,
-                onTap: () => _add(kind),
-              ),
-            ),
+          for (final (kind, icon) in _kinds)
+            Builder(builder: (_) {
+              final (label, hint) = _kindLabelHint(l10n, kind);
+              return Padding(
+                padding: const EdgeInsets.only(bottom: AppSizes.sm),
+                child: _AddBlockTile(
+                  icon: icon,
+                  label: label,
+                  hint: hint,
+                  onTap: () => _add(kind),
+                ),
+              );
+            }),
         ],
       ],
     );
@@ -219,17 +233,19 @@ class _BlockCard extends StatelessWidget {
   final VoidCallback onDown;
   final Future<String?> Function() onPickImage;
 
-  static const _titles = <String, String>{
-    'HERO': 'Hero banner',
-    'FEATURE': 'Feature',
-    'COMPARISON': 'Comparison table',
-    'GALLERY': 'Gallery',
-    'TEXT': 'Text',
-  };
+  String _blockTitle(AppLocalizations l10n, String kind) => switch (kind) {
+        'HERO' => l10n.productsBlockHeroLabel,
+        'FEATURE' => l10n.productsBlockFeature,
+        'COMPARISON' => l10n.productsBlockComparisonLabel,
+        'GALLERY' => l10n.productsBlockGallery,
+        'TEXT' => l10n.productsBlockText,
+        _ => kind,
+      };
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return Container(
       margin: const EdgeInsets.only(bottom: AppSizes.md),
       padding: const EdgeInsets.all(AppSizes.md),
@@ -252,30 +268,30 @@ class _BlockCard extends StatelessWidget {
                   shape: AppShapes.squircle(AppSizes.radiusSm),
                 ),
                 child: Text(
-                  _titles[block.kind] ?? block.kind,
+                  _blockTitle(l10n, block.kind),
                   style: theme.textTheme.labelSmall
                       ?.copyWith(fontWeight: FontWeight.w800),
                 ),
               ),
               const SizedBox(width: AppSizes.sm),
-              Text('${index + 1} of $total',
+              Text(l10n.productsBlockPosition('${index + 1}', '$total'),
                   style: theme.textTheme.bodySmall
                       ?.copyWith(color: AppColors.muted)),
               const Spacer(),
               IconButton(
-                tooltip: 'Move up',
+                tooltip: l10n.productsMoveUp,
                 visualDensity: VisualDensity.compact,
                 onPressed: index == 0 ? null : onUp,
                 icon: const Icon(Icons.keyboard_arrow_up_rounded),
               ),
               IconButton(
-                tooltip: 'Move down',
+                tooltip: l10n.productsMoveDown,
                 visualDensity: VisualDensity.compact,
                 onPressed: index == total - 1 ? null : onDown,
                 icon: const Icon(Icons.keyboard_arrow_down_rounded),
               ),
               IconButton(
-                tooltip: 'Remove',
+                tooltip: l10n.productsRemove,
                 visualDensity: VisualDensity.compact,
                 onPressed: onRemove,
                 icon: const Icon(Icons.delete_outline),
@@ -305,27 +321,28 @@ class _BlockForm extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     switch (block.kind) {
       case 'HERO':
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _ImageField(
-              label: 'Banner image',
+              label: l10n.productsBannerImage,
               value: block.data['imageUrl'] as String? ?? '',
               onChanged: (v) => onUpdate(_patch({'imageUrl': v})),
               onPickImage: onPickImage,
             ),
             const SizedBox(height: 10),
             _TextLine(
-              label: 'Headline',
+              label: l10n.productsHeadline,
               value: block.data['headline'] as String? ?? '',
               onChanged: (v) => onUpdate(_patch({'headline': v})),
               maxLength: 120,
             ),
             const SizedBox(height: 8),
             _TextLine(
-              label: 'Subtext (optional)',
+              label: l10n.productsSubtext,
               value: block.data['subtext'] as String? ?? '',
               onChanged: (v) => onUpdate(_patch({'subtext': v})),
               maxLength: 240,
@@ -337,7 +354,7 @@ class _BlockForm extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _ImageField(
-              label: 'Feature image',
+              label: l10n.productsFeatureImage,
               value: block.data['imageUrl'] as String? ?? '',
               onChanged: (v) => onUpdate(_patch({'imageUrl': v})),
               onPickImage: onPickImage,
@@ -345,13 +362,13 @@ class _BlockForm extends StatelessWidget {
             const SizedBox(height: 10),
             Row(
               children: [
-                const Text('Image on the '),
+                Text(l10n.productsImageOnThe),
                 const SizedBox(width: 8),
                 DropdownButton<String>(
                   value: (block.data['side'] as String?) ?? 'LEFT',
-                  items: const [
-                    DropdownMenuItem(value: 'LEFT', child: Text('Left')),
-                    DropdownMenuItem(value: 'RIGHT', child: Text('Right')),
+                  items: [
+                    DropdownMenuItem(value: 'LEFT', child: Text(l10n.productsSideLeft)),
+                    DropdownMenuItem(value: 'RIGHT', child: Text(l10n.productsSideRight)),
                   ],
                   onChanged: (v) =>
                       v == null ? null : onUpdate(_patch({'side': v})),
@@ -360,14 +377,14 @@ class _BlockForm extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             _TextLine(
-              label: 'Title',
+              label: l10n.productsFieldTitle,
               value: block.data['title'] as String? ?? '',
               onChanged: (v) => onUpdate(_patch({'title': v})),
               maxLength: 120,
             ),
             const SizedBox(height: 8),
             _TextArea(
-              label: 'Description',
+              label: l10n.productsDescription,
               value: block.data['body'] as String? ?? '',
               onChanged: (v) => onUpdate(_patch({'body': v})),
               maxLength: 500,
@@ -384,7 +401,7 @@ class _BlockForm extends StatelessWidget {
           children: [
             for (var i = 0; i < imgs.length; i++) ...[
               _ImageField(
-                label: 'Image ${i + 1}',
+                label: l10n.productsImageN('${i + 1}'),
                 value: imgs[i]['url'] as String? ?? '',
                 onChanged: (v) {
                   imgs[i] = {...imgs[i], 'url': v};
@@ -397,7 +414,7 @@ class _BlockForm extends StatelessWidget {
                 },
               ),
               _TextLine(
-                label: 'Caption (optional)',
+                label: l10n.productsCaption,
                 value: imgs[i]['caption'] as String? ?? '',
                 onChanged: (v) {
                   imgs[i] = {...imgs[i], 'caption': v};
@@ -410,7 +427,7 @@ class _BlockForm extends StatelessWidget {
             if (imgs.length < 6)
               OutlinedButton.icon(
                 icon: const Icon(Icons.add, size: 16),
-                label: const Text('Add image'),
+                label: Text(l10n.productsAddImageAction),
                 onPressed: () {
                   imgs.add({'url': ''});
                   onUpdate(_patch({'images': imgs}));
@@ -426,7 +443,7 @@ class _BlockForm extends StatelessWidget {
       case 'TEXT':
       default:
         return _TextArea(
-          label: 'Text',
+          label: l10n.productsBlockText,
           value: block.data['markdown'] as String? ?? '',
           onChanged: (v) => onUpdate(_patch({'markdown': v})),
           maxLength: 2000,
@@ -517,16 +534,16 @@ class _ComparisonEditorState extends State<_ComparisonEditor> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Name what you’re comparing, then add a row for each feature '
-          'and fill in a cell under every column.',
+          l10n.productsComparisonIntro,
           style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
         ),
         const SizedBox(height: AppSizes.md),
-        Text('Columns',
+        Text(l10n.productsColumns,
             style: theme.textTheme.labelMedium
                 ?.copyWith(fontWeight: FontWeight.w800)),
         const SizedBox(height: AppSizes.sm),
@@ -540,8 +557,8 @@ class _ComparisonEditorState extends State<_ComparisonEditor> {
                     initialValue: _columns[c]['label'] as String,
                     onChanged: (v) => _mutate(() => _columns[c]['label'] = v),
                     decoration: InputDecoration(
-                      labelText: 'Column ${c + 1} name',
-                      hintText: c == 0 ? 'This product' : 'Other / competitor',
+                      labelText: l10n.productsColumnNName('${c + 1}'),
+                      hintText: c == 0 ? l10n.productsThisProductHint : l10n.productsOtherCompetitorHint,
                       border: const OutlineInputBorder(),
                       isDense: true,
                     ),
@@ -550,7 +567,7 @@ class _ComparisonEditorState extends State<_ComparisonEditor> {
                 if (_columns.length > _minColumns)
                   IconButton(
                     icon: const Icon(Icons.close, size: 18),
-                    tooltip: 'Remove column',
+                    tooltip: l10n.productsRemoveColumn,
                     onPressed: () => _mutate(() => _columns.removeAt(c)),
                   ),
               ],
@@ -561,13 +578,13 @@ class _ComparisonEditorState extends State<_ComparisonEditor> {
             alignment: Alignment.centerLeft,
             child: TextButton.icon(
               icon: const Icon(Icons.add, size: 16),
-              label: const Text('Add column'),
+              label: Text(l10n.productsAddColumn),
               onPressed: () => _mutate(() => _columns
                   .add(<String, dynamic>{'label': '', 'values': <String>[]})),
             ),
           ),
         const SizedBox(height: AppSizes.md),
-        Text('Rows',
+        Text(l10n.productsRows,
             style: theme.textTheme.labelMedium
                 ?.copyWith(fontWeight: FontWeight.w800)),
         const SizedBox(height: AppSizes.sm),
@@ -587,10 +604,10 @@ class _ComparisonEditorState extends State<_ComparisonEditor> {
                       child: TextFormField(
                         initialValue: _rows[r],
                         onChanged: (v) => _mutate(() => _rows[r] = v),
-                        decoration: const InputDecoration(
-                          labelText: 'Feature',
-                          hintText: 'e.g. Battery life',
-                          border: OutlineInputBorder(),
+                        decoration: InputDecoration(
+                          labelText: l10n.productsFeature,
+                          hintText: l10n.productsFeatureHint,
+                          border: const OutlineInputBorder(),
                           isDense: true,
                         ),
                       ),
@@ -598,7 +615,7 @@ class _ComparisonEditorState extends State<_ComparisonEditor> {
                     if (_rows.length > 1)
                       IconButton(
                         icon: const Icon(Icons.delete_outline, size: 20),
-                        tooltip: 'Remove row',
+                        tooltip: l10n.productsRemoveRow,
                         onPressed: () => _mutate(() {
                           _rows.removeAt(r);
                           for (final c in _columns) {
@@ -619,7 +636,7 @@ class _ComparisonEditorState extends State<_ComparisonEditor> {
                       decoration: InputDecoration(
                         labelText:
                             (_columns[c]['label'] as String).trim().isEmpty
-                                ? 'Column ${c + 1}'
+                                ? l10n.productsColumnN('${c + 1}')
                                 : _columns[c]['label'] as String,
                         border: const OutlineInputBorder(),
                         isDense: true,
@@ -634,7 +651,7 @@ class _ComparisonEditorState extends State<_ComparisonEditor> {
             alignment: Alignment.centerLeft,
             child: TextButton.icon(
               icon: const Icon(Icons.add, size: 16),
-              label: const Text('Add row'),
+              label: Text(l10n.productsAddRow),
               onPressed: () => _mutate(() => _rows.add('')),
             ),
           ),
@@ -680,6 +697,7 @@ class _ImageFieldState extends State<_ImageField> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final hasImage = widget.value.trim().isNotEmpty;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -726,12 +744,12 @@ class _ImageFieldState extends State<_ImageField> {
                                 child: CircularProgressIndicator(strokeWidth: 2),
                               )
                             : const Icon(Icons.upload_rounded, size: 16),
-                        label: Text(hasImage ? 'Replace' : 'Upload'),
+                        label: Text(hasImage ? l10n.productsReplace : l10n.productsUpload),
                       ),
                       if (hasImage && widget.onRemove != null)
                         IconButton(
                           icon: const Icon(Icons.delete_outline, size: 20),
-                          tooltip: 'Remove',
+                          tooltip: l10n.productsRemove,
                           onPressed: widget.onRemove,
                         ),
                     ],
@@ -743,7 +761,7 @@ class _ImageFieldState extends State<_ImageField> {
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                     onPressed: () => setState(() => _showUrl = !_showUrl),
-                    child: Text(_showUrl ? 'Hide link field' : 'or paste a link',
+                    child: Text(_showUrl ? l10n.productsHideLinkField : l10n.productsOrPasteLink,
                         style: Theme.of(context).textTheme.bodySmall),
                   ),
                 ],
@@ -757,9 +775,9 @@ class _ImageFieldState extends State<_ImageField> {
             initialValue: widget.value,
             onChanged: widget.onChanged,
             keyboardType: TextInputType.url,
-            decoration: const InputDecoration(
-              labelText: 'Image link (URL)',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: l10n.productsImageLinkUrl,
+              border: const OutlineInputBorder(),
               isDense: true,
             ),
           ),

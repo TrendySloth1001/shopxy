@@ -18,6 +18,7 @@ import 'package:shopxy/features/products/presentation/utils/product_ocr_parser.d
 import 'package:shopxy/features/products/presentation/widgets/content_blocks_editor.dart';
 import 'package:shopxy/features/products/presentation/widgets/variants_editor.dart';
 import 'package:shopxy/features/reviews/presentation/pages/product_reviews_page.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/constants/app_units.dart';
@@ -280,6 +281,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     setState(() => _isSaving = true);
     // Capture before any awaits so we don't have to reach back through
     // context after async gaps.
+    final l10n = AppLocalizations.of(context);
     final provider = context.read<ProductsProvider>();
     final ds = context.read<ProductsRemoteDataSource>();
     final customFieldsDs = context.read<CustomFieldsRemoteDataSource>();
@@ -297,9 +299,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
         if (existing != null && existing.id != currentId) {
           messenger.showSnackBar(
             SnackBar(
-              content: Text(
-                'A product with that $label already exists — saving will not merge',
-              ),
+              content: Text(l10n.productsDuplicateWarning(label)),
             ),
           );
         }
@@ -308,7 +308,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
       }
     }
     await warnIfDuplicate(skuText, 'SKU');
-    await warnIfDuplicate(barcodeText, 'barcode');
+    await warnIfDuplicate(barcodeText, l10n.productsBarcodeLower);
     if (!mounted) return;
     // Drop content blocks whose per-kind required fields are missing.
     // Backend Zod will 400 on a malformed block even if the merchant
@@ -319,7 +319,10 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
       _contentBlocks.retainWhere(_isContentBlockShippable);
       messenger.showSnackBar(
         SnackBar(
-          content: Text('Dropped $droppedBlocks malformed content block${droppedBlocks == 1 ? "" : "s"}'),
+          content: Text(
+            '${l10n.productsDroppedBlocksPrefix} $droppedBlocks '
+            '${droppedBlocks == 1 ? l10n.productsMalformedBlockSingular : l10n.productsMalformedBlockPlural}',
+          ),
         ),
       );
     }
@@ -419,15 +422,17 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
   }
 
   String? _requiredValidator(String? value) {
-    if (value == null || value.trim().isEmpty) return AppStrings.fieldRequired;
+    final l10n = AppLocalizations.of(context);
+    if (value == null || value.trim().isEmpty) return l10n.productsFieldRequired;
     return null;
   }
 
   String? _priceValidator(String? value) {
-    if (value == null || value.trim().isEmpty) return AppStrings.fieldRequired;
+    final l10n = AppLocalizations.of(context);
+    if (value == null || value.trim().isEmpty) return l10n.productsFieldRequired;
     final n = double.tryParse(value);
-    if (n == null) return AppStrings.invalidNumber;
-    if (n < 0) return AppStrings.priceMustBePositive;
+    if (n == null) return l10n.productsInvalidNumber;
+    if (n < 0) return l10n.productsPriceMustBePositive;
     return null;
   }
 
@@ -450,17 +455,17 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
         _applyDraft(draft, onlyEmpty: true);
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text(AppStrings.ocrApplied)));
+        ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).productsOcrApplied)));
       } else {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text(AppStrings.ocrNoDetails)));
+        ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).productsOcrNoDetails)));
       }
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text(AppStrings.ocrFailed)));
+      ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).productsOcrFailed)));
     } finally {
       await recognizer.close();
       if (mounted) setState(() => _isScanning = false);
@@ -535,10 +540,8 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     const maxBytes = 5 * 1024 * 1024;
     if (file.lengthSync() > maxBytes) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Image is larger than 5 MB. Pick a smaller image or crop tighter.',
-          ),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).productsImageTooLarge),
         ),
       );
       return null;
@@ -578,14 +581,12 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
   Future<void> _pickAndUploadMultiple() async {
     if (_isUploading) return;
     final picker = ImagePicker();
+    final l10n = AppLocalizations.of(context);
     final remaining = _maxGalleryImages - _imageUrls.length;
     if (remaining <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'You can attach at most $_maxGalleryImages images per product. '
-            'Remove some to add more.',
-          ),
+          content: Text(l10n.productsMaxImagesReached('$_maxGalleryImages')),
         ),
       );
       return;
@@ -607,8 +608,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Selected ${picked.length}, but only $remaining more fit. '
-            'Skipping the extras.',
+            l10n.productsSelectedButOnlyFit('${picked.length}', '$remaining'),
           ),
         ),
       );
@@ -619,7 +619,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     for (final x in batch) {
       final file = File(x.path);
       if (file.lengthSync() > 5 * 1024 * 1024) {
-        failures.add('${x.name}: larger than 5 MB');
+        failures.add(l10n.productsFileTooLarge(x.name));
         continue;
       }
       final ok = await _uploadOne(file, externallyManaged: true);
@@ -632,14 +632,19 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     if (mounted) setState(() => _isUploading = false);
     if (succeeded > 0 && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Uploaded $succeeded image${succeeded == 1 ? '' : 's'}.')),
+        SnackBar(
+          content: Text(
+            '${l10n.productsUploadedPrefix} $succeeded '
+            '${succeeded == 1 ? l10n.productsImageSingular : l10n.productsImagePlural}',
+          ),
+        ),
       );
     }
     if (failures.isNotEmpty && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Skipped ${failures.length}: ${failures.take(3).join(', ')}'
+            '${l10n.productsSkippedPrefix} ${failures.length}: ${failures.take(3).join(', ')}'
             '${failures.length > 3 ? '…' : ''}',
           ),
         ),
@@ -661,10 +666,8 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     const maxBytes = 5 * 1024 * 1024;
     if (file.lengthSync() > maxBytes) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Image is larger than 5 MB. Pick a smaller image or crop tighter.',
-          ),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).productsImageTooLarge),
         ),
       );
       return false;
@@ -703,7 +706,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     if (Uri.tryParse(url)?.hasScheme != true) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text(AppStrings.invalidUrl)));
+      ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).productsInvalidUrl)));
       return;
     }
     setState(() {
@@ -713,19 +716,20 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
   }
 
   Future<bool> _confirmDiscard() async {
+    final l10n = AppLocalizations.of(context);
     final discard = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Discard changes?'),
-        content: const Text('Your edits will be lost.'),
+        title: Text(l10n.productsDiscardTitle),
+        content: Text(l10n.productsDiscardMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Keep editing'),
+            child: Text(l10n.productsKeepEditing),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Discard'),
+            child: Text(l10n.productsDiscard),
           ),
         ],
       ),
@@ -761,6 +765,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
   @override
   Widget build(BuildContext context) {
     final categories = context.watch<CategoriesProvider>().categories;
+    final l10n = AppLocalizations.of(context);
 
     return PopScope(
       canPop: !_dirty,
@@ -772,11 +777,11 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
       child: Scaffold(
         appBar: AppBar(
           title:
-              Text(isEditing ? AppStrings.editProduct : AppStrings.addProduct),
+              Text(isEditing ? l10n.productsEditProduct : l10n.productsAddProduct),
           actions: [
             if (isEditing)
               IconButton(
-                tooltip: 'Reviews',
+                tooltip: l10n.productsReviews,
                 icon: const Icon(Icons.reviews_outlined),
                 onPressed: () => Navigator.of(context).push(
                   MaterialPageRoute(
@@ -791,7 +796,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
               ),
             IconButton(
               onPressed: _isScanning ? null : _scanLabel,
-              tooltip: AppStrings.scanLabel,
+              tooltip: l10n.productsScanLabel,
               icon: _isScanning
                   ? const SizedBox(
                       width: 18,
@@ -808,7 +813,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                       height: 20,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text(AppStrings.save),
+                  : Text(l10n.productsSave),
             ),
           ],
         ),
@@ -824,7 +829,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
 
               // ── The essentials — everything required to publish ───────
               AppSectionHeader(
-                title: 'THE BASICS',
+                title: l10n.productsSectionBasics,
                 padding: const EdgeInsets.only(bottom: AppSizes.sm),
               ),
               TextFormField(
@@ -833,9 +838,9 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                 // caps name at 200 chars) so the user hits the wall here
                 // instead of on save.
                 maxLength: 200,
-                decoration: const InputDecoration(
-                  labelText: AppStrings.productName,
-                  hintText: 'e.g. Boult Astra TWS Earbuds',
+                decoration: InputDecoration(
+                  labelText: l10n.productsProductName,
+                  hintText: l10n.productsNameHint,
                   counterText: '',
                 ),
                 validator: _requiredValidator,
@@ -844,9 +849,9 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
               const SizedBox(height: AppSizes.md),
               TextFormField(
                 controller: _description,
-                decoration: const InputDecoration(
-                  labelText: AppStrings.description,
-                  hintText: 'A line or two about what it is',
+                decoration: InputDecoration(
+                  labelText: l10n.productsDescription,
+                  hintText: l10n.productsDescriptionHint,
                 ),
                 maxLines: 2,
                 textCapitalization: TextCapitalization.sentences,
@@ -854,9 +859,9 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
               const SizedBox(height: AppSizes.md),
               TextFormField(
                 controller: _brand,
-                decoration: const InputDecoration(
-                  labelText: 'Brand',
-                  hintText: 'e.g. Boult — optional',
+                decoration: InputDecoration(
+                  labelText: l10n.productsBrand,
+                  hintText: l10n.productsBrandHint,
                 ),
                 textCapitalization: TextCapitalization.words,
               ),
@@ -864,7 +869,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
               const SizedBox(height: AppSizes.lg),
               // ── Price ─────────────────────────────────────────────────
               AppSectionHeader(
-                title: 'PRICE',
+                title: l10n.productsSectionPrice,
                 padding: const EdgeInsets.only(bottom: AppSizes.sm),
               ),
               Row(
@@ -872,10 +877,10 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                   Expanded(
                     child: TextFormField(
                       controller: _sellingPrice,
-                      decoration: const InputDecoration(
-                        labelText: 'Selling price',
+                      decoration: InputDecoration(
+                        labelText: l10n.productsSellingPriceLabel,
                         prefixText: '${AppStrings.currencySymbol} ',
-                        helperText: 'What the customer pays',
+                        helperText: l10n.productsSellingPriceHelper,
                       ),
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       validator: _priceValidator,
@@ -885,10 +890,10 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                   Expanded(
                     child: TextFormField(
                       controller: _mrp,
-                      decoration: const InputDecoration(
-                        labelText: 'MRP',
+                      decoration: InputDecoration(
+                        labelText: l10n.productsMrp,
                         prefixText: '${AppStrings.currencySymbol} ',
-                        helperText: 'Strike-through price',
+                        helperText: l10n.productsMrpHelper,
                       ),
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       validator: _priceValidator,
@@ -902,10 +907,10 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                   Expanded(
                     child: TextFormField(
                       controller: _purchasePrice,
-                      decoration: const InputDecoration(
-                        labelText: 'Cost price',
+                      decoration: InputDecoration(
+                        labelText: l10n.productsCostPrice,
                         prefixText: '${AppStrings.currencySymbol} ',
-                        helperText: 'What you pay',
+                        helperText: l10n.productsCostPriceHelper,
                       ),
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       validator: _priceValidator,
@@ -915,10 +920,10 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                   Expanded(
                     child: TextFormField(
                       controller: _taxPercent,
-                      decoration: const InputDecoration(
-                        labelText: 'GST',
+                      decoration: InputDecoration(
+                        labelText: l10n.productsGst,
                         suffixText: '%',
-                        helperText: 'Optional',
+                        helperText: l10n.productsOptional,
                       ),
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     ),
@@ -929,14 +934,14 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
               const SizedBox(height: AppSizes.lg),
               // ── Identity & stock ──────────────────────────────────────
               AppSectionHeader(
-                title: 'IDENTITY & STOCK',
+                title: l10n.productsSectionIdentityStock,
                 padding: const EdgeInsets.only(bottom: AppSizes.sm),
               ),
               TextFormField(
                 controller: _sku,
-                decoration: const InputDecoration(
-                  labelText: AppStrings.sku,
-                  helperText: 'Your own product code — must be unique',
+                decoration: InputDecoration(
+                  labelText: l10n.productsSku,
+                  helperText: l10n.productsSkuHelper,
                 ),
                 validator: _requiredValidator,
               ),
@@ -947,8 +952,8 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                     Expanded(
                       child: TextFormField(
                         controller: _stockQuantity,
-                        decoration: const InputDecoration(
-                          labelText: 'Opening stock',
+                        decoration: InputDecoration(
+                          labelText: l10n.productsOpeningStock,
                         ),
                         keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       ),
@@ -966,14 +971,13 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
 
               // ── More details — optional, each opens full-screen ───────
               AppSectionHeader(
-                title: 'MORE DETAILS',
+                title: l10n.productsSectionMoreDetails,
                 padding: const EdgeInsets.only(bottom: AppSizes.xs),
               ),
               Padding(
                 padding: const EdgeInsets.only(bottom: AppSizes.md),
                 child: Text(
-                  'All optional. Add as much as you like to make the product '
-                  'page richer — you can come back any time.',
+                  l10n.productsMoreDetailsIntro,
                   style: Theme.of(context)
                       .textTheme
                       .bodySmall
@@ -995,13 +999,14 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
   /// Unit dropdown — shows the short code when collapsed (so it fits a
   /// half-width slot) and the full label inside the menu.
   Widget _unitField() {
+    final l10n = AppLocalizations.of(context);
     final value = AppUnits.all.contains(_selectedUnit)
         ? _selectedUnit
         : AppUnits.all.first;
     return DropdownButtonFormField<String>(
       initialValue: value,
       isExpanded: true,
-      decoration: const InputDecoration(labelText: AppStrings.unit),
+      decoration: InputDecoration(labelText: l10n.productsUnit),
       selectedItemBuilder: (_) =>
           AppUnits.all.map((u) => Text('$u — ${AppUnits.label(u)}')).toList(),
       items: AppUnits.all
@@ -1019,13 +1024,14 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
   }
 
   Widget _categoryField(List<dynamic> categories) {
+    final l10n = AppLocalizations.of(context);
     final selected = _selectedCategoryId == null
         ? null
         : categories
             .where((c) => c.id == _selectedCategoryId)
             .cast<dynamic>()
             .firstOrNull;
-    final label = selected?.name ?? AppStrings.none;
+    final label = selected?.name ?? l10n.productsNone;
     final iconData = resolveCategoryIcon(selected?.iconName as String?);
     return InkWell(
       onTap: () async {
@@ -1042,7 +1048,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
       },
       borderRadius: AppShapes.squircleRadius(AppSizes.radiusSm),
       child: InputDecorator(
-        decoration: const InputDecoration(labelText: AppStrings.category),
+        decoration: InputDecoration(labelText: l10n.productsCategory),
         child: Row(
           children: [
             Icon(iconData, size: 18, color: AppColors.muted),
@@ -1057,9 +1063,10 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
   }
 
   List<Widget> _photosSection() {
+    final l10n = AppLocalizations.of(context);
     return [
       AppSectionHeader(
-        title: AppStrings.productImages.toUpperCase(),
+        title: l10n.productsProductImages.toUpperCase(),
         padding: const EdgeInsets.only(bottom: AppSizes.sm),
       ),
       if (_imageUrls.isNotEmpty) ...[
@@ -1135,7 +1142,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
             child: OutlinedButton.icon(
               onPressed: _isUploading ? null : _pickAndUploadMultiple,
               icon: const Icon(Icons.photo_library_rounded, size: 18),
-              label: const Text(AppStrings.pickFromGallery),
+              label: Text(l10n.productsPickFromGallery),
             ),
           ),
           const SizedBox(width: AppSizes.sm),
@@ -1145,7 +1152,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                   ? null
                   : () => _pickAndUploadImage(ImageSource.camera),
               icon: const Icon(Icons.camera_alt_rounded, size: 18),
-              label: const Text(AppStrings.takePhoto),
+              label: Text(l10n.productsTakePhoto),
             ),
           ),
         ],
@@ -1154,8 +1161,8 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
         padding: const EdgeInsets.only(top: AppSizes.xs),
         child: Text(
           _imageUrls.isEmpty
-              ? 'Tap "Pick from gallery" to select multiple images at once. Up to $_maxGalleryImages per product.'
-              : '${_imageUrls.length}/$_maxGalleryImages images added.',
+              ? l10n.productsGalleryEmptyHint('$_maxGalleryImages')
+              : l10n.productsGalleryCountHint('${_imageUrls.length}', '$_maxGalleryImages'),
           style: Theme.of(context)
               .textTheme
               .bodySmall
@@ -1174,7 +1181,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
         child: ExpansionTile(
           tilePadding: EdgeInsets.zero,
           childrenPadding: const EdgeInsets.only(bottom: AppSizes.sm),
-          title: Text('Add by image link',
+          title: Text(l10n.productsAddByImageLink,
               style: Theme.of(context)
                   .textTheme
                   .bodySmall
@@ -1185,9 +1192,9 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                 Expanded(
                   child: TextFormField(
                     controller: _imageUrlController,
-                    decoration: const InputDecoration(
-                      labelText: AppStrings.addImageUrl,
-                      hintText: AppStrings.imageUrlHint,
+                    decoration: InputDecoration(
+                      labelText: l10n.productsAddImageUrl,
+                      hintText: l10n.productsImageUrlHint,
                     ),
                     keyboardType: TextInputType.url,
                     onFieldSubmitted: (_) => _addImageUrl(),
@@ -1197,7 +1204,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                 IconButton.filled(
                   onPressed: _addImageUrl,
                   icon: const Icon(Icons.link_rounded),
-                  tooltip: AppStrings.addImage,
+                  tooltip: l10n.productsAddImage,
                 ),
               ],
             ),
@@ -1210,6 +1217,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
   // ── "More details" hub ──────────────────────────────────────────────
 
   List<Widget> _detailTiles() {
+    final l10n = AppLocalizations.of(context);
     final specRows = _specs.fold<int>(0, (n, g) => n + g.rows.length);
     final customSet =
         _customFieldValues.values.where((v) => v.trim().isNotEmpty).length;
@@ -1221,14 +1229,12 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     final tiles = <Widget>[
       _DetailTile(
         icon: Icons.bolt_outlined,
-        title: 'Highlights',
-        subtitle: 'Short selling points shown up top',
+        title: l10n.productsHighlightsTitle,
+        subtitle: l10n.productsHighlightsSubtitle,
         count: _highlights.length,
         onTap: () => _openEditor(
-          title: 'Highlights',
-          intro:
-              'Short bullet points shown above the fold on the product page. '
-              'Up to 8.',
+          title: l10n.productsHighlightsTitle,
+          intro: l10n.productsHighlightsIntro,
           builder: (refresh) => _HighlightsEditor(
             items: _highlights,
             controller: _highlightController,
@@ -1246,37 +1252,34 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
       ),
       _DetailTile(
         icon: Icons.fact_check_outlined,
-        title: 'Specifications',
-        subtitle: 'Detailed spec sheet, grouped by section',
+        title: l10n.productsSpecificationsTitle,
+        subtitle: l10n.productsSpecificationsSubtitle,
         count: specRows,
         onTap: () => _openEditor(
-          title: 'Specifications',
-          intro: 'Group attributes by section (e.g. "Display", "Camera"). '
-              'Each row is a label and a value.',
+          title: l10n.productsSpecificationsTitle,
+          intro: l10n.productsSpecificationsIntro,
           builder: (_) => _SpecsEditor(groups: _specs, onChange: _markDirty),
         ),
       ),
       _DetailTile(
         icon: Icons.local_offer_outlined,
-        title: 'Offers',
-        subtitle: 'Coupon, EMI or exchange offers',
+        title: l10n.productsOffersTitle,
+        subtitle: l10n.productsOffersSubtitle,
         count: _offers.length,
         onTap: () => _openEditor(
-          title: 'Offers',
-          intro:
-              'Bank, coupon, EMI or exchange offers shown beneath the price.',
+          title: l10n.productsOffersTitle,
+          intro: l10n.productsOffersIntro,
           builder: (_) => _OffersEditor(offers: _offers, onChange: _markDirty),
         ),
       ),
       _DetailTile(
         icon: Icons.article_outlined,
-        title: 'Rich product description',
-        subtitle: 'Hero image, features, comparison, gallery',
+        title: l10n.productsRichDescriptionTitle,
+        subtitle: l10n.productsRichDescriptionSubtitle,
         count: _contentBlocks.length,
         onTap: () => _openEditor(
-          title: 'Rich description',
-          intro: 'Build the scrollable story on the product page. '
-              'Add up to 8 blocks and drag them into order.',
+          title: l10n.productsRichDescriptionShort,
+          intro: l10n.productsRichDescriptionIntro,
           builder: (_) => ContentBlocksEditor(
             blocks: _contentBlocks,
             onChange: _markDirty,
@@ -1286,14 +1289,12 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
       ),
       _DetailTile(
         icon: Icons.style_outlined,
-        title: 'Variants',
-        subtitle: 'Colours, sizes and other options',
+        title: l10n.productsVariantsTitle,
+        subtitle: l10n.productsVariantsSubtitle,
         count: _variants.where((v) => !v.isDefault).length,
         onTap: () => _openEditor(
-          title: 'Variants',
-          intro: 'Optional. Declare axes (Colour, Size, …) and add one '
-              'variant per combination. A single default variant is created '
-              'automatically when you don\'t.',
+          title: l10n.productsVariantsTitle,
+          intro: l10n.productsVariantsIntro,
           builder: (_) => VariantsEditor(
             axes: _variantAxes,
             variants: _variants,
@@ -1308,12 +1309,12 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
       ),
       _DetailTile(
         icon: Icons.sell_outlined,
-        title: 'Tags',
-        subtitle: 'Keywords that help shoppers find this',
+        title: l10n.productsTagsTitle,
+        subtitle: l10n.productsTagsSubtitle,
         count: _tags.length,
         onTap: () => _openEditor(
-          title: 'Tags',
-          intro: 'Up to 20. Bestseller, Eco-friendly, etc.',
+          title: l10n.productsTagsTitle,
+          intro: l10n.productsTagsIntro,
           builder: (refresh) => _TagsEditor(
             tags: _tags,
             controller: _tagController,
@@ -1331,11 +1332,11 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
       ),
       _DetailTile(
         icon: Icons.qr_code_2_outlined,
-        title: 'Codes & inventory',
-        subtitle: 'Barcode, HSN code, low-stock alert',
+        title: l10n.productsCodesInventoryTitle,
+        subtitle: l10n.productsCodesInventorySubtitle,
         count: codesSet,
         onTap: () => _openEditor(
-          title: 'Codes & inventory',
+          title: l10n.productsCodesInventoryTitle,
           builder: (_) => _CodesInventoryEditor(
             barcode: _barcode,
             hsnCode: _hsnCode,
@@ -1346,13 +1347,12 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
       ),
       _DetailTile(
         icon: Icons.dashboard_customize_outlined,
-        title: 'More about this product',
-        subtitle: 'Your shop\'s own custom fields',
+        title: l10n.productsMoreAboutTitle,
+        subtitle: l10n.productsMoreAboutSubtitle,
         count: customSet,
         onTap: () => _openEditor(
-          title: 'More about this product',
-          intro: 'Shop-wide fields like Warranty, Model number or Material '
-              '— define them once, reuse on every product.',
+          title: l10n.productsMoreAboutTitle,
+          intro: l10n.productsMoreAboutIntro,
           builder: (_) => CustomFieldsFormSection(
             values: _customFieldValues,
             onValueChanged: (id, value) {
@@ -1481,13 +1481,14 @@ class _EditorScaffold extends StatefulWidget {
 class _EditorScaffoldState extends State<_EditorScaffold> {
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Done'),
+            child: Text(l10n.productsDone),
           ),
         ],
       ),
@@ -1531,24 +1532,25 @@ class _CodesInventoryEditor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         TextFormField(
           controller: barcode,
           onChanged: (_) => onChanged(),
-          decoration: const InputDecoration(
-            labelText: AppStrings.barcode,
-            helperText: 'The number under the striped code on the package',
+          decoration: InputDecoration(
+            labelText: l10n.productsBarcode,
+            helperText: l10n.productsBarcodeHelper,
           ),
         ),
         const SizedBox(height: AppSizes.lg),
         TextFormField(
           controller: hsnCode,
           onChanged: (_) => onChanged(),
-          decoration: const InputDecoration(
-            labelText: AppStrings.hsnCode,
-            helperText: 'Tax classification code for invoices',
+          decoration: InputDecoration(
+            labelText: l10n.productsHsnCode,
+            helperText: l10n.productsHsnCodeHelper,
           ),
         ),
         const SizedBox(height: AppSizes.lg),
@@ -1556,9 +1558,9 @@ class _CodesInventoryEditor extends StatelessWidget {
           controller: lowStockThreshold,
           onChanged: (_) => onChanged(),
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: const InputDecoration(
-            labelText: AppStrings.lowStockThreshold,
-            helperText: 'We\'ll flag the product once stock drops to this',
+          decoration: InputDecoration(
+            labelText: l10n.productsLowStockThreshold,
+            helperText: l10n.productsLowStockThresholdHelper,
           ),
         ),
       ],
@@ -1583,6 +1585,7 @@ class _TagsEditor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1602,8 +1605,8 @@ class _TagsEditor extends StatelessWidget {
         TextField(
           controller: controller,
           decoration: InputDecoration(
-            labelText: 'Add tag',
-            helperText: 'Up to 20. Bestseller, Eco-friendly, etc.',
+            labelText: l10n.productsAddTag,
+            helperText: l10n.productsTagsIntro,
             suffixIcon: IconButton(
               icon: const Icon(Icons.add_rounded),
               onPressed: onAdd,
@@ -1636,6 +1639,7 @@ class _HighlightsEditor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1653,7 +1657,7 @@ class _HighlightsEditor extends StatelessWidget {
                 IconButton(
                   icon: const Icon(Icons.close_rounded, size: 18),
                   onPressed: () => onRemove(i),
-                  tooltip: 'Remove',
+                  tooltip: l10n.productsRemove,
                 ),
               ],
             ),
@@ -1665,9 +1669,9 @@ class _HighlightsEditor extends StatelessWidget {
                 child: TextField(
                   controller: controller,
                   maxLength: 140,
-                  decoration: const InputDecoration(
-                    hintText: 'Add a highlight…',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    hintText: l10n.productsAddHighlightHint,
+                    border: const OutlineInputBorder(),
                     isDense: true,
                     counterText: '',
                   ),
@@ -1708,6 +1712,7 @@ class _SpecsEditorState extends State<_SpecsEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1759,7 +1764,7 @@ class _SpecsEditorState extends State<_SpecsEditor> {
         OutlinedButton.icon(
           onPressed: widget.groups.length >= 10 ? null : _addGroup,
           icon: const Icon(Icons.add),
-          label: const Text('Add spec group'),
+          label: Text(l10n.productsAddSpecGroup),
         ),
       ],
     );
@@ -1786,6 +1791,7 @@ class _GroupCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       margin: const EdgeInsets.only(bottom: AppSizes.md),
       padding: const EdgeInsets.all(AppSizes.md),
@@ -1802,9 +1808,9 @@ class _GroupCard extends StatelessWidget {
                 child: TextFormField(
                   initialValue: group.title,
                   onChanged: onChangeTitle,
-                  decoration: const InputDecoration(
-                    labelText: 'Group title (e.g. Display)',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: l10n.productsGroupTitleLabel,
+                    border: const OutlineInputBorder(),
                     isDense: true,
                   ),
                 ),
@@ -1812,7 +1818,7 @@ class _GroupCard extends StatelessWidget {
               IconButton(
                 icon: const Icon(Icons.delete_outline),
                 onPressed: onRemoveGroup,
-                tooltip: 'Remove group',
+                tooltip: l10n.productsRemoveGroup,
               ),
             ],
           ),
@@ -1824,9 +1830,9 @@ class _GroupCard extends StatelessWidget {
           TextFormField(
             initialValue: group.tab ?? '',
             onChanged: onChangeTab,
-            decoration: const InputDecoration(
-              labelText: 'Tab (optional — e.g. Features & Specs)',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: l10n.productsTabLabel,
+              border: const OutlineInputBorder(),
               isDense: true,
             ),
           ),
@@ -1852,17 +1858,17 @@ class _GroupCard extends StatelessWidget {
                           initialValue: group.rows[i].label,
                           onChanged: (v) =>
                               onChangeRow(i, group.rows[i].copyWith(label: v)),
-                          decoration: const InputDecoration(
-                            labelText: 'Label',
-                            hintText: 'e.g. In the box',
-                            border: OutlineInputBorder(),
+                          decoration: InputDecoration(
+                            labelText: l10n.productsSpecLabelLabel,
+                            hintText: l10n.productsSpecLabelHint,
+                            border: const OutlineInputBorder(),
                             isDense: true,
                           ),
                         ),
                       ),
                       IconButton(
                         icon: const Icon(Icons.close_rounded, size: 18),
-                        tooltip: 'Remove row',
+                        tooltip: l10n.productsRemoveRow,
                         onPressed: () => onRemoveRow(i),
                       ),
                     ],
@@ -1876,10 +1882,10 @@ class _GroupCard extends StatelessWidget {
                           onChangeRow(i, group.rows[i].copyWith(value: v)),
                       minLines: 1,
                       maxLines: 3,
-                      decoration: const InputDecoration(
-                        labelText: 'Value',
-                        hintText: 'e.g. Earbuds, charging case, cable, manual',
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: l10n.productsSpecValueLabel,
+                        hintText: l10n.productsSpecValueHint,
+                        border: const OutlineInputBorder(),
                         isDense: true,
                       ),
                     ),
@@ -1890,7 +1896,7 @@ class _GroupCard extends StatelessWidget {
           TextButton.icon(
             onPressed: group.rows.length >= 20 ? null : onAddRow,
             icon: const Icon(Icons.add, size: 18),
-            label: const Text('Add row'),
+            label: Text(l10n.productsAddRow),
           ),
         ],
       ),
@@ -1924,6 +1930,7 @@ class _OffersEditorState extends State<_OffersEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     // Bank offers were removed from this editor — surface that to the
     // merchant explicitly so they don't go looking for the option.
     return Column(
@@ -1944,9 +1951,7 @@ class _OffersEditorState extends State<_OffersEditor> {
               const SizedBox(width: AppSizes.sm),
               Expanded(
                 child: Text(
-                  'Bank offers are platform-wide and managed centrally. '
-                  'Customers will still see HDFC / ICICI / SBI etc. on this '
-                  'product\'s page if a platform offer is active.',
+                  l10n.productsBankOffersNote,
                   style: Theme.of(context)
                       .textTheme
                       .bodySmall
@@ -1973,7 +1978,7 @@ class _OffersEditorState extends State<_OffersEditor> {
         OutlinedButton.icon(
           onPressed: widget.offers.length >= 6 ? null : _addOffer,
           icon: const Icon(Icons.add),
-          label: const Text('Add offer'),
+          label: Text(l10n.productsAddOffer),
         ),
       ],
     );
@@ -2024,6 +2029,7 @@ class _OfferRowState extends State<_OfferRow> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       margin: const EdgeInsets.only(bottom: AppSizes.md),
       padding: const EdgeInsets.all(AppSizes.md),
@@ -2046,9 +2052,9 @@ class _OfferRowState extends State<_OfferRow> {
                   initialValue: widget.kinds.contains(widget.offer.kind)
                       ? widget.offer.kind
                       : 'COUPON',
-                  decoration: const InputDecoration(
-                    labelText: 'Kind',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: l10n.productsOfferKind,
+                    border: const OutlineInputBorder(),
                     isDense: true,
                   ),
                   items: [
@@ -2073,10 +2079,10 @@ class _OfferRowState extends State<_OfferRow> {
             controller: _headline,
             onChanged: (v) =>
                 widget.onChange(widget.offer.copyWith(headline: v)),
-            decoration: const InputDecoration(
-              labelText: 'Headline',
-              hintText: 'e.g. ₹2000 off with code WELCOME',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: l10n.productsOfferHeadline,
+              hintText: l10n.productsOfferHeadlineHint,
+              border: const OutlineInputBorder(),
               isDense: true,
             ),
           ),
@@ -2088,9 +2094,9 @@ class _OfferRowState extends State<_OfferRow> {
                   controller: _detail,
                   onChanged: (v) =>
                       widget.onChange(widget.offer.copyWith(detail: v)),
-                  decoration: const InputDecoration(
-                    labelText: 'Detail (optional)',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: l10n.productsOfferDetail,
+                    border: const OutlineInputBorder(),
                     isDense: true,
                   ),
                 ),
@@ -2102,9 +2108,9 @@ class _OfferRowState extends State<_OfferRow> {
                   controller: _code,
                   onChanged: (v) =>
                       widget.onChange(widget.offer.copyWith(code: v)),
-                  decoration: const InputDecoration(
-                    labelText: 'Code (optional)',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: l10n.productsOfferCode,
+                    border: const OutlineInputBorder(),
                     isDense: true,
                   ),
                 ),

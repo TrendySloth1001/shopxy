@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
-import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 
@@ -30,19 +30,20 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     super.dispose();
   }
 
-  String? _validateNext(String? v) {
+  String? _validateNext(AppLocalizations l10n, String? v) {
     final t = v ?? '';
-    if (t.length < 8) return 'Must be at least 8 characters';
-    if (!RegExp(r'[A-Za-z]').hasMatch(t)) return 'Must contain a letter';
-    if (!RegExp(r'[0-9]').hasMatch(t)) return 'Must contain a number';
+    if (t.length < 8) return l10n.profilePasswordMinLength;
+    if (!RegExp(r'[A-Za-z]').hasMatch(t)) return l10n.profilePasswordNeedsLetter;
+    if (!RegExp(r'[0-9]').hasMatch(t)) return l10n.profilePasswordNeedsNumber;
     return null;
   }
 
   Future<void> _submit() async {
+    final l10n = AppLocalizations.of(context);
     if (!_formKey.currentState!.validate()) return;
     if (_next.text != _confirm.text) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Passwords do not match')),
+        SnackBar(content: Text(l10n.profilePasswordsDoNotMatch)),
       );
       return;
     }
@@ -51,7 +52,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       await context.read<AuthProvider>().changePassword(_current.text, _next.text);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password changed. Existing sessions revoked.')),
+        SnackBar(content: Text(l10n.profilePasswordChanged)),
       );
       Navigator.pop(context);
     } catch (e) {
@@ -65,8 +66,9 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text(AppStrings.changePassword)),
+      appBar: AppBar(title: Text(l10n.profileChangePassword)),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -76,7 +78,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
               controller: _current,
               obscureText: !_showCurrent,
               decoration: InputDecoration(
-                labelText: AppStrings.currentPassword,
+                labelText: l10n.profileCurrentPassword,
                 suffixIcon: IconButton(
                   icon: Icon(_showCurrent
                       ? Icons.visibility_off_outlined
@@ -84,15 +86,15 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                   onPressed: () => setState(() => _showCurrent = !_showCurrent),
                 ),
               ),
-              validator: (v) => (v ?? '').isEmpty ? 'Required' : null,
+              validator: (v) => (v ?? '').isEmpty ? l10n.profileRequired : null,
             ),
             const SizedBox(height: AppSizes.lg),
             TextFormField(
               controller: _next,
               obscureText: !_showNext,
               decoration: InputDecoration(
-                labelText: AppStrings.newPassword,
-                helperText: '8+ chars, must include a letter and a number',
+                labelText: l10n.profileNewPassword,
+                helperText: l10n.profilePasswordHelper,
                 suffixIcon: IconButton(
                   icon: Icon(_showNext
                       ? Icons.visibility_off_outlined
@@ -100,14 +102,15 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                   onPressed: () => setState(() => _showNext = !_showNext),
                 ),
               ),
-              validator: _validateNext,
+              validator: (v) => _validateNext(l10n, v),
             ),
             const SizedBox(height: AppSizes.lg),
             TextFormField(
               controller: _confirm,
               obscureText: !_showNext,
-              decoration: const InputDecoration(labelText: 'Confirm new password'),
-              validator: (v) => (v ?? '').isEmpty ? 'Required' : null,
+              decoration: InputDecoration(
+                  labelText: l10n.profileConfirmNewPassword),
+              validator: (v) => (v ?? '').isEmpty ? l10n.profileRequired : null,
             ),
             const SizedBox(height: AppSizes.xl),
             FilledButton(
@@ -126,7 +129,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                         color: AppColors.onInverse,
                       ),
                     )
-                  : const Text(AppStrings.changePassword),
+                  : Text(l10n.profileChangePassword),
             ),
           ],
         ),

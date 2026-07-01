@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/features/coupons/data/datasources/merchant_coupons_remote_data_source.dart';
 import 'package:shopxy/features/coupons/domain/merchant_coupon.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
@@ -169,6 +170,7 @@ class _CouponEditorSheetState extends State<_CouponEditorSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final isEdit = widget.existing != null;
     return Padding(
       padding: EdgeInsets.only(
@@ -183,7 +185,7 @@ class _CouponEditorSheetState extends State<_CouponEditorSheet> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              isEdit ? 'Edit coupon' : 'New coupon',
+              isEdit ? l10n.couponsEditCoupon : l10n.couponsNewCoupon,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w800,
                   ),
@@ -191,10 +193,10 @@ class _CouponEditorSheetState extends State<_CouponEditorSheet> {
             const SizedBox(height: AppSizes.md),
             TextField(
               controller: _code,
-              decoration: const InputDecoration(
-                labelText: 'Code',
+              decoration: InputDecoration(
+                labelText: l10n.couponsFieldCode,
                 hintText: 'WELCOME10',
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
               ),
               textCapitalization: TextCapitalization.characters,
               inputFormatters: [
@@ -204,10 +206,10 @@ class _CouponEditorSheetState extends State<_CouponEditorSheet> {
             const SizedBox(height: AppSizes.sm),
             TextField(
               controller: _title,
-              decoration: const InputDecoration(
-                labelText: 'Title',
-                hintText: 'New user offer',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.couponsFieldTitle,
+                hintText: l10n.couponsFieldTitleHint,
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: AppSizes.sm),
@@ -215,9 +217,9 @@ class _CouponEditorSheetState extends State<_CouponEditorSheet> {
               controller: _description,
               minLines: 1,
               maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'Description (optional)',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.couponsFieldDescription,
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: AppSizes.md),
@@ -226,16 +228,18 @@ class _CouponEditorSheetState extends State<_CouponEditorSheet> {
                 Expanded(
                   child: DropdownButtonFormField<String>(
                     initialValue: _discountType,
-                    decoration: const InputDecoration(
-                      labelText: 'Type',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: l10n.couponsFieldType,
+                      border: const OutlineInputBorder(),
                     ),
-                    items: const [
+                    items: [
                       DropdownMenuItem(
-                        value: 'PERCENT', child: Text('Percent off'),
+                        value: 'PERCENT',
+                        child: Text(l10n.couponsDiscountTypePercent),
                       ),
                       DropdownMenuItem(
-                        value: 'FLAT', child: Text('Flat ₹ off'),
+                        value: 'FLAT',
+                        child: Text(l10n.couponsDiscountTypeFlat),
                       ),
                     ],
                     onChanged: (v) =>
@@ -250,7 +254,9 @@ class _CouponEditorSheetState extends State<_CouponEditorSheet> {
                       decimal: true,
                     ),
                     decoration: InputDecoration(
-                      labelText: _discountType == 'PERCENT' ? '% off' : '₹ off',
+                      labelText: _discountType == 'PERCENT'
+                          ? l10n.couponsFieldPercentOff
+                          : l10n.couponsFieldAmountOff,
                       border: const OutlineInputBorder(),
                     ),
                   ),
@@ -262,9 +268,9 @@ class _CouponEditorSheetState extends State<_CouponEditorSheet> {
               TextField(
                 controller: _maxDiscount,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(
-                  labelText: 'Max discount (₹) — caps the % off',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: l10n.couponsFieldMaxDiscount,
+                  border: const OutlineInputBorder(),
                 ),
               ),
             ],
@@ -272,9 +278,9 @@ class _CouponEditorSheetState extends State<_CouponEditorSheet> {
             TextField(
               controller: _minOrder,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'Minimum order (₹)',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.couponsFieldMinOrder,
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: AppSizes.md),
@@ -284,7 +290,8 @@ class _CouponEditorSheetState extends State<_CouponEditorSheet> {
                   child: OutlinedButton.icon(
                     onPressed: () => _pickDate(isFrom: true),
                     icon: const Icon(Icons.event),
-                    label: Text('From  ${_date.format(_validFrom)}'),
+                    label: Text(
+                        '${l10n.couponsDateFrom}  ${_date.format(_validFrom)}'),
                   ),
                 ),
                 const SizedBox(width: AppSizes.sm),
@@ -292,7 +299,8 @@ class _CouponEditorSheetState extends State<_CouponEditorSheet> {
                   child: OutlinedButton.icon(
                     onPressed: () => _pickDate(isFrom: false),
                     icon: const Icon(Icons.event_available),
-                    label: Text('Until ${_date.format(_validUntil)}'),
+                    label: Text(
+                        '${l10n.couponsDateUntil} ${_date.format(_validUntil)}'),
                   ),
                 ),
               ],
@@ -304,9 +312,9 @@ class _CouponEditorSheetState extends State<_CouponEditorSheet> {
                   child: TextField(
                     controller: _perUserLimit,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Per-user limit (0 = unlimited)',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: l10n.couponsFieldPerUserLimit,
+                      border: const OutlineInputBorder(),
                     ),
                   ),
                 ),
@@ -315,9 +323,9 @@ class _CouponEditorSheetState extends State<_CouponEditorSheet> {
                   child: TextField(
                     controller: _totalCap,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Total cap (0 = unlimited)',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: l10n.couponsFieldTotalCap,
+                      border: const OutlineInputBorder(),
                     ),
                   ),
                 ),
@@ -327,30 +335,20 @@ class _CouponEditorSheetState extends State<_CouponEditorSheet> {
             SwitchListTile(
               value: _isPublic,
               onChanged: (v) => setState(() => _isPublic = v),
-              title: const Text('Public — auto-applies'),
-              subtitle: const Text(
-                'Anyone can see and use it. Auto-applies at checkout when '
-                'the cart matches — no code typing needed. Keep off for '
-                'private codes shared with specific people.',
-              ),
+              title: Text(l10n.couponsPublicTitle),
+              subtitle: Text(l10n.couponsPublicSubtitle),
             ),
             SwitchListTile(
               value: _firstOrderOnly,
               onChanged: (v) => setState(() => _firstOrderOnly = v),
-              title: const Text('First-order only'),
-              subtitle: const Text(
-                'Restricts redemption to customers with no prior confirmed '
-                'orders. Pair with "per-user limit = 1" for a single-shot '
-                'welcome offer.',
-              ),
+              title: Text(l10n.couponsFirstOrderTitle),
+              subtitle: Text(l10n.couponsFirstOrderSubtitle),
             ),
             SwitchListTile(
               value: _isActive,
               onChanged: (v) => setState(() => _isActive = v),
-              title: const Text('Active'),
-              subtitle: const Text(
-                'When off, buyers won\'t see this coupon and can\'t redeem it.',
-              ),
+              title: Text(l10n.couponsActiveTitle),
+              subtitle: Text(l10n.couponsActiveSubtitle),
             ),
             if (_error != null) ...[
               const SizedBox(height: AppSizes.sm),
@@ -366,8 +364,10 @@ class _CouponEditorSheetState extends State<_CouponEditorSheet> {
               onPressed: _saving ? null : _save,
               child: Text(
                 _saving
-                    ? 'Saving…'
-                    : isEdit ? 'Save changes' : 'Create coupon',
+                    ? l10n.couponsSaving
+                    : isEdit
+                        ? l10n.couponsSaveChanges
+                        : l10n.couponsCreateCoupon,
               ),
             ),
           ],

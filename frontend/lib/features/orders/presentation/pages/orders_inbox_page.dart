@@ -10,9 +10,9 @@ import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/orders/domain/entities/merchant_order.dart';
 import 'package:shopxy/features/orders/presentation/pages/merchant_order_detail_page.dart';
 import 'package:shopxy/features/orders/presentation/providers/orders_provider.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_durations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
-import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
@@ -27,12 +27,22 @@ class OrdersInboxPage extends StatefulWidget {
 }
 
 class _OrdersInboxPageState extends State<OrdersInboxPage> {
-  static const _tabs = [
-    (label: AppStrings.tabPending, status: 'PENDING'),
-    (label: AppStrings.tabConfirmed, status: 'CONFIRMED'),
-    (label: AppStrings.tabRejected, status: 'REJECTED'),
-    (label: AppStrings.tabAll, status: null),
-  ];
+  // Status filters for the four inbox tabs. Labels are resolved from
+  // l10n at build time (see _tabLabel); only the status codes live here.
+  static const _tabStatuses = <String?>['PENDING', 'CONFIRMED', 'REJECTED', null];
+
+  String _tabLabel(AppLocalizations l10n, String? status) {
+    switch (status) {
+      case 'PENDING':
+        return l10n.ordersTabPending;
+      case 'CONFIRMED':
+        return l10n.ordersTabConfirmed;
+      case 'REJECTED':
+        return l10n.ordersTabRejected;
+      default:
+        return l10n.ordersTabAll;
+    }
+  }
 
   int _index = 0;
   final _searchCtrl = TextEditingController();
@@ -44,7 +54,7 @@ class _OrdersInboxPageState extends State<OrdersInboxPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final p = context.read<OrdersProvider>();
-      p.setStatusFilter(_tabs.first.status);
+      p.setStatusFilter(_tabStatuses.first);
       p.refreshPendingCount();
     });
   }
@@ -89,17 +99,18 @@ class _OrdersInboxPageState extends State<OrdersInboxPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final p = context.watch<OrdersProvider>();
     final canView = context.select<AuthProvider, bool>(
         (a) => a.user?.canView('orders') ?? false);
     return Scaffold(
       appBar: AppBar(
         leading: Navigator.canPop(context) ? null : const ShellMenuButton(),
-        title: const Text(AppStrings.orders),
+        title: Text(l10n.ordersTitle),
         actions: [AccessReloadButton(onReload: () => p.load())],
       ),
       body: !canView
-          ? const NoAccessView(title: 'Orders hidden')
+          ? NoAccessView(title: l10n.ordersNoAccessTitle)
           : Column(
         children: [
           // ── Status pills ───────────────────────────────────────────
@@ -114,21 +125,21 @@ class _OrdersInboxPageState extends State<OrdersInboxPage> {
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  for (int i = 0; i < _tabs.length; i++)
+                  for (int i = 0; i < _tabStatuses.length; i++)
                     Padding(
                       padding: const EdgeInsets.only(right: AppSizes.sm),
                       child: _Pill(
-                        label: _tabs[i].label,
+                        label: _tabLabel(l10n, _tabStatuses[i]),
                         // Tiny count badge on Pending so a busy merchant
                         // sees the pile growing without leaving the
                         // inbox.
-                        badge: _tabs[i].status == 'PENDING' && p.pendingCount > 0
+                        badge: _tabStatuses[i] == 'PENDING' && p.pendingCount > 0
                             ? p.pendingCount
                             : null,
                         selected: i == _index,
                         onTap: () {
                           setState(() => _index = i);
-                          p.setStatusFilter(_tabs[i].status);
+                          p.setStatusFilter(_tabStatuses[i]);
                         },
                       ),
                     ),
@@ -152,7 +163,7 @@ class _OrdersInboxPageState extends State<OrdersInboxPage> {
                     onChanged: _onSearchChanged,
                     decoration: InputDecoration(
                       isDense: true,
-                      hintText: AppStrings.inboxSearchHint,
+                      hintText: l10n.ordersSearchHint,
                       prefixIcon:
                           const Icon(Icons.search_rounded, size: AppSizes.iconMd),
                       suffixIcon: p.search.isEmpty
@@ -191,7 +202,7 @@ class _OrdersInboxPageState extends State<OrdersInboxPage> {
                       ? _ErrorState(message: p.error!, onRetry: p.load)
                       : p.orders.isEmpty
                           ? _EmptyInbox(
-                              isPending: _tabs[_index].status == 'PENDING',
+                              isPending: _tabStatuses[_index] == 'PENDING',
                               hasFilters: p.search.isNotEmpty ||
                                   p.from != null ||
                                   p.to != null,
@@ -289,10 +300,12 @@ class _DateFilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final active = from != null && to != null;
-    final label =
-        active ? '${_fmt.format(from!)} – ${_fmt.format(to!)}' : 'Any date';
+    final label = active
+        ? '${_fmt.format(from!)} – ${_fmt.format(to!)}'
+        : l10n.ordersAnyDate;
     return Material(
       color: active ? AppColors.inverseSurface : AppColors.surfaceTint,
       shape: AppShapes.squircle(AppSizes.radiusFull),
@@ -348,6 +361,7 @@ class _OrderRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final preview = _itemPreviewText(order);
     return Material(
@@ -400,7 +414,7 @@ class _OrderRow extends StatelessWidget {
                     ],
                     const SizedBox(height: 2),
                     Text(
-                      '${_date.format(order.createdAt.toLocal())} · ${order.itemCount} ${order.itemCount == 1 ? 'item' : 'items'}',
+                      '${_date.format(order.createdAt.toLocal())} · ${order.itemCount} ${order.itemCount == 1 ? l10n.ordersItemUnit : l10n.ordersItemsUnit}',
                       style: theme.textTheme.bodySmall
                           ?.copyWith(color: AppColors.muted),
                     ),
@@ -462,6 +476,7 @@ class _EmptyInbox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final isAllCaughtUp = isPending && !hasFilters;
     return ListView(
@@ -492,10 +507,10 @@ class _EmptyInbox extends StatelessWidget {
         Center(
           child: Text(
             isAllCaughtUp
-                ? AppStrings.allCaughtUp
+                ? l10n.ordersAllCaughtUp
                 : hasFilters
-                    ? 'No matching orders'
-                    : AppStrings.noOrdersYet,
+                    ? l10n.ordersNoMatching
+                    : l10n.ordersNoneYet,
             style: theme.textTheme.titleMedium
                 ?.copyWith(fontWeight: FontWeight.w700),
           ),
@@ -506,10 +521,10 @@ class _EmptyInbox extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: AppSizes.xl),
             child: Text(
               isAllCaughtUp
-                  ? AppStrings.allCaughtUpHint
+                  ? l10n.ordersAllCaughtUpHint
                   : hasFilters
-                      ? 'Try a different search or date range.'
-                      : 'New orders will appear here when customers place them.',
+                      ? l10n.ordersNoMatchingHint
+                      : l10n.ordersNoneYetHint,
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: AppColors.muted),
               textAlign: TextAlign.center,
@@ -619,6 +634,7 @@ class _ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -628,7 +644,7 @@ class _ErrorState extends StatelessWidget {
             size: AppSizes.iconHuge, color: AppColors.muted),
         const SizedBox(height: AppSizes.md),
         Text(
-          AppStrings.error,
+          l10n.ordersError,
           style: theme.textTheme.titleMedium
               ?.copyWith(fontWeight: FontWeight.w700),
           textAlign: TextAlign.center,
@@ -647,7 +663,7 @@ class _ErrorState extends StatelessWidget {
           child: FilledButton.icon(
             onPressed: onRetry,
             icon: const Icon(Icons.refresh_rounded),
-            label: const Text(AppStrings.retry),
+            label: Text(l10n.ordersRetry),
           ),
         ),
       ],

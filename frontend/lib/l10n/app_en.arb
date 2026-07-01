@@ -1,10 +1,10 @@
 {
   "@@locale": "en",
-
   "settingsPreferences": "Preferences",
-  "@settingsPreferences": { "description": "Settings section: appearance & language preferences" },
+  "@settingsPreferences": {
+    "description": "Settings section: appearance & language preferences"
+  },
   "settingsPreferencesSubtitle": "Currency, theme and language.",
-
   "theme": "Theme",
   "themeSubtitle": "Choose how ShopXY looks on this device.",
   "themeLight": "Light",
@@ -23,14 +23,1210 @@
   "themeOledDesc": "True black — best for OLED displays.",
   "themeMidnightDesc": "Deep navy — indigo-tinted dark.",
   "themeNordDesc": "Muted arctic blue-grey — soft dark.",
-
   "language": "Language",
   "languageSubtitle": "Choose your preferred language.",
-
   "commonSave": "Save",
   "commonCancel": "Cancel",
   "commonSignOut": "Sign out",
-
   "noShopTitle": "No shop linked yet",
-  "noShopBody": "Ask a shop owner to invite you to their team, then sign in again to accept."
+  "noShopBody": "Ask a shop owner to invite you to their team, then sign in again to accept.",
+  "productsTitle": "Products",
+  "productsSwitchToCardView": "Switch to card view",
+  "productsSwitchToCompactView": "Switch to compact view",
+  "productsAddProduct": "Add Product",
+  "productsHidden": "Products hidden",
+  "productsSearchHint": "Search products...",
+  "productsFilterAll": "All",
+  "productsLowStock": "Low Stock",
+  "productsOutOfStock": "Out of Stock",
+  "productsCategoryPickerLabel": "Category",
+  "productsAllStockedUpTitle": "All stocked up",
+  "productsAllStockedUpHint": "Nothing is running low right now. Nice work.",
+  "productsNoMatches": "No matches",
+  "productsNoProducts": "No products found",
+  "productsNoMatchesHint": "Try clearing filters or searching for something else.",
+  "productsNoProductsHint": "Tap + to add your first product",
+  "productsStockInAction": "Stock in",
+  "productsStockOutAction": "Stock out",
+  "productsNotFoundTitle": "Product not found",
+  "productsNotFoundHint": "Add it now with the scanned code",
+  "productsScanAgain": "Scan again",
+  "productsScanQr": "Scan QR / Barcode",
+  "productsScanHint": "Point camera at QR or barcode",
+  "productsLoading": "Loading...",
+  "productsSpecifications": "Specifications",
+  "productsGenerateQr": "Generate QR Code",
+  "productsClose": "Close",
+  "productsListedOnMarketplace": "Listed on the marketplace.",
+  "productsHiddenFromMarketplace": "Hidden from the marketplace.",
+  "productsCouldntUpdateVisibility": "Couldn't update visibility",
+  "productsDelete": "Delete",
+  "productsDeleteConfirm": "Delete this product?",
+  "productsDeleted": "Product deleted",
+  "productsError": "Something went wrong",
+  "productsDetailsTitle": "Product Details",
+  "productsShare": "Share",
+  "productsEdit": "Edit",
+  "productsStockLedger": "Stock ledger",
+  "productsStockLedgerHint": "Every movement with source documents",
+  "productsPricingSection": "PRICING",
+  "productsMrp": "MRP",
+  "productsSellingPrice": "Selling Price",
+  "productsPurchasePrice": "Purchase Price",
+  "productsTaxPercent": "Tax %",
+  "productsNone": "None",
+  "productsProfitMargin": "Profit Margin",
+  "productsDetailsSection": "DETAILS",
+  "productsHsnCode": "HSN Code",
+  "productsUnit": "Unit",
+  "productsCategory": "Category",
+  "productsCreated": "Created",
+  "productsLastUpdated": "Last updated",
+  "productsStatus": "Status",
+  "productsActive": "Active",
+  "productsInactive": "Inactive",
+  "productsTagBestseller": "Bestseller",
+  "productsTagEditorsPick": "Editor's pick",
+  "productsTagNewArrival": "New arrival",
+  "productsTagTrending": "Trending",
+  "productsReviewSingular": "review",
+  "productsReviewPlural": "reviews",
+  "productsNoReviewsYet": "No reviews yet",
+  "productsListedTitle": "Listed on marketplace",
+  "productsNotListedTitle": "Not listed",
+  "productsListedHint": "Customers can find and buy this product.",
+  "productsNotListedHint": "Visible to you only. Flip to publish.",
+  "productsPerformance": "PERFORMANCE",
+  "productsLifetimeSold": "Lifetime sold",
+  "productsSold30d": "Sold (30d)",
+  "productsReviewsLabel": "Reviews",
+  "productsLastActivity": "LAST ACTIVITY",
+  "productsStockedIn": "Stocked in",
+  "productsSold": "Sold",
+  "productsVariantsSection": "VARIANTS",
+  "productsDefaultVariant": "Default",
+  "productsDefaultBadge": "DEFAULT",
+  "productsInactiveBadge": "INACTIVE",
+  "productsHighlightsSection": "HIGHLIGHTS",
+  "productsProductSpecs": "PRODUCT SPECS",
+  "productsCouponCopied": "Coupon code copied",
+  "productsOffersSection": "OFFERS",
+  "productsBlockHero": "Hero",
+  "productsBlockFeature": "Feature",
+  "productsBlockComparison": "Comparison",
+  "productsBlockGallery": "Gallery",
+  "productsBlockText": "Text",
+  "productsColumnsUnit": "columns",
+  "productsRowsUnit": "rows",
+  "productsImagesUnit": "images",
+  "productsRichContentSection": "RICH CONTENT",
+  "productsTagsSection": "TAGS",
+  "productsLowStockAlertAt": "Low stock alert at",
+  "productsInStock": "In Stock",
+  "productsSupplierPriceHistory": "Supplier-wise Price History",
+  "productsNoSupplierHistory": "No supplier stock-in history yet",
+  "productsUnknownSupplier": "Unknown Supplier",
+  "productsVendor": "Vendor",
+  "productsLatestPrice": "Latest Price",
+  "productsAveragePrice": "Average Price",
+  "productsTotalQuantityBought": "Total Bought",
+  "productsPurchasesUnit": "purchases",
+  "productsLastStockIn": "Last Stock In",
+  "productsPolicy": "Policy",
+  "productsRecentBuys": "Recent Buys",
+  "productsQtyLabel": "Qty",
+  "productsWeightedAverage": "Weighted Avg",
+  "productsUseLatestPrice": "Use Latest",
+  "productsKeepCurrentPrice": "Keep Current",
+  "productsStockIn": "Stock In",
+  "productsStockOut": "Stock Out",
+  "productsCopiedSuffix": "copied",
+  "productsSku": "SKU",
+  "productsBarcode": "Barcode",
+  "productsPendingDrafts": "Pending drafts",
+  "productsPendingDraftsHint": "Stock will move once these are confirmed.",
+  "productsCustomer": "Customer",
+  "productsSale": "Sale",
+  "productsPurchase": "Purchase",
+  "productsPriceGstBreakdown": "PRICE & GST BREAKDOWN",
+  "productsTaxableValue": "Taxable value",
+  "productsPriceBeforeGst": "price before GST",
+  "productsTotalGst": "Total GST",
+  "productsSellingPriceInclGst": "Selling price (incl. GST)",
+  "productsGstExplainer": "Prices include GST. CGST + SGST shown for a sale within your state; a sale to another state is charged the same total as IGST.",
+  "productsReviewsSection": "REVIEWS",
+  "productsNoReviewsBody": "No reviews yet. Verified buyers can rate this product after a confirmed purchase.",
+  "productsRatingSingular": "rating",
+  "productsRatingPlural": "ratings",
+  "productsVerified": "verified",
+  "productsSeeAllReviews": "See all reviews",
+  "productsDuplicateWarning": "A product with that {label} already exists — saving will not merge",
+  "@productsDuplicateWarning": {
+    "placeholders": {
+      "label": {
+        "type": "Object"
+      }
+    }
+  },
+  "productsBarcodeLower": "barcode",
+  "productsDroppedBlocksPrefix": "Dropped",
+  "productsMalformedBlockSingular": "malformed content block",
+  "productsMalformedBlockPlural": "malformed content blocks",
+  "productsFieldRequired": "This field is required",
+  "productsInvalidNumber": "Enter a valid number",
+  "productsPriceMustBePositive": "Price must be greater than 0",
+  "productsOcrApplied": "Applied scan results",
+  "productsOcrNoDetails": "No product details found",
+  "productsOcrFailed": "Could not read product details",
+  "productsImageTooLarge": "Image is larger than 5 MB. Pick a smaller image or crop tighter.",
+  "productsMaxImagesReached": "You can attach at most {count} images per product. Remove some to add more.",
+  "@productsMaxImagesReached": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "productsSelectedButOnlyFit": "Selected {selected}, but only {remaining} more fit. Skipping the extras.",
+  "@productsSelectedButOnlyFit": {
+    "placeholders": {
+      "selected": {
+        "type": "Object"
+      },
+      "remaining": {
+        "type": "Object"
+      }
+    }
+  },
+  "productsFileTooLarge": "{name}: larger than 5 MB",
+  "@productsFileTooLarge": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "productsUploadedPrefix": "Uploaded",
+  "productsImageSingular": "image",
+  "productsImagePlural": "images",
+  "productsSkippedPrefix": "Skipped",
+  "productsInvalidUrl": "Enter a valid URL",
+  "productsDiscardTitle": "Discard changes?",
+  "productsDiscardMessage": "Your edits will be lost.",
+  "productsKeepEditing": "Keep editing",
+  "productsDiscard": "Discard",
+  "productsEditProduct": "Edit Product",
+  "productsReviews": "Reviews",
+  "productsScanLabel": "Scan label",
+  "productsSave": "Save",
+  "productsSectionBasics": "THE BASICS",
+  "productsProductName": "Product Name",
+  "productsNameHint": "e.g. Boult Astra TWS Earbuds",
+  "productsDescription": "Description",
+  "productsDescriptionHint": "A line or two about what it is",
+  "productsBrand": "Brand",
+  "productsBrandHint": "e.g. Boult — optional",
+  "productsSectionPrice": "PRICE",
+  "productsSellingPriceLabel": "Selling price",
+  "productsSellingPriceHelper": "What the customer pays",
+  "productsMrpHelper": "Strike-through price",
+  "productsCostPrice": "Cost price",
+  "productsCostPriceHelper": "What you pay",
+  "productsGst": "GST",
+  "productsOptional": "Optional",
+  "productsSectionIdentityStock": "IDENTITY & STOCK",
+  "productsSkuHelper": "Your own product code — must be unique",
+  "productsOpeningStock": "Opening stock",
+  "productsSectionMoreDetails": "MORE DETAILS",
+  "productsMoreDetailsIntro": "All optional. Add as much as you like to make the product page richer — you can come back any time.",
+  "productsProductImages": "Product Images",
+  "productsPickFromGallery": "Gallery",
+  "productsTakePhoto": "Camera",
+  "productsGalleryEmptyHint": "Tap \"Pick from gallery\" to select multiple images at once. Up to {count} per product.",
+  "@productsGalleryEmptyHint": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "productsGalleryCountHint": "{count}/{max} images added.",
+  "@productsGalleryCountHint": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      },
+      "max": {
+        "type": "Object"
+      }
+    }
+  },
+  "productsAddByImageLink": "Add by image link",
+  "productsAddImageUrl": "Or paste image URL",
+  "productsImageUrlHint": "https://...",
+  "productsAddImage": "Add Image",
+  "productsHighlightsTitle": "Highlights",
+  "productsHighlightsSubtitle": "Short selling points shown up top",
+  "productsHighlightsIntro": "Short bullet points shown above the fold on the product page. Up to 8.",
+  "productsSpecificationsTitle": "Specifications",
+  "productsSpecificationsSubtitle": "Detailed spec sheet, grouped by section",
+  "productsSpecificationsIntro": "Group attributes by section (e.g. \"Display\", \"Camera\"). Each row is a label and a value.",
+  "productsOffersTitle": "Offers",
+  "productsOffersSubtitle": "Coupon, EMI or exchange offers",
+  "productsOffersIntro": "Bank, coupon, EMI or exchange offers shown beneath the price.",
+  "productsRichDescriptionTitle": "Rich product description",
+  "productsRichDescriptionSubtitle": "Hero image, features, comparison, gallery",
+  "productsRichDescriptionShort": "Rich description",
+  "productsRichDescriptionIntro": "Build the scrollable story on the product page. Add up to 8 blocks and drag them into order.",
+  "productsVariantsTitle": "Variants",
+  "productsVariantsSubtitle": "Colours, sizes and other options",
+  "productsVariantsIntro": "Optional. Declare axes (Colour, Size, …) and add one variant per combination. A single default variant is created automatically when you don't.",
+  "productsTagsTitle": "Tags",
+  "productsTagsSubtitle": "Keywords that help shoppers find this",
+  "productsTagsIntro": "Up to 20. Bestseller, Eco-friendly, etc.",
+  "productsCodesInventoryTitle": "Codes & inventory",
+  "productsCodesInventorySubtitle": "Barcode, HSN code, low-stock alert",
+  "productsMoreAboutTitle": "More about this product",
+  "productsMoreAboutSubtitle": "Your shop's own custom fields",
+  "productsMoreAboutIntro": "Shop-wide fields like Warranty, Model number or Material — define them once, reuse on every product.",
+  "productsDone": "Done",
+  "productsBarcodeHelper": "The number under the striped code on the package",
+  "productsHsnCodeHelper": "Tax classification code for invoices",
+  "productsLowStockThreshold": "Low Stock Alert",
+  "productsLowStockThresholdHelper": "We'll flag the product once stock drops to this",
+  "productsAddTag": "Add tag",
+  "productsRemove": "Remove",
+  "productsAddHighlightHint": "Add a highlight…",
+  "productsAddSpecGroup": "Add spec group",
+  "productsGroupTitleLabel": "Group title (e.g. Display)",
+  "productsRemoveGroup": "Remove group",
+  "productsTabLabel": "Tab (optional — e.g. Features & Specs)",
+  "productsSpecLabelLabel": "Label",
+  "productsSpecLabelHint": "e.g. In the box",
+  "productsRemoveRow": "Remove row",
+  "productsSpecValueLabel": "Value",
+  "productsSpecValueHint": "e.g. Earbuds, charging case, cable, manual",
+  "productsAddRow": "Add row",
+  "productsBankOffersNote": "Bank offers are platform-wide and managed centrally. Customers will still see HDFC / ICICI / SBI etc. on this product's page if a platform offer is active.",
+  "productsAddOffer": "Add offer",
+  "productsOfferKind": "Kind",
+  "productsOfferHeadline": "Headline",
+  "productsOfferHeadlineHint": "e.g. ₹2000 off with code WELCOME",
+  "productsOfferDetail": "Detail (optional)",
+  "productsOfferCode": "Code (optional)",
+  "productsBlockHeroLabel": "Hero banner",
+  "productsBlockHeroHint": "A big image with a headline",
+  "productsBlockFeatureLabel": "Feature",
+  "productsBlockFeatureHint": "Image beside a title + description",
+  "productsBlockComparisonLabel": "Comparison table",
+  "productsBlockComparisonHint": "Compare this vs other options",
+  "productsBlockGalleryLabel": "Gallery",
+  "productsBlockGalleryHint": "A row of images with captions",
+  "productsBlockTextLabel": "Text",
+  "productsBlockTextHint": "A paragraph of rich text",
+  "productsBlocksEmptyHint": "Build a rich product story shoppers scroll through — add a block to start.",
+  "productsBlockPosition": "{index} of {total}",
+  "@productsBlockPosition": {
+    "placeholders": {
+      "index": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "productsMoveUp": "Move up",
+  "productsMoveDown": "Move down",
+  "productsBannerImage": "Banner image",
+  "productsHeadline": "Headline",
+  "productsSubtext": "Subtext (optional)",
+  "productsFeatureImage": "Feature image",
+  "productsImageOnThe": "Image on the ",
+  "productsSideLeft": "Left",
+  "productsSideRight": "Right",
+  "productsFieldTitle": "Title",
+  "productsImageN": "Image {index}",
+  "@productsImageN": {
+    "placeholders": {
+      "index": {
+        "type": "Object"
+      }
+    }
+  },
+  "productsCaption": "Caption (optional)",
+  "productsAddImageAction": "Add image",
+  "productsComparisonIntro": "Name what you're comparing, then add a row for each feature and fill in a cell under every column.",
+  "productsColumns": "Columns",
+  "productsColumnNName": "Column {index} name",
+  "@productsColumnNName": {
+    "placeholders": {
+      "index": {
+        "type": "Object"
+      }
+    }
+  },
+  "productsThisProductHint": "This product",
+  "productsOtherCompetitorHint": "Other / competitor",
+  "productsRemoveColumn": "Remove column",
+  "productsAddColumn": "Add column",
+  "productsRows": "Rows",
+  "productsFeature": "Feature",
+  "productsFeatureHint": "e.g. Battery life",
+  "productsColumnN": "Column {index}",
+  "@productsColumnN": {
+    "placeholders": {
+      "index": {
+        "type": "Object"
+      }
+    }
+  },
+  "productsReplace": "Replace",
+  "productsUpload": "Upload",
+  "productsHideLinkField": "Hide link field",
+  "productsOrPasteLink": "or paste a link",
+  "productsImageLinkUrl": "Image link (URL)",
+  "productsAxes": "Axes",
+  "productsAddAxis": "Add axis (e.g. Colour, Size)",
+  "productsVariantsLabel": "Variants",
+  "productsAddVariant": "Add variant",
+  "productsAxisNameLabel": "Axis name (e.g. Colour)",
+  "productsValueN": "Value {index}",
+  "@productsValueN": {
+    "placeholders": {
+      "index": {
+        "type": "Object"
+      }
+    }
+  },
+  "productsAddValue": "Add value",
+  "productsAxisFallback": "Axis",
+  "productsSellingShort": "Selling",
+  "productsStockShort": "Stock",
+  "productsVariantImagesHint": "Add images for this exact variant — what colour it looks like, how it fits. Customers picking this option will see these instead of the product-level gallery.",
+  "productsAddVariantImage": "Add variant image",
+  "productsFromGallery": "From gallery",
+  "productsTakePhotoMenu": "Take photo",
+  "productsAddShort": "Add",
+  "productsAddPhotos": "Add photos",
+  "productsOutOfStockLabel": "Out of stock",
+  "productsReorderAt": "reorder at",
+  "productsInStockSuffix": "in stock",
+  "productsOutSince": "Out since",
+  "productsLastIn": "Last in:",
+  "productsCostPrefix": "cost",
+  "productsAboveMrp": "above M.R.P.",
+  "ordersTitle": "Orders",
+  "ordersNoAccessTitle": "Orders hidden",
+  "ordersTabPending": "Pending",
+  "ordersTabConfirmed": "Confirmed",
+  "ordersTabRejected": "Rejected",
+  "ordersTabAll": "All",
+  "ordersSearchHint": "Search customer, item or #id",
+  "ordersAnyDate": "Any date",
+  "ordersItemUnit": "item",
+  "ordersItemsUnit": "items",
+  "ordersAllCaughtUp": "All caught up",
+  "ordersAllCaughtUpHint": "New orders will land here.",
+  "ordersNoMatching": "No matching orders",
+  "ordersNoMatchingHint": "Try a different search or date range.",
+  "ordersNoneYet": "No orders here yet",
+  "ordersNoneYetHint": "New orders will appear here when customers place them.",
+  "ordersError": "Something went wrong",
+  "ordersRetry": "Retry",
+  "ordersDetailTitle": "Order #{id}",
+  "@ordersDetailTitle": {
+    "placeholders": {
+      "id": {
+        "type": "Object"
+      }
+    }
+  },
+  "ordersActionShare": "Share order summary",
+  "ordersManageWhat": "manage orders",
+  "ordersDecline": "Decline",
+  "ordersConfirmAndCreateInvoice": "Confirm & create invoice",
+  "ordersInvoiceCreated": "Invoice {no} created",
+  "@ordersInvoiceCreated": {
+    "placeholders": {
+      "no": {
+        "type": "Object"
+      }
+    }
+  },
+  "ordersDeclinedToast": "Order declined",
+  "ordersShippingPosted": "Shipping update posted",
+  "ordersStockPosted": "{name} stock posted",
+  "@ordersStockPosted": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "ordersCouldNotOpenApp": "Could not open that app",
+  "ordersWhatsappGreeting": "Hi {name}, regarding your order #{id}.",
+  "@ordersWhatsappGreeting": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      },
+      "id": {
+        "type": "Object"
+      }
+    }
+  },
+  "ordersEmailSubject": "Order #{id}",
+  "@ordersEmailSubject": {
+    "placeholders": {
+      "id": {
+        "type": "Object"
+      }
+    }
+  },
+  "ordersShareHeader": "Order #{id} from {name}",
+  "@ordersShareHeader": {
+    "placeholders": {
+      "id": {
+        "type": "Object"
+      },
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "ordersJustNow": "just now",
+  "ordersMinAgo": "{n} min ago",
+  "@ordersMinAgo": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      }
+    }
+  },
+  "ordersHrAgo": "{n} hr ago",
+  "@ordersHrAgo": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      }
+    }
+  },
+  "ordersDayAgo": "{n} days ago",
+  "@ordersDayAgo": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      }
+    }
+  },
+  "ordersSummaryItemsLabel": "Items",
+  "ordersSummaryQtyLabel": "Total qty",
+  "ordersSummaryTotalLabel": "Estimated",
+  "ordersShortfallTitle": "{short} of {total} items short on stock",
+  "@ordersShortfallTitle": {
+    "placeholders": {
+      "short": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "ordersShortfallBody": "Restock now or decline — the invoice will fail to post otherwise.",
+  "ordersRestock": "Restock",
+  "ordersLinkedParty": "Linked party",
+  "ordersCall": "Call",
+  "ordersWhatsapp": "WhatsApp",
+  "ordersEmail": "Email",
+  "ordersCustomerNote": "Customer's note",
+  "ordersJourneyPlaced": "Placed",
+  "ordersJourneyDeclined": "Declined",
+  "ordersJourneyCancelled": "Cancelled",
+  "ordersJourneyConfirmed": "Confirmed",
+  "ordersJourneyInvoiced": "Invoiced",
+  "ordersJourneyPaid": "Paid",
+  "ordersInactiveProduct": "Inactive product",
+  "ordersStockUnknown": "Stock unknown",
+  "ordersStockOk": "Asked {ask} · {have} {unit} in stock",
+  "@ordersStockOk": {
+    "placeholders": {
+      "ask": {
+        "type": "Object"
+      },
+      "have": {
+        "type": "Object"
+      },
+      "unit": {
+        "type": "Object"
+      }
+    }
+  },
+  "ordersStockShort": "Asked {ask} · in stock {have} · short {short}",
+  "@ordersStockShort": {
+    "placeholders": {
+      "ask": {
+        "type": "Object"
+      },
+      "have": {
+        "type": "Object"
+      },
+      "short": {
+        "type": "Object"
+      }
+    }
+  },
+  "ordersTotalsSubtotal": "Subtotal",
+  "ordersTotalsTax": "Tax",
+  "ordersTotalsDiscount": "Discount",
+  "ordersTotalsTotal": "Total",
+  "ordersPartialFulfillFootnote": "Final invoice may differ if you partial-fulfill.",
+  "ordersOpenInvoice": "Open invoice {no}",
+  "@ordersOpenInvoice": {
+    "placeholders": {
+      "no": {
+        "type": "Object"
+      }
+    }
+  },
+  "ordersConfirmShortfallTitle": "Stock looks short — confirm anyway?",
+  "ordersConfirmOrderTitle": "Confirm this order?",
+  "ordersConfirmShortfallWarning": "Some items have less stock than the customer asked for. The draft invoice will fail to post when you try to confirm it.",
+  "ordersConfirmOrderBody": "This creates a draft sale invoice for the items. Stock will move once you confirm the invoice.",
+  "ordersNotYet": "Not yet",
+  "ordersConfirmOrder": "Confirm order",
+  "ordersDeclineReasonOutOfStock": "Out of stock",
+  "ordersDeclineReasonClosed": "Closed today",
+  "ordersDeclineReasonPriceChanged": "Price changed",
+  "ordersDeclineReasonOther": "Other",
+  "ordersDeclineOrderTitle": "Decline this order?",
+  "ordersDeclineOrderBody": "The customer will be notified. You can leave a note explaining why.",
+  "ordersDeclineOrderNoteHint": "Reason (optional)",
+  "ordersKeep": "Keep",
+  "ordersDeclineOrder": "Decline order",
+  "ordersShippingUpdates": "Shipping updates",
+  "ordersUpdateShipping": "Update shipping",
+  "ordersNoShippingUpdates": "No shipping updates yet.",
+  "ordersMilestonePacked": "Packed",
+  "ordersMilestoneShipped": "Shipped",
+  "ordersMilestoneOutForDelivery": "Out for delivery",
+  "ordersMilestoneDelivered": "Delivered",
+  "ordersMilestoneReturned": "Returned",
+  "ordersShippingSheetBody": "The customer sees these updates on their order. Marking Delivered starts their return window.",
+  "ordersCourierHint": "Courier (optional), e.g. Delhivery",
+  "ordersAwbHint": "AWB / tracking number (optional)",
+  "ordersEtaHint": "ETA (optional)",
+  "ordersClearEta": "Clear ETA",
+  "ordersNoteHint": "Note (optional)",
+  "ordersCancel": "Cancel",
+  "ordersSaveUpdate": "Save update",
+  "ordersStockDraftPendingOne": "1 stock draft pending",
+  "ordersStockDraftPendingMany": "{count} stock drafts pending",
+  "@ordersStockDraftPendingMany": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "ordersStockDraftHint": "Confirm to post the stock — until then the shortfall stays.",
+  "ordersDraftInvoiceNo": "Draft invoice #{no}",
+  "@ordersDraftInvoiceNo": {
+    "placeholders": {
+      "no": {
+        "type": "Object"
+      }
+    }
+  },
+  "ordersOpenDraft": "Open draft",
+  "ordersConfirm": "Confirm",
+  "ordersHide": "Hide",
+  "invoicesNavTitle": "Invoices",
+  "invoicesCreateTitle": "Create Invoice",
+  "invoicesSearchHint": "Search invoice no, party, vendor",
+  "invoicesFiltersTooltip": "Filters",
+  "invoicesFilterAll": "All",
+  "invoicesFilterSales": "Sales",
+  "invoicesFilterPurchases": "Purchases",
+  "invoicesErrorTitle": "Something went wrong",
+  "invoicesRetry": "Retry",
+  "invoicesEmptyTitle": "No invoices found",
+  "invoicesEmptyBody": "Create your first invoice to get started",
+  "invoicesGeneratingPdf": "Generating PDF...",
+  "invoicesItemUnit": "item",
+  "invoicesItemsUnit": "items",
+  "invoicesDownloadTooltip": "Download Invoice",
+  "invoicesDocTaxInvoice": "Tax Invoice",
+  "invoicesDocBillOfSupply": "Bill of Supply",
+  "invoicesDocEstimate": "Estimate",
+  "invoicesDocProforma": "Proforma",
+  "invoicesDocCreditNote": "Credit Note",
+  "invoicesDocDebitNote": "Debit Note",
+  "invoicesStatusDraft": "Draft",
+  "invoicesStatusConfirmed": "Confirmed",
+  "invoicesStatusCancelled": "Cancelled",
+  "invoicesFilterAllDocuments": "All documents",
+  "invoicesFilterAnyStatus": "Any status",
+  "invoicesFiltersTitle": "Filters",
+  "invoicesDocumentTypeLabel": "Document type",
+  "invoicesStatusLabel": "Status",
+  "invoicesClearAll": "Clear all",
+  "invoicesApply": "Apply",
+  "invoicesEditDraftTitle": "Edit Draft",
+  "invoicesSaveAsDraft": "Save as draft",
+  "invoicesUpdateDraft": "Update draft",
+  "invoicesSaveAndConfirm": "Save & confirm",
+  "invoicesUpdateAndConfirm": "Update & confirm",
+  "invoicesInvoiceType": "Invoice Type",
+  "invoicesSaleInvoice": "Sale Invoice",
+  "invoicesPurchaseInvoice": "Purchase Invoice",
+  "invoicesCustomerInfo": "Customer Information",
+  "invoicesVendorInfo": "Vendor Information",
+  "invoicesSelectVendor": "Select vendor",
+  "invoicesSelectParty": "Select party",
+  "invoicesCustomerName": "Customer Name",
+  "invoicesPhone": "Phone",
+  "invoicesGstin": "GSTIN",
+  "invoicesPlaceOfSupply": "Place of supply (state)",
+  "invoicesPlaceOfSupplyHelper": "Buyer state — drives CGST/SGST vs IGST",
+  "invoicesSelectDash": "— Select —",
+  "invoicesInvoiceItems": "Invoice Items",
+  "invoicesSearchToAddProduct": "Search product to add",
+  "invoicesScanBarcode": "Scan barcode",
+  "invoicesNoItemsYet": "No items added yet",
+  "invoicesTotals": "Totals",
+  "invoicesPricesIncludeGst": "Prices include GST",
+  "invoicesPricesInclusiveHint": "Tax is backed out of the entered prices",
+  "invoicesPricesExclusiveHint": "GST is added on top of the entered prices",
+  "invoicesSubtotal": "Subtotal",
+  "invoicesDiscount": "Discount",
+  "invoicesRoundOff": "Round-off",
+  "invoicesGrandTotal": "Grand Total",
+  "invoicesNote": "Note",
+  "invoicesChange": "Change",
+  "invoicesQuantity": "Quantity",
+  "invoicesUnitPrice": "Unit Price",
+  "invoicesTax": "Tax",
+  "invoicesTotal": "Total",
+  "invoicesNeedsItems": "Please add at least one item",
+  "invoicesUpdatedAndConfirmed": "Invoice updated and confirmed",
+  "invoicesSavedAsDraft": "Saved as draft",
+  "invoicesConfirmedNamed": "{invoiceNo} confirmed",
+  "@invoicesConfirmedNamed": {
+    "placeholders": {
+      "invoiceNo": {
+        "type": "Object"
+      }
+    }
+  },
+  "invoicesSavedDraftConfirmFailed": "Saved as draft — confirm failed, please review.",
+  "invoicesDiscardChangesTitle": "Discard changes?",
+  "invoicesDiscardChangesBody": "Your edits will be lost.",
+  "invoicesKeepEditing": "Keep editing",
+  "invoicesDiscard": "Discard",
+  "invoicesErrorTitle2Unused": "unused",
+  "invoicesPaymentModeOnline": "Online",
+  "invoicesPaymentModeCash": "Cash",
+  "invoicesPaymentModeCheque": "Cheque",
+  "invoicesPaymentModeCard": "Card",
+  "invoicesCouldNotOpenWhatsApp": "Could not open WhatsApp",
+  "invoicesConvertTitle": "Convert to Invoice?",
+  "invoicesConvertBody": "A new tax invoice will be created from {invoiceNo}. The estimate stays on file unchanged.",
+  "@invoicesConvertBody": {
+    "placeholders": {
+      "invoiceNo": {
+        "type": "Object"
+      }
+    }
+  },
+  "invoicesCancel": "Cancel",
+  "invoicesConvert": "Convert",
+  "invoicesCancelledNamed": "{invoiceNo} cancelled",
+  "@invoicesCancelledNamed": {
+    "placeholders": {
+      "invoiceNo": {
+        "type": "Object"
+      }
+    }
+  },
+  "invoicesCancelInvoice": "Cancel Invoice",
+  "invoicesCancelConfirmBody": "Cancel {invoiceNo}? No stock will be moved and the invoice will be marked as cancelled.",
+  "@invoicesCancelConfirmBody": {
+    "placeholders": {
+      "invoiceNo": {
+        "type": "Object"
+      }
+    }
+  },
+  "invoicesKeepDraft": "Keep draft",
+  "invoicesEdit": "Edit",
+  "invoicesShare": "Share",
+  "invoicesDelete": "Delete",
+  "invoicesDeleteConfirmBody": "Delete {invoiceNo}? This can't be undone.",
+  "@invoicesDeleteConfirmBody": {
+    "placeholders": {
+      "invoiceNo": {
+        "type": "Object"
+      }
+    }
+  },
+  "invoicesDeletedNamed": "{invoiceNo} deleted",
+  "@invoicesDeletedNamed": {
+    "placeholders": {
+      "invoiceNo": {
+        "type": "Object"
+      }
+    }
+  },
+  "invoicesCustomer": "Customer",
+  "invoicesVendor": "Vendor",
+  "invoicesAddress": "Address",
+  "invoicesTaxAmount": "Tax Amount",
+  "invoicesCess": "Cess",
+  "invoicesReceived": "Received",
+  "invoicesOutstanding": "Outstanding",
+  "invoicesSendViaWhatsApp": "Send via WhatsApp",
+  "invoicesOpensChatWith": "Opens chat with {phone}",
+  "@invoicesOpensChatWith": {
+    "placeholders": {
+      "phone": {
+        "type": "Object"
+      }
+    }
+  },
+  "invoicesPickChatToSend": "Pick a chat to send to",
+  "invoicesConvertToInvoice": "Convert to Invoice",
+  "invoicesConvertTileSubtitle": "Create a tax invoice from this estimate",
+  "invoicesMarkAsPaid": "Mark as Paid",
+  "invoicesRecordReceiptSubtitle": "Record a receipt for this invoice",
+  "invoicesRecordPaymentSubtitle": "Record a payment for this bill",
+  "invoicesPaymentRecorded": "Payment recorded",
+  "invoicesConfirmInvoice": "Confirm Invoice",
+  "partiesTitle": "Parties",
+  "partiesAddParty": "Add Party",
+  "partiesEditParty": "Edit Party",
+  "partiesDeleteParty": "Delete Party",
+  "partiesDeletePartyConfirm": "Are you sure you want to delete this party? \"{name}\"?",
+  "@partiesDeletePartyConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "partiesPartyDeleted": "Party deleted successfully",
+  "partiesSearchParties": "Search parties...",
+  "partiesNoParties": "No parties found",
+  "partiesNoPartiesHint": "Tap + to add your first party",
+  "partiesSelectParty": "Select party",
+  "partiesNewParty": "New party",
+  "partiesPartyName": "Party Name",
+  "partiesContactName": "Contact Name",
+  "partiesPhone": "Phone",
+  "partiesEmail": "Email",
+  "partiesGstin": "GSTIN",
+  "partiesAddress": "Address",
+  "partiesCity": "City",
+  "partiesPinCode": "PIN code",
+  "partiesState": "State",
+  "partiesSelectPlaceholder": "— Select —",
+  "partiesSave": "Save",
+  "partiesEdit": "Edit",
+  "partiesDelete": "Delete",
+  "partiesConfirm": "Confirm",
+  "partiesFieldRequired": "This field is required",
+  "partiesPartyUpdated": "{name} updated",
+  "@partiesPartyUpdated": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "partiesPartyAdded": "{name} added",
+  "@partiesPartyAdded": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "partiesCancelInvitationTitle": "Cancel invitation",
+  "partiesCancelInvitationBody": "Cancel this pending invitation? You can send a new one later.",
+  "partiesInvitationCancelled": "Invitation cancelled",
+  "partiesAlreadyLinked": "Already linked",
+  "partiesInviteToShopxy": "Invite to Shopxy",
+  "partiesAddEmailFirst": "Add an email first",
+  "partiesSentTo": "Sent to {email}",
+  "@partiesSentTo": {
+    "placeholders": {
+      "email": {
+        "type": "Object"
+      }
+    }
+  },
+  "partiesGstinLabel": "GSTIN",
+  "partiesChallansUnit": "challans",
+  "partiesInvoicesUnit": "invoices",
+  "partiesItemsUnit": "items",
+  "partiesBillsUnit": "bills",
+  "partiesInviteStatusInvited": "Invited",
+  "partiesInviteStatusLinked": "Linked",
+  "partiesInviteStatusDeclined": "Declined",
+  "partiesInviteStatusCancelled": "Cancelled",
+  "partiesInviteStatusExpired": "Expired",
+  "partiesPartyTitle": "Party",
+  "partiesRecordPayment": "Record payment",
+  "partiesLedger": "Ledger",
+  "partiesRecentInvoices": "Recent invoices",
+  "partiesRecentChallans": "Recent challans",
+  "partiesNoActivityYet": "No activity yet.",
+  "partiesNetBilled": "Net billed",
+  "partiesSales": "Sales",
+  "partiesReturns": "Returns",
+  "partiesBalance": "BALANCE",
+  "partiesBalanceShort": "Bal",
+  "partiesNoOutstanding": "No outstanding",
+  "partiesOwesYou": "Owes you",
+  "partiesAdvanceCredit": "Advance / credit",
+  "vendorsTitle": "Vendors",
+  "vendorsAddVendor": "Add Vendor",
+  "vendorsEditVendor": "Edit Vendor",
+  "vendorsDeleteVendor": "Delete Vendor",
+  "vendorsDeleteVendorConfirm": "Are you sure you want to delete this vendor?",
+  "vendorsVendorDeleted": "Vendor deleted successfully",
+  "vendorsSearchHint": "Search vendors...",
+  "vendorsEmptyTitle": "No vendors found",
+  "vendorsEmptyHint": "Tap + to add your first vendor",
+  "vendorsVendorName": "Vendor Name",
+  "vendorsContactName": "Contact Name",
+  "vendorsPhone": "Phone",
+  "vendorsEmail": "Email",
+  "vendorsGstin": "GSTIN",
+  "vendorsAddress": "Address",
+  "vendorsCity": "City",
+  "vendorsPinCode": "PIN code",
+  "vendorsState": "State",
+  "vendorsStateSelect": "— Select —",
+  "vendorsSave": "Save",
+  "vendorsDelete": "Delete",
+  "vendorsEdit": "Edit",
+  "vendorsConfirm": "Confirm",
+  "vendorsFieldRequired": "This field is required",
+  "vendorsSelectVendor": "Select vendor",
+  "vendorsNewVendor": "New vendor",
+  "vendorsTxnsUnit": "txns",
+  "vendorsInvoicesUnit": "invoices",
+  "vendorsCancelInviteTitle": "Cancel invitation",
+  "vendorsCancelInviteMessage": "Cancel this pending invitation? You can send a new one later.",
+  "vendorsInviteCancelled": "Invitation cancelled",
+  "vendorsAlreadyLinked": "Already linked",
+  "vendorsInviteToShopxy": "Invite to Shopxy",
+  "vendorsAddEmailFirst": "Add an email first",
+  "vendorsCancelInvitation": "Cancel invitation",
+  "vendorsSentTo": "Sent to",
+  "vendorsInviteStatusInvited": "Invited",
+  "vendorsInviteStatusLinked": "Linked",
+  "vendorsInviteStatusDeclined": "Declined",
+  "vendorsInviteStatusCancelled": "Cancelled",
+  "vendorsInviteStatusExpired": "Expired",
+  "vendorsDetailTitle": "Vendor",
+  "vendorsRecordPayment": "Record payment",
+  "vendorsLedger": "Ledger",
+  "vendorsRecentBills": "Recent bills",
+  "vendorsRecentStockIn": "Recent stock-in",
+  "vendorsNoActivity": "No activity yet.",
+  "vendorsLinked": "Linked",
+  "vendorsNetPurchased": "Net purchased",
+  "vendorsBillsUnit": "bills",
+  "vendorsStockIns": "Stock-ins",
+  "vendorsLedgerRows": "Ledger rows",
+  "vendorsReturns": "Returns",
+  "vendorsItemUnit": "item",
+  "vendorsItemsUnit": "items",
+  "vendorsNoOutstanding": "No outstanding",
+  "vendorsYouOwe": "You owe",
+  "vendorsAdvanceWithVendor": "Advance with vendor",
+  "vendorsBalanceLabel": "BALANCE",
+  "vendorsBalShort": "Bal",
+  "profileNavProfile": "Profile",
+  "profileSettings": "Settings",
+  "profileEditProfile": "Edit profile",
+  "profileAppTagline": "Smart Inventory Management",
+  "profileMemberSince": "Since",
+  "profileManageBusiness": "Manage your business",
+  "profileNavCategories": "Categories",
+  "profileCategoriesSubtitle": "Product categories and grouping",
+  "profileNavVendors": "Vendors",
+  "profileVendorsSubtitle": "Suppliers you buy from",
+  "profileNavParties": "Parties",
+  "profilePartiesSubtitle": "Customers you sell to",
+  "profileOperations": "Operations",
+  "profileNavInvoices": "Invoices",
+  "profileInvoicesSubtitle": "Sales, purchase and credit notes",
+  "profileNavChallans": "Challans",
+  "profileChallansSubtitle": "Delivery notes without prices",
+  "profileStockAdjustments": "Stock adjustments",
+  "profileStockAdjustmentsSubtitle": "Damage, expiry, shrinkage corrections",
+  "profileReports": "Reports",
+  "profileReportsSubtitle": "Sales, purchases, GST and P&L",
+  "profileFinishShopSetup": "Finish setting up your shop",
+  "profileFinishShopSetupBody": "Add your shop name, GSTIN and state so invoices print correctly.",
+  "profileFieldName": "Name",
+  "profileFieldPhoto": "Photo",
+  "profileFieldPhone": "Phone",
+  "profileFieldShopName": "Shop name",
+  "profileFieldAddress": "Address",
+  "profileFieldCity": "City",
+  "profileFieldState": "State",
+  "profileFieldStateCode": "State code",
+  "profileFieldPinCode": "PIN code",
+  "profileFieldGstin": "GSTIN",
+  "profileFieldPan": "PAN",
+  "profileFieldUpiId": "UPI ID",
+  "profileCompletionTitle": "Profile complete",
+  "profileCompletionDetailsAdded": "details added.",
+  "profileCompleteIt": "Complete it",
+  "profileWhatsLeft": "WHAT'S LEFT",
+  "profileRoleOwner": "Owner",
+  "profileRoleManager": "Manager",
+  "profileRoleStockist": "Stockist",
+  "profileRoleCashier": "Cashier",
+  "profileRoleStaff": "Staff",
+  "profileChangePassword": "Change Password",
+  "profileCurrentPassword": "Current Password",
+  "profileNewPassword": "New Password",
+  "profileConfirmNewPassword": "Confirm new password",
+  "profilePasswordHelper": "8+ chars, must include a letter and a number",
+  "profilePasswordMinLength": "Must be at least 8 characters",
+  "profilePasswordNeedsLetter": "Must contain a letter",
+  "profilePasswordNeedsNumber": "Must contain a number",
+  "profilePasswordsDoNotMatch": "Passwords do not match",
+  "profilePasswordChanged": "Password changed. Existing sessions revoked.",
+  "profileRequired": "Required",
+  "profilePrivacyPolicy": "Privacy policy",
+  "profileTermsOfService": "Terms of service",
+  "profilePrivacyBody": "ShopXY is a Data Fiduciary under India's Digital Personal Data Protection Act, 2023 (DPDP). This notice explains what we collect, why, and the rights you have over your data.\n\nWhat we hold\nWe store the minimum data needed to run your shop: account credentials, your product/vendor/party records, invoices and payments you create, notification preferences, and consent timestamps. We do not sell your data and do not share it with third parties except as required to operate the service (hosting, error monitoring) or by Indian law.\n\nData localisation\nYour data is stored on servers located in India in line with applicable RBI / sector guidance. Backups are encrypted and held in the same jurisdiction.\n\nRetention\nFinancial records — invoices, payments and supporting ledgers — are retained for at least 8 financial years to comply with the Companies Act, 2013 (§128) and the GST Act (§36). Other personal data is retained only as long as your account is active or as required to provide the service.\n\nYour rights (DPDP §11 and §12)\nYou have the right to (a) access a copy of your personal data, (b) correct or update it, (c) withdraw consent and request erasure, and (d) nominate someone to act on your behalf. The Settings > Danger zone screen exposes \"Export my data\" (a downloadable JSON of every row tied to your account) and \"Delete account\" (immediate erasure for customer accounts; controlled erasure for shop-owner accounts whose books are still inside the 8-year retention window).\n\nConsent withdrawal\nYou may withdraw consent at any time by deleting your account or by emailing support@shopxy.app. Withdrawal does not apply retroactively to processing performed lawfully before withdrawal.\n\nGrievance redressal\nDPDP §13 requires a published grievance contact. Please reach our Grievance Officer at grievance@shopxy.app. We acknowledge within 48 hours and aim to resolve within one month; personal-data requests under the DPDP Act are addressed within 15 days. If unresolved, you may approach the Data Protection Board of India.\n",
+  "profileTermsBody": "ShopXY is provided as-is for managing your shop's inventory, invoices, payments and customer relationships. By creating an account you agree to the terms below.\n\n1. Account integrity. Provide accurate information when registering and keep your password confidential — you are responsible for all activity under your account.\n\n2. Lawful use. Use the service only for legitimate business operations. No spam, no scraping, no attempts to compromise other accounts or to bypass billing.\n\n3. Compliance with Indian law. You will comply with all applicable tax, GST and commerce laws of India. ShopXY assists with documentation but does not constitute legal or tax advice.\n\n4. Data and consent. Your use of ShopXY is also governed by the Privacy Policy, which describes how we handle personal data under the DPDP Act, 2023 — including data localisation in India, an 8-year retention window for financial books (Companies Act §128 / GST §36), and your rights to access and delete your data via the in-app Settings screen.\n\n5. Service availability. We may schedule maintenance or update features. We will give reasonable notice for material changes.\n\n6. Termination. We may suspend accounts that violate these terms or that we reasonably suspect of fraudulent activity. You may close your account at any time via Settings > Delete account.\n\n7. Grievances. Questions, complaints or DPDP requests can be sent to grievance@shopxy.app. The Grievance Officer acknowledges within 48 hours and responds within one month.\n",
+  "profileTakePhoto": "Take a photo",
+  "profilePickFromGallery": "Pick from gallery",
+  "profileRemovePhoto": "Remove photo",
+  "profileProfileUpdated": "Profile updated",
+  "profileName": "Name",
+  "profileNameMinLength": "Name must be at least 2 characters",
+  "profileNameTooLong": "Name too long",
+  "profileEmail": "Email",
+  "profileEmailNotEditable": "Email changes are not supported yet",
+  "profileShopDetails": "Shop details",
+  "profileShopDetailsHint": "These appear on invoices and PDFs. GSTIN must match the state.",
+  "profileShopName": "Shop name",
+  "profileShopAddress": "Shop address",
+  "profileCity": "City",
+  "profilePinCode": "PIN code",
+  "profileState": "State",
+  "profileSelectPlaceholder": "— Select —",
+  "profileGstin": "GSTIN",
+  "profilePan": "PAN",
+  "profileUpiId": "UPI ID",
+  "profileSave": "Save",
+  "profileSectionAccount": "ACCOUNT",
+  "profileChangePasswordSubtitle": "Update the password on your account",
+  "profileSectionShopOperations": "SHOP OPERATIONS",
+  "profileShopOperations": "Shop operations",
+  "profileShopOperationsSubtitle": "Hours, vacation mode, payouts, KYC, team",
+  "profileSectionAppearance": "APPEARANCE",
+  "profileCurrency": "Currency",
+  "profileCurrencyIndianRupee": "Indian Rupee (₹)",
+  "profileListDensity": "List density",
+  "profileListDensityCompactDesc": "Tighter rows — more products per screen.",
+  "profileListDensityComfortableDesc": "Comfortable spacing (default).",
+  "profileDensityComfortable": "Comfortable",
+  "profileDensityCompact": "Compact",
+  "profileNavigationStyle": "Navigation style",
+  "profileNavigationStyleSidebarDesc": "Left-side rail with destinations stacked vertically.",
+  "profileNavigationStyleBottomDesc": "Bottom tab bar (default).",
+  "profileNavStyleBottomBar": "Bottom bar",
+  "profileNavStyleSidebar": "Sidebar",
+  "profileSectionInventory": "INVENTORY",
+  "profileCustomFields": "Custom Fields",
+  "profileCustomFieldsHint": "Track extra information on every product",
+  "profileSectionNotifications": "NOTIFICATIONS",
+  "profileEmailNotifications": "Email notifications",
+  "profileEmailNotificationsSubtitle": "Low-stock alerts and weekly summary",
+  "profilePreferenceSaveFailed": "Could not save preference:",
+  "profileSectionAbout": "ABOUT",
+  "profileAppVersion": "App version",
+  "profileSectionDangerZone": "DANGER ZONE",
+  "profileExportMyData": "Export my data",
+  "profileExportMyDataSubtitle": "Download a JSON copy of every record tied to your account.",
+  "profileExportFailed": "Export failed:",
+  "profileDataExportShareText": "Your ShopXY data export",
+  "profileDeleteAccount": "Delete account",
+  "profileDeleteAccountSubtitle": "Permanently erase your account. Shop owners with invoices in the past 8 years must contact support (Companies Act / GST retention).",
+  "profileDeleteAccountDialogBody": "This permanently erases your account and revokes every session. Owners whose invoices are still inside the 8-year Companies Act / GST retention window cannot delete in-app — contact support@shopxy.example for a controlled wipe.",
+  "profileAccountDeleted": "Account deleted",
+  "profileCancel": "Cancel",
+  "profileDelete": "Delete",
+  "profileLogout": "Log out",
+  "profileLogoutConfirm": "Are you sure you want to log out?",
+  "profileComingSoon": "Coming soon",
+  "notificationsTitle": "Notifications",
+  "notificationsTabInbox": "Inbox",
+  "notificationsTabInvites": "Invites",
+  "notificationsTabSent": "Sent",
+  "notificationsMarkAllRead": "Mark all read",
+  "notificationsInviteButton": "Invite",
+  "notificationsInboxEmptyTitle": "No notifications yet",
+  "notificationsInboxEmptyBody": "When something happens — like an invitation reply — you'll see it here.",
+  "notificationsIncomingEmptyTitle": "No invitations",
+  "notificationsIncomingEmptyBody": "When a shop invites you as a party or vendor, you'll see the request here.",
+  "notificationsOutgoingEmptyTitle": "No invitations sent yet",
+  "notificationsOutgoingEmptyBody": "Tap the Invite button to invite a party or vendor by email.",
+  "notificationsAShop": "A shop",
+  "notificationsRolePartyCustomer": "Party (customer)",
+  "notificationsRoleVendorSupplier": "Vendor (supplier)",
+  "notificationsWantsToAddYou": "wants to add you as their {role}",
+  "@notificationsWantsToAddYou": {
+    "placeholders": {
+      "role": {
+        "type": "Object"
+      }
+    }
+  },
+  "notificationsDecline": "Decline",
+  "notificationsAccept": "Accept",
+  "notificationsInvitationAccepted": "Invitation accepted",
+  "notificationsInvitationDeclined": "Invitation declined",
+  "notificationsRoleParty": "Party",
+  "notificationsRoleVendor": "Vendor",
+  "notificationsCancel": "Cancel",
+  "notificationsInvitationCancelled": "Invitation cancelled",
+  "notificationsStatusPending": "Pending",
+  "notificationsStatusAccepted": "Accepted",
+  "notificationsStatusDeclined": "Declined",
+  "notificationsStatusCancelled": "Cancelled",
+  "notificationsStatusExpired": "Expired",
+  "notificationsInvitationSent": "Invitation sent",
+  "notificationsSendInvitationTitle": "Send invitation",
+  "notificationsInviteByEmail": "Invite by email",
+  "notificationsInviteByEmailHelp": "They will see your request under Notifications. If they don't have a Shopxy account yet, it shows up the moment they sign up with this email.",
+  "notificationsCustomerName": "Customer name",
+  "notificationsVendorName": "Vendor name",
+  "notificationsRecipientEmail": "Recipient email",
+  "notificationsMessageOptional": "Message (optional)",
+  "notificationsMessageHint": "Hey! Linking your account on Shopxy…",
+  "notificationsModeExisting": "Existing",
+  "notificationsModeNewContact": "New contact",
+  "notificationsChooseParty": "Choose party",
+  "notificationsChooseVendor": "Choose vendor",
+  "notificationsSearchParties": "Search parties…",
+  "notificationsSearchVendors": "Search vendors…",
+  "notificationsNoContactsFound": "No contacts found",
+  "categoriesTitle": "Categories",
+  "categoriesEmptyTitle": "No categories yet",
+  "categoriesEmptyHint": "Tap + to add a category",
+  "categoriesProductsEmptyTitle": "No products in this category",
+  "categoriesProductsNoMatchTitle": "No products match \"{name}\"",
+  "@categoriesProductsNoMatchTitle": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "categoriesProductsEmptySubtitle": "Assign products to \"{name}\" from the product editor.",
+  "@categoriesProductsEmptySubtitle": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "categoriesProductsNoMatchSubtitle": "Try a shorter or different search.",
+  "categoriesProductUnit": "product",
+  "categoriesProductsUnit": "products",
+  "categoriesSearchProductsHint": "Search products",
+  "categoriesPickerTitle": "Select category",
+  "categoriesCancel": "Cancel",
+  "categoriesClearSelection": "Clear selection",
+  "categoriesError": "Something went wrong",
+  "categoriesNoMatch": "No categories match that search.",
+  "categoriesSubcategoriesUnit": "subcategories",
+  "couponsTitle": "Coupons",
+  "couponsNewCoupon": "New coupon",
+  "couponsEditCoupon": "Edit coupon",
+  "couponsCreateCoupon": "Create coupon",
+  "couponsSaveChanges": "Save changes",
+  "couponsSaving": "Saving…",
+  "couponsCancel": "Cancel",
+  "couponsDeactivate": "Deactivate",
+  "couponsRetry": "Retry",
+  "couponsDeactivateConfirmTitle": "Deactivate {code}?",
+  "@couponsDeactivateConfirmTitle": {
+    "placeholders": {
+      "code": {
+        "type": "Object"
+      }
+    }
+  },
+  "couponsDeactivateConfirmBody": "Buyers won't see this coupon anymore. Existing redemptions are unaffected.",
+  "couponsEmptyBody": "No coupons yet. Tap \"New coupon\" to create your first one.",
+  "couponsPercentOff": "{value}% off",
+  "@couponsPercentOff": {
+    "placeholders": {
+      "value": {
+        "type": "Object"
+      }
+    }
+  },
+  "couponsAmountOff": "{amount} off",
+  "@couponsAmountOff": {
+    "placeholders": {
+      "amount": {
+        "type": "Object"
+      }
+    }
+  },
+  "couponsStatusInactive": "Inactive",
+  "couponsStatusExpired": "Expired",
+  "couponsStatusExhausted": "Exhausted",
+  "couponsStatusLive": "Live",
+  "couponsBadgePublicAutoApplies": "Public · auto-applies",
+  "couponsBadgeFirstOrderOnly": "First order only",
+  "couponsValidityRedeemed": "Valid {from} – {until} · {count} redeemed",
+  "@couponsValidityRedeemed": {
+    "placeholders": {
+      "from": {
+        "type": "Object"
+      },
+      "until": {
+        "type": "Object"
+      },
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "couponsFieldCode": "Code",
+  "couponsFieldTitle": "Title",
+  "couponsFieldTitleHint": "New user offer",
+  "couponsFieldDescription": "Description (optional)",
+  "couponsFieldType": "Type",
+  "couponsDiscountTypePercent": "Percent off",
+  "couponsDiscountTypeFlat": "Flat ₹ off",
+  "couponsFieldPercentOff": "% off",
+  "couponsFieldAmountOff": "₹ off",
+  "couponsFieldMaxDiscount": "Max discount (₹) — caps the % off",
+  "couponsFieldMinOrder": "Minimum order (₹)",
+  "couponsDateFrom": "From",
+  "couponsDateUntil": "Until",
+  "couponsFieldPerUserLimit": "Per-user limit (0 = unlimited)",
+  "couponsFieldTotalCap": "Total cap (0 = unlimited)",
+  "couponsPublicTitle": "Public — auto-applies",
+  "couponsPublicSubtitle": "Anyone can see and use it. Auto-applies at checkout when the cart matches — no code typing needed. Keep off for private codes shared with specific people.",
+  "couponsFirstOrderTitle": "First-order only",
+  "couponsFirstOrderSubtitle": "Restricts redemption to customers with no prior confirmed orders. Pair with \"per-user limit = 1\" for a single-shot welcome offer.",
+  "couponsActiveTitle": "Active",
+  "couponsActiveSubtitle": "When off, buyers won't see this coupon and can't redeem it."
 }

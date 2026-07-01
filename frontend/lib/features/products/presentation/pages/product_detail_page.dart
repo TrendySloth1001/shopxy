@@ -28,6 +28,7 @@ import 'package:shopxy/features/stock/data/datasources/stock_remote_data_source.
 import 'package:shopxy/features/stock/domain/entities/stock_transaction.dart';
 import 'package:shopxy/features/stock/presentation/pages/stock_ledger_page.dart';
 import 'package:shopxy/features/stock/presentation/widgets/stock_bottom_sheet.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_durations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
@@ -177,6 +178,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   List<Widget> _buildCustomFieldSections() {
     if (_customFieldValues.isEmpty) return const [];
 
+    final l10n = AppLocalizations.of(context);
     // Section-id → name resolved from the provider. Definitions
     // shipped on each value already carry sectionId, so this is
     // a cheap lookup once the tree is loaded.
@@ -195,7 +197,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     final widgets = <Widget>[];
     final ungrouped = bySection.remove(null);
     if (ungrouped != null) {
-      widgets.add(_buildSection(AppStrings.specifications, ungrouped));
+      widgets.add(_buildSection(l10n.productsSpecifications, ungrouped));
       widgets.add(const SizedBox(height: AppSizes.lg));
     }
     // Render sections in provider order (which itself is sortOrder-
@@ -208,7 +210,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       final values = bySection[sectionId];
       if (values == null || values.isEmpty) continue;
       widgets.add(_buildSection(
-        sectionNames[sectionId] ?? AppStrings.specifications,
+        sectionNames[sectionId] ?? l10n.productsSpecifications,
         values,
       ));
       widgets.add(const SizedBox(height: AppSizes.lg));
@@ -381,8 +383,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       context: context,
       builder: (ctx) {
         final theme = Theme.of(ctx);
+        final l10n = AppLocalizations.of(ctx);
         return AlertDialog(
-          title: const Text(AppStrings.generateQr),
+          title: Text(l10n.productsGenerateQr),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -417,7 +420,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           ),
           actions: [
             AppButton.ghost(
-              label: 'Close',
+              label: l10n.productsClose,
               onPressed: () => Navigator.pop(ctx),
             ),
           ],
@@ -440,6 +443,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
   Future<void> _togglePublish(bool next) async {
     if (_product == null || _isTogglingPublish) return;
+    final l10n = AppLocalizations.of(context);
     setState(() => _isTogglingPublish = true);
     try {
       final ds = context.read<ProductsRemoteDataSource>();
@@ -450,15 +454,15 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         SnackBar(
           content: Text(
             next
-                ? 'Listed on the marketplace.'
-                : 'Hidden from the marketplace.',
+                ? l10n.productsListedOnMarketplace
+                : l10n.productsHiddenFromMarketplace,
           ),
         ),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Couldn't update visibility: ${friendlyError(e)}")),
+        SnackBar(content: Text('${l10n.productsCouldntUpdateVisibility}: ${friendlyError(e)}')),
       );
     } finally {
       if (mounted) setState(() => _isTogglingPublish = false);
@@ -466,11 +470,12 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   }
 
   void _deleteProduct() async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await AppConfirmDialog.show(
       context,
-      title: AppStrings.delete,
-      message: AppStrings.deleteProductConfirm,
-      confirmLabel: AppStrings.delete,
+      title: l10n.productsDelete,
+      message: l10n.productsDeleteConfirm,
+      confirmLabel: l10n.productsDelete,
       danger: true,
     );
 
@@ -478,7 +483,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       await context.read<ProductsProvider>().deleteProduct(widget.productId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text(AppStrings.productDeleted)),
+          SnackBar(content: Text(l10n.productsDeleted)),
         );
         Navigator.pop(context);
       }
@@ -487,6 +492,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final currencyFormat = NumberFormat.currency(
       symbol: AppStrings.currencySymbol,
       decimalDigits: 2,
@@ -502,7 +508,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     if (_product == null) {
       return Scaffold(
         appBar: AppBar(),
-        body: const Center(child: Text(AppStrings.error)),
+        body: Center(child: Text(l10n.productsError)),
       );
     }
 
@@ -515,24 +521,24 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(AppStrings.productDetails),
+        title: Text(l10n.productsDetailsTitle),
         actions: [
           IconButton(
             onPressed: _shareProduct,
             icon: const Icon(Icons.ios_share_rounded),
-            tooltip: 'Share',
+            tooltip: l10n.productsShare,
           ),
           IconButton(
             onPressed: _showQrDialog,
             icon: const Icon(Icons.qr_code_rounded),
-            tooltip: AppStrings.generateQr,
+            tooltip: l10n.productsGenerateQr,
           ),
           // Edit is a product write — shown locked (greyed + padlock) for
           // roles without products:manage so they know it exists.
           LockedIconButton(
             allowed: canWriteProducts,
             icon: Icons.edit_outlined,
-            tooltip: 'Edit',
+            tooltip: l10n.productsEdit,
             what: 'edit products',
             onPressed: _openEdit,
           ),
@@ -540,9 +546,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert_rounded),
               itemBuilder: (_) => [
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'delete',
-                  child: Text(AppStrings.delete),
+                  child: Text(l10n.productsDelete),
                 ),
               ],
               onSelected: (value) {
@@ -630,13 +636,13 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                AppStrings.stockLedger,
+                                l10n.productsStockLedger,
                                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                       fontWeight: FontWeight.w600,
                                     ),
                               ),
                               Text(
-                                AppStrings.stockLedgerHint,
+                                l10n.productsStockLedgerHint,
                                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                       color: AppColors.muted,
                                     ),
@@ -654,24 +660,24 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   ),
                   const SizedBox(height: AppSizes.xl),
                   _DetailSection(
-                    title: 'PRICING',
+                    title: l10n.productsPricingSection,
                     rows: [
-                      _DetailRow(AppStrings.mrp, currencyFormat.format(p.mrp)),
+                      _DetailRow(l10n.productsMrp, currencyFormat.format(p.mrp)),
                       _DetailRow(
-                        AppStrings.sellingPrice,
+                        l10n.productsSellingPrice,
                         currencyFormat.format(p.sellingPrice),
                       ),
                       _DetailRow(
-                        AppStrings.purchasePrice,
+                        l10n.productsPurchasePrice,
                         currencyFormat.format(p.purchasePrice),
                       ),
                       _DetailRow(
-                        AppStrings.taxPercent,
+                        l10n.productsTaxPercent,
                         p.taxPercent > 0
                             ? '${_formatRate(p.taxPercent)}% · ${currencyFormat.format(gstFromInclusive(p.sellingPrice, p.taxPercent).gst)}'
-                            : 'None',
+                            : l10n.productsNone,
                       ),
-                      _DetailRow(AppStrings.profitMargin, '${p.margin.toStringAsFixed(1)}%'),
+                      _DetailRow(l10n.productsProfitMargin, '${p.margin.toStringAsFixed(1)}%'),
                     ],
                   ),
                   if (p.taxPercent > 0) ...[
@@ -726,24 +732,24 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   // generic SPECIFICATIONS group.
                   ..._buildCustomFieldSections(),
                   _DetailSection(
-                    title: 'DETAILS',
+                    title: l10n.productsDetailsSection,
                     rows: [
                       if (p.hsnCode != null)
-                        _DetailRow(AppStrings.hsnCode, p.hsnCode!),
-                      _DetailRow(AppStrings.unit, AppUnits.label(p.unit)),
+                        _DetailRow(l10n.productsHsnCode, p.hsnCode!),
+                      _DetailRow(l10n.productsUnit, AppUnits.label(p.unit)),
                       if (p.category != null)
-                        _DetailRow('Category', p.category!.name),
+                        _DetailRow(l10n.productsCategory, p.category!.name),
                       _DetailRow(
-                        AppStrings.created,
+                        l10n.productsCreated,
                         DateFormat('dd MMM yyyy, hh:mm a').format(p.createdAt.toLocal()),
                       ),
                       _DetailRow(
-                        'Last updated',
+                        l10n.productsLastUpdated,
                         DateFormat('dd MMM yyyy, hh:mm a').format(p.updatedAt.toLocal()),
                       ),
                       _DetailRow(
-                        'Status',
-                        p.isActive ? 'Active' : 'Inactive',
+                        l10n.productsStatus,
+                        p.isActive ? l10n.productsActive : l10n.productsInactive,
                       ),
                     ],
                   ),
@@ -979,6 +985,7 @@ class _ProductHeaderCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return AppCard(
       padding: const EdgeInsets.all(AppSizes.lg),
       child: Column(
@@ -1036,7 +1043,7 @@ class _ProductHeaderCard extends StatelessWidget {
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               AppStatusBadge(
-                label: product.isActive ? 'Active' : 'Inactive',
+                label: product.isActive ? l10n.productsActive : l10n.productsInactive,
                 tone: product.isActive
                     ? AppStatusTone.success
                     : AppStatusTone.neutral,
@@ -1048,14 +1055,14 @@ class _ProductHeaderCard extends StatelessWidget {
               if (product.ratingAvg != null)
                 AppStatusBadge(
                   label:
-                      '${product.ratingAvg!.toStringAsFixed(1)} · ${product.ratingCount} review${product.ratingCount == 1 ? '' : 's'}',
+                      '${product.ratingAvg!.toStringAsFixed(1)} · ${product.ratingCount} ${product.ratingCount == 1 ? l10n.productsReviewSingular : l10n.productsReviewPlural}',
                   tone: AppStatusTone.neutral,
                   icon: Icons.star_rounded,
                   dense: true,
                 )
               else
-                const AppStatusBadge(
-                  label: 'No reviews yet',
+                AppStatusBadge(
+                  label: l10n.productsNoReviewsYet,
                   tone: AppStatusTone.neutral,
                   icon: Icons.star_outline_rounded,
                   dense: true,
@@ -1092,11 +1099,11 @@ class _SystemTagsRow extends StatelessWidget {
   const _SystemTagsRow({required this.tags});
   final List<String> tags;
 
-  String _label(String tag) => switch (tag) {
-        'BESTSELLER' => 'Bestseller',
-        'EDITORS_PICK' => "Editor's pick",
-        'NEW_ARRIVAL' => 'New arrival',
-        'TRENDING' => 'Trending',
+  String _label(AppLocalizations l10n, String tag) => switch (tag) {
+        'BESTSELLER' => l10n.productsTagBestseller,
+        'EDITORS_PICK' => l10n.productsTagEditorsPick,
+        'NEW_ARRIVAL' => l10n.productsTagNewArrival,
+        'TRENDING' => l10n.productsTagTrending,
         _ => tag,
       };
 
@@ -1111,6 +1118,7 @@ class _SystemTagsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return Wrap(
       spacing: AppSizes.sm,
       runSpacing: AppSizes.xs,
@@ -1124,7 +1132,7 @@ class _SystemTagsRow extends StatelessWidget {
               shape: AppShapes.squircle(AppSizes.radiusSm),
             ),
             child: Text(
-              _label(t),
+              _label(l10n, t),
               style: theme.textTheme.labelSmall?.copyWith(
                 color: _palette(t).fg,
                 fontWeight: FontWeight.w800,
@@ -1154,6 +1162,7 @@ class _MarketplaceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final published = product.isPublished;
     return AppCard(
       padding: const EdgeInsets.fromLTRB(
@@ -1187,14 +1196,14 @@ class _MarketplaceCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  published ? 'Listed on marketplace' : 'Not listed',
+                  published ? l10n.productsListedTitle : l10n.productsNotListedTitle,
                   style: theme.textTheme.bodyMedium
                       ?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 Text(
                   published
-                      ? 'Customers can find and buy this product.'
-                      : 'Visible to you only. Flip to publish.',
+                      ? l10n.productsListedHint
+                      : l10n.productsNotListedHint,
                   style: theme.textTheme.bodySmall
                       ?.copyWith(color: AppColors.muted),
                 ),
@@ -1231,13 +1240,14 @@ class _SalesPerformanceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return AppCard(
       padding: const EdgeInsets.all(AppSizes.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'PERFORMANCE',
+            l10n.productsPerformance,
             style: theme.textTheme.labelSmall?.copyWith(
               color: AppColors.muted,
               fontWeight: FontWeight.w800,
@@ -1250,21 +1260,21 @@ class _SalesPerformanceCard extends StatelessWidget {
               Expanded(
                 child: _PerformanceMetric(
                   icon: Icons.sell_rounded,
-                  label: 'Lifetime sold',
+                  label: l10n.productsLifetimeSold,
                   value: '${product.totalSold}',
                 ),
               ),
               Expanded(
                 child: _PerformanceMetric(
                   icon: Icons.timeline_rounded,
-                  label: 'Sold (30d)',
+                  label: l10n.productsSold30d,
                   value: '${product.soldLast30d}',
                 ),
               ),
               Expanded(
                 child: _PerformanceMetric(
                   icon: Icons.star_rounded,
-                  label: 'Reviews',
+                  label: l10n.productsReviewsLabel,
                   value: product.ratingCount == 0
                       ? '—'
                       : '${product.ratingAvg?.toStringAsFixed(1) ?? '—'} · ${product.ratingCount}',
@@ -1329,13 +1339,14 @@ class _LastActivityCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return AppCard(
       padding: const EdgeInsets.all(AppSizes.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'LAST ACTIVITY',
+            l10n.productsLastActivity,
             style: theme.textTheme.labelSmall?.copyWith(
               color: AppColors.muted,
               fontWeight: FontWeight.w800,
@@ -1347,7 +1358,7 @@ class _LastActivityCard extends StatelessWidget {
             _LastActivityRow(
               icon: Icons.south_west_rounded,
               tone: AppColors.success,
-              label: 'Stocked in',
+              label: l10n.productsStockedIn,
               ago: _ago(product.lastStockInAt!),
               subtitle: product.lastVendorName,
             ),
@@ -1357,7 +1368,7 @@ class _LastActivityCard extends StatelessWidget {
             _LastActivityRow(
               icon: Icons.north_east_rounded,
               tone: AppColors.error,
-              label: 'Sold',
+              label: l10n.productsSold,
               ago: _ago(product.lastStockOutAt!),
             ),
         ],
@@ -1430,8 +1441,8 @@ class _VariantsSection extends StatelessWidget {
   final NumberFormat currencyFormat;
   final String unitLabel;
 
-  String _attrs(Map<String, String> attrs) {
-    if (attrs.isEmpty) return 'Default';
+  String _attrs(AppLocalizations l10n, Map<String, String> attrs) {
+    if (attrs.isEmpty) return l10n.productsDefaultVariant;
     return axes
         .map((a) => attrs[a.name])
         .where((v) => v != null && v.isNotEmpty)
@@ -1447,12 +1458,13 @@ class _VariantsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final active = [...variants]..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         AppSectionHeader(
-          title: 'VARIANTS (${active.length})',
+          title: '${l10n.productsVariantsSection} (${active.length})',
           padding: const EdgeInsets.only(bottom: AppSizes.sm),
         ),
         AppCard(
@@ -1516,7 +1528,7 @@ class _VariantsSection extends StatelessWidget {
                                             AppSizes.radiusSm),
                                       ),
                                       child: Text(
-                                        'DEFAULT',
+                                        l10n.productsDefaultBadge,
                                         style: theme.textTheme.labelSmall
                                             ?.copyWith(
                                           color: AppColors.white,
@@ -1539,7 +1551,7 @@ class _VariantsSection extends StatelessWidget {
                                             AppSizes.radiusSm),
                                       ),
                                       child: Text(
-                                        'INACTIVE',
+                                        l10n.productsInactiveBadge,
                                         style: theme.textTheme.labelSmall
                                             ?.copyWith(
                                           color: AppColors.white,
@@ -1551,7 +1563,7 @@ class _VariantsSection extends StatelessWidget {
                                   ),
                                 Flexible(
                                   child: Text(
-                                    _attrs(active[i].attributes),
+                                    _attrs(l10n, active[i].attributes),
                                     style: theme.textTheme.bodyMedium
                                         ?.copyWith(
                                             fontWeight: FontWeight.w700),
@@ -1618,11 +1630,12 @@ class _HighlightsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         AppSectionHeader(
-          title: 'HIGHLIGHTS (${items.length})',
+          title: '${l10n.productsHighlightsSection} (${items.length})',
           padding: const EdgeInsets.only(bottom: AppSizes.sm),
         ),
         AppCard(
@@ -1680,11 +1693,12 @@ class _ProductSpecsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         AppSectionHeader(
-          title: 'PRODUCT SPECS',
+          title: l10n.productsProductSpecs,
           padding: const EdgeInsets.only(bottom: AppSizes.sm),
         ),
         AppCard(
@@ -1795,10 +1809,11 @@ class _OffersSection extends StatelessWidget {
       };
 
   void _copy(BuildContext context, String code) {
+    final l10n = AppLocalizations.of(context);
     Clipboard.setData(ClipboardData(text: code));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Coupon code copied'),
+        content: Text(l10n.productsCouponCopied),
         duration: AppDurations.snackbar,
       ),
     );
@@ -1807,11 +1822,12 @@ class _OffersSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         AppSectionHeader(
-          title: 'OFFERS (${offers.length})',
+          title: '${l10n.productsOffersSection} (${offers.length})',
           padding: const EdgeInsets.only(bottom: AppSizes.sm),
         ),
         AppCard(
@@ -1919,33 +1935,34 @@ class _ContentBlocksSection extends StatelessWidget {
   const _ContentBlocksSection({required this.blocks});
   final List<ContentBlock> blocks;
 
-  ({IconData icon, String label, String preview}) _summary(ContentBlock b) {
+  ({IconData icon, String label, String preview}) _summary(
+      AppLocalizations l10n, ContentBlock b) {
     final d = b.data;
     return switch (b.kind) {
       'HERO' => (
           icon: Icons.image_rounded,
-          label: 'Hero',
+          label: l10n.productsBlockHero,
           preview: (d['headline'] as String?) ?? '',
         ),
       'FEATURE' => (
           icon: Icons.featured_play_list_rounded,
-          label: 'Feature · ${d['side'] ?? 'LEFT'}',
+          label: '${l10n.productsBlockFeature} · ${d['side'] ?? 'LEFT'}',
           preview: (d['title'] as String?) ?? '',
         ),
       'COMPARISON' => (
           icon: Icons.compare_arrows_rounded,
-          label: 'Comparison',
+          label: l10n.productsBlockComparison,
           preview:
-              '${(d['columns'] as List?)?.length ?? 0} columns · ${(d['rows'] as List?)?.length ?? 0} rows',
+              '${(d['columns'] as List?)?.length ?? 0} ${l10n.productsColumnsUnit} · ${(d['rows'] as List?)?.length ?? 0} ${l10n.productsRowsUnit}',
         ),
       'GALLERY' => (
           icon: Icons.collections_rounded,
-          label: 'Gallery',
-          preview: '${(d['images'] as List?)?.length ?? 0} images',
+          label: l10n.productsBlockGallery,
+          preview: '${(d['images'] as List?)?.length ?? 0} ${l10n.productsImagesUnit}',
         ),
       'TEXT' => (
           icon: Icons.text_snippet_rounded,
-          label: 'Text',
+          label: l10n.productsBlockText,
           preview: ((d['markdown'] as String?) ?? '').split('\n').first,
         ),
       _ => (
@@ -1959,11 +1976,12 @@ class _ContentBlocksSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         AppSectionHeader(
-          title: 'RICH CONTENT (${blocks.length})',
+          title: '${l10n.productsRichContentSection} (${blocks.length})',
           padding: const EdgeInsets.only(bottom: AppSizes.sm),
         ),
         AppCard(
@@ -1973,7 +1991,7 @@ class _ContentBlocksSection extends StatelessWidget {
               for (int i = 0; i < blocks.length; i++) ...[
                 if (i > 0) const AppDivider.flush(),
                 Builder(builder: (_) {
-                  final s = _summary(blocks[i]);
+                  final s = _summary(l10n, blocks[i]);
                   return Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: AppSizes.lg,
@@ -2042,11 +2060,12 @@ class _TagsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         AppSectionHeader(
-          title: 'TAGS',
+          title: l10n.productsTagsSection,
           padding: const EdgeInsets.only(bottom: AppSizes.sm),
         ),
         AppCard(
@@ -2096,10 +2115,10 @@ class _StockStatusCard extends StatelessWidget {
     return Icons.check_circle_outline_rounded;
   }
 
-  String get _label {
-    if (product.isOutOfStock) return AppStrings.outOfStock;
-    if (product.isLowStock) return AppStrings.lowStock;
-    return AppStrings.inStock;
+  String _labelOf(AppLocalizations l10n) {
+    if (product.isOutOfStock) return l10n.productsOutOfStock;
+    if (product.isLowStock) return l10n.productsLowStock;
+    return l10n.productsInStock;
   }
 
   String _formatQty(double qty) {
@@ -2111,6 +2130,7 @@ class _StockStatusCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return AppCard(
       padding: const EdgeInsets.all(AppSizes.lg),
       child: Row(
@@ -2127,13 +2147,13 @@ class _StockStatusCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Low stock alert at ${_formatQty(product.lowStockThreshold)}',
+                  '${l10n.productsLowStockAlertAt} ${_formatQty(product.lowStockThreshold)}',
                   style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
                 ),
               ],
             ),
           ),
-          AppStatusBadge(label: _label, tone: _tone, icon: _icon),
+          AppStatusBadge(label: _labelOf(l10n), tone: _tone, icon: _icon),
         ],
       ),
     );
@@ -2156,27 +2176,30 @@ class _SupplierPriceHistorySection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final suppliers = _groupBySupplier(transactions);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         AppSectionHeader(
-          title: AppStrings.supplierPriceHistory.toUpperCase(),
+          title: l10n.productsSupplierPriceHistory.toUpperCase(),
           padding: const EdgeInsets.only(bottom: AppSizes.sm),
         ),
         AppCard(
           padding: const EdgeInsets.all(AppSizes.lg),
-          child: _buildContent(theme, suppliers),
+          child: _buildContent(context, theme, suppliers),
         ),
       ],
     );
   }
 
   Widget _buildContent(
+    BuildContext context,
     ThemeData theme,
     List<MapEntry<String, List<StockTransaction>>> suppliers,
   ) {
+    final l10n = AppLocalizations.of(context);
     if (isLoading) {
       return const Center(
         child: Padding(
@@ -2188,14 +2211,14 @@ class _SupplierPriceHistorySection extends StatelessWidget {
 
     if (errorMessage != null) {
       return Text(
-        AppStrings.error,
+        l10n.productsError,
         style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.error),
       );
     }
 
     if (suppliers.isEmpty) {
       return Text(
-        AppStrings.noSupplierHistory,
+        l10n.productsNoSupplierHistory,
         style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted),
       );
     }
@@ -2249,6 +2272,7 @@ class _SupplierHistoryTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final sorted = [...transactions]
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
@@ -2262,7 +2286,7 @@ class _SupplierHistoryTile extends StatelessWidget {
         : priceValues.reduce((s, p) => s + p) / priceValues.length;
     final totalQty = transactions.fold<double>(0, (s, t) => s + t.quantity);
     final lastStockIn = sorted.first.createdAt;
-    final lastPolicy = _policyLabel(sorted.first.purchasePriceMode);
+    final lastPolicy = _policyLabel(l10n, sorted.first.purchasePriceMode);
     final isVendor = sorted.first.vendorId != null;
 
     return Column(
@@ -2272,15 +2296,15 @@ class _SupplierHistoryTile extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                supplierName.isEmpty ? AppStrings.unknownSupplier : supplierName,
+                supplierName.isEmpty ? l10n.productsUnknownSupplier : supplierName,
                 style: theme.textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
               ),
             ),
             if (isVendor)
-              const AppStatusBadge(
-                label: AppStrings.vendor,
+              AppStatusBadge(
+                label: l10n.productsVendor,
                 icon: Icons.business_rounded,
                 dense: true,
               ),
@@ -2288,27 +2312,27 @@ class _SupplierHistoryTile extends StatelessWidget {
         ),
         const SizedBox(height: AppSizes.sm),
         _SupplierMetricRow(
-          label: AppStrings.latestPrice,
+          label: l10n.productsLatestPrice,
           value: latestPrice == null ? '-' : currencyFormat.format(latestPrice),
         ),
         _SupplierMetricRow(
-          label: AppStrings.averagePrice,
+          label: l10n.productsAveragePrice,
           value:
               averagePrice == null ? '-' : currencyFormat.format(averagePrice),
         ),
         _SupplierMetricRow(
-          label: AppStrings.totalQuantityBought,
+          label: l10n.productsTotalQuantityBought,
           value:
-              '${totalQty % 1 == 0 ? totalQty.toInt() : totalQty.toStringAsFixed(2)} (${transactions.length} ${AppStrings.transactions})',
+              '${totalQty % 1 == 0 ? totalQty.toInt() : totalQty.toStringAsFixed(2)} (${transactions.length} ${l10n.productsPurchasesUnit})',
         ),
         _SupplierMetricRow(
-          label: AppStrings.lastStockIn,
+          label: l10n.productsLastStockIn,
           value: DateFormat('dd MMM yyyy, hh:mm a').format(lastStockIn.toLocal()),
         ),
-        _SupplierMetricRow(label: AppStrings.policy, value: lastPolicy),
+        _SupplierMetricRow(label: l10n.productsPolicy, value: lastPolicy),
         const SizedBox(height: AppSizes.sm),
         Text(
-          AppStrings.recentBuys,
+          l10n.productsRecentBuys,
           style: theme.textTheme.labelMedium?.copyWith(color: AppColors.muted),
         ),
         const SizedBox(height: AppSizes.xs),
@@ -2332,7 +2356,7 @@ class _SupplierHistoryTile extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'Qty: $qty',
+                  '${l10n.productsQtyLabel}: $qty',
                   style: theme.textTheme.bodySmall?.copyWith(
                     fontWeight: FontWeight.w500,
                   ),
@@ -2352,10 +2376,10 @@ class _SupplierHistoryTile extends StatelessWidget {
     );
   }
 
-  String _policyLabel(String? mode) {
-    if (mode == 'WEIGHTED_AVERAGE') return AppStrings.weightedAverage;
-    if (mode == 'USE_LATEST') return AppStrings.useLatestPrice;
-    if (mode == 'KEEP_CURRENT') return AppStrings.keepCurrentPrice;
+  String _policyLabel(AppLocalizations l10n, String? mode) {
+    if (mode == 'WEIGHTED_AVERAGE') return l10n.productsWeightedAverage;
+    if (mode == 'USE_LATEST') return l10n.productsUseLatestPrice;
+    if (mode == 'KEEP_CURRENT') return l10n.productsKeepCurrentPrice;
     return '-';
   }
 }
@@ -2496,6 +2520,7 @@ class _StockActionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return SafeArea(
       top: false,
       child: Container(
@@ -2518,7 +2543,7 @@ class _StockActionBar extends StatelessWidget {
             children: [
               Expanded(
                 child: AppButton.secondary(
-                  label: AppStrings.stockIn,
+                  label: l10n.productsStockIn,
                   icon: Icons.add_rounded,
                   onPressed: onStockIn,
                   fullWidth: true,
@@ -2527,7 +2552,7 @@ class _StockActionBar extends StatelessWidget {
               const SizedBox(width: AppSizes.md),
               Expanded(
                 child: AppButton.primary(
-                  label: AppStrings.stockOut,
+                  label: l10n.productsStockOut,
                   icon: Icons.remove_rounded,
                   onPressed: onStockOut,
                   fullWidth: true,
@@ -2551,10 +2576,11 @@ class _IdentifierRibbon extends StatelessWidget {
   final String? barcode;
 
   void _copy(BuildContext context, String value, String label) {
+    final l10n = AppLocalizations.of(context);
     Clipboard.setData(ClipboardData(text: value));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$label copied'),
+        content: Text('$label ${l10n.productsCopiedSuffix}'),
         duration: AppDurations.snackbar,
       ),
     );
@@ -2562,22 +2588,23 @@ class _IdentifierRibbon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Wrap(
       spacing: AppSizes.sm,
       runSpacing: AppSizes.xs,
       children: [
         _IdentifierChip(
           icon: Icons.tag_rounded,
-          label: AppStrings.sku,
+          label: l10n.productsSku,
           value: sku,
-          onTap: () => _copy(context, sku, AppStrings.sku),
+          onTap: () => _copy(context, sku, l10n.productsSku),
         ),
         if (barcode != null && barcode!.isNotEmpty)
           _IdentifierChip(
             icon: Icons.qr_code_2_rounded,
-            label: AppStrings.barcode,
+            label: l10n.productsBarcode,
             value: barcode!,
-            onTap: () => _copy(context, barcode!, AppStrings.barcode),
+            onTap: () => _copy(context, barcode!, l10n.productsBarcode),
           ),
       ],
     );
@@ -2657,6 +2684,7 @@ class _PendingDraftsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final unitLabel = AppUnits.label(productUnit);
     return AppCard(
       padding: EdgeInsets.zero,
@@ -2691,13 +2719,13 @@ class _PendingDraftsCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Pending drafts (${drafts.length})',
+                        '${l10n.productsPendingDrafts} (${drafts.length})',
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w700,
                         ),
                       ),
                       Text(
-                        'Stock will move once these are confirmed.',
+                        l10n.productsPendingDraftsHint,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: AppColors.muted,
                         ),
@@ -2737,6 +2765,7 @@ class _PendingDraftRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final isSale = invoice.isSale;
     final qty = invoice.items.fold<double>(
       0,
@@ -2748,8 +2777,8 @@ class _PendingDraftRow extends StatelessWidget {
     final counterparty = isSale
         ? ((invoice.customerName?.isNotEmpty ?? false)
             ? invoice.customerName!
-            : AppStrings.customer)
-        : (invoice.vendorName ?? AppStrings.vendor);
+            : l10n.productsCustomer)
+        : (invoice.vendorName ?? l10n.productsVendor);
 
     return InkWell(
       onTap: onTap,
@@ -2779,7 +2808,7 @@ class _PendingDraftRow extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    '${isSale ? 'Sale' : 'Purchase'} · $counterparty',
+                    '${isSale ? l10n.productsSale : l10n.productsPurchase} · $counterparty',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: AppColors.muted,
                     ),
@@ -2833,13 +2862,14 @@ class _GstBreakdownSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final b = gstFromInclusive(sellingPrice, taxPercent);
     final half = taxPercent / 2;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         AppSectionHeader(
-          title: 'PRICE & GST BREAKDOWN',
+          title: l10n.productsPriceGstBreakdown,
           padding: const EdgeInsets.only(bottom: AppSizes.sm),
         ),
         AppCard(
@@ -2851,8 +2881,8 @@ class _GstBreakdownSection extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _GstRow(
-                label: 'Taxable value',
-                hint: 'price before GST',
+                label: l10n.productsTaxableValue,
+                hint: l10n.productsPriceBeforeGst,
                 value: currencyFormat.format(b.taxable),
               ),
               _GstRow(
@@ -2864,7 +2894,7 @@ class _GstBreakdownSection extends StatelessWidget {
                 value: currencyFormat.format(b.sgst),
               ),
               _GstRow(
-                label: 'Total GST @ ${_formatRate(taxPercent)}%',
+                label: '${l10n.productsTotalGst} @ ${_formatRate(taxPercent)}%',
                 value: currencyFormat.format(b.gst),
                 strong: true,
               ),
@@ -2876,7 +2906,7 @@ class _GstBreakdownSection extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      'Selling price (incl. GST)',
+                      l10n.productsSellingPriceInclGst,
                       style: theme.textTheme.bodyMedium,
                     ),
                   ),
@@ -2891,8 +2921,7 @@ class _GstBreakdownSection extends StatelessWidget {
               ),
               const SizedBox(height: AppSizes.sm),
               Text(
-                'Prices include GST. CGST + SGST shown for a sale within your '
-                'state; a sale to another state is charged the same total as IGST.',
+                l10n.productsGstExplainer,
                 style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
               ),
             ],
@@ -2974,13 +3003,14 @@ class _ReviewsSummarySection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final s = summary;
     final count = s?.ratingCount ?? 0;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         AppSectionHeader(
-          title: 'REVIEWS',
+          title: l10n.productsReviewsSection,
           padding: const EdgeInsets.only(bottom: AppSizes.sm),
         ),
         AppCard(
@@ -2994,8 +3024,7 @@ class _ReviewsSummarySection extends StatelessWidget {
                 )
               : (s == null || count == 0)
                   ? Text(
-                      'No reviews yet. Verified buyers can rate this product '
-                      'after a confirmed purchase.',
+                      l10n.productsNoReviewsBody,
                       style: theme.textTheme.bodyMedium
                           ?.copyWith(color: AppColors.muted),
                     )
@@ -3007,6 +3036,7 @@ class _ReviewsSummarySection extends StatelessWidget {
 
   Widget _content(BuildContext context, ReviewSummary s, int count) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final avg = s.ratingAvg ?? 0;
     final total = count == 0 ? 1 : count;
     return Column(
@@ -3026,7 +3056,7 @@ class _ReviewsSummarySection extends StatelessWidget {
                 _StarRow(rating: avg, size: 16),
                 const SizedBox(height: 2),
                 Text(
-                  '$count ${count == 1 ? 'rating' : 'ratings'}',
+                  '$count ${count == 1 ? l10n.productsRatingSingular : l10n.productsRatingPlural}',
                   style: theme.textTheme.bodySmall
                       ?.copyWith(color: AppColors.muted),
                 ),
@@ -3038,7 +3068,7 @@ class _ReviewsSummarySection extends StatelessWidget {
                           size: 13, color: AppColors.success),
                       const SizedBox(width: 3),
                       Text(
-                        '${s.verifiedCount} verified',
+                        '${s.verifiedCount} ${l10n.productsVerified}',
                         style: theme.textTheme.bodySmall
                             ?.copyWith(color: AppColors.success),
                       ),
@@ -3074,7 +3104,7 @@ class _ReviewsSummarySection extends StatelessWidget {
         Align(
           alignment: Alignment.centerLeft,
           child: AppButton.ghost(
-            label: 'See all reviews',
+            label: l10n.productsSeeAllReviews,
             icon: Icons.reviews_outlined,
             onPressed: onSeeAll,
           ),
@@ -3169,6 +3199,7 @@ class _RecentReviewTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -3194,7 +3225,7 @@ class _RecentReviewTile extends StatelessWidget {
         ],
         const SizedBox(height: 2),
         Text(
-          review.userName ?? 'Customer',
+          review.userName ?? l10n.productsCustomer,
           style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
         ),
       ],

@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:shopxy/features/vendors/data/datasources/vendors_remote_data_source.dart';
 import 'package:shopxy/features/vendors/domain/entities/vendor.dart';
 import 'package:shopxy/features/vendors/presentation/pages/vendors_page.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
-import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
@@ -85,6 +85,7 @@ class _VendorPickerSheetState extends State<_VendorPickerSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final height = MediaQuery.of(context).size.height * 0.8;
 
     return SizedBox(
@@ -109,14 +110,14 @@ class _VendorPickerSheetState extends State<_VendorPickerSheet> {
               child: Row(
                 children: [
                   Text(
-                    AppStrings.selectVendor,
+                    l10n.vendorsSelectVendor,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                   const Spacer(),
                   AppButton.ghost(
-                    label: AppStrings.newVendor,
+                    label: l10n.vendorsNewVendor,
                     icon: Icons.add_rounded,
                     onPressed: _addNew,
                     size: AppButtonSize.sm,
@@ -129,9 +130,9 @@ class _VendorPickerSheetState extends State<_VendorPickerSheet> {
               child: TextField(
                 controller: _search,
                 autofocus: true,
-                decoration: const InputDecoration(
-                  hintText: AppStrings.searchVendors,
-                  prefixIcon: Icon(Icons.search_rounded),
+                decoration: InputDecoration(
+                  hintText: l10n.vendorsSearchHint,
+                  prefixIcon: const Icon(Icons.search_rounded),
                 ),
                 onChanged: _load,
               ),
@@ -156,12 +157,12 @@ class _VendorPickerSheetState extends State<_VendorPickerSheet> {
                                     ),
                                     const SizedBox(height: AppSizes.md),
                                     Text(
-                                      AppStrings.noVendors,
+                                      l10n.vendorsEmptyTitle,
                                       style: theme.textTheme.bodyMedium,
                                     ),
                                     const SizedBox(height: AppSizes.md),
                                     AppButton.primary(
-                                      label: AppStrings.addVendor,
+                                      label: l10n.vendorsAddVendor,
                                       icon: Icons.add_rounded,
                                       onPressed: _addNew,
                                     ),
