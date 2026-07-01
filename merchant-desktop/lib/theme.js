@@ -30,14 +30,24 @@ function storePath() {
   return path.join(_userDataDir, "theme.json");
 }
 
-const VALID = new Set(["light", "dark", "oled"]);
+/** Theme families, kept in sync with merchant-web's src/features/theme/theme.ts
+ *  (this shell can't import from the web bundle). Light-family themes map to the
+ *  OS "light" source; every other theme is "dark". */
+const LIGHT_THEMES = new Set(["light", "beige", "rose", "sage"]);
+const DARK_THEMES = new Set(["dark", "oled", "midnight", "nord"]);
+const VALID = new Set([...LIGHT_THEMES, ...DARK_THEMES]);
 
 /** Native window background per theme — matches the canvas tokens in the web
  *  app's globals.css so the cold-start frame doesn't flash a different colour. */
 const BACKGROUND = {
   light: "#f7f6f2",
+  beige: "#ece3d1",
+  rose: "#fbf0f2",
+  sage: "#eaf1ea",
   dark: "#0f1419",
   oled: "#000000",
+  midnight: "#0d1220",
+  nord: "#2e3440",
 };
 
 function readTheme() {
@@ -63,10 +73,11 @@ function backgroundFor(theme) {
   return BACKGROUND[theme] || BACKGROUND.light;
 }
 
-/** Electron `nativeTheme.themeSource` value — the two dark variants are both
- *  "dark" as far as the OS is concerned. */
+/** Electron `nativeTheme.themeSource` value — the light-family themes report
+ *  "light"; every dark-family theme reports "dark", as far as the OS is
+ *  concerned (it can't tell deep-slate from navy from true-black). */
 function nativeSourceFor(theme) {
-  return theme === "light" ? "light" : "dark";
+  return LIGHT_THEMES.has(theme) ? "light" : "dark";
 }
 
 module.exports = {

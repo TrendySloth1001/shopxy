@@ -560,43 +560,40 @@ class _ThemeRow extends StatelessWidget {
                 Text(
                   switch (prefs.mode) {
                     AppThemeMode.light => 'Warm canvas, dark text (default).',
+                    AppThemeMode.beige => 'Soft sepia paper — warm, low glare.',
+                    AppThemeMode.rose => 'Warm blush — soft and easy on the eye.',
+                    AppThemeMode.sage => 'Cool mint-green — calm and quiet.',
                     AppThemeMode.dark => 'Deep slate surfaces, easy on the eyes.',
                     AppThemeMode.oled => 'True black — best for OLED displays.',
+                    AppThemeMode.midnight => 'Deep navy — indigo-tinted dark.',
+                    AppThemeMode.nord => 'Muted arctic blue-grey — soft dark.',
                   },
                   style: theme.textTheme.bodySmall
                       ?.copyWith(color: AppColors.muted),
                 ),
                 const SizedBox(height: AppSizes.sm),
-                SegmentedButton<AppThemeMode>(
-                  segments: const [
-                    ButtonSegment(
-                      value: AppThemeMode.light,
-                      icon: Icon(Icons.light_mode_outlined,
-                          size: AppSizes.iconSm),
-                      label: Text('Light'),
-                    ),
-                    ButtonSegment(
-                      value: AppThemeMode.dark,
-                      icon: Icon(Icons.dark_mode_outlined,
-                          size: AppSizes.iconSm),
-                      label: Text('Dark'),
-                    ),
-                    ButtonSegment(
-                      value: AppThemeMode.oled,
-                      icon: Icon(Icons.contrast_rounded, size: AppSizes.iconSm),
-                      label: Text('OLED'),
-                    ),
+                // A wrapping chip set (not a SegmentedButton) so the eight
+                // themes stay usable on a phone — they flow onto multiple rows
+                // instead of squeezing into one. Each chip previews the theme's
+                // canvas colour as a swatch dot.
+                Wrap(
+                  spacing: AppSizes.sm,
+                  runSpacing: AppSizes.sm,
+                  children: [
+                    for (final mode in AppThemeMode.values)
+                      ChoiceChip(
+                        avatar: Container(
+                          decoration: BoxDecoration(
+                            color: ThemePrefsProvider.paletteFor(mode).canvas,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: AppColors.hairline),
+                          ),
+                        ),
+                        label: Text(_themeLabel(mode)),
+                        selected: prefs.mode == mode,
+                        onSelected: (_) => prefs.setMode(mode),
+                      ),
                   ],
-                  selected: {prefs.mode},
-                  showSelectedIcon: false,
-                  onSelectionChanged: (set) => prefs.setMode(set.first),
-                  style: ButtonStyle(
-                    visualDensity: VisualDensity.compact,
-                    textStyle: WidgetStatePropertyAll(
-                      theme.textTheme.labelMedium
-                          ?.copyWith(fontWeight: FontWeight.w700),
-                    ),
-                  ),
                 ),
               ],
             ),
@@ -606,6 +603,18 @@ class _ThemeRow extends StatelessWidget {
     );
   }
 }
+
+/// Display label for a theme mode, shown on its picker chip.
+String _themeLabel(AppThemeMode mode) => switch (mode) {
+      AppThemeMode.light => 'Light',
+      AppThemeMode.beige => 'Beige',
+      AppThemeMode.rose => 'Rose',
+      AppThemeMode.sage => 'Sage',
+      AppThemeMode.dark => 'Dark',
+      AppThemeMode.oled => 'OLED',
+      AppThemeMode.midnight => 'Midnight',
+      AppThemeMode.nord => 'Nord',
+    };
 
 /// Two-way picker for [NavigationStyle]. Tapping a segment writes
 /// through the [NavigationPrefsProvider] which persists the choice and
