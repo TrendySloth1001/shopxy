@@ -5,8 +5,9 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/theme/app_typography.dart';
 
 /// Builds the app [ThemeData] from an [AppPalette]. One builder drives all
-/// three themes (light / dark / OLED) — the palette carries the colour
-/// differences, this file carries the shared component styling.
+/// eight themes (light / beige / rose / sage / dark / OLED / midnight / nord) —
+/// the palette carries the colour differences, this file carries the shared
+/// component styling.
 ///
 /// Component surfaces (cards, inputs, sheets, menus, dialogs) read
 /// [AppPalette.surface], text/icons read [AppPalette.ink], the strong neutral
@@ -17,8 +18,13 @@ class AppTheme {
   AppTheme._();
 
   static ThemeData get light => fromPalette(AppPalette.light);
+  static ThemeData get beige => fromPalette(AppPalette.beige);
+  static ThemeData get rose => fromPalette(AppPalette.rose);
+  static ThemeData get sage => fromPalette(AppPalette.sage);
   static ThemeData get dark => fromPalette(AppPalette.dark);
   static ThemeData get oled => fromPalette(AppPalette.oled);
+  static ThemeData get midnight => fromPalette(AppPalette.midnight);
+  static ThemeData get nord => fromPalette(AppPalette.nord);
 
   static ThemeData fromPalette(AppPalette p) {
     final scheme = ColorScheme(

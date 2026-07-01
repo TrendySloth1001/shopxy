@@ -194,14 +194,26 @@
 /*
  * ── Theme modes ─────────────────────────────────────────────────────────
  *
- * The merchant app ships three themes, selected by the `data-theme` attribute
+ * The merchant app ships eight themes, selected by the `data-theme` attribute
  * on <html> (set before paint by the inline script in layout.tsx, then driven
- * by the ThemeProvider):
+ * by the ThemeProvider). Two families — light (dark ink on a light ground,
+ * color-scheme: light) and dark (light ink on a dark ground):
  *
+ *   Light family:
  *   • light          — the default above (no attribute / data-theme="light")
+ *   • beige          — warm sepia paper canvas, cream surfaces, warm dark ink
+ *   • rose           — warm blush / rosé: pink canvas, plum-dark ink
+ *   • sage           — cool mint-green: soft green canvas, green-dark ink
+ *   Dark family:
  *   • dark           — normal dark: deep-slate canvas, raised surfaces
  *   • oled           — true-black canvas for OLED panels (shares the dark
  *                      palette, only the canvas/surface blacks differ)
+ *   • midnight       — deep navy / indigo (independent block)
+ *   • nord           — muted arctic blue-grey, aurora status hues (independent)
+ *
+ * The light-family themes (light, beige, rose, sage) only re-tint the neutrals
+ * and soft fills off the default @theme block; the dark-family themes that are
+ * NOT oled (dark, midnight, nord) re-declare the full set in their own block.
  *
  * Tokens are CSS custom properties, and every Tailwind utility compiles to
  * `var(--color-…)`, so re-assigning a variable here re-themes the whole app at
@@ -209,6 +221,148 @@
  * surface/ink token; the brand stays emerald (brightened a touch so it carries
  * on a dark ground) and the soft status fills become low-alpha tints.
  */
+
+/* Beige — a second light-family theme: warm sepia paper. Dark text on a soft
+ * beige canvas with cream raised surfaces; lower glare than the white light
+ * theme. `color-scheme: light` so native controls/scrollbars stay light. Only
+ * the surface/ink neutrals and the warm-tinted soft fills differ from the light
+ * default; brand + status foregrounds are shared with light. The `html` prefix
+ * lifts specificity above the `:root` @theme block (same reason as dark). */
+html[data-theme="beige"] {
+  color-scheme: light;
+
+  /* Inks — warm near-black on paper. `--color-white` stays literal white. */
+  --color-ink: #241f16;
+  --color-hairline: #241f1624;
+  --color-surface-tint: #241f160a;
+  --color-muted: #6d6450;
+  --color-subtle: #948a72;
+  --color-disabled: #c0b6a0;
+  /* Warm near-black scrim so modals darken the paper ground. */
+  --color-scrim: #17130a;
+  /* Inverse pair — dark warm fill + warm-light text (strongest neutral CTA). */
+  --color-inverse-surface: #241f16;
+  --color-on-inverse: #f4eede;
+
+  /* Surfaces — beige canvas, cream raised cards/inputs a step lighter. */
+  --color-canvas: #ece3d1;
+  --color-page-tint: #f1e9d9;
+  --color-hero-panel: #e0d5be;
+  --color-surface: #f8f2e6;
+  --color-field: #fbf6ec;
+
+  /* Brand stays emerald (light values read well on cream); only the soft fill
+     is warmed a touch so brand chips sit on the paper ground. */
+  --color-brand-soft: #e4efdf;
+
+  /* Status — light-theme foregrounds; soft fills warmed for the beige ground. */
+  --color-success-soft: #e6f1e2;
+  --color-warning-soft: #f5e7cb;
+  --color-error-soft: #f7e6de;
+  --color-info-soft: #e3e9f6;
+  --color-highlight: #fbe08a;
+
+  /* Editorial accents — foregrounds shared with light; soft fills warmed. */
+  --color-accent-teal-soft: #daedee;
+  --color-accent-indigo-soft: #e5e2f6;
+  --color-accent-amber-soft: #f5e6cb;
+  --color-accent-rose-soft: #f5dde8;
+
+  /* Merchant-only accents. */
+  --color-flash-deal-soft: #ffe1cf;
+  --color-flash-deal-soft-alt: #ffd0cb;
+
+  /* Warm-tinted shadows so lift reads against the sepia ground. */
+  --shadow-floating: 0 4px 12px rgba(45, 36, 20, 0.06);
+  --shadow-menu: 0 8px 20px rgba(45, 36, 20, 0.08);
+  --shadow-snackbar: 0 10px 24px rgba(45, 36, 20, 0.14);
+}
+
+/* Rose — a light-family theme: warm blush / rosé. Warm plum-dark ink on a soft
+ * pink canvas with lighter blush surfaces. `color-scheme: light`. Brand + status
+ * foregrounds are shared with the light default; only the neutrals and the soft
+ * fills are re-tinted for the pink ground. */
+html[data-theme="rose"] {
+  color-scheme: light;
+
+  --color-ink: #3a2530;
+  --color-hairline: #3a25301f;
+  --color-surface-tint: #3a25300a;
+  --color-muted: #8a6d78;
+  --color-subtle: #b394a1;
+  --color-disabled: #d9c2cb;
+  --color-scrim: #2a0f1a;
+  --color-inverse-surface: #3a2530;
+  --color-on-inverse: #fbeef2;
+
+  --color-canvas: #fbf0f2;
+  --color-page-tint: #fdf5f6;
+  --color-hero-panel: #f6e2e7;
+  --color-surface: #fff7f9;
+  --color-field: #fffafb;
+
+  --color-brand-soft: #e2f0e8;
+
+  --color-success-soft: #e6f1e6;
+  --color-warning-soft: #f6e7cd;
+  --color-error-soft: #f9e3e3;
+  --color-info-soft: #e6e9f7;
+  --color-highlight: #fbd5e0;
+
+  --color-accent-teal-soft: #dbeef0;
+  --color-accent-indigo-soft: #e9e2f4;
+  --color-accent-amber-soft: #f6e6cd;
+  --color-accent-rose-soft: #f9dbe8;
+
+  --color-flash-deal-soft: #ffe0d4;
+  --color-flash-deal-soft-alt: #ffd2d8;
+
+  --shadow-floating: 0 4px 12px rgba(90, 40, 55, 0.06);
+  --shadow-menu: 0 8px 20px rgba(90, 40, 55, 0.08);
+  --shadow-snackbar: 0 10px 24px rgba(90, 40, 55, 0.14);
+}
+
+/* Sage — a light-family theme: cool mint-green, calm. Deep green-dark ink on a
+ * soft mint canvas with lighter surfaces. `color-scheme: light`. */
+html[data-theme="sage"] {
+  color-scheme: light;
+
+  --color-ink: #1c2b23;
+  --color-hairline: #1c2b231f;
+  --color-surface-tint: #1c2b230a;
+  --color-muted: #5d7268;
+  --color-subtle: #8aa093;
+  --color-disabled: #c0cfc6;
+  --color-scrim: #0c1811;
+  --color-inverse-surface: #1c2b23;
+  --color-on-inverse: #eaf3ee;
+
+  --color-canvas: #eaf1ea;
+  --color-page-tint: #f0f6f0;
+  --color-hero-panel: #dbe7dd;
+  --color-surface: #f5faf5;
+  --color-field: #f9fdf9;
+
+  --color-brand-soft: #dcecdf;
+
+  --color-success-soft: #e4f1e4;
+  --color-warning-soft: #f4e7cb;
+  --color-error-soft: #f7e5e0;
+  --color-info-soft: #e2e9f5;
+  --color-highlight: #d6ebc9;
+
+  --color-accent-teal-soft: #d7ecec;
+  --color-accent-indigo-soft: #e3e2f2;
+  --color-accent-amber-soft: #f3e6c9;
+  --color-accent-rose-soft: #f3dde6;
+
+  --color-flash-deal-soft: #ffe1d0;
+  --color-flash-deal-soft-alt: #ffd2cd;
+
+  --shadow-floating: 0 4px 12px rgba(28, 43, 35, 0.06);
+  --shadow-menu: 0 8px 20px rgba(28, 43, 35, 0.08);
+  --shadow-snackbar: 0 10px 24px rgba(28, 43, 35, 0.14);
+}
 
 /* Shared dark palette — applies to both `dark` and `oled`.
  *
@@ -289,6 +443,112 @@ html[data-theme="oled"] {
   --color-surface: #0c1014;
   --color-field: #14181d;
   --color-hairline: #ffffff24;
+}
+
+/* Midnight — a dark-family theme: deep navy / indigo. An independent block (it
+ * does NOT inherit the shared dark palette above), so it re-declares the full
+ * set. Light ink on a navy-black canvas; brand emerald brightened for the ground. */
+html[data-theme="midnight"] {
+  color-scheme: dark;
+
+  --color-ink: #e6e9f2;
+  --color-hairline: #ffffff1f;
+  --color-surface-tint: #ffffff0d;
+  --color-muted: #9aa3c4;
+  --color-subtle: #6b7396;
+  --color-disabled: #454d70;
+  --color-inverse-surface: #e6e9f2;
+  --color-on-inverse: #141a2e;
+
+  --color-canvas: #0d1220;
+  --color-page-tint: #111730;
+  --color-hero-panel: #1a2240;
+  --color-surface: #141b30;
+  --color-field: #1a2240;
+
+  --color-brand: #34c07f;
+  --color-brand-strong: #6fe0a6;
+  --color-brand-soft: #34c07f26;
+
+  --color-success: #3ecf86;
+  --color-success-soft: #3ecf8626;
+  --color-warning: #e0a64a;
+  --color-warning-soft: #e0a64a26;
+  --color-error: #f0726a;
+  --color-error-soft: #f0726a26;
+  --color-info: #6aa0f5;
+  --color-info-soft: #6aa0f526;
+  --color-highlight: #3a3a5c;
+
+  --color-accent-teal: #3bbccb;
+  --color-accent-teal-soft: #3bbccb26;
+  --color-accent-indigo: #8b87f0;
+  --color-accent-indigo-soft: #8b87f026;
+  --color-accent-amber: #d99a3c;
+  --color-accent-amber-soft: #d99a3c26;
+  --color-accent-rose: #e07aa6;
+  --color-accent-rose-soft: #e07aa626;
+
+  --color-flash-deal: #f0793f;
+  --color-flash-deal-soft: #f0793f26;
+  --color-flash-deal-soft-alt: #f05a5a26;
+
+  --shadow-floating: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-menu: 0 8px 24px rgba(0, 0, 0, 0.6);
+  --shadow-snackbar: 0 10px 28px rgba(0, 0, 0, 0.65);
+}
+
+/* Nord — a dark-family theme: muted arctic blue-grey (the Nord palette). Softer
+ * than the deep-slate dark; status colours take on Nord's aurora hues. Also an
+ * independent block. */
+html[data-theme="nord"] {
+  color-scheme: dark;
+
+  --color-ink: #e5e9f0;
+  --color-hairline: #ffffff1a;
+  --color-surface-tint: #ffffff0d;
+  --color-muted: #9aa4b8;
+  --color-subtle: #6d7688;
+  --color-disabled: #4c566a;
+  --color-inverse-surface: #e5e9f0;
+  --color-on-inverse: #2e3440;
+
+  --color-canvas: #2e3440;
+  --color-page-tint: #333a47;
+  --color-hero-panel: #3b4252;
+  --color-surface: #3b4252;
+  --color-field: #434c5e;
+
+  --color-brand: #6bcf9a;
+  --color-brand-strong: #8fe0b3;
+  --color-brand-soft: #6bcf9a26;
+
+  --color-success: #a3be8c;
+  --color-success-soft: #a3be8c26;
+  --color-warning: #ebcb8b;
+  --color-warning-soft: #ebcb8b26;
+  --color-error: #bf616a;
+  --color-error-soft: #bf616a26;
+  --color-info: #81a1c1;
+  --color-info-soft: #81a1c126;
+  --color-highlight: #4c4636;
+
+  --color-accent-teal: #88c0d0;
+  --color-accent-teal-soft: #88c0d026;
+  --color-accent-indigo: #8f9ce0;
+  --color-accent-indigo-soft: #8f9ce026;
+  --color-accent-amber: #d08770;
+  --color-accent-amber-soft: #d0877026;
+  --color-accent-rose: #d08fb0;
+  --color-accent-rose-soft: #d08fb026;
+
+  --color-flash-deal: #d08770;
+  --color-flash-deal-soft: #d0877026;
+  --color-flash-deal-soft-alt: #bf616a26;
+
+  --shadow-floating: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-menu: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-snackbar: 0 10px 28px rgba(0, 0, 0, 0.55);
 }
 
 /* Route-change entrance: the incoming page is a solid sheet that slides UP

@@ -2,11 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shopxy/shared/theme/app_palette.dart';
 
-/// The three themes the merchant app ships, mirroring the web app:
-/// - [light] — warm canvas, dark text (default).
-/// - [dark]  — normal dark: deep-slate surfaces.
-/// - [oled]  — true black, for OLED panels (shares the dark palette).
-enum AppThemeMode { light, dark, oled }
+/// The eight themes the merchant app ships, mirroring the web app. Two families
+/// — light (dark ink on a light ground) and dark (light ink on a dark ground):
+/// - [light]    — warm canvas, dark text (default).
+/// - [beige]    — soft sepia paper.
+/// - [rose]     — warm blush / rosé.
+/// - [sage]     — cool mint-green, calm.
+/// - [dark]     — normal dark: deep-slate surfaces.
+/// - [oled]     — true black, for OLED panels (shares the dark palette).
+/// - [midnight] — deep navy / indigo.
+/// - [nord]     — muted arctic blue-grey.
+enum AppThemeMode { light, beige, rose, sage, dark, oled, midnight, nord }
 
 /// Owns the selected theme and persists it to the same secure-storage
 /// container used for auth tokens / nav prefs (no new dependency). Loaded in
@@ -28,10 +34,20 @@ class ThemePrefsProvider extends ChangeNotifier {
     switch (mode) {
       case AppThemeMode.light:
         return AppPalette.light;
+      case AppThemeMode.beige:
+        return AppPalette.beige;
+      case AppThemeMode.rose:
+        return AppPalette.rose;
+      case AppThemeMode.sage:
+        return AppPalette.sage;
       case AppThemeMode.dark:
         return AppPalette.dark;
       case AppThemeMode.oled:
         return AppPalette.oled;
+      case AppThemeMode.midnight:
+        return AppPalette.midnight;
+      case AppThemeMode.nord:
+        return AppPalette.nord;
     }
   }
 
@@ -53,10 +69,20 @@ class ThemePrefsProvider extends ChangeNotifier {
 
   static AppThemeMode _parse(String? raw) {
     switch (raw) {
+      case 'beige':
+        return AppThemeMode.beige;
+      case 'rose':
+        return AppThemeMode.rose;
+      case 'sage':
+        return AppThemeMode.sage;
       case 'dark':
         return AppThemeMode.dark;
       case 'oled':
         return AppThemeMode.oled;
+      case 'midnight':
+        return AppThemeMode.midnight;
+      case 'nord':
+        return AppThemeMode.nord;
       default:
         return AppThemeMode.light;
     }
