@@ -3426,5 +3426,197 @@
     "colorField": {
       "swatchLabel": "{label} रंग-नमूना"
     }
+  },
+  "dashboard": {
+    "greeting": {
+      "morning": "सुप्रभात",
+      "afternoon": "नमस्कार",
+      "evening": "शुभ संध्या"
+    },
+    "subtitle": "{shop} कैसा चल रहा है, यहाँ देखें।",
+    "yourShop": "आपकी दुकान",
+    "refresh": "डैशबोर्ड ताज़ा करें",
+    "loadError": "डैशबोर्ड लोड नहीं हो सका।",
+    "tryAgain": "फिर से कोशिश करें",
+    "view": "देखें",
+    "pendingInvites": "आपके पास {count} लंबित निमंत्रण {count, plural, one {है} other {हैं}} — देखें और स्वीकार करें।",
+    "period": {
+      "ariaLabel": "डैशबोर्ड समय अवधि",
+      "today": "आज",
+      "week": "7 दिन",
+      "month": "30 दिन"
+    },
+    "kpi": {
+      "sales": "बिक्री",
+      "netProfit": "शुद्ध लाभ",
+      "receivables": "लेनदारी",
+      "payables": "देनदारी",
+      "margin": "{margin}% मार्जिन",
+      "salesAria": "चयनित अवधि के लिए बिक्री {value} — विवरण खोलें",
+      "netProfitAria": "शुद्ध लाभ {value}, मार्जिन {margin} प्रतिशत — गणना खोलें",
+      "receivablesAria": "{count} पक्षों से लेनदारी {value} — विवरण खोलें",
+      "payablesAria": "{count} विक्रेताओं को देनदारी {value} — विवरण खोलें",
+      "debtors": "{count, plural, one {# पक्ष पर आपका बकाया} other {# पक्षों पर आपका बकाया}}",
+      "creditors": "{count, plural, one {# विक्रेता को भुगतान करना है} other {# विक्रेताओं को भुगतान करना है}}"
+    },
+    "delta": {
+      "new": "नया",
+      "noChange": "{phrase} की तुलना में कोई बदलाव नहीं",
+      "up": "{phrase} की तुलना में {pct} प्रतिशत अधिक",
+      "down": "{phrase} की तुलना में {pct} प्रतिशत कम",
+      "phrase": {
+        "today": "पिछले दिन",
+        "week": "पिछले 7 दिनों",
+        "month": "पिछले 30 दिनों"
+      }
+    },
+    "action": {
+      "title": "ध्यान देने की ज़रूरत",
+      "allCaughtUp": "सब कुछ अप-टू-डेट है — अभी किसी कार्रवाई की ज़रूरत नहीं।",
+      "ordersToConfirm": "पुष्टि करने वाले ऑर्डर",
+      "returnsToReview": "समीक्षा वाले रिटर्न",
+      "quotesToPrice": "मूल्य तय करने वाले कोटेशन",
+      "draftsToConfirm": "पुष्टि करने वाले ड्राफ्ट",
+      "outOfStock": "स्टॉक में नहीं",
+      "lowStock": "कम स्टॉक"
+    },
+    "alert": {
+      "title": "अलर्ट",
+      "dismiss": "सूचना हटाएँ",
+      "cta": {
+        "reorder": "फिर से ऑर्डर करें",
+        "fileGst": "GST दाखिल करें",
+        "viewReport": "रिपोर्ट देखें",
+        "openTill": "टिल खोलें"
+      }
+    },
+    "onboarding": {
+      "heading": "आइए आपकी दुकान तैयार करें",
+      "subtitle": "ये चरण पूरे करें और आपका डैशबोर्ड लाइव आँकड़ों से भर जाएगा।",
+      "progress": "{completed}/{total} पूरे",
+      "progressAria": "{total} में से {completed} चरण पूरे",
+      "product": {
+        "title": "अपना पहला प्रोडक्ट जोड़ें",
+        "desc": "अपनी कैटलॉग बनाएँ ताकि आप बिल बना सकें और स्टॉक ट्रैक कर सकें।",
+        "cta": "प्रोडक्ट जोड़ें"
+      },
+      "invoice": {
+        "title": "अपना पहला इनवॉइस बनाएँ",
+        "desc": "एक बिक्री का बिल बनाएँ — GST आपके लिए संभाल लिया जाता है।",
+        "cta": "नया इनवॉइस"
+      },
+      "customer": {
+        "title": "एक ग्राहक जोड़ें",
+        "desc": "जानें किस पर आपका बकाया है और उन्हें इनवॉइस भेजें।",
+        "cta": "ग्राहक जोड़ें"
+      },
+      "payouts": {
+        "title": "पेआउट सेट करें",
+        "desc": "ऑनलाइन ऑर्डर के लिए सेटलमेंट प्राप्त करें।",
+        "cta": "सेट करें"
+      }
+    },
+    "ops": {
+      "title": "संचालन",
+      "gstThisMonth": "इस महीने का GST",
+      "outputTaxCollected": "{value} आउटपुट टैक्स एकत्र किया गया",
+      "inventoryValue": "इन्वेंट्री मूल्य",
+      "costBasis": "उपलब्ध स्टॉक का लागत मूल्य",
+      "openTillSince": "टिल खुला · {time} से",
+      "salesCount": "{count, plural, one {# बिक्री} other {# बिक्रियाँ}}"
+    },
+    "recent": {
+      "title": "हाल की गतिविधि",
+      "empty": "कोई हालिया स्टॉक हलचल नहीं।",
+      "productFallback": "प्रोडक्ट #{id}"
+    },
+    "analytics": {
+      "topCategories": "शीर्ष श्रेणियाँ",
+      "topCategoriesAria": "बिक्री के अनुसार शीर्ष श्रेणियाँ",
+      "categorySales": "श्रेणी बिक्री",
+      "nounCategories": "श्रेणियाँ",
+      "topProducts": "शीर्ष प्रोडक्ट",
+      "topProductsAria": "बिक्री के अनुसार शीर्ष प्रोडक्ट",
+      "productSales": "प्रोडक्ट बिक्री",
+      "nounProducts": "प्रोडक्ट",
+      "slowMovers": "धीमे बिकने वाले",
+      "slowMoversHint": "बिना बिके स्टॉक इकाइयों का हिस्सा — पूँजी जो घूम नहीं रही।",
+      "slowMoversAria": "बिना बिके स्टॉक के अनुसार धीमे बिकने वाले",
+      "idleStock": "बिना बिका स्टॉक",
+      "unitsValue": "{count} इकाइयाँ"
+    },
+    "trend": {
+      "title": "बिक्री रुझान",
+      "sales": "बिक्री",
+      "previous": "पिछला",
+      "purchases": "खरीद",
+      "returns": "रिटर्न",
+      "ariaLabel": "{days} दिनों में बिक्री का रुझान, भुगतान-मोड और तुलना लाइनों के साथ।",
+      "tableCaption": "चयनित अवधि के दैनिक मान",
+      "day": "दिन"
+    },
+    "drawer": {
+      "retry": "फिर से कोशिश करें",
+      "salesLoadError": "बिके प्रोडक्ट लोड नहीं हो सके।",
+      "pnlLoadError": "P&L रिपोर्ट लोड नहीं हो सकी।",
+      "genericLoadError": "यह लोड नहीं हो सका।",
+      "filterPlaceholder": "प्रोडक्ट या SKU से फ़िल्टर करें",
+      "filterAria": "बिके प्रोडक्ट फ़िल्टर करें",
+      "noMatch": "उस फ़िल्टर से कोई प्रोडक्ट मेल नहीं खाता।",
+      "noSales": "इस अवधि में कोई प्रोडक्ट नहीं बिका। लंबी अवधि आज़माएँ।",
+      "productCount": "{count, plural, one {# प्रोडक्ट} other {# प्रोडक्ट}}",
+      "revenue": "राजस्व {value}",
+      "unnamed": "अनाम",
+      "units": "इकाइयाँ",
+      "qtySold": "{qty} {unit} बिकी",
+      "showingTop": "शीर्ष {count} दिखाए जा रहे हैं। सभी देखने के लिए पूरी रिपोर्ट खोलें।",
+      "viewSalesReport": "पूरी बिक्री रिपोर्ट देखें",
+      "noData": "इस अवधि के लिए कोई डेटा नहीं।",
+      "noProfitActivity": "इस अवधि में कोई बिक्री या लागत दर्ज नहीं। लंबी अवधि आज़माएँ।",
+      "viewPnlReport": "पूरी P&L रिपोर्ट खोलें",
+      "grossMargin": "सकल मार्जिन {pct}%",
+      "accountCount": "{count, plural, one {# खाता} other {# खाते}}",
+      "billedSettled": "{billed} बिल किया · {paid} {settled}",
+      "settledReceived": "प्राप्त",
+      "settledPaid": "भुगतान",
+      "noOpenDocs": "कोई खुला दस्तावेज़ नहीं।",
+      "creditNote": "क्रेडिट नोट",
+      "noReceivables": "अभी किसी पर आपका बकाया नहीं है।",
+      "noPayables": "अभी आपको कुछ भी भुगतान नहीं करना है।",
+      "viewAllCustomers": "सभी ग्राहक देखें",
+      "viewAllVendors": "सभी विक्रेता देखें"
+    },
+    "pnl": {
+      "confirmedSales": "पुष्ट बिक्री",
+      "confirmedSalesBasis": "पुष्ट बिक्री इनवॉइस का GST-रहित मूल्य, क्रेडिट नोट घटाकर",
+      "salesReturns": "घटाएँ: बिक्री रिटर्न",
+      "salesReturnsBasis": "रिफंड किए गए रिटर्न का GST-रहित मूल्य",
+      "revenueA": "राजस्व (A)",
+      "goodsSold": "बेचा गया माल, लागत पर",
+      "goodsSoldBasis": "प्रत्येक बिक्री की पुष्टि पर खपत हुई स्टॉक लागत",
+      "returnedRestocked": "घटाएँ: वापस आया माल पुनः स्टॉक किया गया",
+      "returnedRestockedBasis": "वापस आई वस्तुएँ उनकी खपत लागत पर पुनः जोड़ी गईं",
+      "cogsB": "बेचे गए माल की लागत (B)",
+      "grossProfit": "सकल लाभ (A − B)",
+      "writeOffs": "घटाएँ: स्टॉक राइट-ऑफ",
+      "writeOffsBasis": "अवधि में क्षति, समाप्ति और घटती के समायोजन",
+      "netProfit": "शुद्ध लाभ",
+      "footnote": "हर आँकड़ा इस अवधि की तारीख वाले पुष्ट इनवॉइस, रिफंड किए गए रिटर्न और स्टॉक समायोजनों से जोड़ा गया है; अनुमान और प्रोफ़ॉर्मा शामिल नहीं हैं।"
+    },
+    "pie": {
+      "other": "अन्य",
+      "noData": "इस अवधि में अभी कोई डेटा नहीं।",
+      "about": "इस चार्ट के बारे में",
+      "hoverHint": "विवरण के लिए किसी स्लाइस पर होवर करें।",
+      "summaryTotal": "<b>{count}</b> {noun} में कुल <num>{total}</num> (औसतन <num>{avg}</num> प्रत्येक)।",
+      "summaryLeader": "<em>{label}</em> <b>{pct}%</b> (<num>{value}</num>) के साथ आगे है",
+      "summarySecond": ", जो <em>{label}</em> के <b>{pct}%</b> से आगे है",
+      "summaryTopK": "शीर्ष <b>{topK}</b> {subject} का <b>{topKpct}%</b> बनाते हैं",
+      "summarySmallest": ", जबकि <em>{label}</em> <b>{pct}%</b> पर सबसे पीछे है",
+      "sliceDetail": "<name>{label}</name> — <num>{value}</num>, {subject} का <b>{pct}%</b>।",
+      "tableItem": "वस्तु",
+      "tableValue": "मूल्य",
+      "tableShare": "हिस्सा"
+    }
   }
 }

@@ -1,16 +1,18 @@
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, Timer } from "lucide-react";
 import type { DashboardTransaction } from "../stats";
 import { Section } from "./ui";
 
 /** Recent stock movements feed, each row linking to its source document. */
 export function RecentActivity({ transactions }: { transactions: DashboardTransaction[] }) {
+  const t = useTranslations("dashboard");
   return (
-    <Section id="recent" title="Recent activity">
+    <Section id="recent" title={t("recent.title")}>
       {transactions.length === 0 ? (
         <div className="flex items-center gap-md py-lg text-muted">
           <Timer size={20} className="text-subtle" aria-hidden="true" />
-          <span className="text-body-md">No recent stock movements.</span>
+          <span className="text-body-md">{t("recent.empty")}</span>
         </div>
       ) : (
         <ul>
@@ -24,6 +26,7 @@ export function RecentActivity({ transactions }: { transactions: DashboardTransa
 }
 
 function ActivityRow({ tx }: { tx: DashboardTransaction }) {
+  const t = useTranslations("dashboard");
   const isIn = tx.direction === "IN" || tx.type === "STOCK_IN";
   const isOut = tx.direction === "OUT" || tx.type === "STOCK_OUT";
   const accent = isIn ? "text-success" : isOut ? "text-error" : "text-accent-indigo";
@@ -51,7 +54,7 @@ function ActivityRow({ tx }: { tx: DashboardTransaction }) {
         <Icon size={18} className={accent} aria-hidden="true" />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-body-md text-ink">{tx.product?.name ?? `Product #${tx.productId}`}</p>
+        <p className="truncate text-body-md text-ink">{tx.product?.name ?? t("recent.productFallback", { id: tx.productId })}</p>
         <p className="text-body-sm text-muted">{time}</p>
       </div>
       <span className={`shrink-0 text-title-md tabular-nums ${accent}`}>

@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import type { DashboardInsights } from "../stats";
 import { inr } from "./ui";
 import { InfographicPie, PIE_PALETTE_A, PIE_PALETTE_B, PIE_PALETTE_C } from "./infographic-pie";
@@ -8,38 +9,39 @@ import { InfographicPie, PIE_PALETTE_A, PIE_PALETTE_B, PIE_PALETTE_C } from "./i
  * of idle in-stock units — which products lock up the most capital).
  */
 export function Analytics({ insights }: { insights: DashboardInsights }) {
+  const t = useTranslations("dashboard");
   return (
     <div className="grid gap-md xl:grid-cols-2">
-      <Card title="Top categories">
+      <Card id="top-categories" title={t("analytics.topCategories")}>
         <InfographicPie
           rows={insights.topCategories.map((c) => ({ label: c.name, value: c.revenue }))}
           palette={PIE_PALETTE_A}
           formatValue={(v) => inr.format(v)}
-          ariaLabel="Top categories by sales"
-          subject="category sales"
-          itemNoun="categories"
+          ariaLabel={t("analytics.topCategoriesAria")}
+          subject={t("analytics.categorySales")}
+          itemNoun={t("analytics.nounCategories")}
         />
       </Card>
 
-      <Card title="Top products">
+      <Card id="top-products" title={t("analytics.topProducts")}>
         <InfographicPie
           rows={insights.topProducts.map((p) => ({ label: p.name, value: p.revenue }))}
           palette={PIE_PALETTE_B}
           formatValue={(v) => inr.format(v)}
-          ariaLabel="Top products by sales"
-          subject="product sales"
-          itemNoun="products"
+          ariaLabel={t("analytics.topProductsAria")}
+          subject={t("analytics.productSales")}
+          itemNoun={t("analytics.nounProducts")}
         />
       </Card>
 
-      <Card title="Slow movers" hint="Share of idle in-stock units — capital that isn’t moving." span>
+      <Card id="slow-movers" title={t("analytics.slowMovers")} hint={t("analytics.slowMoversHint")} span>
         <InfographicPie
           rows={insights.slowMovers.map((m) => ({ label: m.name, value: m.stock }))}
           palette={PIE_PALETTE_C}
-          formatValue={(v) => `${v} units`}
-          ariaLabel="Slow movers by idle stock"
-          subject="idle stock"
-          itemNoun="products"
+          formatValue={(v) => t("analytics.unitsValue", { count: v })}
+          ariaLabel={t("analytics.slowMoversAria")}
+          subject={t("analytics.idleStock")}
+          itemNoun={t("analytics.nounProducts")}
         />
       </Card>
     </div>
@@ -47,17 +49,19 @@ export function Analytics({ insights }: { insights: DashboardInsights }) {
 }
 
 function Card({
+  id,
   title,
   hint,
   span,
   children,
 }: {
+  id: string;
   title: string;
   hint?: string;
   span?: boolean;
   children: React.ReactNode;
 }) {
-  const headingId = `${title.replace(/\s+/g, "-").toLowerCase()}-h`;
+  const headingId = `${id}-h`;
   return (
     <section
       aria-labelledby={headingId}

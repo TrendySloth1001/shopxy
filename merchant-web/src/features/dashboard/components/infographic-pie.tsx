@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 /**
  * Infographic-style pie: variable-radius wedges (bigger value → reaches further
@@ -71,11 +72,11 @@ function sector(rInner: number, rOuter: number, start: number, end: number): str
   const large = end - start > 180 ? 1 : 0;
   return `M${x1},${y1} A${rOuter},${rOuter} 0 ${large} 1 ${x2},${y2} L${x3},${y3} A${rInner},${rInner} 0 ${large} 0 ${x4},${y4} Z`;
 }
-function collapse(rows: PieRow[], maxSlices: number): PieRow[] {
+function collapse(rows: PieRow[], maxSlices: number, otherLabel: string): PieRow[] {
   const sorted = rows.filter((r) => r.value > 0).sort((a, b) => b.value - a.value);
   if (sorted.length <= maxSlices) return sorted;
   const head = sorted.slice(0, maxSlices - 1);
-  head.push({ label: "Other", value: sorted.slice(maxSlices - 1).reduce((s, r) => s + r.value, 0) });
+  head.push({ label: otherLabel, value: sorted.slice(maxSlices - 1).reduce((s, r) => s + r.value, 0) });
   return head;
 }
 const trim = (s: string, n = 18) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
@@ -95,11 +96,13 @@ export function InfographicPie({
   subject?: string;
   itemNoun?: string;
 }) {
+  const t = useTranslations("dashboard");
+  const otherLabel = t("pie.other");
   const [active, setActive] = useState<number | null>(null);
 
-  const slices = collapse(rows, palette.length);
+  const slices = collapse(rows, palette.length, otherLabel);
   const total = slices.reduce((s, r) => s + r.value, 0);
-  if (total <= 0) return <p className="text-body-sm text-muted">No data in this period yet.</p>;
+  if (total <= 0) return <p className="text-body-sm text-muted">{t("pie.noData")}</p>;
 
   const maxVal = Math.max(...slices.map((s) => s.value));
   const single = slices.length === 1;
@@ -113,7 +116,7 @@ export function InfographicPie({
   });
   const cur = active != null ? segs[active] : null;
   const top = segs[0];
-  const second = segs[1] && segs[1].label !== "Other" ? segs[1] : null;
+  const second = segs[1] && segs[1].label !== otherLabel ? segs[1] : null;
   const smallest = segs.length > 2 ? segs[segs.length - 1] : null;
   const topK = Math.min(2, segs.length);
   const topKpct = segs.slice(0, topK).reduce((a, s) => a + s.pct, 0);
@@ -195,32 +198,54 @@ export function InfographicPie({
 
         {/* whole-chart written summary + full ranked breakdown */}
         <aside className="lg:w-64 lg:shrink-0">
-          <p className="text-label-md uppercase tracking-wide text-muted">About this chart</p>
+          <p className="text-label-md uppercase tracking-wide text-muted">{t("pie.about")}</p>
           <p className="mt-sm text-body-md leading-relaxed text-ink">
-            <strong className="tabular-nums">{formatValue(total)}</strong> across{" "}
-            <strong>{segs.length}</strong> {segs.length === 1 ? itemNoun.replace(/s$/, "") : itemNoun} (avg{" "}
-            <strong className="tabular-nums">{formatValue(Math.round(avg))}</strong> each).{" "}
-            <em>
-              <u>{top.label}</u>
-            </em>{" "}
-            leads with <strong>{top.pct}%</strong> (<strong className="tabular-nums">{formatValue(top.value)}</strong>)
-            {second ? (
-              <>
-                , ahead of <em>{second.label}</em> at <strong>{second.pct}%</strong>
-              </>
-            ) : null}
-            .{" "}
-            {segs.length > 2 ? (
-              <>
-                The top <strong>{topK}</strong> make up <strong>{topKpct}%</strong> of {subject}
-                {smallest ? (
-                  <>
-                    , while <em>{smallest.label}</em> trails at <strong>{smallest.pct}%</strong>
-                  </>
-                ) : null}
-                .
-              </>
-            ) : null}
+            {t.rich("pie.summaryTotal", {
+              total: formatValue(total),
+              count: segs.length,
+              noun: itemNoun,
+              avg: formatValue(Math.round(avg)),
+              b: (chunks) => <strong>{chunks}</strong>,
+              num: (chunks) => <strong className="tabular-nums">{chunks}</strong>,
+            })}{" "}
+            {t.rich("pie.summaryLeader", {
+              label: top.label,
+              pct: top.pct,
+              value: formatValue(top.value),
+              b: (chunks) => <strong>{chunks}</strong>,
+              num: (chunks) => <strong className="tabular-nums">{chunks}</strong>,
+              em: (chunks) => (
+                <em>
+                  <u>{chunks}</u>
+                </em>
+              ),
+            })}
+            {second
+              ? t.rich("pie.summarySecond", {
+                  label: second.label,
+                  pct: second.pct,
+                  b: (chunks) => <strong>{chunks}</strong>,
+                  em: (chunks) => <em>{chunks}</em>,
+                })
+              : null}
+            {". "}
+            {segs.length > 2
+              ? t.rich("pie.summaryTopK", {
+                  topK,
+                  topKpct,
+                  subject,
+                  b: (chunks) => <strong>{chunks}</strong>,
+                })
+              : null}
+            {segs.length > 2 && smallest
+              ? t.rich("pie.summarySmallest", {
+                  label: smallest.label,
+                  pct: smallest.pct,
+                  b: (chunks) => <strong>{chunks}</strong>,
+                  em: (chunks) => <em>{chunks}</em>,
+                })
+              : null}
+            {segs.length > 2 ? "." : null}
           </p>
 
           {/* full breakdown */}
@@ -241,7 +266,7 @@ export function InfographicPie({
               </li>
             ))}
           </ul>
-          <p className="mt-sm text-body-sm italic text-subtle">Hover a slice for its breakdown.</p>
+          <p className="mt-sm text-body-sm italic text-subtle">{t("pie.hoverHint")}</p>
         </aside>
       </div>
 
@@ -256,8 +281,15 @@ export function InfographicPie({
           <div className="flex items-center gap-sm rounded-lg bg-surface-tint px-md py-sm">
             <span className={`size-2.5 shrink-0 rounded-full ${cur.color.bg}`} aria-hidden="true" />
             <p className="text-body-sm text-ink">
-              <span className="font-semibold">{cur.label}</span> — <strong className="tabular-nums">{formatValue(cur.value)}</strong>,{" "}
-              <strong>{cur.pct}%</strong> of {subject}.
+              {t.rich("pie.sliceDetail", {
+                label: cur.label,
+                value: formatValue(cur.value),
+                pct: cur.pct,
+                subject,
+                name: (chunks) => <span className="font-semibold">{chunks}</span>,
+                b: (chunks) => <strong>{chunks}</strong>,
+                num: (chunks) => <strong className="tabular-nums">{chunks}</strong>,
+              })}
             </p>
           </div>
         ) : null}
@@ -267,9 +299,9 @@ export function InfographicPie({
         <caption>{ariaLabel}</caption>
         <thead>
           <tr>
-            <th scope="col">Item</th>
-            <th scope="col">Value</th>
-            <th scope="col">Share</th>
+            <th scope="col">{t("pie.tableItem")}</th>
+            <th scope="col">{t("pie.tableValue")}</th>
+            <th scope="col">{t("pie.tableShare")}</th>
           </tr>
         </thead>
         <tbody>

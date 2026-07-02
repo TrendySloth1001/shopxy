@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import type { DashboardTrend } from "../stats";
 import { inr } from "./ui";
 import { TrendChart, type TrendSeries } from "./trend-chart";
@@ -35,11 +36,12 @@ const titleCase = (m: string) => m.charAt(0) + m.slice(1).toLowerCase();
  * show by default; the comparison lines start hidden and can be toggled on.
  */
 export function TrendCard({ trend, className = "" }: { trend: DashboardTrend; className?: string }) {
+  const t = useTranslations("dashboard");
   const labels = trend.labels.map(fmtDay);
   const total = trend.sales.reduce((s, v) => s + v, 0);
 
   const series: TrendSeries[] = [
-    { key: "sales", label: "Sales", stroke: "text-brand", dot: "bg-brand", values: trend.sales },
+    { key: "sales", label: t("trend.sales"), stroke: "text-brand", dot: "bg-brand", values: trend.sales },
     ...trend.paymentSeries.map((p) => {
       const c = MODE_COLOR[p.mode.toUpperCase()] ?? MODE_FALLBACK;
       return { key: `pay:${p.mode}`, label: titleCase(p.mode), stroke: c.stroke, dot: c.dot, values: p.values };
@@ -49,11 +51,11 @@ export function TrendCard({ trend, className = "" }: { trend: DashboardTrend; cl
   // Comparison lines — included but hidden by default (toggle on demand).
   const comparisons: TrendSeries[] = [];
   if (trend.previous.some((v) => v !== 0))
-    comparisons.push({ key: "previous", label: "Previous", stroke: "text-subtle", dot: "bg-subtle", values: trend.previous });
+    comparisons.push({ key: "previous", label: t("trend.previous"), stroke: "text-subtle", dot: "bg-subtle", values: trend.previous });
   if (trend.purchases.some((v) => v !== 0))
-    comparisons.push({ key: "purchases", label: "Purchases", stroke: "text-accent-amber", dot: "bg-accent-amber", values: trend.purchases });
+    comparisons.push({ key: "purchases", label: t("trend.purchases"), stroke: "text-accent-amber", dot: "bg-accent-amber", values: trend.purchases });
   if (trend.returns.some((v) => v !== 0))
-    comparisons.push({ key: "returns", label: "Returns", stroke: "text-accent-rose", dot: "bg-accent-rose", values: trend.returns });
+    comparisons.push({ key: "returns", label: t("trend.returns"), stroke: "text-accent-rose", dot: "bg-accent-rose", values: trend.returns });
 
   const all = [...series, ...comparisons];
 
@@ -62,7 +64,7 @@ export function TrendCard({ trend, className = "" }: { trend: DashboardTrend; cl
       <div className="flex flex-wrap items-end justify-between gap-md">
         <div>
           <h2 id="trend-h" className="text-label-md uppercase tracking-wide text-muted">
-            Sales trend
+            {t("trend.title")}
           </h2>
           <p className="mt-xs text-title-md tabular-nums text-ink">{inr.format(total)}</p>
         </div>
@@ -72,7 +74,7 @@ export function TrendCard({ trend, className = "" }: { trend: DashboardTrend; cl
         <TrendChart
           series={all}
           xLabels={labels}
-          ariaLabel={`Sales trend over ${labels.length} days, with payment-mode and comparison lines.`}
+          ariaLabel={t("trend.ariaLabel", { days: labels.length })}
           formatValue={(v) => inr.format(v)}
           formatTick={(v) => inrCompact.format(v)}
           initialHidden={comparisons.map((c) => c.key)}
@@ -81,10 +83,10 @@ export function TrendCard({ trend, className = "" }: { trend: DashboardTrend; cl
 
       {/* Screen-reader data-table fallback for the chart. */}
       <table className="sr-only">
-        <caption>Daily values for the selected period</caption>
+        <caption>{t("trend.tableCaption")}</caption>
         <thead>
           <tr>
-            <th scope="col">Day</th>
+            <th scope="col">{t("trend.day")}</th>
             {all.map((s) => (
               <th key={s.key} scope="col">
                 {s.label}

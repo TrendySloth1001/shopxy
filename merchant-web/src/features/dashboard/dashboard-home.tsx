@@ -1,12 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Mail, RefreshCw } from "lucide-react";
 import { useAuth } from "@/features/auth/auth-context";
 import { listIncomingInvitations } from "@/features/invitations/api";
 import { getPayoutStatus } from "@/features/shop/api";
+import { dateInputToIso } from "@/shared/datetime";
 import {
   fetchDashboardStats,
   type DashboardPeriod,
@@ -25,11 +27,11 @@ import { OnboardingChecklist } from "./components/onboarding-checklist";
 const PERIOD_STORE_KEY = "sx_dashboard_period";
 const PERIODS_SET = new Set<DashboardPeriod>(["today", "week", "month"]);
 
-function greeting(): string {
+function greetingKey(): "morning" | "afternoon" | "evening" {
   const h = new Date().getHours();
-  if (h < 12) return "Good morning";
-  if (h < 17) return "Good afternoon";
-  return "Good evening";
+  if (h < 12) return "morning";
+  if (h < 17) return "afternoon";
+  return "evening";
 }
 
 function initialPeriod(): DashboardPeriod {
@@ -39,6 +41,7 @@ function initialPeriod(): DashboardPeriod {
 }
 
 function useDashboard(period: DashboardPeriod) {
+  const t = useTranslations("dashboard");
   const [data, setData] = useState<DashboardStats | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true); // first load (no data yet)
@@ -61,7 +64,7 @@ function useDashboard(period: DashboardPeriod) {
         setError(null);
       } catch (e) {
         if (!active) return;
-        setError(e instanceof Error ? e.message : "Could not load the dashboard.");
+        setError(e instanceof Error ? e.message : t("loadError"));
       } finally {
         if (active) {
           setLoading(false);
@@ -72,7 +75,7 @@ function useDashboard(period: DashboardPeriod) {
     return () => {
       active = false;
     };
-  }, [period, nonce]);
+  }, [period, nonce, t]);
 
   return { data, error, loading, refreshing, reload };
 }
@@ -80,6 +83,7 @@ function useDashboard(period: DashboardPeriod) {
 export function DashboardHome() {
   const { user } = useAuth();
   const router = useRouter();
+  const t = useTranslations("dashboard");
   const [period, setPeriod] = useState<DashboardPeriod>(initialPeriod);
   const { data, error, loading, refreshing, reload } = useDashboard(period);
 
@@ -101,11 +105,11 @@ export function DashboardHome() {
       <div className="flex flex-wrap items-end justify-between gap-md">
         <div>
           <h1 className="text-headline-md text-ink">
-            {greeting()}
+            {t(`greeting.${greetingKey()}`)}
             {user?.name ? `, ${user.name.split(" ")[0]}` : ""}
           </h1>
           <p className="mt-xs text-body-md text-muted">
-            Here’s how {user?.shopName ?? "your shop"} is doing.
+            {t("subtitle", { shop: user?.shopName ?? t("yourShop") })}
           </p>
         </div>
         <div className="flex items-center gap-sm">
@@ -114,7 +118,7 @@ export function DashboardHome() {
             type="button"
             onClick={reload}
             disabled={loading || refreshing}
-            aria-label="Refresh dashboard"
+            aria-label={t("refresh")}
             className="inline-flex size-9 items-center justify-center rounded-button border border-hairline text-muted transition-colors hover:bg-surface-tint hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:opacity-50"
           >
             <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} aria-hidden="true" />
@@ -163,6 +167,18 @@ function DashboardBody({
     };
   }, []);
 
+  // meta.from/to are date-only IST keys (YYYY-MM-DD); the reports endpoints the
+  // KPI drawers call validate `from`/`to` as full ISO datetimes, so widen them
+  // to a day-spanning ISO range. Memoised so the drawers don't refetch on every
+  // dashboard re-render (only when the period window changes).
+  const kpiRange = useMemo(
+    () => ({
+      from: dateInputToIso(stats.meta.from),
+      to: dateInputToIso(stats.meta.to, true),
+    }),
+    [stats.meta.from, stats.meta.to],
+  );
+
   const isFresh = !stats.onboarding.hasInvoices && stats.onboarding.totalProducts === 0;
 
   // A fresh shop gets guidance, not a wall of zeros.
@@ -182,7 +198,7 @@ function DashboardBody({
       {/* Period-scoped money sections dim while a new period loads. */}
       <div className={refreshing ? "pointer-events-none opacity-60 transition-opacity" : "transition-opacity"}>
         <div className="space-y-xxl" aria-busy={refreshing}>
-          {stats.kpis ? <KpiRow kpis={stats.kpis} period={period} /> : null}
+          {stats.kpis ? <KpiRow kpis={stats.kpis} period={period} range={kpiRange} /> : null}
           {stats.trend ? <TrendCard trend={stats.trend} /> : null}
           {stats.insights ? <Analytics insights={stats.insights} /> : null}
         </div>
@@ -206,6 +222,7 @@ function DashboardBody({
  * as a customer/vendor/team member). Links to the notifications Invites tab.
  */
 function PendingInviteCallout() {
+  const t = useTranslations("dashboard");
   const [count, setCount] = useState(0);
 
   useEffect(() => {
@@ -231,14 +248,15 @@ function PendingInviteCallout() {
     >
       <Mail size={18} className="shrink-0" aria-hidden="true" />
       <span className="min-w-0 flex-1 text-body-md">
-        You have {count} pending invitation{count === 1 ? "" : "s"} — review and accept.
+        {t("pendingInvites", { count })}
       </span>
-      <span className="shrink-0 text-label-md underline-offset-2">View</span>
+      <span className="shrink-0 text-label-md underline-offset-2">{t("view")}</span>
     </Link>
   );
 }
 
 function ErrorView({ message, onRetry }: { message: string; onRetry: () => void }) {
+  const t = useTranslations("dashboard");
   return (
     <div className="flex flex-col items-start gap-md">
       <p className="text-body-md text-muted">{message}</p>
@@ -247,7 +265,7 @@ function ErrorView({ message, onRetry }: { message: string; onRetry: () => void 
         onClick={onRetry}
         className="inline-flex h-10 items-center rounded-button border border-hairline px-lg text-label-md text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
       >
-        Try again
+        {t("tryAgain")}
       </button>
     </div>
   );

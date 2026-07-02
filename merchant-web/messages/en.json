@@ -3426,5 +3426,197 @@
     "colorField": {
       "swatchLabel": "{label} swatch"
     }
+  },
+  "dashboard": {
+    "greeting": {
+      "morning": "Good morning",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening"
+    },
+    "subtitle": "Here's how {shop} is doing.",
+    "yourShop": "your shop",
+    "refresh": "Refresh dashboard",
+    "loadError": "Could not load the dashboard.",
+    "tryAgain": "Try again",
+    "view": "View",
+    "pendingInvites": "You have {count} pending invitation{count, plural, one {} other {s}} — review and accept.",
+    "period": {
+      "ariaLabel": "Dashboard time period",
+      "today": "Today",
+      "week": "7 days",
+      "month": "30 days"
+    },
+    "kpi": {
+      "sales": "Sales",
+      "netProfit": "Net profit",
+      "receivables": "Receivables",
+      "payables": "Payables",
+      "margin": "{margin}% margin",
+      "salesAria": "Sales {value} for the selected period — open the breakdown",
+      "netProfitAria": "Net profit {value}, margin {margin} percent — open the calculation",
+      "receivablesAria": "Receivables {value} from {count} parties — open the breakdown",
+      "payablesAria": "Payables {value} to {count} vendors — open the breakdown",
+      "debtors": "{count, plural, one {# party owes you} other {# parties owe you}}",
+      "creditors": "{count, plural, one {# vendor to pay} other {# vendors to pay}}"
+    },
+    "delta": {
+      "new": "New",
+      "noChange": "No change versus {phrase}",
+      "up": "Up {pct} percent versus {phrase}",
+      "down": "Down {pct} percent versus {phrase}",
+      "phrase": {
+        "today": "the previous day",
+        "week": "the previous 7 days",
+        "month": "the previous 30 days"
+      }
+    },
+    "action": {
+      "title": "Needs attention",
+      "allCaughtUp": "You're all caught up — nothing needs action right now.",
+      "ordersToConfirm": "Orders to confirm",
+      "returnsToReview": "Returns to review",
+      "quotesToPrice": "Quotes to price",
+      "draftsToConfirm": "Drafts to confirm",
+      "outOfStock": "Out of stock",
+      "lowStock": "Low stock"
+    },
+    "alert": {
+      "title": "Alerts",
+      "dismiss": "Dismiss notification",
+      "cta": {
+        "reorder": "Reorder",
+        "fileGst": "File GST",
+        "viewReport": "View report",
+        "openTill": "Open till"
+      }
+    },
+    "onboarding": {
+      "heading": "Let's get your shop ready",
+      "subtitle": "Finish these steps and your dashboard fills with live numbers.",
+      "progress": "{completed}/{total} done",
+      "progressAria": "{completed} of {total} steps complete",
+      "product": {
+        "title": "Add your first product",
+        "desc": "Build your catalogue so you can bill and track stock.",
+        "cta": "Add product"
+      },
+      "invoice": {
+        "title": "Create your first invoice",
+        "desc": "Bill a sale — GST is handled for you.",
+        "cta": "New invoice"
+      },
+      "customer": {
+        "title": "Add a customer",
+        "desc": "Track who owes you and send them invoices.",
+        "cta": "Add customer"
+      },
+      "payouts": {
+        "title": "Set up payouts",
+        "desc": "Receive settlements for online orders.",
+        "cta": "Set up"
+      }
+    },
+    "ops": {
+      "title": "Operations",
+      "gstThisMonth": "GST this month",
+      "outputTaxCollected": "{value} output tax collected",
+      "inventoryValue": "Inventory value",
+      "costBasis": "Cost basis of stock on hand",
+      "openTillSince": "Open till · since {time}",
+      "salesCount": "{count, plural, one {# sale} other {# sales}}"
+    },
+    "recent": {
+      "title": "Recent activity",
+      "empty": "No recent stock movements.",
+      "productFallback": "Product #{id}"
+    },
+    "analytics": {
+      "topCategories": "Top categories",
+      "topCategoriesAria": "Top categories by sales",
+      "categorySales": "category sales",
+      "nounCategories": "categories",
+      "topProducts": "Top products",
+      "topProductsAria": "Top products by sales",
+      "productSales": "product sales",
+      "nounProducts": "products",
+      "slowMovers": "Slow movers",
+      "slowMoversHint": "Share of idle in-stock units — capital that isn't moving.",
+      "slowMoversAria": "Slow movers by idle stock",
+      "idleStock": "idle stock",
+      "unitsValue": "{count} units"
+    },
+    "trend": {
+      "title": "Sales trend",
+      "sales": "Sales",
+      "previous": "Previous",
+      "purchases": "Purchases",
+      "returns": "Returns",
+      "ariaLabel": "Sales trend over {days} days, with payment-mode and comparison lines.",
+      "tableCaption": "Daily values for the selected period",
+      "day": "Day"
+    },
+    "drawer": {
+      "retry": "Retry",
+      "salesLoadError": "Could not load sold products.",
+      "pnlLoadError": "Could not load the P&L report.",
+      "genericLoadError": "Could not load this.",
+      "filterPlaceholder": "Filter by product or SKU",
+      "filterAria": "Filter products sold",
+      "noMatch": "No products match that filter.",
+      "noSales": "No products sold in this period. Try a longer range.",
+      "productCount": "{count, plural, one {# product} other {# products}}",
+      "revenue": "Revenue {value}",
+      "unnamed": "Unnamed",
+      "units": "units",
+      "qtySold": "{qty} {unit} sold",
+      "showingTop": "Showing the top {count}. Open the full report to see all.",
+      "viewSalesReport": "View the full sales report",
+      "noData": "No data for this period.",
+      "noProfitActivity": "No sales or costs recorded in this period. Try a longer range.",
+      "viewPnlReport": "Open the full P&L report",
+      "grossMargin": "Gross margin {pct}%",
+      "accountCount": "{count, plural, one {# account} other {# accounts}}",
+      "billedSettled": "{billed} billed · {paid} {settled}",
+      "settledReceived": "received",
+      "settledPaid": "paid",
+      "noOpenDocs": "No open documents.",
+      "creditNote": "Credit note",
+      "noReceivables": "No one owes you right now.",
+      "noPayables": "You have nothing to pay right now.",
+      "viewAllCustomers": "View all customers",
+      "viewAllVendors": "View all vendors"
+    },
+    "pnl": {
+      "confirmedSales": "Confirmed sales",
+      "confirmedSalesBasis": "Ex-GST value of confirmed sale invoices, less credit notes",
+      "salesReturns": "Less: sales returns",
+      "salesReturnsBasis": "Ex-GST value of refunded returns",
+      "revenueA": "Revenue (A)",
+      "goodsSold": "Goods sold, at cost",
+      "goodsSoldBasis": "Stock cost consumed when each sale confirmed",
+      "returnedRestocked": "Less: returned goods restocked",
+      "returnedRestockedBasis": "Returned items put back at their consumed cost",
+      "cogsB": "Cost of goods sold (B)",
+      "grossProfit": "Gross profit (A − B)",
+      "writeOffs": "Less: stock write-offs",
+      "writeOffsBasis": "Damage, expiry and shrinkage adjustments in range",
+      "netProfit": "Net profit",
+      "footnote": "Every figure is summed from confirmed invoices, refunded returns and stock adjustments dated in this period; estimates and proformas are excluded."
+    },
+    "pie": {
+      "other": "Other",
+      "noData": "No data in this period yet.",
+      "about": "About this chart",
+      "hoverHint": "Hover a slice for its breakdown.",
+      "summaryTotal": "<num>{total}</num> across <b>{count}</b> {noun} (avg <num>{avg}</num> each).",
+      "summaryLeader": "<em>{label}</em> leads with <b>{pct}%</b> (<num>{value}</num>)",
+      "summarySecond": ", ahead of <em>{label}</em> at <b>{pct}%</b>",
+      "summaryTopK": "The top <b>{topK}</b> make up <b>{topKpct}%</b> of {subject}",
+      "summarySmallest": ", while <em>{label}</em> trails at <b>{pct}%</b>",
+      "sliceDetail": "<name>{label}</name> — <num>{value}</num>, <b>{pct}%</b> of {subject}.",
+      "tableItem": "Item",
+      "tableValue": "Value",
+      "tableShare": "Share"
+    }
   }
 }
