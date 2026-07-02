@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/core/network/image_url.dart';
 import 'package:shopxy/features/admin/data/models/admin_collection.dart';
 import 'package:shopxy/features/admin/presentation/pages/admin_collection_editor_page.dart';
@@ -52,19 +53,20 @@ class _AdminCollectionsPageState extends State<AdminCollectionsPage> {
   }
 
   Future<void> _confirmDelete(AdminCollectionSummary c) async {
+    final l10n = AppLocalizations.of(context);
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Delete collection?'),
-        content: Text('"${c.title}" and its item list will be removed.'),
+        title: Text(l10n.adminCollectionDeleteTitle),
+        content: Text(l10n.adminCollectionDeleteBody(c.title)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: Text(l10n.adminCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Delete'),
+            child: Text(l10n.adminDelete),
           ),
         ],
       ),
@@ -75,14 +77,15 @@ class _AdminCollectionsPageState extends State<AdminCollectionsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final provider = context.watch<AdminCollectionsProvider>();
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
-        title: const Text('Collections'),
+        title: Text(l10n.adminCollectionsTitle),
         actions: [
           IconButton(
-            tooltip: 'Refresh',
+            tooltip: l10n.adminRefresh,
             icon: const Icon(Icons.refresh),
             onPressed: provider.isLoading ? null : () => provider.load(),
           ),
@@ -91,7 +94,7 @@ class _AdminCollectionsPageState extends State<AdminCollectionsPage> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openNew,
         icon: const Icon(Icons.add),
-        label: const Text('New collection'),
+        label: Text(l10n.adminCollectionNew),
       ),
       body: provider.isLoading && provider.list.isEmpty
           ? const _CollectionsListSkeleton()
@@ -99,9 +102,9 @@ class _AdminCollectionsPageState extends State<AdminCollectionsPage> {
               onRefresh: provider.load,
               child: provider.list.isEmpty
                   ? ListView(
-                      children: const [
-                        SizedBox(height: AppSizes.huge),
-                        Center(child: Text('No collections yet')),
+                      children: [
+                        const SizedBox(height: AppSizes.huge),
+                        Center(child: Text(l10n.adminCollectionsEmpty)),
                       ],
                     )
                   : ListView.separated(
@@ -140,6 +143,7 @@ class _CollectionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return InkWell(
       onTap: onTap,
       borderRadius: AppShapes.squircleRadius(AppSizes.radiusLg),
@@ -179,7 +183,8 @@ class _CollectionRow extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '/${collection.slug}  ·  ${collection.itemCount} item${collection.itemCount == 1 ? '' : 's'}',
+                    '/${collection.slug}  ·  '
+                    '${collection.itemCount == 1 ? l10n.adminCollectionItemCountOne('${collection.itemCount}') : l10n.adminCollectionItemCountOther('${collection.itemCount}')}',
                     style: Theme.of(context)
                         .textTheme
                         .bodySmall
@@ -216,7 +221,9 @@ class _StatusChip extends StatelessWidget {
         shape: AppShapes.squircle(AppSizes.radiusSm),
       ),
       child: Text(
-        published ? 'Published' : 'Draft',
+        published
+            ? AppLocalizations.of(context).adminPublished
+            : AppLocalizations.of(context).adminDraft,
         style: Theme.of(context).textTheme.labelMedium?.copyWith(
               color: published ? AppColors.success : AppColors.black,
             ),

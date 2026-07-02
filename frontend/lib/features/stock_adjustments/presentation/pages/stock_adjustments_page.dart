@@ -6,8 +6,8 @@ import 'package:shopxy/features/stock/domain/entities/stock_transaction.dart'
 import 'package:shopxy/features/stock_adjustments/data/datasources/stock_adjustments_remote_data_source.dart';
 import 'package:shopxy/features/stock_adjustments/domain/entities/stock_adjustment.dart';
 import 'package:shopxy/features/stock_adjustments/presentation/pages/create_stock_adjustment_page.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
-import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_error_view.dart';
@@ -68,8 +68,9 @@ class _StockAdjustmentsPageState extends State<StockAdjustmentsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Stock adjustments')),
+      appBar: AppBar(title: Text(l10n.stockAdjTitle)),
       body: _buildBody(),
       floatingActionButton: FloatingActionButton(
         heroTag: 'stock_adjustments_fab',
@@ -80,6 +81,7 @@ class _StockAdjustmentsPageState extends State<StockAdjustmentsPage> {
   }
 
   Widget _buildBody() {
+    final l10n = AppLocalizations.of(context);
     if (_isLoading) {
       return const _StockAdjustmentsSkeleton();
     }
@@ -89,8 +91,8 @@ class _StockAdjustmentsPageState extends State<StockAdjustmentsPage> {
     if (_items.isEmpty) {
       return EmptyState.line(
         kind: LineArt.emptyClipboard,
-        title: 'No adjustments yet',
-        subtitle: 'Tap + to record damage, expired stock, or a count correction.',
+        title: l10n.stockAdjEmptyTitle,
+        subtitle: l10n.stockAdjEmptySubtitle,
       );
     }
     return RefreshIndicator(
@@ -198,9 +200,11 @@ class _AdjustmentTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final dateStr =
         DateFormat('d MMM yyyy · hh:mm a').format(adjustment.createdAt.toLocal());
     final count = adjustment.itemCount ?? adjustment.items.length;
+    final itemsLabel = count == 1 ? l10n.stockAdjItemSingular : l10n.stockAdjItemPlural;
 
     return InkWell(
       onTap: null,
@@ -238,7 +242,7 @@ class _AdjustmentTile extends StatelessWidget {
                   ),
                   const SizedBox(height: AppSizes.xs),
                   Text(
-                    '$count ${count == 1 ? 'item' : AppStrings.items} · $dateStr',
+                    '$count $itemsLabel · $dateStr',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: AppColors.muted,
                     ),

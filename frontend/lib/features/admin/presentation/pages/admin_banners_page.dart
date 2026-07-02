@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/core/network/image_url.dart';
 import 'package:shopxy/features/admin/data/models/banner.dart';
 import 'package:shopxy/features/admin/presentation/pages/admin_banner_editor_sheet.dart';
@@ -36,16 +37,17 @@ class _AdminBannersPageState extends State<AdminBannersPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final provider = context.watch<AdminBannersProvider>();
     final grouped = provider.grouped;
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
-        title: const Text('Banner manager'),
+        title: Text(l10n.adminBannersTitle),
         actions: [
           IconButton(
-            tooltip: 'Refresh',
+            tooltip: l10n.adminRefresh,
             icon: const Icon(Icons.refresh),
             onPressed: provider.isLoading ? null : () => provider.load(),
           ),
@@ -54,7 +56,7 @@ class _AdminBannersPageState extends State<AdminBannersPage> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openEditor(),
         icon: const Icon(Icons.add),
-        label: const Text('New banner'),
+        label: Text(l10n.adminBannerNew),
       ),
       body: provider.isLoading && provider.banners.isEmpty
           ? const _BannersSkeleton()
@@ -80,14 +82,14 @@ class _AdminBannersPageState extends State<AdminBannersPage> {
                             final confirm = await showDialog<bool>(
                               context: context,
                               builder: (ctx) => AlertDialog(
-                                title: const Text('Delete banner?'),
+                                title: Text(l10n.adminBannerDeleteTitle),
                                 content: Text(
-                                  'This banner will be removed from ${b.placement.label}.',
+                                  l10n.adminBannerDeleteBody(b.placement.label),
                                 ),
                                 actions: [
                                   TextButton(
                                     onPressed: () => Navigator.pop(ctx, false),
-                                    child: const Text('Cancel'),
+                                    child: Text(l10n.adminCancel),
                                   ),
                                   FilledButton.tonal(
                                     style: FilledButton.styleFrom(
@@ -95,7 +97,7 @@ class _AdminBannersPageState extends State<AdminBannersPage> {
                                       foregroundColor: AppColors.error,
                                     ),
                                     onPressed: () => Navigator.pop(ctx, true),
-                                    child: const Text('Delete'),
+                                    child: Text(l10n.adminDelete),
                                   ),
                                 ],
                               ),
@@ -209,7 +211,7 @@ class _EmptyTile extends StatelessWidget {
             const SizedBox(width: AppSizes.md),
             Expanded(
               child: Text(
-                'No banners in this placement yet',
+                AppLocalizations.of(context).adminBannerPlacementEmpty,
                 style: TextStyle(color: AppColors.muted),
               ),
             ),
@@ -323,7 +325,8 @@ class _BannerTile extends StatelessWidget {
                           ),
                           const SizedBox(width: AppSizes.sm),
                           Text(
-                            'Sort ${banner.sortOrder}',
+                            AppLocalizations.of(context)
+                                .adminBannerSort('${banner.sortOrder}'),
                             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                                   color: AppColors.muted,
                                 ),
@@ -343,7 +346,7 @@ class _BannerTile extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  tooltip: 'Delete',
+                  tooltip: AppLocalizations.of(context).adminDelete,
                   icon: const Icon(Icons.delete_outline),
                   onPressed: onDelete,
                 ),

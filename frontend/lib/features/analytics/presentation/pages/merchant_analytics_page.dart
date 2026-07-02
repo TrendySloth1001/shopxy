@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/features/analytics/data/models/analytics.dart';
 import 'package:shopxy/features/analytics/presentation/providers/analytics_provider.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
@@ -42,6 +43,7 @@ class _MerchantAnalyticsPageState extends State<MerchantAnalyticsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final provider = context.watch<AnalyticsProvider>();
     final df = DateFormat.yMMMd();
     final data = provider.data;
@@ -49,10 +51,10 @@ class _MerchantAnalyticsPageState extends State<MerchantAnalyticsPage> {
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
-        title: const Text('Analytics'),
+        title: Text(l10n.analyticsTitle),
         actions: [
           IconButton(
-            tooltip: 'Refresh',
+            tooltip: l10n.analyticsRefresh,
             icon: const Icon(Icons.refresh),
             onPressed: provider.isLoading ? null : provider.load,
           ),
@@ -80,12 +82,12 @@ class _MerchantAnalyticsPageState extends State<MerchantAnalyticsPage> {
                     _KpiStrip(totals: data.totals),
                     const SizedBox(height: AppSizes.lg),
                     Text(
-                      'By product',
+                      l10n.analyticsByProduct,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: AppSizes.sm),
                     if (data.products.isEmpty)
-                      const _Empty(text: 'No active products yet')
+                      _Empty(text: l10n.analyticsNoActiveProducts)
                     else
                       _ProductTable(
                         rows: provider.sortedProducts,
@@ -141,18 +143,19 @@ class _KpiStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Wrap(
       spacing: AppSizes.sm,
       runSpacing: AppSizes.sm,
       children: [
-        _Kpi(label: 'Impressions', value: '${totals.impressions}'),
-        _Kpi(label: 'Taps', value: '${totals.taps}'),
-        _Kpi(label: 'Views', value: '${totals.views}'),
-        _Kpi(label: 'Add to cart', value: '${totals.addToCart}'),
-        _Kpi(label: 'Purchases', value: '${totals.purchases}'),
-        _Kpi(label: 'Wishlist', value: '${totals.wishlistAdd}'),
-        _Kpi(label: 'CTR', value: _pct(totals.ctr)),
-        _Kpi(label: 'CVR', value: _pct(totals.cvr)),
+        _Kpi(label: l10n.analyticsKpiImpressions, value: '${totals.impressions}'),
+        _Kpi(label: l10n.analyticsKpiTaps, value: '${totals.taps}'),
+        _Kpi(label: l10n.analyticsKpiViews, value: '${totals.views}'),
+        _Kpi(label: l10n.analyticsKpiAddToCart, value: '${totals.addToCart}'),
+        _Kpi(label: l10n.analyticsKpiPurchases, value: '${totals.purchases}'),
+        _Kpi(label: l10n.analyticsKpiWishlist, value: '${totals.wishlistAdd}'),
+        _Kpi(label: l10n.analyticsKpiCtr, value: _pct(totals.ctr)),
+        _Kpi(label: l10n.analyticsKpiCvr, value: _pct(totals.cvr)),
       ],
     );
   }
@@ -378,6 +381,7 @@ class _ProductTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: DataTable(
@@ -385,41 +389,41 @@ class _ProductTable extends StatelessWidget {
         sortAscending: sortAsc,
         columns: [
           DataColumn(
-            label: const Text('Product'),
+            label: Text(l10n.analyticsColProduct),
             onSort: (_, _) => onSort(AnalyticsSortKey.product),
           ),
           DataColumn(
-            label: const Text('Imp'),
+            label: Text(l10n.analyticsColImpressions),
             numeric: true,
             onSort: (_, _) => onSort(AnalyticsSortKey.impressions),
           ),
           DataColumn(
-            label: const Text('Taps'),
+            label: Text(l10n.analyticsColTaps),
             numeric: true,
             onSort: (_, _) => onSort(AnalyticsSortKey.taps),
           ),
           DataColumn(
-            label: const Text('Views'),
+            label: Text(l10n.analyticsColViews),
             numeric: true,
             onSort: (_, _) => onSort(AnalyticsSortKey.views),
           ),
           DataColumn(
-            label: const Text('ATC'),
+            label: Text(l10n.analyticsColAddToCart),
             numeric: true,
             onSort: (_, _) => onSort(AnalyticsSortKey.addToCart),
           ),
           DataColumn(
-            label: const Text('Buys'),
+            label: Text(l10n.analyticsColPurchases),
             numeric: true,
             onSort: (_, _) => onSort(AnalyticsSortKey.purchases),
           ),
           DataColumn(
-            label: const Text('CTR'),
+            label: Text(l10n.analyticsColCtr),
             numeric: true,
             onSort: (_, _) => onSort(AnalyticsSortKey.ctr),
           ),
           DataColumn(
-            label: const Text('CVR'),
+            label: Text(l10n.analyticsColCvr),
             numeric: true,
             onSort: (_, _) => onSort(AnalyticsSortKey.cvr),
           ),

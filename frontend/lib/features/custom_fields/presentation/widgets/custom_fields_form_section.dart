@@ -7,8 +7,8 @@ import 'package:shopxy/features/custom_fields/presentation/widgets/custom_field_
 import 'package:shopxy/features/custom_fields/presentation/widgets/custom_field_input.dart';
 import 'package:shopxy/features/custom_fields/presentation/widgets/custom_section_editor_sheet.dart';
 import 'package:shopxy/features/custom_fields/presentation/widgets/templates_picker_sheet.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
-import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
@@ -51,6 +51,7 @@ class _CustomFieldsFormSectionState extends State<CustomFieldsFormSection> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final provider = context.watch<CustomFieldsProvider>();
     final tree = provider.tree;
 
@@ -105,17 +106,17 @@ class _CustomFieldsFormSectionState extends State<CustomFieldsFormSection> {
           runSpacing: AppSizes.sm,
           children: [
             AppButton.secondary(
-              label: AppStrings.addCustomField,
+              label: l10n.customFieldsAddField,
               icon: Icons.add_rounded,
               onPressed: () => CustomFieldEditorSheet.show(context),
             ),
             AppButton.ghost(
-              label: 'Add section',
+              label: l10n.customFieldsAddSection,
               icon: Icons.folder_outlined,
               onPressed: () => CustomSectionEditorSheet.show(context),
             ),
             AppButton.ghost(
-              label: 'Templates',
+              label: l10n.customFieldsTemplates,
               icon: Icons.auto_awesome_rounded,
               onPressed: () => TemplatesPickerSheet.show(context),
             ),
@@ -189,6 +190,7 @@ class _EmptyHint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(
@@ -203,7 +205,7 @@ class _EmptyHint extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            AppStrings.customFieldsEmptyHint,
+            l10n.customFieldsEmptyHint,
             style: theme.textTheme.bodySmall?.copyWith(
               color: AppColors.muted,
             ),
@@ -214,12 +216,12 @@ class _EmptyHint extends StatelessWidget {
             runSpacing: AppSizes.sm,
             children: [
               AppButton.secondary(
-                label: AppStrings.addCustomField,
+                label: l10n.customFieldsAddField,
                 icon: Icons.add_rounded,
                 onPressed: onAddField,
               ),
               AppButton.ghost(
-                label: 'Browse templates',
+                label: l10n.customFieldsBrowseTemplates,
                 icon: Icons.auto_awesome_rounded,
                 onPressed: onShowTemplates,
               ),

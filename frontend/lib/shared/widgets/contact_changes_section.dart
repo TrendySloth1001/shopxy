@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/core/network/api_client.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/app_card.dart';
@@ -83,11 +84,12 @@ class _ContactChangesSectionState extends State<ContactChangesSection> {
     if (_error != null) return const SizedBox.shrink();
     final entries = _entries;
     if (entries == null || entries.isEmpty) return const SizedBox.shrink();
+    final l10n = AppLocalizations.of(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const AppSectionHeader(title: 'Recent changes'),
+        AppSectionHeader(title: l10n.sharedContactChangesRecentChanges),
         const AppDivider(),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
@@ -117,6 +119,7 @@ class _ChangeRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final actor = entry.changedByName;
     return Padding(
       padding: const EdgeInsets.symmetric(
@@ -152,10 +155,10 @@ class _ChangeRow extends StatelessWidget {
                     ),
                     children: [
                       TextSpan(
-                        text: _labelFor(entry.field),
+                        text: _labelFor(l10n, entry.field),
                         style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
-                      const TextSpan(text: ' changed'),
+                      TextSpan(text: ' ${l10n.sharedContactChangesChangedSuffix}'),
                     ],
                   ),
                 ),
@@ -189,32 +192,32 @@ class _ChangeRow extends StatelessWidget {
     return v;
   }
 
-  static String _labelFor(String field) {
+  static String _labelFor(AppLocalizations l10n, String field) {
     switch (field) {
       case 'name':
-        return 'Name';
+        return l10n.sharedContactChangesFieldName;
       case 'contactName':
-        return 'Contact person';
+        return l10n.sharedContactChangesFieldContactPerson;
       case 'phone':
-        return 'Phone';
+        return l10n.sharedContactChangesFieldPhone;
       case 'email':
-        return 'Email';
+        return l10n.sharedContactChangesFieldEmail;
       case 'address':
-        return 'Address';
+        return l10n.sharedContactChangesFieldAddress;
       case 'city':
-        return 'City';
+        return l10n.sharedContactChangesFieldCity;
       case 'state':
-        return 'State';
+        return l10n.sharedContactChangesFieldState;
       case 'stateCode':
-        return 'State code';
+        return l10n.sharedContactChangesFieldStateCode;
       case 'pinCode':
-        return 'PIN code';
+        return l10n.sharedContactChangesFieldPinCode;
       case 'panNumber':
         return 'PAN';
       case 'gstin':
         return 'GSTIN';
       case 'isActive':
-        return 'Active';
+        return l10n.sharedContactChangesFieldActive;
       default:
         return field;
     }

@@ -5,8 +5,8 @@ import 'package:shopxy/features/custom_fields/domain/entities/custom_field.dart'
 import 'package:shopxy/features/custom_fields/presentation/providers/custom_fields_provider.dart';
 import 'package:shopxy/features/custom_fields/presentation/widgets/custom_field_icon_picker.dart';
 import 'package:shopxy/features/custom_fields/presentation/widgets/custom_field_icons.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
-import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
@@ -89,6 +89,7 @@ class _CustomSectionEditorSheetState extends State<CustomSectionEditorSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final mediaQuery = MediaQuery.of(context);
     final isEditing = widget.existing != null;
 
@@ -123,7 +124,9 @@ class _CustomSectionEditorSheetState extends State<CustomSectionEditorSheet> {
                 ),
                 const SizedBox(height: AppSizes.md),
                 Text(
-                  isEditing ? 'Edit section' : 'Add section',
+                  isEditing
+                      ? l10n.customFieldsEditSection
+                      : l10n.customFieldsAddSection,
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
@@ -155,15 +158,15 @@ class _CustomSectionEditorSheetState extends State<CustomSectionEditorSheet> {
                     Expanded(
                       child: TextFormField(
                         controller: _nameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Section name',
-                          border: OutlineInputBorder(),
+                        decoration: InputDecoration(
+                          labelText: l10n.customFieldsSectionName,
+                          border: const OutlineInputBorder(),
                         ),
                         textCapitalization: TextCapitalization.words,
                         autofocus: !isEditing,
                         validator: (v) {
                           if (v == null || v.trim().isEmpty) {
-                            return AppStrings.fieldRequired;
+                            return l10n.customFieldsFieldRequired;
                           }
                           return null;
                         },
@@ -173,7 +176,7 @@ class _CustomSectionEditorSheetState extends State<CustomSectionEditorSheet> {
                 ),
                 const SizedBox(height: AppSizes.md),
                 Text(
-                  'Pick an icon',
+                  l10n.customFieldsPickIcon,
                   style: theme.textTheme.labelMedium?.copyWith(
                     color: AppColors.muted,
                   ),
@@ -185,7 +188,9 @@ class _CustomSectionEditorSheetState extends State<CustomSectionEditorSheet> {
                 ),
                 const SizedBox(height: AppSizes.lg),
                 AppButton.primary(
-                  label: _isSaving ? AppStrings.loading : AppStrings.save,
+                  label: _isSaving
+                      ? l10n.customFieldsLoading
+                      : l10n.customFieldsSave,
                   onPressed: _isSaving ? null : _save,
                   fullWidth: true,
                 ),

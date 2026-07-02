@@ -8,6 +8,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 
 /// Merchant-facing read-only listing of reviews for one of their
 /// products. Reply / moderation deferred to a later phase.
@@ -77,8 +78,9 @@ class _ProductReviewsPageState extends State<ProductReviewsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text('Reviews · ${widget.productName}')),
+      appBar: AppBar(title: Text(l10n.reviewsTitle(widget.productName))),
       body: _loading && _reviews.isEmpty
           ? const _ReviewsPageSkeleton()
           : _error != null && _reviews.isEmpty
@@ -110,17 +112,17 @@ class _ProductReviewsPageState extends State<ProductReviewsPage> {
                                   ? const CircularProgressIndicator()
                                   : TextButton(
                                       onPressed: () => _load(more: true),
-                                      child: const Text('Load more'),
+                                      child: Text(l10n.reviewsLoadMore),
                                     ),
                             ),
                           );
                         }
                         if (_reviews.isEmpty) {
-                          return const Padding(
-                            padding: EdgeInsets.all(AppSizes.xl),
+                          return Padding(
+                            padding: const EdgeInsets.all(AppSizes.xl),
                             child: Center(
                               child: Text(
-                                'No reviews yet — they\'ll show up here once buyers leave one.',
+                                l10n.reviewsEmpty,
                                 textAlign: TextAlign.center,
                               ),
                             ),
@@ -143,6 +145,7 @@ class _Summary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.all(AppSizes.lg),
       color: AppColors.heroPanel,
@@ -175,7 +178,11 @@ class _Summary extends StatelessWidget {
           const SizedBox(width: AppSizes.md),
           Expanded(
             child: Text(
-              count == 0 ? 'No reviews yet' : '$count review${count == 1 ? '' : 's'}',
+              count == 0
+                  ? l10n.reviewsNoneYet
+                  : count == 1
+                      ? l10n.reviewsCountSingular
+                      : l10n.reviewsCountPlural('$count'),
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ),
@@ -191,6 +198,7 @@ class _ReviewTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final df = DateFormat.yMMMd();
     return Padding(
       padding: const EdgeInsets.all(AppSizes.lg),
@@ -211,7 +219,7 @@ class _ReviewTile extends StatelessWidget {
               const SizedBox(width: AppSizes.sm),
               Expanded(
                 child: Text(
-                  review.userName ?? 'Customer',
+                  review.userName ?? l10n.reviewsCustomerFallback,
                   style: Theme.of(context).textTheme.labelLarge,
                 ),
               ),

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import 'package:shopxy/features/custom_fields/domain/entities/custom_field.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
@@ -68,6 +69,7 @@ class _CustomFieldInputState extends State<CustomFieldInput> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     switch (widget.definition.type) {
       case CustomFieldType.TEXT:
         return TextField(
@@ -121,7 +123,7 @@ class _CustomFieldInputState extends State<CustomFieldInput> {
               suffixIcon: const Icon(Icons.calendar_today_rounded),
             ),
             child: Text(
-              display.isEmpty ? 'Pick a date' : display,
+              display.isEmpty ? l10n.customFieldsPickDate : display,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: display.isEmpty ? AppColors.muted : AppColors.black,
                   ),

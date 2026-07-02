@@ -5,6 +5,7 @@ import 'package:shopxy/features/challans/presentation/pages/challan_detail_page.
 import 'package:shopxy/features/invoices/presentation/pages/invoice_detail_page.dart';
 import 'package:shopxy/features/stock/data/datasources/stock_remote_data_source.dart';
 import 'package:shopxy/features/stock/domain/entities/stock_transaction.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
@@ -95,10 +96,11 @@ class _StockLedgerPageState extends State<StockLedgerPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Stock Ledger'),
+        title: Text(l10n.stockLedgerTitle),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(AppSizes.xxl + AppSizes.xs),
           child: Padding(
@@ -126,6 +128,7 @@ class _StockLedgerPageState extends State<StockLedgerPage> {
   }
 
   Widget _buildBody() {
+    final l10n = AppLocalizations.of(context);
     if (_isLoading) {
       return const _StockLedgerSkeleton();
     }
@@ -136,7 +139,7 @@ class _StockLedgerPageState extends State<StockLedgerPage> {
       return EmptyState.line(
         kind: LineArt.ledger,
         title: AppStrings.noData,
-        subtitle: 'No movements recorded for this product yet.',
+        subtitle: l10n.stockLedgerEmptySubtitle,
       );
     }
 
@@ -286,6 +289,7 @@ class _LedgerEntryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final sign = entry.isStockIn ? '+' : '-';
     final qtyStr = '$sign${_formatQty(entry.quantity)}';
     final unitLabel = unit ?? entry.productUnit ?? '';
@@ -337,8 +341,8 @@ class _LedgerEntryCard extends StatelessWidget {
                           ),
                         ),
                         if (entry.isReversal)
-                          const AppStatusBadge(
-                            label: 'Reversal',
+                          AppStatusBadge(
+                            label: l10n.stockLedgerReversalBadge,
                             dense: true,
                           ),
                       ],
@@ -394,7 +398,7 @@ class _LedgerEntryCard extends StatelessWidget {
                         ),
                       if (entry.createdByName != null)
                         Text(
-                          'by ${entry.createdByName}',
+                          l10n.stockLedgerByName(entry.createdByName!),
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: AppColors.muted,
                           ),
@@ -404,7 +408,7 @@ class _LedgerEntryCard extends StatelessWidget {
                 ),
                 if (entry.stockAfter != null)
                   Text(
-                    'Bal: ${_formatQty(entry.stockAfter!)}',
+                    l10n.stockLedgerBalance(_formatQty(entry.stockAfter!)),
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: AppColors.muted,
                       fontWeight: FontWeight.w600,
@@ -428,7 +432,7 @@ class _LedgerEntryCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   Text(
-                    'View source',
+                    l10n.stockLedgerViewSource,
                     style: theme.textTheme.labelMedium?.copyWith(
                       color: AppColors.black,
                       fontWeight: FontWeight.w600,
