@@ -10804,6 +10804,1134 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Active'**
   String get sharedContactChangesFieldActive;
+
+  /// No description provided for @navDashboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Dashboard'**
+  String get navDashboard;
+
+  /// No description provided for @navProducts.
+  ///
+  /// In en, this message translates to:
+  /// **'Products'**
+  String get navProducts;
+
+  /// No description provided for @navOrders.
+  ///
+  /// In en, this message translates to:
+  /// **'Orders'**
+  String get navOrders;
+
+  /// No description provided for @navProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get navProfile;
+
+  /// No description provided for @navCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'Categories'**
+  String get navCategories;
+
+  /// No description provided for @navVendors.
+  ///
+  /// In en, this message translates to:
+  /// **'Vendors'**
+  String get navVendors;
+
+  /// No description provided for @navParties.
+  ///
+  /// In en, this message translates to:
+  /// **'Parties'**
+  String get navParties;
+
+  /// No description provided for @navInvoices.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoices'**
+  String get navInvoices;
+
+  /// No description provided for @navQuotations.
+  ///
+  /// In en, this message translates to:
+  /// **'Quotations'**
+  String get navQuotations;
+
+  /// No description provided for @navChallans.
+  ///
+  /// In en, this message translates to:
+  /// **'Challans'**
+  String get navChallans;
+
+  /// No description provided for @navMyShop.
+  ///
+  /// In en, this message translates to:
+  /// **'My Shop'**
+  String get navMyShop;
+
+  /// No description provided for @navTeamRoles.
+  ///
+  /// In en, this message translates to:
+  /// **'Team & roles'**
+  String get navTeamRoles;
+
+  /// No description provided for @navBanners.
+  ///
+  /// In en, this message translates to:
+  /// **'Banners'**
+  String get navBanners;
+
+  /// No description provided for @navCoupons.
+  ///
+  /// In en, this message translates to:
+  /// **'Coupons'**
+  String get navCoupons;
+
+  /// No description provided for @navPointOfSale.
+  ///
+  /// In en, this message translates to:
+  /// **'Point of sale'**
+  String get navPointOfSale;
+
+  /// No description provided for @navCashier.
+  ///
+  /// In en, this message translates to:
+  /// **'Cashier'**
+  String get navCashier;
+
+  /// No description provided for @navScanToConsole.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan to console'**
+  String get navScanToConsole;
+
+  /// No description provided for @navStockAdjustments.
+  ///
+  /// In en, this message translates to:
+  /// **'Stock adjustments'**
+  String get navStockAdjustments;
+
+  /// No description provided for @navReturns.
+  ///
+  /// In en, this message translates to:
+  /// **'Returns'**
+  String get navReturns;
+
+  /// No description provided for @navReports.
+  ///
+  /// In en, this message translates to:
+  /// **'Reports'**
+  String get navReports;
+
+  /// No description provided for @navAnalytics.
+  ///
+  /// In en, this message translates to:
+  /// **'Analytics'**
+  String get navAnalytics;
+
+  /// No description provided for @navBannerManager.
+  ///
+  /// In en, this message translates to:
+  /// **'Banner manager'**
+  String get navBannerManager;
+
+  /// No description provided for @navCategoryTaxonomy.
+  ///
+  /// In en, this message translates to:
+  /// **'Category taxonomy'**
+  String get navCategoryTaxonomy;
+
+  /// No description provided for @navCollections.
+  ///
+  /// In en, this message translates to:
+  /// **'Collections'**
+  String get navCollections;
+
+  /// No description provided for @navBankOffers.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank offers'**
+  String get navBankOffers;
+
+  /// No description provided for @navShopVerification.
+  ///
+  /// In en, this message translates to:
+  /// **'Shop verification'**
+  String get navShopVerification;
+
+  /// No description provided for @navSectionManage.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage'**
+  String get navSectionManage;
+
+  /// No description provided for @navSectionOperations.
+  ///
+  /// In en, this message translates to:
+  /// **'Operations'**
+  String get navSectionOperations;
+
+  /// No description provided for @navSectionPlatformAdmin.
+  ///
+  /// In en, this message translates to:
+  /// **'Platform admin'**
+  String get navSectionPlatformAdmin;
+
+  /// No description provided for @navMenu.
+  ///
+  /// In en, this message translates to:
+  /// **'Menu'**
+  String get navMenu;
+
+  /// No description provided for @reportsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reports'**
+  String get reportsTitle;
+
+  /// No description provided for @reportsRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get reportsRefresh;
+
+  /// No description provided for @reportsRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get reportsRetry;
+
+  /// No description provided for @reportsPresetThisMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'This month'**
+  String get reportsPresetThisMonth;
+
+  /// No description provided for @reportsPresetLast30Days.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 30 days'**
+  String get reportsPresetLast30Days;
+
+  /// No description provided for @reportsPresetThisFy.
+  ///
+  /// In en, this message translates to:
+  /// **'This FY'**
+  String get reportsPresetThisFy;
+
+  /// No description provided for @reportsTabSales.
+  ///
+  /// In en, this message translates to:
+  /// **'Sales'**
+  String get reportsTabSales;
+
+  /// No description provided for @reportsTabPurchases.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchases'**
+  String get reportsTabPurchases;
+
+  /// No description provided for @reportsTabGst.
+  ///
+  /// In en, this message translates to:
+  /// **'GST'**
+  String get reportsTabGst;
+
+  /// No description provided for @reportsTabPnl.
+  ///
+  /// In en, this message translates to:
+  /// **'P&L'**
+  String get reportsTabPnl;
+
+  /// No description provided for @reportsTabCalculator.
+  ///
+  /// In en, this message translates to:
+  /// **'Calculator'**
+  String get reportsTabCalculator;
+
+  /// No description provided for @reportsNoActivityInRange.
+  ///
+  /// In en, this message translates to:
+  /// **'No activity in this range.'**
+  String get reportsNoActivityInRange;
+
+  /// No description provided for @reportsPace.
+  ///
+  /// In en, this message translates to:
+  /// **'≈ {perDay}/day at this pace · ~{projected} over 30 days'**
+  String reportsPace(Object perDay, Object projected);
+
+  /// No description provided for @reportsTotalSales.
+  ///
+  /// In en, this message translates to:
+  /// **'TOTAL SALES'**
+  String get reportsTotalSales;
+
+  /// No description provided for @reportsSalesHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} confirmed invoices · {tax} GST · net {net} after refunds'**
+  String reportsSalesHelper(Object count, Object tax, Object net);
+
+  /// No description provided for @reportsTopProducts.
+  ///
+  /// In en, this message translates to:
+  /// **'TOP PRODUCTS'**
+  String get reportsTopProducts;
+
+  /// No description provided for @reportsNoSalesInRange.
+  ///
+  /// In en, this message translates to:
+  /// **'No sales in this range.'**
+  String get reportsNoSalesInRange;
+
+  /// No description provided for @reportsSoldCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} sold'**
+  String reportsSoldCount(Object count);
+
+  /// No description provided for @reportsTopCustomers.
+  ///
+  /// In en, this message translates to:
+  /// **'TOP CUSTOMERS'**
+  String get reportsTopCustomers;
+
+  /// No description provided for @reportsNoCustomersInRange.
+  ///
+  /// In en, this message translates to:
+  /// **'No customers in this range.'**
+  String get reportsNoCustomersInRange;
+
+  /// No description provided for @reportsInvoiceCountOne.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} invoice'**
+  String reportsInvoiceCountOne(Object count);
+
+  /// No description provided for @reportsInvoiceCountOther.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} invoices'**
+  String reportsInvoiceCountOther(Object count);
+
+  /// No description provided for @reportsTotalPurchases.
+  ///
+  /// In en, this message translates to:
+  /// **'TOTAL PURCHASES'**
+  String get reportsTotalPurchases;
+
+  /// No description provided for @reportsPurchasesHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} confirmed bills · {tax} GST'**
+  String reportsPurchasesHelper(Object count, Object tax);
+
+  /// No description provided for @reportsTopPurchasedProducts.
+  ///
+  /// In en, this message translates to:
+  /// **'TOP PURCHASED PRODUCTS'**
+  String get reportsTopPurchasedProducts;
+
+  /// No description provided for @reportsNoPurchasesInRange.
+  ///
+  /// In en, this message translates to:
+  /// **'No purchases in this range.'**
+  String get reportsNoPurchasesInRange;
+
+  /// No description provided for @reportsBoughtCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} bought'**
+  String reportsBoughtCount(Object count);
+
+  /// No description provided for @reportsTopVendors.
+  ///
+  /// In en, this message translates to:
+  /// **'TOP VENDORS'**
+  String get reportsTopVendors;
+
+  /// No description provided for @reportsNoVendorsInRange.
+  ///
+  /// In en, this message translates to:
+  /// **'No vendors in this range.'**
+  String get reportsNoVendorsInRange;
+
+  /// No description provided for @reportsBillCountOne.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} bill'**
+  String reportsBillCountOne(Object count);
+
+  /// No description provided for @reportsBillCountOther.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} bills'**
+  String reportsBillCountOther(Object count);
+
+  /// No description provided for @reportsOutputGst.
+  ///
+  /// In en, this message translates to:
+  /// **'OUTPUT GST'**
+  String get reportsOutputGst;
+
+  /// No description provided for @reportsCollectedOnSales.
+  ///
+  /// In en, this message translates to:
+  /// **'Collected on sales'**
+  String get reportsCollectedOnSales;
+
+  /// No description provided for @reportsInputGstItc.
+  ///
+  /// In en, this message translates to:
+  /// **'INPUT GST (ITC)'**
+  String get reportsInputGstItc;
+
+  /// No description provided for @reportsPaidOnPurchases.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid on purchases'**
+  String get reportsPaidOnPurchases;
+
+  /// No description provided for @reportsNetGstPayable.
+  ///
+  /// In en, this message translates to:
+  /// **'NET GST PAYABLE'**
+  String get reportsNetGstPayable;
+
+  /// No description provided for @reportsGstOwedNote.
+  ///
+  /// In en, this message translates to:
+  /// **'You owe this to the tax authority'**
+  String get reportsGstOwedNote;
+
+  /// No description provided for @reportsGstCreditCarriedNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Input credit carried forward'**
+  String get reportsGstCreditCarriedNote;
+
+  /// No description provided for @reportsNetPayableByTaxHead.
+  ///
+  /// In en, this message translates to:
+  /// **'NET PAYABLE BY TAX HEAD'**
+  String get reportsNetPayableByTaxHead;
+
+  /// No description provided for @reportsTaxHeadNote.
+  ///
+  /// In en, this message translates to:
+  /// **'CGST + SGST apply to in-state sales; IGST to inter-state. Net is each head’s output tax minus its own input credit.'**
+  String get reportsTaxHeadNote;
+
+  /// No description provided for @reportsOutputGstByRate.
+  ///
+  /// In en, this message translates to:
+  /// **'OUTPUT GST BY RATE'**
+  String get reportsOutputGstByRate;
+
+  /// No description provided for @reportsNoOutputGstInRange.
+  ///
+  /// In en, this message translates to:
+  /// **'No output GST in this range.'**
+  String get reportsNoOutputGstInRange;
+
+  /// No description provided for @reportsInputGstByRate.
+  ///
+  /// In en, this message translates to:
+  /// **'INPUT GST BY RATE'**
+  String get reportsInputGstByRate;
+
+  /// No description provided for @reportsNoInputGstInRange.
+  ///
+  /// In en, this message translates to:
+  /// **'No input GST in this range.'**
+  String get reportsNoInputGstInRange;
+
+  /// No description provided for @reportsCess.
+  ///
+  /// In en, this message translates to:
+  /// **'CESS'**
+  String get reportsCess;
+
+  /// No description provided for @reportsOutputCess.
+  ///
+  /// In en, this message translates to:
+  /// **'Output cess'**
+  String get reportsOutputCess;
+
+  /// No description provided for @reportsInputCess.
+  ///
+  /// In en, this message translates to:
+  /// **'Input cess'**
+  String get reportsInputCess;
+
+  /// No description provided for @reportsNetCessPayable.
+  ///
+  /// In en, this message translates to:
+  /// **'Net cess payable'**
+  String get reportsNetCessPayable;
+
+  /// No description provided for @reportsCessNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Cess is set off only against cess, never against GST.'**
+  String get reportsCessNote;
+
+  /// No description provided for @reportsOutputGstReturnsNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Output GST is shown net of {amount} reversed on refunded returns in this period.'**
+  String reportsOutputGstReturnsNote(Object amount);
+
+  /// No description provided for @reportsColHead.
+  ///
+  /// In en, this message translates to:
+  /// **'HEAD'**
+  String get reportsColHead;
+
+  /// No description provided for @reportsColOutput.
+  ///
+  /// In en, this message translates to:
+  /// **'OUTPUT'**
+  String get reportsColOutput;
+
+  /// No description provided for @reportsColItc.
+  ///
+  /// In en, this message translates to:
+  /// **'ITC'**
+  String get reportsColItc;
+
+  /// No description provided for @reportsColNet.
+  ///
+  /// In en, this message translates to:
+  /// **'NET'**
+  String get reportsColNet;
+
+  /// No description provided for @reportsColTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'TOTAL'**
+  String get reportsColTotal;
+
+  /// No description provided for @reportsColRate.
+  ///
+  /// In en, this message translates to:
+  /// **'RATE'**
+  String get reportsColRate;
+
+  /// No description provided for @reportsColTaxable.
+  ///
+  /// In en, this message translates to:
+  /// **'TAXABLE'**
+  String get reportsColTaxable;
+
+  /// No description provided for @reportsHeadInterState.
+  ///
+  /// In en, this message translates to:
+  /// **'Inter-state'**
+  String get reportsHeadInterState;
+
+  /// No description provided for @reportsHeadCentral.
+  ///
+  /// In en, this message translates to:
+  /// **'Central'**
+  String get reportsHeadCentral;
+
+  /// No description provided for @reportsHeadState.
+  ///
+  /// In en, this message translates to:
+  /// **'State'**
+  String get reportsHeadState;
+
+  /// No description provided for @reportsNetProfit.
+  ///
+  /// In en, this message translates to:
+  /// **'NET PROFIT'**
+  String get reportsNetProfit;
+
+  /// No description provided for @reportsGrossMargin.
+  ///
+  /// In en, this message translates to:
+  /// **'Gross margin {pct}%'**
+  String reportsGrossMargin(Object pct);
+
+  /// No description provided for @reportsRevenue.
+  ///
+  /// In en, this message translates to:
+  /// **'Revenue'**
+  String get reportsRevenue;
+
+  /// No description provided for @reportsCostOfGoodsSold.
+  ///
+  /// In en, this message translates to:
+  /// **'Cost of goods sold'**
+  String get reportsCostOfGoodsSold;
+
+  /// No description provided for @reportsGrossProfit.
+  ///
+  /// In en, this message translates to:
+  /// **'Gross profit'**
+  String get reportsGrossProfit;
+
+  /// No description provided for @reportsAdjustmentWriteoffs.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjustment write-offs'**
+  String get reportsAdjustmentWriteoffs;
+
+  /// No description provided for @reportsNetProfitRow.
+  ///
+  /// In en, this message translates to:
+  /// **'Net profit'**
+  String get reportsNetProfitRow;
+
+  /// No description provided for @reportsHowThisIsCalculated.
+  ///
+  /// In en, this message translates to:
+  /// **'HOW THIS IS CALCULATED'**
+  String get reportsHowThisIsCalculated;
+
+  /// No description provided for @reportsConfirmedSales.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirmed sales'**
+  String get reportsConfirmedSales;
+
+  /// No description provided for @reportsConfirmedSalesBasis.
+  ///
+  /// In en, this message translates to:
+  /// **'Taxable value (ex-GST) of confirmed sale invoices, less credit notes'**
+  String get reportsConfirmedSalesBasis;
+
+  /// No description provided for @reportsLessSalesReturns.
+  ///
+  /// In en, this message translates to:
+  /// **'Less: sales returns'**
+  String get reportsLessSalesReturns;
+
+  /// No description provided for @reportsLessSalesReturnsBasis.
+  ///
+  /// In en, this message translates to:
+  /// **'Ex-GST value of refunded returns, pro-rated by returned quantity'**
+  String get reportsLessSalesReturnsBasis;
+
+  /// No description provided for @reportsRevenueA.
+  ///
+  /// In en, this message translates to:
+  /// **'Revenue (A)'**
+  String get reportsRevenueA;
+
+  /// No description provided for @reportsGoodsSoldAtCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Goods sold, at cost'**
+  String get reportsGoodsSoldAtCost;
+
+  /// No description provided for @reportsGoodsSoldAtCostBasis.
+  ///
+  /// In en, this message translates to:
+  /// **'Stock cost layers consumed when each sale was confirmed'**
+  String get reportsGoodsSoldAtCostBasis;
+
+  /// No description provided for @reportsLessReturnedGoodsRestocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Less: returned goods restocked'**
+  String get reportsLessReturnedGoodsRestocked;
+
+  /// No description provided for @reportsLessReturnedGoodsRestockedBasis.
+  ///
+  /// In en, this message translates to:
+  /// **'Returned items put back into inventory at their consumed cost'**
+  String get reportsLessReturnedGoodsRestockedBasis;
+
+  /// No description provided for @reportsCostOfGoodsSoldB.
+  ///
+  /// In en, this message translates to:
+  /// **'Cost of goods sold (B)'**
+  String get reportsCostOfGoodsSoldB;
+
+  /// No description provided for @reportsGrossProfitAB.
+  ///
+  /// In en, this message translates to:
+  /// **'Gross profit (A − B)'**
+  String get reportsGrossProfitAB;
+
+  /// No description provided for @reportsLessStockWriteoffs.
+  ///
+  /// In en, this message translates to:
+  /// **'Less: stock write-offs'**
+  String get reportsLessStockWriteoffs;
+
+  /// No description provided for @reportsLessStockWriteoffsBasis.
+  ///
+  /// In en, this message translates to:
+  /// **'Damage, expiry and shrinkage stock adjustments dated in this range'**
+  String get reportsLessStockWriteoffsBasis;
+
+  /// No description provided for @reportsNetProfitFormula.
+  ///
+  /// In en, this message translates to:
+  /// **'Net profit (A − B − write-offs)'**
+  String get reportsNetProfitFormula;
+
+  /// No description provided for @reportsPnlNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Gross margin {pct}% = gross profit ÷ revenue. Every figure is summed from confirmed invoices, refunded returns and stock adjustments dated in this range; estimates and proformas are excluded.'**
+  String reportsPnlNote(Object pct);
+
+  /// No description provided for @reportsProductsSold.
+  ///
+  /// In en, this message translates to:
+  /// **'PRODUCTS SOLD'**
+  String get reportsProductsSold;
+
+  /// No description provided for @reportsCountOfTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} of {total}'**
+  String reportsCountOfTotal(Object count, Object total);
+
+  /// No description provided for @reportsSearchByProductOrSku.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by product or SKU…'**
+  String get reportsSearchByProductOrSku;
+
+  /// No description provided for @reportsNoSoldProductsMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'No sold products match “{query}”.'**
+  String reportsNoSoldProductsMatch(Object query);
+
+  /// No description provided for @reportsNoProductsSoldInRange.
+  ///
+  /// In en, this message translates to:
+  /// **'No products sold in this range.'**
+  String get reportsNoProductsSoldInRange;
+
+  /// No description provided for @reportsSaleCountOne.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} sale'**
+  String reportsSaleCountOne(Object count);
+
+  /// No description provided for @reportsSaleCountOther.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} sales'**
+  String reportsSaleCountOther(Object count);
+
+  /// No description provided for @reportsLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading…'**
+  String get reportsLoading;
+
+  /// No description provided for @reportsLoadMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Load more ({count} left)'**
+  String reportsLoadMore(Object count);
+
+  /// No description provided for @reportsAllProductsShownOne.
+  ///
+  /// In en, this message translates to:
+  /// **'All {count} product shown.'**
+  String reportsAllProductsShownOne(Object count);
+
+  /// No description provided for @reportsAllProductsShownOther.
+  ///
+  /// In en, this message translates to:
+  /// **'All {count} products shown.'**
+  String reportsAllProductsShownOther(Object count);
+
+  /// No description provided for @reportsProductFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Product'**
+  String get reportsProductFallback;
+
+  /// No description provided for @reportsNoSalesForProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'No sales found for this product.'**
+  String get reportsNoSalesForProduct;
+
+  /// No description provided for @reportsCalcTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pricing & profit calculator'**
+  String get reportsCalcTitle;
+
+  /// No description provided for @reportsCalcIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Add products below, then set quantity, GST and discount per line — totals, GST, profit and margin update live.'**
+  String get reportsCalcIntro;
+
+  /// No description provided for @reportsCalcNoProductsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No products yet — add some from the list below.'**
+  String get reportsCalcNoProductsYet;
+
+  /// No description provided for @reportsCalcSupply.
+  ///
+  /// In en, this message translates to:
+  /// **'Supply'**
+  String get reportsCalcSupply;
+
+  /// No description provided for @reportsCalcWithinState.
+  ///
+  /// In en, this message translates to:
+  /// **'Within state'**
+  String get reportsCalcWithinState;
+
+  /// No description provided for @reportsCalcInterState.
+  ///
+  /// In en, this message translates to:
+  /// **'Inter-state'**
+  String get reportsCalcInterState;
+
+  /// No description provided for @reportsCalcDiscountIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Discount in'**
+  String get reportsCalcDiscountIn;
+
+  /// No description provided for @reportsCalcOverallDiscount.
+  ///
+  /// In en, this message translates to:
+  /// **'Overall discount'**
+  String get reportsCalcOverallDiscount;
+
+  /// No description provided for @reportsCalcGrandTotalInclGst.
+  ///
+  /// In en, this message translates to:
+  /// **'GRAND TOTAL · INCL. GST'**
+  String get reportsCalcGrandTotalInclGst;
+
+  /// No description provided for @reportsCalcProductCountOne.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} product'**
+  String reportsCalcProductCountOne(Object count);
+
+  /// No description provided for @reportsCalcProductCountOther.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} products'**
+  String reportsCalcProductCountOther(Object count);
+
+  /// No description provided for @reportsCalcQtySummary.
+  ///
+  /// In en, this message translates to:
+  /// **' · {qty} qty'**
+  String reportsCalcQtySummary(Object qty);
+
+  /// No description provided for @reportsCalcDiscOff.
+  ///
+  /// In en, this message translates to:
+  /// **' · {amount} off'**
+  String reportsCalcDiscOff(Object amount);
+
+  /// No description provided for @reportsCalcProfit.
+  ///
+  /// In en, this message translates to:
+  /// **'Profit'**
+  String get reportsCalcProfit;
+
+  /// No description provided for @reportsCalcMargin.
+  ///
+  /// In en, this message translates to:
+  /// **'Margin'**
+  String get reportsCalcMargin;
+
+  /// No description provided for @reportsCalcBlockTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'TOTAL'**
+  String get reportsCalcBlockTotal;
+
+  /// No description provided for @reportsCalcGrossSubtotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Gross subtotal'**
+  String get reportsCalcGrossSubtotal;
+
+  /// No description provided for @reportsCalcHintInclGst.
+  ///
+  /// In en, this message translates to:
+  /// **'incl. GST'**
+  String get reportsCalcHintInclGst;
+
+  /// No description provided for @reportsCalcLineDiscounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Line discounts'**
+  String get reportsCalcLineDiscounts;
+
+  /// No description provided for @reportsCalcGrandTotalRow.
+  ///
+  /// In en, this message translates to:
+  /// **'Grand total (incl. GST)'**
+  String get reportsCalcGrandTotalRow;
+
+  /// No description provided for @reportsCalcBlockGstInterState.
+  ///
+  /// In en, this message translates to:
+  /// **'GST · INTER-STATE'**
+  String get reportsCalcBlockGstInterState;
+
+  /// No description provided for @reportsCalcBlockGstWithinState.
+  ///
+  /// In en, this message translates to:
+  /// **'GST · WITHIN STATE'**
+  String get reportsCalcBlockGstWithinState;
+
+  /// No description provided for @reportsCalcSubtotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Subtotal'**
+  String get reportsCalcSubtotal;
+
+  /// No description provided for @reportsCalcHintTaxableExGst.
+  ///
+  /// In en, this message translates to:
+  /// **'taxable, ex-GST'**
+  String get reportsCalcHintTaxableExGst;
+
+  /// No description provided for @reportsCalcGstTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'GST total'**
+  String get reportsCalcGstTotal;
+
+  /// No description provided for @reportsCalcBlockProfit.
+  ///
+  /// In en, this message translates to:
+  /// **'PROFIT'**
+  String get reportsCalcBlockProfit;
+
+  /// No description provided for @reportsCalcCostOfGoods.
+  ///
+  /// In en, this message translates to:
+  /// **'Cost of goods'**
+  String get reportsCalcCostOfGoods;
+
+  /// No description provided for @reportsCalcRevenue.
+  ///
+  /// In en, this message translates to:
+  /// **'Revenue'**
+  String get reportsCalcRevenue;
+
+  /// No description provided for @reportsCalcMarkup.
+  ///
+  /// In en, this message translates to:
+  /// **'Markup'**
+  String get reportsCalcMarkup;
+
+  /// No description provided for @reportsCalcHintReturnOnCost.
+  ///
+  /// In en, this message translates to:
+  /// **'return on cost'**
+  String get reportsCalcHintReturnOnCost;
+
+  /// No description provided for @reportsCalcProfitMargin.
+  ///
+  /// In en, this message translates to:
+  /// **'Profit margin'**
+  String get reportsCalcProfitMargin;
+
+  /// No description provided for @reportsCalcQuotation.
+  ///
+  /// In en, this message translates to:
+  /// **'QUOTATION'**
+  String get reportsCalcQuotation;
+
+  /// No description provided for @reportsCalcStatusRequested.
+  ///
+  /// In en, this message translates to:
+  /// **'Requested'**
+  String get reportsCalcStatusRequested;
+
+  /// No description provided for @reportsCalcStatusSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent'**
+  String get reportsCalcStatusSent;
+
+  /// No description provided for @reportsCalcStatusAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Accepted'**
+  String get reportsCalcStatusAccepted;
+
+  /// No description provided for @reportsCalcStatusDeclined.
+  ///
+  /// In en, this message translates to:
+  /// **'Declined'**
+  String get reportsCalcStatusDeclined;
+
+  /// No description provided for @reportsCalcStatusCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get reportsCalcStatusCancelled;
+
+  /// No description provided for @reportsCalcStatusExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Expired'**
+  String get reportsCalcStatusExpired;
+
+  /// No description provided for @reportsCalcLoadQuotation.
+  ///
+  /// In en, this message translates to:
+  /// **'Load a quotation'**
+  String get reportsCalcLoadQuotation;
+
+  /// No description provided for @reportsCalcChooseCustomer.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose customer'**
+  String get reportsCalcChooseCustomer;
+
+  /// No description provided for @reportsCalcDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Download'**
+  String get reportsCalcDownload;
+
+  /// No description provided for @reportsCalcSending.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending…'**
+  String get reportsCalcSending;
+
+  /// No description provided for @reportsCalcPriceAndSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Price & send'**
+  String get reportsCalcPriceAndSend;
+
+  /// No description provided for @reportsCalcSendQuotation.
+  ///
+  /// In en, this message translates to:
+  /// **'Send quotation'**
+  String get reportsCalcSendQuotation;
+
+  /// No description provided for @reportsCalcNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get reportsCalcNew;
+
+  /// No description provided for @reportsCalcNoteLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Note (optional)'**
+  String get reportsCalcNoteLabel;
+
+  /// No description provided for @reportsCalcNoteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Shown on the quotation…'**
+  String get reportsCalcNoteHint;
+
+  /// No description provided for @reportsCalcQuoteNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Download and Send both save the quotation (the PDF is generated from a saved quote). A customer-requested quote is priced & sent back; otherwise a new one goes to the chosen customer. Totals are GST-inclusive — the quote matches the grand total above.'**
+  String get reportsCalcQuoteNote;
+
+  /// No description provided for @reportsCalcYourProducts.
+  ///
+  /// In en, this message translates to:
+  /// **'YOUR PRODUCTS'**
+  String get reportsCalcYourProducts;
+
+  /// No description provided for @reportsCalcAddedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} added'**
+  String reportsCalcAddedCount(Object count);
+
+  /// No description provided for @reportsCalcSearchByNameOrSku.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by name or SKU…'**
+  String get reportsCalcSearchByNameOrSku;
+
+  /// No description provided for @reportsCalcLoadingProducts.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading your products…'**
+  String get reportsCalcLoadingProducts;
+
+  /// No description provided for @reportsCalcNoProductsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No products found.'**
+  String get reportsCalcNoProductsFound;
+
+  /// No description provided for @reportsCalcEach.
+  ///
+  /// In en, this message translates to:
+  /// **'each'**
+  String get reportsCalcEach;
+
+  /// No description provided for @reportsCalcRemoveProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {name}'**
+  String reportsCalcRemoveProduct(Object name);
+
+  /// No description provided for @reportsCalcQty.
+  ///
+  /// In en, this message translates to:
+  /// **'Qty'**
+  String get reportsCalcQty;
+
+  /// No description provided for @reportsCalcDisc.
+  ///
+  /// In en, this message translates to:
+  /// **'Disc'**
+  String get reportsCalcDisc;
+
+  /// No description provided for @reportsCalcSearchByNumberOrCustomer.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by number or customer…'**
+  String get reportsCalcSearchByNumberOrCustomer;
+
+  /// No description provided for @reportsCalcNoQuotationsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No quotations yet.'**
+  String get reportsCalcNoQuotationsYet;
+
+  /// No description provided for @reportsCalcAddOneProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Add at least one product with a price and quantity.'**
+  String get reportsCalcAddOneProduct;
+
+  /// No description provided for @reportsCalcChooseCustomerFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a customer first.'**
+  String get reportsCalcChooseCustomerFirst;
+
+  /// No description provided for @reportsCalcQuoteSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Quotation {number} sent to {name}.'**
+  String reportsCalcQuoteSent(Object number, Object name);
 }
 
 class _AppLocalizationsDelegate

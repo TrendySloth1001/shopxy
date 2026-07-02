@@ -2882,5 +2882,393 @@
   "sharedContactChangesFieldState": "State",
   "sharedContactChangesFieldStateCode": "State code",
   "sharedContactChangesFieldPinCode": "PIN code",
-  "sharedContactChangesFieldActive": "Active"
+  "sharedContactChangesFieldActive": "Active",
+  "navDashboard": "Dashboard",
+  "navProducts": "Products",
+  "navOrders": "Orders",
+  "navProfile": "Profile",
+  "navCategories": "Categories",
+  "navVendors": "Vendors",
+  "navParties": "Parties",
+  "navInvoices": "Invoices",
+  "navQuotations": "Quotations",
+  "navChallans": "Challans",
+  "navMyShop": "My Shop",
+  "navTeamRoles": "Team & roles",
+  "navBanners": "Banners",
+  "navCoupons": "Coupons",
+  "navPointOfSale": "Point of sale",
+  "navCashier": "Cashier",
+  "navScanToConsole": "Scan to console",
+  "navStockAdjustments": "Stock adjustments",
+  "navReturns": "Returns",
+  "navReports": "Reports",
+  "navAnalytics": "Analytics",
+  "navBannerManager": "Banner manager",
+  "navCategoryTaxonomy": "Category taxonomy",
+  "navCollections": "Collections",
+  "navBankOffers": "Bank offers",
+  "navShopVerification": "Shop verification",
+  "navSectionManage": "Manage",
+  "navSectionOperations": "Operations",
+  "navSectionPlatformAdmin": "Platform admin",
+  "navMenu": "Menu",
+  "reportsTitle": "Reports",
+  "reportsRefresh": "Refresh",
+  "reportsRetry": "Retry",
+  "reportsPresetThisMonth": "This month",
+  "reportsPresetLast30Days": "Last 30 days",
+  "reportsPresetThisFy": "This FY",
+  "reportsTabSales": "Sales",
+  "reportsTabPurchases": "Purchases",
+  "reportsTabGst": "GST",
+  "reportsTabPnl": "P&L",
+  "reportsTabCalculator": "Calculator",
+  "reportsNoActivityInRange": "No activity in this range.",
+  "reportsPace": "≈ {perDay}/day at this pace · ~{projected} over 30 days",
+  "@reportsPace": {
+    "placeholders": {
+      "perDay": {
+        "type": "Object"
+      },
+      "projected": {
+        "type": "Object"
+      }
+    }
+  },
+  "reportsTotalSales": "TOTAL SALES",
+  "reportsSalesHelper": "{count} confirmed invoices · {tax} GST · net {net} after refunds",
+  "@reportsSalesHelper": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      },
+      "tax": {
+        "type": "Object"
+      },
+      "net": {
+        "type": "Object"
+      }
+    }
+  },
+  "reportsTopProducts": "TOP PRODUCTS",
+  "reportsNoSalesInRange": "No sales in this range.",
+  "reportsSoldCount": "{count} sold",
+  "@reportsSoldCount": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "reportsTopCustomers": "TOP CUSTOMERS",
+  "reportsNoCustomersInRange": "No customers in this range.",
+  "reportsInvoiceCountOne": "{count} invoice",
+  "@reportsInvoiceCountOne": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "reportsInvoiceCountOther": "{count} invoices",
+  "@reportsInvoiceCountOther": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "reportsTotalPurchases": "TOTAL PURCHASES",
+  "reportsPurchasesHelper": "{count} confirmed bills · {tax} GST",
+  "@reportsPurchasesHelper": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      },
+      "tax": {
+        "type": "Object"
+      }
+    }
+  },
+  "reportsTopPurchasedProducts": "TOP PURCHASED PRODUCTS",
+  "reportsNoPurchasesInRange": "No purchases in this range.",
+  "reportsBoughtCount": "{count} bought",
+  "@reportsBoughtCount": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "reportsTopVendors": "TOP VENDORS",
+  "reportsNoVendorsInRange": "No vendors in this range.",
+  "reportsBillCountOne": "{count} bill",
+  "@reportsBillCountOne": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "reportsBillCountOther": "{count} bills",
+  "@reportsBillCountOther": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "reportsOutputGst": "OUTPUT GST",
+  "reportsCollectedOnSales": "Collected on sales",
+  "reportsInputGstItc": "INPUT GST (ITC)",
+  "reportsPaidOnPurchases": "Paid on purchases",
+  "reportsNetGstPayable": "NET GST PAYABLE",
+  "reportsGstOwedNote": "You owe this to the tax authority",
+  "reportsGstCreditCarriedNote": "Input credit carried forward",
+  "reportsNetPayableByTaxHead": "NET PAYABLE BY TAX HEAD",
+  "reportsTaxHeadNote": "CGST + SGST apply to in-state sales; IGST to inter-state. Net is each head’s output tax minus its own input credit.",
+  "reportsOutputGstByRate": "OUTPUT GST BY RATE",
+  "reportsNoOutputGstInRange": "No output GST in this range.",
+  "reportsInputGstByRate": "INPUT GST BY RATE",
+  "reportsNoInputGstInRange": "No input GST in this range.",
+  "reportsCess": "CESS",
+  "reportsOutputCess": "Output cess",
+  "reportsInputCess": "Input cess",
+  "reportsNetCessPayable": "Net cess payable",
+  "reportsCessNote": "Cess is set off only against cess, never against GST.",
+  "reportsOutputGstReturnsNote": "Output GST is shown net of {amount} reversed on refunded returns in this period.",
+  "@reportsOutputGstReturnsNote": {
+    "placeholders": {
+      "amount": {
+        "type": "Object"
+      }
+    }
+  },
+  "reportsColHead": "HEAD",
+  "reportsColOutput": "OUTPUT",
+  "reportsColItc": "ITC",
+  "reportsColNet": "NET",
+  "reportsColTotal": "TOTAL",
+  "reportsColRate": "RATE",
+  "reportsColTaxable": "TAXABLE",
+  "reportsHeadInterState": "Inter-state",
+  "reportsHeadCentral": "Central",
+  "reportsHeadState": "State",
+  "reportsNetProfit": "NET PROFIT",
+  "reportsGrossMargin": "Gross margin {pct}%",
+  "@reportsGrossMargin": {
+    "placeholders": {
+      "pct": {
+        "type": "Object"
+      }
+    }
+  },
+  "reportsRevenue": "Revenue",
+  "reportsCostOfGoodsSold": "Cost of goods sold",
+  "reportsGrossProfit": "Gross profit",
+  "reportsAdjustmentWriteoffs": "Adjustment write-offs",
+  "reportsNetProfitRow": "Net profit",
+  "reportsHowThisIsCalculated": "HOW THIS IS CALCULATED",
+  "reportsConfirmedSales": "Confirmed sales",
+  "reportsConfirmedSalesBasis": "Taxable value (ex-GST) of confirmed sale invoices, less credit notes",
+  "reportsLessSalesReturns": "Less: sales returns",
+  "reportsLessSalesReturnsBasis": "Ex-GST value of refunded returns, pro-rated by returned quantity",
+  "reportsRevenueA": "Revenue (A)",
+  "reportsGoodsSoldAtCost": "Goods sold, at cost",
+  "reportsGoodsSoldAtCostBasis": "Stock cost layers consumed when each sale was confirmed",
+  "reportsLessReturnedGoodsRestocked": "Less: returned goods restocked",
+  "reportsLessReturnedGoodsRestockedBasis": "Returned items put back into inventory at their consumed cost",
+  "reportsCostOfGoodsSoldB": "Cost of goods sold (B)",
+  "reportsGrossProfitAB": "Gross profit (A − B)",
+  "reportsLessStockWriteoffs": "Less: stock write-offs",
+  "reportsLessStockWriteoffsBasis": "Damage, expiry and shrinkage stock adjustments dated in this range",
+  "reportsNetProfitFormula": "Net profit (A − B − write-offs)",
+  "reportsPnlNote": "Gross margin {pct}% = gross profit ÷ revenue. Every figure is summed from confirmed invoices, refunded returns and stock adjustments dated in this range; estimates and proformas are excluded.",
+  "@reportsPnlNote": {
+    "placeholders": {
+      "pct": {
+        "type": "Object"
+      }
+    }
+  },
+  "reportsProductsSold": "PRODUCTS SOLD",
+  "reportsCountOfTotal": "{count} of {total}",
+  "@reportsCountOfTotal": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "reportsSearchByProductOrSku": "Search by product or SKU…",
+  "reportsNoSoldProductsMatch": "No sold products match “{query}”.",
+  "@reportsNoSoldProductsMatch": {
+    "placeholders": {
+      "query": {
+        "type": "Object"
+      }
+    }
+  },
+  "reportsNoProductsSoldInRange": "No products sold in this range.",
+  "reportsSaleCountOne": "{count} sale",
+  "@reportsSaleCountOne": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "reportsSaleCountOther": "{count} sales",
+  "@reportsSaleCountOther": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "reportsLoading": "Loading…",
+  "reportsLoadMore": "Load more ({count} left)",
+  "@reportsLoadMore": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "reportsAllProductsShownOne": "All {count} product shown.",
+  "@reportsAllProductsShownOne": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "reportsAllProductsShownOther": "All {count} products shown.",
+  "@reportsAllProductsShownOther": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "reportsProductFallback": "Product",
+  "reportsNoSalesForProduct": "No sales found for this product.",
+  "reportsCalcTitle": "Pricing & profit calculator",
+  "reportsCalcIntro": "Add products below, then set quantity, GST and discount per line — totals, GST, profit and margin update live.",
+  "reportsCalcNoProductsYet": "No products yet — add some from the list below.",
+  "reportsCalcSupply": "Supply",
+  "reportsCalcWithinState": "Within state",
+  "reportsCalcInterState": "Inter-state",
+  "reportsCalcDiscountIn": "Discount in",
+  "reportsCalcOverallDiscount": "Overall discount",
+  "reportsCalcGrandTotalInclGst": "GRAND TOTAL · INCL. GST",
+  "reportsCalcProductCountOne": "{count} product",
+  "@reportsCalcProductCountOne": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "reportsCalcProductCountOther": "{count} products",
+  "@reportsCalcProductCountOther": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "reportsCalcQtySummary": " · {qty} qty",
+  "@reportsCalcQtySummary": {
+    "placeholders": {
+      "qty": {
+        "type": "Object"
+      }
+    }
+  },
+  "reportsCalcDiscOff": " · {amount} off",
+  "@reportsCalcDiscOff": {
+    "placeholders": {
+      "amount": {
+        "type": "Object"
+      }
+    }
+  },
+  "reportsCalcProfit": "Profit",
+  "reportsCalcMargin": "Margin",
+  "reportsCalcBlockTotal": "TOTAL",
+  "reportsCalcGrossSubtotal": "Gross subtotal",
+  "reportsCalcHintInclGst": "incl. GST",
+  "reportsCalcLineDiscounts": "Line discounts",
+  "reportsCalcGrandTotalRow": "Grand total (incl. GST)",
+  "reportsCalcBlockGstInterState": "GST · INTER-STATE",
+  "reportsCalcBlockGstWithinState": "GST · WITHIN STATE",
+  "reportsCalcSubtotal": "Subtotal",
+  "reportsCalcHintTaxableExGst": "taxable, ex-GST",
+  "reportsCalcGstTotal": "GST total",
+  "reportsCalcBlockProfit": "PROFIT",
+  "reportsCalcCostOfGoods": "Cost of goods",
+  "reportsCalcRevenue": "Revenue",
+  "reportsCalcMarkup": "Markup",
+  "reportsCalcHintReturnOnCost": "return on cost",
+  "reportsCalcProfitMargin": "Profit margin",
+  "reportsCalcQuotation": "QUOTATION",
+  "reportsCalcStatusRequested": "Requested",
+  "reportsCalcStatusSent": "Sent",
+  "reportsCalcStatusAccepted": "Accepted",
+  "reportsCalcStatusDeclined": "Declined",
+  "reportsCalcStatusCancelled": "Cancelled",
+  "reportsCalcStatusExpired": "Expired",
+  "reportsCalcLoadQuotation": "Load a quotation",
+  "reportsCalcChooseCustomer": "Choose customer",
+  "reportsCalcDownload": "Download",
+  "reportsCalcSending": "Sending…",
+  "reportsCalcPriceAndSend": "Price & send",
+  "reportsCalcSendQuotation": "Send quotation",
+  "reportsCalcNew": "New",
+  "reportsCalcNoteLabel": "Note (optional)",
+  "reportsCalcNoteHint": "Shown on the quotation…",
+  "reportsCalcQuoteNote": "Download and Send both save the quotation (the PDF is generated from a saved quote). A customer-requested quote is priced & sent back; otherwise a new one goes to the chosen customer. Totals are GST-inclusive — the quote matches the grand total above.",
+  "reportsCalcYourProducts": "YOUR PRODUCTS",
+  "reportsCalcAddedCount": "{count} added",
+  "@reportsCalcAddedCount": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "reportsCalcSearchByNameOrSku": "Search by name or SKU…",
+  "reportsCalcLoadingProducts": "Loading your products…",
+  "reportsCalcNoProductsFound": "No products found.",
+  "reportsCalcEach": "each",
+  "reportsCalcRemoveProduct": "Remove {name}",
+  "@reportsCalcRemoveProduct": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "reportsCalcQty": "Qty",
+  "reportsCalcDisc": "Disc",
+  "reportsCalcSearchByNumberOrCustomer": "Search by number or customer…",
+  "reportsCalcNoQuotationsYet": "No quotations yet.",
+  "reportsCalcAddOneProduct": "Add at least one product with a price and quantity.",
+  "reportsCalcChooseCustomerFirst": "Choose a customer first.",
+  "reportsCalcQuoteSent": "Quotation {number} sent to {name}.",
+  "@reportsCalcQuoteSent": {
+    "placeholders": {
+      "number": {
+        "type": "Object"
+      },
+      "name": {
+        "type": "Object"
+      }
+    }
+  }
 }

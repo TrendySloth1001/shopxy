@@ -31,6 +31,7 @@ import 'package:shopxy/features/auth/domain/entities/auth_user.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/stock_adjustments/presentation/pages/stock_adjustments_page.dart';
 import 'package:shopxy/features/vendors/presentation/pages/vendors_page.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
@@ -52,7 +53,10 @@ class _Destination {
     required this.page,
     this.id,
   });
-  final String label;
+  /// Resolves the destination's user-facing label against the active
+  /// localizations. Kept as a resolver (not a plain String) because the
+  /// destination list is declared statically, outside any BuildContext.
+  final String Function(AppLocalizations l10n) label;
   final IconData icon;
   final IconData selectedIcon;
   final Widget page;
@@ -75,7 +79,9 @@ class _Shortcut {
     required this.builder,
     this.requires,
   });
-  final String label;
+  /// Resolver for the shortcut's user-facing label. See [_Destination.label]
+  /// for why this is a function rather than a plain String.
+  final String Function(AppLocalizations l10n) label;
   final IconData icon;
   final Color accent;
   final Color accentSoft;
@@ -92,7 +98,7 @@ class _Shortcut {
 
 List<_Shortcut> get _manageShortcuts => [
       _Shortcut(
-        label: 'My Shop',
+        label: (l10n) => l10n.navMyShop,
         icon: Icons.storefront_outlined,
         accent: AppColors.brand,
         accentSoft: AppColors.brandSoft,
@@ -100,7 +106,7 @@ List<_Shortcut> get _manageShortcuts => [
         requires: (u) => u.canView('shop'),
       ),
       _Shortcut(
-        label: 'Team & roles',
+        label: (l10n) => l10n.navTeamRoles,
         icon: Icons.groups_2_outlined,
         accent: AppColors.accentIndigo,
         accentSoft: AppColors.accentIndigoSoft,
@@ -108,7 +114,7 @@ List<_Shortcut> get _manageShortcuts => [
         requires: (u) => u.canView('team'),
       ),
       _Shortcut(
-        label: 'Banners',
+        label: (l10n) => l10n.navBanners,
         icon: Icons.image_outlined,
         accent: AppColors.accentIndigo,
         accentSoft: AppColors.accentIndigoSoft,
@@ -116,7 +122,7 @@ List<_Shortcut> get _manageShortcuts => [
         requires: (u) => u.canView('marketing'),
       ),
       _Shortcut(
-        label: 'Coupons',
+        label: (l10n) => l10n.navCoupons,
         icon: Icons.local_offer_outlined,
         accent: AppColors.accentAmber,
         accentSoft: AppColors.accentAmberSoft,
@@ -124,7 +130,7 @@ List<_Shortcut> get _manageShortcuts => [
         requires: (u) => u.canView('marketing'),
       ),
       _Shortcut(
-        label: AppStrings.navCategories,
+        label: (l10n) => l10n.navCategories,
         icon: Icons.category_outlined,
         accent: AppColors.accentTeal,
         accentSoft: AppColors.accentTealSoft,
@@ -132,7 +138,7 @@ List<_Shortcut> get _manageShortcuts => [
         requires: (u) => u.canView('products'),
       ),
       _Shortcut(
-        label: AppStrings.navVendors,
+        label: (l10n) => l10n.navVendors,
         icon: Icons.storefront_outlined,
         accent: AppColors.accentIndigo,
         accentSoft: AppColors.accentIndigoSoft,
@@ -140,7 +146,7 @@ List<_Shortcut> get _manageShortcuts => [
         requires: (u) => u.canView('vendors'),
       ),
       _Shortcut(
-        label: AppStrings.navParties,
+        label: (l10n) => l10n.navParties,
         icon: Icons.groups_outlined,
         accent: AppColors.accentRose,
         accentSoft: AppColors.accentRoseSoft,
@@ -151,7 +157,7 @@ List<_Shortcut> get _manageShortcuts => [
 
 List<_Shortcut> get _operationShortcuts => [
       _Shortcut(
-        label: 'Point of sale',
+        label: (l10n) => l10n.navPointOfSale,
         icon: Icons.point_of_sale_rounded,
         accent: AppColors.brand,
         accentSoft: AppColors.brandSoft,
@@ -159,7 +165,7 @@ List<_Shortcut> get _operationShortcuts => [
         requires: (u) => u.canView('invoices'),
       ),
       _Shortcut(
-        label: 'Cashier',
+        label: (l10n) => l10n.navCashier,
         icon: Icons.calculate_outlined,
         accent: AppColors.accentIndigo,
         accentSoft: AppColors.accentIndigoSoft,
@@ -167,7 +173,7 @@ List<_Shortcut> get _operationShortcuts => [
         requires: (u) => u.canView('invoices'),
       ),
       _Shortcut(
-        label: 'Scan to console',
+        label: (l10n) => l10n.navScanToConsole,
         icon: Icons.qr_code_scanner_rounded,
         accent: AppColors.accentTeal,
         accentSoft: AppColors.accentTealSoft,
@@ -175,7 +181,7 @@ List<_Shortcut> get _operationShortcuts => [
         requires: (u) => u.canView('products'),
       ),
       _Shortcut(
-        label: AppStrings.navInvoices,
+        label: (l10n) => l10n.navInvoices,
         icon: Icons.receipt_long_outlined,
         accent: AppColors.brandStrong,
         accentSoft: AppColors.brandSoft,
@@ -183,7 +189,7 @@ List<_Shortcut> get _operationShortcuts => [
         requires: (u) => u.canView('invoices'),
       ),
       _Shortcut(
-        label: AppStrings.navQuotations,
+        label: (l10n) => l10n.navQuotations,
         icon: Icons.request_quote_outlined,
         accent: AppColors.accentIndigo,
         accentSoft: AppColors.accentIndigoSoft,
@@ -191,7 +197,7 @@ List<_Shortcut> get _operationShortcuts => [
         requires: (u) => u.canView('quotations'),
       ),
       _Shortcut(
-        label: AppStrings.navChallans,
+        label: (l10n) => l10n.navChallans,
         icon: Icons.assignment_outlined,
         accent: AppColors.accentAmber,
         accentSoft: AppColors.accentAmberSoft,
@@ -199,7 +205,7 @@ List<_Shortcut> get _operationShortcuts => [
         requires: (u) => u.canView('challans'),
       ),
       _Shortcut(
-        label: 'Stock adjustments',
+        label: (l10n) => l10n.navStockAdjustments,
         icon: Icons.tune_rounded,
         accent: AppColors.brand,
         accentSoft: AppColors.brandSoft,
@@ -207,7 +213,7 @@ List<_Shortcut> get _operationShortcuts => [
         requires: (u) => u.canView('stock'),
       ),
       _Shortcut(
-        label: 'Returns',
+        label: (l10n) => l10n.navReturns,
         icon: Icons.assignment_return_outlined,
         accent: AppColors.accentRose,
         accentSoft: AppColors.accentRoseSoft,
@@ -215,7 +221,7 @@ List<_Shortcut> get _operationShortcuts => [
         requires: (u) => u.canView('orders'),
       ),
       _Shortcut(
-        label: 'Reports',
+        label: (l10n) => l10n.navReports,
         icon: Icons.summarize_outlined,
         accent: AppColors.brandStrong,
         accentSoft: AppColors.brandSoft,
@@ -223,7 +229,7 @@ List<_Shortcut> get _operationShortcuts => [
         requires: (u) => u.canView('reports'),
       ),
       _Shortcut(
-        label: 'Analytics',
+        label: (l10n) => l10n.navAnalytics,
         icon: Icons.bar_chart_outlined,
         accent: AppColors.accentIndigo,
         accentSoft: AppColors.accentIndigoSoft,
@@ -232,31 +238,33 @@ List<_Shortcut> get _operationShortcuts => [
       ),
     ];
 
-const _destinations = <_Destination>[
+// Labels are resolvers (see [_Destination.label]) so the list can't be
+// const; it's built once as a top-level final instead.
+final _destinations = <_Destination>[
   _Destination(
-    label: AppStrings.navDashboard,
+    label: (l10n) => l10n.navDashboard,
     icon: Icons.dashboard_outlined,
     selectedIcon: Icons.dashboard_rounded,
-    page: DashboardPage(),
+    page: const DashboardPage(),
   ),
   _Destination(
-    label: AppStrings.navProducts,
+    label: (l10n) => l10n.navProducts,
     icon: Icons.inventory_2_outlined,
     selectedIcon: Icons.inventory_2_rounded,
-    page: ProductsPage(),
+    page: const ProductsPage(),
   ),
   _Destination(
-    label: AppStrings.navOrders,
+    label: (l10n) => l10n.navOrders,
     icon: Icons.inbox_outlined,
     selectedIcon: Icons.inbox_rounded,
-    page: OrdersInboxPage(),
+    page: const OrdersInboxPage(),
     id: _kOrdersDestinationId,
   ),
   _Destination(
-    label: AppStrings.navProfile,
+    label: (l10n) => l10n.navProfile,
     icon: Icons.person_outline_rounded,
     selectedIcon: Icons.person_rounded,
-    page: ProfilePage(),
+    page: const ProfilePage(),
   ),
 ];
 
@@ -309,6 +317,7 @@ class AppShellState extends State<AppShell> {
       return const PosPage(kiosk: true);
     }
 
+    final l10n = AppLocalizations.of(context);
     final prefs = context.watch<NavigationPrefsProvider>();
     final pendingOrders = context.watch<OrdersProvider>().pendingCount;
     final pages = _destinations.map((d) => d.page).toList(growable: false);
@@ -360,7 +369,7 @@ class AppShellState extends State<AppShell> {
                               ? pendingOrders
                               : 0,
                         ),
-                        label: d.label,
+                        label: d.label(l10n),
                       ),
                   ],
                 ),
@@ -401,6 +410,7 @@ class _NavDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final active = _ActiveTab.of(context);
 
     return Drawer(
@@ -482,12 +492,12 @@ class _NavDrawer extends StatelessWidget {
                     return [
                       if (manage.isNotEmpty) ...[
                         const SizedBox(height: 12),
-                        const _DrawerSectionLabel(text: 'Manage'),
+                        _DrawerSectionLabel(text: l10n.navSectionManage),
                         for (final s in manage) _DrawerShortcutTile(shortcut: s),
                       ],
                       if (ops.isNotEmpty) ...[
                         const SizedBox(height: 8),
-                        const _DrawerSectionLabel(text: 'Operations'),
+                        _DrawerSectionLabel(text: l10n.navSectionOperations),
                         for (final s in ops) _DrawerShortcutTile(shortcut: s),
                       ],
                     ];
@@ -495,10 +505,10 @@ class _NavDrawer extends StatelessWidget {
                   if (context.watch<AuthProvider>().user?.isPlatformAdmin ==
                       true) ...[
                     const SizedBox(height: 8),
-                    const _DrawerSectionLabel(text: 'Platform admin'),
+                    _DrawerSectionLabel(text: l10n.navSectionPlatformAdmin),
                     _DrawerShortcutTile(
                       shortcut: _Shortcut(
-                        label: 'Banner manager',
+                        label: (l10n) => l10n.navBannerManager,
                         icon: Icons.view_carousel_outlined,
                         accent: AppColors.accentIndigo,
                         accentSoft: AppColors.accentIndigoSoft,
@@ -507,7 +517,7 @@ class _NavDrawer extends StatelessWidget {
                     ),
                     _DrawerShortcutTile(
                       shortcut: _Shortcut(
-                        label: 'Category taxonomy',
+                        label: (l10n) => l10n.navCategoryTaxonomy,
                         icon: Icons.account_tree_outlined,
                         accent: AppColors.accentTeal,
                         accentSoft: AppColors.accentTealSoft,
@@ -516,7 +526,7 @@ class _NavDrawer extends StatelessWidget {
                     ),
                     _DrawerShortcutTile(
                       shortcut: _Shortcut(
-                        label: 'Collections',
+                        label: (l10n) => l10n.navCollections,
                         icon: Icons.collections_bookmark_outlined,
                         accent: AppColors.accentRose,
                         accentSoft: AppColors.accentRoseSoft,
@@ -525,7 +535,7 @@ class _NavDrawer extends StatelessWidget {
                     ),
                     _DrawerShortcutTile(
                       shortcut: _Shortcut(
-                        label: 'Bank offers',
+                        label: (l10n) => l10n.navBankOffers,
                         icon: Icons.account_balance_outlined,
                         accent: AppColors.info,
                         accentSoft: AppColors.infoSoft,
@@ -534,7 +544,7 @@ class _NavDrawer extends StatelessWidget {
                     ),
                     _DrawerShortcutTile(
                       shortcut: _Shortcut(
-                        label: 'Shop verification',
+                        label: (l10n) => l10n.navShopVerification,
                         icon: Icons.verified_user_outlined,
                         accent: AppColors.brandStrong,
                         accentSoft: AppColors.brandSoft,
@@ -576,6 +586,7 @@ class _DrawerTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
       child: Material(
@@ -596,7 +607,7 @@ class _DrawerTile extends StatelessWidget {
                 const SizedBox(width: 14),
                 Expanded(
                   child: Text(
-                    destination.label,
+                    destination.label(l10n),
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: selected ? AppColors.onInverse : AppColors.black,
                       fontWeight: FontWeight.w700,
@@ -663,6 +674,7 @@ class _DrawerShortcutTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
       child: Material(
@@ -692,7 +704,7 @@ class _DrawerShortcutTile extends StatelessWidget {
                 const SizedBox(width: 14),
                 Expanded(
                   child: Text(
-                    shortcut.label,
+                    shortcut.label(l10n),
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: AppColors.black,
                       fontWeight: FontWeight.w600,
@@ -722,10 +734,11 @@ class ShellMenuButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final prefs = context.watch<NavigationPrefsProvider>();
     return IconButton(
       icon: const Icon(Icons.menu_rounded),
-      tooltip: 'Menu',
+      tooltip: l10n.navMenu,
       onPressed: prefs.openShellDrawer,
     );
   }
