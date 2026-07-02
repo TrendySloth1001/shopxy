@@ -121,8 +121,6 @@ class ProfilePage extends StatelessWidget {
       if (user.canView('products'))
         _ManageTile(
           icon: Icons.category_outlined,
-          accent: AppColors.accentTeal,
-          accentSoft: AppColors.accentTealSoft,
           title: l10n.profileNavCategories,
           subtitle: l10n.profileCategoriesSubtitle,
           onTap: () => Navigator.push(
@@ -133,8 +131,6 @@ class ProfilePage extends StatelessWidget {
       if (user.canView('vendors'))
         _ManageTile(
           icon: Icons.storefront_outlined,
-          accent: AppColors.accentIndigo,
-          accentSoft: AppColors.accentIndigoSoft,
           title: l10n.profileNavVendors,
           subtitle: l10n.profileVendorsSubtitle,
           onTap: () => Navigator.push(
@@ -145,8 +141,6 @@ class ProfilePage extends StatelessWidget {
       if (user.canView('parties'))
         _ManageTile(
           icon: Icons.groups_outlined,
-          accent: AppColors.accentRose,
-          accentSoft: AppColors.accentRoseSoft,
           title: l10n.profileNavParties,
           subtitle: l10n.profilePartiesSubtitle,
           onTap: () => Navigator.push(
@@ -158,9 +152,9 @@ class ProfilePage extends StatelessWidget {
     if (tiles.isEmpty) return const [];
     return [
       _SectionLabel(text: l10n.profileManageBusiness),
-      const SizedBox(height: AppSizes.sm),
-      _ManageCard(children: tiles),
-      const SizedBox(height: AppSizes.lg),
+      const SizedBox(height: AppSizes.xs),
+      _ManageList(children: tiles),
+      const SizedBox(height: AppSizes.xl),
     ];
   }
 
@@ -173,8 +167,6 @@ class ProfilePage extends StatelessWidget {
       if (user.canView('invoices'))
         _ManageTile(
           icon: Icons.receipt_long_outlined,
-          accent: AppColors.brandStrong,
-          accentSoft: AppColors.brandSoft,
           title: l10n.profileNavInvoices,
           subtitle: l10n.profileInvoicesSubtitle,
           onTap: () => Navigator.push(
@@ -185,8 +177,6 @@ class ProfilePage extends StatelessWidget {
       if (user.canView('challans'))
         _ManageTile(
           icon: Icons.assignment_outlined,
-          accent: AppColors.accentAmber,
-          accentSoft: AppColors.accentAmberSoft,
           title: l10n.profileNavChallans,
           subtitle: l10n.profileChallansSubtitle,
           onTap: () => Navigator.push(
@@ -197,8 +187,6 @@ class ProfilePage extends StatelessWidget {
       if (user.canView('stock'))
         _ManageTile(
           icon: Icons.tune_rounded,
-          accent: AppColors.brand,
-          accentSoft: AppColors.brandSoft,
           title: l10n.profileStockAdjustments,
           subtitle: l10n.profileStockAdjustmentsSubtitle,
           onTap: () => Navigator.push(
@@ -209,8 +197,6 @@ class ProfilePage extends StatelessWidget {
       if (user.canView('reports'))
         _ManageTile(
           icon: Icons.insights_outlined,
-          accent: AppColors.brandStrong,
-          accentSoft: AppColors.brandSoft,
           title: l10n.profileReports,
           subtitle: l10n.profileReportsSubtitle,
           onTap: () => Navigator.push(
@@ -222,8 +208,8 @@ class ProfilePage extends StatelessWidget {
     if (tiles.isEmpty) return const [];
     return [
       _SectionLabel(text: l10n.profileOperations),
-      const SizedBox(height: AppSizes.sm),
-      _ManageCard(children: tiles),
+      const SizedBox(height: AppSizes.xs),
+      _ManageList(children: tiles),
     ];
   }
 }
@@ -615,11 +601,12 @@ class _SectionLabel extends StatelessWidget {
   }
 }
 
-/// Card shell that wraps a list of [_ManageTile]s, drawing a single
-/// rounded border so the grouping feels like one surface rather than a
-/// flat list of rows. Hairline dividers between rows.
-class _ManageCard extends StatelessWidget {
-  const _ManageCard({required this.children});
+/// Flat list of [_ManageTile]s — no bordered card, just rows separated by
+/// hairline dividers directly on the page canvas (the app's "dividers over
+/// boxes" grouping). Dividers inset to the content width, aligned under the
+/// row's icon+text so they read as one quiet group.
+class _ManageList extends StatelessWidget {
+  const _ManageList({required this.children});
   final List<Widget> children;
 
   @override
@@ -628,41 +615,27 @@ class _ManageCard extends StatelessWidget {
     for (var i = 0; i < children.length; i++) {
       if (i > 0) {
         rows.add(
-          Padding(
-            padding: const EdgeInsets.only(left: AppSizes.lg + AppSizes.xxxl + AppSizes.md),
-            child: Divider(height: 1, color: AppColors.hairline),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: AppSizes.lg),
+            child: Divider(height: 1),
           ),
         );
       }
       rows.add(children[i]);
     }
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
-      decoration: ShapeDecoration(
-        color: AppColors.surface,
-        shape: AppShapes.squircle(
-          AppSizes.radiusMd,
-          side: BorderSide(color: AppColors.hairline),
-        ),
-      ),
-      child: Column(children: rows),
-    );
+    return Column(children: rows);
   }
 }
 
 class _ManageTile extends StatelessWidget {
   const _ManageTile({
     required this.icon,
-    required this.accent,
-    required this.accentSoft,
     required this.title,
     required this.subtitle,
     required this.onTap,
   });
 
   final IconData icon;
-  final Color accent;
-  final Color accentSoft;
   final String title;
   final String subtitle;
   final VoidCallback onTap;
@@ -672,7 +645,6 @@ class _ManageTile extends StatelessWidget {
     final theme = Theme.of(context);
     return InkWell(
       onTap: onTap,
-      borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
       child: Padding(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSizes.lg,
@@ -680,15 +652,18 @@ class _ManageTile extends StatelessWidget {
         ),
         child: Row(
           children: [
+            // Uniform, neutral icon — one calm treatment for every row (the
+            // same heroPanel square + ink icon used across Settings) instead
+            // of a different accent colour per tile.
             Container(
               width: AppSizes.xxxl,
               height: AppSizes.xxxl,
               decoration: ShapeDecoration(
-                color: accentSoft,
+                color: AppColors.heroPanel,
                 shape: AppShapes.squircle(AppSizes.radiusSm),
               ),
               alignment: Alignment.center,
-              child: Icon(icon, size: AppSizes.iconMd, color: accent),
+              child: Icon(icon, size: AppSizes.iconMd, color: AppColors.black),
             ),
             const SizedBox(width: AppSizes.md),
             Expanded(
