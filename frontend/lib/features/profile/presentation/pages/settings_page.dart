@@ -206,7 +206,6 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           // Language is live (multilingual pilot): English + हिन्दी.
           const _LanguageRow(),
-          const _NavigationStyleRow(),
           const _DensityRow(),
 
           const _Gap(),
@@ -711,95 +710,6 @@ String _languageLabel(AppLanguage lang) => switch (lang) {
       AppLanguage.english => 'English',
       AppLanguage.hindi => 'हिन्दी',
     };
-
-/// Two-way picker for [NavigationStyle]. Tapping a segment writes
-/// through the [NavigationPrefsProvider] which persists the choice and
-/// rebuilds [AppShell] live — so the user sees the layout swap without
-/// leaving Settings.
-class _NavigationStyleRow extends StatelessWidget {
-  const _NavigationStyleRow();
-
-  @override
-  Widget build(BuildContext context) {
-    final prefs = context.watch<NavigationPrefsProvider>();
-    final theme = Theme.of(context);
-    final l10n = AppLocalizations.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSizes.lg,
-        vertical: AppSizes.md,
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: AppSizes.xxxl,
-            height: AppSizes.xxxl,
-            decoration: ShapeDecoration(
-              color: AppColors.heroPanel,
-              shape: AppShapes.squircle(AppSizes.radiusSm),
-            ),
-            alignment: Alignment.center,
-            child: Icon(
-              Icons.dashboard_customize_outlined,
-              size: AppSizes.iconMd,
-              color: AppColors.black,
-            ),
-          ),
-          const SizedBox(width: AppSizes.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.profileNavigationStyle,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: AppColors.black,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  prefs.isSidebar
-                      ? l10n.profileNavigationStyleSidebarDesc
-                      : l10n.profileNavigationStyleBottomDesc,
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: AppColors.muted),
-                ),
-                const SizedBox(height: AppSizes.sm),
-                SegmentedButton<NavigationStyle>(
-                  segments: [
-                    ButtonSegment(
-                      value: NavigationStyle.bottomBar,
-                      icon: const Icon(Icons.dock_rounded, size: AppSizes.iconSm),
-                      label: Text(l10n.profileNavStyleBottomBar),
-                    ),
-                    ButtonSegment(
-                      value: NavigationStyle.sidebar,
-                      icon: const Icon(Icons.view_sidebar_outlined,
-                          size: AppSizes.iconSm),
-                      label: Text(l10n.profileNavStyleSidebar),
-                    ),
-                  ],
-                  selected: {prefs.style},
-                  showSelectedIcon: false,
-                  onSelectionChanged: (set) => prefs.setStyle(set.first),
-                  style: ButtonStyle(
-                    visualDensity: VisualDensity.compact,
-                    textStyle: WidgetStatePropertyAll(
-                      theme.textTheme.labelMedium
-                          ?.copyWith(fontWeight: FontWeight.w700),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _SettingRow extends StatelessWidget {
   const _SettingRow({

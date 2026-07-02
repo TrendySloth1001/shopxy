@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/core/auth/shop_capabilities.dart';
 import 'package:shopxy/core/network/image_url.dart';
-import 'package:shopxy/core/router/app_shell.dart';
 import 'package:shopxy/features/auth/domain/entities/auth_user.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/categories/presentation/pages/categories_page.dart';
@@ -37,12 +36,9 @@ class ProfilePage extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
-        // Profile is opened as a pushed route (from the dashboard's profile
-        // action) now that it's not a bottom-nav tab, so show a back button;
-        // fall back to the shell menu if it's ever a root tab again.
-        leading: Navigator.canPop(context)
-            ? const BackButton()
-            : const ShellMenuButton(),
+        // Profile is always opened as a pushed route now (from the dashboard's
+        // profile action or the Menu tab), so a plain back button.
+        leading: const BackButton(),
         title: Text(l10n.profileNavProfile),
         actions: [
           IconButton(
