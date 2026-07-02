@@ -17,13 +17,18 @@ export function PageTransition({ children }: { children: ReactNode }) {
 
 function SlideFrame({ children }: { children: ReactNode }) {
   // Clip while the sheet slides up so it emerges from the bottom edge instead
-  // of being visible mid-flight. Once settled, drop the clip so in-page sticky
-  // headers and overlays (dropdowns, tooltips) aren't constrained by it.
+  // of being visible mid-flight. Once settled, drop BOTH the clip and the
+  // animation class: `sx-page-slide` leaves a `transform: translateY(0)` (fill
+  // `both`) plus `will-change: transform`, and either one establishes a
+  // containing block for `position: fixed` descendants — which would anchor
+  // in-page overlays (slide-over sheets, modals) to this box instead of the
+  // viewport. translateY(0) is the identity transform, so dropping the class is
+  // visually a no-op; it just frees fixed overlays to cover the full viewport.
   const [settled, setSettled] = useState(false);
   return (
     <div className={settled ? undefined : "overflow-hidden"}>
       <div
-        className="sx-page-slide"
+        className={settled ? undefined : "sx-page-slide"}
         onAnimationEnd={(e) => {
           if (e.animationName === "sx-page-in") setSettled(true);
         }}

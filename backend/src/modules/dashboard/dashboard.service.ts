@@ -456,6 +456,173 @@ export class DashboardService {
 
     return alerts;
   }
+
+  // ── drill-downs: per-counterparty receivables / payables ─────────────
+  // Backing data for the dashboard KPI drawers. Each returns the same
+  // billed − received basis as the headline receivables()/payables() KPIs,
+  // but broken out per debtor/creditor with the confirmed documents that
+  // make up the balance, so a merchant can see *who* owes and *for what*.
+
+  /// Per-party receivables: every debtor (billed − received > 0) with the
+  /// confirmed sale documents behind the balance, biggest first.
+  async receivablesBreakdown(shopId: number) {
+    const rows = await prisma.$queryRaw<
+      { partyId: number; name: string; billed: string; received: string; outstanding: string }[]
+    >`
+      WITH billed AS (
+        SELECT party_id, SUM((CASE WHEN document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * total) AS amt
+          FROM invoices
+         WHERE shop_id = ${shopId} AND type = 'SALE' AND status = 'CONFIRMED'
+           AND document_type NOT IN ('ESTIMATE', 'PROFORMA') AND party_id IS NOT NULL
+         GROUP BY party_id),
+      paid AS (
+        SELECT party_id, SUM(amount) AS amt FROM payments
+         WHERE shop_id = ${shopId} AND type = 'RECEIPT' AND voided_at IS NULL AND party_id IS NOT NULL
+         GROUP BY party_id)
+      SELECT b.party_id AS "partyId", pt.name AS name,
+             b.amt::text AS billed,
+             COALESCE(p.amt, 0)::text AS received,
+             (b.amt - COALESCE(p.amt, 0))::text AS outstanding
+        FROM billed b
+        JOIN parties pt ON pt.id = b.party_id
+        LEFT JOIN paid p ON p.party_id = b.party_id
+       WHERE b.amt - COALESCE(p.amt, 0) > 0.005
+       ORDER BY b.amt - COALESCE(p.amt, 0) DESC
+       LIMIT 200`;
+    const invoices = rows.length
+      ? await prisma.invoice.findMany({
+          where: {
+            shopId,
+            partyId: { in: rows.map((r) => r.partyId) },
+            type: 'SALE',
+            status: 'CONFIRMED',
+            documentType: { notIn: ['ESTIMATE', 'PROFORMA'] },
+          },
+          orderBy: { invoiceDate: 'desc' },
+          select: {
+            id: true,
+            partyId: true,
+            invoiceNo: true,
+            documentType: true,
+            invoiceDate: true,
+            total: true,
+          },
+        })
+      : [];
+    return this.assembleBreakdown(
+      rows.map((r) => ({
+        id: r.partyId,
+        name: r.name,
+        billed: toNumber(r.billed),
+        received: toNumber(r.received),
+        outstanding: toNumber(r.outstanding),
+      })),
+      invoices.map((i) => ({ ...i, ref: i.partyId })),
+      'received',
+    );
+  }
+
+  /// Per-vendor payables: the mirror of receivablesBreakdown — every creditor
+  /// (billed − paid > 0) with the confirmed purchase documents behind it.
+  async payablesBreakdown(shopId: number) {
+    const rows = await prisma.$queryRaw<
+      { vendorId: number; name: string; billed: string; received: string; outstanding: string }[]
+    >`
+      WITH billed AS (
+        SELECT vendor_id, SUM((CASE WHEN document_type = 'CREDIT_NOTE' THEN -1 ELSE 1 END) * total) AS amt
+          FROM invoices
+         WHERE shop_id = ${shopId} AND type = 'PURCHASE' AND status = 'CONFIRMED'
+           AND document_type NOT IN ('ESTIMATE', 'PROFORMA') AND vendor_id IS NOT NULL
+         GROUP BY vendor_id),
+      paid AS (
+        SELECT vendor_id, SUM(amount) AS amt FROM payments
+         WHERE shop_id = ${shopId} AND type = 'PAYMENT' AND voided_at IS NULL AND vendor_id IS NOT NULL
+         GROUP BY vendor_id)
+      SELECT b.vendor_id AS "vendorId", vn.name AS name,
+             b.amt::text AS billed,
+             COALESCE(p.amt, 0)::text AS received,
+             (b.amt - COALESCE(p.amt, 0))::text AS outstanding
+        FROM billed b
+        JOIN vendors vn ON vn.id = b.vendor_id
+        LEFT JOIN paid p ON p.vendor_id = b.vendor_id
+       WHERE b.amt - COALESCE(p.amt, 0) > 0.005
+       ORDER BY b.amt - COALESCE(p.amt, 0) DESC
+       LIMIT 200`;
+    const invoices = rows.length
+      ? await prisma.invoice.findMany({
+          where: {
+            shopId,
+            vendorId: { in: rows.map((r) => r.vendorId) },
+            type: 'PURCHASE',
+            status: 'CONFIRMED',
+            documentType: { notIn: ['ESTIMATE', 'PROFORMA'] },
+          },
+          orderBy: { invoiceDate: 'desc' },
+          select: {
+            id: true,
+            vendorId: true,
+            invoiceNo: true,
+            documentType: true,
+            invoiceDate: true,
+            total: true,
+          },
+        })
+      : [];
+    return this.assembleBreakdown(
+      rows.map((r) => ({
+        id: r.vendorId,
+        name: r.name,
+        billed: toNumber(r.billed),
+        received: toNumber(r.received),
+        outstanding: toNumber(r.outstanding),
+      })),
+      invoices.map((i) => ({ ...i, ref: i.vendorId })),
+      'paid',
+    );
+  }
+
+  /// Fold a per-counterparty aggregate list + its flat invoice list into the
+  /// drawer payload: counterparties (biggest balance first) each carrying the
+  /// documents behind their balance, plus grand totals. `paidField` names the
+  /// per-party amount so the label reads "received"/"paid" as appropriate.
+  private assembleBreakdown(
+    parties: { id: number; name: string; billed: number; received: number; outstanding: number }[],
+    invoices: {
+      id: number;
+      ref: number | null;
+      invoiceNo: string;
+      documentType: string;
+      invoiceDate: Date;
+      total: unknown;
+    }[],
+    paidField: 'received' | 'paid',
+  ) {
+    const byRef = new Map<number, typeof invoices>();
+    for (const inv of invoices) {
+      if (inv.ref == null) continue;
+      const list = byRef.get(inv.ref) ?? [];
+      list.push(inv);
+      byRef.set(inv.ref, list);
+    }
+    return {
+      outstanding: round2(parties.reduce((s, p) => s + p.outstanding, 0)),
+      count: parties.length,
+      parties: parties.map((p) => ({
+        id: p.id,
+        name: p.name,
+        billed: round2(p.billed),
+        [paidField]: round2(p.received),
+        outstanding: round2(p.outstanding),
+        invoices: (byRef.get(p.id) ?? []).map((i) => ({
+          id: i.id,
+          invoiceNo: i.invoiceNo,
+          documentType: i.documentType,
+          invoiceDate: i.invoiceDate,
+          total: toNumber(i.total),
+        })),
+      })),
+    };
+  }
 }
 
 function toNumber(value: unknown): number {

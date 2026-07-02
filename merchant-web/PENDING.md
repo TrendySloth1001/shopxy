@@ -25,9 +25,20 @@ Deferred / simplified:
   period-independent sections (receivables, payables, GST, inventory) are
   recomputed on every period switch. If it feels heavy, split into a static
   endpoint + a `?period` series endpoint, or add a short Redis cache.
-- [ ] **Receivables / payables ageing.** No `dueDate` / payment-terms column on
-  `Invoice`, so the KPIs show outstanding + debtor/creditor counts but **no
-  overdue ageing** (0–30 / 31–60 / 60+). Add once invoice due-dates exist.
+- [x] **KPI drill-down drawers.** Each hero KPI card now opens a right-side
+  `SideSheet` instead of navigating: Sales → products sold (name/SKU filter,
+  `/reports/sold-products`), Net profit → the traced P&L statement
+  (`/reports/pnl`), Receivables/Payables → per-debtor/creditor accounts, each
+  expandable to the confirmed documents behind the balance. New backend:
+  `GET /dashboard/receivables` + `/dashboard/payables` (`reports:view`-gated,
+  `dashboard.service.ts` `receivablesBreakdown`/`payablesBreakdown`); web:
+  `features/dashboard/components/kpi-drawers.tsx` + `drilldown.ts`.
+- [ ] **Receivables / payables ageing + per-invoice allocation.** No `dueDate` /
+  payment-terms column on `Invoice`, and payments are recorded at the
+  party/vendor level (not allocated to a specific invoice). So the drill-down
+  drawers show the party-level balance + the list of confirmed documents, but
+  **no overdue ageing** (0–30 / 31–60 / 60+) and no per-invoice balance-due. Add
+  ageing/allocation once invoice due-dates + payment allocation exist.
 - [ ] **Smart-alert heuristics.** Sales-drop threshold (−25%), GST-due window
   (14th→20th of month), low-stock and till-open rules live in
   `dashboard.service.ts buildAlerts`. Tune against real merchant behaviour; GST

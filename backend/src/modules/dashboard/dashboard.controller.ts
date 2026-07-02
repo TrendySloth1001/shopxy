@@ -25,6 +25,29 @@ export class DashboardController {
     });
     res.json(stats);
   }
+
+  /// Per-party receivables drill-down for the dashboard KPI drawer. Financial,
+  /// so it carries the same `reports:view` gate as the KPI figures themselves.
+  async receivables(req: Request, res: Response): Promise<void> {
+    if (!this.canViewFinancials(req)) {
+      res.status(403).json({ error: 'You do not have permission to view reports.' });
+      return;
+    }
+    res.json(await dashboardService.receivablesBreakdown(req.shopId!));
+  }
+
+  /// Per-vendor payables drill-down — vendor-side mirror of receivables().
+  async payables(req: Request, res: Response): Promise<void> {
+    if (!this.canViewFinancials(req)) {
+      res.status(403).json({ error: 'You do not have permission to view reports.' });
+      return;
+    }
+    res.json(await dashboardService.payablesBreakdown(req.shopId!));
+  }
+
+  private canViewFinancials(req: Request): boolean {
+    return hasRight(req.user?.shopRole, req.user?.shopPermissions, viewRight('reports'));
+  }
 }
 
 export const dashboardController = new DashboardController();
