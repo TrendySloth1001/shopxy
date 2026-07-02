@@ -283,16 +283,22 @@ class AppTheme {
         selectedColor: p.inverseSurface,
         secondarySelectedColor: p.inverseSurface,
         disabledColor: p.surface,
-        // State-aware label colour: dark/light ink when unselected, the
-        // inverse foreground when selected — so a selected FilterChip stays
-        // readable on the inverseSurface fill in every theme (not just the
-        // ChoiceChip path that uses secondaryLabelStyle).
+        // State-aware label colour: dark ink when unselected, the inverse
+        // foreground when selected — so a chip's label stays readable in both
+        // states. BOTH labelStyle and secondaryLabelStyle must be state-aware:
+        // FilterChip reads labelStyle, but ChoiceChip/InputChip read
+        // secondaryLabelStyle for the label — if that one is a flat onInverse
+        // (light), unselected ChoiceChips render light-on-light (invisible).
         labelStyle: WidgetStateTextStyle.resolveWith(
           (states) => (textTheme.labelMedium ?? const TextStyle()).copyWith(
             color: states.contains(WidgetState.selected) ? p.onInverse : p.ink,
           ),
         ),
-        secondaryLabelStyle: textTheme.labelMedium?.copyWith(color: p.onInverse),
+        secondaryLabelStyle: WidgetStateTextStyle.resolveWith(
+          (states) => (textTheme.labelMedium ?? const TextStyle()).copyWith(
+            color: states.contains(WidgetState.selected) ? p.onInverse : p.ink,
+          ),
+        ),
         side: BorderSide(color: p.ink, width: 1),
         shape: AppShapes.squircle(
           AppSizes.radiusFull,
