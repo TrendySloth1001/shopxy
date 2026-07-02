@@ -56,6 +56,16 @@ class QuotationsRemoteDataSource {
     return Quotation.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
+  /// Full detail (with line items) for one quotation — used by the pricing
+  /// calculator to load a saved quote back into the basket.
+  Future<Quotation> get(int id) async {
+    final res = await _client.get('/quotations/$id');
+    if (res.statusCode != 200) {
+      throw Exception(_err(res.body, 'Failed to load quotation'));
+    }
+    return Quotation.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+  }
+
   Future<Quotation> cancel(int id) async {
     final res = await _client.post('/quotations/$id/cancel');
     if (res.statusCode != 200) {
