@@ -37,7 +37,12 @@ class ProfilePage extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
-        leading: const ShellMenuButton(),
+        // Profile is opened as a pushed route (from the dashboard's profile
+        // action) now that it's not a bottom-nav tab, so show a back button;
+        // fall back to the shell menu if it's ever a root tab again.
+        leading: Navigator.canPop(context)
+            ? const BackButton()
+            : const ShellMenuButton(),
         title: Text(l10n.profileNavProfile),
         actions: [
           IconButton(

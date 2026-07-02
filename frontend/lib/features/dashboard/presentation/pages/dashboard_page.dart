@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:shopxy/core/auth/permission_widgets.dart';
 import 'package:shopxy/core/auth/shop_capabilities.dart';
 import 'package:shopxy/core/router/app_shell.dart';
+import 'package:shopxy/features/profile/presentation/pages/profile_page.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/dashboard/domain/entities/dashboard_stats.dart';
 import 'package:shopxy/features/dashboard/presentation/providers/dashboard_provider.dart';
@@ -91,12 +92,15 @@ class _DashboardPageState extends State<DashboardPage> {
         title: const Text(AppStrings.appName),
         actions: [
           const NotificationBell(),
-          // Profile shortcut — jumps to the Profile tab. (Refresh lives next to
-          // the period switcher below, so the top-bar reload was redundant.)
+          // Profile shortcut — opens the Profile page. (Profile is no longer a
+          // bottom-nav tab; refresh lives next to the period switcher below.)
           IconButton(
             tooltip: l10n.navProfile,
             icon: const Icon(Icons.person_outline_rounded),
-            onPressed: () => goToProfileTab(context),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ProfilePage()),
+            ),
           ),
         ],
       ),
