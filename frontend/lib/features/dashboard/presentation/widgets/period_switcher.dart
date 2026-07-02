@@ -21,7 +21,11 @@ class PeriodSwitcher extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Container(
-      padding: const EdgeInsets.all(2),
+      padding: const EdgeInsets.all(3),
+      // Clip children to the rounded shape so the selected pill can never
+      // bleed past the track's corners (the pill sits close to the edge and
+      // its corners would otherwise poke outside the larger corner radius).
+      clipBehavior: Clip.antiAlias,
       decoration: ShapeDecoration(
         color: AppColors.canvas,
         shape: AppShapes.squircle(
@@ -51,12 +55,13 @@ class PeriodSwitcher extends StatelessWidget {
       onTap: () => onChanged(p),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
-        margin: const EdgeInsets.symmetric(horizontal: 1),
         padding:
             const EdgeInsets.symmetric(horizontal: AppSizes.md, vertical: 6),
         decoration: ShapeDecoration(
           color: selected ? AppColors.inverseSurface : Colors.transparent,
-          shape: AppShapes.squircle(6),
+          // Corner radius kept concentric with the track (track radius minus
+          // the 3px inset) so the pill nests instead of poking out.
+          shape: AppShapes.squircle(AppSizes.radiusButton - 3),
         ),
         child: Text(
           _periodLabel(p, l10n),
