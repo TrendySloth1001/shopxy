@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { AlertCircle, AlertTriangle, ArrowRight, Info, X, type LucideIcon } from "lucide-react";
 import type { DashboardAlert } from "../stats";
 
@@ -13,12 +14,12 @@ const STYLE: Record<DashboardAlert["severity"], SevStyle> = {
   info: { icon: Info, iconClass: "text-brand-strong" },
 };
 
-// Per-alert call-to-action labels (the message already carries the detail).
-const CTA: Record<string, string> = {
-  "low-stock": "Reorder",
-  "gst-due": "File GST",
-  "sales-drop": "View report",
-  "till-open": "Open till",
+// Per-alert call-to-action label keys (the message already carries the detail).
+const CTA_KEY: Record<string, string> = {
+  "low-stock": "alert.cta.reorder",
+  "gst-due": "alert.cta.fileGst",
+  "sales-drop": "alert.cta.viewReport",
+  "till-open": "alert.cta.openTill",
 };
 
 const DISMISS_KEY = "sx_dashboard_alerts_dismissed";
@@ -34,6 +35,7 @@ function readDismissed(): Set<string> {
 
 /** Dismissible smart-alert notifications (session-scoped dismissal). */
 export function Alerts({ alerts }: { alerts: DashboardAlert[] }) {
+  const t = useTranslations("dashboard");
   const [dismissed, setDismissed] = useState<Set<string>>(readDismissed);
   const visible = useMemo(() => alerts.filter((a) => !dismissed.has(a.id)), [alerts, dismissed]);
 
@@ -50,11 +52,11 @@ export function Alerts({ alerts }: { alerts: DashboardAlert[] }) {
   if (visible.length === 0) return null;
 
   return (
-    <section aria-label="Alerts" className="divide-y divide-hairline overflow-hidden rounded-lg border border-hairline bg-canvas shadow-snackbar">
+    <section aria-label={t("alert.title")} className="divide-y divide-hairline overflow-hidden rounded-lg border border-hairline bg-canvas shadow-snackbar">
       {visible.map((a) => {
         const s = STYLE[a.severity];
         const Icon = s.icon;
-        const cta = CTA[a.id] ?? "View";
+        const cta = CTA_KEY[a.id] ? t(CTA_KEY[a.id]) : t("view");
         return (
           <div
             key={a.id}
@@ -73,7 +75,7 @@ export function Alerts({ alerts }: { alerts: DashboardAlert[] }) {
             <button
               type="button"
               onClick={() => dismiss(a.id)}
-              aria-label="Dismiss notification"
+              aria-label={t("alert.dismiss")}
               className="flex size-8 shrink-0 items-center justify-center rounded-md text-subtle transition-colors hover:bg-surface-tint hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
             >
               <X size={16} aria-hidden="true" />

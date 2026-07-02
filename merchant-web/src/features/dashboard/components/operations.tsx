@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Boxes, Receipt, Store } from "lucide-react";
 import type { DashboardGstMtd, DashboardTill } from "../stats";
 import { inr } from "./ui";
@@ -17,10 +18,11 @@ export function Operations({
   gstMtd: DashboardGstMtd | null;
   inventoryValue: number;
 }) {
+  const t = useTranslations("dashboard");
   return (
     <section aria-labelledby="ops-h">
       <h2 id="ops-h" className="text-label-md uppercase tracking-wide text-muted">
-        Operations
+        {t("ops.title")}
       </h2>
       <div className="mt-md grid gap-md sm:grid-cols-2 lg:grid-cols-3">
         {till ? <TillTile till={till} /> : null}
@@ -28,17 +30,17 @@ export function Operations({
           <Tile
             href="/dashboard/reports"
             icon={<Receipt size={16} className="text-accent-indigo" aria-hidden="true" />}
-            label="GST this month"
+            label={t("ops.gstThisMonth")}
             value={inr.format(gstMtd.netPayable)}
-            sub={`${inr.format(gstMtd.outputTax)} output tax collected`}
+            sub={t("ops.outputTaxCollected", { value: inr.format(gstMtd.outputTax) })}
           />
         ) : null}
         <Tile
           href="/dashboard/stock-adjustments"
           icon={<Boxes size={16} className="text-brand-strong" aria-hidden="true" />}
-          label="Inventory value"
+          label={t("ops.inventoryValue")}
           value={inr.format(inventoryValue)}
-          sub="Cost basis of stock on hand"
+          sub={t("ops.costBasis")}
         />
       </div>
     </section>
@@ -74,8 +76,9 @@ function Tile({
 }
 
 function TillTile({ till }: { till: DashboardTill }) {
+  const t = useTranslations("dashboard");
   const since = new Date(till.openedAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
-  const topTenders = till.tenders.slice(0, 3).map((t) => `${t.mode} ${inr.format(t.amount)}`).join(" · ");
+  const topTenders = till.tenders.slice(0, 3).map((tender) => `${tender.mode} ${inr.format(tender.amount)}`).join(" · ");
   return (
     <Link
       href="/dashboard/pos"
@@ -83,11 +86,11 @@ function TillTile({ till }: { till: DashboardTill }) {
     >
       <div className="flex items-center gap-sm">
         <Store size={16} className="text-success" aria-hidden="true" />
-        <span className="text-label-md text-muted">Open till · since {since}</span>
+        <span className="text-label-md text-muted">{t("ops.openTillSince", { time: since })}</span>
       </div>
       <p className="mt-sm text-headline-sm tabular-nums text-ink">{inr.format(till.expectedCash)}</p>
       <p className="mt-xs truncate text-body-sm text-muted">
-        {till.salesCount} {till.salesCount === 1 ? "sale" : "sales"}
+        {t("ops.salesCount", { count: till.salesCount })}
         {topTenders ? ` · ${topTenders}` : ""}
       </p>
     </Link>

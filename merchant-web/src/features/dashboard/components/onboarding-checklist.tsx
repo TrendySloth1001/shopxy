@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { ArrowRight, CheckCircle2, Circle } from "lucide-react";
 import type { DashboardOnboarding } from "../stats";
 
@@ -15,34 +16,35 @@ export function OnboardingChecklist({
   onboarding: DashboardOnboarding;
   payoutsEnabled: boolean;
 }) {
+  const t = useTranslations("dashboard");
   const steps = [
     {
       done: onboarding.totalProducts > 0,
-      title: "Add your first product",
-      desc: "Build your catalogue so you can bill and track stock.",
+      title: t("onboarding.product.title"),
+      desc: t("onboarding.product.desc"),
       href: "/dashboard/products/new",
-      cta: "Add product",
+      cta: t("onboarding.product.cta"),
     },
     {
       done: onboarding.hasInvoices,
-      title: "Create your first invoice",
-      desc: "Bill a sale — GST is handled for you.",
+      title: t("onboarding.invoice.title"),
+      desc: t("onboarding.invoice.desc"),
       href: "/dashboard/invoices/new",
-      cta: "New invoice",
+      cta: t("onboarding.invoice.cta"),
     },
     {
       done: onboarding.hasParties,
-      title: "Add a customer",
-      desc: "Track who owes you and send them invoices.",
+      title: t("onboarding.customer.title"),
+      desc: t("onboarding.customer.desc"),
       href: "/dashboard/parties",
-      cta: "Add customer",
+      cta: t("onboarding.customer.cta"),
     },
     {
       done: payoutsEnabled,
-      title: "Set up payouts",
-      desc: "Receive settlements for online orders.",
+      title: t("onboarding.payouts.title"),
+      desc: t("onboarding.payouts.desc"),
       href: "/dashboard/payouts",
-      cta: "Set up",
+      cta: t("onboarding.payouts.cta"),
     },
   ];
   const completed = steps.filter((s) => s.done).length;
@@ -52,14 +54,14 @@ export function OnboardingChecklist({
       <div className="flex flex-wrap items-end justify-between gap-md">
         <div>
           <h2 id="setup-h" className="text-headline-sm text-ink">
-            Let’s get your shop ready
+            {t("onboarding.heading")}
           </h2>
           <p className="mt-xs text-body-md text-muted">
-            Finish these steps and your dashboard fills with live numbers.
+            {t("onboarding.subtitle")}
           </p>
         </div>
-        <p className="text-label-md tabular-nums text-muted" aria-label={`${completed} of ${steps.length} steps complete`}>
-          {completed}/{steps.length} done
+        <p className="text-label-md tabular-nums text-muted" aria-label={t("onboarding.progressAria", { completed, total: steps.length })}>
+          {t("onboarding.progress", { completed, total: steps.length })}
         </p>
       </div>
 

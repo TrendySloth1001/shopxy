@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef } from "react";
-import { PERIODS, PERIOD_LABEL, type DashboardPeriod } from "../stats";
+import { useTranslations } from "next-intl";
+import { PERIODS, type DashboardPeriod } from "../stats";
 
 /**
  * Accessible segmented control for the dashboard window. Implemented as a
@@ -15,6 +16,7 @@ export function PeriodSwitcher({
   value: DashboardPeriod;
   onChange: (p: DashboardPeriod) => void;
 }) {
+  const t = useTranslations("dashboard");
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
 
   function onKeyDown(e: React.KeyboardEvent, index: number) {
@@ -30,7 +32,7 @@ export function PeriodSwitcher({
   return (
     <div
       role="radiogroup"
-      aria-label="Dashboard time period"
+      aria-label={t("period.ariaLabel")}
       className="inline-flex items-center gap-[2px] rounded-button border border-hairline bg-canvas p-[2px]"
     >
       {PERIODS.map((p, i) => {
@@ -51,7 +53,7 @@ export function PeriodSwitcher({
               selected ? "bg-inverse-surface text-on-inverse" : "text-muted hover:text-ink hover:bg-surface-tint"
             }`}
           >
-            {PERIOD_LABEL[p]}
+            {t(`period.${p}`)}
           </button>
         );
       })}
