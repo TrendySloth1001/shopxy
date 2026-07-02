@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/core/app.dart';
 import 'package:shopxy/core/auth/token_manager.dart';
 import 'package:shopxy/core/config/app_config.dart';
 import 'package:shopxy/core/network/api_client.dart';
 import 'package:shopxy/core/prefs/navigation_prefs.dart';
+import 'package:shopxy/core/prefs/prefs_storage.dart';
 import 'package:shopxy/core/prefs/theme_prefs.dart';
 import 'package:shopxy/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
@@ -70,12 +70,12 @@ void main() async {
   // Reuse the same secure-storage container we already use for tokens
   // for tiny user prefs (currently just nav style). Awaited so the
   // first frame already reflects the saved choice.
-  final navPrefs = NavigationPrefsProvider(const FlutterSecureStorage());
+  final navPrefs = NavigationPrefsProvider(appPrefsStorage);
   await navPrefs.load();
 
   // Theme choice (light / dark / OLED) — loaded before the first frame so the
   // app opens in the saved theme with no flash. Also primes AppPalette.active.
-  final themePrefs = ThemePrefsProvider(const FlutterSecureStorage());
+  final themePrefs = ThemePrefsProvider(appPrefsStorage);
   await themePrefs.load();
 
   final apiClient = ApiClient(tokenManager);
@@ -191,6 +191,7 @@ void main() async {
         Provider<PartiesRemoteDataSource>.value(value: partiesDs),
         Provider<PaymentsRemoteDataSource>.value(value: paymentsDs),
         Provider<QuotationsRemoteDataSource>.value(value: quotationsDs),
+        Provider<ReportsRemoteDataSource>.value(value: reportsDs),
         Provider<ChallansRemoteDataSource>.value(value: challansDs),
         Provider<StockAdjustmentsRemoteDataSource>.value(value: stockAdjustmentsDs),
         Provider<CategoriesRemoteDataSource>.value(value: categoriesDs),

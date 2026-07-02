@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/core/network/api_client.dart';
 import 'package:shopxy/core/prefs/locale_prefs.dart';
+import 'package:shopxy/core/prefs/prefs_storage.dart';
 import 'package:shopxy/core/prefs/theme_prefs.dart';
 import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/core/router/app_shell.dart';
@@ -27,7 +27,7 @@ class ShopxyApp extends StatelessWidget {
     // stays out of the shared bootstrap file. It loads asynchronously; until
     // then the app opens in English.
     return ChangeNotifierProvider<LocalePrefsProvider>(
-      create: (_) => LocalePrefsProvider(const FlutterSecureStorage())..load(),
+      create: (_) => LocalePrefsProvider(appPrefsStorage)..load(),
       child: Consumer<LocalePrefsProvider>(
         builder: (context, localePrefs, _) {
           // Drive the whole app from the selected theme. Setting AppPalette.active
