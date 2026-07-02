@@ -46,18 +46,26 @@ const _kOrdersDestinationId = 'orders';
 // Labels are resolvers (see [_Destination.label]) so the list can't be const;
 // it's built once as a top-level final instead. Everything beyond these five
 // primary tabs lives in the Menu tab (see menu_page.dart).
+// Bottom-bar order: Menu · Products · Home · Orders · Invoices, with Home
+// (the dashboard) centred as the default landing tab.
 final _destinations = <_Destination>[
   _Destination(
-    label: (l10n) => l10n.navDashboard,
-    icon: Icons.dashboard_outlined,
-    selectedIcon: Icons.dashboard_rounded,
-    page: const DashboardPage(),
+    label: (l10n) => l10n.navMenu,
+    icon: Icons.apps_outlined,
+    selectedIcon: Icons.apps,
+    page: const MenuPage(),
   ),
   _Destination(
     label: (l10n) => l10n.navProducts,
     icon: Icons.inventory_2_outlined,
     selectedIcon: Icons.inventory_2_rounded,
     page: const ProductsPage(),
+  ),
+  _Destination(
+    label: (l10n) => l10n.navHome,
+    icon: Icons.home_outlined,
+    selectedIcon: Icons.home_rounded,
+    page: const DashboardPage(),
   ),
   _Destination(
     label: (l10n) => l10n.navOrders,
@@ -72,16 +80,14 @@ final _destinations = <_Destination>[
     selectedIcon: Icons.receipt_long,
     page: const InvoicesPage(),
   ),
-  _Destination(
-    label: (l10n) => l10n.navMenu,
-    icon: Icons.apps_outlined,
-    selectedIcon: Icons.apps,
-    page: const MenuPage(),
-  ),
 ];
 
+/// The Home (dashboard) tab — used as the initial tab so the app opens on Home,
+/// not the first bar slot. Resolved by type so it survives reordering.
+final _homeIndex = _destinations.indexWhere((d) => d.page is DashboardPage);
+
 class AppShellState extends State<AppShell> {
-  int _currentIndex = 0;
+  int _currentIndex = _homeIndex < 0 ? 0 : _homeIndex;
 
   void _select(int index) {
     setState(() => _currentIndex = index);
