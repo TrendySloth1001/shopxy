@@ -8,6 +8,7 @@ import 'package:shopxy/features/products/domain/entities/product.dart';
 import 'package:shopxy/features/stock/data/datasources/stock_remote_data_source.dart';
 import 'package:shopxy/features/vendors/data/datasources/vendors_remote_data_source.dart';
 import 'package:shopxy/features/stock/presentation/providers/stock_provider.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_durations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
@@ -219,6 +220,7 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
+    final l10n = AppLocalizations.of(context);
     setState(() => _isSaving = true);
     final parsedUnitPrice = _parseDouble(_unitPrice.text);
     final parsedQuantity = _parseDouble(_quantity.text);
@@ -238,10 +240,8 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Draft invoice created — confirm it from the Invoices tab to post stock.',
-            ),
+          SnackBar(
+            content: Text(l10n.stockSheetDraftCreated),
           ),
         );
         // Return the draft invoice id so the opener can offer an
@@ -264,6 +264,7 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     return Padding(
       padding: EdgeInsets.only(
@@ -309,7 +310,10 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
                 textAlign: TextAlign.center,
               ),
               Text(
-                'Current stock: ${_formatQty(widget.product.stockQuantity)} ${widget.product.unit}',
+                l10n.stockSheetCurrentStock(
+                  _formatQty(widget.product.stockQuantity),
+                  widget.product.unit,
+                ),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -321,16 +325,16 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
               // Damage / expired / shrinkage live on the Stock Adjustments
               // page; pure cash movements happen here.
               SegmentedButton<String>(
-                segments: const [
+                segments: [
                   ButtonSegment(
                     value: 'STOCK_IN',
-                    label: Text('Purchase'),
-                    icon: Icon(Icons.add_rounded),
+                    label: Text(l10n.stockSheetPurchase),
+                    icon: const Icon(Icons.add_rounded),
                   ),
                   ButtonSegment(
                     value: 'STOCK_OUT',
-                    label: Text('Sale'),
-                    icon: Icon(Icons.remove_rounded),
+                    label: Text(l10n.stockSheetSale),
+                    icon: const Icon(Icons.remove_rounded),
                   ),
                 ],
                 selected: {_type},
@@ -362,8 +366,8 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
                   Expanded(
                     child: TextFormField(
                       controller: _quantity,
-                      decoration: const InputDecoration(
-                        labelText: AppStrings.quantity,
+                      decoration: InputDecoration(
+                        labelText: l10n.stockSheetQuantity,
                       ),
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
@@ -371,11 +375,11 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
                       autofocus: true,
                       validator: (v) {
                         if (v == null || v.isEmpty) {
-                          return AppStrings.fieldRequired;
+                          return l10n.stockSheetFieldRequired;
                         }
                         final n = double.tryParse(v);
                         if (n == null || n <= 0) {
-                          return AppStrings.invalidNumber;
+                          return l10n.stockSheetInvalidNumber;
                         }
                         return null;
                       },
@@ -386,7 +390,7 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
                     child: TextFormField(
                       controller: _unitPrice,
                       decoration: InputDecoration(
-                        labelText: AppStrings.unitPrice,
+                        labelText: l10n.stockSheetUnitPrice,
                         prefixText: '${AppStrings.currencySymbol} ',
                       ),
                       keyboardType: const TextInputType.numberWithOptions(
@@ -398,15 +402,15 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
                             return null;
                           }
                           return double.tryParse(v) == null
-                              ? AppStrings.invalidNumber
+                              ? l10n.stockSheetInvalidNumber
                               : null;
                         }
                         if (v == null || v.isEmpty) {
-                          return AppStrings.fieldRequired;
+                          return l10n.stockSheetFieldRequired;
                         }
                         final n = double.tryParse(v);
                         if (n == null || n < 0) {
-                          return AppStrings.invalidNumber;
+                          return l10n.stockSheetInvalidNumber;
                         }
                         return null;
                       },
@@ -418,7 +422,7 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
 
               if (_type == 'STOCK_OUT') ...[
                 Text(
-                  'Customer',
+                  l10n.stockSheetCustomer,
                   style: theme.textTheme.labelMedium?.copyWith(
                     color: AppColors.muted,
                     fontWeight: FontWeight.w600,
@@ -429,13 +433,13 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
                 TextFormField(
                   controller: _partyQuery,
                   decoration: InputDecoration(
-                    hintText: 'Search parties — defaults to Walk-in Customer',
+                    hintText: l10n.stockSheetSearchParties,
                     prefixIcon: const Icon(Icons.person_search_rounded),
                     suffixIcon: _selectedParty != null
                         ? IconButton(
                             icon: const Icon(Icons.close_rounded),
                             onPressed: _clearParty,
-                            tooltip: 'Clear',
+                            tooltip: l10n.stockSheetClear,
                           )
                         : _isSearchingParties
                         ? const Padding(
@@ -480,7 +484,7 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
                   )
                 else if (_vendors.isNotEmpty || _selectedVendor != null) ...[
                   Text(
-                    AppStrings.supplier,
+                    l10n.stockSheetSupplier,
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
@@ -537,10 +541,10 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
                           controller: ctrl,
                           focusNode: focusNode,
                           decoration: InputDecoration(
-                            labelText: AppStrings.supplier,
+                            labelText: l10n.stockSheetSupplier,
                             helperText: _freeTextOptions.isEmpty
-                                ? AppStrings.supplierHint
-                                : AppStrings.supplierAutocompleteHint,
+                                ? l10n.stockSheetSupplierHint
+                                : l10n.stockSheetSupplierAutocompleteHint,
                             suffixIcon: _freeTextOptions.isNotEmpty
                                 ? const Icon(Icons.history_rounded)
                                 : null,
@@ -598,13 +602,13 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
 
               TextFormField(
                 controller: _note,
-                decoration: const InputDecoration(labelText: AppStrings.note),
+                decoration: InputDecoration(labelText: l10n.stockSheetNote),
                 textCapitalization: TextCapitalization.sentences,
               ),
               const SizedBox(height: AppSizes.xxl),
 
               AppButton.primary(
-                label: AppStrings.confirm,
+                label: l10n.stockSheetConfirm,
                 onPressed: _save,
                 isLoading: _isSaving,
                 size: AppButtonSize.lg,

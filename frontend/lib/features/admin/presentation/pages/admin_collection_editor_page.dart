@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/core/network/image_url.dart';
 import 'package:shopxy/features/admin/data/models/admin_collection.dart';
 import 'package:shopxy/features/admin/presentation/providers/admin_collections_provider.dart';
@@ -102,10 +103,8 @@ class _AdminCollectionEditorPageState extends State<AdminCollectionEditorPage> {
     const maxBytes = 5 * 1024 * 1024;
     if (file.lengthSync() > maxBytes) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Image is larger than 5 MB. Pick a smaller image or crop tighter.',
-          ),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).adminImageTooLarge),
         ),
       );
       return;
@@ -117,7 +116,7 @@ class _AdminCollectionEditorPageState extends State<AdminCollectionEditorPage> {
     setState(() => _saving = false);
     if (url == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(shop.error ?? 'Image upload failed')),
+        SnackBar(content: Text(shop.error ?? AppLocalizations.of(context).adminImageUploadFailed)),
       );
       return;
     }
@@ -142,7 +141,7 @@ class _AdminCollectionEditorPageState extends State<AdminCollectionEditorPage> {
   Future<void> _save() async {
     if (_title.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Title is required')),
+        SnackBar(content: Text(AppLocalizations.of(context).adminCollectionTitleRequired)),
       );
       return;
     }
@@ -159,7 +158,7 @@ class _AdminCollectionEditorPageState extends State<AdminCollectionEditorPage> {
       if (!mounted) return;
       setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(provider.error ?? 'Save failed')),
+        SnackBar(content: Text(provider.error ?? AppLocalizations.of(context).adminSaveFailed)),
       );
       return;
     }
@@ -197,7 +196,7 @@ class _AdminCollectionEditorPageState extends State<AdminCollectionEditorPage> {
     // De-dupe by product id.
     if (_items.any((it) => it.product.id == picked.id)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Already in this collection')),
+        SnackBar(content: Text(AppLocalizations.of(context).adminCollectionAlreadyAdded)),
       );
       return;
     }
@@ -210,10 +209,11 @@ class _AdminCollectionEditorPageState extends State<AdminCollectionEditorPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     if (_loading) {
       return Scaffold(
         backgroundColor: AppColors.canvas,
-        appBar: AppBar(title: const Text('Edit collection')),
+        appBar: AppBar(title: Text(l10n.adminCollectionEditTitle)),
         body: const _CollectionEditorSkeleton(),
       );
     }
@@ -221,11 +221,11 @@ class _AdminCollectionEditorPageState extends State<AdminCollectionEditorPage> {
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
-        title: Text(isEdit ? 'Edit collection' : 'New collection'),
+        title: Text(isEdit ? l10n.adminCollectionEditTitle : l10n.adminCollectionNewTitle),
         actions: [
           if (isEdit)
             IconButton(
-              tooltip: 'Add product',
+              tooltip: l10n.adminCollectionAddProduct,
               icon: const Icon(Icons.add),
               onPressed: _addProduct,
             ),
@@ -236,7 +236,7 @@ class _AdminCollectionEditorPageState extends State<AdminCollectionEditorPage> {
           padding: const EdgeInsets.all(AppSizes.lg),
           child: FilledButton(
             onPressed: _saving ? null : _save,
-            child: Text(_saving ? 'Saving…' : 'Save'),
+            child: Text(_saving ? l10n.adminSaving : l10n.adminSave),
           ),
         ),
       ),
@@ -252,28 +252,28 @@ class _AdminCollectionEditorPageState extends State<AdminCollectionEditorPage> {
           const SizedBox(height: AppSizes.md),
           TextField(
             controller: _title,
-            decoration: const InputDecoration(labelText: 'Title *'),
+            decoration: InputDecoration(labelText: l10n.adminCollectionTitleLabel),
           ),
           const SizedBox(height: AppSizes.md),
           TextField(
             controller: _slug,
-            decoration: const InputDecoration(
-              labelText: 'Slug',
-              helperText: 'Leave blank to auto-derive from title',
+            decoration: InputDecoration(
+              labelText: l10n.adminCollectionSlugLabel,
+              helperText: l10n.adminCollectionSlugHelper,
             ),
           ),
           const SizedBox(height: AppSizes.md),
           TextField(
             controller: _eyebrow,
-            decoration: const InputDecoration(
-              labelText: 'Eyebrow',
-              helperText: 'Tiny copy above title',
+            decoration: InputDecoration(
+              labelText: l10n.adminCollectionEyebrowLabel,
+              helperText: l10n.adminCollectionEyebrowHelper,
             ),
           ),
           const SizedBox(height: AppSizes.md),
           TextField(
             controller: _subtitle,
-            decoration: const InputDecoration(labelText: 'Subtitle'),
+            decoration: InputDecoration(labelText: l10n.adminCollectionSubtitleLabel),
           ),
           const SizedBox(height: AppSizes.md),
           Row(
@@ -281,16 +281,16 @@ class _AdminCollectionEditorPageState extends State<AdminCollectionEditorPage> {
               Expanded(
                 child: TextField(
                   controller: _ctaText,
-                  decoration: const InputDecoration(labelText: 'CTA text'),
+                  decoration: InputDecoration(labelText: l10n.adminCollectionCtaTextLabel),
                 ),
               ),
               const SizedBox(width: AppSizes.md),
               Expanded(
                 child: TextField(
                   controller: _ctaTarget,
-                  decoration: const InputDecoration(
-                    labelText: 'CTA target',
-                    helperText: 'category:slug | product:id | url:https://…',
+                  decoration: InputDecoration(
+                    labelText: l10n.adminCollectionCtaTargetLabel,
+                    helperText: l10n.adminLinkTargetHelper,
                   ),
                 ),
               ),
@@ -299,9 +299,9 @@ class _AdminCollectionEditorPageState extends State<AdminCollectionEditorPage> {
           const SizedBox(height: AppSizes.md),
           TextField(
             controller: _bgColor,
-            decoration: const InputDecoration(
-              labelText: 'BG color (#hex)',
-              helperText: 'Optional — accent surface in rails',
+            decoration: InputDecoration(
+              labelText: l10n.adminCollectionBgColorLabel,
+              helperText: l10n.adminCollectionBgColorHelper,
             ),
           ),
           const SizedBox(height: AppSizes.lg),
@@ -309,22 +309,22 @@ class _AdminCollectionEditorPageState extends State<AdminCollectionEditorPage> {
             value: _isPublished,
             onChanged: (v) => setState(() => _isPublished = v),
             contentPadding: EdgeInsets.zero,
-            title: const Text('Published'),
-            subtitle: const Text('Visible to shoppers on the customer app'),
+            title: Text(l10n.adminPublished),
+            subtitle: Text(l10n.adminCollectionPublishedSubtitle),
           ),
           const SizedBox(height: AppSizes.lg),
           Text(
-            'Items',
+            l10n.adminCollectionItemsSection,
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: AppSizes.sm),
           if (!isEdit)
-            const _Hint(
-              text: 'Save the collection first, then add products from the + button.',
+            _Hint(
+              text: l10n.adminCollectionItemsHintNew,
             )
           else if (_items.isEmpty)
-            const _Hint(
-              text: 'Tap + in the app bar to add products.',
+            _Hint(
+              text: l10n.adminCollectionItemsHintEmpty,
             )
           else
             ReorderableListView.builder(
@@ -376,7 +376,9 @@ class _AdminCollectionEditorPageState extends State<AdminCollectionEditorPage> {
         Expanded(
           child: OutlinedButton.icon(
             icon: const Icon(Icons.upload_outlined),
-            label: Text(_coverImageUrl == null ? 'Cover image' : 'Replace cover'),
+            label: Text(_coverImageUrl == null
+                ? AppLocalizations.of(context).adminCollectionCoverImage
+                : AppLocalizations.of(context).adminCollectionReplaceCover),
             onPressed: _saving ? null : _pickCover,
           ),
         ),
@@ -605,6 +607,7 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -622,9 +625,9 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
           child: TextField(
             controller: _controller,
             autofocus: true,
-            decoration: const InputDecoration(
-              labelText: 'Search product name or SKU',
-              prefixIcon: Icon(Icons.search),
+            decoration: InputDecoration(
+              labelText: l10n.adminCollectionProductSearchLabel,
+              prefixIcon: const Icon(Icons.search),
             ),
             onChanged: _onChanged,
           ),
@@ -635,7 +638,7 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
           child: _results.isEmpty
               ? Center(
                   child: Text(
-                    'Type 2+ characters to search',
+                    l10n.adminCollectionProductSearchHint,
                     style: TextStyle(color: AppColors.muted),
                   ),
                 )

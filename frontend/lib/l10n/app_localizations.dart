@@ -9132,6 +9132,1678 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Mark as received'**
   String get returnsMarkReceived;
+
+  /// No description provided for @adminActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get adminActive;
+
+  /// No description provided for @adminCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get adminCancel;
+
+  /// No description provided for @adminDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get adminDelete;
+
+  /// No description provided for @adminDeactivate.
+  ///
+  /// In en, this message translates to:
+  /// **'Deactivate'**
+  String get adminDeactivate;
+
+  /// No description provided for @adminCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get adminCreate;
+
+  /// No description provided for @adminSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get adminSave;
+
+  /// No description provided for @adminSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving…'**
+  String get adminSaving;
+
+  /// No description provided for @adminSaveChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Save changes'**
+  String get adminSaveChanges;
+
+  /// No description provided for @adminSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Save failed'**
+  String get adminSaveFailed;
+
+  /// No description provided for @adminRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get adminRefresh;
+
+  /// No description provided for @adminRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get adminRetry;
+
+  /// No description provided for @adminNotSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not set'**
+  String get adminNotSet;
+
+  /// No description provided for @adminPublished.
+  ///
+  /// In en, this message translates to:
+  /// **'Published'**
+  String get adminPublished;
+
+  /// No description provided for @adminDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft'**
+  String get adminDraft;
+
+  /// No description provided for @adminSortLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort'**
+  String get adminSortLabel;
+
+  /// No description provided for @adminImageTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'Image is larger than 5 MB. Pick a smaller image or crop tighter.'**
+  String get adminImageTooLarge;
+
+  /// No description provided for @adminImageUploadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Image upload failed'**
+  String get adminImageUploadFailed;
+
+  /// No description provided for @adminReplaceImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace image'**
+  String get adminReplaceImage;
+
+  /// No description provided for @adminLinkTargetHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'category:slug | product:id | url:https://…'**
+  String get adminLinkTargetHelper;
+
+  /// No description provided for @adminBankOffersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank offers'**
+  String get adminBankOffersTitle;
+
+  /// No description provided for @adminBankOfferNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New offer'**
+  String get adminBankOfferNew;
+
+  /// No description provided for @adminBankOffersEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No bank offers yet. Tap \"New offer\" to curate the first one.'**
+  String get adminBankOffersEmpty;
+
+  /// No description provided for @adminBankOfferDeactivateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Deactivate offer?'**
+  String get adminBankOfferDeactivateTitle;
+
+  /// No description provided for @adminBankOfferDeactivateBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Customers won\'t see this offer on any PDP. You can re-activate it later from this page.'**
+  String get adminBankOfferDeactivateBody;
+
+  /// No description provided for @adminBankOfferPercentOff.
+  ///
+  /// In en, this message translates to:
+  /// **'{value}% off'**
+  String adminBankOfferPercentOff(Object value);
+
+  /// No description provided for @adminBankOfferAmountOff.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} off'**
+  String adminBankOfferAmountOff(Object value);
+
+  /// No description provided for @adminBankOfferMinOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'min order {value}'**
+  String adminBankOfferMinOrder(Object value);
+
+  /// No description provided for @adminBankOfferCap.
+  ///
+  /// In en, this message translates to:
+  /// **'cap {value}'**
+  String adminBankOfferCap(Object value);
+
+  /// No description provided for @adminBankOfferValidRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Valid {from} – {until}'**
+  String adminBankOfferValidRange(Object from, Object until);
+
+  /// No description provided for @adminBankOfferEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit bank offer'**
+  String get adminBankOfferEditTitle;
+
+  /// No description provided for @adminBankOfferNewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New bank offer'**
+  String get adminBankOfferNewTitle;
+
+  /// No description provided for @adminBankOfferBankLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank'**
+  String get adminBankOfferBankLabel;
+
+  /// No description provided for @adminBankOfferCardTypeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Card type'**
+  String get adminBankOfferCardTypeLabel;
+
+  /// No description provided for @adminBankOfferTypeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get adminBankOfferTypeLabel;
+
+  /// No description provided for @adminBankOfferTypePercent.
+  ///
+  /// In en, this message translates to:
+  /// **'Percent off'**
+  String get adminBankOfferTypePercent;
+
+  /// No description provided for @adminBankOfferTypeFlat.
+  ///
+  /// In en, this message translates to:
+  /// **'Flat ₹ off'**
+  String get adminBankOfferTypeFlat;
+
+  /// No description provided for @adminBankOfferPercentField.
+  ///
+  /// In en, this message translates to:
+  /// **'% off'**
+  String get adminBankOfferPercentField;
+
+  /// No description provided for @adminBankOfferAmountField.
+  ///
+  /// In en, this message translates to:
+  /// **'₹ off'**
+  String get adminBankOfferAmountField;
+
+  /// No description provided for @adminBankOfferMaxDiscountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Max discount (₹) — caps the % off'**
+  String get adminBankOfferMaxDiscountLabel;
+
+  /// No description provided for @adminBankOfferMinOrderLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum order (₹) — eligibility filter'**
+  String get adminBankOfferMinOrderLabel;
+
+  /// No description provided for @adminBankOfferTermsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms (optional)'**
+  String get adminBankOfferTermsLabel;
+
+  /// No description provided for @adminBankOfferTermsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Not valid on no-cost EMI. Excludes Apple products.'**
+  String get adminBankOfferTermsHint;
+
+  /// No description provided for @adminBankOfferFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'From  {date}'**
+  String adminBankOfferFrom(Object date);
+
+  /// No description provided for @adminBankOfferUntil.
+  ///
+  /// In en, this message translates to:
+  /// **'Until {date}'**
+  String adminBankOfferUntil(Object date);
+
+  /// No description provided for @adminBankOfferActiveSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'When off, the offer never decorates a PDP. Use this to park a draft or expire an offer early without deleting it.'**
+  String get adminBankOfferActiveSubtitle;
+
+  /// No description provided for @adminBankOfferPdpPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'PDP preview'**
+  String get adminBankOfferPdpPreview;
+
+  /// No description provided for @adminBankOfferPreviewCap.
+  ///
+  /// In en, this message translates to:
+  /// **' up to ₹{value}'**
+  String adminBankOfferPreviewCap(Object value);
+
+  /// No description provided for @adminBankOfferPreviewPercent.
+  ///
+  /// In en, this message translates to:
+  /// **'{discount}% off{cap} on {target}'**
+  String adminBankOfferPreviewPercent(
+    Object discount,
+    Object cap,
+    Object target,
+  );
+
+  /// No description provided for @adminBankOfferPreviewFlat.
+  ///
+  /// In en, this message translates to:
+  /// **'₹{discount} off on {target}'**
+  String adminBankOfferPreviewFlat(Object discount, Object target);
+
+  /// No description provided for @adminBankOfferCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create offer'**
+  String get adminBankOfferCreate;
+
+  /// No description provided for @adminBannersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Banner manager'**
+  String get adminBannersTitle;
+
+  /// No description provided for @adminBannerNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New banner'**
+  String get adminBannerNew;
+
+  /// No description provided for @adminBannerDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete banner?'**
+  String get adminBannerDeleteTitle;
+
+  /// No description provided for @adminBannerDeleteBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This banner will be removed from {placement}.'**
+  String adminBannerDeleteBody(Object placement);
+
+  /// No description provided for @adminBannerPlacementEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No banners in this placement yet'**
+  String get adminBannerPlacementEmpty;
+
+  /// No description provided for @adminBannerSort.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort {value}'**
+  String adminBannerSort(Object value);
+
+  /// No description provided for @adminBannerEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit banner'**
+  String get adminBannerEditTitle;
+
+  /// No description provided for @adminBannerNewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New banner'**
+  String get adminBannerNewTitle;
+
+  /// No description provided for @adminBannerImageRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'An image is required'**
+  String get adminBannerImageRequired;
+
+  /// No description provided for @adminBannerPlacementLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Placement'**
+  String get adminBannerPlacementLabel;
+
+  /// No description provided for @adminBannerLinkLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Link'**
+  String get adminBannerLinkLabel;
+
+  /// No description provided for @adminBannerActiveSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'When off, hidden regardless of schedule'**
+  String get adminBannerActiveSubtitle;
+
+  /// No description provided for @adminBannerCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create banner'**
+  String get adminBannerCreate;
+
+  /// No description provided for @adminBannerUploadImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload image *'**
+  String get adminBannerUploadImage;
+
+  /// No description provided for @adminBannerStarts.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts'**
+  String get adminBannerStarts;
+
+  /// No description provided for @adminBannerEnds.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends'**
+  String get adminBannerEnds;
+
+  /// No description provided for @adminCategoryTaxonomyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Category taxonomy'**
+  String get adminCategoryTaxonomyTitle;
+
+  /// No description provided for @adminCategoryRoot.
+  ///
+  /// In en, this message translates to:
+  /// **'Root category'**
+  String get adminCategoryRoot;
+
+  /// No description provided for @adminCategoryDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete \"{name}\"?'**
+  String adminCategoryDeleteTitle(Object name);
+
+  /// No description provided for @adminCategoryDeleteBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Children re-parent to root. Products in this category fall back to \"uncategorised\" (the link goes null).'**
+  String get adminCategoryDeleteBody;
+
+  /// No description provided for @adminCategoryProductCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} products'**
+  String adminCategoryProductCount(Object value);
+
+  /// No description provided for @adminCategoryAddChild.
+  ///
+  /// In en, this message translates to:
+  /// **'Add child'**
+  String get adminCategoryAddChild;
+
+  /// No description provided for @adminCategoryNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Name is required'**
+  String get adminCategoryNameRequired;
+
+  /// No description provided for @adminCategoryEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit category'**
+  String get adminCategoryEditTitle;
+
+  /// No description provided for @adminCategoryNewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New category'**
+  String get adminCategoryNewTitle;
+
+  /// No description provided for @adminCategoryNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Name *'**
+  String get adminCategoryNameLabel;
+
+  /// No description provided for @adminCategoryNameHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Slug auto-derives from this.'**
+  String get adminCategoryNameHelper;
+
+  /// No description provided for @adminCategoryDescriptionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get adminCategoryDescriptionLabel;
+
+  /// No description provided for @adminCategoryImageUrlLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Image URL'**
+  String get adminCategoryImageUrlLabel;
+
+  /// No description provided for @adminCategoryImageUrlHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer-side circle puck image.'**
+  String get adminCategoryImageUrlHelper;
+
+  /// No description provided for @adminCategoryParentLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Parent'**
+  String get adminCategoryParentLabel;
+
+  /// No description provided for @adminCategoryRootOption.
+  ///
+  /// In en, this message translates to:
+  /// **'— Root —'**
+  String get adminCategoryRootOption;
+
+  /// No description provided for @adminCollectionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Collections'**
+  String get adminCollectionsTitle;
+
+  /// No description provided for @adminCollectionNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New collection'**
+  String get adminCollectionNew;
+
+  /// No description provided for @adminCollectionsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No collections yet'**
+  String get adminCollectionsEmpty;
+
+  /// No description provided for @adminCollectionDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete collection?'**
+  String get adminCollectionDeleteTitle;
+
+  /// No description provided for @adminCollectionDeleteBody.
+  ///
+  /// In en, this message translates to:
+  /// **'\"{title}\" and its item list will be removed.'**
+  String adminCollectionDeleteBody(Object title);
+
+  /// No description provided for @adminCollectionItemCountOne.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} item'**
+  String adminCollectionItemCountOne(Object value);
+
+  /// No description provided for @adminCollectionItemCountOther.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} items'**
+  String adminCollectionItemCountOther(Object value);
+
+  /// No description provided for @adminCollectionEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit collection'**
+  String get adminCollectionEditTitle;
+
+  /// No description provided for @adminCollectionNewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New collection'**
+  String get adminCollectionNewTitle;
+
+  /// No description provided for @adminCollectionAddProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Add product'**
+  String get adminCollectionAddProduct;
+
+  /// No description provided for @adminCollectionTitleRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Title is required'**
+  String get adminCollectionTitleRequired;
+
+  /// No description provided for @adminCollectionAlreadyAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Already in this collection'**
+  String get adminCollectionAlreadyAdded;
+
+  /// No description provided for @adminCollectionTitleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Title *'**
+  String get adminCollectionTitleLabel;
+
+  /// No description provided for @adminCollectionSlugLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Slug'**
+  String get adminCollectionSlugLabel;
+
+  /// No description provided for @adminCollectionSlugHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave blank to auto-derive from title'**
+  String get adminCollectionSlugHelper;
+
+  /// No description provided for @adminCollectionEyebrowLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Eyebrow'**
+  String get adminCollectionEyebrowLabel;
+
+  /// No description provided for @adminCollectionEyebrowHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Tiny copy above title'**
+  String get adminCollectionEyebrowHelper;
+
+  /// No description provided for @adminCollectionSubtitleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Subtitle'**
+  String get adminCollectionSubtitleLabel;
+
+  /// No description provided for @adminCollectionCtaTextLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'CTA text'**
+  String get adminCollectionCtaTextLabel;
+
+  /// No description provided for @adminCollectionCtaTargetLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'CTA target'**
+  String get adminCollectionCtaTargetLabel;
+
+  /// No description provided for @adminCollectionBgColorLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'BG color (#hex)'**
+  String get adminCollectionBgColorLabel;
+
+  /// No description provided for @adminCollectionBgColorHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional — accent surface in rails'**
+  String get adminCollectionBgColorHelper;
+
+  /// No description provided for @adminCollectionPublishedSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Visible to shoppers on the customer app'**
+  String get adminCollectionPublishedSubtitle;
+
+  /// No description provided for @adminCollectionItemsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Items'**
+  String get adminCollectionItemsSection;
+
+  /// No description provided for @adminCollectionItemsHintNew.
+  ///
+  /// In en, this message translates to:
+  /// **'Save the collection first, then add products from the + button.'**
+  String get adminCollectionItemsHintNew;
+
+  /// No description provided for @adminCollectionItemsHintEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap + in the app bar to add products.'**
+  String get adminCollectionItemsHintEmpty;
+
+  /// No description provided for @adminCollectionCoverImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Cover image'**
+  String get adminCollectionCoverImage;
+
+  /// No description provided for @adminCollectionReplaceCover.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace cover'**
+  String get adminCollectionReplaceCover;
+
+  /// No description provided for @adminCollectionProductSearchLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Search product name or SKU'**
+  String get adminCollectionProductSearchLabel;
+
+  /// No description provided for @adminCollectionProductSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Type 2+ characters to search'**
+  String get adminCollectionProductSearchHint;
+
+  /// No description provided for @adminShopsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Shop verification'**
+  String get adminShopsTitle;
+
+  /// No description provided for @adminShopsSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by shop name or slug'**
+  String get adminShopsSearchHint;
+
+  /// No description provided for @adminShopVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified'**
+  String get adminShopVerified;
+
+  /// No description provided for @adminShopDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'draft'**
+  String get adminShopDraft;
+
+  /// No description provided for @adminShopsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No shops found.'**
+  String get adminShopsEmpty;
+
+  /// No description provided for @analyticsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Analytics'**
+  String get analyticsTitle;
+
+  /// No description provided for @analyticsRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get analyticsRefresh;
+
+  /// No description provided for @analyticsByProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'By product'**
+  String get analyticsByProduct;
+
+  /// No description provided for @analyticsNoActiveProducts.
+  ///
+  /// In en, this message translates to:
+  /// **'No active products yet'**
+  String get analyticsNoActiveProducts;
+
+  /// No description provided for @analyticsKpiImpressions.
+  ///
+  /// In en, this message translates to:
+  /// **'Impressions'**
+  String get analyticsKpiImpressions;
+
+  /// No description provided for @analyticsKpiTaps.
+  ///
+  /// In en, this message translates to:
+  /// **'Taps'**
+  String get analyticsKpiTaps;
+
+  /// No description provided for @analyticsKpiViews.
+  ///
+  /// In en, this message translates to:
+  /// **'Views'**
+  String get analyticsKpiViews;
+
+  /// No description provided for @analyticsKpiAddToCart.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to cart'**
+  String get analyticsKpiAddToCart;
+
+  /// No description provided for @analyticsKpiPurchases.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchases'**
+  String get analyticsKpiPurchases;
+
+  /// No description provided for @analyticsKpiWishlist.
+  ///
+  /// In en, this message translates to:
+  /// **'Wishlist'**
+  String get analyticsKpiWishlist;
+
+  /// No description provided for @analyticsKpiCtr.
+  ///
+  /// In en, this message translates to:
+  /// **'CTR'**
+  String get analyticsKpiCtr;
+
+  /// No description provided for @analyticsKpiCvr.
+  ///
+  /// In en, this message translates to:
+  /// **'CVR'**
+  String get analyticsKpiCvr;
+
+  /// No description provided for @analyticsColProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Product'**
+  String get analyticsColProduct;
+
+  /// No description provided for @analyticsColImpressions.
+  ///
+  /// In en, this message translates to:
+  /// **'Imp'**
+  String get analyticsColImpressions;
+
+  /// No description provided for @analyticsColTaps.
+  ///
+  /// In en, this message translates to:
+  /// **'Taps'**
+  String get analyticsColTaps;
+
+  /// No description provided for @analyticsColViews.
+  ///
+  /// In en, this message translates to:
+  /// **'Views'**
+  String get analyticsColViews;
+
+  /// No description provided for @analyticsColAddToCart.
+  ///
+  /// In en, this message translates to:
+  /// **'ATC'**
+  String get analyticsColAddToCart;
+
+  /// No description provided for @analyticsColPurchases.
+  ///
+  /// In en, this message translates to:
+  /// **'Buys'**
+  String get analyticsColPurchases;
+
+  /// No description provided for @analyticsColCtr.
+  ///
+  /// In en, this message translates to:
+  /// **'CTR'**
+  String get analyticsColCtr;
+
+  /// No description provided for @analyticsColCvr.
+  ///
+  /// In en, this message translates to:
+  /// **'CVR'**
+  String get analyticsColCvr;
+
+  /// No description provided for @customFieldsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom Fields'**
+  String get customFieldsTitle;
+
+  /// No description provided for @customFieldsTemplates.
+  ///
+  /// In en, this message translates to:
+  /// **'Templates'**
+  String get customFieldsTemplates;
+
+  /// No description provided for @customFieldsAddField.
+  ///
+  /// In en, this message translates to:
+  /// **'Add field'**
+  String get customFieldsAddField;
+
+  /// No description provided for @customFieldsAddSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Add section'**
+  String get customFieldsAddSection;
+
+  /// No description provided for @customFieldsEditField.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit field'**
+  String get customFieldsEditField;
+
+  /// No description provided for @customFieldsEditSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit section'**
+  String get customFieldsEditSection;
+
+  /// No description provided for @customFieldsArchive.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive'**
+  String get customFieldsArchive;
+
+  /// No description provided for @customFieldsArchiveSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive \"{name}\"?'**
+  String customFieldsArchiveSectionTitle(Object name);
+
+  /// No description provided for @customFieldsArchiveSectionMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Archiving hides the section. Its fields stay where they are and can be reassigned later.'**
+  String get customFieldsArchiveSectionMessage;
+
+  /// No description provided for @customFieldsArchiveFieldTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive \"{name}\"?'**
+  String customFieldsArchiveFieldTitle(Object name);
+
+  /// No description provided for @customFieldsArchiveFieldConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive this field? Existing values stay on each product, but the field stops appearing on new ones.'**
+  String get customFieldsArchiveFieldConfirm;
+
+  /// No description provided for @customFieldsEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No custom fields yet'**
+  String get customFieldsEmptyTitle;
+
+  /// No description provided for @customFieldsEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Define fields like Warranty, Model Number, Material — visible on every product.'**
+  String get customFieldsEmptyHint;
+
+  /// No description provided for @customFieldsBrowseTemplates.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse templates'**
+  String get customFieldsBrowseTemplates;
+
+  /// No description provided for @customFieldsTemplatesCalloutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stamp a quick-start template'**
+  String get customFieldsTemplatesCalloutTitle;
+
+  /// No description provided for @customFieldsTemplatesCalloutSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Electronics, Apparel, Logistics, Food, Warranty…'**
+  String get customFieldsTemplatesCalloutSubtitle;
+
+  /// No description provided for @customFieldsFieldCountOne.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} field'**
+  String customFieldsFieldCountOne(Object count);
+
+  /// No description provided for @customFieldsFieldCountOther.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} fields'**
+  String customFieldsFieldCountOther(Object count);
+
+  /// No description provided for @customFieldsNoSection.
+  ///
+  /// In en, this message translates to:
+  /// **'No section'**
+  String get customFieldsNoSection;
+
+  /// No description provided for @customFieldsUngroupedCountOne.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} ungrouped field'**
+  String customFieldsUngroupedCountOne(Object count);
+
+  /// No description provided for @customFieldsUngroupedCountOther.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} ungrouped fields'**
+  String customFieldsUngroupedCountOther(Object count);
+
+  /// No description provided for @customFieldsUnitInline.
+  ///
+  /// In en, this message translates to:
+  /// **'in {unit}'**
+  String customFieldsUnitInline(Object unit);
+
+  /// No description provided for @customFieldsOptionCountOne.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} option'**
+  String customFieldsOptionCountOne(Object count);
+
+  /// No description provided for @customFieldsOptionCountOther.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} options'**
+  String customFieldsOptionCountOther(Object count);
+
+  /// No description provided for @customFieldsSectionName.
+  ///
+  /// In en, this message translates to:
+  /// **'Section name'**
+  String get customFieldsSectionName;
+
+  /// No description provided for @customFieldsFieldRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'This field is required'**
+  String get customFieldsFieldRequired;
+
+  /// No description provided for @customFieldsPickIcon.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick an icon'**
+  String get customFieldsPickIcon;
+
+  /// No description provided for @customFieldsLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading...'**
+  String get customFieldsLoading;
+
+  /// No description provided for @customFieldsSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get customFieldsSave;
+
+  /// No description provided for @customFieldsDropdownMinOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Add at least two options for a dropdown.'**
+  String get customFieldsDropdownMinOptions;
+
+  /// No description provided for @customFieldsFieldName.
+  ///
+  /// In en, this message translates to:
+  /// **'Field name'**
+  String get customFieldsFieldName;
+
+  /// No description provided for @customFieldsFieldType.
+  ///
+  /// In en, this message translates to:
+  /// **'Field type'**
+  String get customFieldsFieldType;
+
+  /// No description provided for @customFieldsSectionOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Section (optional)'**
+  String get customFieldsSectionOptional;
+
+  /// No description provided for @customFieldsUnitSuffix.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit (optional)'**
+  String get customFieldsUnitSuffix;
+
+  /// No description provided for @customFieldsUnitSuffixHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. kg, days, GB'**
+  String get customFieldsUnitSuffixHint;
+
+  /// No description provided for @customFieldsOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Options'**
+  String get customFieldsOptions;
+
+  /// No description provided for @customFieldsOptionsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'One per line. Used for dropdown choices.'**
+  String get customFieldsOptionsHint;
+
+  /// No description provided for @customFieldsTemplateApplied.
+  ///
+  /// In en, this message translates to:
+  /// **'Template applied'**
+  String get customFieldsTemplateApplied;
+
+  /// No description provided for @customFieldsQuickStartTemplates.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick-start templates'**
+  String get customFieldsQuickStartTemplates;
+
+  /// No description provided for @customFieldsTemplatesSheetSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap any template to add its section and fields to your shop.'**
+  String get customFieldsTemplatesSheetSubtitle;
+
+  /// No description provided for @customFieldsTemplatesUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Templates unavailable. Check your connection and try again.'**
+  String get customFieldsTemplatesUnavailable;
+
+  /// No description provided for @customFieldsTemplateFieldCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} fields'**
+  String customFieldsTemplateFieldCount(Object count);
+
+  /// No description provided for @customFieldsPickDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a date'**
+  String get customFieldsPickDate;
+
+  /// No description provided for @paymentsCounterpartyParty.
+  ///
+  /// In en, this message translates to:
+  /// **'party'**
+  String get paymentsCounterpartyParty;
+
+  /// No description provided for @paymentsCounterpartyVendor.
+  ///
+  /// In en, this message translates to:
+  /// **'vendor'**
+  String get paymentsCounterpartyVendor;
+
+  /// No description provided for @paymentsRecordReceiptTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Record receipt'**
+  String get paymentsRecordReceiptTitle;
+
+  /// No description provided for @paymentsRecordPaymentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Record payment'**
+  String get paymentsRecordPaymentTitle;
+
+  /// No description provided for @paymentsFromCounterparty.
+  ///
+  /// In en, this message translates to:
+  /// **'From {name}'**
+  String paymentsFromCounterparty(Object name);
+
+  /// No description provided for @paymentsToCounterparty.
+  ///
+  /// In en, this message translates to:
+  /// **'To {name}'**
+  String paymentsToCounterparty(Object name);
+
+  /// No description provided for @paymentsAmountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get paymentsAmountLabel;
+
+  /// No description provided for @paymentsAmountPositiveError.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a positive amount'**
+  String get paymentsAmountPositiveError;
+
+  /// No description provided for @paymentsModeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Mode'**
+  String get paymentsModeLabel;
+
+  /// No description provided for @paymentsUpiTransactionIdLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'UPI transaction id'**
+  String get paymentsUpiTransactionIdLabel;
+
+  /// No description provided for @paymentsChequeNumberLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cheque number'**
+  String get paymentsChequeNumberLabel;
+
+  /// No description provided for @paymentsReferenceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference'**
+  String get paymentsReferenceLabel;
+
+  /// No description provided for @paymentsDateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get paymentsDateLabel;
+
+  /// No description provided for @paymentsAllocatedToLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Allocated to'**
+  String get paymentsAllocatedToLabel;
+
+  /// No description provided for @paymentsInvoiceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoice'**
+  String get paymentsInvoiceLabel;
+
+  /// No description provided for @paymentsAllocateToInvoiceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Allocate to an invoice'**
+  String get paymentsAllocateToInvoiceTitle;
+
+  /// No description provided for @paymentsAllocateToInvoiceSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Off = on-account credit'**
+  String get paymentsAllocateToInvoiceSubtitle;
+
+  /// No description provided for @paymentsNoInvoicesFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No invoices found for this {name}.'**
+  String paymentsNoInvoicesFound(Object name);
+
+  /// No description provided for @paymentsPickInvoiceError.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick an invoice'**
+  String get paymentsPickInvoiceError;
+
+  /// No description provided for @paymentsNoteOptionalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Note (optional)'**
+  String get paymentsNoteOptionalLabel;
+
+  /// No description provided for @paymentsSaveReceipt.
+  ///
+  /// In en, this message translates to:
+  /// **'Save receipt'**
+  String get paymentsSaveReceipt;
+
+  /// No description provided for @paymentsSavePayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Save payment'**
+  String get paymentsSavePayment;
+
+  /// No description provided for @reviewsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reviews · {name}'**
+  String reviewsTitle(Object name);
+
+  /// No description provided for @reviewsLoadMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Load more'**
+  String get reviewsLoadMore;
+
+  /// No description provided for @reviewsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No reviews yet — they\'ll show up here once buyers leave one.'**
+  String get reviewsEmpty;
+
+  /// No description provided for @reviewsNoneYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No reviews yet'**
+  String get reviewsNoneYet;
+
+  /// No description provided for @reviewsCountSingular.
+  ///
+  /// In en, this message translates to:
+  /// **'1 review'**
+  String get reviewsCountSingular;
+
+  /// No description provided for @reviewsCountPlural.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} reviews'**
+  String reviewsCountPlural(Object count);
+
+  /// No description provided for @reviewsCustomerFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer'**
+  String get reviewsCustomerFallback;
+
+  /// No description provided for @scanConsoleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan to console'**
+  String get scanConsoleTitle;
+
+  /// No description provided for @scanConsoleClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get scanConsoleClear;
+
+  /// No description provided for @scanConsoleClearFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not clear: {error}'**
+  String scanConsoleClearFailed(Object error);
+
+  /// No description provided for @scanConsoleEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Point the camera at a product barcode or QR.'**
+  String get scanConsoleEmpty;
+
+  /// No description provided for @scanConsoleConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection established'**
+  String get scanConsoleConnected;
+
+  /// No description provided for @scanConsoleWatching.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} consoles watching · {sent} sent'**
+  String scanConsoleWatching(Object count, Object sent);
+
+  /// No description provided for @scanConsoleOpenWebHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the Scan console on the web to see scans live'**
+  String get scanConsoleOpenWebHint;
+
+  /// No description provided for @scanConsoleConnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting…'**
+  String get scanConsoleConnecting;
+
+  /// No description provided for @scanConsoleReconnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnecting…'**
+  String get scanConsoleReconnecting;
+
+  /// No description provided for @scanConsoleNotConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Not connected'**
+  String get scanConsoleNotConnected;
+
+  /// No description provided for @stockLedgerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stock Ledger'**
+  String get stockLedgerTitle;
+
+  /// No description provided for @stockLedgerEmptySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No movements recorded for this product yet.'**
+  String get stockLedgerEmptySubtitle;
+
+  /// No description provided for @stockLedgerReversalBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Reversal'**
+  String get stockLedgerReversalBadge;
+
+  /// No description provided for @stockLedgerByName.
+  ///
+  /// In en, this message translates to:
+  /// **'by {name}'**
+  String stockLedgerByName(Object name);
+
+  /// No description provided for @stockLedgerBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Bal: {qty}'**
+  String stockLedgerBalance(Object qty);
+
+  /// No description provided for @stockLedgerViewSource.
+  ///
+  /// In en, this message translates to:
+  /// **'View source'**
+  String get stockLedgerViewSource;
+
+  /// No description provided for @stockSheetDraftCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft invoice created — confirm it from the Invoices tab to post stock.'**
+  String get stockSheetDraftCreated;
+
+  /// No description provided for @stockSheetCurrentStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Current stock: {qty} {unit}'**
+  String stockSheetCurrentStock(Object qty, Object unit);
+
+  /// No description provided for @stockSheetPurchase.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase'**
+  String get stockSheetPurchase;
+
+  /// No description provided for @stockSheetSale.
+  ///
+  /// In en, this message translates to:
+  /// **'Sale'**
+  String get stockSheetSale;
+
+  /// No description provided for @stockSheetQuantity.
+  ///
+  /// In en, this message translates to:
+  /// **'Quantity'**
+  String get stockSheetQuantity;
+
+  /// No description provided for @stockSheetFieldRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'This field is required'**
+  String get stockSheetFieldRequired;
+
+  /// No description provided for @stockSheetInvalidNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid number'**
+  String get stockSheetInvalidNumber;
+
+  /// No description provided for @stockSheetUnitPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit price'**
+  String get stockSheetUnitPrice;
+
+  /// No description provided for @stockSheetCustomer.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer'**
+  String get stockSheetCustomer;
+
+  /// No description provided for @stockSheetSearchParties.
+  ///
+  /// In en, this message translates to:
+  /// **'Search parties — defaults to Walk-in Customer'**
+  String get stockSheetSearchParties;
+
+  /// No description provided for @stockSheetClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get stockSheetClear;
+
+  /// No description provided for @stockSheetSupplier.
+  ///
+  /// In en, this message translates to:
+  /// **'Supplier'**
+  String get stockSheetSupplier;
+
+  /// No description provided for @stockSheetSupplierHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Track supplier-wise price history'**
+  String get stockSheetSupplierHint;
+
+  /// No description provided for @stockSheetSupplierAutocompleteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Start typing to see previous suppliers'**
+  String get stockSheetSupplierAutocompleteHint;
+
+  /// No description provided for @stockSheetNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get stockSheetNote;
+
+  /// No description provided for @stockSheetConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get stockSheetConfirm;
+
+  /// No description provided for @stockAdjTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stock adjustments'**
+  String get stockAdjTitle;
+
+  /// No description provided for @stockAdjEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No adjustments yet'**
+  String get stockAdjEmptyTitle;
+
+  /// No description provided for @stockAdjEmptySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap + to record damage, expired stock, or a count correction.'**
+  String get stockAdjEmptySubtitle;
+
+  /// No description provided for @stockAdjItemSingular.
+  ///
+  /// In en, this message translates to:
+  /// **'item'**
+  String get stockAdjItemSingular;
+
+  /// No description provided for @stockAdjItemPlural.
+  ///
+  /// In en, this message translates to:
+  /// **'items'**
+  String get stockAdjItemPlural;
+
+  /// No description provided for @stockAdjNewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New stock adjustment'**
+  String get stockAdjNewTitle;
+
+  /// No description provided for @stockAdjSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit'**
+  String get stockAdjSubmit;
+
+  /// No description provided for @stockAdjAddAtLeastOne.
+  ///
+  /// In en, this message translates to:
+  /// **'Add at least one item to adjust.'**
+  String get stockAdjAddAtLeastOne;
+
+  /// No description provided for @stockAdjDiscardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard changes?'**
+  String get stockAdjDiscardTitle;
+
+  /// No description provided for @stockAdjDiscardMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your edits will be lost.'**
+  String get stockAdjDiscardMessage;
+
+  /// No description provided for @stockAdjKeepEditing.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep editing'**
+  String get stockAdjKeepEditing;
+
+  /// No description provided for @stockAdjDiscard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get stockAdjDiscard;
+
+  /// No description provided for @stockAdjReasonSection.
+  ///
+  /// In en, this message translates to:
+  /// **'REASON'**
+  String get stockAdjReasonSection;
+
+  /// No description provided for @stockAdjProductsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'PRODUCTS'**
+  String get stockAdjProductsSection;
+
+  /// No description provided for @stockAdjReasonDamage.
+  ///
+  /// In en, this message translates to:
+  /// **'Damaged'**
+  String get stockAdjReasonDamage;
+
+  /// No description provided for @stockAdjReasonExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Expired'**
+  String get stockAdjReasonExpired;
+
+  /// No description provided for @stockAdjReasonShrinkage.
+  ///
+  /// In en, this message translates to:
+  /// **'Shrinkage'**
+  String get stockAdjReasonShrinkage;
+
+  /// No description provided for @stockAdjReasonRecount.
+  ///
+  /// In en, this message translates to:
+  /// **'Recount correction'**
+  String get stockAdjReasonRecount;
+
+  /// No description provided for @stockAdjReasonOpening.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening balance'**
+  String get stockAdjReasonOpening;
+
+  /// No description provided for @stockAdjAddStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Add stock'**
+  String get stockAdjAddStock;
+
+  /// No description provided for @stockAdjRemoveStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove stock'**
+  String get stockAdjRemoveStock;
+
+  /// No description provided for @stockAdjNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get stockAdjNote;
+
+  /// No description provided for @stockAdjSearchProducts.
+  ///
+  /// In en, this message translates to:
+  /// **'Search products'**
+  String get stockAdjSearchProducts;
+
+  /// No description provided for @stockAdjNoProductsAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'No products added yet.'**
+  String get stockAdjNoProductsAdded;
+
+  /// No description provided for @stockAdjPostAdjustment.
+  ///
+  /// In en, this message translates to:
+  /// **'Post adjustment'**
+  String get stockAdjPostAdjustment;
+
+  /// No description provided for @sharedContactChangesRecentChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent changes'**
+  String get sharedContactChangesRecentChanges;
+
+  /// No description provided for @sharedContactChangesChangedSuffix.
+  ///
+  /// In en, this message translates to:
+  /// **'changed'**
+  String get sharedContactChangesChangedSuffix;
+
+  /// No description provided for @sharedContactChangesFieldName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get sharedContactChangesFieldName;
+
+  /// No description provided for @sharedContactChangesFieldContactPerson.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact person'**
+  String get sharedContactChangesFieldContactPerson;
+
+  /// No description provided for @sharedContactChangesFieldPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone'**
+  String get sharedContactChangesFieldPhone;
+
+  /// No description provided for @sharedContactChangesFieldEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get sharedContactChangesFieldEmail;
+
+  /// No description provided for @sharedContactChangesFieldAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Address'**
+  String get sharedContactChangesFieldAddress;
+
+  /// No description provided for @sharedContactChangesFieldCity.
+  ///
+  /// In en, this message translates to:
+  /// **'City'**
+  String get sharedContactChangesFieldCity;
+
+  /// No description provided for @sharedContactChangesFieldState.
+  ///
+  /// In en, this message translates to:
+  /// **'State'**
+  String get sharedContactChangesFieldState;
+
+  /// No description provided for @sharedContactChangesFieldStateCode.
+  ///
+  /// In en, this message translates to:
+  /// **'State code'**
+  String get sharedContactChangesFieldStateCode;
+
+  /// No description provided for @sharedContactChangesFieldPinCode.
+  ///
+  /// In en, this message translates to:
+  /// **'PIN code'**
+  String get sharedContactChangesFieldPinCode;
+
+  /// No description provided for @sharedContactChangesFieldActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get sharedContactChangesFieldActive;
 }
 
 class _AppLocalizationsDelegate

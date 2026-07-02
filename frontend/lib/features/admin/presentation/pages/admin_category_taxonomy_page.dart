@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/features/categories/data/datasources/categories_remote_data_source.dart';
 import 'package:shopxy/features/categories/domain/entities/category.dart';
 import 'package:shopxy/shared/constants/app_durations.dart';
@@ -137,18 +138,16 @@ class _AdminCategoryTaxonomyPageState extends State<AdminCategoryTaxonomyPage> {
   }
 
   Future<void> _delete(Category c) async {
+    final l10n = AppLocalizations.of(context);
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Delete "${c.name}"?'),
-        content: const Text(
-          'Children re-parent to root. Products in this category fall '
-          'back to "uncategorised" (the link goes null).',
-        ),
+        title: Text(l10n.adminCategoryDeleteTitle(c.name)),
+        content: Text(l10n.adminCategoryDeleteBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(l10n.adminCancel),
           ),
           FilledButton.tonal(
             style: FilledButton.styleFrom(
@@ -156,7 +155,7 @@ class _AdminCategoryTaxonomyPageState extends State<AdminCategoryTaxonomyPage> {
               foregroundColor: AppColors.error,
             ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete'),
+            child: Text(l10n.adminDelete),
           ),
         ],
       ),
@@ -169,13 +168,14 @@ class _AdminCategoryTaxonomyPageState extends State<AdminCategoryTaxonomyPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
-        title: const Text('Category taxonomy'),
+        title: Text(l10n.adminCategoryTaxonomyTitle),
         actions: [
           IconButton(
-            tooltip: 'Refresh',
+            tooltip: l10n.adminRefresh,
             icon: const Icon(Icons.refresh),
             onPressed: _loading ? null : _load,
           ),
@@ -184,7 +184,7 @@ class _AdminCategoryTaxonomyPageState extends State<AdminCategoryTaxonomyPage> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _createRoot,
         icon: const Icon(Icons.add),
-        label: const Text('Root category'),
+        label: Text(l10n.adminCategoryRoot),
       ),
       body: _loading && _tree.isEmpty
           ? const _CategoryListSkeleton()
@@ -413,7 +413,7 @@ class _CategoryTreeTile extends StatelessWidget {
                           const SizedBox(height: 2),
                           Text(
                             '${c.slug ?? '-'}'
-                            '${c.productCount != null ? '  ·  ${c.productCount} products' : ''}',
+                            '${c.productCount != null ? '  ·  ${AppLocalizations.of(context).adminCategoryProductCount('${c.productCount}')}' : ''}',
                             style: Theme.of(context)
                                 .textTheme
                                 .labelSmall
@@ -423,12 +423,12 @@ class _CategoryTreeTile extends StatelessWidget {
                       ),
                     ),
                     IconButton(
-                      tooltip: 'Add child',
+                      tooltip: AppLocalizations.of(context).adminCategoryAddChild,
                       icon: const Icon(Icons.add),
                       onPressed: () => onAddChild(c.id),
                     ),
                     IconButton(
-                      tooltip: 'Delete',
+                      tooltip: AppLocalizations.of(context).adminDelete,
                       icon: const Icon(Icons.delete_outline),
                       onPressed: () => onDelete(c),
                     ),
@@ -519,7 +519,7 @@ class _CategoryEditorSheetState extends State<_CategoryEditorSheet> {
 
   Future<void> _save() async {
     if (_name.text.trim().isEmpty) {
-      setState(() => _error = 'Name is required');
+      setState(() => _error = AppLocalizations.of(context).adminCategoryNameRequired);
       return;
     }
     setState(() {
@@ -561,6 +561,7 @@ class _CategoryEditorSheetState extends State<_CategoryEditorSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -578,7 +579,7 @@ class _CategoryEditorSheetState extends State<_CategoryEditorSheet> {
           child: Row(
             children: [
               Text(
-                _isEdit ? 'Edit category' : 'New category',
+                _isEdit ? l10n.adminCategoryEditTitle : l10n.adminCategoryNewTitle,
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const Spacer(),
@@ -600,32 +601,32 @@ class _CategoryEditorSheetState extends State<_CategoryEditorSheet> {
             children: [
               TextField(
                 controller: _name,
-                decoration: const InputDecoration(
-                  labelText: 'Name *',
-                  helperText: 'Slug auto-derives from this.',
+                decoration: InputDecoration(
+                  labelText: l10n.adminCategoryNameLabel,
+                  helperText: l10n.adminCategoryNameHelper,
                 ),
               ),
               const SizedBox(height: AppSizes.md),
               TextField(
                 controller: _description,
-                decoration: const InputDecoration(labelText: 'Description'),
+                decoration: InputDecoration(labelText: l10n.adminCategoryDescriptionLabel),
                 maxLines: 2,
               ),
               const SizedBox(height: AppSizes.md),
               TextField(
                 controller: _imageUrl,
-                decoration: const InputDecoration(
-                  labelText: 'Image URL',
-                  helperText: 'Customer-side circle puck image.',
+                decoration: InputDecoration(
+                  labelText: l10n.adminCategoryImageUrlLabel,
+                  helperText: l10n.adminCategoryImageUrlHelper,
                 ),
               ),
               const SizedBox(height: AppSizes.md),
               DropdownButtonFormField<int?>(
                 initialValue: _parentId,
-                decoration: const InputDecoration(labelText: 'Parent'),
+                decoration: InputDecoration(labelText: l10n.adminCategoryParentLabel),
                 isExpanded: true,
                 items: [
-                  const DropdownMenuItem(value: null, child: Text('— Root —')),
+                  DropdownMenuItem(value: null, child: Text(l10n.adminCategoryRootOption)),
                   for (final c in widget.availableParents)
                     DropdownMenuItem(value: c.id, child: Text(c.name)),
                 ],
@@ -638,7 +639,7 @@ class _CategoryEditorSheetState extends State<_CategoryEditorSheet> {
                     width: 96,
                     child: TextField(
                       controller: _sortOrder,
-                      decoration: const InputDecoration(labelText: 'Sort'),
+                      decoration: InputDecoration(labelText: l10n.adminSortLabel),
                       keyboardType: TextInputType.number,
                     ),
                   ),
@@ -648,7 +649,7 @@ class _CategoryEditorSheetState extends State<_CategoryEditorSheet> {
                       value: _isActive,
                       onChanged: (v) => setState(() => _isActive = v),
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('Active'),
+                      title: Text(l10n.adminActive),
                     ),
                   ),
                 ],
@@ -664,7 +665,7 @@ class _CategoryEditorSheetState extends State<_CategoryEditorSheet> {
               FilledButton(
                 onPressed: _busy ? null : _save,
                 child: Text(
-                  _busy ? 'Saving…' : (_isEdit ? 'Save changes' : 'Create'),
+                  _busy ? l10n.adminSaving : (_isEdit ? l10n.adminSaveChanges : l10n.adminCreate),
                 ),
               ),
             ],

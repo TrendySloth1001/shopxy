@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:shopxy/features/payments/data/datasources/payments_remote_data_source.dart';
 import 'package:shopxy/features/payments/domain/entities/payment.dart';
 import 'package:shopxy/features/payments/presentation/providers/payments_provider.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
@@ -203,10 +204,11 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final viewInsets = MediaQuery.of(context).viewInsets.bottom;
     final counterpartyLabel = _isReceipt
-        ? (widget.partyName ?? 'party')
-        : (widget.vendorName ?? 'vendor');
+        ? (widget.partyName ?? l10n.paymentsCounterpartyParty)
+        : (widget.vendorName ?? l10n.paymentsCounterpartyVendor);
 
     return Padding(
       padding: EdgeInsets.only(bottom: viewInsets),
@@ -224,7 +226,9 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
                   children: [
                     Expanded(
                       child: Text(
-                        _isReceipt ? 'Record receipt' : 'Record payment',
+                        _isReceipt
+                            ? l10n.paymentsRecordReceiptTitle
+                            : l10n.paymentsRecordPaymentTitle,
                         style: theme.textTheme.titleLarge
                             ?.copyWith(fontWeight: FontWeight.w700),
                       ),
@@ -237,8 +241,8 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
                 ),
                 Text(
                   _isReceipt
-                      ? 'From $counterpartyLabel'
-                      : 'To $counterpartyLabel',
+                      ? l10n.paymentsFromCounterparty(counterpartyLabel)
+                      : l10n.paymentsToCounterparty(counterpartyLabel),
                   style: theme.textTheme.bodyMedium
                       ?.copyWith(color: AppColors.muted),
                 ),
@@ -249,20 +253,20 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
                     decimal: true,
                   ),
                   autofocus: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Amount',
+                  decoration: InputDecoration(
+                    labelText: l10n.paymentsAmountLabel,
                     prefixText: AppStrings.currencySymbol,
                   ),
                   validator: (v) {
                     final parsed = double.tryParse((v ?? '').trim());
                     if (parsed == null || parsed <= 0) {
-                      return 'Enter a positive amount';
+                      return l10n.paymentsAmountPositiveError;
                     }
                     return null;
                   },
                 ),
                 const SizedBox(height: AppSizes.md),
-                Text('Mode', style: theme.textTheme.labelLarge),
+                Text(l10n.paymentsModeLabel, style: theme.textTheme.labelLarge),
                 const SizedBox(height: AppSizes.xs),
                 Wrap(
                   spacing: AppSizes.sm,
@@ -284,10 +288,10 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
                     controller: _modeRefCtrl,
                     decoration: InputDecoration(
                       labelText: _mode == 'UPI'
-                          ? 'UPI transaction id'
+                          ? l10n.paymentsUpiTransactionIdLabel
                           : _mode == 'CHEQUE'
-                              ? 'Cheque number'
-                              : 'Reference',
+                              ? l10n.paymentsChequeNumberLabel
+                              : l10n.paymentsReferenceLabel,
                     ),
                   ),
                 ],
@@ -296,9 +300,9 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
                   onTap: _pickDate,
                   borderRadius: AppShapes.squircleRadius(AppSizes.radiusInput),
                   child: InputDecorator(
-                    decoration: const InputDecoration(
-                      labelText: 'Date',
-                      suffixIcon: Icon(Icons.calendar_today_outlined),
+                    decoration: InputDecoration(
+                      labelText: l10n.paymentsDateLabel,
+                      suffixIcon: const Icon(Icons.calendar_today_outlined),
                     ),
                     child: Text(_dateFmt.format(_date)),
                   ),
@@ -306,17 +310,18 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
                 const SizedBox(height: AppSizes.md),
                 if (_isLocked) ...[
                   InputDecorator(
-                    decoration: const InputDecoration(
-                      labelText: 'Allocated to',
+                    decoration: InputDecoration(
+                      labelText: l10n.paymentsAllocatedToLabel,
                     ),
-                    child: Text(widget.lockedInvoiceLabel ?? 'Invoice'),
+                    child: Text(
+                        widget.lockedInvoiceLabel ?? l10n.paymentsInvoiceLabel),
                   ),
                 ] else ...[
                   SwitchListTile.adaptive(
                     contentPadding: EdgeInsets.zero,
-                    title: const Text('Allocate to an invoice'),
-                    subtitle: const Text(
-                      'Off = on-account credit',
+                    title: Text(l10n.paymentsAllocateToInvoiceTitle),
+                    subtitle: Text(
+                      l10n.paymentsAllocateToInvoiceSubtitle,
                     ),
                     value: _allocate,
                     onChanged: _toggleAllocate,
@@ -329,15 +334,15 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
                       )
                     else if (_openInvoices.isEmpty)
                       Text(
-                        'No invoices found for this $counterpartyLabel.',
+                        l10n.paymentsNoInvoicesFound(counterpartyLabel),
                         style: theme.textTheme.bodySmall
                             ?.copyWith(color: AppColors.muted),
                       )
                     else
                       DropdownButtonFormField<int>(
                         initialValue: _selectedInvoiceId,
-                        decoration: const InputDecoration(
-                          labelText: 'Invoice',
+                        decoration: InputDecoration(
+                          labelText: l10n.paymentsInvoiceLabel,
                         ),
                         items: [
                           for (final inv in _openInvoices)
@@ -352,15 +357,15 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
                         onChanged: (v) =>
                             setState(() => _selectedInvoiceId = v),
                         validator: (v) =>
-                            v == null ? 'Pick an invoice' : null,
+                            v == null ? l10n.paymentsPickInvoiceError : null,
                       ),
                   ],
                 ],
                 const SizedBox(height: AppSizes.md),
                 TextFormField(
                   controller: _noteCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Note (optional)',
+                  decoration: InputDecoration(
+                    labelText: l10n.paymentsNoteOptionalLabel,
                   ),
                   maxLines: 2,
                 ),
@@ -380,8 +385,8 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
                                 ),
                               )
                             : Text(_isReceipt
-                                ? 'Save receipt'
-                                : 'Save payment'),
+                                ? l10n.paymentsSaveReceipt
+                                : l10n.paymentsSavePayment),
                       );
                     },
                   ),

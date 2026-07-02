@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:shopxy/features/custom_fields/presentation/providers/custom_fields_provider.dart';
 import 'package:shopxy/features/custom_fields/presentation/widgets/custom_field_icons.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
@@ -57,9 +58,10 @@ class _TemplatesPickerSheetState extends State<TemplatesPickerSheet> {
     try {
       await context.read<CustomFieldsProvider>().applyTemplate(id);
       if (!mounted) return;
+      final l10n = AppLocalizations.of(context);
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Template applied')),
+        SnackBar(content: Text(l10n.customFieldsTemplateApplied)),
       );
     } catch (e) {
       if (!mounted) return;
@@ -74,6 +76,7 @@ class _TemplatesPickerSheetState extends State<TemplatesPickerSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final mediaQuery = MediaQuery.of(context);
     final templates = context.watch<CustomFieldsProvider>().templates;
 
@@ -100,14 +103,14 @@ class _TemplatesPickerSheetState extends State<TemplatesPickerSheet> {
               ),
               const SizedBox(height: AppSizes.md),
               Text(
-                'Quick-start templates',
+                l10n.customFieldsQuickStartTemplates,
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
               ),
               const SizedBox(height: AppSizes.xs),
               Text(
-                'Tap any template to add its section and fields to your shop.',
+                l10n.customFieldsTemplatesSheetSubtitle,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: AppColors.muted,
                 ),
@@ -123,7 +126,7 @@ class _TemplatesPickerSheetState extends State<TemplatesPickerSheet> {
                   padding: const EdgeInsets.symmetric(vertical: AppSizes.xl),
                   child: Center(
                     child: Text(
-                      'Templates unavailable. Check your connection and try again.',
+                      l10n.customFieldsTemplatesUnavailable,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: AppColors.muted,
                       ),
@@ -165,7 +168,7 @@ class _TemplatesPickerSheetState extends State<TemplatesPickerSheet> {
                         ),
                       ),
                       subtitle: Text(
-                        '${t.description} · ${t.fieldCount} fields',
+                        '${t.description} · ${l10n.customFieldsTemplateFieldCount(t.fieldCount)}',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: AppColors.muted,
                         ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/features/admin/data/models/platform_bank_offer.dart';
 import 'package:shopxy/features/admin/presentation/providers/admin_bank_offers_provider.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
@@ -174,6 +175,7 @@ class _BodyState extends State<_Body> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final isEdit = widget.existing != null;
     // Live-compose the same headline string the customer card will
     // render, so the admin sees what they're publishing.
@@ -181,13 +183,14 @@ class _BodyState extends State<_Body> {
         double.tryParse(_discountValue.text.trim())?.toStringAsFixed(0) ?? '0';
     final capStr = (_discountType == 'PERCENT' &&
             (double.tryParse(_maxDiscount.text.trim()) ?? 0) > 0)
-        ? ' up to ₹$_maxDiscount'
-            .replaceFirst(_maxDiscount.text, _maxDiscount.text.trim())
+        ? l10n.adminBankOfferPreviewCap(_maxDiscount.text.trim())
         : '';
     final cardLabel = _cardType == 'ANY' ? '' : ' ${_kCardTypes[_cardType]}';
     final preview = _discountType == 'PERCENT'
-        ? '$discountStr% off$capStr on ${_kBanks[_bank]}$cardLabel'
-        : '₹$discountStr off on ${_kBanks[_bank]}$cardLabel';
+        ? l10n.adminBankOfferPreviewPercent(
+            discountStr, capStr, '${_kBanks[_bank]}$cardLabel')
+        : l10n.adminBankOfferPreviewFlat(
+            discountStr, '${_kBanks[_bank]}$cardLabel');
 
     return Padding(
       padding: EdgeInsets.only(
@@ -202,7 +205,7 @@ class _BodyState extends State<_Body> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              isEdit ? 'Edit bank offer' : 'New bank offer',
+              isEdit ? l10n.adminBankOfferEditTitle : l10n.adminBankOfferNewTitle,
               style: Theme.of(context)
                   .textTheme
                   .titleMedium
@@ -211,9 +214,9 @@ class _BodyState extends State<_Body> {
             const SizedBox(height: AppSizes.md),
             DropdownButtonFormField<String>(
               initialValue: _bank,
-              decoration: const InputDecoration(
-                labelText: 'Bank',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.adminBankOfferBankLabel,
+                border: const OutlineInputBorder(),
               ),
               items: [
                 for (final e in _kBanks.entries)
@@ -224,9 +227,9 @@ class _BodyState extends State<_Body> {
             const SizedBox(height: AppSizes.sm),
             DropdownButtonFormField<String>(
               initialValue: _cardType,
-              decoration: const InputDecoration(
-                labelText: 'Card type',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.adminBankOfferCardTypeLabel,
+                border: const OutlineInputBorder(),
               ),
               items: [
                 for (final e in _kCardTypes.entries)
@@ -240,15 +243,17 @@ class _BodyState extends State<_Body> {
                 Expanded(
                   child: DropdownButtonFormField<String>(
                     initialValue: _discountType,
-                    decoration: const InputDecoration(
-                      labelText: 'Type',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: l10n.adminBankOfferTypeLabel,
+                      border: const OutlineInputBorder(),
                     ),
-                    items: const [
+                    items: [
                       DropdownMenuItem(
-                          value: 'PERCENT', child: Text('Percent off')),
+                          value: 'PERCENT',
+                          child: Text(l10n.adminBankOfferTypePercent)),
                       DropdownMenuItem(
-                          value: 'FLAT', child: Text('Flat ₹ off')),
+                          value: 'FLAT',
+                          child: Text(l10n.adminBankOfferTypeFlat)),
                     ],
                     onChanged: (v) =>
                         setState(() => _discountType = v ?? 'PERCENT'),
@@ -263,8 +268,9 @@ class _BodyState extends State<_Body> {
                     ),
                     onChanged: (_) => setState(() {}),
                     decoration: InputDecoration(
-                      labelText:
-                          _discountType == 'PERCENT' ? '% off' : '₹ off',
+                      labelText: _discountType == 'PERCENT'
+                          ? l10n.adminBankOfferPercentField
+                          : l10n.adminBankOfferAmountField,
                       border: const OutlineInputBorder(),
                     ),
                   ),
@@ -278,9 +284,9 @@ class _BodyState extends State<_Body> {
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
                 onChanged: (_) => setState(() {}),
-                decoration: const InputDecoration(
-                  labelText: 'Max discount (₹) — caps the % off',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: l10n.adminBankOfferMaxDiscountLabel,
+                  border: const OutlineInputBorder(),
                 ),
               ),
             ],
@@ -289,9 +295,9 @@ class _BodyState extends State<_Body> {
               controller: _minOrder,
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'Minimum order (₹) — eligibility filter',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.adminBankOfferMinOrderLabel,
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: AppSizes.sm),
@@ -300,11 +306,10 @@ class _BodyState extends State<_Body> {
               maxLength: 280,
               minLines: 1,
               maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'Terms (optional)',
-                hintText:
-                    'e.g. Not valid on no-cost EMI. Excludes Apple products.',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.adminBankOfferTermsLabel,
+                hintText: l10n.adminBankOfferTermsHint,
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: AppSizes.md),
@@ -314,7 +319,8 @@ class _BodyState extends State<_Body> {
                   child: OutlinedButton.icon(
                     onPressed: () => _pickDate(isFrom: true),
                     icon: const Icon(Icons.event),
-                    label: Text('From  ${_date.format(_validFrom)}'),
+                    label: Text(
+                        l10n.adminBankOfferFrom(_date.format(_validFrom))),
                   ),
                 ),
                 const SizedBox(width: AppSizes.sm),
@@ -322,7 +328,8 @@ class _BodyState extends State<_Body> {
                   child: OutlinedButton.icon(
                     onPressed: () => _pickDate(isFrom: false),
                     icon: const Icon(Icons.event_available),
-                    label: Text('Until ${_date.format(_validUntil)}'),
+                    label: Text(
+                        l10n.adminBankOfferUntil(_date.format(_validUntil))),
                   ),
                 ),
               ],
@@ -331,11 +338,8 @@ class _BodyState extends State<_Body> {
             SwitchListTile(
               value: _isActive,
               onChanged: (v) => setState(() => _isActive = v),
-              title: const Text('Active'),
-              subtitle: const Text(
-                'When off, the offer never decorates a PDP. Use this to '
-                'park a draft or expire an offer early without deleting it.',
-              ),
+              title: Text(l10n.adminActive),
+              subtitle: Text(l10n.adminBankOfferActiveSubtitle),
             ),
             const SizedBox(height: AppSizes.sm),
             Container(
@@ -348,7 +352,7 @@ class _BodyState extends State<_Body> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'PDP preview',
+                    l10n.adminBankOfferPdpPreview,
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                           color: AppColors.muted,
                           letterSpacing: 0.6,
@@ -380,10 +384,10 @@ class _BodyState extends State<_Body> {
               onPressed: _saving ? null : _save,
               child: Text(
                 _saving
-                    ? 'Saving…'
+                    ? l10n.adminSaving
                     : isEdit
-                        ? 'Save changes'
-                        : 'Create offer',
+                        ? l10n.adminSaveChanges
+                        : l10n.adminBankOfferCreate,
               ),
             ),
           ],

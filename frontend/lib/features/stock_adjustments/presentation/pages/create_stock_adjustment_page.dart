@@ -4,8 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:shopxy/features/products/data/datasources/products_remote_data_source.dart';
 import 'package:shopxy/features/products/domain/entities/product.dart';
 import 'package:shopxy/features/stock_adjustments/data/datasources/stock_adjustments_remote_data_source.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
-import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
 import 'package:shopxy/shared/widgets/app_card.dart';
@@ -137,8 +137,9 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     if (_items.isEmpty) {
+      final l10n = AppLocalizations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Add at least one item to adjust.')),
+        SnackBar(content: Text(l10n.stockAdjAddAtLeastOne)),
       );
       return;
     }
@@ -171,19 +172,20 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
   }
 
   Future<bool> _confirmDiscard() async {
+    final l10n = AppLocalizations.of(context);
     final discard = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Discard changes?'),
-        content: const Text('Your edits will be lost.'),
+        title: Text(l10n.stockAdjDiscardTitle),
+        content: Text(l10n.stockAdjDiscardMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Keep editing'),
+            child: Text(l10n.stockAdjKeepEditing),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Discard'),
+            child: Text(l10n.stockAdjDiscard),
           ),
         ],
       ),
@@ -191,9 +193,27 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
     return discard == true;
   }
 
+  String _reasonLabel(AppLocalizations l10n, String code) {
+    switch (code) {
+      case 'DAMAGE':
+        return l10n.stockAdjReasonDamage;
+      case 'EXPIRED':
+        return l10n.stockAdjReasonExpired;
+      case 'SHRINKAGE':
+        return l10n.stockAdjReasonShrinkage;
+      case 'RECOUNT':
+        return l10n.stockAdjReasonRecount;
+      case 'OPENING':
+        return l10n.stockAdjReasonOpening;
+      default:
+        return code;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final allowDirectionToggle = _reason == 'RECOUNT' || _reason == 'OPENING';
 
     return PopScope(
@@ -205,7 +225,7 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
       },
       child: Scaffold(
       appBar: AppBar(
-        title: const Text('New stock adjustment'),
+        title: Text(l10n.stockAdjNewTitle),
         actions: [
           TextButton(
             onPressed: _isSaving ? null : _save,
@@ -215,7 +235,7 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
                     height: AppSizes.iconMd,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text(AppStrings.submit),
+                : Text(l10n.stockAdjSubmit),
           ),
         ],
       ),
@@ -233,9 +253,9 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
               child: ListView(
                 padding: const EdgeInsets.all(AppSizes.lg),
                 children: [
-            const AppSectionHeader(
-              title: 'REASON',
-              padding: EdgeInsets.only(bottom: AppSizes.sm),
+            AppSectionHeader(
+              title: l10n.stockAdjReasonSection,
+              padding: const EdgeInsets.only(bottom: AppSizes.sm),
             ),
             Wrap(
               spacing: AppSizes.sm,
@@ -243,7 +263,7 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
               children: _kReasons.map((r) {
                 final selected = _reason == r.code;
                 return ChoiceChip(
-                  label: Text(r.label),
+                  label: Text(_reasonLabel(l10n, r.code)),
                   selected: selected,
                   onSelected: (_) => _pickReason(r.code),
                 );
@@ -252,9 +272,9 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
             if (allowDirectionToggle) ...[
               const SizedBox(height: AppSizes.md),
               SegmentedButton<String>(
-                segments: const [
-                  ButtonSegment(value: 'IN', label: Text('Add stock')),
-                  ButtonSegment(value: 'OUT', label: Text('Remove stock')),
+                segments: [
+                  ButtonSegment(value: 'IN', label: Text(l10n.stockAdjAddStock)),
+                  ButtonSegment(value: 'OUT', label: Text(l10n.stockAdjRemoveStock)),
                 ],
                 selected: {_direction},
                 showSelectedIcon: false,
@@ -264,19 +284,19 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
             const SizedBox(height: AppSizes.lg),
             TextFormField(
               controller: _note,
-              decoration: const InputDecoration(labelText: AppStrings.note),
+              decoration: InputDecoration(labelText: l10n.stockAdjNote),
               maxLines: 2,
               textCapitalization: TextCapitalization.sentences,
             ),
             const SizedBox(height: AppSizes.xxl),
-            const AppSectionHeader(
-              title: 'PRODUCTS',
-              padding: EdgeInsets.only(bottom: AppSizes.sm),
+            AppSectionHeader(
+              title: l10n.stockAdjProductsSection,
+              padding: const EdgeInsets.only(bottom: AppSizes.sm),
             ),
             TextFormField(
               controller: _searchCtrl,
               decoration: InputDecoration(
-                labelText: AppStrings.searchProducts,
+                labelText: l10n.stockAdjSearchProducts,
                 prefixIcon: const Icon(Icons.search_rounded),
                 suffixIcon: _isSearching
                     ? const Padding(
@@ -317,7 +337,7 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
                 padding: const EdgeInsets.all(AppSizes.xl),
                 alignment: Alignment.center,
                 child: Text(
-                  'No products added yet.',
+                  l10n.stockAdjNoProductsAdded,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: AppColors.muted,
                   ),
@@ -343,7 +363,7 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
               ),
             const SizedBox(height: AppSizes.xxl),
             AppButton.primary(
-              label: 'Post adjustment',
+              label: l10n.stockAdjPostAdjustment,
               icon: Icons.check_circle_outline_rounded,
               onPressed: _isSaving ? null : _save,
               isLoading: _isSaving,

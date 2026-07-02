@@ -4876,4 +4876,948 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get returnsMarkReceived => 'प्राप्त के रूप में चिह्नित करें';
+
+  @override
+  String get adminActive => 'सक्रिय';
+
+  @override
+  String get adminCancel => 'रद्द करें';
+
+  @override
+  String get adminDelete => 'हटाएं';
+
+  @override
+  String get adminDeactivate => 'निष्क्रिय करें';
+
+  @override
+  String get adminCreate => 'बनाएं';
+
+  @override
+  String get adminSave => 'सहेजें';
+
+  @override
+  String get adminSaving => 'सहेजा जा रहा है…';
+
+  @override
+  String get adminSaveChanges => 'बदलाव सहेजें';
+
+  @override
+  String get adminSaveFailed => 'सहेजना विफल रहा';
+
+  @override
+  String get adminRefresh => 'रीफ़्रेश करें';
+
+  @override
+  String get adminRetry => 'फिर से कोशिश करें';
+
+  @override
+  String get adminNotSet => 'सेट नहीं है';
+
+  @override
+  String get adminPublished => 'प्रकाशित';
+
+  @override
+  String get adminDraft => 'ड्राफ़्ट';
+
+  @override
+  String get adminSortLabel => 'क्रम';
+
+  @override
+  String get adminImageTooLarge =>
+      'इमेज 5 MB से बड़ी है। छोटी इमेज चुनें या और कसकर क्रॉप करें।';
+
+  @override
+  String get adminImageUploadFailed => 'इमेज अपलोड विफल रहा';
+
+  @override
+  String get adminReplaceImage => 'इमेज बदलें';
+
+  @override
+  String get adminLinkTargetHelper =>
+      'category:slug | product:id | url:https://…';
+
+  @override
+  String get adminBankOffersTitle => 'बैंक ऑफ़र';
+
+  @override
+  String get adminBankOfferNew => 'नया ऑफ़र';
+
+  @override
+  String get adminBankOffersEmpty =>
+      'अभी तक कोई बैंक ऑफ़र नहीं। पहला ऑफ़र बनाने के लिए \"नया ऑफ़र\" पर टैप करें।';
+
+  @override
+  String get adminBankOfferDeactivateTitle => 'ऑफ़र निष्क्रिय करें?';
+
+  @override
+  String get adminBankOfferDeactivateBody =>
+      'ग्राहकों को यह ऑफ़र किसी भी PDP पर नहीं दिखेगा। आप इसे बाद में इस पेज से फिर से सक्रिय कर सकते हैं।';
+
+  @override
+  String adminBankOfferPercentOff(Object value) {
+    return '$value% छूट';
+  }
+
+  @override
+  String adminBankOfferAmountOff(Object value) {
+    return '$value छूट';
+  }
+
+  @override
+  String adminBankOfferMinOrder(Object value) {
+    return 'न्यूनतम ऑर्डर $value';
+  }
+
+  @override
+  String adminBankOfferCap(Object value) {
+    return 'अधिकतम $value';
+  }
+
+  @override
+  String adminBankOfferValidRange(Object from, Object until) {
+    return 'मान्य $from – $until';
+  }
+
+  @override
+  String get adminBankOfferEditTitle => 'बैंक ऑफ़र संपादित करें';
+
+  @override
+  String get adminBankOfferNewTitle => 'नया बैंक ऑफ़र';
+
+  @override
+  String get adminBankOfferBankLabel => 'बैंक';
+
+  @override
+  String get adminBankOfferCardTypeLabel => 'कार्ड प्रकार';
+
+  @override
+  String get adminBankOfferTypeLabel => 'प्रकार';
+
+  @override
+  String get adminBankOfferTypePercent => 'प्रतिशत छूट';
+
+  @override
+  String get adminBankOfferTypeFlat => 'फ़्लैट ₹ छूट';
+
+  @override
+  String get adminBankOfferPercentField => '% छूट';
+
+  @override
+  String get adminBankOfferAmountField => '₹ छूट';
+
+  @override
+  String get adminBankOfferMaxDiscountLabel => 'अधिकतम छूट (₹) — % छूट की सीमा';
+
+  @override
+  String get adminBankOfferMinOrderLabel =>
+      'न्यूनतम ऑर्डर (₹) — पात्रता फ़िल्टर';
+
+  @override
+  String get adminBankOfferTermsLabel => 'शर्तें (वैकल्पिक)';
+
+  @override
+  String get adminBankOfferTermsHint =>
+      'जैसे, नो-कॉस्ट EMI पर मान्य नहीं। Apple उत्पाद शामिल नहीं।';
+
+  @override
+  String adminBankOfferFrom(Object date) {
+    return 'से  $date';
+  }
+
+  @override
+  String adminBankOfferUntil(Object date) {
+    return 'तक $date';
+  }
+
+  @override
+  String get adminBankOfferActiveSubtitle =>
+      'बंद होने पर, ऑफ़र किसी PDP पर कभी नहीं दिखता। इसका उपयोग ड्राफ़्ट रोकने या ऑफ़र को हटाए बिना जल्दी समाप्त करने के लिए करें।';
+
+  @override
+  String get adminBankOfferPdpPreview => 'PDP पूर्वावलोकन';
+
+  @override
+  String adminBankOfferPreviewCap(Object value) {
+    return ' ₹$value तक';
+  }
+
+  @override
+  String adminBankOfferPreviewPercent(
+    Object discount,
+    Object cap,
+    Object target,
+  ) {
+    return '$target पर $discount% छूट$cap';
+  }
+
+  @override
+  String adminBankOfferPreviewFlat(Object discount, Object target) {
+    return '$target पर ₹$discount छूट';
+  }
+
+  @override
+  String get adminBankOfferCreate => 'ऑफ़र बनाएं';
+
+  @override
+  String get adminBannersTitle => 'बैनर प्रबंधक';
+
+  @override
+  String get adminBannerNew => 'नया बैनर';
+
+  @override
+  String get adminBannerDeleteTitle => 'बैनर हटाएं?';
+
+  @override
+  String adminBannerDeleteBody(Object placement) {
+    return 'यह बैनर $placement से हटा दिया जाएगा।';
+  }
+
+  @override
+  String get adminBannerPlacementEmpty => 'इस स्थान पर अभी तक कोई बैनर नहीं';
+
+  @override
+  String adminBannerSort(Object value) {
+    return 'क्रम $value';
+  }
+
+  @override
+  String get adminBannerEditTitle => 'बैनर संपादित करें';
+
+  @override
+  String get adminBannerNewTitle => 'नया बैनर';
+
+  @override
+  String get adminBannerImageRequired => 'एक इमेज आवश्यक है';
+
+  @override
+  String get adminBannerPlacementLabel => 'स्थान';
+
+  @override
+  String get adminBannerLinkLabel => 'लिंक';
+
+  @override
+  String get adminBannerActiveSubtitle =>
+      'बंद होने पर, शेड्यूल की परवाह किए बिना छिपा रहेगा';
+
+  @override
+  String get adminBannerCreate => 'बैनर बनाएं';
+
+  @override
+  String get adminBannerUploadImage => 'इमेज अपलोड करें *';
+
+  @override
+  String get adminBannerStarts => 'शुरू';
+
+  @override
+  String get adminBannerEnds => 'समाप्त';
+
+  @override
+  String get adminCategoryTaxonomyTitle => 'श्रेणी वर्गीकरण';
+
+  @override
+  String get adminCategoryRoot => 'मूल श्रेणी';
+
+  @override
+  String adminCategoryDeleteTitle(Object name) {
+    return '\"$name\" हटाएं?';
+  }
+
+  @override
+  String get adminCategoryDeleteBody =>
+      'उप-श्रेणियां मूल में स्थानांतरित हो जाएंगी। इस श्रेणी के उत्पाद \"अवर्गीकृत\" में चले जाएंगे (लिंक शून्य हो जाएगा)।';
+
+  @override
+  String adminCategoryProductCount(Object value) {
+    return '$value उत्पाद';
+  }
+
+  @override
+  String get adminCategoryAddChild => 'उप-श्रेणी जोड़ें';
+
+  @override
+  String get adminCategoryNameRequired => 'नाम आवश्यक है';
+
+  @override
+  String get adminCategoryEditTitle => 'श्रेणी संपादित करें';
+
+  @override
+  String get adminCategoryNewTitle => 'नई श्रेणी';
+
+  @override
+  String get adminCategoryNameLabel => 'नाम *';
+
+  @override
+  String get adminCategoryNameHelper => 'स्लग इससे अपने आप बनता है।';
+
+  @override
+  String get adminCategoryDescriptionLabel => 'विवरण';
+
+  @override
+  String get adminCategoryImageUrlLabel => 'इमेज URL';
+
+  @override
+  String get adminCategoryImageUrlHelper => 'ग्राहक-पक्ष की गोल पक इमेज।';
+
+  @override
+  String get adminCategoryParentLabel => 'मूल श्रेणी';
+
+  @override
+  String get adminCategoryRootOption => '— मूल —';
+
+  @override
+  String get adminCollectionsTitle => 'संग्रह';
+
+  @override
+  String get adminCollectionNew => 'नया संग्रह';
+
+  @override
+  String get adminCollectionsEmpty => 'अभी तक कोई संग्रह नहीं';
+
+  @override
+  String get adminCollectionDeleteTitle => 'संग्रह हटाएं?';
+
+  @override
+  String adminCollectionDeleteBody(Object title) {
+    return '\"$title\" और इसकी आइटम सूची हटा दी जाएगी।';
+  }
+
+  @override
+  String adminCollectionItemCountOne(Object value) {
+    return '$value आइटम';
+  }
+
+  @override
+  String adminCollectionItemCountOther(Object value) {
+    return '$value आइटम';
+  }
+
+  @override
+  String get adminCollectionEditTitle => 'संग्रह संपादित करें';
+
+  @override
+  String get adminCollectionNewTitle => 'नया संग्रह';
+
+  @override
+  String get adminCollectionAddProduct => 'उत्पाद जोड़ें';
+
+  @override
+  String get adminCollectionTitleRequired => 'शीर्षक आवश्यक है';
+
+  @override
+  String get adminCollectionAlreadyAdded => 'पहले से ही इस संग्रह में है';
+
+  @override
+  String get adminCollectionTitleLabel => 'शीर्षक *';
+
+  @override
+  String get adminCollectionSlugLabel => 'स्लग';
+
+  @override
+  String get adminCollectionSlugHelper =>
+      'शीर्षक से अपने आप बनाने के लिए खाली छोड़ें';
+
+  @override
+  String get adminCollectionEyebrowLabel => 'आइब्रो';
+
+  @override
+  String get adminCollectionEyebrowHelper => 'शीर्षक के ऊपर छोटा टेक्स्ट';
+
+  @override
+  String get adminCollectionSubtitleLabel => 'उपशीर्षक';
+
+  @override
+  String get adminCollectionCtaTextLabel => 'CTA टेक्स्ट';
+
+  @override
+  String get adminCollectionCtaTargetLabel => 'CTA लक्ष्य';
+
+  @override
+  String get adminCollectionBgColorLabel => 'बैकग्राउंड रंग (#hex)';
+
+  @override
+  String get adminCollectionBgColorHelper => 'वैकल्पिक — रेल में एक्सेंट सतह';
+
+  @override
+  String get adminCollectionPublishedSubtitle =>
+      'ग्राहक ऐप पर खरीदारों को दिखाई देगा';
+
+  @override
+  String get adminCollectionItemsSection => 'आइटम';
+
+  @override
+  String get adminCollectionItemsHintNew =>
+      'पहले संग्रह सहेजें, फिर + बटन से उत्पाद जोड़ें।';
+
+  @override
+  String get adminCollectionItemsHintEmpty =>
+      'उत्पाद जोड़ने के लिए ऐप बार में + पर टैप करें।';
+
+  @override
+  String get adminCollectionCoverImage => 'कवर इमेज';
+
+  @override
+  String get adminCollectionReplaceCover => 'कवर बदलें';
+
+  @override
+  String get adminCollectionProductSearchLabel => 'उत्पाद नाम या SKU खोजें';
+
+  @override
+  String get adminCollectionProductSearchHint =>
+      'खोजने के लिए 2+ अक्षर टाइप करें';
+
+  @override
+  String get adminShopsTitle => 'दुकान सत्यापन';
+
+  @override
+  String get adminShopsSearchHint => 'दुकान का नाम या स्लग खोजें';
+
+  @override
+  String get adminShopVerified => 'सत्यापित';
+
+  @override
+  String get adminShopDraft => 'ड्राफ़्ट';
+
+  @override
+  String get adminShopsEmpty => 'कोई दुकान नहीं मिली।';
+
+  @override
+  String get analyticsTitle => 'एनालिटिक्स';
+
+  @override
+  String get analyticsRefresh => 'रिफ़्रेश करें';
+
+  @override
+  String get analyticsByProduct => 'उत्पाद अनुसार';
+
+  @override
+  String get analyticsNoActiveProducts => 'अभी तक कोई सक्रिय उत्पाद नहीं';
+
+  @override
+  String get analyticsKpiImpressions => 'इंप्रेशन';
+
+  @override
+  String get analyticsKpiTaps => 'टैप';
+
+  @override
+  String get analyticsKpiViews => 'व्यूज़';
+
+  @override
+  String get analyticsKpiAddToCart => 'कार्ट में जोड़ा';
+
+  @override
+  String get analyticsKpiPurchases => 'खरीदारी';
+
+  @override
+  String get analyticsKpiWishlist => 'विशलिस्ट';
+
+  @override
+  String get analyticsKpiCtr => 'CTR';
+
+  @override
+  String get analyticsKpiCvr => 'CVR';
+
+  @override
+  String get analyticsColProduct => 'उत्पाद';
+
+  @override
+  String get analyticsColImpressions => 'इंप्र.';
+
+  @override
+  String get analyticsColTaps => 'टैप';
+
+  @override
+  String get analyticsColViews => 'व्यूज़';
+
+  @override
+  String get analyticsColAddToCart => 'ATC';
+
+  @override
+  String get analyticsColPurchases => 'खरीद';
+
+  @override
+  String get analyticsColCtr => 'CTR';
+
+  @override
+  String get analyticsColCvr => 'CVR';
+
+  @override
+  String get customFieldsTitle => 'कस्टम फ़ील्ड';
+
+  @override
+  String get customFieldsTemplates => 'टेम्पलेट';
+
+  @override
+  String get customFieldsAddField => 'फ़ील्ड जोड़ें';
+
+  @override
+  String get customFieldsAddSection => 'सेक्शन जोड़ें';
+
+  @override
+  String get customFieldsEditField => 'फ़ील्ड संपादित करें';
+
+  @override
+  String get customFieldsEditSection => 'सेक्शन संपादित करें';
+
+  @override
+  String get customFieldsArchive => 'आर्काइव';
+
+  @override
+  String customFieldsArchiveSectionTitle(Object name) {
+    return '\"$name\" को आर्काइव करें?';
+  }
+
+  @override
+  String get customFieldsArchiveSectionMessage =>
+      'आर्काइव करने से सेक्शन छिप जाता है। इसकी फ़ील्ड जहाँ हैं वहीं रहती हैं और बाद में दोबारा असाइन की जा सकती हैं।';
+
+  @override
+  String customFieldsArchiveFieldTitle(Object name) {
+    return '\"$name\" को आर्काइव करें?';
+  }
+
+  @override
+  String get customFieldsArchiveFieldConfirm =>
+      'इस फ़ील्ड को आर्काइव करें? मौजूदा वैल्यू हर प्रोडक्ट पर बनी रहेंगी, लेकिन नई फ़ील्ड नए प्रोडक्ट पर दिखना बंद हो जाएगी।';
+
+  @override
+  String get customFieldsEmptyTitle => 'अभी तक कोई कस्टम फ़ील्ड नहीं';
+
+  @override
+  String get customFieldsEmptyHint =>
+      'वारंटी, मॉडल नंबर, मटेरियल जैसी फ़ील्ड बनाएँ — हर प्रोडक्ट पर दिखेंगी।';
+
+  @override
+  String get customFieldsBrowseTemplates => 'टेम्पलेट देखें';
+
+  @override
+  String get customFieldsTemplatesCalloutTitle =>
+      'क्विक-स्टार्ट टेम्पलेट लगाएँ';
+
+  @override
+  String get customFieldsTemplatesCalloutSubtitle =>
+      'इलेक्ट्रॉनिक्स, परिधान, लॉजिस्टिक्स, फ़ूड, वारंटी…';
+
+  @override
+  String customFieldsFieldCountOne(Object count) {
+    return '$count फ़ील्ड';
+  }
+
+  @override
+  String customFieldsFieldCountOther(Object count) {
+    return '$count फ़ील्ड';
+  }
+
+  @override
+  String get customFieldsNoSection => 'कोई सेक्शन नहीं';
+
+  @override
+  String customFieldsUngroupedCountOne(Object count) {
+    return '$count बिना-समूह फ़ील्ड';
+  }
+
+  @override
+  String customFieldsUngroupedCountOther(Object count) {
+    return '$count बिना-समूह फ़ील्ड';
+  }
+
+  @override
+  String customFieldsUnitInline(Object unit) {
+    return '$unit में';
+  }
+
+  @override
+  String customFieldsOptionCountOne(Object count) {
+    return '$count विकल्प';
+  }
+
+  @override
+  String customFieldsOptionCountOther(Object count) {
+    return '$count विकल्प';
+  }
+
+  @override
+  String get customFieldsSectionName => 'सेक्शन का नाम';
+
+  @override
+  String get customFieldsFieldRequired => 'यह फ़ील्ड आवश्यक है';
+
+  @override
+  String get customFieldsPickIcon => 'एक आइकन चुनें';
+
+  @override
+  String get customFieldsLoading => 'लोड हो रहा है...';
+
+  @override
+  String get customFieldsSave => 'सहेजें';
+
+  @override
+  String get customFieldsDropdownMinOptions =>
+      'ड्रॉपडाउन के लिए कम से कम दो विकल्प जोड़ें।';
+
+  @override
+  String get customFieldsFieldName => 'फ़ील्ड का नाम';
+
+  @override
+  String get customFieldsFieldType => 'फ़ील्ड का प्रकार';
+
+  @override
+  String get customFieldsSectionOptional => 'सेक्शन (वैकल्पिक)';
+
+  @override
+  String get customFieldsUnitSuffix => 'यूनिट (वैकल्पिक)';
+
+  @override
+  String get customFieldsUnitSuffixHint => 'जैसे kg, days, GB';
+
+  @override
+  String get customFieldsOptions => 'विकल्प';
+
+  @override
+  String get customFieldsOptionsHint =>
+      'हर पंक्ति में एक। ड्रॉपडाउन विकल्पों के लिए उपयोग होता है।';
+
+  @override
+  String get customFieldsTemplateApplied => 'टेम्पलेट लागू किया गया';
+
+  @override
+  String get customFieldsQuickStartTemplates => 'क्विक-स्टार्ट टेम्पलेट';
+
+  @override
+  String get customFieldsTemplatesSheetSubtitle =>
+      'किसी भी टेम्पलेट पर टैप करके उसका सेक्शन और फ़ील्ड अपनी दुकान में जोड़ें।';
+
+  @override
+  String get customFieldsTemplatesUnavailable =>
+      'टेम्पलेट उपलब्ध नहीं हैं। अपना कनेक्शन जाँचें और फिर से प्रयास करें।';
+
+  @override
+  String customFieldsTemplateFieldCount(Object count) {
+    return '$count फ़ील्ड';
+  }
+
+  @override
+  String get customFieldsPickDate => 'एक तारीख़ चुनें';
+
+  @override
+  String get paymentsCounterpartyParty => 'पार्टी';
+
+  @override
+  String get paymentsCounterpartyVendor => 'वेंडर';
+
+  @override
+  String get paymentsRecordReceiptTitle => 'रसीद दर्ज करें';
+
+  @override
+  String get paymentsRecordPaymentTitle => 'भुगतान दर्ज करें';
+
+  @override
+  String paymentsFromCounterparty(Object name) {
+    return '$name से';
+  }
+
+  @override
+  String paymentsToCounterparty(Object name) {
+    return '$name को';
+  }
+
+  @override
+  String get paymentsAmountLabel => 'राशि';
+
+  @override
+  String get paymentsAmountPositiveError => 'धनात्मक राशि दर्ज करें';
+
+  @override
+  String get paymentsModeLabel => 'माध्यम';
+
+  @override
+  String get paymentsUpiTransactionIdLabel => 'UPI लेनदेन आईडी';
+
+  @override
+  String get paymentsChequeNumberLabel => 'चेक नंबर';
+
+  @override
+  String get paymentsReferenceLabel => 'संदर्भ';
+
+  @override
+  String get paymentsDateLabel => 'तारीख';
+
+  @override
+  String get paymentsAllocatedToLabel => 'आवंटित';
+
+  @override
+  String get paymentsInvoiceLabel => 'इनवॉइस';
+
+  @override
+  String get paymentsAllocateToInvoiceTitle => 'किसी इनवॉइस में आवंटित करें';
+
+  @override
+  String get paymentsAllocateToInvoiceSubtitle => 'बंद = खाते में जमा';
+
+  @override
+  String paymentsNoInvoicesFound(Object name) {
+    return 'इस $name के लिए कोई इनवॉइस नहीं मिली।';
+  }
+
+  @override
+  String get paymentsPickInvoiceError => 'एक इनवॉइस चुनें';
+
+  @override
+  String get paymentsNoteOptionalLabel => 'नोट (वैकल्पिक)';
+
+  @override
+  String get paymentsSaveReceipt => 'रसीद सहेजें';
+
+  @override
+  String get paymentsSavePayment => 'भुगतान सहेजें';
+
+  @override
+  String reviewsTitle(Object name) {
+    return 'समीक्षाएँ · $name';
+  }
+
+  @override
+  String get reviewsLoadMore => 'और लोड करें';
+
+  @override
+  String get reviewsEmpty =>
+      'अभी कोई समीक्षा नहीं — खरीदार जैसे ही समीक्षा देंगे, वह यहाँ दिखेगी।';
+
+  @override
+  String get reviewsNoneYet => 'अभी कोई समीक्षा नहीं';
+
+  @override
+  String get reviewsCountSingular => '1 समीक्षा';
+
+  @override
+  String reviewsCountPlural(Object count) {
+    return '$count समीक्षाएँ';
+  }
+
+  @override
+  String get reviewsCustomerFallback => 'ग्राहक';
+
+  @override
+  String get scanConsoleTitle => 'कंसोल पर स्कैन करें';
+
+  @override
+  String get scanConsoleClear => 'साफ़ करें';
+
+  @override
+  String scanConsoleClearFailed(Object error) {
+    return 'साफ़ नहीं हो सका: $error';
+  }
+
+  @override
+  String get scanConsoleEmpty =>
+      'कैमरे को किसी उत्पाद के बारकोड या QR पर लक्षित करें।';
+
+  @override
+  String get scanConsoleConnected => 'कनेक्शन स्थापित हो गया';
+
+  @override
+  String scanConsoleWatching(Object count, Object sent) {
+    return '$count कंसोल देख रहे हैं · $sent भेजे गए';
+  }
+
+  @override
+  String get scanConsoleOpenWebHint =>
+      'स्कैन लाइव देखने के लिए वेब पर स्कैन कंसोल खोलें';
+
+  @override
+  String get scanConsoleConnecting => 'कनेक्ट हो रहा है…';
+
+  @override
+  String get scanConsoleReconnecting => 'फिर से कनेक्ट हो रहा है…';
+
+  @override
+  String get scanConsoleNotConnected => 'कनेक्ट नहीं है';
+
+  @override
+  String get stockLedgerTitle => 'स्टॉक लेजर';
+
+  @override
+  String get stockLedgerEmptySubtitle =>
+      'इस उत्पाद के लिए अभी तक कोई मूवमेंट दर्ज नहीं हुआ है।';
+
+  @override
+  String get stockLedgerReversalBadge => 'रिवर्सल';
+
+  @override
+  String stockLedgerByName(Object name) {
+    return '$name द्वारा';
+  }
+
+  @override
+  String stockLedgerBalance(Object qty) {
+    return 'शेष: $qty';
+  }
+
+  @override
+  String get stockLedgerViewSource => 'स्रोत देखें';
+
+  @override
+  String get stockSheetDraftCreated =>
+      'ड्राफ्ट इनवॉइस बन गया — स्टॉक पोस्ट करने के लिए इसे Invoices टैब से कन्फर्म करें।';
+
+  @override
+  String stockSheetCurrentStock(Object qty, Object unit) {
+    return 'वर्तमान स्टॉक: $qty $unit';
+  }
+
+  @override
+  String get stockSheetPurchase => 'खरीद';
+
+  @override
+  String get stockSheetSale => 'बिक्री';
+
+  @override
+  String get stockSheetQuantity => 'मात्रा';
+
+  @override
+  String get stockSheetFieldRequired => 'यह फ़ील्ड आवश्यक है';
+
+  @override
+  String get stockSheetInvalidNumber => 'मान्य संख्या दर्ज करें';
+
+  @override
+  String get stockSheetUnitPrice => 'यूनिट कीमत';
+
+  @override
+  String get stockSheetCustomer => 'ग्राहक';
+
+  @override
+  String get stockSheetSearchParties =>
+      'पार्टियाँ खोजें — डिफ़ॉल्ट रूप से Walk-in Customer';
+
+  @override
+  String get stockSheetClear => 'साफ़ करें';
+
+  @override
+  String get stockSheetSupplier => 'सप्लायर';
+
+  @override
+  String get stockSheetSupplierHint => 'सप्लायर-वार कीमत इतिहास ट्रैक करें';
+
+  @override
+  String get stockSheetSupplierAutocompleteHint =>
+      'पिछले सप्लायर देखने के लिए टाइप करना शुरू करें';
+
+  @override
+  String get stockSheetNote => 'नोट';
+
+  @override
+  String get stockSheetConfirm => 'कन्फर्म करें';
+
+  @override
+  String get stockAdjTitle => 'स्टॉक समायोजन';
+
+  @override
+  String get stockAdjEmptyTitle => 'अभी तक कोई समायोजन नहीं';
+
+  @override
+  String get stockAdjEmptySubtitle =>
+      'क्षति, समाप्त स्टॉक, या गिनती सुधार दर्ज करने के लिए + पर टैप करें।';
+
+  @override
+  String get stockAdjItemSingular => 'वस्तु';
+
+  @override
+  String get stockAdjItemPlural => 'वस्तुएं';
+
+  @override
+  String get stockAdjNewTitle => 'नया स्टॉक समायोजन';
+
+  @override
+  String get stockAdjSubmit => 'सबमिट करें';
+
+  @override
+  String get stockAdjAddAtLeastOne =>
+      'समायोजित करने के लिए कम से कम एक वस्तु जोड़ें।';
+
+  @override
+  String get stockAdjDiscardTitle => 'बदलाव रद्द करें?';
+
+  @override
+  String get stockAdjDiscardMessage => 'आपके बदलाव खो जाएंगे।';
+
+  @override
+  String get stockAdjKeepEditing => 'संपादन जारी रखें';
+
+  @override
+  String get stockAdjDiscard => 'रद्द करें';
+
+  @override
+  String get stockAdjReasonSection => 'कारण';
+
+  @override
+  String get stockAdjProductsSection => 'उत्पाद';
+
+  @override
+  String get stockAdjReasonDamage => 'क्षतिग्रस्त';
+
+  @override
+  String get stockAdjReasonExpired => 'समाप्त';
+
+  @override
+  String get stockAdjReasonShrinkage => 'कमी';
+
+  @override
+  String get stockAdjReasonRecount => 'पुनर्गणना सुधार';
+
+  @override
+  String get stockAdjReasonOpening => 'प्रारंभिक शेष';
+
+  @override
+  String get stockAdjAddStock => 'स्टॉक जोड़ें';
+
+  @override
+  String get stockAdjRemoveStock => 'स्टॉक हटाएं';
+
+  @override
+  String get stockAdjNote => 'टिप्पणी';
+
+  @override
+  String get stockAdjSearchProducts => 'उत्पाद खोजें';
+
+  @override
+  String get stockAdjNoProductsAdded => 'अभी तक कोई उत्पाद नहीं जोड़ा गया।';
+
+  @override
+  String get stockAdjPostAdjustment => 'समायोजन पोस्ट करें';
+
+  @override
+  String get sharedContactChangesRecentChanges => 'हाल के बदलाव';
+
+  @override
+  String get sharedContactChangesChangedSuffix => 'बदला गया';
+
+  @override
+  String get sharedContactChangesFieldName => 'नाम';
+
+  @override
+  String get sharedContactChangesFieldContactPerson => 'संपर्क व्यक्ति';
+
+  @override
+  String get sharedContactChangesFieldPhone => 'फ़ोन';
+
+  @override
+  String get sharedContactChangesFieldEmail => 'ईमेल';
+
+  @override
+  String get sharedContactChangesFieldAddress => 'पता';
+
+  @override
+  String get sharedContactChangesFieldCity => 'शहर';
+
+  @override
+  String get sharedContactChangesFieldState => 'राज्य';
+
+  @override
+  String get sharedContactChangesFieldStateCode => 'राज्य कोड';
+
+  @override
+  String get sharedContactChangesFieldPinCode => 'पिन कोड';
+
+  @override
+  String get sharedContactChangesFieldActive => 'सक्रिय';
 }

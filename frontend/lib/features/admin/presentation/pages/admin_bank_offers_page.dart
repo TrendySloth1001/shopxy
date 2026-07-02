@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/features/admin/data/models/platform_bank_offer.dart';
 import 'package:shopxy/features/admin/presentation/pages/admin_bank_offer_editor_sheet.dart';
 import 'package:shopxy/features/admin/presentation/providers/admin_bank_offers_provider.dart';
@@ -46,23 +47,21 @@ class _AdminBankOffersPageState extends State<AdminBankOffersPage> {
   }
 
   Future<void> _deactivate(AdminPlatformBankOffer o) async {
+    final l10n = AppLocalizations.of(context);
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Deactivate offer?'),
-        content: Text(
-          'Customers won\'t see this offer on any PDP. You can re-activate '
-          'it later from this page.',
-        ),
+        title: Text(l10n.adminBankOfferDeactivateTitle),
+        content: Text(l10n.adminBankOfferDeactivateBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(l10n.adminCancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: AppColors.error),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Deactivate'),
+            child: Text(l10n.adminDeactivate),
           ),
         ],
       ),
@@ -80,14 +79,15 @@ class _AdminBankOffersPageState extends State<AdminBankOffersPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final provider = context.watch<AdminBankOffersProvider>();
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
-        title: const Text('Bank offers'),
+        title: Text(l10n.adminBankOffersTitle),
         actions: [
           IconButton(
-            tooltip: 'Refresh',
+            tooltip: l10n.adminRefresh,
             icon: const Icon(Icons.refresh),
             onPressed: provider.isLoading ? null : provider.load,
           ),
@@ -96,7 +96,7 @@ class _AdminBankOffersPageState extends State<AdminBankOffersPage> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openEditor(),
         icon: const Icon(Icons.add),
-        label: const Text('New offer'),
+        label: Text(l10n.adminBankOfferNew),
       ),
       body: provider.isLoading && provider.offers.isEmpty
           ? const _OfferListSkeleton()
@@ -227,10 +227,11 @@ class _OfferRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final discount = offer.discountType == 'PERCENT'
-        ? '${offer.discountValue.toStringAsFixed(0)}% off'
-        : '${currencyFormat.format(offer.discountValue)} off';
+        ? l10n.adminBankOfferPercentOff(offer.discountValue.toStringAsFixed(0))
+        : l10n.adminBankOfferAmountOff(currencyFormat.format(offer.discountValue));
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSizes.sm),
       child: Material(
@@ -263,9 +264,9 @@ class _OfferRow extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSizes.xs),
                 Text(
-                  '${offer.cardType} · min order '
-                  '${currencyFormat.format(offer.minOrderAmount)}'
-                  '${offer.maxDiscount != null ? ' · cap ${currencyFormat.format(offer.maxDiscount)}' : ''}',
+                  '${offer.cardType} · '
+                  '${l10n.adminBankOfferMinOrder(currencyFormat.format(offer.minOrderAmount))}'
+                  '${offer.maxDiscount != null ? ' · ${l10n.adminBankOfferCap(currencyFormat.format(offer.maxDiscount))}' : ''}',
                   style: theme.textTheme.bodyMedium,
                 ),
                 if (offer.terms != null && offer.terms!.isNotEmpty) ...[
@@ -281,8 +282,10 @@ class _OfferRow extends StatelessWidget {
                 ],
                 const SizedBox(height: AppSizes.xs),
                 Text(
-                  'Valid ${dateFormat.format(offer.validFrom)} – '
-                  '${dateFormat.format(offer.validUntil)}',
+                  l10n.adminBankOfferValidRange(
+                    dateFormat.format(offer.validFrom),
+                    dateFormat.format(offer.validUntil),
+                  ),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: AppColors.muted,
                   ),
@@ -295,7 +298,7 @@ class _OfferRow extends StatelessWidget {
                       onPressed: onDeactivate,
                       icon: const Icon(Icons.power_settings_new,
                           size: AppSizes.iconSm),
-                      label: const Text('Deactivate'),
+                      label: Text(l10n.adminDeactivate),
                       style: TextButton.styleFrom(
                         foregroundColor: AppColors.error,
                         visualDensity: VisualDensity.compact,
@@ -326,7 +329,7 @@ class _EmptyBlock extends StatelessWidget {
                 size: AppSizes.iconHuge, color: AppColors.subtle),
             const SizedBox(height: AppSizes.md),
             Text(
-              'No bank offers yet. Tap "New offer" to curate the first one.',
+              AppLocalizations.of(context).adminBankOffersEmpty,
               textAlign: TextAlign.center,
               style: TextStyle(color: AppColors.muted),
             ),
@@ -354,7 +357,7 @@ class _ErrorBlock extends StatelessWidget {
             const SizedBox(height: AppSizes.md),
             FilledButton(
               onPressed: () => onRetry(),
-              child: const Text('Retry'),
+              child: Text(AppLocalizations.of(context).adminRetry),
             ),
           ],
         ),

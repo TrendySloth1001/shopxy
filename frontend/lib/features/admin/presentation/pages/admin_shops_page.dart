@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/core/network/image_url.dart';
 import 'package:shopxy/features/admin/data/datasources/admin_shops_remote_data_source.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
@@ -80,13 +81,14 @@ class _AdminShopsPageState extends State<AdminShopsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
-        title: const Text('Shop verification'),
+        title: Text(l10n.adminShopsTitle),
         actions: [
           IconButton(
-            tooltip: 'Refresh',
+            tooltip: l10n.adminRefresh,
             icon: const Icon(Icons.refresh),
             onPressed: _loading ? null : _load,
           ),
@@ -100,7 +102,7 @@ class _AdminShopsPageState extends State<AdminShopsPage> {
             child: TextField(
               controller: _searchCtrl,
               decoration: InputDecoration(
-                hintText: 'Search by shop name or slug',
+                hintText: l10n.adminShopsSearchHint,
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _searchCtrl.text.isEmpty
                     ? null
@@ -154,6 +156,7 @@ class _Row extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSizes.sm),
@@ -203,8 +206,8 @@ class _Row extends StatelessWidget {
                         ),
                         if (row.isVerified) ...[
                           const SizedBox(width: AppSizes.sm),
-                          const AppStatusBadge(
-                            label: 'Verified',
+                          AppStatusBadge(
+                            label: l10n.adminShopVerified,
                             tone: AppStatusTone.info,
                             weight: AppStatusWeight.soft,
                             dense: true,
@@ -215,7 +218,7 @@ class _Row extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       '/${row.slug}'
-                      '${row.isPublished ? "" : " · draft"}',
+                      '${row.isPublished ? "" : " · ${l10n.adminShopDraft}"}',
                       style: theme.textTheme.bodySmall
                           ?.copyWith(color: AppColors.muted),
                     ),
@@ -313,7 +316,7 @@ class _EmptyBlock extends StatelessWidget {
                   size: AppSizes.iconHuge, color: AppColors.subtle),
               const SizedBox(height: AppSizes.md),
               Text(
-                'No shops found.',
+                AppLocalizations.of(context).adminShopsEmpty,
                 textAlign: TextAlign.center,
                 style: TextStyle(color: AppColors.muted),
               ),

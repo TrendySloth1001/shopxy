@@ -2327,5 +2327,560 @@
   "returnsReasonOther": "Other",
   "returnsTimeline": "Timeline",
   "returnsMarkPickedUp": "Mark as picked up",
-  "returnsMarkReceived": "Mark as received"
+  "returnsMarkReceived": "Mark as received",
+  "adminActive": "Active",
+  "adminCancel": "Cancel",
+  "adminDelete": "Delete",
+  "adminDeactivate": "Deactivate",
+  "adminCreate": "Create",
+  "adminSave": "Save",
+  "adminSaving": "Saving…",
+  "adminSaveChanges": "Save changes",
+  "adminSaveFailed": "Save failed",
+  "adminRefresh": "Refresh",
+  "adminRetry": "Retry",
+  "adminNotSet": "Not set",
+  "adminPublished": "Published",
+  "adminDraft": "Draft",
+  "adminSortLabel": "Sort",
+  "adminImageTooLarge": "Image is larger than 5 MB. Pick a smaller image or crop tighter.",
+  "adminImageUploadFailed": "Image upload failed",
+  "adminReplaceImage": "Replace image",
+  "adminLinkTargetHelper": "category:slug | product:id | url:https://…",
+  "adminBankOffersTitle": "Bank offers",
+  "adminBankOfferNew": "New offer",
+  "adminBankOffersEmpty": "No bank offers yet. Tap \"New offer\" to curate the first one.",
+  "adminBankOfferDeactivateTitle": "Deactivate offer?",
+  "adminBankOfferDeactivateBody": "Customers won't see this offer on any PDP. You can re-activate it later from this page.",
+  "adminBankOfferPercentOff": "{value}% off",
+  "@adminBankOfferPercentOff": {
+    "placeholders": {
+      "value": {
+        "type": "Object"
+      }
+    }
+  },
+  "adminBankOfferAmountOff": "{value} off",
+  "@adminBankOfferAmountOff": {
+    "placeholders": {
+      "value": {
+        "type": "Object"
+      }
+    }
+  },
+  "adminBankOfferMinOrder": "min order {value}",
+  "@adminBankOfferMinOrder": {
+    "placeholders": {
+      "value": {
+        "type": "Object"
+      }
+    }
+  },
+  "adminBankOfferCap": "cap {value}",
+  "@adminBankOfferCap": {
+    "placeholders": {
+      "value": {
+        "type": "Object"
+      }
+    }
+  },
+  "adminBankOfferValidRange": "Valid {from} – {until}",
+  "@adminBankOfferValidRange": {
+    "placeholders": {
+      "from": {
+        "type": "Object"
+      },
+      "until": {
+        "type": "Object"
+      }
+    }
+  },
+  "adminBankOfferEditTitle": "Edit bank offer",
+  "adminBankOfferNewTitle": "New bank offer",
+  "adminBankOfferBankLabel": "Bank",
+  "adminBankOfferCardTypeLabel": "Card type",
+  "adminBankOfferTypeLabel": "Type",
+  "adminBankOfferTypePercent": "Percent off",
+  "adminBankOfferTypeFlat": "Flat ₹ off",
+  "adminBankOfferPercentField": "% off",
+  "adminBankOfferAmountField": "₹ off",
+  "adminBankOfferMaxDiscountLabel": "Max discount (₹) — caps the % off",
+  "adminBankOfferMinOrderLabel": "Minimum order (₹) — eligibility filter",
+  "adminBankOfferTermsLabel": "Terms (optional)",
+  "adminBankOfferTermsHint": "e.g. Not valid on no-cost EMI. Excludes Apple products.",
+  "adminBankOfferFrom": "From  {date}",
+  "@adminBankOfferFrom": {
+    "placeholders": {
+      "date": {
+        "type": "Object"
+      }
+    }
+  },
+  "adminBankOfferUntil": "Until {date}",
+  "@adminBankOfferUntil": {
+    "placeholders": {
+      "date": {
+        "type": "Object"
+      }
+    }
+  },
+  "adminBankOfferActiveSubtitle": "When off, the offer never decorates a PDP. Use this to park a draft or expire an offer early without deleting it.",
+  "adminBankOfferPdpPreview": "PDP preview",
+  "adminBankOfferPreviewCap": " up to ₹{value}",
+  "@adminBankOfferPreviewCap": {
+    "placeholders": {
+      "value": {
+        "type": "Object"
+      }
+    }
+  },
+  "adminBankOfferPreviewPercent": "{discount}% off{cap} on {target}",
+  "@adminBankOfferPreviewPercent": {
+    "placeholders": {
+      "discount": {
+        "type": "Object"
+      },
+      "cap": {
+        "type": "Object"
+      },
+      "target": {
+        "type": "Object"
+      }
+    }
+  },
+  "adminBankOfferPreviewFlat": "₹{discount} off on {target}",
+  "@adminBankOfferPreviewFlat": {
+    "placeholders": {
+      "discount": {
+        "type": "Object"
+      },
+      "target": {
+        "type": "Object"
+      }
+    }
+  },
+  "adminBankOfferCreate": "Create offer",
+  "adminBannersTitle": "Banner manager",
+  "adminBannerNew": "New banner",
+  "adminBannerDeleteTitle": "Delete banner?",
+  "adminBannerDeleteBody": "This banner will be removed from {placement}.",
+  "@adminBannerDeleteBody": {
+    "placeholders": {
+      "placement": {
+        "type": "Object"
+      }
+    }
+  },
+  "adminBannerPlacementEmpty": "No banners in this placement yet",
+  "adminBannerSort": "Sort {value}",
+  "@adminBannerSort": {
+    "placeholders": {
+      "value": {
+        "type": "Object"
+      }
+    }
+  },
+  "adminBannerEditTitle": "Edit banner",
+  "adminBannerNewTitle": "New banner",
+  "adminBannerImageRequired": "An image is required",
+  "adminBannerPlacementLabel": "Placement",
+  "adminBannerLinkLabel": "Link",
+  "adminBannerActiveSubtitle": "When off, hidden regardless of schedule",
+  "adminBannerCreate": "Create banner",
+  "adminBannerUploadImage": "Upload image *",
+  "adminBannerStarts": "Starts",
+  "adminBannerEnds": "Ends",
+  "adminCategoryTaxonomyTitle": "Category taxonomy",
+  "adminCategoryRoot": "Root category",
+  "adminCategoryDeleteTitle": "Delete \"{name}\"?",
+  "@adminCategoryDeleteTitle": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "adminCategoryDeleteBody": "Children re-parent to root. Products in this category fall back to \"uncategorised\" (the link goes null).",
+  "adminCategoryProductCount": "{value} products",
+  "@adminCategoryProductCount": {
+    "placeholders": {
+      "value": {
+        "type": "Object"
+      }
+    }
+  },
+  "adminCategoryAddChild": "Add child",
+  "adminCategoryNameRequired": "Name is required",
+  "adminCategoryEditTitle": "Edit category",
+  "adminCategoryNewTitle": "New category",
+  "adminCategoryNameLabel": "Name *",
+  "adminCategoryNameHelper": "Slug auto-derives from this.",
+  "adminCategoryDescriptionLabel": "Description",
+  "adminCategoryImageUrlLabel": "Image URL",
+  "adminCategoryImageUrlHelper": "Customer-side circle puck image.",
+  "adminCategoryParentLabel": "Parent",
+  "adminCategoryRootOption": "— Root —",
+  "adminCollectionsTitle": "Collections",
+  "adminCollectionNew": "New collection",
+  "adminCollectionsEmpty": "No collections yet",
+  "adminCollectionDeleteTitle": "Delete collection?",
+  "adminCollectionDeleteBody": "\"{title}\" and its item list will be removed.",
+  "@adminCollectionDeleteBody": {
+    "placeholders": {
+      "title": {
+        "type": "Object"
+      }
+    }
+  },
+  "adminCollectionItemCountOne": "{value} item",
+  "@adminCollectionItemCountOne": {
+    "placeholders": {
+      "value": {
+        "type": "Object"
+      }
+    }
+  },
+  "adminCollectionItemCountOther": "{value} items",
+  "@adminCollectionItemCountOther": {
+    "placeholders": {
+      "value": {
+        "type": "Object"
+      }
+    }
+  },
+  "adminCollectionEditTitle": "Edit collection",
+  "adminCollectionNewTitle": "New collection",
+  "adminCollectionAddProduct": "Add product",
+  "adminCollectionTitleRequired": "Title is required",
+  "adminCollectionAlreadyAdded": "Already in this collection",
+  "adminCollectionTitleLabel": "Title *",
+  "adminCollectionSlugLabel": "Slug",
+  "adminCollectionSlugHelper": "Leave blank to auto-derive from title",
+  "adminCollectionEyebrowLabel": "Eyebrow",
+  "adminCollectionEyebrowHelper": "Tiny copy above title",
+  "adminCollectionSubtitleLabel": "Subtitle",
+  "adminCollectionCtaTextLabel": "CTA text",
+  "adminCollectionCtaTargetLabel": "CTA target",
+  "adminCollectionBgColorLabel": "BG color (#hex)",
+  "adminCollectionBgColorHelper": "Optional — accent surface in rails",
+  "adminCollectionPublishedSubtitle": "Visible to shoppers on the customer app",
+  "adminCollectionItemsSection": "Items",
+  "adminCollectionItemsHintNew": "Save the collection first, then add products from the + button.",
+  "adminCollectionItemsHintEmpty": "Tap + in the app bar to add products.",
+  "adminCollectionCoverImage": "Cover image",
+  "adminCollectionReplaceCover": "Replace cover",
+  "adminCollectionProductSearchLabel": "Search product name or SKU",
+  "adminCollectionProductSearchHint": "Type 2+ characters to search",
+  "adminShopsTitle": "Shop verification",
+  "adminShopsSearchHint": "Search by shop name or slug",
+  "adminShopVerified": "Verified",
+  "adminShopDraft": "draft",
+  "adminShopsEmpty": "No shops found.",
+  "analyticsTitle": "Analytics",
+  "analyticsRefresh": "Refresh",
+  "analyticsByProduct": "By product",
+  "analyticsNoActiveProducts": "No active products yet",
+  "analyticsKpiImpressions": "Impressions",
+  "analyticsKpiTaps": "Taps",
+  "analyticsKpiViews": "Views",
+  "analyticsKpiAddToCart": "Add to cart",
+  "analyticsKpiPurchases": "Purchases",
+  "analyticsKpiWishlist": "Wishlist",
+  "analyticsKpiCtr": "CTR",
+  "analyticsKpiCvr": "CVR",
+  "analyticsColProduct": "Product",
+  "analyticsColImpressions": "Imp",
+  "analyticsColTaps": "Taps",
+  "analyticsColViews": "Views",
+  "analyticsColAddToCart": "ATC",
+  "analyticsColPurchases": "Buys",
+  "analyticsColCtr": "CTR",
+  "analyticsColCvr": "CVR",
+  "customFieldsTitle": "Custom Fields",
+  "customFieldsTemplates": "Templates",
+  "customFieldsAddField": "Add field",
+  "customFieldsAddSection": "Add section",
+  "customFieldsEditField": "Edit field",
+  "customFieldsEditSection": "Edit section",
+  "customFieldsArchive": "Archive",
+  "customFieldsArchiveSectionTitle": "Archive \"{name}\"?",
+  "@customFieldsArchiveSectionTitle": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "customFieldsArchiveSectionMessage": "Archiving hides the section. Its fields stay where they are and can be reassigned later.",
+  "customFieldsArchiveFieldTitle": "Archive \"{name}\"?",
+  "@customFieldsArchiveFieldTitle": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "customFieldsArchiveFieldConfirm": "Archive this field? Existing values stay on each product, but the field stops appearing on new ones.",
+  "customFieldsEmptyTitle": "No custom fields yet",
+  "customFieldsEmptyHint": "Define fields like Warranty, Model Number, Material — visible on every product.",
+  "customFieldsBrowseTemplates": "Browse templates",
+  "customFieldsTemplatesCalloutTitle": "Stamp a quick-start template",
+  "customFieldsTemplatesCalloutSubtitle": "Electronics, Apparel, Logistics, Food, Warranty…",
+  "customFieldsFieldCountOne": "{count} field",
+  "@customFieldsFieldCountOne": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "customFieldsFieldCountOther": "{count} fields",
+  "@customFieldsFieldCountOther": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "customFieldsNoSection": "No section",
+  "customFieldsUngroupedCountOne": "{count} ungrouped field",
+  "@customFieldsUngroupedCountOne": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "customFieldsUngroupedCountOther": "{count} ungrouped fields",
+  "@customFieldsUngroupedCountOther": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "customFieldsUnitInline": "in {unit}",
+  "@customFieldsUnitInline": {
+    "placeholders": {
+      "unit": {
+        "type": "Object"
+      }
+    }
+  },
+  "customFieldsOptionCountOne": "{count} option",
+  "@customFieldsOptionCountOne": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "customFieldsOptionCountOther": "{count} options",
+  "@customFieldsOptionCountOther": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "customFieldsSectionName": "Section name",
+  "customFieldsFieldRequired": "This field is required",
+  "customFieldsPickIcon": "Pick an icon",
+  "customFieldsLoading": "Loading...",
+  "customFieldsSave": "Save",
+  "customFieldsDropdownMinOptions": "Add at least two options for a dropdown.",
+  "customFieldsFieldName": "Field name",
+  "customFieldsFieldType": "Field type",
+  "customFieldsSectionOptional": "Section (optional)",
+  "customFieldsUnitSuffix": "Unit (optional)",
+  "customFieldsUnitSuffixHint": "e.g. kg, days, GB",
+  "customFieldsOptions": "Options",
+  "customFieldsOptionsHint": "One per line. Used for dropdown choices.",
+  "customFieldsTemplateApplied": "Template applied",
+  "customFieldsQuickStartTemplates": "Quick-start templates",
+  "customFieldsTemplatesSheetSubtitle": "Tap any template to add its section and fields to your shop.",
+  "customFieldsTemplatesUnavailable": "Templates unavailable. Check your connection and try again.",
+  "customFieldsTemplateFieldCount": "{count} fields",
+  "@customFieldsTemplateFieldCount": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "customFieldsPickDate": "Pick a date",
+  "paymentsCounterpartyParty": "party",
+  "paymentsCounterpartyVendor": "vendor",
+  "paymentsRecordReceiptTitle": "Record receipt",
+  "paymentsRecordPaymentTitle": "Record payment",
+  "paymentsFromCounterparty": "From {name}",
+  "@paymentsFromCounterparty": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "paymentsToCounterparty": "To {name}",
+  "@paymentsToCounterparty": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "paymentsAmountLabel": "Amount",
+  "paymentsAmountPositiveError": "Enter a positive amount",
+  "paymentsModeLabel": "Mode",
+  "paymentsUpiTransactionIdLabel": "UPI transaction id",
+  "paymentsChequeNumberLabel": "Cheque number",
+  "paymentsReferenceLabel": "Reference",
+  "paymentsDateLabel": "Date",
+  "paymentsAllocatedToLabel": "Allocated to",
+  "paymentsInvoiceLabel": "Invoice",
+  "paymentsAllocateToInvoiceTitle": "Allocate to an invoice",
+  "paymentsAllocateToInvoiceSubtitle": "Off = on-account credit",
+  "paymentsNoInvoicesFound": "No invoices found for this {name}.",
+  "@paymentsNoInvoicesFound": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "paymentsPickInvoiceError": "Pick an invoice",
+  "paymentsNoteOptionalLabel": "Note (optional)",
+  "paymentsSaveReceipt": "Save receipt",
+  "paymentsSavePayment": "Save payment",
+  "reviewsTitle": "Reviews · {name}",
+  "@reviewsTitle": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "reviewsLoadMore": "Load more",
+  "reviewsEmpty": "No reviews yet — they'll show up here once buyers leave one.",
+  "reviewsNoneYet": "No reviews yet",
+  "reviewsCountSingular": "1 review",
+  "reviewsCountPlural": "{count} reviews",
+  "@reviewsCountPlural": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "reviewsCustomerFallback": "Customer",
+  "scanConsoleTitle": "Scan to console",
+  "scanConsoleClear": "Clear",
+  "scanConsoleClearFailed": "Could not clear: {error}",
+  "@scanConsoleClearFailed": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "scanConsoleEmpty": "Point the camera at a product barcode or QR.",
+  "scanConsoleConnected": "Connection established",
+  "scanConsoleWatching": "{count} consoles watching · {sent} sent",
+  "@scanConsoleWatching": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      },
+      "sent": {
+        "type": "Object"
+      }
+    }
+  },
+  "scanConsoleOpenWebHint": "Open the Scan console on the web to see scans live",
+  "scanConsoleConnecting": "Connecting…",
+  "scanConsoleReconnecting": "Reconnecting…",
+  "scanConsoleNotConnected": "Not connected",
+  "stockLedgerTitle": "Stock Ledger",
+  "stockLedgerEmptySubtitle": "No movements recorded for this product yet.",
+  "stockLedgerReversalBadge": "Reversal",
+  "stockLedgerByName": "by {name}",
+  "@stockLedgerByName": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "stockLedgerBalance": "Bal: {qty}",
+  "@stockLedgerBalance": {
+    "placeholders": {
+      "qty": {
+        "type": "Object"
+      }
+    }
+  },
+  "stockLedgerViewSource": "View source",
+  "stockSheetDraftCreated": "Draft invoice created — confirm it from the Invoices tab to post stock.",
+  "stockSheetCurrentStock": "Current stock: {qty} {unit}",
+  "@stockSheetCurrentStock": {
+    "placeholders": {
+      "qty": {
+        "type": "Object"
+      },
+      "unit": {
+        "type": "Object"
+      }
+    }
+  },
+  "stockSheetPurchase": "Purchase",
+  "stockSheetSale": "Sale",
+  "stockSheetQuantity": "Quantity",
+  "stockSheetFieldRequired": "This field is required",
+  "stockSheetInvalidNumber": "Enter a valid number",
+  "stockSheetUnitPrice": "Unit price",
+  "stockSheetCustomer": "Customer",
+  "stockSheetSearchParties": "Search parties — defaults to Walk-in Customer",
+  "stockSheetClear": "Clear",
+  "stockSheetSupplier": "Supplier",
+  "stockSheetSupplierHint": "Track supplier-wise price history",
+  "stockSheetSupplierAutocompleteHint": "Start typing to see previous suppliers",
+  "stockSheetNote": "Note",
+  "stockSheetConfirm": "Confirm",
+  "stockAdjTitle": "Stock adjustments",
+  "stockAdjEmptyTitle": "No adjustments yet",
+  "stockAdjEmptySubtitle": "Tap + to record damage, expired stock, or a count correction.",
+  "stockAdjItemSingular": "item",
+  "stockAdjItemPlural": "items",
+  "stockAdjNewTitle": "New stock adjustment",
+  "stockAdjSubmit": "Submit",
+  "stockAdjAddAtLeastOne": "Add at least one item to adjust.",
+  "stockAdjDiscardTitle": "Discard changes?",
+  "stockAdjDiscardMessage": "Your edits will be lost.",
+  "stockAdjKeepEditing": "Keep editing",
+  "stockAdjDiscard": "Discard",
+  "stockAdjReasonSection": "REASON",
+  "stockAdjProductsSection": "PRODUCTS",
+  "stockAdjReasonDamage": "Damaged",
+  "stockAdjReasonExpired": "Expired",
+  "stockAdjReasonShrinkage": "Shrinkage",
+  "stockAdjReasonRecount": "Recount correction",
+  "stockAdjReasonOpening": "Opening balance",
+  "stockAdjAddStock": "Add stock",
+  "stockAdjRemoveStock": "Remove stock",
+  "stockAdjNote": "Note",
+  "stockAdjSearchProducts": "Search products",
+  "stockAdjNoProductsAdded": "No products added yet.",
+  "stockAdjPostAdjustment": "Post adjustment",
+  "sharedContactChangesRecentChanges": "Recent changes",
+  "sharedContactChangesChangedSuffix": "changed",
+  "sharedContactChangesFieldName": "Name",
+  "sharedContactChangesFieldContactPerson": "Contact person",
+  "sharedContactChangesFieldPhone": "Phone",
+  "sharedContactChangesFieldEmail": "Email",
+  "sharedContactChangesFieldAddress": "Address",
+  "sharedContactChangesFieldCity": "City",
+  "sharedContactChangesFieldState": "State",
+  "sharedContactChangesFieldStateCode": "State code",
+  "sharedContactChangesFieldPinCode": "PIN code",
+  "sharedContactChangesFieldActive": "Active"
 }

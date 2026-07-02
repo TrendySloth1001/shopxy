@@ -4875,4 +4875,947 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get returnsMarkReceived => 'Mark as received';
+
+  @override
+  String get adminActive => 'Active';
+
+  @override
+  String get adminCancel => 'Cancel';
+
+  @override
+  String get adminDelete => 'Delete';
+
+  @override
+  String get adminDeactivate => 'Deactivate';
+
+  @override
+  String get adminCreate => 'Create';
+
+  @override
+  String get adminSave => 'Save';
+
+  @override
+  String get adminSaving => 'Saving…';
+
+  @override
+  String get adminSaveChanges => 'Save changes';
+
+  @override
+  String get adminSaveFailed => 'Save failed';
+
+  @override
+  String get adminRefresh => 'Refresh';
+
+  @override
+  String get adminRetry => 'Retry';
+
+  @override
+  String get adminNotSet => 'Not set';
+
+  @override
+  String get adminPublished => 'Published';
+
+  @override
+  String get adminDraft => 'Draft';
+
+  @override
+  String get adminSortLabel => 'Sort';
+
+  @override
+  String get adminImageTooLarge =>
+      'Image is larger than 5 MB. Pick a smaller image or crop tighter.';
+
+  @override
+  String get adminImageUploadFailed => 'Image upload failed';
+
+  @override
+  String get adminReplaceImage => 'Replace image';
+
+  @override
+  String get adminLinkTargetHelper =>
+      'category:slug | product:id | url:https://…';
+
+  @override
+  String get adminBankOffersTitle => 'Bank offers';
+
+  @override
+  String get adminBankOfferNew => 'New offer';
+
+  @override
+  String get adminBankOffersEmpty =>
+      'No bank offers yet. Tap \"New offer\" to curate the first one.';
+
+  @override
+  String get adminBankOfferDeactivateTitle => 'Deactivate offer?';
+
+  @override
+  String get adminBankOfferDeactivateBody =>
+      'Customers won\'t see this offer on any PDP. You can re-activate it later from this page.';
+
+  @override
+  String adminBankOfferPercentOff(Object value) {
+    return '$value% off';
+  }
+
+  @override
+  String adminBankOfferAmountOff(Object value) {
+    return '$value off';
+  }
+
+  @override
+  String adminBankOfferMinOrder(Object value) {
+    return 'min order $value';
+  }
+
+  @override
+  String adminBankOfferCap(Object value) {
+    return 'cap $value';
+  }
+
+  @override
+  String adminBankOfferValidRange(Object from, Object until) {
+    return 'Valid $from – $until';
+  }
+
+  @override
+  String get adminBankOfferEditTitle => 'Edit bank offer';
+
+  @override
+  String get adminBankOfferNewTitle => 'New bank offer';
+
+  @override
+  String get adminBankOfferBankLabel => 'Bank';
+
+  @override
+  String get adminBankOfferCardTypeLabel => 'Card type';
+
+  @override
+  String get adminBankOfferTypeLabel => 'Type';
+
+  @override
+  String get adminBankOfferTypePercent => 'Percent off';
+
+  @override
+  String get adminBankOfferTypeFlat => 'Flat ₹ off';
+
+  @override
+  String get adminBankOfferPercentField => '% off';
+
+  @override
+  String get adminBankOfferAmountField => '₹ off';
+
+  @override
+  String get adminBankOfferMaxDiscountLabel =>
+      'Max discount (₹) — caps the % off';
+
+  @override
+  String get adminBankOfferMinOrderLabel =>
+      'Minimum order (₹) — eligibility filter';
+
+  @override
+  String get adminBankOfferTermsLabel => 'Terms (optional)';
+
+  @override
+  String get adminBankOfferTermsHint =>
+      'e.g. Not valid on no-cost EMI. Excludes Apple products.';
+
+  @override
+  String adminBankOfferFrom(Object date) {
+    return 'From  $date';
+  }
+
+  @override
+  String adminBankOfferUntil(Object date) {
+    return 'Until $date';
+  }
+
+  @override
+  String get adminBankOfferActiveSubtitle =>
+      'When off, the offer never decorates a PDP. Use this to park a draft or expire an offer early without deleting it.';
+
+  @override
+  String get adminBankOfferPdpPreview => 'PDP preview';
+
+  @override
+  String adminBankOfferPreviewCap(Object value) {
+    return ' up to ₹$value';
+  }
+
+  @override
+  String adminBankOfferPreviewPercent(
+    Object discount,
+    Object cap,
+    Object target,
+  ) {
+    return '$discount% off$cap on $target';
+  }
+
+  @override
+  String adminBankOfferPreviewFlat(Object discount, Object target) {
+    return '₹$discount off on $target';
+  }
+
+  @override
+  String get adminBankOfferCreate => 'Create offer';
+
+  @override
+  String get adminBannersTitle => 'Banner manager';
+
+  @override
+  String get adminBannerNew => 'New banner';
+
+  @override
+  String get adminBannerDeleteTitle => 'Delete banner?';
+
+  @override
+  String adminBannerDeleteBody(Object placement) {
+    return 'This banner will be removed from $placement.';
+  }
+
+  @override
+  String get adminBannerPlacementEmpty => 'No banners in this placement yet';
+
+  @override
+  String adminBannerSort(Object value) {
+    return 'Sort $value';
+  }
+
+  @override
+  String get adminBannerEditTitle => 'Edit banner';
+
+  @override
+  String get adminBannerNewTitle => 'New banner';
+
+  @override
+  String get adminBannerImageRequired => 'An image is required';
+
+  @override
+  String get adminBannerPlacementLabel => 'Placement';
+
+  @override
+  String get adminBannerLinkLabel => 'Link';
+
+  @override
+  String get adminBannerActiveSubtitle =>
+      'When off, hidden regardless of schedule';
+
+  @override
+  String get adminBannerCreate => 'Create banner';
+
+  @override
+  String get adminBannerUploadImage => 'Upload image *';
+
+  @override
+  String get adminBannerStarts => 'Starts';
+
+  @override
+  String get adminBannerEnds => 'Ends';
+
+  @override
+  String get adminCategoryTaxonomyTitle => 'Category taxonomy';
+
+  @override
+  String get adminCategoryRoot => 'Root category';
+
+  @override
+  String adminCategoryDeleteTitle(Object name) {
+    return 'Delete \"$name\"?';
+  }
+
+  @override
+  String get adminCategoryDeleteBody =>
+      'Children re-parent to root. Products in this category fall back to \"uncategorised\" (the link goes null).';
+
+  @override
+  String adminCategoryProductCount(Object value) {
+    return '$value products';
+  }
+
+  @override
+  String get adminCategoryAddChild => 'Add child';
+
+  @override
+  String get adminCategoryNameRequired => 'Name is required';
+
+  @override
+  String get adminCategoryEditTitle => 'Edit category';
+
+  @override
+  String get adminCategoryNewTitle => 'New category';
+
+  @override
+  String get adminCategoryNameLabel => 'Name *';
+
+  @override
+  String get adminCategoryNameHelper => 'Slug auto-derives from this.';
+
+  @override
+  String get adminCategoryDescriptionLabel => 'Description';
+
+  @override
+  String get adminCategoryImageUrlLabel => 'Image URL';
+
+  @override
+  String get adminCategoryImageUrlHelper => 'Customer-side circle puck image.';
+
+  @override
+  String get adminCategoryParentLabel => 'Parent';
+
+  @override
+  String get adminCategoryRootOption => '— Root —';
+
+  @override
+  String get adminCollectionsTitle => 'Collections';
+
+  @override
+  String get adminCollectionNew => 'New collection';
+
+  @override
+  String get adminCollectionsEmpty => 'No collections yet';
+
+  @override
+  String get adminCollectionDeleteTitle => 'Delete collection?';
+
+  @override
+  String adminCollectionDeleteBody(Object title) {
+    return '\"$title\" and its item list will be removed.';
+  }
+
+  @override
+  String adminCollectionItemCountOne(Object value) {
+    return '$value item';
+  }
+
+  @override
+  String adminCollectionItemCountOther(Object value) {
+    return '$value items';
+  }
+
+  @override
+  String get adminCollectionEditTitle => 'Edit collection';
+
+  @override
+  String get adminCollectionNewTitle => 'New collection';
+
+  @override
+  String get adminCollectionAddProduct => 'Add product';
+
+  @override
+  String get adminCollectionTitleRequired => 'Title is required';
+
+  @override
+  String get adminCollectionAlreadyAdded => 'Already in this collection';
+
+  @override
+  String get adminCollectionTitleLabel => 'Title *';
+
+  @override
+  String get adminCollectionSlugLabel => 'Slug';
+
+  @override
+  String get adminCollectionSlugHelper =>
+      'Leave blank to auto-derive from title';
+
+  @override
+  String get adminCollectionEyebrowLabel => 'Eyebrow';
+
+  @override
+  String get adminCollectionEyebrowHelper => 'Tiny copy above title';
+
+  @override
+  String get adminCollectionSubtitleLabel => 'Subtitle';
+
+  @override
+  String get adminCollectionCtaTextLabel => 'CTA text';
+
+  @override
+  String get adminCollectionCtaTargetLabel => 'CTA target';
+
+  @override
+  String get adminCollectionBgColorLabel => 'BG color (#hex)';
+
+  @override
+  String get adminCollectionBgColorHelper =>
+      'Optional — accent surface in rails';
+
+  @override
+  String get adminCollectionPublishedSubtitle =>
+      'Visible to shoppers on the customer app';
+
+  @override
+  String get adminCollectionItemsSection => 'Items';
+
+  @override
+  String get adminCollectionItemsHintNew =>
+      'Save the collection first, then add products from the + button.';
+
+  @override
+  String get adminCollectionItemsHintEmpty =>
+      'Tap + in the app bar to add products.';
+
+  @override
+  String get adminCollectionCoverImage => 'Cover image';
+
+  @override
+  String get adminCollectionReplaceCover => 'Replace cover';
+
+  @override
+  String get adminCollectionProductSearchLabel => 'Search product name or SKU';
+
+  @override
+  String get adminCollectionProductSearchHint => 'Type 2+ characters to search';
+
+  @override
+  String get adminShopsTitle => 'Shop verification';
+
+  @override
+  String get adminShopsSearchHint => 'Search by shop name or slug';
+
+  @override
+  String get adminShopVerified => 'Verified';
+
+  @override
+  String get adminShopDraft => 'draft';
+
+  @override
+  String get adminShopsEmpty => 'No shops found.';
+
+  @override
+  String get analyticsTitle => 'Analytics';
+
+  @override
+  String get analyticsRefresh => 'Refresh';
+
+  @override
+  String get analyticsByProduct => 'By product';
+
+  @override
+  String get analyticsNoActiveProducts => 'No active products yet';
+
+  @override
+  String get analyticsKpiImpressions => 'Impressions';
+
+  @override
+  String get analyticsKpiTaps => 'Taps';
+
+  @override
+  String get analyticsKpiViews => 'Views';
+
+  @override
+  String get analyticsKpiAddToCart => 'Add to cart';
+
+  @override
+  String get analyticsKpiPurchases => 'Purchases';
+
+  @override
+  String get analyticsKpiWishlist => 'Wishlist';
+
+  @override
+  String get analyticsKpiCtr => 'CTR';
+
+  @override
+  String get analyticsKpiCvr => 'CVR';
+
+  @override
+  String get analyticsColProduct => 'Product';
+
+  @override
+  String get analyticsColImpressions => 'Imp';
+
+  @override
+  String get analyticsColTaps => 'Taps';
+
+  @override
+  String get analyticsColViews => 'Views';
+
+  @override
+  String get analyticsColAddToCart => 'ATC';
+
+  @override
+  String get analyticsColPurchases => 'Buys';
+
+  @override
+  String get analyticsColCtr => 'CTR';
+
+  @override
+  String get analyticsColCvr => 'CVR';
+
+  @override
+  String get customFieldsTitle => 'Custom Fields';
+
+  @override
+  String get customFieldsTemplates => 'Templates';
+
+  @override
+  String get customFieldsAddField => 'Add field';
+
+  @override
+  String get customFieldsAddSection => 'Add section';
+
+  @override
+  String get customFieldsEditField => 'Edit field';
+
+  @override
+  String get customFieldsEditSection => 'Edit section';
+
+  @override
+  String get customFieldsArchive => 'Archive';
+
+  @override
+  String customFieldsArchiveSectionTitle(Object name) {
+    return 'Archive \"$name\"?';
+  }
+
+  @override
+  String get customFieldsArchiveSectionMessage =>
+      'Archiving hides the section. Its fields stay where they are and can be reassigned later.';
+
+  @override
+  String customFieldsArchiveFieldTitle(Object name) {
+    return 'Archive \"$name\"?';
+  }
+
+  @override
+  String get customFieldsArchiveFieldConfirm =>
+      'Archive this field? Existing values stay on each product, but the field stops appearing on new ones.';
+
+  @override
+  String get customFieldsEmptyTitle => 'No custom fields yet';
+
+  @override
+  String get customFieldsEmptyHint =>
+      'Define fields like Warranty, Model Number, Material — visible on every product.';
+
+  @override
+  String get customFieldsBrowseTemplates => 'Browse templates';
+
+  @override
+  String get customFieldsTemplatesCalloutTitle =>
+      'Stamp a quick-start template';
+
+  @override
+  String get customFieldsTemplatesCalloutSubtitle =>
+      'Electronics, Apparel, Logistics, Food, Warranty…';
+
+  @override
+  String customFieldsFieldCountOne(Object count) {
+    return '$count field';
+  }
+
+  @override
+  String customFieldsFieldCountOther(Object count) {
+    return '$count fields';
+  }
+
+  @override
+  String get customFieldsNoSection => 'No section';
+
+  @override
+  String customFieldsUngroupedCountOne(Object count) {
+    return '$count ungrouped field';
+  }
+
+  @override
+  String customFieldsUngroupedCountOther(Object count) {
+    return '$count ungrouped fields';
+  }
+
+  @override
+  String customFieldsUnitInline(Object unit) {
+    return 'in $unit';
+  }
+
+  @override
+  String customFieldsOptionCountOne(Object count) {
+    return '$count option';
+  }
+
+  @override
+  String customFieldsOptionCountOther(Object count) {
+    return '$count options';
+  }
+
+  @override
+  String get customFieldsSectionName => 'Section name';
+
+  @override
+  String get customFieldsFieldRequired => 'This field is required';
+
+  @override
+  String get customFieldsPickIcon => 'Pick an icon';
+
+  @override
+  String get customFieldsLoading => 'Loading...';
+
+  @override
+  String get customFieldsSave => 'Save';
+
+  @override
+  String get customFieldsDropdownMinOptions =>
+      'Add at least two options for a dropdown.';
+
+  @override
+  String get customFieldsFieldName => 'Field name';
+
+  @override
+  String get customFieldsFieldType => 'Field type';
+
+  @override
+  String get customFieldsSectionOptional => 'Section (optional)';
+
+  @override
+  String get customFieldsUnitSuffix => 'Unit (optional)';
+
+  @override
+  String get customFieldsUnitSuffixHint => 'e.g. kg, days, GB';
+
+  @override
+  String get customFieldsOptions => 'Options';
+
+  @override
+  String get customFieldsOptionsHint =>
+      'One per line. Used for dropdown choices.';
+
+  @override
+  String get customFieldsTemplateApplied => 'Template applied';
+
+  @override
+  String get customFieldsQuickStartTemplates => 'Quick-start templates';
+
+  @override
+  String get customFieldsTemplatesSheetSubtitle =>
+      'Tap any template to add its section and fields to your shop.';
+
+  @override
+  String get customFieldsTemplatesUnavailable =>
+      'Templates unavailable. Check your connection and try again.';
+
+  @override
+  String customFieldsTemplateFieldCount(Object count) {
+    return '$count fields';
+  }
+
+  @override
+  String get customFieldsPickDate => 'Pick a date';
+
+  @override
+  String get paymentsCounterpartyParty => 'party';
+
+  @override
+  String get paymentsCounterpartyVendor => 'vendor';
+
+  @override
+  String get paymentsRecordReceiptTitle => 'Record receipt';
+
+  @override
+  String get paymentsRecordPaymentTitle => 'Record payment';
+
+  @override
+  String paymentsFromCounterparty(Object name) {
+    return 'From $name';
+  }
+
+  @override
+  String paymentsToCounterparty(Object name) {
+    return 'To $name';
+  }
+
+  @override
+  String get paymentsAmountLabel => 'Amount';
+
+  @override
+  String get paymentsAmountPositiveError => 'Enter a positive amount';
+
+  @override
+  String get paymentsModeLabel => 'Mode';
+
+  @override
+  String get paymentsUpiTransactionIdLabel => 'UPI transaction id';
+
+  @override
+  String get paymentsChequeNumberLabel => 'Cheque number';
+
+  @override
+  String get paymentsReferenceLabel => 'Reference';
+
+  @override
+  String get paymentsDateLabel => 'Date';
+
+  @override
+  String get paymentsAllocatedToLabel => 'Allocated to';
+
+  @override
+  String get paymentsInvoiceLabel => 'Invoice';
+
+  @override
+  String get paymentsAllocateToInvoiceTitle => 'Allocate to an invoice';
+
+  @override
+  String get paymentsAllocateToInvoiceSubtitle => 'Off = on-account credit';
+
+  @override
+  String paymentsNoInvoicesFound(Object name) {
+    return 'No invoices found for this $name.';
+  }
+
+  @override
+  String get paymentsPickInvoiceError => 'Pick an invoice';
+
+  @override
+  String get paymentsNoteOptionalLabel => 'Note (optional)';
+
+  @override
+  String get paymentsSaveReceipt => 'Save receipt';
+
+  @override
+  String get paymentsSavePayment => 'Save payment';
+
+  @override
+  String reviewsTitle(Object name) {
+    return 'Reviews · $name';
+  }
+
+  @override
+  String get reviewsLoadMore => 'Load more';
+
+  @override
+  String get reviewsEmpty =>
+      'No reviews yet — they\'ll show up here once buyers leave one.';
+
+  @override
+  String get reviewsNoneYet => 'No reviews yet';
+
+  @override
+  String get reviewsCountSingular => '1 review';
+
+  @override
+  String reviewsCountPlural(Object count) {
+    return '$count reviews';
+  }
+
+  @override
+  String get reviewsCustomerFallback => 'Customer';
+
+  @override
+  String get scanConsoleTitle => 'Scan to console';
+
+  @override
+  String get scanConsoleClear => 'Clear';
+
+  @override
+  String scanConsoleClearFailed(Object error) {
+    return 'Could not clear: $error';
+  }
+
+  @override
+  String get scanConsoleEmpty => 'Point the camera at a product barcode or QR.';
+
+  @override
+  String get scanConsoleConnected => 'Connection established';
+
+  @override
+  String scanConsoleWatching(Object count, Object sent) {
+    return '$count consoles watching · $sent sent';
+  }
+
+  @override
+  String get scanConsoleOpenWebHint =>
+      'Open the Scan console on the web to see scans live';
+
+  @override
+  String get scanConsoleConnecting => 'Connecting…';
+
+  @override
+  String get scanConsoleReconnecting => 'Reconnecting…';
+
+  @override
+  String get scanConsoleNotConnected => 'Not connected';
+
+  @override
+  String get stockLedgerTitle => 'Stock Ledger';
+
+  @override
+  String get stockLedgerEmptySubtitle =>
+      'No movements recorded for this product yet.';
+
+  @override
+  String get stockLedgerReversalBadge => 'Reversal';
+
+  @override
+  String stockLedgerByName(Object name) {
+    return 'by $name';
+  }
+
+  @override
+  String stockLedgerBalance(Object qty) {
+    return 'Bal: $qty';
+  }
+
+  @override
+  String get stockLedgerViewSource => 'View source';
+
+  @override
+  String get stockSheetDraftCreated =>
+      'Draft invoice created — confirm it from the Invoices tab to post stock.';
+
+  @override
+  String stockSheetCurrentStock(Object qty, Object unit) {
+    return 'Current stock: $qty $unit';
+  }
+
+  @override
+  String get stockSheetPurchase => 'Purchase';
+
+  @override
+  String get stockSheetSale => 'Sale';
+
+  @override
+  String get stockSheetQuantity => 'Quantity';
+
+  @override
+  String get stockSheetFieldRequired => 'This field is required';
+
+  @override
+  String get stockSheetInvalidNumber => 'Enter a valid number';
+
+  @override
+  String get stockSheetUnitPrice => 'Unit price';
+
+  @override
+  String get stockSheetCustomer => 'Customer';
+
+  @override
+  String get stockSheetSearchParties =>
+      'Search parties — defaults to Walk-in Customer';
+
+  @override
+  String get stockSheetClear => 'Clear';
+
+  @override
+  String get stockSheetSupplier => 'Supplier';
+
+  @override
+  String get stockSheetSupplierHint => 'Track supplier-wise price history';
+
+  @override
+  String get stockSheetSupplierAutocompleteHint =>
+      'Start typing to see previous suppliers';
+
+  @override
+  String get stockSheetNote => 'Note';
+
+  @override
+  String get stockSheetConfirm => 'Confirm';
+
+  @override
+  String get stockAdjTitle => 'Stock adjustments';
+
+  @override
+  String get stockAdjEmptyTitle => 'No adjustments yet';
+
+  @override
+  String get stockAdjEmptySubtitle =>
+      'Tap + to record damage, expired stock, or a count correction.';
+
+  @override
+  String get stockAdjItemSingular => 'item';
+
+  @override
+  String get stockAdjItemPlural => 'items';
+
+  @override
+  String get stockAdjNewTitle => 'New stock adjustment';
+
+  @override
+  String get stockAdjSubmit => 'Submit';
+
+  @override
+  String get stockAdjAddAtLeastOne => 'Add at least one item to adjust.';
+
+  @override
+  String get stockAdjDiscardTitle => 'Discard changes?';
+
+  @override
+  String get stockAdjDiscardMessage => 'Your edits will be lost.';
+
+  @override
+  String get stockAdjKeepEditing => 'Keep editing';
+
+  @override
+  String get stockAdjDiscard => 'Discard';
+
+  @override
+  String get stockAdjReasonSection => 'REASON';
+
+  @override
+  String get stockAdjProductsSection => 'PRODUCTS';
+
+  @override
+  String get stockAdjReasonDamage => 'Damaged';
+
+  @override
+  String get stockAdjReasonExpired => 'Expired';
+
+  @override
+  String get stockAdjReasonShrinkage => 'Shrinkage';
+
+  @override
+  String get stockAdjReasonRecount => 'Recount correction';
+
+  @override
+  String get stockAdjReasonOpening => 'Opening balance';
+
+  @override
+  String get stockAdjAddStock => 'Add stock';
+
+  @override
+  String get stockAdjRemoveStock => 'Remove stock';
+
+  @override
+  String get stockAdjNote => 'Note';
+
+  @override
+  String get stockAdjSearchProducts => 'Search products';
+
+  @override
+  String get stockAdjNoProductsAdded => 'No products added yet.';
+
+  @override
+  String get stockAdjPostAdjustment => 'Post adjustment';
+
+  @override
+  String get sharedContactChangesRecentChanges => 'Recent changes';
+
+  @override
+  String get sharedContactChangesChangedSuffix => 'changed';
+
+  @override
+  String get sharedContactChangesFieldName => 'Name';
+
+  @override
+  String get sharedContactChangesFieldContactPerson => 'Contact person';
+
+  @override
+  String get sharedContactChangesFieldPhone => 'Phone';
+
+  @override
+  String get sharedContactChangesFieldEmail => 'Email';
+
+  @override
+  String get sharedContactChangesFieldAddress => 'Address';
+
+  @override
+  String get sharedContactChangesFieldCity => 'City';
+
+  @override
+  String get sharedContactChangesFieldState => 'State';
+
+  @override
+  String get sharedContactChangesFieldStateCode => 'State code';
+
+  @override
+  String get sharedContactChangesFieldPinCode => 'PIN code';
+
+  @override
+  String get sharedContactChangesFieldActive => 'Active';
 }

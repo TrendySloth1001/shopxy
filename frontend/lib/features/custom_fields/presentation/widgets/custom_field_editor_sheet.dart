@@ -5,8 +5,8 @@ import 'package:shopxy/features/custom_fields/domain/entities/custom_field.dart'
 import 'package:shopxy/features/custom_fields/presentation/providers/custom_fields_provider.dart';
 import 'package:shopxy/features/custom_fields/presentation/widgets/custom_field_icon_picker.dart';
 import 'package:shopxy/features/custom_fields/presentation/widgets/custom_field_icons.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
-import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
@@ -89,9 +89,10 @@ class _CustomFieldEditorSheetState extends State<CustomFieldEditorSheet> {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     if (_type == CustomFieldType.DROPDOWN &&
         (_parsedOptions()?.length ?? 0) < 2) {
+      final l10n = AppLocalizations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Add at least two options for a dropdown.'),
+        SnackBar(
+          content: Text(l10n.customFieldsDropdownMinOptions),
         ),
       );
       return;
@@ -158,6 +159,7 @@ class _CustomFieldEditorSheetState extends State<CustomFieldEditorSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final mediaQuery = MediaQuery.of(context);
     final isEditing = widget.existing != null;
     final sections = context.watch<CustomFieldsProvider>().sections;
@@ -195,8 +197,8 @@ class _CustomFieldEditorSheetState extends State<CustomFieldEditorSheet> {
                 const SizedBox(height: AppSizes.md),
                 Text(
                   isEditing
-                      ? AppStrings.editCustomField
-                      : AppStrings.addCustomField,
+                      ? l10n.customFieldsEditField
+                      : l10n.customFieldsAddField,
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
@@ -215,15 +217,15 @@ class _CustomFieldEditorSheetState extends State<CustomFieldEditorSheet> {
                     Expanded(
                       child: TextFormField(
                         controller: _nameController,
-                        decoration: const InputDecoration(
-                          labelText: AppStrings.fieldName,
-                          border: OutlineInputBorder(),
+                        decoration: InputDecoration(
+                          labelText: l10n.customFieldsFieldName,
+                          border: const OutlineInputBorder(),
                         ),
                         textCapitalization: TextCapitalization.words,
                         autofocus: !isEditing,
                         validator: (v) {
                           if (v == null || v.trim().isEmpty) {
-                            return AppStrings.fieldRequired;
+                            return l10n.customFieldsFieldRequired;
                           }
                           return null;
                         },
@@ -241,9 +243,9 @@ class _CustomFieldEditorSheetState extends State<CustomFieldEditorSheet> {
                 const SizedBox(height: AppSizes.md),
                 DropdownButtonFormField<CustomFieldType>(
                   initialValue: _type,
-                  decoration: const InputDecoration(
-                    labelText: AppStrings.fieldType,
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: l10n.customFieldsFieldType,
+                    border: const OutlineInputBorder(),
                   ),
                   items: [
                     for (final t in CustomFieldType.values)
@@ -257,14 +259,14 @@ class _CustomFieldEditorSheetState extends State<CustomFieldEditorSheet> {
                   const SizedBox(height: AppSizes.md),
                   DropdownButtonFormField<int?>(
                     initialValue: dropdownSectionValue,
-                    decoration: const InputDecoration(
-                      labelText: 'Section (optional)',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: l10n.customFieldsSectionOptional,
+                      border: const OutlineInputBorder(),
                     ),
                     items: [
-                      const DropdownMenuItem<int?>(
+                      DropdownMenuItem<int?>(
                         value: null,
-                        child: Text('No section'),
+                        child: Text(l10n.customFieldsNoSection),
                       ),
                       for (final s in activeSections)
                         DropdownMenuItem<int?>(
@@ -279,10 +281,10 @@ class _CustomFieldEditorSheetState extends State<CustomFieldEditorSheet> {
                   const SizedBox(height: AppSizes.md),
                   TextFormField(
                     controller: _unitController,
-                    decoration: const InputDecoration(
-                      labelText: AppStrings.unitSuffix,
-                      hintText: AppStrings.unitSuffixHint,
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: l10n.customFieldsUnitSuffix,
+                      hintText: l10n.customFieldsUnitSuffixHint,
+                      border: const OutlineInputBorder(),
                     ),
                   ),
                 ],
@@ -290,10 +292,10 @@ class _CustomFieldEditorSheetState extends State<CustomFieldEditorSheet> {
                   const SizedBox(height: AppSizes.md),
                   TextFormField(
                     controller: _optionsController,
-                    decoration: const InputDecoration(
-                      labelText: AppStrings.fieldOptions,
-                      helperText: AppStrings.fieldOptionsHint,
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: l10n.customFieldsOptions,
+                      helperText: l10n.customFieldsOptionsHint,
+                      border: const OutlineInputBorder(),
                     ),
                     minLines: 3,
                     maxLines: 6,
@@ -301,7 +303,9 @@ class _CustomFieldEditorSheetState extends State<CustomFieldEditorSheet> {
                 ],
                 const SizedBox(height: AppSizes.lg),
                 AppButton.primary(
-                  label: _isSaving ? AppStrings.loading : AppStrings.save,
+                  label: _isSaving
+                      ? l10n.customFieldsLoading
+                      : l10n.customFieldsSave,
                   onPressed: _isSaving ? null : _save,
                   fullWidth: true,
                 ),

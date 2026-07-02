@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/core/network/api_client.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/features/scan_console/presentation/scan_console_client.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
@@ -67,8 +68,9 @@ class _ScanConsolePageState extends State<ScanConsolePage> {
       await _client.clearConsole();
     } catch (e) {
       if (!mounted) return;
+      final l10n = AppLocalizations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not clear: $e')),
+        SnackBar(content: Text(l10n.scanConsoleClearFailed('$e'))),
       );
     }
   }
@@ -76,15 +78,16 @@ class _ScanConsolePageState extends State<ScanConsolePage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
-        title: const Text('Scan to console'),
+        title: Text(l10n.scanConsoleTitle),
         actions: [
           TextButton.icon(
             onPressed: _client.recent.isEmpty ? null : _clear,
             icon: const Icon(Icons.delete_sweep_outlined, size: AppSizes.iconSm),
-            label: const Text('Clear'),
+            label: Text(l10n.scanConsoleClear),
           ),
         ],
       ),
@@ -117,7 +120,7 @@ class _ScanConsolePageState extends State<ScanConsolePage> {
             child: _client.recent.isEmpty
                 ? Center(
                     child: Text(
-                      'Point the camera at a product barcode or QR.',
+                      l10n.scanConsoleEmpty,
                       style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted),
                     ),
                   )
@@ -143,6 +146,7 @@ class _ConnectionBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     late final Color bg;
     late final Color fg;
@@ -155,25 +159,25 @@ class _ConnectionBanner extends StatelessWidget {
         bg = AppColors.successSoft;
         fg = AppColors.success;
         icon = Icons.check_circle_rounded;
-        title = 'Connection established';
+        title = l10n.scanConsoleConnected;
         subtitle = client.consoles > 0
-            ? '${client.consoles} console${client.consoles == 1 ? '' : 's'} watching · ${client.sentCount} sent'
-            : 'Open the Scan console on the web to see scans live';
+            ? l10n.scanConsoleWatching(client.consoles, client.sentCount)
+            : l10n.scanConsoleOpenWebHint;
       case ScanConnStatus.connecting:
         bg = AppColors.surfaceTint;
         fg = AppColors.muted;
         icon = Icons.sync_rounded;
-        title = 'Connecting…';
+        title = l10n.scanConsoleConnecting;
       case ScanConnStatus.reconnecting:
         bg = AppColors.warningSoft;
         fg = AppColors.warning;
         icon = Icons.sync_problem_rounded;
-        title = 'Reconnecting…';
+        title = l10n.scanConsoleReconnecting;
       case ScanConnStatus.error:
         bg = AppColors.errorSoft;
         fg = AppColors.error;
         icon = Icons.error_outline_rounded;
-        title = 'Not connected';
+        title = l10n.scanConsoleNotConnected;
         subtitle = client.error;
     }
 

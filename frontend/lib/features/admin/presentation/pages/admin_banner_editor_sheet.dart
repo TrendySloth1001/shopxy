@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/core/network/image_url.dart';
 import 'package:shopxy/features/admin/data/models/banner.dart';
 import 'package:shopxy/features/admin/presentation/providers/admin_banners_provider.dart';
@@ -90,7 +91,7 @@ class _AdminBannerEditorSheetState extends State<AdminBannerEditorSheet> {
     setState(() => _busy = false);
     if (url == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(shop.error ?? 'Image upload failed')),
+        SnackBar(content: Text(shop.error ?? AppLocalizations.of(context).adminImageUploadFailed)),
       );
       return;
     }
@@ -104,10 +105,8 @@ class _AdminBannerEditorSheetState extends State<AdminBannerEditorSheet> {
     const maxBytes = 5 * 1024 * 1024;
     if (file.lengthSync() > maxBytes) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Image is larger than 5 MB. Pick a smaller image or crop tighter.',
-          ),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).adminImageTooLarge),
         ),
       );
       return false;
@@ -143,7 +142,7 @@ class _AdminBannerEditorSheetState extends State<AdminBannerEditorSheet> {
   Future<void> _save() async {
     if (_imageUrl == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('An image is required')),
+        SnackBar(content: Text(AppLocalizations.of(context).adminBannerImageRequired)),
       );
       return;
     }
@@ -167,13 +166,14 @@ class _AdminBannerEditorSheetState extends State<AdminBannerEditorSheet> {
       Navigator.of(context).pop(true);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(provider.error ?? 'Save failed')),
+        SnackBar(content: Text(provider.error ?? AppLocalizations.of(context).adminSaveFailed)),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -183,7 +183,7 @@ class _AdminBannerEditorSheetState extends State<AdminBannerEditorSheet> {
           child: Row(
             children: [
               Text(
-                _isEdit ? 'Edit banner' : 'New banner',
+                _isEdit ? l10n.adminBannerEditTitle : l10n.adminBannerNewTitle,
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const Spacer(),
@@ -207,7 +207,7 @@ class _AdminBannerEditorSheetState extends State<AdminBannerEditorSheet> {
               const SizedBox(height: AppSizes.md),
               DropdownButtonFormField<BannerPlacement>(
                 initialValue: _placement,
-                decoration: const InputDecoration(labelText: 'Placement'),
+                decoration: InputDecoration(labelText: l10n.adminBannerPlacementLabel),
                 items: BannerPlacement.values
                     .map((p) => DropdownMenuItem(value: p, child: Text(p.label)))
                     .toList(),
@@ -219,9 +219,9 @@ class _AdminBannerEditorSheetState extends State<AdminBannerEditorSheet> {
                   Expanded(
                     child: TextField(
                       controller: _linkUrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Link',
-                        helperText: 'category:slug | product:id | url:https://…',
+                      decoration: InputDecoration(
+                        labelText: l10n.adminBannerLinkLabel,
+                        helperText: l10n.adminLinkTargetHelper,
                       ),
                     ),
                   ),
@@ -230,7 +230,7 @@ class _AdminBannerEditorSheetState extends State<AdminBannerEditorSheet> {
                     width: 80,
                     child: TextField(
                       controller: _sortOrder,
-                      decoration: const InputDecoration(labelText: 'Sort'),
+                      decoration: InputDecoration(labelText: l10n.adminSortLabel),
                       keyboardType: TextInputType.number,
                     ),
                   ),
@@ -243,13 +243,13 @@ class _AdminBannerEditorSheetState extends State<AdminBannerEditorSheet> {
                 value: _isActive,
                 onChanged: (v) => setState(() => _isActive = v),
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Active'),
-                subtitle: const Text('When off, hidden regardless of schedule'),
+                title: Text(l10n.adminActive),
+                subtitle: Text(l10n.adminBannerActiveSubtitle),
               ),
               const SizedBox(height: AppSizes.lg),
               FilledButton(
                 onPressed: _busy ? null : _save,
-                child: Text(_busy ? 'Saving…' : (_isEdit ? 'Save changes' : 'Create banner')),
+                child: Text(_busy ? l10n.adminSaving : (_isEdit ? l10n.adminSaveChanges : l10n.adminBannerCreate)),
               ),
             ],
           ),
@@ -281,7 +281,9 @@ class _AdminBannerEditorSheetState extends State<AdminBannerEditorSheet> {
         Expanded(
           child: OutlinedButton.icon(
             icon: const Icon(Icons.upload_outlined),
-            label: Text(_imageUrl == null ? 'Upload image *' : 'Replace image'),
+            label: Text(_imageUrl == null
+                ? AppLocalizations.of(context).adminBannerUploadImage
+                : AppLocalizations.of(context).adminReplaceImage),
             onPressed: _busy ? null : _pickImage,
           ),
         ),
@@ -290,12 +292,13 @@ class _AdminBannerEditorSheetState extends State<AdminBannerEditorSheet> {
   }
 
   Widget _scheduleRow() {
+    final l10n = AppLocalizations.of(context);
     final df = DateFormat.yMMMd().add_jm();
     return Row(
       children: [
         Expanded(
           child: _DateField(
-            label: 'Starts',
+            label: l10n.adminBannerStarts,
             value: _startAt,
             formatter: df,
             onTap: () => _pickDate(isStart: true),
@@ -307,7 +310,7 @@ class _AdminBannerEditorSheetState extends State<AdminBannerEditorSheet> {
         const SizedBox(width: AppSizes.md),
         Expanded(
           child: _DateField(
-            label: 'Ends',
+            label: l10n.adminBannerEnds,
             value: _endAt,
             formatter: df,
             onTap: () => _pickDate(isStart: false),
@@ -366,7 +369,9 @@ class _DateField extends StatelessWidget {
                   size: AppSizes.iconMd),
         ),
         child: Text(
-          value == null ? 'Not set' : formatter.format(value!),
+          value == null
+              ? AppLocalizations.of(context).adminNotSet
+              : formatter.format(value!),
           style: TextStyle(
             color: value == null ? AppColors.muted : AppColors.black,
           ),

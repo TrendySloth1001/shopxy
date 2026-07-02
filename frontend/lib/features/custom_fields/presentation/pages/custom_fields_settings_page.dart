@@ -7,8 +7,8 @@ import 'package:shopxy/features/custom_fields/presentation/widgets/custom_field_
 import 'package:shopxy/features/custom_fields/presentation/widgets/custom_field_icons.dart';
 import 'package:shopxy/features/custom_fields/presentation/widgets/custom_section_editor_sheet.dart';
 import 'package:shopxy/features/custom_fields/presentation/widgets/templates_picker_sheet.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
-import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
@@ -51,12 +51,12 @@ class _CustomFieldsSettingsPageState extends State<CustomFieldsSettingsPage> {
   Future<void> _showTemplates() => TemplatesPickerSheet.show(context);
 
   Future<void> _archiveSection(CustomFieldSection s) async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await AppConfirmDialog.show(
       context,
-      title: 'Archive "${s.name}"?',
-      message:
-          'Archiving hides the section. Its fields stay where they are and can be reassigned later.',
-      confirmLabel: AppStrings.archive,
+      title: l10n.customFieldsArchiveSectionTitle(s.name),
+      message: l10n.customFieldsArchiveSectionMessage,
+      confirmLabel: l10n.customFieldsArchive,
       danger: true,
     );
     if (!confirmed || !mounted) return;
@@ -64,11 +64,12 @@ class _CustomFieldsSettingsPageState extends State<CustomFieldsSettingsPage> {
   }
 
   Future<void> _archiveField(CustomFieldDefinition d) async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await AppConfirmDialog.show(
       context,
-      title: '${AppStrings.archive} "${d.name}"?',
-      message: AppStrings.archiveCustomFieldConfirm,
-      confirmLabel: AppStrings.archive,
+      title: l10n.customFieldsArchiveFieldTitle(d.name),
+      message: l10n.customFieldsArchiveFieldConfirm,
+      confirmLabel: l10n.customFieldsArchive,
       danger: true,
     );
     if (!confirmed || !mounted) return;
@@ -77,28 +78,30 @@ class _CustomFieldsSettingsPageState extends State<CustomFieldsSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final provider = context.watch<CustomFieldsProvider>();
     final tree = provider.tree;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(AppStrings.customFields),
+        title: Text(l10n.customFieldsTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.auto_awesome_rounded),
-            tooltip: 'Templates',
+            tooltip: l10n.customFieldsTemplates,
             onPressed: _showTemplates,
           ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.add_rounded),
-            tooltip: AppStrings.addCustomField,
+            tooltip: l10n.customFieldsAddField,
             onSelected: (v) {
               if (v == 'section') _addSection();
               if (v == 'field') _addFieldTo(null);
             },
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: 'field', child: Text('Add field')),
-              PopupMenuItem(value: 'section', child: Text('Add section')),
+            itemBuilder: (_) => [
+              PopupMenuItem(value: 'field', child: Text(l10n.customFieldsAddField)),
+              PopupMenuItem(
+                  value: 'section', child: Text(l10n.customFieldsAddSection)),
             ],
           ),
         ],
@@ -162,21 +165,22 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return EmptyState.line(
       kind: LineArt.boxes,
-      title: AppStrings.customFieldsEmptyTitle,
-      subtitle: AppStrings.customFieldsEmptyHint,
+      title: l10n.customFieldsEmptyTitle,
+      subtitle: l10n.customFieldsEmptyHint,
       action: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           AppButton.primary(
-            label: 'Browse templates',
+            label: l10n.customFieldsBrowseTemplates,
             icon: Icons.auto_awesome_rounded,
             onPressed: onShowTemplates,
           ),
           const SizedBox(height: AppSizes.sm),
           AppButton.ghost(
-            label: AppStrings.addCustomField,
+            label: l10n.customFieldsAddField,
             icon: Icons.add_rounded,
             onPressed: onAddField,
           ),
@@ -193,6 +197,7 @@ class _TemplatesCallout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return Material(
       color: AppColors.tileBg(AppColors.brandSoft),
       shape: AppShapes.squircle(
@@ -216,14 +221,14 @@ class _TemplatesCallout extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Stamp a quick-start template',
+                      l10n.customFieldsTemplatesCalloutTitle,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: AppColors.brandStrong,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     Text(
-                      'Electronics, Apparel, Logistics, Food, Warranty…',
+                      l10n.customFieldsTemplatesCalloutSubtitle,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: AppColors.brandStrong,
                       ),
@@ -263,6 +268,7 @@ class _SectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final fields = section.fields.where((d) => d.isActive).toList();
 
     return Material(
@@ -303,7 +309,9 @@ class _SectionCard extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          '${fields.length} field${fields.length == 1 ? '' : 's'}',
+                          fields.length == 1
+                              ? l10n.customFieldsFieldCountOne(fields.length)
+                              : l10n.customFieldsFieldCountOther(fields.length),
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: AppColors.muted,
                           ),
@@ -317,7 +325,7 @@ class _SectionCard extends StatelessWidget {
                       Icons.archive_outlined,
                       color: AppColors.muted,
                     ),
-                    tooltip: AppStrings.archive,
+                    tooltip: l10n.customFieldsArchive,
                   ),
                 ],
               ),
@@ -352,7 +360,7 @@ class _SectionCard extends StatelessWidget {
                   Icon(Icons.add_rounded, color: AppColors.muted),
                   const SizedBox(width: AppSizes.sm),
                   Text(
-                    AppStrings.addCustomField,
+                    l10n.customFieldsAddField,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: AppColors.muted,
                       fontWeight: FontWeight.w600,
@@ -384,6 +392,7 @@ class _UngroupedSectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final active = fields.where((d) => d.isActive).toList();
 
     return Material(
@@ -410,13 +419,16 @@ class _UngroupedSectionCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'No section',
+                        l10n.customFieldsNoSection,
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w700,
                         ),
                       ),
                       Text(
-                        '${active.length} ungrouped field${active.length == 1 ? '' : 's'}',
+                        active.length == 1
+                            ? l10n.customFieldsUngroupedCountOne(active.length)
+                            : l10n
+                                .customFieldsUngroupedCountOther(active.length),
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: AppColors.muted,
                         ),
@@ -456,7 +468,7 @@ class _UngroupedSectionCard extends StatelessWidget {
                   Icon(Icons.add_rounded, color: AppColors.muted),
                   const SizedBox(width: AppSizes.sm),
                   Text(
-                    AppStrings.addCustomField,
+                    l10n.customFieldsAddField,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: AppColors.muted,
                       fontWeight: FontWeight.w600,
@@ -615,16 +627,18 @@ class _FieldRow extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onArchive;
 
-  String _typeSubtitle() {
+  String _typeSubtitle(AppLocalizations l10n) {
     final parts = <String>[field.type.displayLabel];
     if (field.type == CustomFieldType.NUMBER &&
         field.unitSuffix != null &&
         field.unitSuffix!.isNotEmpty) {
-      parts.add('in ${field.unitSuffix}');
+      parts.add(l10n.customFieldsUnitInline(field.unitSuffix!));
     }
     if (field.type == CustomFieldType.DROPDOWN) {
       final count = field.options?.length ?? 0;
-      parts.add('$count option${count == 1 ? '' : 's'}');
+      parts.add(count == 1
+          ? l10n.customFieldsOptionCountOne(count)
+          : l10n.customFieldsOptionCountOther(count));
     }
     return parts.join(' · ');
   }
@@ -632,6 +646,7 @@ class _FieldRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -658,7 +673,7 @@ class _FieldRow extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    _typeSubtitle(),
+                    _typeSubtitle(l10n),
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: AppColors.muted,
                     ),
@@ -672,7 +687,7 @@ class _FieldRow extends StatelessWidget {
                 color: AppColors.muted,
                 size: AppSizes.iconMd,
               ),
-              tooltip: AppStrings.archive,
+              tooltip: l10n.customFieldsArchive,
               onPressed: onArchive,
             ),
           ],
