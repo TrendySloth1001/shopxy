@@ -36,6 +36,7 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 class _MenuItem {
   const _MenuItem({
     required this.label,
+    required this.description,
     required this.icon,
     required this.accent,
     required this.accentSoft,
@@ -43,6 +44,7 @@ class _MenuItem {
     this.requires,
   });
   final String Function(AppLocalizations l10n) label;
+  final String Function(AppLocalizations l10n) description;
   final IconData icon;
   final Color accent;
   final Color accentSoft;
@@ -56,6 +58,7 @@ class _MenuItem {
 List<_MenuItem> get _manageItems => [
       _MenuItem(
         label: (l) => l.navMyShop,
+        description: (l) => l.menuDescMyShop,
         icon: Icons.storefront_outlined,
         accent: AppColors.brand,
         accentSoft: AppColors.brandSoft,
@@ -64,6 +67,7 @@ List<_MenuItem> get _manageItems => [
       ),
       _MenuItem(
         label: (l) => l.navTeamRoles,
+        description: (l) => l.menuDescTeam,
         icon: Icons.groups_2_outlined,
         accent: AppColors.accentIndigo,
         accentSoft: AppColors.accentIndigoSoft,
@@ -72,6 +76,7 @@ List<_MenuItem> get _manageItems => [
       ),
       _MenuItem(
         label: (l) => l.navCategories,
+        description: (l) => l.menuDescCategories,
         icon: Icons.category_outlined,
         accent: AppColors.accentTeal,
         accentSoft: AppColors.accentTealSoft,
@@ -80,6 +85,7 @@ List<_MenuItem> get _manageItems => [
       ),
       _MenuItem(
         label: (l) => l.navVendors,
+        description: (l) => l.menuDescVendors,
         icon: Icons.storefront_outlined,
         accent: AppColors.accentIndigo,
         accentSoft: AppColors.accentIndigoSoft,
@@ -88,6 +94,7 @@ List<_MenuItem> get _manageItems => [
       ),
       _MenuItem(
         label: (l) => l.navParties,
+        description: (l) => l.menuDescParties,
         icon: Icons.groups_outlined,
         accent: AppColors.accentRose,
         accentSoft: AppColors.accentRoseSoft,
@@ -96,6 +103,7 @@ List<_MenuItem> get _manageItems => [
       ),
       _MenuItem(
         label: (l) => l.navBanners,
+        description: (l) => l.menuDescBanners,
         icon: Icons.image_outlined,
         accent: AppColors.accentIndigo,
         accentSoft: AppColors.accentIndigoSoft,
@@ -104,6 +112,7 @@ List<_MenuItem> get _manageItems => [
       ),
       _MenuItem(
         label: (l) => l.navCoupons,
+        description: (l) => l.menuDescCoupons,
         icon: Icons.local_offer_outlined,
         accent: AppColors.accentAmber,
         accentSoft: AppColors.accentAmberSoft,
@@ -116,6 +125,7 @@ List<_MenuItem> get _manageItems => [
 List<_MenuItem> get _operationItems => [
       _MenuItem(
         label: (l) => l.navPointOfSale,
+        description: (l) => l.menuDescPos,
         icon: Icons.point_of_sale_rounded,
         accent: AppColors.brand,
         accentSoft: AppColors.brandSoft,
@@ -124,6 +134,7 @@ List<_MenuItem> get _operationItems => [
       ),
       _MenuItem(
         label: (l) => l.navCashier,
+        description: (l) => l.menuDescCashier,
         icon: Icons.calculate_outlined,
         accent: AppColors.accentIndigo,
         accentSoft: AppColors.accentIndigoSoft,
@@ -132,6 +143,7 @@ List<_MenuItem> get _operationItems => [
       ),
       _MenuItem(
         label: (l) => l.navScanToConsole,
+        description: (l) => l.menuDescScan,
         icon: Icons.qr_code_scanner_rounded,
         accent: AppColors.accentTeal,
         accentSoft: AppColors.accentTealSoft,
@@ -140,6 +152,7 @@ List<_MenuItem> get _operationItems => [
       ),
       _MenuItem(
         label: (l) => l.navQuotations,
+        description: (l) => l.menuDescQuotations,
         icon: Icons.request_quote_outlined,
         accent: AppColors.accentIndigo,
         accentSoft: AppColors.accentIndigoSoft,
@@ -148,6 +161,7 @@ List<_MenuItem> get _operationItems => [
       ),
       _MenuItem(
         label: (l) => l.navChallans,
+        description: (l) => l.menuDescChallans,
         icon: Icons.assignment_outlined,
         accent: AppColors.accentAmber,
         accentSoft: AppColors.accentAmberSoft,
@@ -156,6 +170,7 @@ List<_MenuItem> get _operationItems => [
       ),
       _MenuItem(
         label: (l) => l.navStockAdjustments,
+        description: (l) => l.menuDescStockAdj,
         icon: Icons.tune_rounded,
         accent: AppColors.brand,
         accentSoft: AppColors.brandSoft,
@@ -164,6 +179,7 @@ List<_MenuItem> get _operationItems => [
       ),
       _MenuItem(
         label: (l) => l.navReturns,
+        description: (l) => l.menuDescReturns,
         icon: Icons.assignment_return_outlined,
         accent: AppColors.accentRose,
         accentSoft: AppColors.accentRoseSoft,
@@ -172,6 +188,7 @@ List<_MenuItem> get _operationItems => [
       ),
       _MenuItem(
         label: (l) => l.navReports,
+        description: (l) => l.menuDescReports,
         icon: Icons.summarize_outlined,
         accent: AppColors.brandStrong,
         accentSoft: AppColors.brandSoft,
@@ -180,6 +197,7 @@ List<_MenuItem> get _operationItems => [
       ),
       _MenuItem(
         label: (l) => l.navAnalytics,
+        description: (l) => l.menuDescAnalytics,
         icon: Icons.bar_chart_outlined,
         accent: AppColors.accentIndigo,
         accentSoft: AppColors.accentIndigoSoft,
@@ -191,6 +209,7 @@ List<_MenuItem> get _operationItems => [
 List<_MenuItem> get _adminItems => [
       _MenuItem(
         label: (l) => l.navBannerManager,
+        description: (l) => l.menuDescBannerManager,
         icon: Icons.view_carousel_outlined,
         accent: AppColors.accentIndigo,
         accentSoft: AppColors.accentIndigoSoft,
@@ -198,6 +217,7 @@ List<_MenuItem> get _adminItems => [
       ),
       _MenuItem(
         label: (l) => l.navCategoryTaxonomy,
+        description: (l) => l.menuDescCategoryTaxonomy,
         icon: Icons.account_tree_outlined,
         accent: AppColors.accentTeal,
         accentSoft: AppColors.accentTealSoft,
@@ -205,6 +225,7 @@ List<_MenuItem> get _adminItems => [
       ),
       _MenuItem(
         label: (l) => l.navCollections,
+        description: (l) => l.menuDescCollections,
         icon: Icons.collections_bookmark_outlined,
         accent: AppColors.accentRose,
         accentSoft: AppColors.accentRoseSoft,
@@ -212,6 +233,7 @@ List<_MenuItem> get _adminItems => [
       ),
       _MenuItem(
         label: (l) => l.navBankOffers,
+        description: (l) => l.menuDescBankOffers,
         icon: Icons.account_balance_outlined,
         accent: AppColors.info,
         accentSoft: AppColors.infoSoft,
@@ -219,6 +241,7 @@ List<_MenuItem> get _adminItems => [
       ),
       _MenuItem(
         label: (l) => l.navShopVerification,
+        description: (l) => l.menuDescShopVerification,
         icon: Icons.verified_user_outlined,
         accent: AppColors.brandStrong,
         accentSoft: AppColors.brandSoft,
@@ -229,6 +252,7 @@ List<_MenuItem> get _adminItems => [
 List<_MenuItem> get _accountItems => [
       _MenuItem(
         label: (l) => l.navProfile,
+        description: (l) => l.menuDescProfile,
         icon: Icons.person_outline_rounded,
         accent: AppColors.brand,
         accentSoft: AppColors.brandSoft,
@@ -236,6 +260,7 @@ List<_MenuItem> get _accountItems => [
       ),
       _MenuItem(
         label: (l) => l.profileSettings,
+        description: (l) => l.menuDescSettings,
         icon: Icons.settings_outlined,
         accent: AppColors.accentIndigo,
         accentSoft: AppColors.accentIndigoSoft,
@@ -263,13 +288,26 @@ class MenuPage extends StatelessWidget {
         padding: const EdgeInsets.only(top: AppSizes.sm, bottom: AppSizes.huge),
         children: [
           if (manage.isNotEmpty)
-            _MenuGroup(title: l10n.navSectionManage, items: manage),
+            _MenuGroup(
+              title: l10n.navSectionManage,
+              sectionIcon: Icons.work_outline_rounded,
+              items: manage,
+            ),
           if (ops.isNotEmpty)
-            _MenuGroup(title: l10n.navSectionOperations, items: ops),
+            _MenuGroup(
+              title: l10n.navSectionOperations,
+              sectionIcon: Icons.build_outlined,
+              items: ops,
+            ),
           if (isAdmin)
-            _MenuGroup(title: l10n.navSectionPlatformAdmin, items: _adminItems),
+            _MenuGroup(
+              title: l10n.navSectionPlatformAdmin,
+              sectionIcon: Icons.shield_outlined,
+              items: _adminItems,
+            ),
           _MenuGroup(
             title: l10n.profileSectionAccount,
+            sectionIcon: Icons.person_outline_rounded,
             items: _accountItems,
           ),
         ],
@@ -279,9 +317,15 @@ class MenuPage extends StatelessWidget {
 }
 
 /// A titled group of rows inside one rounded surface card (iOS Settings look).
+/// The section title carries a small leading icon.
 class _MenuGroup extends StatelessWidget {
-  const _MenuGroup({required this.title, required this.items});
+  const _MenuGroup({
+    required this.title,
+    required this.sectionIcon,
+    required this.items,
+  });
   final String title;
+  final IconData sectionIcon;
   final List<_MenuItem> items;
 
   @override
@@ -292,7 +336,7 @@ class _MenuGroup extends StatelessWidget {
       if (i > 0) {
         // Divider inset past the icon square, aligned under the label.
         rows.add(const Padding(
-          padding: EdgeInsets.only(left: AppSizes.md + 30 + AppSizes.md),
+          padding: EdgeInsets.only(left: AppSizes.md + 40 + AppSizes.md),
           child: Divider(height: 1),
         ));
       }
@@ -306,13 +350,20 @@ class _MenuGroup extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(AppSizes.md, 0, 0, AppSizes.sm),
-            child: Text(
-              title.toUpperCase(),
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: AppColors.muted,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1,
-              ),
+            child: Row(
+              children: [
+                Icon(sectionIcon,
+                    size: AppSizes.iconSm, color: AppColors.muted),
+                const SizedBox(width: AppSizes.sm),
+                Text(
+                  title.toUpperCase(),
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: AppColors.muted,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+              ],
             ),
           ),
           Container(
@@ -347,29 +398,42 @@ class _MenuRow extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(
-            horizontal: AppSizes.md, vertical: AppSizes.sm + 2),
+            horizontal: AppSizes.md, vertical: AppSizes.md),
         child: Row(
           children: [
             Container(
-              width: 30,
-              height: 30,
+              width: 40,
+              height: 40,
               decoration: ShapeDecoration(
                 color: item.accentSoft,
-                shape: AppShapes.squircle(8),
+                shape: AppShapes.squircle(10),
               ),
               alignment: Alignment.center,
-              child: Icon(item.icon, size: 18, color: item.accent),
+              child: Icon(item.icon, size: 22, color: item.accent),
             ),
             const SizedBox(width: AppSizes.md),
             Expanded(
-              child: Text(
-                item.label(l10n),
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: AppColors.black,
-                  fontWeight: FontWeight.w500,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    item.label(l10n),
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: AppColors.black,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    item.description(l10n),
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: AppColors.muted),
+                  ),
+                ],
               ),
             ),
+            const SizedBox(width: AppSizes.sm),
             Icon(Icons.chevron_right_rounded,
                 size: 20, color: AppColors.subtle),
           ],
