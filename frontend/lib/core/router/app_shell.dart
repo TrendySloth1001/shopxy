@@ -13,7 +13,6 @@ import 'package:shopxy/features/products/presentation/pages/products_page.dart';
 import 'package:shopxy/features/pos/presentation/pages/pos_page.dart';
 import 'package:shopxy/features/scan_console/presentation/pages/scan_console_page.dart';
 import 'package:shopxy/features/cashier/presentation/pages/cashier_page.dart';
-import 'package:shopxy/features/profile/presentation/pages/profile_page.dart';
 import 'package:shopxy/features/reports/presentation/pages/reports_page.dart';
 import 'package:shopxy/features/shop/presentation/pages/shop_profile_page.dart';
 import 'package:shopxy/features/shop/presentation/pages/shop_team_page.dart';
@@ -261,10 +260,10 @@ final _destinations = <_Destination>[
     id: _kOrdersDestinationId,
   ),
   _Destination(
-    label: (l10n) => l10n.navProfile,
-    icon: Icons.person_outline_rounded,
-    selectedIcon: Icons.person_rounded,
-    page: const ProfilePage(),
+    label: (l10n) => l10n.navInvoices,
+    icon: Icons.receipt_long_outlined,
+    selectedIcon: Icons.receipt_long,
+    page: const InvoicesPage(),
   ),
 ];
 
@@ -288,14 +287,6 @@ class _ActiveTab extends InheritedWidget {
 
   @override
   bool updateShouldNotify(_ActiveTab oldWidget) => index != oldWidget.index;
-}
-
-/// Jump to the Profile tab from any widget below the [AppShell] (e.g. a
-/// dashboard header action). Resolves the destination by type so it survives
-/// reordering of [_destinations]; no-op if Profile isn't a shell tab.
-void goToProfileTab(BuildContext context) {
-  final i = _destinations.indexWhere((d) => d.page is ProfilePage);
-  if (i >= 0) _ActiveTab.of(context).select(i);
 }
 
 class AppShellState extends State<AppShell> {
