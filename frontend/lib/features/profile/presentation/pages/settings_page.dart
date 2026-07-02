@@ -590,6 +590,15 @@ class _ThemeRow extends StatelessWidget {
                           ),
                         ),
                         label: Text(_themeLabel(l10n, mode)),
+                        // Explicit label colour so the chip stays readable in
+                        // both states (ChoiceChip otherwise renders unselected
+                        // labels from the inverse foreground — invisible here).
+                        labelStyle: theme.textTheme.labelMedium?.copyWith(
+                          color: prefs.mode == mode
+                              ? AppColors.onInverse
+                              : AppColors.black,
+                          fontWeight: FontWeight.w600,
+                        ),
                         selected: prefs.mode == mode,
                         onSelected: (_) => prefs.setMode(mode),
                       ),
@@ -677,6 +686,12 @@ class _LanguageRow extends StatelessWidget {
                     for (final lang in AppLanguage.values)
                       ChoiceChip(
                         label: Text(_languageLabel(lang)),
+                        labelStyle: theme.textTheme.labelMedium?.copyWith(
+                          color: prefs.language == lang
+                              ? AppColors.onInverse
+                              : AppColors.black,
+                          fontWeight: FontWeight.w600,
+                        ),
                         selected: prefs.language == lang,
                         onSelected: (_) => prefs.setLanguage(lang),
                       ),
