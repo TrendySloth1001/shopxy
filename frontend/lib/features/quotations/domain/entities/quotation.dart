@@ -51,6 +51,8 @@ class Quotation {
     required this.quotationNo,
     required this.status,
     required this.partyName,
+    this.partyId,
+    this.placeOfSupplyStateCode,
     required this.subtotal,
     required this.taxAmount,
     required this.total,
@@ -66,6 +68,13 @@ class Quotation {
   final String quotationNo;
   final String status; // REQUESTED | PENDING | ACCEPTED | DECLINED | CANCELLED | EXPIRED
   final String partyName;
+
+  /// The linked customer's id — needed to spawn a *new* quotation from a loaded
+  /// one (the pricing calculator's round-trip). Null for legacy payloads.
+  final int? partyId;
+
+  /// Place-of-supply state code carried through when re-pricing a request.
+  final String? placeOfSupplyStateCode;
   final double subtotal;
   final double taxAmount;
   final double total;
@@ -100,6 +109,8 @@ class Quotation {
       quotationNo: j['quotationNo'] as String,
       status: j['status'] as String,
       partyName: (party?['name'] as String?) ?? 'Customer',
+      partyId: (party?['id'] as num?)?.toInt(),
+      placeOfSupplyStateCode: j['placeOfSupplyStateCode'] as String?,
       subtotal: _d(j['subtotal']),
       taxAmount: _d(j['taxAmount']),
       total: _d(j['total']),
