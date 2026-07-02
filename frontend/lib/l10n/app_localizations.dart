@@ -11932,6 +11932,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Quotation {number} sent to {name}.'**
   String reportsCalcQuoteSent(Object number, Object name);
+
+  /// No description provided for @navHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get navHome;
+
+  /// No description provided for @menuDescMyShop.
+  ///
+  /// In en, this message translates to:
+  /// **'Storefront, hours and policies'**
+  String get menuDescMyShop;
+
+  /// No description provided for @menuDescTeam.
+  ///
+  /// In en, this message translates to:
+  /// **'Staff and their permissions'**
+  String get menuDescTeam;
+
+  /// No description provided for @menuDescCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'Product categories and grouping'**
+  String get menuDescCategories;
+
+  /// No description provided for @menuDescVendors.
+  ///
+  /// In en, this message translates to:
+  /// **'Suppliers you buy from'**
+  String get menuDescVendors;
+
+  /// No description provided for @menuDescParties.
+  ///
+  /// In en, this message translates to:
+  /// **'Customers you sell to'**
+  String get menuDescParties;
+
+  /// No description provided for @menuDescBanners.
+  ///
+  /// In en, this message translates to:
+  /// **'Storefront home banners'**
+  String get menuDescBanners;
+
+  /// No description provided for @menuDescCoupons.
+  ///
+  /// In en, this message translates to:
+  /// **'Discount codes and offers'**
+  String get menuDescCoupons;
+
+  /// No description provided for @menuDescPos.
+  ///
+  /// In en, this message translates to:
+  /// **'Fast in-store billing'**
+  String get menuDescPos;
+
+  /// No description provided for @menuDescCashier.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick checkout register'**
+  String get menuDescCashier;
+
+  /// No description provided for @menuDescScan.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan items into a session'**
+  String get menuDescScan;
+
+  /// No description provided for @menuDescQuotations.
+  ///
+  /// In en, this message translates to:
+  /// **'Price quotes for customers'**
+  String get menuDescQuotations;
+
+  /// No description provided for @menuDescChallans.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivery notes without prices'**
+  String get menuDescChallans;
+
+  /// No description provided for @menuDescStockAdj.
+  ///
+  /// In en, this message translates to:
+  /// **'Damage, expiry and corrections'**
+  String get menuDescStockAdj;
+
+  /// No description provided for @menuDescReturns.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer returns and refunds'**
+  String get menuDescReturns;
+
+  /// No description provided for @menuDescReports.
+  ///
+  /// In en, this message translates to:
+  /// **'Sales, purchases, GST and P&L'**
+  String get menuDescReports;
+
+  /// No description provided for @menuDescAnalytics.
+  ///
+  /// In en, this message translates to:
+  /// **'Traffic and performance'**
+  String get menuDescAnalytics;
+
+  /// No description provided for @menuDescBannerManager.
+  ///
+  /// In en, this message translates to:
+  /// **'Marketplace home banners'**
+  String get menuDescBannerManager;
+
+  /// No description provided for @menuDescCategoryTaxonomy.
+  ///
+  /// In en, this message translates to:
+  /// **'Global category tree'**
+  String get menuDescCategoryTaxonomy;
+
+  /// No description provided for @menuDescCollections.
+  ///
+  /// In en, this message translates to:
+  /// **'Curated product collections'**
+  String get menuDescCollections;
+
+  /// No description provided for @menuDescBankOffers.
+  ///
+  /// In en, this message translates to:
+  /// **'Card and bank discounts'**
+  String get menuDescBankOffers;
+
+  /// No description provided for @menuDescShopVerification.
+  ///
+  /// In en, this message translates to:
+  /// **'Review and verify shops'**
+  String get menuDescShopVerification;
+
+  /// No description provided for @menuDescProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account and shop'**
+  String get menuDescProfile;
+
+  /// No description provided for @menuDescSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Currency, theme and language'**
+  String get menuDescSettings;
 }
 
 class _AppLocalizationsDelegate
