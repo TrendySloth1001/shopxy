@@ -290,6 +290,14 @@ class _ActiveTab extends InheritedWidget {
   bool updateShouldNotify(_ActiveTab oldWidget) => index != oldWidget.index;
 }
 
+/// Jump to the Profile tab from any widget below the [AppShell] (e.g. a
+/// dashboard header action). Resolves the destination by type so it survives
+/// reordering of [_destinations]; no-op if Profile isn't a shell tab.
+void goToProfileTab(BuildContext context) {
+  final i = _destinations.indexWhere((d) => d.page is ProfilePage);
+  if (i >= 0) _ActiveTab.of(context).select(i);
+}
+
 class AppShellState extends State<AppShell> {
   int _currentIndex = 0;
 
