@@ -42,4 +42,45 @@ class ReportsRemoteDataSource {
     }
     return PnlReport.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
+
+  /// Aggregated "products sold" summary — one row per product, biggest revenue
+  /// first, optionally filtered by a product name / SKU [search].
+  Future<SoldProductsPage> soldProducts(
+    DateTime from,
+    DateTime to, {
+    int page = 1,
+    int limit = 25,
+    String search = '',
+  }) async {
+    final params = _range(from, to)
+      ..['page'] = page.toString()
+      ..['limit'] = limit.toString();
+    if (search.trim().isNotEmpty) params['search'] = search.trim();
+    final res =
+        await _client.get('/reports/sold-products', queryParameters: params);
+    if (res.statusCode != 200) {
+      throw Exception('Failed to load sold products: ${res.statusCode}');
+    }
+    return SoldProductsPage.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+  }
+
+  /// One page of a single product's sale timeline (newest first).
+  Future<SoldItemsPage> soldItems(
+    DateTime from,
+    DateTime to, {
+    required int productId,
+    int page = 1,
+    int limit = 15,
+  }) async {
+    final params = _range(from, to)
+      ..['productId'] = productId.toString()
+      ..['page'] = page.toString()
+      ..['limit'] = limit.toString();
+    final res =
+        await _client.get('/reports/sold-items', queryParameters: params);
+    if (res.statusCode != 200) {
+      throw Exception('Failed to load sale timeline: ${res.statusCode}');
+    }
+    return SoldItemsPage.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+  }
 }
