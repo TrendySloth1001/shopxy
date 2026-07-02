@@ -5820,4 +5820,634 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get sharedContactChangesFieldActive => 'सक्रिय';
+
+  @override
+  String get navDashboard => 'डैशबोर्ड';
+
+  @override
+  String get navProducts => 'उत्पाद';
+
+  @override
+  String get navOrders => 'ऑर्डर';
+
+  @override
+  String get navProfile => 'प्रोफ़ाइल';
+
+  @override
+  String get navCategories => 'श्रेणियाँ';
+
+  @override
+  String get navVendors => 'विक्रेता';
+
+  @override
+  String get navParties => 'पक्ष';
+
+  @override
+  String get navInvoices => 'इनवॉइस';
+
+  @override
+  String get navQuotations => 'कोटेशन';
+
+  @override
+  String get navChallans => 'चालान';
+
+  @override
+  String get navMyShop => 'मेरी दुकान';
+
+  @override
+  String get navTeamRoles => 'टीम और भूमिकाएँ';
+
+  @override
+  String get navBanners => 'बैनर';
+
+  @override
+  String get navCoupons => 'कूपन';
+
+  @override
+  String get navPointOfSale => 'पॉइंट ऑफ़ सेल';
+
+  @override
+  String get navCashier => 'कैशियर';
+
+  @override
+  String get navScanToConsole => 'कंसोल में स्कैन करें';
+
+  @override
+  String get navStockAdjustments => 'स्टॉक समायोजन';
+
+  @override
+  String get navReturns => 'रिटर्न';
+
+  @override
+  String get navReports => 'रिपोर्ट';
+
+  @override
+  String get navAnalytics => 'एनालिटिक्स';
+
+  @override
+  String get navBannerManager => 'बैनर मैनेजर';
+
+  @override
+  String get navCategoryTaxonomy => 'श्रेणी वर्गीकरण';
+
+  @override
+  String get navCollections => 'कलेक्शन';
+
+  @override
+  String get navBankOffers => 'बैंक ऑफ़र';
+
+  @override
+  String get navShopVerification => 'दुकान सत्यापन';
+
+  @override
+  String get navSectionManage => 'प्रबंधन';
+
+  @override
+  String get navSectionOperations => 'संचालन';
+
+  @override
+  String get navSectionPlatformAdmin => 'प्लेटफ़ॉर्म एडमिन';
+
+  @override
+  String get navMenu => 'मेनू';
+
+  @override
+  String get reportsTitle => 'रिपोर्ट';
+
+  @override
+  String get reportsRefresh => 'ताज़ा करें';
+
+  @override
+  String get reportsRetry => 'पुनः प्रयास करें';
+
+  @override
+  String get reportsPresetThisMonth => 'इस महीने';
+
+  @override
+  String get reportsPresetLast30Days => 'पिछले 30 दिन';
+
+  @override
+  String get reportsPresetThisFy => 'इस वित्तीय वर्ष';
+
+  @override
+  String get reportsTabSales => 'बिक्री';
+
+  @override
+  String get reportsTabPurchases => 'खरीद';
+
+  @override
+  String get reportsTabGst => 'GST';
+
+  @override
+  String get reportsTabPnl => 'लाभ-हानि';
+
+  @override
+  String get reportsTabCalculator => 'कैलकुलेटर';
+
+  @override
+  String get reportsNoActivityInRange => 'इस अवधि में कोई गतिविधि नहीं।';
+
+  @override
+  String reportsPace(Object perDay, Object projected) {
+    return '≈ $perDay/दिन इस गति से · ~$projected 30 दिनों में';
+  }
+
+  @override
+  String get reportsTotalSales => 'कुल बिक्री';
+
+  @override
+  String reportsSalesHelper(Object count, Object tax, Object net) {
+    return '$count पुष्ट चालान · $tax GST · रिफंड के बाद शुद्ध $net';
+  }
+
+  @override
+  String get reportsTopProducts => 'शीर्ष उत्पाद';
+
+  @override
+  String get reportsNoSalesInRange => 'इस अवधि में कोई बिक्री नहीं।';
+
+  @override
+  String reportsSoldCount(Object count) {
+    return '$count बिके';
+  }
+
+  @override
+  String get reportsTopCustomers => 'शीर्ष ग्राहक';
+
+  @override
+  String get reportsNoCustomersInRange => 'इस अवधि में कोई ग्राहक नहीं।';
+
+  @override
+  String reportsInvoiceCountOne(Object count) {
+    return '$count चालान';
+  }
+
+  @override
+  String reportsInvoiceCountOther(Object count) {
+    return '$count चालान';
+  }
+
+  @override
+  String get reportsTotalPurchases => 'कुल खरीद';
+
+  @override
+  String reportsPurchasesHelper(Object count, Object tax) {
+    return '$count पुष्ट बिल · $tax GST';
+  }
+
+  @override
+  String get reportsTopPurchasedProducts => 'शीर्ष खरीदे गए उत्पाद';
+
+  @override
+  String get reportsNoPurchasesInRange => 'इस अवधि में कोई खरीद नहीं।';
+
+  @override
+  String reportsBoughtCount(Object count) {
+    return '$count खरीदे';
+  }
+
+  @override
+  String get reportsTopVendors => 'शीर्ष विक्रेता';
+
+  @override
+  String get reportsNoVendorsInRange => 'इस अवधि में कोई विक्रेता नहीं।';
+
+  @override
+  String reportsBillCountOne(Object count) {
+    return '$count बिल';
+  }
+
+  @override
+  String reportsBillCountOther(Object count) {
+    return '$count बिल';
+  }
+
+  @override
+  String get reportsOutputGst => 'आउटपुट GST';
+
+  @override
+  String get reportsCollectedOnSales => 'बिक्री पर एकत्रित';
+
+  @override
+  String get reportsInputGstItc => 'इनपुट GST (ITC)';
+
+  @override
+  String get reportsPaidOnPurchases => 'खरीद पर चुकाया गया';
+
+  @override
+  String get reportsNetGstPayable => 'देय शुद्ध GST';
+
+  @override
+  String get reportsGstOwedNote => 'यह आपको कर प्राधिकरण को चुकाना है';
+
+  @override
+  String get reportsGstCreditCarriedNote => 'इनपुट क्रेडिट आगे ले जाया गया';
+
+  @override
+  String get reportsNetPayableByTaxHead => 'कर शीर्ष अनुसार देय शुद्ध';
+
+  @override
+  String get reportsTaxHeadNote =>
+      'CGST + SGST राज्य के भीतर बिक्री पर लागू होते हैं; IGST अंतर-राज्यीय पर। शुद्ध राशि प्रत्येक शीर्ष के आउटपुट कर में से उसके अपने इनपुट क्रेडिट को घटाकर होती है।';
+
+  @override
+  String get reportsOutputGstByRate => 'दर अनुसार आउटपुट GST';
+
+  @override
+  String get reportsNoOutputGstInRange => 'इस अवधि में कोई आउटपुट GST नहीं।';
+
+  @override
+  String get reportsInputGstByRate => 'दर अनुसार इनपुट GST';
+
+  @override
+  String get reportsNoInputGstInRange => 'इस अवधि में कोई इनपुट GST नहीं।';
+
+  @override
+  String get reportsCess => 'उपकर';
+
+  @override
+  String get reportsOutputCess => 'आउटपुट उपकर';
+
+  @override
+  String get reportsInputCess => 'इनपुट उपकर';
+
+  @override
+  String get reportsNetCessPayable => 'देय शुद्ध उपकर';
+
+  @override
+  String get reportsCessNote =>
+      'उपकर केवल उपकर के विरुद्ध समायोजित होता है, GST के विरुद्ध कभी नहीं।';
+
+  @override
+  String reportsOutputGstReturnsNote(Object amount) {
+    return 'आउटपुट GST इस अवधि में रिफंड की गई वापसियों पर उलटी गई $amount राशि घटाकर दिखाया गया है।';
+  }
+
+  @override
+  String get reportsColHead => 'शीर्ष';
+
+  @override
+  String get reportsColOutput => 'आउटपुट';
+
+  @override
+  String get reportsColItc => 'ITC';
+
+  @override
+  String get reportsColNet => 'शुद्ध';
+
+  @override
+  String get reportsColTotal => 'कुल';
+
+  @override
+  String get reportsColRate => 'दर';
+
+  @override
+  String get reportsColTaxable => 'कर योग्य';
+
+  @override
+  String get reportsHeadInterState => 'अंतर-राज्यीय';
+
+  @override
+  String get reportsHeadCentral => 'केंद्रीय';
+
+  @override
+  String get reportsHeadState => 'राज्य';
+
+  @override
+  String get reportsNetProfit => 'शुद्ध लाभ';
+
+  @override
+  String reportsGrossMargin(Object pct) {
+    return 'सकल मार्जिन $pct%';
+  }
+
+  @override
+  String get reportsRevenue => 'राजस्व';
+
+  @override
+  String get reportsCostOfGoodsSold => 'बेचे गए माल की लागत';
+
+  @override
+  String get reportsGrossProfit => 'सकल लाभ';
+
+  @override
+  String get reportsAdjustmentWriteoffs => 'समायोजन बट्टे-खाते';
+
+  @override
+  String get reportsNetProfitRow => 'शुद्ध लाभ';
+
+  @override
+  String get reportsHowThisIsCalculated => 'यह कैसे गणना की जाती है';
+
+  @override
+  String get reportsConfirmedSales => 'पुष्ट बिक्री';
+
+  @override
+  String get reportsConfirmedSalesBasis =>
+      'पुष्ट बिक्री चालानों का कर योग्य मूल्य (GST रहित), क्रेडिट नोट घटाकर';
+
+  @override
+  String get reportsLessSalesReturns => 'घटाएँ: बिक्री वापसियाँ';
+
+  @override
+  String get reportsLessSalesReturnsBasis =>
+      'रिफंड की गई वापसियों का GST रहित मूल्य, लौटाई गई मात्रा के अनुपात में';
+
+  @override
+  String get reportsRevenueA => 'राजस्व (A)';
+
+  @override
+  String get reportsGoodsSoldAtCost => 'बेचा गया माल, लागत पर';
+
+  @override
+  String get reportsGoodsSoldAtCostBasis =>
+      'प्रत्येक बिक्री पुष्ट होने पर उपयोग की गई स्टॉक लागत परतें';
+
+  @override
+  String get reportsLessReturnedGoodsRestocked =>
+      'घटाएँ: लौटाया गया माल पुनः स्टॉक में';
+
+  @override
+  String get reportsLessReturnedGoodsRestockedBasis =>
+      'लौटाई गई वस्तुएँ उनकी उपयोग की गई लागत पर वापस इन्वेंटरी में डाली गईं';
+
+  @override
+  String get reportsCostOfGoodsSoldB => 'बेचे गए माल की लागत (B)';
+
+  @override
+  String get reportsGrossProfitAB => 'सकल लाभ (A − B)';
+
+  @override
+  String get reportsLessStockWriteoffs => 'घटाएँ: स्टॉक बट्टे-खाते';
+
+  @override
+  String get reportsLessStockWriteoffsBasis =>
+      'इस अवधि में दर्ज क्षति, समाप्ति और कमी के स्टॉक समायोजन';
+
+  @override
+  String get reportsNetProfitFormula => 'शुद्ध लाभ (A − B − बट्टे-खाते)';
+
+  @override
+  String reportsPnlNote(Object pct) {
+    return 'सकल मार्जिन $pct% = सकल लाभ ÷ राजस्व। प्रत्येक आँकड़ा इस अवधि में दर्ज पुष्ट चालानों, रिफंड की गई वापसियों और स्टॉक समायोजनों से जोड़ा गया है; अनुमान और प्रोफार्मा शामिल नहीं हैं।';
+  }
+
+  @override
+  String get reportsProductsSold => 'बेचे गए उत्पाद';
+
+  @override
+  String reportsCountOfTotal(Object count, Object total) {
+    return '$total में से $count';
+  }
+
+  @override
+  String get reportsSearchByProductOrSku => 'उत्पाद या SKU से खोजें…';
+
+  @override
+  String reportsNoSoldProductsMatch(Object query) {
+    return '“$query” से मेल खाता कोई बिका उत्पाद नहीं।';
+  }
+
+  @override
+  String get reportsNoProductsSoldInRange =>
+      'इस अवधि में कोई उत्पाद नहीं बिका।';
+
+  @override
+  String reportsSaleCountOne(Object count) {
+    return '$count बिक्री';
+  }
+
+  @override
+  String reportsSaleCountOther(Object count) {
+    return '$count बिक्रियाँ';
+  }
+
+  @override
+  String get reportsLoading => 'लोड हो रहा है…';
+
+  @override
+  String reportsLoadMore(Object count) {
+    return 'और लोड करें ($count शेष)';
+  }
+
+  @override
+  String reportsAllProductsShownOne(Object count) {
+    return 'सभी $count उत्पाद दिखाया गया।';
+  }
+
+  @override
+  String reportsAllProductsShownOther(Object count) {
+    return 'सभी $count उत्पाद दिखाए गए।';
+  }
+
+  @override
+  String get reportsProductFallback => 'उत्पाद';
+
+  @override
+  String get reportsNoSalesForProduct =>
+      'इस उत्पाद के लिए कोई बिक्री नहीं मिली।';
+
+  @override
+  String get reportsCalcTitle => 'मूल्य निर्धारण और लाभ कैलकुलेटर';
+
+  @override
+  String get reportsCalcIntro =>
+      'नीचे उत्पाद जोड़ें, फिर प्रति पंक्ति मात्रा, GST और छूट सेट करें — कुल, GST, लाभ और मार्जिन तुरंत अपडेट होते हैं।';
+
+  @override
+  String get reportsCalcNoProductsYet =>
+      'अभी कोई उत्पाद नहीं — नीचे दी सूची से कुछ जोड़ें।';
+
+  @override
+  String get reportsCalcSupply => 'आपूर्ति';
+
+  @override
+  String get reportsCalcWithinState => 'राज्य के भीतर';
+
+  @override
+  String get reportsCalcInterState => 'अंतर-राज्यीय';
+
+  @override
+  String get reportsCalcDiscountIn => 'छूट किसमें';
+
+  @override
+  String get reportsCalcOverallDiscount => 'समग्र छूट';
+
+  @override
+  String get reportsCalcGrandTotalInclGst => 'कुल योग · GST सहित';
+
+  @override
+  String reportsCalcProductCountOne(Object count) {
+    return '$count उत्पाद';
+  }
+
+  @override
+  String reportsCalcProductCountOther(Object count) {
+    return '$count उत्पाद';
+  }
+
+  @override
+  String reportsCalcQtySummary(Object qty) {
+    return ' · $qty मात्रा';
+  }
+
+  @override
+  String reportsCalcDiscOff(Object amount) {
+    return ' · $amount की छूट';
+  }
+
+  @override
+  String get reportsCalcProfit => 'लाभ';
+
+  @override
+  String get reportsCalcMargin => 'मार्जिन';
+
+  @override
+  String get reportsCalcBlockTotal => 'कुल';
+
+  @override
+  String get reportsCalcGrossSubtotal => 'सकल उप-योग';
+
+  @override
+  String get reportsCalcHintInclGst => 'GST सहित';
+
+  @override
+  String get reportsCalcLineDiscounts => 'पंक्ति छूट';
+
+  @override
+  String get reportsCalcGrandTotalRow => 'कुल योग (GST सहित)';
+
+  @override
+  String get reportsCalcBlockGstInterState => 'GST · अंतर-राज्यीय';
+
+  @override
+  String get reportsCalcBlockGstWithinState => 'GST · राज्य के भीतर';
+
+  @override
+  String get reportsCalcSubtotal => 'उप-योग';
+
+  @override
+  String get reportsCalcHintTaxableExGst => 'कर योग्य, GST रहित';
+
+  @override
+  String get reportsCalcGstTotal => 'कुल GST';
+
+  @override
+  String get reportsCalcBlockProfit => 'लाभ';
+
+  @override
+  String get reportsCalcCostOfGoods => 'माल की लागत';
+
+  @override
+  String get reportsCalcRevenue => 'राजस्व';
+
+  @override
+  String get reportsCalcMarkup => 'मार्कअप';
+
+  @override
+  String get reportsCalcHintReturnOnCost => 'लागत पर प्रतिफल';
+
+  @override
+  String get reportsCalcProfitMargin => 'लाभ मार्जिन';
+
+  @override
+  String get reportsCalcQuotation => 'कोटेशन';
+
+  @override
+  String get reportsCalcStatusRequested => 'अनुरोधित';
+
+  @override
+  String get reportsCalcStatusSent => 'भेजा गया';
+
+  @override
+  String get reportsCalcStatusAccepted => 'स्वीकृत';
+
+  @override
+  String get reportsCalcStatusDeclined => 'अस्वीकृत';
+
+  @override
+  String get reportsCalcStatusCancelled => 'रद्द';
+
+  @override
+  String get reportsCalcStatusExpired => 'समाप्त';
+
+  @override
+  String get reportsCalcLoadQuotation => 'कोटेशन लोड करें';
+
+  @override
+  String get reportsCalcChooseCustomer => 'ग्राहक चुनें';
+
+  @override
+  String get reportsCalcDownload => 'डाउनलोड';
+
+  @override
+  String get reportsCalcSending => 'भेजा जा रहा है…';
+
+  @override
+  String get reportsCalcPriceAndSend => 'मूल्य लगाएँ और भेजें';
+
+  @override
+  String get reportsCalcSendQuotation => 'कोटेशन भेजें';
+
+  @override
+  String get reportsCalcNew => 'नया';
+
+  @override
+  String get reportsCalcNoteLabel => 'नोट (वैकल्पिक)';
+
+  @override
+  String get reportsCalcNoteHint => 'कोटेशन पर दिखाया जाएगा…';
+
+  @override
+  String get reportsCalcQuoteNote =>
+      'डाउनलोड और भेजें दोनों कोटेशन को सहेजते हैं (PDF सहेजे गए कोटेशन से बनता है)। ग्राहक द्वारा अनुरोधित कोटेशन को मूल्य लगाकर वापस भेजा जाता है; अन्यथा एक नया कोटेशन चुने गए ग्राहक को जाता है। कुल राशियाँ GST सहित हैं — कोटेशन ऊपर दिए कुल योग से मेल खाता है।';
+
+  @override
+  String get reportsCalcYourProducts => 'आपके उत्पाद';
+
+  @override
+  String reportsCalcAddedCount(Object count) {
+    return '$count जोड़े गए';
+  }
+
+  @override
+  String get reportsCalcSearchByNameOrSku => 'नाम या SKU से खोजें…';
+
+  @override
+  String get reportsCalcLoadingProducts => 'आपके उत्पाद लोड हो रहे हैं…';
+
+  @override
+  String get reportsCalcNoProductsFound => 'कोई उत्पाद नहीं मिला।';
+
+  @override
+  String get reportsCalcEach => 'प्रति';
+
+  @override
+  String reportsCalcRemoveProduct(Object name) {
+    return '$name हटाएँ';
+  }
+
+  @override
+  String get reportsCalcQty => 'मात्रा';
+
+  @override
+  String get reportsCalcDisc => 'छूट';
+
+  @override
+  String get reportsCalcSearchByNumberOrCustomer => 'नंबर या ग्राहक से खोजें…';
+
+  @override
+  String get reportsCalcNoQuotationsYet => 'अभी कोई कोटेशन नहीं।';
+
+  @override
+  String get reportsCalcAddOneProduct =>
+      'कम से कम एक उत्पाद मूल्य और मात्रा के साथ जोड़ें।';
+
+  @override
+  String get reportsCalcChooseCustomerFirst => 'पहले एक ग्राहक चुनें।';
+
+  @override
+  String reportsCalcQuoteSent(Object number, Object name) {
+    return 'कोटेशन $number $name को भेजा गया।';
+  }
 }

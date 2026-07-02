@@ -5818,4 +5818,633 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sharedContactChangesFieldActive => 'Active';
+
+  @override
+  String get navDashboard => 'Dashboard';
+
+  @override
+  String get navProducts => 'Products';
+
+  @override
+  String get navOrders => 'Orders';
+
+  @override
+  String get navProfile => 'Profile';
+
+  @override
+  String get navCategories => 'Categories';
+
+  @override
+  String get navVendors => 'Vendors';
+
+  @override
+  String get navParties => 'Parties';
+
+  @override
+  String get navInvoices => 'Invoices';
+
+  @override
+  String get navQuotations => 'Quotations';
+
+  @override
+  String get navChallans => 'Challans';
+
+  @override
+  String get navMyShop => 'My Shop';
+
+  @override
+  String get navTeamRoles => 'Team & roles';
+
+  @override
+  String get navBanners => 'Banners';
+
+  @override
+  String get navCoupons => 'Coupons';
+
+  @override
+  String get navPointOfSale => 'Point of sale';
+
+  @override
+  String get navCashier => 'Cashier';
+
+  @override
+  String get navScanToConsole => 'Scan to console';
+
+  @override
+  String get navStockAdjustments => 'Stock adjustments';
+
+  @override
+  String get navReturns => 'Returns';
+
+  @override
+  String get navReports => 'Reports';
+
+  @override
+  String get navAnalytics => 'Analytics';
+
+  @override
+  String get navBannerManager => 'Banner manager';
+
+  @override
+  String get navCategoryTaxonomy => 'Category taxonomy';
+
+  @override
+  String get navCollections => 'Collections';
+
+  @override
+  String get navBankOffers => 'Bank offers';
+
+  @override
+  String get navShopVerification => 'Shop verification';
+
+  @override
+  String get navSectionManage => 'Manage';
+
+  @override
+  String get navSectionOperations => 'Operations';
+
+  @override
+  String get navSectionPlatformAdmin => 'Platform admin';
+
+  @override
+  String get navMenu => 'Menu';
+
+  @override
+  String get reportsTitle => 'Reports';
+
+  @override
+  String get reportsRefresh => 'Refresh';
+
+  @override
+  String get reportsRetry => 'Retry';
+
+  @override
+  String get reportsPresetThisMonth => 'This month';
+
+  @override
+  String get reportsPresetLast30Days => 'Last 30 days';
+
+  @override
+  String get reportsPresetThisFy => 'This FY';
+
+  @override
+  String get reportsTabSales => 'Sales';
+
+  @override
+  String get reportsTabPurchases => 'Purchases';
+
+  @override
+  String get reportsTabGst => 'GST';
+
+  @override
+  String get reportsTabPnl => 'P&L';
+
+  @override
+  String get reportsTabCalculator => 'Calculator';
+
+  @override
+  String get reportsNoActivityInRange => 'No activity in this range.';
+
+  @override
+  String reportsPace(Object perDay, Object projected) {
+    return '≈ $perDay/day at this pace · ~$projected over 30 days';
+  }
+
+  @override
+  String get reportsTotalSales => 'TOTAL SALES';
+
+  @override
+  String reportsSalesHelper(Object count, Object tax, Object net) {
+    return '$count confirmed invoices · $tax GST · net $net after refunds';
+  }
+
+  @override
+  String get reportsTopProducts => 'TOP PRODUCTS';
+
+  @override
+  String get reportsNoSalesInRange => 'No sales in this range.';
+
+  @override
+  String reportsSoldCount(Object count) {
+    return '$count sold';
+  }
+
+  @override
+  String get reportsTopCustomers => 'TOP CUSTOMERS';
+
+  @override
+  String get reportsNoCustomersInRange => 'No customers in this range.';
+
+  @override
+  String reportsInvoiceCountOne(Object count) {
+    return '$count invoice';
+  }
+
+  @override
+  String reportsInvoiceCountOther(Object count) {
+    return '$count invoices';
+  }
+
+  @override
+  String get reportsTotalPurchases => 'TOTAL PURCHASES';
+
+  @override
+  String reportsPurchasesHelper(Object count, Object tax) {
+    return '$count confirmed bills · $tax GST';
+  }
+
+  @override
+  String get reportsTopPurchasedProducts => 'TOP PURCHASED PRODUCTS';
+
+  @override
+  String get reportsNoPurchasesInRange => 'No purchases in this range.';
+
+  @override
+  String reportsBoughtCount(Object count) {
+    return '$count bought';
+  }
+
+  @override
+  String get reportsTopVendors => 'TOP VENDORS';
+
+  @override
+  String get reportsNoVendorsInRange => 'No vendors in this range.';
+
+  @override
+  String reportsBillCountOne(Object count) {
+    return '$count bill';
+  }
+
+  @override
+  String reportsBillCountOther(Object count) {
+    return '$count bills';
+  }
+
+  @override
+  String get reportsOutputGst => 'OUTPUT GST';
+
+  @override
+  String get reportsCollectedOnSales => 'Collected on sales';
+
+  @override
+  String get reportsInputGstItc => 'INPUT GST (ITC)';
+
+  @override
+  String get reportsPaidOnPurchases => 'Paid on purchases';
+
+  @override
+  String get reportsNetGstPayable => 'NET GST PAYABLE';
+
+  @override
+  String get reportsGstOwedNote => 'You owe this to the tax authority';
+
+  @override
+  String get reportsGstCreditCarriedNote => 'Input credit carried forward';
+
+  @override
+  String get reportsNetPayableByTaxHead => 'NET PAYABLE BY TAX HEAD';
+
+  @override
+  String get reportsTaxHeadNote =>
+      'CGST + SGST apply to in-state sales; IGST to inter-state. Net is each head’s output tax minus its own input credit.';
+
+  @override
+  String get reportsOutputGstByRate => 'OUTPUT GST BY RATE';
+
+  @override
+  String get reportsNoOutputGstInRange => 'No output GST in this range.';
+
+  @override
+  String get reportsInputGstByRate => 'INPUT GST BY RATE';
+
+  @override
+  String get reportsNoInputGstInRange => 'No input GST in this range.';
+
+  @override
+  String get reportsCess => 'CESS';
+
+  @override
+  String get reportsOutputCess => 'Output cess';
+
+  @override
+  String get reportsInputCess => 'Input cess';
+
+  @override
+  String get reportsNetCessPayable => 'Net cess payable';
+
+  @override
+  String get reportsCessNote =>
+      'Cess is set off only against cess, never against GST.';
+
+  @override
+  String reportsOutputGstReturnsNote(Object amount) {
+    return 'Output GST is shown net of $amount reversed on refunded returns in this period.';
+  }
+
+  @override
+  String get reportsColHead => 'HEAD';
+
+  @override
+  String get reportsColOutput => 'OUTPUT';
+
+  @override
+  String get reportsColItc => 'ITC';
+
+  @override
+  String get reportsColNet => 'NET';
+
+  @override
+  String get reportsColTotal => 'TOTAL';
+
+  @override
+  String get reportsColRate => 'RATE';
+
+  @override
+  String get reportsColTaxable => 'TAXABLE';
+
+  @override
+  String get reportsHeadInterState => 'Inter-state';
+
+  @override
+  String get reportsHeadCentral => 'Central';
+
+  @override
+  String get reportsHeadState => 'State';
+
+  @override
+  String get reportsNetProfit => 'NET PROFIT';
+
+  @override
+  String reportsGrossMargin(Object pct) {
+    return 'Gross margin $pct%';
+  }
+
+  @override
+  String get reportsRevenue => 'Revenue';
+
+  @override
+  String get reportsCostOfGoodsSold => 'Cost of goods sold';
+
+  @override
+  String get reportsGrossProfit => 'Gross profit';
+
+  @override
+  String get reportsAdjustmentWriteoffs => 'Adjustment write-offs';
+
+  @override
+  String get reportsNetProfitRow => 'Net profit';
+
+  @override
+  String get reportsHowThisIsCalculated => 'HOW THIS IS CALCULATED';
+
+  @override
+  String get reportsConfirmedSales => 'Confirmed sales';
+
+  @override
+  String get reportsConfirmedSalesBasis =>
+      'Taxable value (ex-GST) of confirmed sale invoices, less credit notes';
+
+  @override
+  String get reportsLessSalesReturns => 'Less: sales returns';
+
+  @override
+  String get reportsLessSalesReturnsBasis =>
+      'Ex-GST value of refunded returns, pro-rated by returned quantity';
+
+  @override
+  String get reportsRevenueA => 'Revenue (A)';
+
+  @override
+  String get reportsGoodsSoldAtCost => 'Goods sold, at cost';
+
+  @override
+  String get reportsGoodsSoldAtCostBasis =>
+      'Stock cost layers consumed when each sale was confirmed';
+
+  @override
+  String get reportsLessReturnedGoodsRestocked =>
+      'Less: returned goods restocked';
+
+  @override
+  String get reportsLessReturnedGoodsRestockedBasis =>
+      'Returned items put back into inventory at their consumed cost';
+
+  @override
+  String get reportsCostOfGoodsSoldB => 'Cost of goods sold (B)';
+
+  @override
+  String get reportsGrossProfitAB => 'Gross profit (A − B)';
+
+  @override
+  String get reportsLessStockWriteoffs => 'Less: stock write-offs';
+
+  @override
+  String get reportsLessStockWriteoffsBasis =>
+      'Damage, expiry and shrinkage stock adjustments dated in this range';
+
+  @override
+  String get reportsNetProfitFormula => 'Net profit (A − B − write-offs)';
+
+  @override
+  String reportsPnlNote(Object pct) {
+    return 'Gross margin $pct% = gross profit ÷ revenue. Every figure is summed from confirmed invoices, refunded returns and stock adjustments dated in this range; estimates and proformas are excluded.';
+  }
+
+  @override
+  String get reportsProductsSold => 'PRODUCTS SOLD';
+
+  @override
+  String reportsCountOfTotal(Object count, Object total) {
+    return '$count of $total';
+  }
+
+  @override
+  String get reportsSearchByProductOrSku => 'Search by product or SKU…';
+
+  @override
+  String reportsNoSoldProductsMatch(Object query) {
+    return 'No sold products match “$query”.';
+  }
+
+  @override
+  String get reportsNoProductsSoldInRange => 'No products sold in this range.';
+
+  @override
+  String reportsSaleCountOne(Object count) {
+    return '$count sale';
+  }
+
+  @override
+  String reportsSaleCountOther(Object count) {
+    return '$count sales';
+  }
+
+  @override
+  String get reportsLoading => 'Loading…';
+
+  @override
+  String reportsLoadMore(Object count) {
+    return 'Load more ($count left)';
+  }
+
+  @override
+  String reportsAllProductsShownOne(Object count) {
+    return 'All $count product shown.';
+  }
+
+  @override
+  String reportsAllProductsShownOther(Object count) {
+    return 'All $count products shown.';
+  }
+
+  @override
+  String get reportsProductFallback => 'Product';
+
+  @override
+  String get reportsNoSalesForProduct => 'No sales found for this product.';
+
+  @override
+  String get reportsCalcTitle => 'Pricing & profit calculator';
+
+  @override
+  String get reportsCalcIntro =>
+      'Add products below, then set quantity, GST and discount per line — totals, GST, profit and margin update live.';
+
+  @override
+  String get reportsCalcNoProductsYet =>
+      'No products yet — add some from the list below.';
+
+  @override
+  String get reportsCalcSupply => 'Supply';
+
+  @override
+  String get reportsCalcWithinState => 'Within state';
+
+  @override
+  String get reportsCalcInterState => 'Inter-state';
+
+  @override
+  String get reportsCalcDiscountIn => 'Discount in';
+
+  @override
+  String get reportsCalcOverallDiscount => 'Overall discount';
+
+  @override
+  String get reportsCalcGrandTotalInclGst => 'GRAND TOTAL · INCL. GST';
+
+  @override
+  String reportsCalcProductCountOne(Object count) {
+    return '$count product';
+  }
+
+  @override
+  String reportsCalcProductCountOther(Object count) {
+    return '$count products';
+  }
+
+  @override
+  String reportsCalcQtySummary(Object qty) {
+    return ' · $qty qty';
+  }
+
+  @override
+  String reportsCalcDiscOff(Object amount) {
+    return ' · $amount off';
+  }
+
+  @override
+  String get reportsCalcProfit => 'Profit';
+
+  @override
+  String get reportsCalcMargin => 'Margin';
+
+  @override
+  String get reportsCalcBlockTotal => 'TOTAL';
+
+  @override
+  String get reportsCalcGrossSubtotal => 'Gross subtotal';
+
+  @override
+  String get reportsCalcHintInclGst => 'incl. GST';
+
+  @override
+  String get reportsCalcLineDiscounts => 'Line discounts';
+
+  @override
+  String get reportsCalcGrandTotalRow => 'Grand total (incl. GST)';
+
+  @override
+  String get reportsCalcBlockGstInterState => 'GST · INTER-STATE';
+
+  @override
+  String get reportsCalcBlockGstWithinState => 'GST · WITHIN STATE';
+
+  @override
+  String get reportsCalcSubtotal => 'Subtotal';
+
+  @override
+  String get reportsCalcHintTaxableExGst => 'taxable, ex-GST';
+
+  @override
+  String get reportsCalcGstTotal => 'GST total';
+
+  @override
+  String get reportsCalcBlockProfit => 'PROFIT';
+
+  @override
+  String get reportsCalcCostOfGoods => 'Cost of goods';
+
+  @override
+  String get reportsCalcRevenue => 'Revenue';
+
+  @override
+  String get reportsCalcMarkup => 'Markup';
+
+  @override
+  String get reportsCalcHintReturnOnCost => 'return on cost';
+
+  @override
+  String get reportsCalcProfitMargin => 'Profit margin';
+
+  @override
+  String get reportsCalcQuotation => 'QUOTATION';
+
+  @override
+  String get reportsCalcStatusRequested => 'Requested';
+
+  @override
+  String get reportsCalcStatusSent => 'Sent';
+
+  @override
+  String get reportsCalcStatusAccepted => 'Accepted';
+
+  @override
+  String get reportsCalcStatusDeclined => 'Declined';
+
+  @override
+  String get reportsCalcStatusCancelled => 'Cancelled';
+
+  @override
+  String get reportsCalcStatusExpired => 'Expired';
+
+  @override
+  String get reportsCalcLoadQuotation => 'Load a quotation';
+
+  @override
+  String get reportsCalcChooseCustomer => 'Choose customer';
+
+  @override
+  String get reportsCalcDownload => 'Download';
+
+  @override
+  String get reportsCalcSending => 'Sending…';
+
+  @override
+  String get reportsCalcPriceAndSend => 'Price & send';
+
+  @override
+  String get reportsCalcSendQuotation => 'Send quotation';
+
+  @override
+  String get reportsCalcNew => 'New';
+
+  @override
+  String get reportsCalcNoteLabel => 'Note (optional)';
+
+  @override
+  String get reportsCalcNoteHint => 'Shown on the quotation…';
+
+  @override
+  String get reportsCalcQuoteNote =>
+      'Download and Send both save the quotation (the PDF is generated from a saved quote). A customer-requested quote is priced & sent back; otherwise a new one goes to the chosen customer. Totals are GST-inclusive — the quote matches the grand total above.';
+
+  @override
+  String get reportsCalcYourProducts => 'YOUR PRODUCTS';
+
+  @override
+  String reportsCalcAddedCount(Object count) {
+    return '$count added';
+  }
+
+  @override
+  String get reportsCalcSearchByNameOrSku => 'Search by name or SKU…';
+
+  @override
+  String get reportsCalcLoadingProducts => 'Loading your products…';
+
+  @override
+  String get reportsCalcNoProductsFound => 'No products found.';
+
+  @override
+  String get reportsCalcEach => 'each';
+
+  @override
+  String reportsCalcRemoveProduct(Object name) {
+    return 'Remove $name';
+  }
+
+  @override
+  String get reportsCalcQty => 'Qty';
+
+  @override
+  String get reportsCalcDisc => 'Disc';
+
+  @override
+  String get reportsCalcSearchByNumberOrCustomer =>
+      'Search by number or customer…';
+
+  @override
+  String get reportsCalcNoQuotationsYet => 'No quotations yet.';
+
+  @override
+  String get reportsCalcAddOneProduct =>
+      'Add at least one product with a price and quantity.';
+
+  @override
+  String get reportsCalcChooseCustomerFirst => 'Choose a customer first.';
+
+  @override
+  String reportsCalcQuoteSent(Object number, Object name) {
+    return 'Quotation $number sent to $name.';
+  }
 }
