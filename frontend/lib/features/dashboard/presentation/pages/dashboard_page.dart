@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/core/auth/permission_widgets.dart';
 import 'package:shopxy/core/auth/shop_capabilities.dart';
-import 'package:shopxy/core/router/app_shell.dart';
 import 'package:shopxy/features/profile/presentation/pages/profile_page.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/dashboard/domain/entities/dashboard_stats.dart';
@@ -88,7 +87,6 @@ class _DashboardPageState extends State<DashboardPage> {
 
     return Scaffold(
       appBar: AppBar(
-        leading: const ShellMenuButton(),
         title: const Text(AppStrings.appName),
         actions: [
           const NotificationBell(),

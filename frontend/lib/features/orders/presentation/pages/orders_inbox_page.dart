@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/core/auth/permission_widgets.dart';
 import 'package:shopxy/core/auth/shop_capabilities.dart';
-import 'package:shopxy/core/router/app_shell.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/orders/domain/entities/merchant_order.dart';
 import 'package:shopxy/features/orders/presentation/pages/merchant_order_detail_page.dart';
@@ -105,7 +104,6 @@ class _OrdersInboxPageState extends State<OrdersInboxPage> {
         (a) => a.user?.canView('orders') ?? false);
     return Scaffold(
       appBar: AppBar(
-        leading: Navigator.canPop(context) ? null : const ShellMenuButton(),
         title: Text(l10n.ordersTitle),
         actions: [AccessReloadButton(onReload: () => p.load())],
       ),

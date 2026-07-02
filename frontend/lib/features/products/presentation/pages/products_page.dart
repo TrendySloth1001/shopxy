@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/core/auth/permission_widgets.dart';
 import 'package:shopxy/core/auth/shop_capabilities.dart';
-import 'package:shopxy/core/router/app_shell.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/categories/presentation/widgets/category_icon_catalog.dart';
 import 'package:shopxy/features/categories/presentation/widgets/category_picker_sheet.dart';
@@ -212,7 +211,6 @@ class _ProductsPageState extends State<ProductsPage> {
 
     return Scaffold(
       appBar: AppBar(
-        leading: const ShellMenuButton(),
         title: Text(l10n.productsTitle),
         actions: [
           Builder(
