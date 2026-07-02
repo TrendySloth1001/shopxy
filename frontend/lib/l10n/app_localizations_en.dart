@@ -6447,4 +6447,76 @@ class AppLocalizationsEn extends AppLocalizations {
   String reportsCalcQuoteSent(Object number, Object name) {
     return 'Quotation $number sent to $name.';
   }
+
+  @override
+  String get navHome => 'Home';
+
+  @override
+  String get menuDescMyShop => 'Storefront, hours and policies';
+
+  @override
+  String get menuDescTeam => 'Staff and their permissions';
+
+  @override
+  String get menuDescCategories => 'Product categories and grouping';
+
+  @override
+  String get menuDescVendors => 'Suppliers you buy from';
+
+  @override
+  String get menuDescParties => 'Customers you sell to';
+
+  @override
+  String get menuDescBanners => 'Storefront home banners';
+
+  @override
+  String get menuDescCoupons => 'Discount codes and offers';
+
+  @override
+  String get menuDescPos => 'Fast in-store billing';
+
+  @override
+  String get menuDescCashier => 'Quick checkout register';
+
+  @override
+  String get menuDescScan => 'Scan items into a session';
+
+  @override
+  String get menuDescQuotations => 'Price quotes for customers';
+
+  @override
+  String get menuDescChallans => 'Delivery notes without prices';
+
+  @override
+  String get menuDescStockAdj => 'Damage, expiry and corrections';
+
+  @override
+  String get menuDescReturns => 'Customer returns and refunds';
+
+  @override
+  String get menuDescReports => 'Sales, purchases, GST and P&L';
+
+  @override
+  String get menuDescAnalytics => 'Traffic and performance';
+
+  @override
+  String get menuDescBannerManager => 'Marketplace home banners';
+
+  @override
+  String get menuDescCategoryTaxonomy => 'Global category tree';
+
+  @override
+  String get menuDescCollections => 'Curated product collections';
+
+  @override
+  String get menuDescBankOffers => 'Card and bank discounts';
+
+  @override
+  String get menuDescShopVerification => 'Review and verify shops';
+
+  @override
+  String get menuDescProfile => 'Your account and shop';
+
+  @override
+  String get menuDescSettings => 'Currency, theme and language';
 }

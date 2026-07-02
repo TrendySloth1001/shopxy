@@ -3270,5 +3270,29 @@
         "type": "Object"
       }
     }
-  }
+  },
+  "navHome": "Home",
+  "menuDescMyShop": "Storefront, hours and policies",
+  "menuDescTeam": "Staff and their permissions",
+  "menuDescCategories": "Product categories and grouping",
+  "menuDescVendors": "Suppliers you buy from",
+  "menuDescParties": "Customers you sell to",
+  "menuDescBanners": "Storefront home banners",
+  "menuDescCoupons": "Discount codes and offers",
+  "menuDescPos": "Fast in-store billing",
+  "menuDescCashier": "Quick checkout register",
+  "menuDescScan": "Scan items into a session",
+  "menuDescQuotations": "Price quotes for customers",
+  "menuDescChallans": "Delivery notes without prices",
+  "menuDescStockAdj": "Damage, expiry and corrections",
+  "menuDescReturns": "Customer returns and refunds",
+  "menuDescReports": "Sales, purchases, GST and P&L",
+  "menuDescAnalytics": "Traffic and performance",
+  "menuDescBannerManager": "Marketplace home banners",
+  "menuDescCategoryTaxonomy": "Global category tree",
+  "menuDescCollections": "Curated product collections",
+  "menuDescBankOffers": "Card and bank discounts",
+  "menuDescShopVerification": "Review and verify shops",
+  "menuDescProfile": "Your account and shop",
+  "menuDescSettings": "Currency, theme and language"
 }

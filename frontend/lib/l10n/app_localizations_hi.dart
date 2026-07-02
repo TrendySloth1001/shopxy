@@ -6450,4 +6450,76 @@ class AppLocalizationsHi extends AppLocalizations {
   String reportsCalcQuoteSent(Object number, Object name) {
     return 'कोटेशन $number $name को भेजा गया।';
   }
+
+  @override
+  String get navHome => 'होम';
+
+  @override
+  String get menuDescMyShop => 'स्टोरफ़्रंट, समय और नीतियाँ';
+
+  @override
+  String get menuDescTeam => 'स्टाफ़ और उनकी अनुमतियाँ';
+
+  @override
+  String get menuDescCategories => 'उत्पाद श्रेणियाँ और समूहन';
+
+  @override
+  String get menuDescVendors => 'जिन आपूर्तिकर्ताओं से आप खरीदते हैं';
+
+  @override
+  String get menuDescParties => 'जिन ग्राहकों को आप बेचते हैं';
+
+  @override
+  String get menuDescBanners => 'स्टोरफ़्रंट होम बैनर';
+
+  @override
+  String get menuDescCoupons => 'छूट कोड और ऑफ़र';
+
+  @override
+  String get menuDescPos => 'तेज़ इन-स्टोर बिलिंग';
+
+  @override
+  String get menuDescCashier => 'त्वरित चेकआउट रजिस्टर';
+
+  @override
+  String get menuDescScan => 'आइटम को सेशन में स्कैन करें';
+
+  @override
+  String get menuDescQuotations => 'ग्राहकों के लिए मूल्य कोटेशन';
+
+  @override
+  String get menuDescChallans => 'बिना कीमत वाले डिलीवरी नोट';
+
+  @override
+  String get menuDescStockAdj => 'क्षति, समाप्ति और सुधार';
+
+  @override
+  String get menuDescReturns => 'ग्राहक रिटर्न और रिफंड';
+
+  @override
+  String get menuDescReports => 'बिक्री, खरीद, GST और लाभ-हानि';
+
+  @override
+  String get menuDescAnalytics => 'ट्रैफ़िक और प्रदर्शन';
+
+  @override
+  String get menuDescBannerManager => 'मार्केटप्लेस होम बैनर';
+
+  @override
+  String get menuDescCategoryTaxonomy => 'वैश्विक श्रेणी वृक्ष';
+
+  @override
+  String get menuDescCollections => 'क्यूरेटेड उत्पाद संग्रह';
+
+  @override
+  String get menuDescBankOffers => 'कार्ड और बैंक छूट';
+
+  @override
+  String get menuDescShopVerification => 'दुकानों की समीक्षा और सत्यापन';
+
+  @override
+  String get menuDescProfile => 'आपका खाता और दुकान';
+
+  @override
+  String get menuDescSettings => 'मुद्रा, थीम और भाषा';
 }
