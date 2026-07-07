@@ -8,6 +8,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 
 /// Platform-admin editor for the marketplace taxonomy tree. Each node
@@ -170,9 +171,10 @@ class _AdminCategoryTaxonomyPageState extends State<AdminCategoryTaxonomyPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Scaffold(
+      extendBodyBehindAppBar: true,
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(
-        title: Text(l10n.adminCategoryTaxonomyTitle),
+      appBar: FloatingAppBar(
+        title: l10n.adminCategoryTaxonomyTitle,
         actions: [
           IconButton(
             tooltip: l10n.adminRefresh,
@@ -189,18 +191,22 @@ class _AdminCategoryTaxonomyPageState extends State<AdminCategoryTaxonomyPage> {
       body: _loading && _tree.isEmpty
           ? const _CategoryListSkeleton()
           : _error != null && _tree.isEmpty
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppSizes.xl),
-                    child: Text(_error!, textAlign: TextAlign.center),
+              ? SafeArea(
+                  top: true,
+                  bottom: false,
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppSizes.xl),
+                      child: Text(_error!, textAlign: TextAlign.center),
+                    ),
                   ),
                 )
               : RefreshIndicator(
                   onRefresh: _load,
                   child: ListView(
-                    padding: const EdgeInsets.fromLTRB(
+                    padding: EdgeInsets.fromLTRB(
                       AppSizes.lg,
-                      AppSizes.lg,
+                      AppSizes.lg + FloatingAppBar.contentTopInset(context),
                       AppSizes.lg,
                       AppSizes.fabClearance,
                     ),
@@ -307,9 +313,9 @@ class _CategoryListSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(
+      padding: EdgeInsets.fromLTRB(
         AppSizes.lg,
-        AppSizes.lg,
+        AppSizes.lg + FloatingAppBar.contentTopInset(context),
         AppSizes.lg,
         AppSizes.fabClearance,
       ),

@@ -9,6 +9,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 
 /// Merchant list of quotations sent to customers. Clean divided rows; tap opens
 /// the detail page. FAB opens the catalogue → bucket → send flow.
@@ -44,13 +45,17 @@ class _QuotationsPageState extends State<QuotationsPage> {
   Widget build(BuildContext context) {
     final p = context.watch<QuotationsProvider>();
     return Scaffold(
-      appBar: AppBar(title: const Text('Quotations')),
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(title: 'Quotations'),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _create,
         icon: const Icon(Icons.add_rounded),
         label: const Text('New quotation'),
       ),
-      body: p.isLoading && p.items.isEmpty
+      body: SafeArea(
+        top: true,
+        bottom: false,
+        child: p.isLoading && p.items.isEmpty
           ? const _QuotationsSkeleton()
           : p.error != null && p.items.isEmpty
               ? Center(
@@ -90,14 +95,11 @@ class _QuotationsPageState extends State<QuotationsPage> {
                           ],
                         )
                       : ListView.separated(
-                          padding: const EdgeInsets.symmetric(
-                              vertical: AppSizes.sm),
+                          padding: const EdgeInsets.fromLTRB(
+                              AppSizes.lg, AppSizes.sm, AppSizes.lg, AppSizes.sm),
                           itemCount: p.items.length,
-                          separatorBuilder: (_, _) => Container(
-                              height: 1,
-                              color: AppColors.hairline,
-                              margin: const EdgeInsets.symmetric(
-                                  horizontal: AppSizes.lg)),
+                          separatorBuilder: (_, _) =>
+                              const SizedBox(height: AppSizes.sm),
                           itemBuilder: (_, i) => _QuotationRow(
                             q: p.items[i],
                             currency: _currency,
@@ -115,6 +117,7 @@ class _QuotationsPageState extends State<QuotationsPage> {
                           ),
                         ),
                 ),
+      ),
     );
   }
 }
@@ -129,13 +132,10 @@ class _QuotationsSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
-      padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
+      padding: const EdgeInsets.fromLTRB(
+          AppSizes.lg, AppSizes.sm, AppSizes.lg, AppSizes.sm),
       itemCount: 6,
-      separatorBuilder: (_, _) => Container(
-        height: 1,
-        color: AppColors.hairline,
-        margin: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
-      ),
+      separatorBuilder: (_, _) => const SizedBox(height: AppSizes.sm),
       itemBuilder: (_, _) => const _QuotationRowSkeleton(),
     );
   }
@@ -146,7 +146,12 @@ class _QuotationRowSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return Container(
+      decoration: ShapeDecoration(
+        color: AppColors.surface,
+        shape: AppShapes.squircle(AppSizes.radiusLg,
+            side: BorderSide(color: AppColors.hairline)),
+      ),
       padding: const EdgeInsets.symmetric(
           horizontal: AppSizes.lg, vertical: AppSizes.md),
       child: Row(
@@ -214,15 +219,20 @@ class _QuotationRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final (fg, bg, label) = _style();
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-            horizontal: AppSizes.lg, vertical: AppSizes.md),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
+    return Material(
+      color: AppColors.surface,
+      shape: AppShapes.squircle(AppSizes.radiusLg,
+          side: BorderSide(color: AppColors.hairline)),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSizes.lg, vertical: AppSizes.md),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
@@ -254,12 +264,13 @@ class _QuotationRow extends StatelessWidget {
                 ],
               ),
             ),
-            Text(currency.format(q.total),
-                style: theme.textTheme.titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w800)),
-            const SizedBox(width: AppSizes.xs),
-            Icon(Icons.chevron_right_rounded, color: AppColors.muted),
-          ],
+              Text(currency.format(q.total),
+                  style: theme.textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w800)),
+              const SizedBox(width: AppSizes.xs),
+              Icon(Icons.chevron_right_rounded, color: AppColors.muted),
+            ],
+          ),
         ),
       ),
     );

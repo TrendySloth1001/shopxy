@@ -428,6 +428,247 @@ export class InvoicesService {
     return invoice;
   }
 
+  /// Merchant-issued credit / debit note raised from an existing invoice's
+  /// detail screen — the manual Sec 34 path, distinct from the POS / order
+  /// refund path (which stays on `createSalesReturnInTx` because it also
+  /// settles money). A CREDIT_NOTE reduces the buyer's liability (signed
+  /// negative in every roll-up) and, when the goods physically come back,
+  /// restocks at the original cost basis; a DEBIT_NOTE raises the liability
+  /// (undercharge / supplementary supply) and never touches stock. Both are
+  /// CONFIRMED, sequentially numbered (CRN / DBN), retained documents that
+  /// reference the original invoice and inherit its GST place-of-supply so
+  /// the adjustment mirrors the source document, not today's shop state.
+  async createAdjustmentNoteFromInvoice(
+    shopId: number,
+    originalInvoiceId: number,
+    input: {
+      documentType: 'CREDIT_NOTE' | 'DEBIT_NOTE';
+      reason?: string;
+      /// Credit notes only. Default true — the returned goods go back on the
+      /// shelf. Set false for a value-only credit note (post-sale discount /
+      /// price correction) where nothing physically comes back.
+      restock?: boolean;
+      lines: Array<{ productId: number; quantity: number; unitPrice?: number }>;
+    },
+    createdById?: number,
+  ): Promise<{ invoice: { id: number; invoiceNo: string; total: Prisma.Decimal } } | { error: string }> {
+    return prisma.$transaction(async (tx) => {
+      const original = await tx.invoice.findFirst({
+        where: { id: originalInvoiceId, shopId },
+        include: { items: true },
+      });
+      if (!original) return { error: 'Original invoice not found' as const };
+      if (original.type !== 'SALE') {
+        return { error: 'Notes can only be issued against sale invoices' as const };
+      }
+      if (original.status !== 'CONFIRMED') {
+        return { error: 'Notes can only be issued against a confirmed invoice' as const };
+      }
+      if (
+        original.documentType !== 'TAX_INVOICE' &&
+        original.documentType !== 'BILL_OF_SUPPLY'
+      ) {
+        return {
+          error: 'Notes can only be issued against a tax invoice or bill of supply' as const,
+        };
+      }
+      if (input.lines.length === 0) {
+        return { error: 'A note needs at least one line' as const };
+      }
+
+      // Each note line must reference a product that was actually on the
+      // original invoice — you cannot credit/debit goods that were never sold
+      // on this document. GST slab / cess / inclusive flag are inherited from
+      // the ORIGINAL line so the reversal mirrors the source tax exactly.
+      const origByProduct = new Map<number, (typeof original.items)[number]>();
+      for (const it of original.items) origByProduct.set(it.productId, it);
+
+      const items: InvoiceItemInput[] = [];
+      for (const line of input.lines) {
+        const orig = origByProduct.get(line.productId);
+        if (!orig) {
+          return {
+            error: `Product ${line.productId} is not on the original invoice` as const,
+          };
+        }
+        if (!(line.quantity > 0)) {
+          return { error: 'Note line quantity must be positive' as const };
+        }
+        items.push({
+          productId: line.productId,
+          quantity: line.quantity,
+          // Credit note reverses what was charged → original unit price.
+          // Debit note bills a supplementary amount → merchant-entered price.
+          unitPrice:
+            input.documentType === 'CREDIT_NOTE'
+              ? Number(orig.unitPrice)
+              : (line.unitPrice ?? 0),
+          taxPercent: Number(orig.taxPercent),
+          cessRate: Number(orig.cessRate),
+          isPriceInclusive: orig.isPriceInclusive,
+        });
+      }
+
+      // CREDIT_NOTE over-credit guard: the cumulative credited quantity per
+      // product across ALL confirmed credit notes on this invoice (this manual
+      // path AND the refund path both set originalInvoiceId) can't exceed what
+      // was sold — otherwise a merchant could refund/restock more units than
+      // they billed. Debit notes have no upper bound (they add value).
+      if (input.documentType === 'CREDIT_NOTE') {
+        const priorNotes = await tx.invoice.findMany({
+          where: {
+            shopId,
+            originalInvoiceId,
+            documentType: 'CREDIT_NOTE',
+            status: 'CONFIRMED',
+          },
+          include: { items: true },
+        });
+        const creditedSoFar = new Map<number, number>();
+        for (const n of priorNotes) {
+          for (const it of n.items) {
+            creditedSoFar.set(
+              it.productId,
+              (creditedSoFar.get(it.productId) ?? 0) + Number(it.quantity),
+            );
+          }
+        }
+        for (const line of input.lines) {
+          const orig = origByProduct.get(line.productId)!;
+          const already = creditedSoFar.get(line.productId) ?? 0;
+          const remaining = Number(orig.quantity) - already;
+          if (line.quantity > remaining) {
+            return {
+              error: `Cannot credit ${line.quantity} of that item — only ${remaining} of ${Number(orig.quantity)} remain uncredited` as const,
+            };
+          }
+        }
+      }
+
+      const resolved = await this.resolveInvoiceFields(
+        {
+          shopId,
+          type: 'SALE',
+          documentType: input.documentType,
+          partyId: original.partyId ?? undefined,
+          customerName: original.customerName ?? undefined,
+          customerPhone: original.customerPhone ?? undefined,
+          customerGstin: original.customerGstin ?? undefined,
+          placeOfSupplyStateCode: original.placeOfSupplyStateCode ?? undefined,
+          // GST-7 — force the original's stored interstate split so the note
+          // reverses/adds tax on the same side (IGST vs CGST/SGST) as the source.
+          isInterstateOverride: original.isInterstate,
+          note: input.reason,
+          items,
+        },
+        tx,
+      );
+      if ('error' in resolved) return { error: resolved.error };
+      const { header, itemsData } = resolved;
+
+      const { invoiceNo, financialYear } = await nextInvoiceNo(
+        shopId,
+        'SALE',
+        header.documentType,
+        header.invoiceDate,
+        tx,
+      );
+
+      const invoice = await tx.invoice.create({
+        data: {
+          ...header,
+          shopId,
+          invoiceNo,
+          financialYear,
+          status: 'CONFIRMED',
+          originalInvoiceId,
+          createdById: createdById ?? null,
+          items: { create: itemsData },
+        },
+        include: { items: true },
+      });
+
+      // Feed the roll-ups in the SAME tx as the document (a later restock
+      // failure rolls the event back too). The aggregation's document_type
+      // CASE signs a CREDIT_NOTE negative and a DEBIT_NOTE positive.
+      await enqueueOutbox(
+        {
+          aggregateType: 'invoice',
+          aggregateId: invoice.id,
+          eventType: 'invoice.confirmed',
+          shopId,
+          payload: {
+            invoiceId: invoice.id,
+            occurredAt: invoice.invoiceDate.toISOString(),
+          },
+        },
+        tx,
+      );
+
+      // Goods physically returned → restock at the ORIGINAL sale's cost basis
+      // (mirrors createSalesReturnInTx). On-hand quantity is always restored
+      // exactly; the over-credit guard above bounds the total to what was sold.
+      // Debit notes and value-only credit notes never move stock.
+      const shouldRestock =
+        input.documentType === 'CREDIT_NOTE' && (input.restock ?? true);
+      if (shouldRestock) {
+        const restocked = await ledgerService.restockReturnAtCost(
+          {
+            shopId,
+            originalInvoiceId,
+            sourceType: 'INVOICE',
+            sourceId: invoice.id,
+            idempotencyKey: `INVOICE:${invoice.id}:NOTE_RESTOCK`,
+            counterpartyName: header.customerName ?? undefined,
+            counterpartyGstin: header.customerGstin ?? undefined,
+            createdById,
+            note: `Credit note ${invoice.invoiceNo}`,
+            lines: invoice.items.map((it) => ({
+              productId: it.productId,
+              quantity: Number(it.quantity),
+              sourceLineId: it.id,
+            })),
+          },
+          tx,
+        );
+        if ('error' in restocked) {
+          if (restocked.error === 'No original consumption') {
+            // Legacy sale with no cost-layer history — averaged restock so the
+            // goods still return to the shelf (same idempotency namespace).
+            const fallback = await ledgerService.post(
+              {
+                shopId,
+                direction: 'IN',
+                reasonCode: 'RETURN_IN',
+                sourceType: 'INVOICE',
+                sourceId: invoice.id,
+                idempotencyKey: `INVOICE:${invoice.id}:NOTE_RESTOCK`,
+                counterpartyName: header.customerName ?? undefined,
+                counterpartyGstin: header.customerGstin ?? undefined,
+                createdById,
+                note: `Credit note ${invoice.invoiceNo}`,
+                lines: invoice.items.map((it) => ({
+                  productId: it.productId,
+                  quantity: Number(it.quantity),
+                  unitPrice: Number(it.unitPrice),
+                  sourceLineId: it.id,
+                })),
+              },
+              tx,
+            );
+            if ('error' in fallback) {
+              throw new PosInvoiceError(fallback.error);
+            }
+          } else {
+            throw new PosInvoiceError(restocked.error);
+          }
+        }
+      }
+
+      return { invoice: { id: invoice.id, invoiceNo: invoice.invoiceNo, total: invoice.total } };
+    });
+  }
+
   /// Pure resolution step shared by create + update: party/vendor look-ups,
   /// product snapshots, GST split and total calculation. Returns either an
   /// `error` or the ready-to-write header + items payload.

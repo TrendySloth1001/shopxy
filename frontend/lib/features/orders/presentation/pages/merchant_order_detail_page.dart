@@ -21,6 +21,7 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 
@@ -399,8 +400,9 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
     final canWriteOrders = context.select<AuthProvider, bool>(
         (a) => a.user?.canWriteOrders ?? false);
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.ordersDetailTitle('${widget.orderId}')),
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(
+        title: l10n.ordersDetailTitle('${widget.orderId}'),
         actions: [
           if (order != null)
             IconButton(
@@ -589,7 +591,10 @@ class _Body extends StatelessWidget {
     return ListView(
       controller: scrollController,
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
+      padding: EdgeInsets.only(
+        top: AppSizes.md + FloatingAppBar.contentTopInset(context),
+        bottom: AppSizes.md,
+      ),
       children: [
         // Decision summary strip
         _DecisionSummaryStrip(
@@ -1642,7 +1647,10 @@ class _ErrorState extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    return Center(
+    return SafeArea(
+      top: true,
+      bottom: false,
+      child: Center(
       child: Padding(
         padding: const EdgeInsets.all(AppSizes.xl),
         child: Column(
@@ -1671,6 +1679,7 @@ class _ErrorState extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }
@@ -2322,7 +2331,10 @@ class _OrderDetailSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
+      padding: EdgeInsets.only(
+        top: AppSizes.md + FloatingAppBar.contentTopInset(context),
+        bottom: AppSizes.md,
+      ),
       children: const [
         _SummaryStripSkeleton(),
         SizedBox(height: AppSizes.md),

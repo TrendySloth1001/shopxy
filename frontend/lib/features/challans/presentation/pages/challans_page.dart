@@ -10,7 +10,7 @@ import 'package:shopxy/features/challans/presentation/providers/challans_provide
 import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
-import 'package:shopxy/shared/widgets/app_divider.dart';
+import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_error_view.dart';
 import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
 import 'package:shopxy/shared/widgets/app_search_bar.dart';
@@ -18,6 +18,7 @@ import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 
 class ChallansPage extends StatefulWidget {
   const ChallansPage({super.key});
@@ -52,12 +53,17 @@ class _ChallansPageState extends State<ChallansPage> {
     final provider = context.watch<ChallansProvider>();
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.challansTitle),
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(
+        title: l10n.challansTitle,
         actions: [AccessReloadButton(onReload: () => provider.loadChallans())],
       ),
-      body: Column(
+      body: MediaQuery.removePadding(
+        context: context,
+        removeTop: true,
+        child: Column(
         children: [
+          SizedBox(height: FloatingAppBar.contentTopInset(context)),
           Padding(
             padding: const EdgeInsets.fromLTRB(
               AppSizes.lg,
@@ -113,11 +119,15 @@ class _ChallansPageState extends State<ChallansPage> {
                         color: AppColors.black,
                         backgroundColor: AppColors.surface,
                         child: ListView.separated(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: AppSizes.sm,
-                          ).copyWith(bottom: AppSizes.fabClearance),
+                          padding: const EdgeInsets.fromLTRB(
+                            AppSizes.lg,
+                            AppSizes.sm,
+                            AppSizes.lg,
+                            AppSizes.fabClearance,
+                          ),
                           itemCount: provider.challans.length,
-                          separatorBuilder: (_, _) => const AppDivider(),
+                          separatorBuilder: (_, _) =>
+                              const SizedBox(height: AppSizes.sm),
                           itemBuilder: (ctx, i) {
                             final c = provider.challans[i];
                             return _ChallanTile(
@@ -142,6 +152,7 @@ class _ChallansPageState extends State<ChallansPage> {
                       ),
           ),
         ],
+      ),
       ),
       floatingActionButton: MaybeLocked(
         allowed: context.select<AuthProvider, bool>(
@@ -175,9 +186,10 @@ class _ChallanListSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView.separated(
       physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
+      padding: const EdgeInsets.fromLTRB(
+          AppSizes.lg, AppSizes.sm, AppSizes.lg, AppSizes.sm),
       itemCount: 5,
-      separatorBuilder: (_, _) => const AppDivider(),
+      separatorBuilder: (_, _) => const SizedBox(height: AppSizes.sm),
       itemBuilder: (_, _) => const _ChallanTileSkeleton(),
     );
   }
@@ -188,7 +200,12 @@ class _ChallanTileSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return Container(
+      decoration: ShapeDecoration(
+        color: AppColors.surface,
+        shape: AppShapes.squircle(AppSizes.radiusLg,
+            side: BorderSide(color: AppColors.hairline)),
+      ),
       padding: const EdgeInsets.symmetric(
         horizontal: AppSizes.lg,
         vertical: AppSizes.md,
@@ -228,6 +245,9 @@ class _ChallanTile extends StatelessWidget {
 
     return Material(
       color: AppColors.surface,
+      shape: AppShapes.squircle(AppSizes.radiusLg,
+          side: BorderSide(color: AppColors.hairline)),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         splashColor: AppColors.surfaceTint,

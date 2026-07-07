@@ -14,6 +14,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 
 /// Single-page editor for an editorial collection. Two states:
 ///   * new      — title/slug/etc, can't manage items until saved once
@@ -212,16 +213,18 @@ class _AdminCollectionEditorPageState extends State<AdminCollectionEditorPage> {
     final l10n = AppLocalizations.of(context);
     if (_loading) {
       return Scaffold(
+        extendBodyBehindAppBar: true,
         backgroundColor: AppColors.canvas,
-        appBar: AppBar(title: Text(l10n.adminCollectionEditTitle)),
+        appBar: FloatingAppBar(title: l10n.adminCollectionEditTitle),
         body: const _CollectionEditorSkeleton(),
       );
     }
     final isEdit = _existing != null;
     return Scaffold(
+      extendBodyBehindAppBar: true,
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(
-        title: Text(isEdit ? l10n.adminCollectionEditTitle : l10n.adminCollectionNewTitle),
+      appBar: FloatingAppBar(
+        title: isEdit ? l10n.adminCollectionEditTitle : l10n.adminCollectionNewTitle,
         actions: [
           if (isEdit)
             IconButton(
@@ -241,9 +244,9 @@ class _AdminCollectionEditorPageState extends State<AdminCollectionEditorPage> {
         ),
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(
+        padding: EdgeInsets.fromLTRB(
           AppSizes.lg,
-          AppSizes.lg,
+          AppSizes.lg + FloatingAppBar.contentTopInset(context),
           AppSizes.lg,
           AppSizes.huge,
         ),
@@ -474,9 +477,9 @@ class _CollectionEditorSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(
+      padding: EdgeInsets.fromLTRB(
         AppSizes.lg,
-        AppSizes.lg,
+        AppSizes.lg + FloatingAppBar.contentTopInset(context),
         AppSizes.lg,
         AppSizes.huge,
       ),

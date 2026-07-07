@@ -17,6 +17,7 @@ import 'package:shopxy/shared/widgets/app_section_header.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/widgets/contact_changes_section.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 
 class VendorDetailPage extends StatefulWidget {
@@ -89,7 +90,8 @@ class _VendorDetailPageState extends State<VendorDetailPage> {
     final l10n = AppLocalizations.of(context);
     final canRecord = !_isLoading && _overview != null;
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.vendorsDetailTitle)),
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(title: l10n.vendorsDetailTitle),
       floatingActionButton: canRecord
           ? FloatingActionButton.extended(
               onPressed: _openRecordPayment,
@@ -100,16 +102,22 @@ class _VendorDetailPageState extends State<VendorDetailPage> {
       body: _isLoading
           ? const _VendorDetailSkeleton()
           : _error != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppSizes.xl),
-                    child: Text(_error!, textAlign: TextAlign.center),
+              ? SafeArea(
+                  top: true,
+                  bottom: false,
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppSizes.xl),
+                      child: Text(_error!, textAlign: TextAlign.center),
+                    ),
                   ),
                 )
               : RefreshIndicator(
                   onRefresh: _load,
                   child: ListView(
-                    padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
+                    padding: EdgeInsets.only(
+                        top: AppSizes.md + FloatingAppBar.contentTopInset(context),
+                        bottom: AppSizes.md),
                     children: _buildBody(_overview!),
                   ),
                 ),
@@ -569,7 +577,9 @@ class _VendorDetailSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
+      padding: EdgeInsets.only(
+          top: AppSizes.md + FloatingAppBar.contentTopInset(context),
+          bottom: AppSizes.md),
       children: const [
         _HeaderSkeleton(),
         SizedBox(height: AppSizes.lg),

@@ -100,6 +100,12 @@ class AppLocalizationsHi extends AppLocalizations {
   String get productsSwitchToCompactView => 'कॉम्पैक्ट व्यू पर जाएँ';
 
   @override
+  String get productsGridView => 'ग्रिड व्यू';
+
+  @override
+  String get productsListView => 'सूची व्यू';
+
+  @override
   String get productsAddProduct => 'उत्पाद जोड़ें';
 
   @override
@@ -1699,6 +1705,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get invoicesOutstanding => 'बकाया';
 
   @override
+  String get invoicesPaymentsReceivedTitle => 'प्राप्त भुगतान';
+
+  @override
   String get invoicesSendViaWhatsApp => 'WhatsApp से भेजें';
 
   @override
@@ -1729,6 +1738,62 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get invoicesConfirmInvoice => 'चालान की पुष्टि करें';
+
+  @override
+  String get invoicesIssueNoteAction => 'क्रेडिट / डेबिट नोट जारी करें';
+
+  @override
+  String get invoicesIssueNoteActionSubtitle =>
+      'इस पुष्ट बिक्री को क्रेडिट या डेबिट नोट से समायोजित करें';
+
+  @override
+  String get invoicesIssueNoteTitle => 'नोट जारी करें';
+
+  @override
+  String get invoicesCreditNoteExplainer =>
+      'ग्राहक की देय राशि घटाता है। लौटाया गया माल वापस स्टॉक में जोड़ा जा सकता है।';
+
+  @override
+  String get invoicesDebitNoteExplainer =>
+      'ग्राहक से अतिरिक्त राशि वसूलता है — जैसे कम शुल्क का सुधार।';
+
+  @override
+  String get invoicesNoteReturnToStock => 'माल वापस स्टॉक में करें';
+
+  @override
+  String get invoicesNoteReason => 'कारण (वैकल्पिक)';
+
+  @override
+  String get invoicesNoteExtraPerUnit => 'प्रति इकाई अतिरिक्त';
+
+  @override
+  String get invoicesIssueCreditNote => 'क्रेडिट नोट जारी करें';
+
+  @override
+  String get invoicesIssueDebitNote => 'डेबिट नोट जारी करें';
+
+  @override
+  String get invoicesNoteSelectLines => 'नोट में कम से कम एक पंक्ति जोड़ें';
+
+  @override
+  String invoicesNoteSoldQty(Object qty) {
+    return 'बेचा गया $qty';
+  }
+
+  @override
+  String invoicesNoteIssued(Object noteNo) {
+    return '$noteNo जारी किया गया';
+  }
+
+  @override
+  String invoicesNoteAgainst(Object invoiceNo) {
+    return '$invoiceNo के विरुद्ध';
+  }
+
+  @override
+  String invoicesNoteApproxTotal(Object amount) {
+    return 'अनुमानित कुल $amount';
+  }
 
   @override
   String get partiesTitle => 'पार्टियाँ';
@@ -2167,6 +2232,15 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get profileFinishShopSetupBody =>
       'इनवॉइस सही छपें इसके लिए अपनी दुकान का नाम, GSTIN और राज्य जोड़ें।';
+
+  @override
+  String get profilePersonalDetails => 'व्यक्तिगत विवरण';
+
+  @override
+  String get profileNotAdded => 'नहीं जोड़ा गया';
+
+  @override
+  String get profileCopied => 'क्लिपबोर्ड पर कॉपी किया गया';
 
   @override
   String get profileFieldName => 'नाम';

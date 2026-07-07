@@ -14,6 +14,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 
 /// "Shop operations" hub — entry tiles for Hours/Vacation, Payouts,
 /// KYC, and Team. Hours and Payouts are fully wired (Payouts shows a
@@ -66,9 +67,10 @@ class _ShopOperationsPageState extends State<ShopOperationsPage> {
     final isLoading = shopProvider.isLoading || payouts.isLoading;
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(
-        title: Text(l10n.shopOperationsTitle),
+      appBar: FloatingAppBar(
+        title: l10n.shopOperationsTitle,
         actions: [
           AccessReloadButton(onReload: () => context.read<ShopProvider>().load()),
         ],
@@ -77,7 +79,9 @@ class _ShopOperationsPageState extends State<ShopOperationsPage> {
       body: isLoading && shop == null
           ? const _OperationsSkeleton()
           : ListView(
-        padding: const EdgeInsets.only(top: AppSizes.sm, bottom: AppSizes.huge),
+        padding: EdgeInsets.only(
+            top: AppSizes.sm + FloatingAppBar.contentTopInset(context),
+            bottom: AppSizes.huge),
         children: [
           if (canShop)
             _OpsTile(
@@ -208,7 +212,9 @@ class _OperationsSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.only(top: AppSizes.sm, bottom: AppSizes.huge),
+      padding: EdgeInsets.only(
+          top: AppSizes.sm + FloatingAppBar.contentTopInset(context),
+          bottom: AppSizes.huge),
       physics: const NeverScrollableScrollPhysics(),
       children: const [
         _OpsTileSkeleton(),

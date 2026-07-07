@@ -14,6 +14,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/shared/constants/app_durations.dart';
 
@@ -216,10 +217,16 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
     final theme = Theme.of(context);
     final canSend = _lines.isNotEmpty && (_isRespond || _party != null);
     return Scaffold(
-      appBar: AppBar(
-          title: Text(_isRespond ? 'Price & send quote' : 'New quotation')),
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(
+          title: _isRespond ? 'Price & send quote' : 'New quotation'),
       body: ListView(
-        padding: const EdgeInsets.all(AppSizes.lg),
+        padding: EdgeInsets.fromLTRB(
+          AppSizes.lg,
+          AppSizes.lg + FloatingAppBar.contentTopInset(context),
+          AppSizes.lg,
+          AppSizes.lg,
+        ),
         children: [
           // Customer selector (fixed when responding to a request).
           _SectionLabel('Customer'),

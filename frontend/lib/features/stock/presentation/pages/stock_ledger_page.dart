@@ -9,6 +9,7 @@ import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_card.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
@@ -99,8 +100,9 @@ class _StockLedgerPageState extends State<StockLedgerPage> {
     final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.stockLedgerTitle),
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(
+        title: l10n.stockLedgerTitle,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(AppSizes.xxl + AppSizes.xs),
           child: Padding(
@@ -133,13 +135,21 @@ class _StockLedgerPageState extends State<StockLedgerPage> {
       return const _StockLedgerSkeleton();
     }
     if (_error != null) {
-      return AppErrorView(onRetry: _load);
+      return SafeArea(
+        top: true,
+        bottom: false,
+        child: AppErrorView(onRetry: _load),
+      );
     }
     if (_entries.isEmpty) {
-      return EmptyState.line(
-        kind: LineArt.ledger,
-        title: AppStrings.noData,
-        subtitle: l10n.stockLedgerEmptySubtitle,
+      return SafeArea(
+        top: true,
+        bottom: false,
+        child: EmptyState.line(
+          kind: LineArt.ledger,
+          title: AppStrings.noData,
+          subtitle: l10n.stockLedgerEmptySubtitle,
+        ),
       );
     }
 
@@ -148,9 +158,11 @@ class _StockLedgerPageState extends State<StockLedgerPage> {
       color: AppColors.black,
       backgroundColor: AppColors.surface,
       child: ListView.separated(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.lg,
-          vertical: AppSizes.md,
+        padding: EdgeInsets.fromLTRB(
+          AppSizes.lg,
+          AppSizes.md + FloatingAppBar.contentTopInset(context) + AppSizes.xxl + AppSizes.xs,
+          AppSizes.lg,
+          AppSizes.md,
         ),
         itemCount: _entries.length,
         separatorBuilder: (_, _) => const SizedBox(height: AppSizes.sm),
@@ -176,9 +188,11 @@ class _StockLedgerSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSizes.lg,
-        vertical: AppSizes.md,
+      padding: EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.md + FloatingAppBar.contentTopInset(context) + AppSizes.xxl + AppSizes.xs,
+        AppSizes.lg,
+        AppSizes.md,
       ),
       physics: const NeverScrollableScrollPhysics(),
       itemCount: 6,

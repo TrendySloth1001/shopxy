@@ -17,6 +17,7 @@ import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_error_view.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/shared/constants/app_durations.dart';
 
@@ -144,9 +145,10 @@ class _CategoryProductsPageState extends State<CategoryProductsPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Scaffold(
+      extendBodyBehindAppBar: true,
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(
-        title: Text(widget.category.name),
+      appBar: FloatingAppBar(
+        title: widget.category.name,
       ),
       body: _isLoading && _products.isEmpty
           ? const _CategoryProductsSkeleton()
@@ -159,6 +161,11 @@ class _CategoryProductsPageState extends State<CategoryProductsPage> {
                   child: CustomScrollView(
                     controller: _scrollCtrl,
                     slivers: [
+                      SliverToBoxAdapter(
+                        child: SizedBox(
+                          height: FloatingAppBar.contentTopInset(context),
+                        ),
+                      ),
                       SliverToBoxAdapter(
                         child: _Header(
                           category: widget.category,

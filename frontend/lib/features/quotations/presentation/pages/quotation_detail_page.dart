@@ -13,6 +13,7 @@ import 'package:shopxy/features/quotations/presentation/widgets/quote_line_thumb
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 
 /// Merchant-side quotation detail: who it went to, status, line items, totals,
@@ -190,8 +191,9 @@ class _QuotationDetailPageState extends State<QuotationDetailPage> {
     final theme = Theme.of(context);
     final (fg, _, label) = _style(_q.status);
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_q.quotationNo),
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(
+        title: _q.quotationNo,
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: AppSizes.sm),
@@ -217,7 +219,12 @@ class _QuotationDetailPageState extends State<QuotationDetailPage> {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(AppSizes.lg),
+        padding: EdgeInsets.fromLTRB(
+          AppSizes.lg,
+          AppSizes.lg + FloatingAppBar.contentTopInset(context),
+          AppSizes.lg,
+          AppSizes.lg,
+        ),
         children: [
           // Status + meta — flat, no box.
           Column(

@@ -24,7 +24,7 @@ import 'package:shopxy/features/shop/presentation/providers/linked_account_provi
 import 'package:shopxy/features/shop/presentation/widgets/payout_setup_sheet.dart';
 import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
-import 'package:shopxy/shared/constants/app_strings.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_error_view.dart';
@@ -84,17 +84,30 @@ class _DashboardPageState extends State<DashboardPage> {
     if (canViewDashboard) {
       _maybeNudgePayouts(context.watch<LinkedAccountProvider>());
     }
+    // The profile action shows the user's actual avatar (their photo, or a
+    // colored monogram fallback) rather than a generic person glyph.
+    final profile =
+        context.select<AuthProvider, ({String? name, String? avatarUrl})>(
+      (a) => (name: a.user?.name, avatarUrl: a.user?.avatarUrl),
+    );
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(AppStrings.appName),
+      // Let the page scroll *behind* the floating app bar (transparent) —
+      // content passes under the islands. The scroll adds the bar's inset
+      // as top padding so nothing hides beneath it at rest.
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar.brand(
         actions: [
           const NotificationBell(),
-          // Profile shortcut — opens the Profile page. (Profile is no longer a
-          // bottom-nav tab; refresh lives next to the period switcher below.)
+          // Profile shortcut — the user's avatar opens the Profile page.
+          // (Profile is no longer a bottom-nav tab.)
           IconButton(
             tooltip: l10n.navProfile,
-            icon: const Icon(Icons.person_outline_rounded),
+            icon: ProfileAvatar(
+              name: profile.name ?? '',
+              imageUrl: profile.avatarUrl,
+              size: 30,
+            ),
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const ProfilePage()),
@@ -137,9 +150,12 @@ class _DashboardScroll extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, c) {
         final pad = _hPad(c.maxWidth);
+        // With extendBodyBehindAppBar the body starts at y=0, so add the
+        // app bar's inset (status bar + island band) to the top padding.
+        final topInset = FloatingAppBar.contentTopInset(context) + AppSizes.xxl;
         return ListView(
           padding: EdgeInsets.fromLTRB(
-              pad, AppSizes.xxl, pad, AppSizes.huge),
+              pad, topInset, pad, AppSizes.huge),
           children: [
             _Header(provider: provider, width: c.maxWidth),
             const _PendingInviteCallout(),

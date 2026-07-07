@@ -11,6 +11,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 
 /// Payouts & settlement onboarding. Wires the shop to a Razorpay Route linked
@@ -286,9 +287,10 @@ class _ShopPayoutsPageState extends State<ShopPayoutsPage>
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Scaffold(
+      extendBodyBehindAppBar: true,
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(
-        title: Text(l10n.shopPayoutsTitle),
+      appBar: FloatingAppBar(
+        title: l10n.shopPayoutsTitle,
         actions: [
           TextButton(
             onPressed: () async {
@@ -313,7 +315,9 @@ class _ShopPayoutsPageState extends State<ShopPayoutsPage>
   // Existing account → just show its KYC status (no wizard).
   Widget _statusView() {
     return ListView(
-      padding: const EdgeInsets.only(top: AppSizes.lg, bottom: AppSizes.huge),
+      padding: EdgeInsets.only(
+          top: AppSizes.lg + FloatingAppBar.contentTopInset(context),
+          bottom: AppSizes.huge),
       children: [
         if (_error != null) _ErrorLine(message: _error!, onRetry: () => _load()),
         _StatusSection(status: _status, onRefresh: () => _load(refresh: true)),
@@ -325,8 +329,12 @@ class _ShopPayoutsPageState extends State<ShopPayoutsPage>
     final l10n = AppLocalizations.of(context);
     final isLast = _step == _steps.length - 1;
     final draft = _provider.draft;
-    return Column(
+    return MediaQuery.removePadding(
+      context: context,
+      removeTop: true,
+      child: Column(
       children: [
+        SizedBox(height: FloatingAppBar.contentTopInset(context)),
         if (_error != null)
           _ErrorLine(
             message: _error!,
@@ -356,6 +364,7 @@ class _ShopPayoutsPageState extends State<ShopPayoutsPage>
         ),
         _footer(isLast: isLast),
       ],
+      ),
     );
   }
 
@@ -478,9 +487,13 @@ class _PayoutsWizardSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Column(
+    return MediaQuery.removePadding(
+      context: context,
+      removeTop: true,
+      child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        SizedBox(height: FloatingAppBar.contentTopInset(context)),
         // ── Progress header (4-step indicator + step label) ──────────────────
         Padding(
           padding: const EdgeInsets.fromLTRB(
@@ -564,6 +577,7 @@ class _PayoutsWizardSkeleton extends StatelessWidget {
           ),
         ),
       ],
+      ),
     );
   }
 }

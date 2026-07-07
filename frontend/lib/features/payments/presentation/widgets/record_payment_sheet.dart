@@ -10,6 +10,7 @@ import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/shared/widgets/app_filter_pill.dart';
 
 /// Bottom-sheet form for recording a payment.
 ///
@@ -101,6 +102,10 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
   int? _selectedInvoiceId;
   List<LedgerEntry> _openInvoices = const [];
   bool _loadingInvoices = false;
+  // Shown inline inside the sheet. A snackbar via ScaffoldMessenger renders at
+  // the screen bottom — behind this modal sheet — so save failures were
+  // invisible; surface them here instead.
+  String? _error;
 
   bool get _isReceipt => widget.type == 'RECEIPT';
   bool get _isLocked => widget.lockedInvoiceId != null;
@@ -173,6 +178,7 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
   }
 
   Future<void> _submit() async {
+    setState(() => _error = null);
     if (!_formKey.currentState!.validate()) return;
     final amount = double.tryParse(_amountCtrl.text.trim());
     if (amount == null || amount <= 0) return;
@@ -194,10 +200,8 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
       );
       if (mounted) Navigator.of(context).pop(payment);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(friendlyError(e))));
-      }
+      // Inline (not a snackbar) so the message is visible above the sheet.
+      if (mounted) setState(() => _error = friendlyError(e));
     }
   }
 
@@ -270,15 +274,17 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
                 const SizedBox(height: AppSizes.xs),
                 Wrap(
                   spacing: AppSizes.sm,
-                  runSpacing: AppSizes.xs,
+                  runSpacing: AppSizes.sm,
                   children: [
+                    // AppFilterPill sets the label colour directly, so the
+                    // unselected label stays legible — unlike the themed
+                    // ChoiceChip, whose state-aware label rendered light-on-
+                    // light here.
                     for (final m in _modes)
-                      ChoiceChip(
-                        label: Text(m),
+                      AppFilterPill(
+                        label: m,
                         selected: _mode == m,
-                        onSelected: (s) {
-                          if (s) setState(() => _mode = m);
-                        },
+                        onTap: () => setState(() => _mode = m),
                       ),
                   ],
                 ),
@@ -369,27 +375,78 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
                   ),
                   maxLines: 2,
                 ),
-                const SizedBox(height: AppSizes.lg),
-                SizedBox(
-                  width: double.infinity,
-                  child: Consumer<PaymentsProvider>(
-                    builder: (_, prov, _) {
-                      return FilledButton(
-                        onPressed: prov.isSubmitting ? null : _submit,
-                        child: prov.isSubmitting
-                            ? const SizedBox(
-                                width: AppSizes.iconMd,
-                                height: AppSizes.iconMd,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : Text(_isReceipt
-                                ? l10n.paymentsSaveReceipt
-                                : l10n.paymentsSavePayment),
-                      );
-                    },
+                if (_error != null) ...[
+                  const SizedBox(height: AppSizes.md),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(AppSizes.md),
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+                      border: Border.all(
+                        color: AppColors.error.withValues(alpha: 0.30),
+                      ),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.error_outline_rounded,
+                          color: AppColors.error,
+                          size: AppSizes.iconSm,
+                        ),
+                        const SizedBox(width: AppSizes.sm),
+                        Expanded(
+                          child: Text(
+                            _error!,
+                            style: theme.textTheme.bodySmall
+                                ?.copyWith(color: AppColors.error),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
+                ],
+                const SizedBox(height: AppSizes.lg),
+                // Cancel + Save side by side so there's always an obvious way
+                // out of the sheet (the top X alone was easy to miss).
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size.fromHeight(52),
+                        ),
+                        child: Text(l10n.commonCancel),
+                      ),
+                    ),
+                    const SizedBox(width: AppSizes.md),
+                    Expanded(
+                      flex: 2,
+                      child: Consumer<PaymentsProvider>(
+                        builder: (_, prov, _) {
+                          return FilledButton(
+                            onPressed: prov.isSubmitting ? null : _submit,
+                            style: FilledButton.styleFrom(
+                              minimumSize: const Size.fromHeight(52),
+                            ),
+                            child: prov.isSubmitting
+                                ? const SizedBox(
+                                    width: AppSizes.iconMd,
+                                    height: AppSizes.iconMd,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : Text(_isReceipt
+                                    ? l10n.paymentsSaveReceipt
+                                    : l10n.paymentsSavePayment),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

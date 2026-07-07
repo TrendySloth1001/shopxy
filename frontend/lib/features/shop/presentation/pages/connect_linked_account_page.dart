@@ -7,6 +7,7 @@ import 'package:shopxy/features/shop/data/datasources/linked_account_remote_data
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 
 /// Connect an EXISTING Razorpay linked account by its acc_XXXX id — skips the
 /// 4-step KYC wizard. Enter the id → verify (fetch from Razorpay) → confirm the
@@ -80,9 +81,11 @@ class _ConnectLinkedAccountPageState extends State<ConnectLinkedAccountPage> {
     final d = _details;
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(title: Text(l10n.shopConnectExistingAccountTitle)),
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(title: l10n.shopConnectExistingAccountTitle),
       body: ListView(
-        padding: const EdgeInsets.all(AppSizes.xl),
+        padding: EdgeInsets.fromLTRB(AppSizes.xl,
+            AppSizes.xl + FloatingAppBar.contentTopInset(context), AppSizes.xl, AppSizes.xl),
         children: [
           Text(
             l10n.shopConnectIntro,

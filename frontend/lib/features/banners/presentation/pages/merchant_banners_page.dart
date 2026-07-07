@@ -10,6 +10,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 
 class MerchantBannersPage extends StatefulWidget {
   const MerchantBannersPage({super.key});
@@ -43,9 +44,10 @@ class _MerchantBannersPageState extends State<MerchantBannersPage> {
     final grouped = provider.grouped;
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(
-        title: Text(l10n.bannersTitle),
+      appBar: FloatingAppBar(
+        title: l10n.bannersTitle,
         actions: [
           IconButton(
             tooltip: l10n.bannersRefresh,
@@ -62,16 +64,22 @@ class _MerchantBannersPageState extends State<MerchantBannersPage> {
       body: provider.isLoading && provider.banners.isEmpty
           ? const _BannersSkeleton()
           : provider.error != null && provider.banners.isEmpty
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppSizes.xl),
-                    child: Text(provider.error!, textAlign: TextAlign.center),
+              ? SafeArea(
+                  top: true,
+                  bottom: false,
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppSizes.xl),
+                      child: Text(provider.error!, textAlign: TextAlign.center),
+                    ),
                   ),
                 )
               : RefreshIndicator(
                   onRefresh: provider.load,
                   child: ListView(
-                    padding: const EdgeInsets.only(bottom: AppSizes.huge),
+                    padding: EdgeInsets.only(
+                        top: FloatingAppBar.contentTopInset(context),
+                        bottom: AppSizes.huge),
                     children: [
                       for (final entry in grouped.entries)
                         _PlacementSection(
@@ -420,7 +428,8 @@ class _BannersSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.only(bottom: AppSizes.huge),
+      padding: EdgeInsets.only(
+          top: FloatingAppBar.contentTopInset(context), bottom: AppSizes.huge),
       children: const [
         _PlacementSectionSkeleton(tileCount: 3),
         _PlacementSectionSkeleton(tileCount: 2),

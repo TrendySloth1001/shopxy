@@ -10,6 +10,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 
 /// Workflow-heavy detail page. Header shows the customer + refund
@@ -167,17 +168,27 @@ class _MerchantReturnDetailPageState extends State<MerchantReturnDetailPage> {
     }
     if (_error != null) {
       return Scaffold(
-        appBar: AppBar(),
-        body: Center(child: Text(_error!)),
+        extendBodyBehindAppBar: true,
+        appBar: FloatingAppBar(),
+        body: SafeArea(
+          top: true,
+          bottom: false,
+          child: Center(child: Text(_error!)),
+        ),
       );
     }
     final l10n = AppLocalizations.of(context);
     final row = _row!;
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.returnsDetailTitle(row.id))),
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(title: l10n.returnsDetailTitle(row.id)),
       body: SafeArea(
-        child: Column(
+        child: MediaQuery.removePadding(
+          context: context,
+          removeTop: true,
+          child: Column(
           children: [
+            SizedBox(height: FloatingAppBar.contentTopInset(context)),
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.all(AppSizes.lg),
@@ -306,6 +317,7 @@ class _MerchantReturnDetailPageState extends State<MerchantReturnDetailPage> {
             ),
           ],
         ),
+        ),
       ),
     );
   }
@@ -321,10 +333,15 @@ class _ReturnDetailSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const AppShimmerLine(widthFactor: 0.4, height: 18)),
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(titleWidget: const AppShimmerLine(widthFactor: 0.4, height: 18)),
       body: SafeArea(
-        child: Column(
+        child: MediaQuery.removePadding(
+          context: context,
+          removeTop: true,
+          child: Column(
           children: [
+            SizedBox(height: FloatingAppBar.contentTopInset(context)),
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.all(AppSizes.lg),
@@ -339,6 +356,7 @@ class _ReturnDetailSkeleton extends StatelessWidget {
             ),
             _ActionBarSkeleton(),
           ],
+        ),
         ),
       ),
     );

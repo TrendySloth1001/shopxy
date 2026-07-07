@@ -11,6 +11,7 @@ import 'package:shopxy/features/auth/domain/entities/auth_user.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/banners/presentation/pages/merchant_banners_page.dart';
 import 'package:shopxy/features/cashier/presentation/pages/cashier_page.dart';
+import 'package:shopxy/features/notifications/presentation/widgets/notification_bell.dart';
 import 'package:shopxy/features/categories/presentation/pages/categories_page.dart';
 import 'package:shopxy/features/challans/presentation/pages/challans_page.dart';
 import 'package:shopxy/features/coupons/presentation/pages/merchant_coupons_page.dart';
@@ -30,6 +31,7 @@ import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 
 /// One menu row — a feature the user can open. Pushes [builder] on tap.
 /// [requires] gates it by shop capability (null = visible to any team member).
@@ -282,10 +284,30 @@ class MenuPage extends StatelessWidget {
     final isAdmin = user?.isPlatformAdmin == true;
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(title: Text(l10n.navMenu)),
+      appBar: FloatingAppBar(
+        title: l10n.navMenu,
+        actions: [
+          const NotificationBell(),
+          IconButton(
+            tooltip: l10n.navProfile,
+            icon: ProfileAvatar(
+              name: user?.name ?? '',
+              imageUrl: user?.avatarUrl,
+              size: 30,
+            ),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ProfilePage()),
+            ),
+          ),
+        ],
+      ),
       body: ListView(
-        padding: const EdgeInsets.only(top: AppSizes.sm, bottom: AppSizes.huge),
+        padding: EdgeInsets.only(
+            top: AppSizes.sm + FloatingAppBar.contentTopInset(context),
+            bottom: AppSizes.huge),
         children: [
           if (manage.isNotEmpty)
             _MenuGroup(

@@ -11,6 +11,7 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 
 /// Read-only browse of the canonical taxonomy. Merchants don't manage
 /// categories any more — the seed lives in the backend manifest. This
@@ -41,7 +42,8 @@ class _CategoriesPageState extends State<CategoriesPage> {
     final tree = provider.tree;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.categoriesTitle)),
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(title: l10n.categoriesTitle),
       body: provider.isLoading && tree.isEmpty
           ? const _CategoriesGridSkeleton()
           : tree.isEmpty
@@ -55,7 +57,12 @@ class _CategoriesPageState extends State<CategoriesPage> {
                   color: AppColors.black,
                   backgroundColor: AppColors.surface,
                   child: GridView.builder(
-                    padding: const EdgeInsets.all(AppSizes.md),
+                    padding: EdgeInsets.fromLTRB(
+                      AppSizes.md,
+                      AppSizes.md + FloatingAppBar.contentTopInset(context),
+                      AppSizes.md,
+                      AppSizes.md,
+                    ),
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 3,
                       mainAxisSpacing: AppSizes.md,

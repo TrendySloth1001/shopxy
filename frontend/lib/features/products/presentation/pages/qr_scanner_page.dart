@@ -10,6 +10,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 
 enum _MissingProductAction { add, retry }
 
@@ -176,14 +177,15 @@ class _QrScannerPageState extends State<QrScannerPage> {
     final l10n = AppLocalizations.of(context);
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       backgroundColor: Colors.black,
-      appBar: AppBar(
-        title: Text(l10n.productsScanQr),
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-        iconTheme: IconThemeData(color: Colors.white),
+      appBar: FloatingAppBar(
+        title: l10n.productsScanQr,
       ),
-      body: Stack(
+      body: SafeArea(
+        top: true,
+        bottom: false,
+        child: Stack(
         children: [
           MobileScanner(controller: _controller, onDetect: _onDetect),
           Center(
@@ -225,6 +227,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

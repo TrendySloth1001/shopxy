@@ -8,6 +8,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 
 /// Admin-only listing of marketplace shops with a verified toggle.
@@ -83,9 +84,10 @@ class _AdminShopsPageState extends State<AdminShopsPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Scaffold(
+      extendBodyBehindAppBar: true,
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(
-        title: Text(l10n.adminShopsTitle),
+      appBar: FloatingAppBar(
+        title: l10n.adminShopsTitle,
         actions: [
           IconButton(
             tooltip: l10n.adminRefresh,
@@ -94,8 +96,12 @@ class _AdminShopsPageState extends State<AdminShopsPage> {
           ),
         ],
       ),
-      body: Column(
+      body: MediaQuery.removePadding(
+        context: context,
+        removeTop: true,
+        child: Column(
         children: [
+          SizedBox(height: FloatingAppBar.contentTopInset(context)),
           Padding(
             padding: const EdgeInsets.fromLTRB(
                 AppSizes.lg, AppSizes.md, AppSizes.lg, AppSizes.sm),
@@ -144,6 +150,7 @@ class _AdminShopsPageState extends State<AdminShopsPage> {
                           ),
           ),
         ],
+      ),
       ),
     );
   }

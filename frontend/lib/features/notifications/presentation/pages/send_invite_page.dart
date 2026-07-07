@@ -10,6 +10,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 
 /// Owner-facing page. Two modes via a segmented switch:
@@ -127,7 +128,8 @@ class _SendInvitePageState extends State<SendInvitePage> {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.notificationsSendInvitationTitle)),
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(title: l10n.notificationsSendInvitationTitle),
       body: SafeArea(
         child: Column(
           children: [

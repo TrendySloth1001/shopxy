@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/core/prefs/theme_prefs.dart';
 import 'package:shopxy/core/router/menu_page.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/dashboard/presentation/pages/dashboard_page.dart';
@@ -24,8 +25,9 @@ class _Destination {
     required this.label,
     required this.icon,
     required this.selectedIcon,
-    required this.page,
+    required this.pageBuilder,
     this.id,
+    this.isHome = false,
   });
 
   /// Resolves the destination's user-facing label against the active
@@ -34,11 +36,19 @@ class _Destination {
   final String Function(AppLocalizations l10n) label;
   final IconData icon;
   final IconData selectedIcon;
-  final Widget page;
+
+  /// Builds a FRESH page widget on each call. Fresh instances (not a cached
+  /// const) are what let the IndexedStack children rebuild when the shell
+  /// rebuilds on a theme change — const pages short-circuit the rebuild and
+  /// keep stale [AppColors] until an app restart.
+  final Widget Function() pageBuilder;
 
   /// Stable identifier used to attach dynamic affordances (like the
   /// pending-orders badge) without leaking layout into the static list.
   final String? id;
+
+  /// The default landing tab (the dashboard).
+  final bool isHome;
 }
 
 const _kOrdersDestinationId = 'orders';
@@ -53,38 +63,39 @@ final _destinations = <_Destination>[
     label: (l10n) => l10n.navMenu,
     icon: Icons.apps_outlined,
     selectedIcon: Icons.apps,
-    page: const MenuPage(),
+    pageBuilder: MenuPage.new,
   ),
   _Destination(
     label: (l10n) => l10n.navProducts,
     icon: Icons.inventory_2_outlined,
     selectedIcon: Icons.inventory_2_rounded,
-    page: const ProductsPage(),
+    pageBuilder: ProductsPage.new,
   ),
   _Destination(
     label: (l10n) => l10n.navHome,
     icon: Icons.home_outlined,
     selectedIcon: Icons.home_rounded,
-    page: const DashboardPage(),
+    pageBuilder: DashboardPage.new,
+    isHome: true,
   ),
   _Destination(
     label: (l10n) => l10n.navOrders,
     icon: Icons.inbox_outlined,
     selectedIcon: Icons.inbox_rounded,
-    page: const OrdersInboxPage(),
+    pageBuilder: OrdersInboxPage.new,
     id: _kOrdersDestinationId,
   ),
   _Destination(
     label: (l10n) => l10n.navInvoices,
     icon: Icons.receipt_long_outlined,
     selectedIcon: Icons.receipt_long,
-    page: const InvoicesPage(),
+    pageBuilder: InvoicesPage.new,
   ),
 ];
 
 /// The Home (dashboard) tab — used as the initial tab so the app opens on Home,
-/// not the first bar slot. Resolved by type so it survives reordering.
-final _homeIndex = _destinations.indexWhere((d) => d.page is DashboardPage);
+/// not the first bar slot.
+final _homeIndex = _destinations.indexWhere((d) => d.isHome);
 
 class AppShellState extends State<AppShell> {
   int _currentIndex = _homeIndex < 0 ? 0 : _homeIndex;
@@ -113,9 +124,14 @@ class AppShellState extends State<AppShell> {
       return const PosPage(kiosk: true);
     }
 
+    // Depend on the theme so a palette change rebuilds the shell — and with
+    // it the freshly-built pages below — instead of leaving them on stale
+    // AppColors until an app restart.
+    context.watch<ThemePrefsProvider>();
     final l10n = AppLocalizations.of(context);
-    final pendingOrders = context.watch<OrdersProvider>().pendingCount;
-    final pages = _destinations.map((d) => d.page).toList(growable: false);
+    // Fresh page instances each build (see [_Destination.pageBuilder]).
+    final pages =
+        _destinations.map((d) => d.pageBuilder()).toList(growable: false);
 
     return Scaffold(
       body: IndexedStack(index: _currentIndex, children: pages),
@@ -133,20 +149,34 @@ class AppShellState extends State<AppShell> {
           destinations: [
             for (final d in _destinations)
               NavigationDestination(
-                icon: _DestinationIcon(
-                  icon: d.icon,
-                  badge: d.id == _kOrdersDestinationId ? pendingOrders : 0,
-                ),
-                selectedIcon: _DestinationIcon(
-                  icon: d.selectedIcon,
-                  badge: d.id == _kOrdersDestinationId ? pendingOrders : 0,
-                ),
+                // The orders badge watches the count itself (via a Selector)
+                // so a count change repaints only that icon — not the whole
+                // shell, which would rebuild every page in the IndexedStack.
+                icon: d.id == _kOrdersDestinationId
+                    ? _OrdersBadgeIcon(icon: d.icon)
+                    : Icon(d.icon),
+                selectedIcon: d.id == _kOrdersDestinationId
+                    ? _OrdersBadgeIcon(icon: d.selectedIcon)
+                    : Icon(d.selectedIcon),
                 label: d.label(l10n),
               ),
           ],
         ),
       ),
     );
+  }
+}
+
+/// Orders bottom-nav icon that subscribes to just the pending count, so an
+/// order arriving repaints this icon alone rather than the whole shell.
+class _OrdersBadgeIcon extends StatelessWidget {
+  const _OrdersBadgeIcon({required this.icon});
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final badge = context.select<OrdersProvider, int>((o) => o.pendingCount);
+    return _DestinationIcon(icon: icon, badge: badge);
   }
 }
 

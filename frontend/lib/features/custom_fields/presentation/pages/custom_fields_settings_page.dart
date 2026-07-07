@@ -16,6 +16,7 @@ import 'package:shopxy/shared/widgets/app_button.dart';
 import 'package:shopxy/shared/widgets/app_dialog.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 
 /// Settings → Custom Fields.
 ///
@@ -83,8 +84,9 @@ class _CustomFieldsSettingsPageState extends State<CustomFieldsSettingsPage> {
     final tree = provider.tree;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.customFieldsTitle),
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(
+        title: l10n.customFieldsTitle,
         actions: [
           IconButton(
             icon: const Icon(Icons.auto_awesome_rounded),
@@ -118,9 +120,9 @@ class _CustomFieldsSettingsPageState extends State<CustomFieldsSettingsPage> {
                   color: AppColors.black,
                   backgroundColor: AppColors.surface,
                   child: ListView(
-                    padding: const EdgeInsets.fromLTRB(
+                    padding: EdgeInsets.fromLTRB(
                       AppSizes.lg,
-                      AppSizes.md,
+                      AppSizes.md + FloatingAppBar.contentTopInset(context),
                       AppSizes.lg,
                       AppSizes.huge,
                     ),

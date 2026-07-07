@@ -10,6 +10,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 
 /// Merchant-facing list of coupons attached to the caller's shop.
@@ -109,7 +110,8 @@ class _MerchantCouponsPageState extends State<MerchantCouponsPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.couponsTitle)),
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(title: l10n.couponsTitle),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openEditor(),
         icon: const Icon(Icons.add),
@@ -124,8 +126,13 @@ class _MerchantCouponsPageState extends State<MerchantCouponsPage> {
                   : RefreshIndicator(
                       onRefresh: _load,
                       child: ListView.builder(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSizes.lg, vertical: AppSizes.sm),
+                        padding: EdgeInsets.only(
+                          left: AppSizes.lg,
+                          right: AppSizes.lg,
+                          top: AppSizes.sm +
+                              FloatingAppBar.contentTopInset(context),
+                          bottom: AppSizes.sm,
+                        ),
                         itemCount: _rows.length,
                         itemBuilder: (_, i) => _CouponRow(
                           row: _rows[i],
@@ -179,7 +186,9 @@ class _CouponRow extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: AppSizes.sm),
       child: Material(
         color: AppColors.surface,
-        shape: AppShapes.squircle(AppSizes.radiusMd),
+        shape: AppShapes.squircle(AppSizes.radiusLg,
+            side: BorderSide(color: AppColors.hairline)),
+        clipBehavior: Clip.antiAlias,
         child: InkWell(
           customBorder: AppShapes.squircle(AppSizes.radiusMd),
           onTap: onEdit,
@@ -282,7 +291,9 @@ class _CouponRowSkeleton extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: AppSizes.sm),
       child: Material(
         color: AppColors.surface,
-        shape: AppShapes.squircle(AppSizes.radiusMd),
+        shape: AppShapes.squircle(AppSizes.radiusLg,
+            side: BorderSide(color: AppColors.hairline)),
+        clipBehavior: Clip.antiAlias,
         child: Padding(
           padding: const EdgeInsets.all(AppSizes.md),
           child: Column(

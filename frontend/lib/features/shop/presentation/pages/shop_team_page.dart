@@ -12,6 +12,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_dialog.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 
 /// Team & roles — editorial layout (flat rows + hairline dividers, no
@@ -199,9 +200,10 @@ class _ShopTeamPageState extends State<ShopTeamPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Scaffold(
+      extendBodyBehindAppBar: true,
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(
-        title: Text(l10n.shopTeamTitle),
+      appBar: FloatingAppBar(
+        title: l10n.shopTeamTitle,
         actions: [
           AccessReloadButton(onReload: _load),
           if (_canManage)
@@ -223,7 +225,9 @@ class _ShopTeamPageState extends State<ShopTeamPage> {
   Widget _content() {
     final l10n = AppLocalizations.of(context);
     return ListView(
-      padding: const EdgeInsets.only(top: AppSizes.md, bottom: AppSizes.huge),
+      padding: EdgeInsets.only(
+          top: AppSizes.md + FloatingAppBar.contentTopInset(context),
+          bottom: AppSizes.huge),
       children: [
         if (!_canManage)
           Padding(
@@ -289,7 +293,9 @@ class _ShopTeamSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.only(top: AppSizes.md, bottom: AppSizes.huge),
+      padding: EdgeInsets.only(
+          top: AppSizes.md + FloatingAppBar.contentTopInset(context),
+          bottom: AppSizes.huge),
       children: [
         // Info banner placeholder
         Padding(
@@ -830,7 +836,10 @@ class _ErrorState extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;
   @override
-  Widget build(BuildContext context) => Center(
+  Widget build(BuildContext context) => SafeArea(
+        top: true,
+        bottom: false,
+        child: Center(
         child: Padding(
           padding: const EdgeInsets.all(AppSizes.xl),
           child: Column(
@@ -844,6 +853,7 @@ class _ErrorState extends StatelessWidget {
             ],
           ),
         ),
+      ),
       );
 }
 

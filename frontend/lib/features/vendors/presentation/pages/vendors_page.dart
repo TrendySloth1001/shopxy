@@ -16,7 +16,6 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
 import 'package:shopxy/shared/widgets/app_dialog.dart';
-import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_error_view.dart';
 import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
 import 'package:shopxy/shared/widgets/app_search_bar.dart';
@@ -24,6 +23,7 @@ import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 
 class VendorsPage extends StatefulWidget {
@@ -67,8 +67,9 @@ class _VendorsPageState extends State<VendorsPage> {
         (a) => a.user?.canManage('vendors') ?? false);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.vendorsTitle),
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(
+        title: l10n.vendorsTitle,
         actions: [
           AccessReloadButton(
               onReload: () => provider.loadVendors(refresh: true)),
@@ -81,8 +82,12 @@ class _VendorsPageState extends State<VendorsPage> {
           ),
         ],
       ),
-      body: Column(
+      body: MediaQuery.removePadding(
+        context: context,
+        removeTop: true,
+        child: Column(
         children: [
+          SizedBox(height: FloatingAppBar.contentTopInset(context)),
           Padding(
             padding: const EdgeInsets.fromLTRB(
               AppSizes.lg,
@@ -126,11 +131,15 @@ class _VendorsPageState extends State<VendorsPage> {
                             color: AppColors.black,
                             backgroundColor: AppColors.surface,
                             child: ListView.separated(
-                              padding: const EdgeInsets.symmetric(
-                                vertical: AppSizes.sm,
+                              padding: const EdgeInsets.fromLTRB(
+                                AppSizes.lg,
+                                AppSizes.sm,
+                                AppSizes.lg,
+                                AppSizes.sm,
                               ),
                               itemCount: provider.vendors.length,
-                              separatorBuilder: (_, _) => const AppDivider(),
+                              separatorBuilder: (_, _) =>
+                                  const SizedBox(height: AppSizes.sm),
                               itemBuilder: (context, i) {
                                 final v = provider.vendors[i];
                                 return _VendorTile(
@@ -149,6 +158,7 @@ class _VendorsPageState extends State<VendorsPage> {
                           ),
           ),
         ],
+      ),
       ),
     );
   }
@@ -263,6 +273,9 @@ class _VendorTile extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     return Material(
       color: AppColors.surface,
+      shape: AppShapes.squircle(AppSizes.radiusLg,
+          side: BorderSide(color: AppColors.hairline)),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         splashColor: AppColors.surfaceTint,
@@ -510,9 +523,10 @@ class _VendorListSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView.separated(
       physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
+      padding: const EdgeInsets.fromLTRB(
+          AppSizes.lg, AppSizes.sm, AppSizes.lg, AppSizes.sm),
       itemCount: 6,
-      separatorBuilder: (_, _) => const AppDivider(),
+      separatorBuilder: (_, _) => const SizedBox(height: AppSizes.sm),
       itemBuilder: (context, index) => const _VendorTileSkeleton(),
     );
   }
@@ -523,7 +537,12 @@ class _VendorTileSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return Container(
+      decoration: ShapeDecoration(
+        color: AppColors.surface,
+        shape: AppShapes.squircle(AppSizes.radiusLg,
+            side: BorderSide(color: AppColors.hairline)),
+      ),
       padding: const EdgeInsets.symmetric(
         horizontal: AppSizes.lg,
         vertical: AppSizes.md,

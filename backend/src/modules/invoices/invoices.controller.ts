@@ -113,9 +113,56 @@ const documentTypeEnum = z.enum([
   'DEBIT_NOTE',
 ]);
 
+/// Document types a client may create directly via POST/PUT /invoices.
+/// CREDIT_NOTE / DEBIT_NOTE are DELIBERATELY excluded: a note is a Sec 34
+/// adjustment that must reference an original invoice and reverse/add its GST
+/// (and, for credit notes, restock) — it can only be raised through
+/// POST /invoices/:id/notes, never minted as a bare document here. The full
+/// `documentTypeEnum` is still used for the list filter (you can filter by
+/// notes) — only creation is restricted.
+const creatableDocumentTypeEnum = z.enum([
+  'TAX_INVOICE',
+  'BILL_OF_SUPPLY',
+  'ESTIMATE',
+  'PROFORMA',
+]);
+
+/// Line of a manually-issued credit/debit note (POST /invoices/:id/notes).
+const noteLineSchema = z.object({
+  productId: z.number().int().positive(),
+  quantity: z.number().positive(),
+  /// Ignored for CREDIT_NOTE (reverses the original's unit price); required for
+  /// DEBIT_NOTE as the supplementary amount charged per unit.
+  unitPrice: z.number().nonnegative().optional(),
+});
+
+const issueNoteSchema = z
+  .object({
+    documentType: z.enum(['CREDIT_NOTE', 'DEBIT_NOTE']),
+    reason: z.string().max(1000).optional(),
+    restock: z.boolean().optional(),
+    lines: z.array(noteLineSchema).min(1),
+  })
+  .superRefine((data, ctx) => {
+    // A debit note bills a supplementary amount, so every line needs a
+    // positive unitPrice. Credit-note lines reverse the original price and
+    // ignore unitPrice entirely.
+    if (data.documentType === 'DEBIT_NOTE') {
+      data.lines.forEach((line, i) => {
+        if (!(line.unitPrice && line.unitPrice > 0)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['lines', i, 'unitPrice'],
+            message: 'Debit note lines require a positive unitPrice',
+          });
+        }
+      });
+    }
+  });
+
 const createInvoiceSchema = z.object({
   type: z.enum(['SALE', 'PURCHASE']),
-  documentType: documentTypeEnum.optional(),
+  documentType: creatableDocumentTypeEnum.optional(),
   placeOfSupplyStateCode: z.string().regex(/^\d{2}$/, 'must be 2-digit GST state code').optional(),
   vendorId: z.number().int().positive().optional(),
   partyId: z.number().int().positive().optional(),
@@ -141,7 +188,7 @@ const updateStatusSchema = z.object({
 
 const updateInvoiceSchema = z.object({
   type: z.enum(['SALE', 'PURCHASE']),
-  documentType: documentTypeEnum.optional(),
+  documentType: creatableDocumentTypeEnum.optional(),
   placeOfSupplyStateCode: z.string().regex(/^\d{2}$/, 'must be 2-digit GST state code').optional(),
   vendorId: z.number().int().positive().nullable().optional(),
   partyId: z.number().int().positive().nullable().optional(),
@@ -233,6 +280,29 @@ export class InvoicesController {
     if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
 
     const result = await invoicesService.convertEstimate(shopId, id);
+    if ('error' in result) {
+      res.status(400).json({ error: result.error });
+      return;
+    }
+    res.status(201).json(result.invoice);
+  }
+
+  /// POST /invoices/:id/notes — raise a credit or debit note against a
+  /// CONFIRMED sale invoice. The Sec 34 adjustment path (distinct from the
+  /// POS/order refund path, which also settles money).
+  async issueNote(req: Request, res: Response): Promise<void> {
+    const shopId = requireShopId(req, res);
+    if (!shopId) return;
+    const id = parseId(req.params.id);
+    if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
+
+    const payload = issueNoteSchema.parse(req.body);
+    const result = await invoicesService.createAdjustmentNoteFromInvoice(
+      shopId,
+      id,
+      payload,
+      req.user?.sub,
+    );
     if ('error' in result) {
       res.status(400).json({ error: result.error });
       return;

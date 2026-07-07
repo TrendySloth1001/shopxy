@@ -42,6 +42,7 @@ import 'package:shopxy/shared/widgets/app_dialog.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_section_header.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 
 class ProductDetailPage extends StatefulWidget {
@@ -500,15 +501,21 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(),
+        extendBodyBehindAppBar: true,
+        appBar: FloatingAppBar(),
         body: const _ProductDetailSkeleton(),
       );
     }
 
     if (_product == null) {
       return Scaffold(
-        appBar: AppBar(),
-        body: Center(child: Text(l10n.productsError)),
+        extendBodyBehindAppBar: true,
+        appBar: FloatingAppBar(),
+        body: SafeArea(
+          top: true,
+          bottom: false,
+          child: Center(child: Text(l10n.productsError)),
+        ),
       );
     }
 
@@ -520,8 +527,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     });
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.productsDetailsTitle),
+      appBar: FloatingAppBar(
+        title: l10n.productsDetailsTitle,
         actions: [
           IconButton(
             onPressed: _shareProduct,

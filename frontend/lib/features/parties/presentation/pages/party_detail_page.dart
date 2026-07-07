@@ -18,6 +18,7 @@ import 'package:shopxy/shared/widgets/app_section_header.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/contact_changes_section.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 
 class PartyDetailPage extends StatefulWidget {
@@ -91,7 +92,8 @@ class _PartyDetailPageState extends State<PartyDetailPage> {
         _overview != null &&
         !(_overview!.isSystem);
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.partiesPartyTitle)),
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(title: l10n.partiesPartyTitle),
       floatingActionButton: canRecord
           ? FloatingActionButton.extended(
               onPressed: _openRecordPayment,
@@ -102,16 +104,23 @@ class _PartyDetailPageState extends State<PartyDetailPage> {
       body: _isLoading
           ? const _PartyDetailSkeleton()
           : _error != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppSizes.xl),
-                    child: Text(_error!, textAlign: TextAlign.center),
+              ? SafeArea(
+                  top: true,
+                  bottom: false,
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppSizes.xl),
+                      child: Text(_error!, textAlign: TextAlign.center),
+                    ),
                   ),
                 )
               : RefreshIndicator(
                   onRefresh: _load,
                   child: ListView(
-                    padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
+                    padding: EdgeInsets.only(
+                      top: AppSizes.md + FloatingAppBar.contentTopInset(context),
+                      bottom: AppSizes.md,
+                    ),
                     children: _buildBody(_overview!),
                   ),
                 ),
@@ -189,7 +198,10 @@ class _PartyDetailSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
+      padding: EdgeInsets.only(
+        top: AppSizes.md + FloatingAppBar.contentTopInset(context),
+        bottom: AppSizes.md,
+      ),
       children: const [
         _HeaderSkeleton(),
         SizedBox(height: AppSizes.lg),

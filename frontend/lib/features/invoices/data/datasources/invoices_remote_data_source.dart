@@ -21,11 +21,22 @@ class CreateInvoiceResult {
   final int? shortfallProductId;
 }
 
+/// One page of the invoice list plus enough pagination context for the
+/// caller to know whether to fetch the next page. `hasMore` is derived
+/// from the server's `pagination.page < pagination.totalPages`.
+class InvoicesPage {
+  const InvoicesPage({required this.items, required this.hasMore});
+  final List<Invoice> items;
+  final bool hasMore;
+}
+
 class InvoicesRemoteDataSource {
   const InvoicesRemoteDataSource(this._client);
   final ApiClient _client;
 
-  Future<List<Invoice>> getInvoices({
+  /// Paginated fetch. Returns the page's items plus `hasMore` so the
+  /// provider can drive infinite scroll. The backend caps `limit` at 100.
+  Future<InvoicesPage> getInvoicesPage({
     String? type,
     String? status,
     String? documentType,
@@ -48,9 +59,39 @@ class InvoicesRemoteDataSource {
     }
     final json = jsonDecode(res.body) as Map<String, dynamic>;
     final data = json['data'] as List<dynamic>;
-    return data
+    final items = data
         .map((e) => InvoiceDto.fromJson(e as Map<String, dynamic>))
         .toList();
+    final pagination = json['pagination'] as Map<String, dynamic>?;
+    final currentPage = (pagination?['page'] as num?)?.toInt() ?? page;
+    final totalPages = (pagination?['totalPages'] as num?)?.toInt() ?? 1;
+    return InvoicesPage(items: items, hasMore: currentPage < totalPages);
+  }
+
+  /// Convenience wrapper that returns just the items of a single page.
+  /// Used by callers that only want a bounded slice (e.g. the product
+  /// page's open-drafts callout) and don't paginate.
+  Future<List<Invoice>> getInvoices({
+    String? type,
+    String? status,
+    String? documentType,
+    int? vendorId,
+    int? productId,
+    String? search,
+    int page = 1,
+    int limit = 20,
+  }) async {
+    final result = await getInvoicesPage(
+      type: type,
+      status: status,
+      documentType: documentType,
+      vendorId: vendorId,
+      productId: productId,
+      search: search,
+      page: page,
+      limit: limit,
+    );
+    return result.items;
   }
 
   Future<Invoice> getInvoiceById(int id) async {
@@ -173,6 +214,40 @@ class InvoicesRemoteDataSource {
       throw Exception(body['error'] ?? 'Failed to convert estimate');
     }
     return InvoiceDto.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+  }
+
+  /// Raise a credit or debit note against a CONFIRMED sale invoice
+  /// (POST /invoices/:id/notes). [lines] carry `{productId, quantity}` and,
+  /// for debit notes, `unitPrice` (the supplementary amount per unit). A
+  /// credit note reverses the original price and — unless [restock] is false —
+  /// puts the goods back on the shelf; a debit note adds value only. Returns
+  /// the freshly-minted note's id / number / total for the confirmation toast.
+  Future<({int id, String invoiceNo, double total})> issueNote(
+    int originalInvoiceId, {
+    required String documentType,
+    String? reason,
+    bool? restock,
+    required List<Map<String, dynamic>> lines,
+  }) async {
+    final res = await _client.post(
+      '/invoices/$originalInvoiceId/notes',
+      body: {
+        'documentType': documentType,
+        if (reason != null && reason.isNotEmpty) 'reason': reason,
+        'restock': ?restock,
+        'lines': lines,
+      },
+    );
+    if (res.statusCode != 201) {
+      final body = jsonDecode(res.body) as Map<String, dynamic>;
+      throw Exception(body['error'] ?? 'Failed to issue note');
+    }
+    final j = jsonDecode(res.body) as Map<String, dynamic>;
+    return (
+      id: j['id'] as int,
+      invoiceNo: j['invoiceNo'] as String,
+      total: double.tryParse('${j['total']}') ?? 0,
+    );
   }
 
   Future<void> deleteInvoice(int id) async {

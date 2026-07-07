@@ -10,6 +10,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 
 /// Admin-only page (drawer entry gated by `User.isPlatformAdmin`). One
@@ -82,9 +83,10 @@ class _AdminBankOffersPageState extends State<AdminBankOffersPage> {
     final l10n = AppLocalizations.of(context);
     final provider = context.watch<AdminBankOffersProvider>();
     return Scaffold(
+      extendBodyBehindAppBar: true,
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(
-        title: Text(l10n.adminBankOffersTitle),
+      appBar: FloatingAppBar(
+        title: l10n.adminBankOffersTitle,
         actions: [
           IconButton(
             tooltip: l10n.adminRefresh,
@@ -107,9 +109,9 @@ class _AdminBankOffersPageState extends State<AdminBankOffersPage> {
                   : RefreshIndicator(
                       onRefresh: provider.load,
                       child: ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(
+                        padding: EdgeInsets.fromLTRB(
                           AppSizes.lg,
-                          AppSizes.sm,
+                          AppSizes.sm + FloatingAppBar.contentTopInset(context),
                           AppSizes.lg,
                           AppSizes.fabClearance,
                         ),
@@ -141,9 +143,9 @@ class _OfferListSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView.builder(
       physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(
+      padding: EdgeInsets.fromLTRB(
         AppSizes.lg,
-        AppSizes.sm,
+        AppSizes.sm + FloatingAppBar.contentTopInset(context),
         AppSizes.lg,
         AppSizes.fabClearance,
       ),
@@ -319,7 +321,10 @@ class _EmptyBlock extends StatelessWidget {
   const _EmptyBlock();
   @override
   Widget build(BuildContext context) {
-    return Center(
+    return SafeArea(
+      top: true,
+      bottom: false,
+      child: Center(
       child: Padding(
         padding: const EdgeInsets.all(AppSizes.xl),
         child: Column(
@@ -336,6 +341,7 @@ class _EmptyBlock extends StatelessWidget {
           ],
         ),
       ),
+      ),
     );
   }
 }
@@ -347,7 +353,10 @@ class _ErrorBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
+    return SafeArea(
+      top: true,
+      bottom: false,
+      child: Center(
       child: Padding(
         padding: const EdgeInsets.all(AppSizes.xl),
         child: Column(
@@ -361,6 +370,7 @@ class _ErrorBlock extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }

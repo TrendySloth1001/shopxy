@@ -278,6 +278,18 @@ abstract class AppLocalizations {
   /// **'Switch to compact view'**
   String get productsSwitchToCompactView;
 
+  /// No description provided for @productsGridView.
+  ///
+  /// In en, this message translates to:
+  /// **'Grid view'**
+  String get productsGridView;
+
+  /// No description provided for @productsListView.
+  ///
+  /// In en, this message translates to:
+  /// **'List view'**
+  String get productsListView;
+
   /// No description provided for @productsAddProduct.
   ///
   /// In en, this message translates to:
@@ -3272,6 +3284,12 @@ abstract class AppLocalizations {
   /// **'Outstanding'**
   String get invoicesOutstanding;
 
+  /// No description provided for @invoicesPaymentsReceivedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Payments received'**
+  String get invoicesPaymentsReceivedTitle;
+
   /// No description provided for @invoicesSendViaWhatsApp.
   ///
   /// In en, this message translates to:
@@ -3331,6 +3349,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Confirm Invoice'**
   String get invoicesConfirmInvoice;
+
+  /// No description provided for @invoicesIssueNoteAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Issue credit / debit note'**
+  String get invoicesIssueNoteAction;
+
+  /// No description provided for @invoicesIssueNoteActionSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust this confirmed sale with a credit or debit note'**
+  String get invoicesIssueNoteActionSubtitle;
+
+  /// No description provided for @invoicesIssueNoteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Issue note'**
+  String get invoicesIssueNoteTitle;
+
+  /// No description provided for @invoicesCreditNoteExplainer.
+  ///
+  /// In en, this message translates to:
+  /// **'Reduces what the customer owes. Returned goods can be put back into stock.'**
+  String get invoicesCreditNoteExplainer;
+
+  /// No description provided for @invoicesDebitNoteExplainer.
+  ///
+  /// In en, this message translates to:
+  /// **'Bills the customer an extra amount — e.g. correcting an undercharge.'**
+  String get invoicesDebitNoteExplainer;
+
+  /// No description provided for @invoicesNoteReturnToStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Return goods to stock'**
+  String get invoicesNoteReturnToStock;
+
+  /// No description provided for @invoicesNoteReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason (optional)'**
+  String get invoicesNoteReason;
+
+  /// No description provided for @invoicesNoteExtraPerUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'Extra per unit'**
+  String get invoicesNoteExtraPerUnit;
+
+  /// No description provided for @invoicesIssueCreditNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Issue credit note'**
+  String get invoicesIssueCreditNote;
+
+  /// No description provided for @invoicesIssueDebitNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Issue debit note'**
+  String get invoicesIssueDebitNote;
+
+  /// No description provided for @invoicesNoteSelectLines.
+  ///
+  /// In en, this message translates to:
+  /// **'Add at least one line to the note'**
+  String get invoicesNoteSelectLines;
+
+  /// No description provided for @invoicesNoteSoldQty.
+  ///
+  /// In en, this message translates to:
+  /// **'Sold {qty}'**
+  String invoicesNoteSoldQty(Object qty);
+
+  /// No description provided for @invoicesNoteIssued.
+  ///
+  /// In en, this message translates to:
+  /// **'{noteNo} issued'**
+  String invoicesNoteIssued(Object noteNo);
+
+  /// No description provided for @invoicesNoteAgainst.
+  ///
+  /// In en, this message translates to:
+  /// **'Against {invoiceNo}'**
+  String invoicesNoteAgainst(Object invoiceNo);
+
+  /// No description provided for @invoicesNoteApproxTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Approx. total {amount}'**
+  String invoicesNoteApproxTotal(Object amount);
 
   /// No description provided for @partiesTitle.
   ///
@@ -4183,6 +4291,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add your shop name, GSTIN and state so invoices print correctly.'**
   String get profileFinishShopSetupBody;
+
+  /// No description provided for @profilePersonalDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal details'**
+  String get profilePersonalDetails;
+
+  /// No description provided for @profileNotAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Not added'**
+  String get profileNotAdded;
+
+  /// No description provided for @profileCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied to clipboard'**
+  String get profileCopied;
 
   /// No description provided for @profileFieldName.
   ///

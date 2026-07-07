@@ -10,6 +10,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 
 /// Merchant returns inbox. Tabs filter by status; each row is tappable
@@ -86,9 +87,14 @@ class _MerchantReturnsPageState extends State<MerchantReturnsPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.returnsTitle)),
-      body: Column(
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(title: l10n.returnsTitle),
+      body: MediaQuery.removePadding(
+        context: context,
+        removeTop: true,
+        child: Column(
         children: [
+          SizedBox(height: FloatingAppBar.contentTopInset(context)),
           Padding(
             padding: const EdgeInsets.fromLTRB(
               AppSizes.lg, AppSizes.md, AppSizes.lg, AppSizes.sm),
@@ -143,6 +149,7 @@ class _MerchantReturnsPageState extends State<MerchantReturnsPage> {
           ),
         ],
       ),
+      ),
     );
   }
 }
@@ -165,7 +172,9 @@ class _ReturnRow extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: AppSizes.sm),
       child: Material(
         color: AppColors.surface,
-        shape: AppShapes.squircle(AppSizes.radiusMd),
+        shape: AppShapes.squircle(AppSizes.radiusLg,
+            side: BorderSide(color: AppColors.hairline)),
+        clipBehavior: Clip.antiAlias,
         child: InkWell(
           customBorder: AppShapes.squircle(AppSizes.radiusMd),
           onTap: onTap,
@@ -268,7 +277,9 @@ class _SkeletonRow extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: AppSizes.sm),
       child: Material(
         color: AppColors.surface,
-        shape: AppShapes.squircle(AppSizes.radiusMd),
+        shape: AppShapes.squircle(AppSizes.radiusLg,
+            side: BorderSide(color: AppColors.hairline)),
+        clipBehavior: Clip.antiAlias,
         child: Padding(
           padding: const EdgeInsets.all(AppSizes.md),
           child: Column(

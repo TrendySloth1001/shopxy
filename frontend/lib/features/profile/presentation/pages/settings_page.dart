@@ -20,6 +20,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_dialog.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 
 enum SettingsSection { account, appearance, notifications, about }
@@ -127,9 +128,13 @@ class _SettingsPageState extends State<SettingsPage> {
     final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.profileSettings)),
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(title: l10n.profileSettings),
       body: ListView(
-        padding: const EdgeInsets.only(bottom: AppSizes.huge),
+        padding: EdgeInsets.only(
+          top: FloatingAppBar.contentTopInset(context),
+          bottom: AppSizes.huge,
+        ),
         children: [
           // ── Account ─────────────────────────────────────────
           _Eyebrow(l10n.profileSectionAccount),

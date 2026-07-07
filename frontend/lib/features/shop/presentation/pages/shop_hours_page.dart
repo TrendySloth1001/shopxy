@@ -7,6 +7,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 
 const _dayCodes = <String>['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 
@@ -100,8 +101,9 @@ class _ShopHoursPageState extends State<ShopHoursPage> {
     final shop = provider.shop;
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(
-        title: Text(l10n.shopHoursTitle),
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(
+        title: l10n.shopHoursTitle,
         actions: [
           if (shop != null)
             TextButton(
@@ -129,8 +131,9 @@ class _ShopHoursPageState extends State<ShopHoursPage> {
       'sun': l10n.shopDaySunday,
     };
     return ListView(
-      padding: const EdgeInsets.fromLTRB(
-          AppSizes.lg, AppSizes.lg, AppSizes.lg, AppSizes.huge),
+      padding: EdgeInsets.fromLTRB(AppSizes.lg,
+          AppSizes.lg + FloatingAppBar.contentTopInset(context),
+          AppSizes.lg, AppSizes.huge),
       children: [
         Material(
           color: _vacationMode
@@ -242,8 +245,9 @@ class _ShopHoursSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(
-          AppSizes.lg, AppSizes.lg, AppSizes.lg, AppSizes.huge),
+      padding: EdgeInsets.fromLTRB(AppSizes.lg,
+          AppSizes.lg + FloatingAppBar.contentTopInset(context),
+          AppSizes.lg, AppSizes.huge),
       children: [
         // Vacation mode card skeleton
         Material(
