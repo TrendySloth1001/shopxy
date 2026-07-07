@@ -3,6 +3,7 @@ import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 
 /// KYC scaffold — UI shell only. Lists the documents the verification flow will
 /// collect; each row shows its status (always "Not uploaded" until the backend
@@ -49,9 +50,11 @@ class ShopKycPage extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(title: Text(l10n.shopKycTitle)),
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(title: l10n.shopKycTitle),
       body: ListView(
-        padding: const EdgeInsets.only(bottom: AppSizes.huge),
+        padding: EdgeInsets.only(
+            top: FloatingAppBar.contentTopInset(context), bottom: AppSizes.huge),
         children: [
           // Flat intro — no card.
           Padding(

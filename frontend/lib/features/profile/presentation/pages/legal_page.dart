@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 
 /// Static legal/about copy. Two flavours (privacy + terms) share the
 /// same scaffolding because the only thing that differs is the body
@@ -20,9 +21,15 @@ class LegalPage extends StatelessWidget {
         _isPrivacy ? l10n.profilePrivacyPolicy : l10n.profileTermsOfService;
     final body = _isPrivacy ? l10n.profilePrivacyBody : l10n.profileTermsBody;
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(title: title),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSizes.lg),
+        padding: EdgeInsets.fromLTRB(
+          AppSizes.lg,
+          AppSizes.lg + FloatingAppBar.contentTopInset(context),
+          AppSizes.lg,
+          AppSizes.lg,
+        ),
         child: Text(body, style: Theme.of(context).textTheme.bodyMedium),
       ),
     );

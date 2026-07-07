@@ -13,6 +13,7 @@ router.get('/:id/pdf', asyncHandler((req, res) => invoicesController.downloadPdf
 router.patch('/:id/status', asyncHandler((req, res) => invoicesController.updateStatus(req, res)));
 router.patch('/:id', asyncHandler((req, res) => invoicesController.update(req, res)));
 router.post('/:id/convert', asyncHandler((req, res) => invoicesController.convert(req, res)));
+router.post('/:id/notes', asyncHandler((req, res) => invoicesController.issueNote(req, res)));
 router.delete('/:id', asyncHandler((req, res) => invoicesController.delete(req, res)));
 
 export default router;

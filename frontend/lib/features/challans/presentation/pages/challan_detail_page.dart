@@ -18,6 +18,7 @@ import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/glass_widgets.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 
 class ChallanDetailPage extends StatefulWidget {
@@ -109,8 +110,13 @@ class _ChallanDetailPageState extends State<ChallanDetailPage> {
     }
     if (_challan == null) {
       return Scaffold(
-        appBar: AppBar(),
-        body: Center(child: Text(l10n.challansError)),
+        extendBodyBehindAppBar: true,
+        appBar: FloatingAppBar(),
+        body: SafeArea(
+          top: true,
+          bottom: false,
+          child: Center(child: Text(l10n.challansError)),
+        ),
       );
     }
 
@@ -118,8 +124,9 @@ class _ChallanDetailPageState extends State<ChallanDetailPage> {
     final df = DateFormat('dd MMM yyyy, hh:mm a');
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(c.challanNo),
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(
+        title: c.challanNo,
         actions: [
           if (c.isPending)
             PopupMenuButton<String>(
@@ -135,8 +142,12 @@ class _ChallanDetailPageState extends State<ChallanDetailPage> {
             ),
         ],
       ),
-      body: Column(
+      body: MediaQuery.removePadding(
+        context: context,
+        removeTop: true,
+        child: Column(
         children: [
+          SizedBox(height: FloatingAppBar.contentTopInset(context)),
           GlassHero.line(
             kind: LineArt.deliveryNote,
             height: AppSizes.heroHeightMd,
@@ -253,6 +264,7 @@ class _ChallanDetailPageState extends State<ChallanDetailPage> {
           ),
         ],
       ),
+      ),
       bottomNavigationBar: c.isPending
           ? SafeArea(
               child: Padding(
@@ -282,11 +294,16 @@ class _ChallanDetailSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: AppShimmerLine(widthFactor: 0.4, height: AppSizes.iconSm),
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(
+        titleWidget: AppShimmerLine(widthFactor: 0.4, height: AppSizes.iconSm),
       ),
-      body: Column(
+      body: MediaQuery.removePadding(
+        context: context,
+        removeTop: true,
+        child: Column(
         children: [
+          SizedBox(height: FloatingAppBar.contentTopInset(context)),
           // Mirror of GlassHero.line
           AppShimmerBox(
             width: double.infinity,
@@ -372,6 +389,7 @@ class _ChallanDetailSkeleton extends StatelessWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }

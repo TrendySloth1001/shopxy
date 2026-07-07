@@ -17,6 +17,7 @@ import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
 import 'package:shopxy/shared/widgets/app_section_header.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/glass_widgets.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/shared/constants/app_durations.dart';
 
@@ -197,8 +198,9 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
         if (discard && context.mounted) Navigator.pop(context);
       },
       child: Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.challansCreate),
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(
+        title: l10n.challansCreate,
         actions: [
           TextButton(
             onPressed: _isSaving ? null : _save,
@@ -214,8 +216,12 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
       ),
       body: Form(
         key: _formKey,
-        child: Column(
+        child: MediaQuery.removePadding(
+          context: context,
+          removeTop: true,
+          child: Column(
           children: [
+            SizedBox(height: FloatingAppBar.contentTopInset(context)),
             GlassHero.line(
               kind: LineArt.deliveryNote,
               height: AppSizes.heroHeightSm,
@@ -361,6 +367,7 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
               ),
             ),
           ],
+        ),
         ),
       ),
       ),

@@ -10,6 +10,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 
 /// Shown right after login/registration when the account has been
 /// invited onto a shop's team but isn't a member yet. Lays out the
@@ -93,9 +94,8 @@ class _JoinRequestPageState extends State<JoinRequestPage> {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(
         actions: [
           TextButton(
             onPressed: _busy ? null : _notNow,
@@ -105,8 +105,9 @@ class _JoinRequestPageState extends State<JoinRequestPage> {
       ),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(
-              AppSizes.lg, AppSizes.sm, AppSizes.lg, AppSizes.huge),
+          padding: EdgeInsets.fromLTRB(AppSizes.lg,
+              AppSizes.sm + FloatingAppBar.contentTopInset(context),
+              AppSizes.lg, AppSizes.huge),
           children: [
             Container(
               width: AppSizes.massive,

@@ -10,11 +10,13 @@ import 'package:shopxy/features/products/presentation/pages/add_edit_product_pag
 import 'package:shopxy/features/products/presentation/pages/product_detail_page.dart';
 import 'package:shopxy/features/products/presentation/pages/qr_scanner_page.dart';
 import 'package:shopxy/features/products/presentation/providers/products_provider.dart';
+import 'package:shopxy/features/products/presentation/widgets/product_grid_card.dart';
 import 'package:shopxy/features/products/presentation/widgets/product_list_tile.dart';
 import 'package:shopxy/features/stock/presentation/widgets/stock_bottom_sheet.dart';
 import 'package:shopxy/core/prefs/navigation_prefs.dart';
 import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
@@ -26,6 +28,7 @@ import 'package:shopxy/shared/widgets/app_filter_pill.dart';
 import 'package:shopxy/shared/widgets/app_search_bar.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 
 /// Products listing — same chassis as the Parties and Vendors pages
 /// (AppBar `+` action, [AppSearchBar] header, [ListView.separated]
@@ -47,6 +50,9 @@ class _ProductsPageState extends State<ProductsPage> {
   // it without us having to fetch the full category list up-front
   // (which doesn't scale past a few hundred entries).
   String? _selectedCategoryName;
+
+  /// Grid (card) view vs the vertical list. Grid is the default.
+  bool _grid = true;
 
   @override
   void initState() {
@@ -182,6 +188,49 @@ class _ProductsPageState extends State<ProductsPage> {
     return items;
   }
 
+  /// Grid view: a continuous 2-column masonry of all products (flat, no
+  /// category headers — grouping wastes columns when sections are small;
+  /// the category filter covers narrowing). Cards vary in height with their
+  /// content, so the masonry tiles them without gaps.
+  Widget _buildGrid({required ProductsProvider provider}) {
+    final products = provider.products;
+    return CustomScrollView(
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSizes.lg,
+            AppSizes.md,
+            AppSizes.lg,
+            AppSizes.md,
+          ),
+          sliver: SliverMasonryGrid.count(
+            crossAxisCount: 2,
+            mainAxisSpacing: AppSizes.md,
+            crossAxisSpacing: AppSizes.md,
+            childCount: products.length,
+            itemBuilder: (context, i) => ProductGridCard(
+              product: products[i],
+              onTap: () => _openProductDetail(products[i]),
+            ),
+          ),
+        ),
+        if (provider.hasMore)
+          SliverToBoxAdapter(
+            child: Builder(
+              builder: (context) {
+                _scheduleLoadMore();
+                return const Padding(
+                  padding: EdgeInsets.all(AppSizes.lg),
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              },
+            ),
+          ),
+        const SliverToBoxAdapter(child: SizedBox(height: AppSizes.huge)),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -210,24 +259,16 @@ class _ProductsPageState extends State<ProductsPage> {
         !hasHeaders && provider.categoryFilter == null;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.productsTitle),
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(
+        title: l10n.productsTitle,
         actions: [
-          Builder(
-            builder: (ctx) {
-              final prefs = ctx.watch<NavigationPrefsProvider>();
-              return IconButton(
-                tooltip: prefs.isCompact ? l10n.productsSwitchToCardView : l10n.productsSwitchToCompactView,
-                icon: Icon(
-                  prefs.isCompact
-                      ? Icons.view_agenda_outlined
-                      : Icons.view_compact_outlined,
-                ),
-                onPressed: () => prefs.setDensity(
-                  prefs.isCompact ? ListDensity.comfortable : ListDensity.compact,
-                ),
-              );
-            },
+          IconButton(
+            tooltip: _grid ? l10n.productsListView : l10n.productsGridView,
+            icon: Icon(
+              _grid ? Icons.view_list_rounded : Icons.grid_view_rounded,
+            ),
+            onPressed: () => setState(() => _grid = !_grid),
           ),
           AccessReloadButton(onReload: () => provider.loadProducts()),
           if (canView)
@@ -244,6 +285,8 @@ class _ProductsPageState extends State<ProductsPage> {
           ? NoAccessView(title: l10n.productsHidden)
           : Column(
         children: [
+          // Drop the fixed search/filter header below the floating app bar.
+          SizedBox(height: FloatingAppBar.contentTopInset(context)),
           Padding(
             padding: const EdgeInsets.fromLTRB(
               AppSizes.lg,
@@ -308,7 +351,9 @@ class _ProductsPageState extends State<ProductsPage> {
           ),
           Expanded(
             child: provider.isLoading && provider.products.isEmpty
-                ? const _ProductListSkeleton()
+                ? (_grid
+                    ? const _ProductGridSkeleton()
+                    : const _ProductListSkeleton())
                 : provider.error != null && provider.products.isEmpty
                     ? AppErrorView(onRetry: () => provider.loadProducts())
                     : provider.products.isEmpty
@@ -347,7 +392,9 @@ class _ProductsPageState extends State<ProductsPage> {
                             onRefresh: () => provider.loadProducts(),
                             color: AppColors.black,
                             backgroundColor: AppColors.surface,
-                            child: ListView.separated(
+                            child: _grid
+                                ? _buildGrid(provider: provider)
+                                : ListView.separated(
                               padding: const EdgeInsets.symmetric(
                                 vertical: AppSizes.sm,
                               ),
@@ -529,6 +576,49 @@ class _ProductListSkeleton extends StatelessWidget {
       itemCount: 6,
       separatorBuilder: (context, index) => const AppDivider(),
       itemBuilder: (context, index) => _ProductRowSkeleton(compact: compact),
+    );
+  }
+}
+
+/// Grid-view loading skeleton — 6 placeholder cards mirroring
+/// [ProductGridCard] (square image + name + price lines).
+class _ProductGridSkeleton extends StatelessWidget {
+  const _ProductGridSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.builder(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.sm,
+        AppSizes.lg,
+        AppSizes.md,
+      ),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: AppSizes.md,
+        crossAxisSpacing: AppSizes.md,
+        childAspectRatio: 0.62,
+      ),
+      itemCount: 6,
+      itemBuilder: (context, index) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const AspectRatio(
+            aspectRatio: 1,
+            child: AppShimmerBox(
+              width: double.infinity,
+              height: double.infinity,
+              radius: AppSizes.radiusLg,
+            ),
+          ),
+          const SizedBox(height: AppSizes.sm),
+          AppShimmerLine(widthFactor: 0.9),
+          const SizedBox(height: AppSizes.xs),
+          AppShimmerLine(widthFactor: 0.5),
+        ],
+      ),
     );
   }
 }

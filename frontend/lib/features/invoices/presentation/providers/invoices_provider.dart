@@ -7,8 +7,13 @@ class InvoicesProvider extends ChangeNotifier {
   InvoicesProvider(this._ds);
   final InvoicesRemoteDataSource _ds;
 
+  static const int _pageSize = 20;
+
   List<Invoice> _invoices = [];
   bool _isLoading = false;
+  bool _isLoadingMore = false;
+  bool _hasMore = true;
+  int _page = 1;
   String? _error;
   String? _typeFilter;
   String? _statusFilter;
@@ -17,6 +22,8 @@ class InvoicesProvider extends ChangeNotifier {
 
   List<Invoice> get invoices => _invoices;
   bool get isLoading => _isLoading;
+  bool get isLoadingMore => _isLoadingMore;
+  bool get hasMore => _hasMore;
   String? get error => _error;
   String? get typeFilter => _typeFilter;
   String? get statusFilter => _statusFilter;
@@ -28,6 +35,9 @@ class InvoicesProvider extends ChangeNotifier {
   void reset() {
     _invoices = [];
     _isLoading = false;
+    _isLoadingMore = false;
+    _hasMore = true;
+    _page = 1;
     _error = null;
     _typeFilter = null;
     _statusFilter = null;
@@ -36,22 +46,56 @@ class InvoicesProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Loads the first page for the current filters, replacing the list.
+  /// Filter/search changes and pull-to-refresh route through here.
   Future<void> loadInvoices({bool refresh = false}) async {
     if (_isLoading) return;
     _isLoading = true;
     _error = null;
+    _page = 1;
     if (refresh) notifyListeners();
     try {
-      _invoices = await _ds.getInvoices(
+      final result = await _ds.getInvoicesPage(
         type: _typeFilter,
         status: _statusFilter,
         documentType: _documentTypeFilter,
         search: _search.isNotEmpty ? _search : null,
+        page: _page,
+        limit: _pageSize,
       );
+      _invoices = result.items;
+      _hasMore = result.hasMore;
     } catch (e) {
       _error = friendlyError(e);
     } finally {
       _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Appends the next page. No-op while a load is in flight or when the
+  /// server has signalled there are no more pages for the current filters.
+  Future<void> loadMore() async {
+    if (_isLoading || _isLoadingMore || !_hasMore) return;
+    _isLoadingMore = true;
+    notifyListeners();
+    try {
+      final next = _page + 1;
+      final result = await _ds.getInvoicesPage(
+        type: _typeFilter,
+        status: _statusFilter,
+        documentType: _documentTypeFilter,
+        search: _search.isNotEmpty ? _search : null,
+        page: next,
+        limit: _pageSize,
+      );
+      _page = next;
+      _invoices = [..._invoices, ...result.items];
+      _hasMore = result.hasMore;
+    } catch (e) {
+      _error = friendlyError(e);
+    } finally {
+      _isLoadingMore = false;
       notifyListeners();
     }
   }

@@ -12,9 +12,32 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/indian.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
+
+/// A field the caller can ask [EditProfilePage] to open focused on — lets
+/// the completion meter deep-link straight to the field a user still needs
+/// to fill instead of dumping them at the top of the form.
+enum ProfileField {
+  name,
+  phone,
+  shopName,
+  shopAddress,
+  shopCity,
+  shopState,
+  shopPinCode,
+  shopGstin,
+  shopPan,
+  upiVpa,
+  photo,
+}
 
 class EditProfilePage extends StatefulWidget {
-  const EditProfilePage({super.key});
+  const EditProfilePage({super.key, this.focusField});
+
+  /// When set, the matching field is focused (and scrolled into view) once
+  /// the form first lays out. `photo`/`shopState` have no text field, so
+  /// they simply open the form at the top.
+  final ProfileField? focusField;
 
   @override
   State<EditProfilePage> createState() => _EditProfilePageState();
@@ -25,6 +48,7 @@ enum _PhotoAction { camera, gallery, remove }
 class _EditProfilePageState extends State<EditProfilePage> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _name;
+  late final TextEditingController _phone;
   // Shop details — every field is editable in this page; an empty string
   // is interpreted by the AuthProvider as "clear it on the server."
   late final TextEditingController _shopName;
@@ -38,11 +62,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
   bool _busy = false;
   bool _uploadingAvatar = false;
 
+  /// Focus nodes for the text fields we can deep-link to. Requesting focus
+  /// also makes Flutter scroll the field into view, so no scroll keys are
+  /// needed. The dropdown (state) and avatar (photo) have no node.
+  late final Map<ProfileField, FocusNode> _focusNodes;
+
   @override
   void initState() {
     super.initState();
     final user = context.read<AuthProvider>().user;
     _name = TextEditingController(text: user?.name ?? '');
+    _phone = TextEditingController(text: user?.phoneNumber ?? '');
     _shopName = TextEditingController(text: user?.shopName ?? '');
     _shopAddress = TextEditingController(text: user?.shopAddress ?? '');
     _shopCity = TextEditingController(text: user?.shopCity ?? '');
@@ -51,11 +81,33 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _shopPan = TextEditingController(text: user?.shopPan ?? '');
     _upiVpa = TextEditingController(text: user?.upiVpa ?? '');
     _shopStateCode = user?.shopStateCode;
+
+    _focusNodes = {
+      for (final f in const [
+        ProfileField.name,
+        ProfileField.phone,
+        ProfileField.shopName,
+        ProfileField.shopAddress,
+        ProfileField.shopCity,
+        ProfileField.shopPinCode,
+        ProfileField.shopGstin,
+        ProfileField.shopPan,
+        ProfileField.upiVpa,
+      ])
+        f: FocusNode(),
+    };
+    final target = widget.focusField;
+    if (target != null && _focusNodes.containsKey(target)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _focusNodes[target]!.requestFocus();
+      });
+    }
   }
 
   @override
   void dispose() {
     _name.dispose();
+    _phone.dispose();
     _shopName.dispose();
     _shopAddress.dispose();
     _shopCity.dispose();
@@ -63,6 +115,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _shopGstin.dispose();
     _shopPan.dispose();
     _upiVpa.dispose();
+    for (final node in _focusNodes.values) {
+      node.dispose();
+    }
     super.dispose();
   }
 
@@ -159,6 +214,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
     final newName = _name.text.trim();
     final nameArg = newName == (user?.name ?? '') ? null : newName;
 
+    // Phone: diff() gives null (unchanged) / '' (cleared) / value. The API
+    // clears only when clearPhone is true, so map '' → clearPhone.
+    final phoneDiff = diff(_phone.text, user?.phoneNumber);
+    final clearPhone = phoneDiff == '';
+    final phoneArg =
+        (phoneDiff != null && phoneDiff.isNotEmpty) ? phoneDiff : null;
+
     final shopNameArg = diff(_shopName.text, user?.shopName);
     final shopAddressArg = diff(_shopAddress.text, user?.shopAddress);
     final shopCityArg = diff(_shopCity.text, user?.shopCity);
@@ -177,6 +239,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     }
 
     final unchanged = nameArg == null &&
+        phoneDiff == null &&
         shopNameArg == null &&
         shopAddressArg == null &&
         shopCityArg == null &&
@@ -194,6 +257,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
     try {
       await auth.updateProfile(
         name: nameArg,
+        phoneNumber: phoneArg,
+        clearPhone: clearPhone,
         shopName: shopNameArg,
         shopAddress: shopAddressArg,
         shopCity: shopCityArg,
@@ -224,11 +289,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
     final l10n = AppLocalizations.of(context);
     final user = context.watch<AuthProvider>().user;
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.profileEditProfile)),
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(title: l10n.profileEditProfile),
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(AppSizes.lg),
+          padding: EdgeInsets.fromLTRB(
+            AppSizes.lg,
+            AppSizes.lg + FloatingAppBar.contentTopInset(context),
+            AppSizes.lg,
+            AppSizes.lg,
+          ),
           children: [
             Center(
               child: Stack(
@@ -274,6 +345,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             const SizedBox(height: AppSizes.xl),
             TextFormField(
               controller: _name,
+              focusNode: _focusNodes[ProfileField.name],
               decoration: InputDecoration(labelText: l10n.profileName),
               textCapitalization: TextCapitalization.words,
               validator: (v) {
@@ -281,6 +353,22 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 if (t.length < 2) return l10n.profileNameMinLength;
                 if (t.length > 80) return l10n.profileNameTooLong;
                 return null;
+              },
+            ),
+            const SizedBox(height: AppSizes.lg),
+            TextFormField(
+              controller: _phone,
+              focusNode: _focusNodes[ProfileField.phone],
+              decoration: InputDecoration(
+                labelText: l10n.profileFieldPhone,
+                hintText: '9876543210',
+                prefixIcon: const Icon(Icons.call_outlined),
+              ),
+              keyboardType: TextInputType.phone,
+              validator: (v) {
+                final t = (v ?? '').trim();
+                if (t.isEmpty) return null; // phone is optional
+                return IndianValidators.phone(v);
               },
             ),
             const SizedBox(height: AppSizes.lg),
@@ -307,12 +395,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
             const SizedBox(height: AppSizes.md),
             TextFormField(
               controller: _shopName,
+              focusNode: _focusNodes[ProfileField.shopName],
               decoration: InputDecoration(labelText: l10n.profileShopName),
               textCapitalization: TextCapitalization.words,
             ),
             const SizedBox(height: AppSizes.md),
             TextFormField(
               controller: _shopAddress,
+              focusNode: _focusNodes[ProfileField.shopAddress],
               decoration: InputDecoration(labelText: l10n.profileShopAddress),
               maxLines: 2,
               textCapitalization: TextCapitalization.sentences,
@@ -323,6 +413,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 Expanded(
                   child: TextFormField(
                     controller: _shopCity,
+                    focusNode: _focusNodes[ProfileField.shopCity],
                     decoration: InputDecoration(labelText: l10n.profileCity),
                     textCapitalization: TextCapitalization.words,
                   ),
@@ -331,6 +422,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 Expanded(
                   child: TextFormField(
                     controller: _shopPinCode,
+                    focusNode: _focusNodes[ProfileField.shopPinCode],
                     decoration: InputDecoration(labelText: l10n.profilePinCode),
                     keyboardType: TextInputType.number,
                     validator: IndianValidators.pincode,
@@ -362,6 +454,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 Expanded(
                   child: TextFormField(
                     controller: _shopGstin,
+                    focusNode: _focusNodes[ProfileField.shopGstin],
                     decoration: InputDecoration(labelText: l10n.profileGstin),
                     textCapitalization: TextCapitalization.characters,
                     validator: IndianValidators.gstin,
@@ -371,6 +464,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 Expanded(
                   child: TextFormField(
                     controller: _shopPan,
+                    focusNode: _focusNodes[ProfileField.shopPan],
                     decoration: InputDecoration(labelText: l10n.profilePan),
                     textCapitalization: TextCapitalization.characters,
                     validator: IndianValidators.pan,
@@ -381,6 +475,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             const SizedBox(height: AppSizes.md),
             TextFormField(
               controller: _upiVpa,
+              focusNode: _focusNodes[ProfileField.upiVpa],
               decoration: InputDecoration(
                 labelText: l10n.profileUpiId,
                 hintText: 'shop@upi',

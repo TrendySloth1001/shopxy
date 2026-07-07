@@ -16,6 +16,7 @@ import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 
 class StockAdjustmentsPage extends StatefulWidget {
@@ -70,7 +71,8 @@ class _StockAdjustmentsPageState extends State<StockAdjustmentsPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.stockAdjTitle)),
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(title: l10n.stockAdjTitle),
       body: _buildBody(),
       floatingActionButton: FloatingActionButton(
         heroTag: 'stock_adjustments_fab',
@@ -86,13 +88,21 @@ class _StockAdjustmentsPageState extends State<StockAdjustmentsPage> {
       return const _StockAdjustmentsSkeleton();
     }
     if (_error != null) {
-      return AppErrorView(onRetry: _load);
+      return SafeArea(
+        top: true,
+        bottom: false,
+        child: AppErrorView(onRetry: _load),
+      );
     }
     if (_items.isEmpty) {
-      return EmptyState.line(
-        kind: LineArt.emptyClipboard,
-        title: l10n.stockAdjEmptyTitle,
-        subtitle: l10n.stockAdjEmptySubtitle,
+      return SafeArea(
+        top: true,
+        bottom: false,
+        child: EmptyState.line(
+          kind: LineArt.emptyClipboard,
+          title: l10n.stockAdjEmptyTitle,
+          subtitle: l10n.stockAdjEmptySubtitle,
+        ),
       );
     }
     return RefreshIndicator(
@@ -100,7 +110,9 @@ class _StockAdjustmentsPageState extends State<StockAdjustmentsPage> {
       color: AppColors.black,
       backgroundColor: AppColors.surface,
       child: ListView.separated(
-        padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
+        padding: EdgeInsets.only(
+            top: AppSizes.sm + FloatingAppBar.contentTopInset(context),
+            bottom: AppSizes.sm),
         itemCount: _items.length,
         separatorBuilder: (_, _) => const AppDivider(),
         itemBuilder: (_, i) => _AdjustmentTile(adjustment: _items[i]),
@@ -120,7 +132,9 @@ class _StockAdjustmentsSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView.separated(
       physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
+      padding: EdgeInsets.only(
+          top: AppSizes.sm + FloatingAppBar.contentTopInset(context),
+          bottom: AppSizes.sm),
       itemCount: 6,
       separatorBuilder: (_, _) => const AppDivider(),
       itemBuilder: (_, _) => const _AdjustmentTileSkeleton(),

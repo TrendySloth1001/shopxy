@@ -8,6 +8,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 
 /// Merchant-facing analytics dashboard. One scroll: date range, KPI
 /// strip, per-product table. All sorting + range manipulation lives in
@@ -49,9 +50,10 @@ class _MerchantAnalyticsPageState extends State<MerchantAnalyticsPage> {
     final data = provider.data;
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(
-        title: Text(l10n.analyticsTitle),
+      appBar: FloatingAppBar(
+        title: l10n.analyticsTitle,
         actions: [
           IconButton(
             tooltip: l10n.analyticsRefresh,
@@ -65,9 +67,9 @@ class _MerchantAnalyticsPageState extends State<MerchantAnalyticsPage> {
           : RefreshIndicator(
               onRefresh: provider.load,
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(
+                padding: EdgeInsets.fromLTRB(
                   AppSizes.lg,
-                  AppSizes.lg,
+                  AppSizes.lg + FloatingAppBar.contentTopInset(context),
                   AppSizes.lg,
                   AppSizes.huge,
                 ),
@@ -227,9 +229,9 @@ class _AnalyticsSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(
+      padding: EdgeInsets.fromLTRB(
         AppSizes.lg,
-        AppSizes.lg,
+        AppSizes.lg + FloatingAppBar.contentTopInset(context),
         AppSizes.lg,
         AppSizes.huge,
       ),

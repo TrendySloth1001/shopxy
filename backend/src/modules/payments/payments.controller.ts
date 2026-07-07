@@ -22,9 +22,15 @@ const createPaymentSchema = z
     amount: z.number().positive(),
     mode: paymentModeSchema,
     modeReference: z.string().max(120).nullable().optional(),
+    // Accept an offset-aware timestamp (…Z / +05:30), a timezone-less LOCAL
+    // datetime (what the Flutter apps send via DateTime.toIso8601String() on a
+    // local DateTime — no offset), or a bare calendar date. The strict
+    // offset-only variant was silently rejecting every app-recorded payment
+    // with a "VALIDATION_ERROR" the modal sheet couldn't even surface.
     paymentDate: z
       .string()
       .datetime({ offset: true })
+      .or(z.string().datetime({ local: true }))
       .or(z.string().date())
       .optional(),
     partyId: z.number().int().positive().nullable().optional(),

@@ -5,6 +5,7 @@ import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 
 class ChangePasswordPage extends StatefulWidget {
   const ChangePasswordPage({super.key});
@@ -68,11 +69,17 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.profileChangePassword)),
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(title: l10n.profileChangePassword),
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(AppSizes.lg),
+          padding: EdgeInsets.fromLTRB(
+            AppSizes.lg,
+            AppSizes.lg + FloatingAppBar.contentTopInset(context),
+            AppSizes.lg,
+            AppSizes.lg,
+          ),
           children: [
             TextFormField(
               controller: _current,

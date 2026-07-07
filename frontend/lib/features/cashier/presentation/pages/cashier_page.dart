@@ -7,6 +7,7 @@ import 'package:shopxy/features/cashier/data/cashier_remote_data_source.dart';
 import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 
 /// Cashier control center: open/close a till shift, manage the cash drawer,
 /// reconcile (X/Z report), and process returns. Reaches /me/cashier over HTTP.
@@ -95,17 +96,26 @@ class _CashierPageState extends State<CashierPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Scaffold(
+      extendBodyBehindAppBar: true,
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(
-        title: Text(l10n.cashierTitle),
+      appBar: FloatingAppBar(
+        title: l10n.cashierTitle,
         actions: [IconButton(onPressed: _loading ? null : _load, icon: const Icon(Icons.refresh_rounded))],
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const SafeArea(
+              top: true,
+              bottom: false,
+              child: Center(child: CircularProgressIndicator()),
+            )
           : RefreshIndicator(
               onRefresh: _load,
               child: ListView(
-                padding: const EdgeInsets.all(AppSizes.lg),
+                padding: EdgeInsets.fromLTRB(
+                    AppSizes.lg,
+                    AppSizes.lg + FloatingAppBar.contentTopInset(context),
+                    AppSizes.lg,
+                    AppSizes.lg),
                 children: [
                   if (_open) ...[
                     _ShiftOwnerBanner(shift: _shift!),

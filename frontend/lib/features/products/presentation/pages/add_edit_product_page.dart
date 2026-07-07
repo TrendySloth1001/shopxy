@@ -25,6 +25,7 @@ import 'package:shopxy/shared/constants/app_units.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_section_header.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 
 class AddEditProductPage extends StatefulWidget {
@@ -775,9 +776,9 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
         if (discard && context.mounted) Navigator.pop(context);
       },
       child: Scaffold(
-        appBar: AppBar(
-          title:
-              Text(isEditing ? l10n.productsEditProduct : l10n.productsAddProduct),
+        extendBodyBehindAppBar: true,
+        appBar: FloatingAppBar(
+          title: isEditing ? l10n.productsEditProduct : l10n.productsAddProduct,
           actions: [
             if (isEditing)
               IconButton(
@@ -820,7 +821,12 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
         body: Form(
           key: _formKey,
           child: ListView(
-            padding: const EdgeInsets.all(AppSizes.lg),
+            padding: EdgeInsets.fromLTRB(
+              AppSizes.lg,
+              AppSizes.lg + FloatingAppBar.contentTopInset(context),
+              AppSizes.lg,
+              AppSizes.lg,
+            ),
             children: [
               // ── Photos ────────────────────────────────────────────────
               ..._photosSection(),
@@ -1483,8 +1489,9 @@ class _EditorScaffoldState extends State<_EditorScaffold> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(
+        title: widget.title,
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -1493,7 +1500,12 @@ class _EditorScaffoldState extends State<_EditorScaffold> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSizes.lg),
+        padding: EdgeInsets.fromLTRB(
+          AppSizes.lg,
+          AppSizes.lg + FloatingAppBar.contentTopInset(context),
+          AppSizes.lg,
+          AppSizes.lg,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

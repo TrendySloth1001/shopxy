@@ -26,6 +26,7 @@ import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 
 class InvoicesPage extends StatefulWidget {
@@ -37,10 +38,12 @@ class InvoicesPage extends StatefulWidget {
 
 class _InvoicesPageState extends State<InvoicesPage> {
   final _searchCtrl = TextEditingController();
+  final _scrollCtrl = ScrollController();
 
   @override
   void initState() {
     super.initState();
+    _scrollCtrl.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) context.read<InvoicesProvider>().loadInvoices();
     });
@@ -49,7 +52,20 @@ class _InvoicesPageState extends State<InvoicesPage> {
   @override
   void dispose() {
     _searchCtrl.dispose();
+    _scrollCtrl.removeListener(_onScroll);
+    _scrollCtrl.dispose();
     super.dispose();
+  }
+
+  /// Fetch the next page once the user scrolls within ~600px of the end.
+  /// The provider guards against concurrent/exhausted loads, so an eager
+  /// threshold is safe and keeps the list feeling continuous.
+  void _onScroll() {
+    if (!_scrollCtrl.hasClients) return;
+    final pos = _scrollCtrl.position;
+    if (pos.pixels >= pos.maxScrollExtent - 600) {
+      context.read<InvoicesProvider>().loadMore();
+    }
   }
 
   Future<void> _openCreate() async {
@@ -93,8 +109,9 @@ class _InvoicesPageState extends State<InvoicesPage> {
     ];
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.invoicesNavTitle),
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(
+        title: l10n.invoicesNavTitle,
         actions: [
           Stack(
             clipBehavior: Clip.none,
@@ -130,8 +147,12 @@ class _InvoicesPageState extends State<InvoicesPage> {
           ),
         ],
       ),
-      body: Column(
+      body: MediaQuery.removePadding(
+        context: context,
+        removeTop: true,
+        child: Column(
         children: [
+          SizedBox(height: FloatingAppBar.contentTopInset(context)),
           Padding(
             padding: const EdgeInsets.fromLTRB(
               AppSizes.lg,
@@ -215,12 +236,21 @@ class _InvoicesPageState extends State<InvoicesPage> {
                             color: AppColors.black,
                             backgroundColor: AppColors.surface,
                             child: ListView.separated(
-                              padding: const EdgeInsets.symmetric(
-                                vertical: AppSizes.sm,
-                              ).copyWith(bottom: 100),
-                              itemCount: provider.invoices.length,
-                              separatorBuilder: (_, _) => const AppDivider(),
+                              controller: _scrollCtrl,
+                              padding: const EdgeInsets.fromLTRB(
+                                AppSizes.lg,
+                                AppSizes.sm,
+                                AppSizes.lg,
+                                100,
+                              ),
+                              itemCount: provider.invoices.length +
+                                  (provider.hasMore ? 1 : 0),
+                              separatorBuilder: (_, _) =>
+                                  const SizedBox(height: AppSizes.sm),
                               itemBuilder: (context, i) {
+                                if (i >= provider.invoices.length) {
+                                  return const _InvoicesLoadMoreFooter();
+                                }
                                 final invoice = provider.invoices[i];
                                 return _InvoiceTile(
                                   invoice: invoice,
@@ -240,6 +270,7 @@ class _InvoicesPageState extends State<InvoicesPage> {
                           ),
           ),
         ],
+      ),
       ),
     );
   }
@@ -539,6 +570,34 @@ class _InvoiceFilterSheetState extends State<_InvoiceFilterSheet> {
 // Skeleton loading state — mirrors the _InvoiceTile layout
 // ---------------------------------------------------------------------------
 
+/// Trailing item in the invoice list while more pages exist. Shows a
+/// compact spinner during a fetch and a quiet placeholder otherwise, so
+/// the scroll position stays stable as the next page streams in.
+class _InvoicesLoadMoreFooter extends StatelessWidget {
+  const _InvoicesLoadMoreFooter();
+
+  @override
+  Widget build(BuildContext context) {
+    final loadingMore =
+        context.select<InvoicesProvider, bool>((p) => p.isLoadingMore);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSizes.lg),
+      child: Center(
+        child: SizedBox(
+          height: 22,
+          width: 22,
+          child: loadingMore
+              ? CircularProgressIndicator(
+                  strokeWidth: 2.2,
+                  color: AppColors.muted,
+                )
+              : const SizedBox.shrink(),
+        ),
+      ),
+    );
+  }
+}
+
 class _InvoicesListSkeleton extends StatelessWidget {
   const _InvoicesListSkeleton();
 
@@ -546,10 +605,14 @@ class _InvoicesListSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView.separated(
       physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(vertical: AppSizes.sm)
-          .copyWith(bottom: 100),
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.sm,
+        AppSizes.lg,
+        100,
+      ),
       itemCount: 6,
-      separatorBuilder: (context, index) => const AppDivider(),
+      separatorBuilder: (context, index) => const SizedBox(height: AppSizes.sm),
       itemBuilder: (context, index) => const _InvoiceTileSkeleton(),
     );
   }
@@ -560,7 +623,14 @@ class _InvoiceTileSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return Container(
+      decoration: ShapeDecoration(
+        color: AppColors.surface,
+        shape: AppShapes.squircle(
+          AppSizes.radiusLg,
+          side: BorderSide(color: AppColors.hairline),
+        ),
+      ),
       padding: const EdgeInsets.symmetric(
         horizontal: AppSizes.lg,
         vertical: AppSizes.md,
@@ -658,6 +728,11 @@ class _InvoiceTile extends StatelessWidget {
 
     return Material(
       color: AppColors.surface,
+      shape: AppShapes.squircle(
+        AppSizes.radiusLg,
+        side: BorderSide(color: AppColors.hairline),
+      ),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         splashColor: AppColors.surfaceTint,

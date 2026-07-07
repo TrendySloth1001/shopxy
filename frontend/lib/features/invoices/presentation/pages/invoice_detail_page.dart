@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
@@ -12,6 +13,7 @@ import 'package:shopxy/features/payments/presentation/widgets/record_payment_she
 import 'package:shopxy/features/payments/data/datasources/payments_remote_data_source.dart';
 import 'package:shopxy/features/payments/domain/entities/payment.dart';
 import 'package:shopxy/features/invoices/presentation/pages/create_invoice_page.dart';
+import 'package:shopxy/features/invoices/presentation/pages/issue_note_page.dart';
 import 'package:shopxy/features/invoices/presentation/providers/invoices_provider.dart';
 import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
@@ -25,6 +27,7 @@ import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/glass_widgets.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 
 class InvoiceDetailPage extends StatefulWidget {
@@ -259,6 +262,19 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
     }
   }
 
+  /// Raise a Sec 34 credit / debit note against this confirmed sale. The
+  /// composer posts to /invoices/:id/notes and refreshes the list; nothing
+  /// on this page changes (the note is a separate document), so we just
+  /// surface the result and stay put.
+  Future<void> _issueNote() async {
+    final invoice = _invoice;
+    if (invoice == null) return;
+    await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => IssueNotePage(invoice: invoice)),
+    );
+  }
+
   /// Open the create form in edit mode for a DRAFT invoice. Once the user
   /// saves we reload the detail (totals + line items may have changed),
   /// so the page reflects the new state without a stale snapshot.
@@ -339,8 +355,13 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
 
     if (_invoice == null) {
       return Scaffold(
-        appBar: AppBar(),
-        body: Center(child: Text(l10n.invoicesErrorTitle)),
+        extendBodyBehindAppBar: true,
+        appBar: FloatingAppBar(),
+        body: SafeArea(
+          top: true,
+          bottom: false,
+          child: Center(child: Text(l10n.invoicesErrorTitle)),
+        ),
       );
     }
 
@@ -348,8 +369,9 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
     final df = DateFormat('dd MMM yyyy, hh:mm a');
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(invoice.invoiceNo),
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(
+        title: invoice.invoiceNo,
         actions: [
           if (!_isDownloading) ...[
             if (invoice.isDraft)
@@ -423,17 +445,22 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
         ],
       ),
       bottomNavigationBar: invoice.isDraft ? _buildDraftActionBar(l10n) : null,
-      body: Column(
+      // Single scroll surface so the hero illustration scrolls away with the
+      // body (it used to be pinned above a nested ListView).
+      body: ListView(
+        padding: EdgeInsets.zero,
         children: [
+          SizedBox(height: FloatingAppBar.contentTopInset(context)),
           GlassHero.line(
             kind: LineArt.invoice,
             height: AppSizes.heroHeightMd,
             illustrationSize: AppSizes.productImageSize,
             accent: invoice.isCancelled ? AppColors.error : AppColors.brand,
           ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(AppSizes.lg),
+          Padding(
+            padding: const EdgeInsets.all(AppSizes.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -616,43 +643,6 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                     value: _outstanding(invoice),
                     isHighlight: true,
                   ),
-                  if (_payments.isNotEmpty) ...[
-                    const SizedBox(height: AppSizes.xs),
-                    for (final p in _payments)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    _paymentModeLabel(l10n, p),
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  Text(
-                                    '${p.referenceNo} · ${df.format(p.paymentDate.toLocal())}',
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: AppColors.muted,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Text(
-                              '${AppStrings.currencySymbol}${p.amount.toStringAsFixed(2)}',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
                 ],
                 if (invoice.amountInWords != null &&
                     invoice.amountInWords!.isNotEmpty) ...[
@@ -670,71 +660,73 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                 ],
               ],
             ),
-          const SizedBox(height: AppSizes.md),
-          const AppDivider.flush(),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: Icon(
-              Icons.chat_rounded,
-              color: AppColors.whatsapp,
+          // Payments received — a simple timeline: a dot per receipt joined by
+          // a vertical rail, with mode + amount and the date / reference as
+          // plain text lines. No cards.
+          if (invoice.status == 'CONFIRMED' && _payments.isNotEmpty) ...[
+            const SizedBox(height: AppSizes.xxl),
+            AppSectionHeader(
+              title: l10n.invoicesPaymentsReceivedTitle.toUpperCase(),
+              padding: const EdgeInsets.only(bottom: AppSizes.md),
             ),
-            title: Text(l10n.invoicesSendViaWhatsApp),
-            subtitle: Text(
-              invoice.customerPhone != null && invoice.customerPhone!.isNotEmpty
-                  ? l10n.invoicesOpensChatWith(invoice.customerPhone!)
-                  : l10n.invoicesPickChatToSend,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: AppColors.muted,
-              ),
+            _PaymentTimeline(
+              payments: _payments,
+              label: (p) => _paymentModeLabel(l10n, p),
+              dateFmt: df,
             ),
-            trailing: const Icon(Icons.chevron_right_rounded),
+          ],
+          const SizedBox(height: AppSizes.lg),
+          // Actions rendered as rounded cards with tinted icon chips. The old
+          // bare ListTiles inherited the theme's `tileColor: surface`, painting
+          // a mismatched lighter strip on the canvas.
+          _ActionTile(
+            iconChild: FaIcon(
+              FontAwesomeIcons.whatsapp,
+              color: AppColors.white,
+              size: 22,
+            ),
+            iconBackground: AppColors.whatsapp,
+            title: l10n.invoicesSendViaWhatsApp,
+            subtitle: invoice.customerPhone != null &&
+                    invoice.customerPhone!.isNotEmpty
+                ? l10n.invoicesOpensChatWith(invoice.customerPhone!)
+                : l10n.invoicesPickChatToSend,
             onTap: _shareViaWhatsApp,
           ),
           // Estimates / proformas get a one-tap "Convert to Invoice" tile.
-          // Hidden once the source is cancelled — converting a cancelled
-          // quotation makes no business sense and the backend would reject
-          // it anyway.
+          // Hidden once cancelled — converting a cancelled quotation makes no
+          // business sense and the backend would reject it anyway.
           if ((invoice.documentType == 'ESTIMATE' ||
                   invoice.documentType == 'PROFORMA') &&
               invoice.status != 'CANCELLED') ...[
-            const AppDivider.flush(),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(
+            const SizedBox(height: AppSizes.sm),
+            _ActionTile(
+              iconChild: Icon(
                 Icons.swap_horiz_rounded,
                 color: AppColors.brand,
+                size: 20,
               ),
-              title: Text(l10n.invoicesConvertToInvoice),
-              subtitle: Text(
-                l10n.invoicesConvertTileSubtitle,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: AppColors.muted,
-                ),
-              ),
-              trailing: const Icon(Icons.chevron_right_rounded),
+              iconBackground: AppColors.brand.withValues(alpha: 0.12),
+              title: l10n.invoicesConvertToInvoice,
+              subtitle: l10n.invoicesConvertTileSubtitle,
               onTap: _isDownloading ? null : _convertToInvoice,
             ),
           ],
           if (invoice.status == 'CONFIRMED' &&
               (invoice.partyId != null || invoice.vendorId != null) &&
               _outstanding(invoice) > 0.005) ...[
-            const AppDivider.flush(),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(
-                Icons.check_circle_outline_rounded,
+            const SizedBox(height: AppSizes.sm),
+            _ActionTile(
+              iconChild: Icon(
+                Icons.account_balance_wallet_rounded,
                 color: AppColors.success,
+                size: 20,
               ),
-              title: Text(l10n.invoicesMarkAsPaid),
-              subtitle: Text(
-                invoice.type == 'SALE'
-                    ? l10n.invoicesRecordReceiptSubtitle
-                    : l10n.invoicesRecordPaymentSubtitle,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: AppColors.muted,
-                ),
-              ),
-              trailing: const Icon(Icons.chevron_right_rounded),
+              iconBackground: AppColors.success.withValues(alpha: 0.14),
+              title: l10n.invoicesMarkAsPaid,
+              subtitle: invoice.type == 'SALE'
+                  ? l10n.invoicesRecordReceiptSubtitle
+                  : l10n.invoicesRecordPaymentSubtitle,
               onTap: () async {
                 final isSale = invoice.type == 'SALE';
                 final created = await RecordPaymentSheet.show(
@@ -744,7 +736,9 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                   vendorId: isSale ? null : invoice.vendorId,
                   partyName: invoice.customerName,
                   vendorName: invoice.vendorName,
-                  initialAmount: invoice.total,
+                  // Pre-fill the amount still due, not the full invoice total —
+                  // part-payments would otherwise default to over the balance.
+                  initialAmount: _outstanding(invoice),
                   lockedInvoiceId: invoice.id,
                   lockedInvoiceLabel: invoice.invoiceNo,
                 );
@@ -753,8 +747,32 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text(l10n.invoicesPaymentRecorded)),
                   );
+                  // Reload so Received / Outstanding reflect the new payment
+                  // immediately — otherwise it still reads ₹0 and looks like
+                  // nothing happened.
+                  _load();
                 }
               },
+            ),
+          ],
+          // Sec 34 credit / debit note. Only against a CONFIRMED sale tax
+          // invoice / bill of supply (mirrors the backend guard) — notes on
+          // purchases, estimates, or drafts make no sense here.
+          if (invoice.status == 'CONFIRMED' &&
+              invoice.type == 'SALE' &&
+              (invoice.documentType == 'TAX_INVOICE' ||
+                  invoice.documentType == 'BILL_OF_SUPPLY')) ...[
+            const SizedBox(height: AppSizes.sm),
+            _ActionTile(
+              iconChild: Icon(
+                Icons.difference_rounded,
+                color: AppColors.brand,
+                size: 20,
+              ),
+              iconBackground: AppColors.brand.withValues(alpha: 0.12),
+              title: l10n.invoicesIssueNoteAction,
+              subtitle: l10n.invoicesIssueNoteActionSubtitle,
+              onTap: _isDownloading ? null : _issueNote,
             ),
           ],
           if (invoice.note != null && invoice.note!.isNotEmpty) ...[
@@ -865,6 +883,181 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
   }
 }
 
+/// A tappable invoice action rendered as a rounded card with a tinted icon
+/// chip (WhatsApp / convert / mark-as-paid / issue-note). Replaces the bare
+/// `ListTile`s, whose theme `tileColor: surface` painted a mismatched lighter
+/// strip on the canvas.
+class _ActionTile extends StatelessWidget {
+  const _ActionTile({
+    required this.iconChild,
+    required this.iconBackground,
+    required this.title,
+    required this.onTap,
+    this.subtitle,
+  });
+
+  /// Pre-built, already-coloured/sized icon (an [Icon] or a [FaIcon]) so the
+  /// tile can host both Material glyphs and Font Awesome brand marks.
+  final Widget iconChild;
+  final Color iconBackground;
+  final String title;
+  final String? subtitle;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      color: AppColors.surface,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+        side: BorderSide(color: AppColors.hairline),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSizes.md),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: iconBackground,
+                  borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+                ),
+                child: Center(child: iconChild),
+              ),
+              const SizedBox(width: AppSizes.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: theme.textTheme.bodyMedium
+                          ?.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle!,
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(color: AppColors.muted),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSizes.sm),
+              Icon(Icons.chevron_right_rounded, color: AppColors.muted),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Payments-received timeline: a hollow dot per receipt joined by a thin
+/// vertical rail, with the mode + amount and the date / reference number as
+/// plain text lines beside it. Deliberately card-less — a light activity feed.
+class _PaymentTimeline extends StatelessWidget {
+  const _PaymentTimeline({
+    required this.payments,
+    required this.label,
+    required this.dateFmt,
+  });
+
+  final List<Payment> payments;
+  final String Function(Payment) label;
+  final DateFormat dateFmt;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      children: [
+        for (int i = 0; i < payments.length; i++)
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Rail: a hollow dot joined to the next receipt by a hairline.
+                Column(
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.only(top: 3),
+                      width: 13,
+                      height: 13,
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.brand, width: 2),
+                      ),
+                    ),
+                    if (i != payments.length - 1)
+                      Expanded(
+                        child: Container(
+                          width: 2,
+                          color: AppColors.brand.withValues(alpha: 0.35),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(width: AppSizes.md),
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      bottom: i == payments.length - 1 ? 0 : AppSizes.lg,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                label(payments[i]),
+                                style: theme.textTheme.bodyMedium
+                                    ?.copyWith(fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                            const SizedBox(width: AppSizes.sm),
+                            Text(
+                              '${AppStrings.currencySymbol}${payments[i].amount.toStringAsFixed(2)}',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.success,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          dateFmt.format(payments[i].paymentDate.toLocal()),
+                          style: theme.textTheme.bodySmall
+                              ?.copyWith(color: AppColors.muted),
+                        ),
+                        if (payments[i].referenceNo.isNotEmpty)
+                          Text(
+                            payments[i].referenceNo,
+                            style: theme.textTheme.bodySmall
+                                ?.copyWith(color: AppColors.muted),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Skeleton shown while the invoice is loading.
 // Mirrors the real page layout: hero → header block → party info →
@@ -876,9 +1069,14 @@ class _InvoiceDetailSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
-      body: Column(
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(),
+      body: MediaQuery.removePadding(
+        context: context,
+        removeTop: true,
+        child: Column(
         children: [
+          SizedBox(height: FloatingAppBar.contentTopInset(context)),
           // Hero illustration placeholder
           const AppShimmerBox(
             width: double.infinity,
@@ -937,6 +1135,7 @@ class _InvoiceDetailSkeleton extends StatelessWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }

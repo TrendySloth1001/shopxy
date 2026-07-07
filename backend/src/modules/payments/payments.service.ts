@@ -315,7 +315,10 @@ export class PaymentsService {
       skip: number;
     },
   ) {
-    const where: Prisma.PaymentWhereInput = { shopId };
+    // Exclude voided payments — they're retained for audit but are reversed,
+    // so they must not appear in ledgers or count toward an invoice's
+    // "Received" (mirrors the outstanding calc, which already filters them).
+    const where: Prisma.PaymentWhereInput = { shopId, voidedAt: null };
     if (options.partyId != null) where.partyId = options.partyId;
     if (options.vendorId != null) where.vendorId = options.vendorId;
     if (options.invoiceId != null) where.invoiceId = options.invoiceId;

@@ -7,6 +7,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/l10n/app_localizations.dart';
 
@@ -80,20 +81,27 @@ class _ProductReviewsPageState extends State<ProductReviewsPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.reviewsTitle(widget.productName))),
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(title: l10n.reviewsTitle(widget.productName)),
       body: _loading && _reviews.isEmpty
           ? const _ReviewsPageSkeleton()
           : _error != null && _reviews.isEmpty
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppSizes.xl),
-                    child: Text(_error!, textAlign: TextAlign.center),
+              ? SafeArea(
+                  top: true,
+                  bottom: false,
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppSizes.xl),
+                      child: Text(_error!, textAlign: TextAlign.center),
+                    ),
                   ),
                 )
               : RefreshIndicator(
                   onRefresh: _load,
                   child: ListView.separated(
-                    padding: const EdgeInsets.only(bottom: AppSizes.huge),
+                    padding: EdgeInsets.only(
+                        top: FloatingAppBar.contentTopInset(context),
+                        bottom: AppSizes.huge),
                     itemCount: _reviews.length + 2,
                     separatorBuilder: (_, _) => const Divider(height: 0),
                     itemBuilder: (context, i) {

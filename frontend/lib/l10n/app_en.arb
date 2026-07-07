@@ -33,6 +33,8 @@
   "productsTitle": "Products",
   "productsSwitchToCardView": "Switch to card view",
   "productsSwitchToCompactView": "Switch to compact view",
+  "productsGridView": "Grid view",
+  "productsListView": "List view",
   "productsAddProduct": "Add Product",
   "productsHidden": "Products hidden",
   "productsSearchHint": "Search products...",
@@ -786,6 +788,7 @@
   "invoicesCess": "Cess",
   "invoicesReceived": "Received",
   "invoicesOutstanding": "Outstanding",
+  "invoicesPaymentsReceivedTitle": "Payments received",
   "invoicesSendViaWhatsApp": "Send via WhatsApp",
   "invoicesOpensChatWith": "Opens chat with {phone}",
   "@invoicesOpensChatWith": {
@@ -803,6 +806,49 @@
   "invoicesRecordPaymentSubtitle": "Record a payment for this bill",
   "invoicesPaymentRecorded": "Payment recorded",
   "invoicesConfirmInvoice": "Confirm Invoice",
+  "invoicesIssueNoteAction": "Issue credit / debit note",
+  "invoicesIssueNoteActionSubtitle": "Adjust this confirmed sale with a credit or debit note",
+  "invoicesIssueNoteTitle": "Issue note",
+  "invoicesCreditNoteExplainer": "Reduces what the customer owes. Returned goods can be put back into stock.",
+  "invoicesDebitNoteExplainer": "Bills the customer an extra amount — e.g. correcting an undercharge.",
+  "invoicesNoteReturnToStock": "Return goods to stock",
+  "invoicesNoteReason": "Reason (optional)",
+  "invoicesNoteExtraPerUnit": "Extra per unit",
+  "invoicesIssueCreditNote": "Issue credit note",
+  "invoicesIssueDebitNote": "Issue debit note",
+  "invoicesNoteSelectLines": "Add at least one line to the note",
+  "invoicesNoteSoldQty": "Sold {qty}",
+  "@invoicesNoteSoldQty": {
+    "placeholders": {
+      "qty": {
+        "type": "Object"
+      }
+    }
+  },
+  "invoicesNoteIssued": "{noteNo} issued",
+  "@invoicesNoteIssued": {
+    "placeholders": {
+      "noteNo": {
+        "type": "Object"
+      }
+    }
+  },
+  "invoicesNoteAgainst": "Against {invoiceNo}",
+  "@invoicesNoteAgainst": {
+    "placeholders": {
+      "invoiceNo": {
+        "type": "Object"
+      }
+    }
+  },
+  "invoicesNoteApproxTotal": "Approx. total {amount}",
+  "@invoicesNoteApproxTotal": {
+    "placeholders": {
+      "amount": {
+        "type": "Object"
+      }
+    }
+  },
   "partiesTitle": "Parties",
   "partiesAddParty": "Add Party",
   "partiesEditParty": "Edit Party",
@@ -973,6 +1019,9 @@
   "profileReportsSubtitle": "Sales, purchases, GST and P&L",
   "profileFinishShopSetup": "Finish setting up your shop",
   "profileFinishShopSetupBody": "Add your shop name, GSTIN and state so invoices print correctly.",
+  "profilePersonalDetails": "Personal details",
+  "profileNotAdded": "Not added",
+  "profileCopied": "Copied to clipboard",
   "profileFieldName": "Name",
   "profileFieldPhoto": "Photo",
   "profileFieldPhone": "Phone",

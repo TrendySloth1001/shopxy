@@ -9,6 +9,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 
 /// Index of all editorial collections (curated product lists). Tap a
 /// row to open the editor — that's where meta, cover, and items get
@@ -80,9 +81,10 @@ class _AdminCollectionsPageState extends State<AdminCollectionsPage> {
     final l10n = AppLocalizations.of(context);
     final provider = context.watch<AdminCollectionsProvider>();
     return Scaffold(
+      extendBodyBehindAppBar: true,
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(
-        title: Text(l10n.adminCollectionsTitle),
+      appBar: FloatingAppBar(
+        title: l10n.adminCollectionsTitle,
         actions: [
           IconButton(
             tooltip: l10n.adminRefresh,
@@ -102,15 +104,17 @@ class _AdminCollectionsPageState extends State<AdminCollectionsPage> {
               onRefresh: provider.load,
               child: provider.list.isEmpty
                   ? ListView(
+                      padding: EdgeInsets.only(
+                          top: FloatingAppBar.contentTopInset(context)),
                       children: [
                         const SizedBox(height: AppSizes.huge),
                         Center(child: Text(l10n.adminCollectionsEmpty)),
                       ],
                     )
                   : ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(
+                      padding: EdgeInsets.fromLTRB(
                         AppSizes.lg,
-                        AppSizes.lg,
+                        AppSizes.lg + FloatingAppBar.contentTopInset(context),
                         AppSizes.lg,
                         AppSizes.fabClearance,
                       ),
@@ -242,9 +246,9 @@ class _CollectionsListSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(
+      padding: EdgeInsets.fromLTRB(
         AppSizes.lg,
-        AppSizes.lg,
+        AppSizes.lg + FloatingAppBar.contentTopInset(context),
         AppSizes.lg,
         AppSizes.fabClearance,
       ),

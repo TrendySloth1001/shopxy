@@ -18,6 +18,7 @@ import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 
 int _i(Object? v) => v is num ? v.toInt() : 0;
 double _d(Object? v) => v is num ? v.toDouble() : 0;
@@ -473,9 +474,10 @@ class _PosPageState extends State<PosPage> {
     final total = snap?.totals.total ?? 0;
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(
-        title: Text(l10n.posTitle),
+      appBar: FloatingAppBar(
+        title: l10n.posTitle,
         actions: [
           IconButton(
             tooltip: l10n.posFindItem,
@@ -494,7 +496,10 @@ class _PosPageState extends State<PosPage> {
           _StatusChip(status: _client.status),
         ],
       ),
-      body: Column(
+      body: SafeArea(
+        top: true,
+        bottom: false,
+        child: Column(
         children: [
           if (_shiftOpen)
             Container(
@@ -611,6 +616,7 @@ class _PosPageState extends State<PosPage> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

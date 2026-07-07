@@ -10,6 +10,7 @@ import 'package:shopxy/features/quotations/presentation/pages/quotation_detail_p
 import 'package:shopxy/features/quotations/presentation/pages/quotations_page.dart';
 import 'package:shopxy/features/quotations/presentation/providers/quotations_provider.dart';
 import 'package:shopxy/l10n/app_localizations.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
@@ -51,8 +52,9 @@ class _NotificationsPageState extends State<NotificationsPage>
     final l10n = AppLocalizations.of(context);
     final p = context.watch<NotificationsProvider>();
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.notificationsTitle),
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(
+        title: l10n.notificationsTitle,
         bottom: TabBar(
           controller: _tabs,
           tabs: [
@@ -122,8 +124,8 @@ class _InboxTab extends StatelessWidget {
       onRefresh: () => p.loadInbox(),
       color: AppColors.brand,
       child: ListView.separated(
-        padding: const EdgeInsets.only(
-          top: AppSizes.sm,
+        padding: EdgeInsets.only(
+          top: AppSizes.sm + FloatingAppBar.contentTopInset(context) + kTextTabBarHeight,
           bottom: AppSizes.massive + AppSizes.xxxl,
         ),
         itemCount: p.items.length,
@@ -280,8 +282,8 @@ class _InboxSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
-      padding: const EdgeInsets.only(
-        top: AppSizes.sm,
+      padding: EdgeInsets.only(
+        top: AppSizes.sm + FloatingAppBar.contentTopInset(context) + kTextTabBarHeight,
         bottom: AppSizes.massive + AppSizes.xxxl,
       ),
       itemCount: 6,
@@ -356,8 +358,8 @@ class _IncomingTab extends StatelessWidget {
       onRefresh: () => p.loadIncoming(),
       color: AppColors.brand,
       child: ListView.separated(
-        padding: const EdgeInsets.only(
-          top: AppSizes.sm,
+        padding: EdgeInsets.only(
+          top: AppSizes.sm + FloatingAppBar.contentTopInset(context) + kTextTabBarHeight,
           bottom: AppSizes.massive + AppSizes.xxxl,
         ),
         itemCount: p.incoming.length,
@@ -536,8 +538,8 @@ class _OutgoingTab extends StatelessWidget {
       onRefresh: () => p.loadOutgoing(),
       color: AppColors.brand,
       child: ListView.separated(
-        padding: const EdgeInsets.only(
-          top: AppSizes.sm,
+        padding: EdgeInsets.only(
+          top: AppSizes.sm + FloatingAppBar.contentTopInset(context) + kTextTabBarHeight,
           bottom: AppSizes.massive + AppSizes.xxxl,
         ),
         itemCount: p.outgoing.length,
@@ -684,7 +686,10 @@ class _EmptyHint extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Center(
+    return SafeArea(
+      top: true,
+      bottom: false,
+      child: Center(
       child: Padding(
         padding: const EdgeInsets.all(AppSizes.xxl),
         child: Column(
@@ -718,6 +723,7 @@ class _EmptyHint extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }

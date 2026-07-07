@@ -11,6 +11,7 @@ import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 
 /// The reports workspace: four date-ranged reports (Sales, Purchases, GST, P&L)
 /// plus a live Calculator tool — a faithful port of merchant-web's
@@ -87,8 +88,9 @@ class _ReportsPageState extends State<ReportsPage> {
     final dateFmt = DateFormat('d MMM yyyy');
     final isCalculator = _tab == _ReportTab.calculator;
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.reportsTitle),
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(
+        title: l10n.reportsTitle,
         actions: [
           if (!isCalculator)
             IconButton(
@@ -98,8 +100,12 @@ class _ReportsPageState extends State<ReportsPage> {
             ),
         ],
       ),
-      body: Column(
+      body: MediaQuery.removePadding(
+        context: context,
+        removeTop: true,
+        child: Column(
         children: [
+          SizedBox(height: FloatingAppBar.contentTopInset(context)),
           // Tabs.
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
@@ -181,6 +187,7 @@ class _ReportsPageState extends State<ReportsPage> {
                         : _ReportBody(provider: p),
           ),
         ],
+      ),
       ),
     );
   }

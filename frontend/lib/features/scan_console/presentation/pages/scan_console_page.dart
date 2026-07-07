@@ -7,6 +7,7 @@ import 'package:shopxy/features/scan_console/presentation/scan_console_client.da
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 
 /// Continuous "scan to console" mode. The phone holds a live WebSocket to the
 /// shop room (role=scanner): every barcode/QR is pushed over the socket, the
@@ -81,8 +82,9 @@ class _ScanConsolePageState extends State<ScanConsolePage> {
     final l10n = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(
-        title: Text(l10n.scanConsoleTitle),
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(
+        title: l10n.scanConsoleTitle,
         actions: [
           TextButton.icon(
             onPressed: _client.recent.isEmpty ? null : _clear,
@@ -91,8 +93,12 @@ class _ScanConsolePageState extends State<ScanConsolePage> {
           ),
         ],
       ),
-      body: Column(
+      body: MediaQuery.removePadding(
+        context: context,
+        removeTop: true,
+        child: Column(
         children: [
+          SizedBox(height: FloatingAppBar.contentTopInset(context)),
           SizedBox(
             height: 280,
             child: Stack(
@@ -133,6 +139,7 @@ class _ScanConsolePageState extends State<ScanConsolePage> {
                   ),
           ),
         ],
+      ),
       ),
     );
   }

@@ -3,6 +3,7 @@ import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/features/shop/data/team_service.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 
 /// Member-access editor returns the role label + exact grant.
 typedef PermissionResult = ({String roleName, List<String> permissions});
@@ -232,8 +233,9 @@ class _PermissionEditorPageState extends State<PermissionEditorPage> {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(
-        title: Text(widget.title),
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(
+        title: widget.title,
         actions: [
           TextButton(
             onPressed: _save,
@@ -246,7 +248,8 @@ class _PermissionEditorPageState extends State<PermissionEditorPage> {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.only(bottom: AppSizes.huge),
+        padding: EdgeInsets.only(
+            top: FloatingAppBar.contentTopInset(context), bottom: AppSizes.huge),
         children: [
           if (widget.subtitle != null)
             Padding(
@@ -356,8 +359,9 @@ class _RoleEditorPageState extends State<RoleEditorPage> {
     final manageCount = manageableAreaCount(_granted.toList());
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(
-        title: Text(widget.isNew ? l10n.shopNewRole : l10n.shopEditRole),
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(
+        title: widget.isNew ? l10n.shopNewRole : l10n.shopEditRole,
         actions: [
           TextButton(
             onPressed: _save,
@@ -370,7 +374,8 @@ class _RoleEditorPageState extends State<RoleEditorPage> {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.only(bottom: AppSizes.huge),
+        padding: EdgeInsets.only(
+            top: FloatingAppBar.contentTopInset(context), bottom: AppSizes.huge),
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(

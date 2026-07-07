@@ -1,25 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:provider/provider.dart';
-import 'package:shopxy/core/auth/shop_capabilities.dart';
 import 'package:shopxy/core/network/image_url.dart';
 import 'package:shopxy/features/auth/domain/entities/auth_user.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
-import 'package:shopxy/features/categories/presentation/pages/categories_page.dart';
-import 'package:shopxy/features/challans/presentation/pages/challans_page.dart';
-import 'package:shopxy/features/invoices/presentation/pages/invoices_page.dart';
-import 'package:shopxy/features/parties/presentation/pages/parties_page.dart';
 import 'package:shopxy/features/profile/presentation/pages/edit_profile_page.dart';
 import 'package:shopxy/features/profile/presentation/pages/settings_page.dart';
-import 'package:shopxy/features/reports/presentation/pages/reports_page.dart';
-import 'package:shopxy/features/stock_adjustments/presentation/pages/stock_adjustments_page.dart';
-import 'package:shopxy/features/vendors/presentation/pages/vendors_page.dart';
 import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shadows.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 
 /// Profile tab — polished snapshot of the merchant identity plus the
 /// shortcuts that don't deserve a top-level nav slot. One canonical
@@ -34,12 +27,10 @@ class ProfilePage extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(
-        // Profile is always opened as a pushed route now (from the dashboard's
-        // profile action or the Menu tab), so a plain back button.
-        leading: const BackButton(),
-        title: Text(l10n.profileNavProfile),
+      appBar: FloatingAppBar(
+        title: l10n.profileNavProfile,
         actions: [
           IconButton(
             tooltip: l10n.profileSettings,
@@ -52,7 +43,10 @@ class ProfilePage extends StatelessWidget {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.only(bottom: AppSizes.huge),
+        padding: EdgeInsets.only(
+          top: FloatingAppBar.contentTopInset(context),
+          bottom: AppSizes.huge,
+        ),
         children: [
           _ProfileHero(user: user),
           if (user != null)
@@ -87,8 +81,13 @@ class ProfilePage extends StatelessWidget {
               ),
             ),
           const SizedBox(height: AppSizes.xl),
-          ..._businessSection(context, user),
-          ..._operationsSection(context, user),
+          if (user != null) ...[
+            _personalSection(context, user),
+            const SizedBox(height: AppSizes.xl),
+            _shopSection(context, user),
+            const SizedBox(height: AppSizes.xl),
+            _LogoutTile(onTap: () => _confirmAndLogout(context)),
+          ],
           const SizedBox(height: AppSizes.huge),
           Center(
             child: Text(
@@ -104,114 +103,242 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  /// Heuristic for whether the shop profile is materially blank. We don't
-  /// require every field — just enough that an invoice header would look
-  /// professional. Used to gate the "complete your shop profile" callout.
+  /// Whether the shop looks genuinely *unstarted* — the gate for the big
+  /// "finish setting up your shop" callout. We only nudge with the banner
+  /// when none of the invoice-critical fields exist yet; once the merchant
+  /// has begun (e.g. only GSTIN left), the completion meter above already
+  /// names the exact missing field, so the banner would be redundant and
+  /// its generic copy ("add your shop name and state") would contradict
+  /// what's actually filled.
   static bool _shopProfileIncomplete(AuthUser u) {
-    return (u.shopName == null || u.shopName!.trim().isEmpty) ||
-        (u.shopStateCode == null || u.shopStateCode!.trim().isEmpty) ||
-        (u.shopGstin == null || u.shopGstin!.trim().isEmpty);
+    bool blank(String? v) => v == null || v.trim().isEmpty;
+    return blank(u.shopName) && blank(u.shopStateCode) && blank(u.shopGstin);
   }
 
-  /// "Manage your business" — only the tiles this role can act on. The
-  /// section header is dropped entirely if the role has none of them.
-  static List<Widget> _businessSection(BuildContext context, AuthUser? user) {
-    if (user == null) return const [];
+  /// "Personal details" — the account-holder's own fields (read-only). The
+  /// shortcuts that used to live here now belong to the Menu tab; this
+  /// screen is solely a snapshot of the profile the user filled in.
+  static Widget _personalSection(BuildContext context, AuthUser user) {
     final l10n = AppLocalizations.of(context);
-    final tiles = <Widget>[
-      if (user.canView('products'))
-        _ManageTile(
-          icon: Icons.category_outlined,
-          title: l10n.profileNavCategories,
-          subtitle: l10n.profileCategoriesSubtitle,
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const CategoriesPage()),
-          ),
+    final accent = AppColors.accentIndigo;
+    final accentSoft = AppColors.accentIndigoSoft;
+    return _DetailSection(
+      icon: Icons.person_outline,
+      title: l10n.profilePersonalDetails,
+      rows: [
+        _DetailRow(
+          icon: Icons.badge_outlined,
+          label: l10n.profileFieldName,
+          value: user.name,
+          accent: accent,
+          accentSoft: accentSoft,
         ),
-      if (user.canView('vendors'))
-        _ManageTile(
+        _DetailRow(
+          icon: Icons.alternate_email,
+          label: l10n.profileEmail,
+          value: user.email,
+          accent: accent,
+          accentSoft: accentSoft,
+          copyable: true,
+        ),
+        _DetailRow(
+          icon: Icons.call_outlined,
+          label: l10n.profileFieldPhone,
+          value: user.phoneNumber,
+          accent: accent,
+          accentSoft: accentSoft,
+          copyable: true,
+        ),
+      ],
+    );
+  }
+
+  /// "Shop details" — the shop identity used on invoices, mirroring the
+  /// fields in [EditProfilePage] so this screen reflects what was entered.
+  static Widget _shopSection(BuildContext context, AuthUser user) {
+    final l10n = AppLocalizations.of(context);
+    final accent = AppColors.brandStrong;
+    final accentSoft = AppColors.brandSoft;
+    return _DetailSection(
+      icon: Icons.storefront_outlined,
+      title: l10n.profileShopDetails,
+      rows: [
+        _DetailRow(
           icon: Icons.storefront_outlined,
-          title: l10n.profileNavVendors,
-          subtitle: l10n.profileVendorsSubtitle,
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const VendorsPage()),
-          ),
+          label: l10n.profileFieldShopName,
+          value: user.shopName,
+          accent: accent,
+          accentSoft: accentSoft,
         ),
-      if (user.canView('parties'))
-        _ManageTile(
-          icon: Icons.groups_outlined,
-          title: l10n.profileNavParties,
-          subtitle: l10n.profilePartiesSubtitle,
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const PartiesPage()),
-          ),
+        _DetailRow(
+          icon: Icons.location_on_outlined,
+          label: l10n.profileFieldAddress,
+          value: user.shopAddress,
+          accent: accent,
+          accentSoft: accentSoft,
         ),
-    ];
-    if (tiles.isEmpty) return const [];
-    return [
-      _SectionLabel(text: l10n.profileManageBusiness),
-      const SizedBox(height: AppSizes.xs),
-      _ManageList(children: tiles),
-      const SizedBox(height: AppSizes.xl),
-    ];
+        _DetailRow(
+          icon: Icons.location_city_outlined,
+          label: l10n.profileFieldCity,
+          value: user.shopCity,
+          accent: accent,
+          accentSoft: accentSoft,
+        ),
+        _DetailRow(
+          icon: Icons.map_outlined,
+          label: l10n.profileFieldState,
+          value: _composeState(user),
+          accent: accent,
+          accentSoft: accentSoft,
+        ),
+        _DetailRow(
+          icon: Icons.markunread_mailbox_outlined,
+          label: l10n.profileFieldPinCode,
+          value: user.shopPinCode,
+          accent: accent,
+          accentSoft: accentSoft,
+        ),
+        _DetailRow(
+          icon: Icons.receipt_long_outlined,
+          label: l10n.profileFieldGstin,
+          value: user.shopGstin,
+          accent: accent,
+          accentSoft: accentSoft,
+          copyable: true,
+        ),
+        _DetailRow(
+          icon: Icons.credit_card_outlined,
+          label: l10n.profileFieldPan,
+          value: user.shopPan,
+          accent: accent,
+          accentSoft: accentSoft,
+          copyable: true,
+        ),
+        _DetailRow(
+          icon: Icons.account_balance_wallet_outlined,
+          label: l10n.profileFieldUpiId,
+          value: user.upiVpa,
+          accent: accent,
+          accentSoft: accentSoft,
+          copyable: true,
+        ),
+      ],
+    );
   }
 
-  /// "Operations" — invoicing/inventory tiles gated by capability.
-  /// Reports stays for everyone (it's a read-only insight surface).
-  static List<Widget> _operationsSection(BuildContext context, AuthUser? user) {
-    if (user == null) return const [];
+  /// Renders the state as "27 — Maharashtra" when both halves are present,
+  /// otherwise whichever one is set (or null so the row shows "Not added").
+  static String? _composeState(AuthUser u) {
+    final code = u.shopStateCode?.trim();
+    final name = u.shopState?.trim();
+    final hasCode = code != null && code.isNotEmpty;
+    final hasName = name != null && name.isNotEmpty;
+    if (hasCode && hasName) return '$code — $name';
+    if (hasName) return name;
+    if (hasCode) return code;
+    return null;
+  }
+
+  /// Confirms via a bottom sheet, then clears the session. Logout only nulls
+  /// the user; the root `_AuthGate` then rebuilds its (home) route to the
+  /// login screen — so we pop every pushed route back to it to reveal it.
+  static Future<void> _confirmAndLogout(BuildContext context) async {
+    final confirmed = await _showLogoutSheet(context);
+    if (confirmed != true || !context.mounted) return;
+    await context.read<AuthProvider>().logout();
+    if (!context.mounted) return;
+    Navigator.of(context).popUntil((route) => route.isFirst);
+  }
+
+  static Future<bool?> _showLogoutSheet(BuildContext context) {
+    final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
-    final tiles = <Widget>[
-      if (user.canView('invoices'))
-        _ManageTile(
-          icon: Icons.receipt_long_outlined,
-          title: l10n.profileNavInvoices,
-          subtitle: l10n.profileInvoicesSubtitle,
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const InvoicesPage()),
+    return showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: AppColors.surface,
+      showDragHandle: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(AppSizes.radiusDialog),
+        ),
+        side: BorderSide(color: AppColors.hairline),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSizes.lg,
+            0,
+            AppSizes.lg,
+            AppSizes.lg,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: AppSizes.huge,
+                height: AppSizes.huge,
+                decoration: ShapeDecoration(
+                  color: AppColors.error.withValues(alpha: 0.12),
+                  shape: AppShapes.squircle(AppSizes.radiusMd),
+                ),
+                alignment: Alignment.center,
+                child: Icon(
+                  Icons.logout_rounded,
+                  color: AppColors.error,
+                  size: AppSizes.iconLg,
+                ),
+              ),
+              const SizedBox(height: AppSizes.md),
+              Text(
+                l10n.profileLogout,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: AppSizes.xs),
+              Text(
+                l10n.profileLogoutConfirm,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: AppColors.muted,
+                ),
+              ),
+              const SizedBox(height: AppSizes.xl),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () => Navigator.of(sheetContext).pop(true),
+                  icon: const Icon(Icons.logout_rounded, size: AppSizes.iconSm),
+                  label: Text(l10n.profileLogout),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.error,
+                    foregroundColor: AppColors.white,
+                    padding:
+                        const EdgeInsets.symmetric(vertical: AppSizes.md),
+                    shape: AppShapes.squircle(AppSizes.radiusButton),
+                    textStyle: theme.textTheme.labelLarge
+                        ?.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSizes.sm),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton(
+                  onPressed: () => Navigator.of(sheetContext).pop(false),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.muted,
+                    padding:
+                        const EdgeInsets.symmetric(vertical: AppSizes.md),
+                  ),
+                  child: Text(l10n.profileCancel),
+                ),
+              ),
+            ],
           ),
         ),
-      if (user.canView('challans'))
-        _ManageTile(
-          icon: Icons.assignment_outlined,
-          title: l10n.profileNavChallans,
-          subtitle: l10n.profileChallansSubtitle,
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const ChallansPage()),
-          ),
-        ),
-      if (user.canView('stock'))
-        _ManageTile(
-          icon: Icons.tune_rounded,
-          title: l10n.profileStockAdjustments,
-          subtitle: l10n.profileStockAdjustmentsSubtitle,
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const StockAdjustmentsPage()),
-          ),
-        ),
-      if (user.canView('reports'))
-        _ManageTile(
-          icon: Icons.insights_outlined,
-          title: l10n.profileReports,
-          subtitle: l10n.profileReportsSubtitle,
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const ReportsPage()),
-          ),
-        ),
-    ];
-    if (tiles.isEmpty) return const [];
-    return [
-      _SectionLabel(text: l10n.profileOperations),
-      const SizedBox(height: AppSizes.xs),
-      _ManageList(children: tiles),
-    ];
+      ),
+    );
   }
 }
 
@@ -260,6 +387,7 @@ class _ProfileHero extends StatelessWidget {
             AppColors.heroPanel,
           ],
         ),
+        shadows: AppShadows.floating,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -326,7 +454,7 @@ class _ProfileHero extends StatelessWidget {
                           _MetaChip(
                             icon: Icons.calendar_today_outlined,
                             label:
-                                '${l10n.profileMemberSince} ${DateFormat('MMM yyyy').format(memberSince)}',
+                                '${l10n.profileMemberSince} ${MaterialLocalizations.of(context).formatMonthYear(memberSince)}',
                           ),
                       ],
                     ),
@@ -453,22 +581,22 @@ class _ProfileCompletion extends StatelessWidget {
   /// the shop. Kept in lockstep with the web `profileCompletion` helper so
   /// both apps show the same percentage. [label] is a localized display
   /// string resolved from [l10n] at build time.
-  static List<({String label, bool filled})> _fields(
+  static List<({String label, bool filled, ProfileField target})> _fields(
       AuthUser u, AppLocalizations l10n) {
     bool ok(String? v) => v != null && v.trim().isNotEmpty;
     return [
-      (label: l10n.profileFieldName, filled: ok(u.name)),
-      (label: l10n.profileFieldPhoto, filled: ok(u.avatarUrl)),
-      (label: l10n.profileFieldPhone, filled: ok(u.phoneNumber)),
-      (label: l10n.profileFieldShopName, filled: ok(u.shopName)),
-      (label: l10n.profileFieldAddress, filled: ok(u.shopAddress)),
-      (label: l10n.profileFieldCity, filled: ok(u.shopCity)),
-      (label: l10n.profileFieldState, filled: ok(u.shopState)),
-      (label: l10n.profileFieldStateCode, filled: ok(u.shopStateCode)),
-      (label: l10n.profileFieldPinCode, filled: ok(u.shopPinCode)),
-      (label: l10n.profileFieldGstin, filled: ok(u.shopGstin)),
-      (label: l10n.profileFieldPan, filled: ok(u.shopPan)),
-      (label: l10n.profileFieldUpiId, filled: ok(u.upiVpa)),
+      (label: l10n.profileFieldName, filled: ok(u.name), target: ProfileField.name),
+      (label: l10n.profileFieldPhoto, filled: ok(u.avatarUrl), target: ProfileField.photo),
+      (label: l10n.profileFieldPhone, filled: ok(u.phoneNumber), target: ProfileField.phone),
+      (label: l10n.profileFieldShopName, filled: ok(u.shopName), target: ProfileField.shopName),
+      (label: l10n.profileFieldAddress, filled: ok(u.shopAddress), target: ProfileField.shopAddress),
+      (label: l10n.profileFieldCity, filled: ok(u.shopCity), target: ProfileField.shopCity),
+      (label: l10n.profileFieldState, filled: ok(u.shopState), target: ProfileField.shopState),
+      (label: l10n.profileFieldStateCode, filled: ok(u.shopStateCode), target: ProfileField.shopState),
+      (label: l10n.profileFieldPinCode, filled: ok(u.shopPinCode), target: ProfileField.shopPinCode),
+      (label: l10n.profileFieldGstin, filled: ok(u.shopGstin), target: ProfileField.shopGstin),
+      (label: l10n.profileFieldPan, filled: ok(u.shopPan), target: ProfileField.shopPan),
+      (label: l10n.profileFieldUpiId, filled: ok(u.upiVpa), target: ProfileField.upiVpa),
     ];
   }
 
@@ -480,7 +608,7 @@ class _ProfileCompletion extends StatelessWidget {
     final total = fields.length;
     final filled = fields.where((f) => f.filled).length;
     final percent = ((filled / total) * 100).round();
-    final missing = fields.where((f) => !f.filled).map((f) => f.label).toList();
+    final missing = fields.where((f) => !f.filled).toList();
 
     // Fully complete — nothing to nudge.
     if (percent >= 100) return const SizedBox.shrink();
@@ -490,9 +618,10 @@ class _ProfileCompletion extends StatelessWidget {
       decoration: ShapeDecoration(
         color: AppColors.surface,
         shape: AppShapes.squircle(
-          AppSizes.radiusMd,
+          AppSizes.radiusLg,
           side: BorderSide(color: AppColors.hairline),
         ),
+        shadows: AppShadows.floating,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -554,20 +683,46 @@ class _ProfileCompletion extends StatelessWidget {
               spacing: AppSizes.sm,
               runSpacing: AppSizes.sm,
               children: [
+                // Each missing field is a tappable chip that deep-links into
+                // the editor focused on exactly that field — no more hunting
+                // down the form for the one thing that's left.
                 for (final m in missing)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSizes.sm,
-                      vertical: 2,
-                    ),
-                    decoration: ShapeDecoration(
-                      color: AppColors.surfaceTint,
-                      shape: AppShapes.squircle(AppSizes.radiusFull),
-                    ),
-                    child: Text(
-                      m,
-                      style: theme.textTheme.labelSmall
-                          ?.copyWith(color: AppColors.muted),
+                  Material(
+                    color: AppColors.brandSoft,
+                    shape: AppShapes.squircle(AppSizes.radiusFull),
+                    child: InkWell(
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              EditProfilePage(focusField: m.target),
+                        ),
+                      ),
+                      customBorder: AppShapes.squircle(AppSizes.radiusFull),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSizes.sm,
+                          vertical: 3,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.add_rounded,
+                              size: AppSizes.iconSm,
+                              color: AppColors.brandStrong,
+                            ),
+                            const SizedBox(width: 2),
+                            Text(
+                              m.label,
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: AppColors.brandStrong,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
               ],
@@ -583,113 +738,229 @@ class _ProfileCompletion extends StatelessWidget {
 // Section primitives
 // ─────────────────────────────────────────────────────────────────────
 
-class _SectionLabel extends StatelessWidget {
-  const _SectionLabel({required this.text});
-  final String text;
+/// The left inset a divider needs so it starts under the row's text, not
+/// under its leading icon: horizontal padding + icon width + icon gap.
+const double _kDetailRowIndent =
+    AppSizes.lg + _kDetailIconSize + AppSizes.md;
+const double _kDetailIconSize = 36;
+
+/// A titled, read-only group of profile fields. A section header (small
+/// icon + label) sits above a bordered surface card whose rows are
+/// separated by inset hairlines — the same "card of facts" treatment as
+/// the completion meter, so the whole screen reads as one calm snapshot.
+class _DetailSection extends StatelessWidget {
+  const _DetailSection({
+    required this.icon,
+    required this.title,
+    required this.rows,
+  });
+  final IconData icon;
+  final String title;
+  final List<Widget> rows;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSizes.xl),
-      child: Text(
-        text,
-        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: AppColors.muted,
-              fontWeight: FontWeight.w700,
+    final theme = Theme.of(context);
+    final children = <Widget>[];
+    for (var i = 0; i < rows.length; i++) {
+      if (i > 0) {
+        children.add(
+          const Divider(
+            height: 1,
+            indent: _kDetailRowIndent,
+            endIndent: AppSizes.lg,
+          ),
+        );
+      }
+      children.add(rows[i]);
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSizes.xl),
+          child: Row(
+            children: [
+              Icon(icon, size: AppSizes.iconSm, color: AppColors.muted),
+              const SizedBox(width: AppSizes.sm),
+              Text(
+                title,
+                style: theme.textTheme.titleSmall?.copyWith(
+                      color: AppColors.muted,
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSizes.sm),
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+          decoration: ShapeDecoration(
+            color: AppColors.surface,
+            shape: AppShapes.squircle(
+              AppSizes.radiusLg,
+              side: BorderSide(color: AppColors.hairline),
             ),
-      ),
+            shadows: AppShadows.floating,
+          ),
+          child: Column(children: children),
+        ),
+      ],
     );
   }
 }
 
-/// Flat list of [_ManageTile]s — no bordered card, just rows separated by
-/// hairline dividers directly on the page canvas (the app's "dividers over
-/// boxes" grouping). Dividers inset to the content width, aligned under the
-/// row's icon+text so they read as one quiet group.
-class _ManageList extends StatelessWidget {
-  const _ManageList({required this.children});
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    final rows = <Widget>[];
-    for (var i = 0; i < children.length; i++) {
-      if (i > 0) {
-        rows.add(
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: AppSizes.lg),
-            child: Divider(height: 1),
-          ),
-        );
-      }
-      rows.add(children[i]);
-    }
-    return Column(children: rows);
-  }
-}
-
-class _ManageTile extends StatelessWidget {
-  const _ManageTile({
+/// One field line inside a [_DetailSection]: a soft-tinted leading icon,
+/// a small label, and the value beneath it. Filled `copyable` fields
+/// (email/phone/GSTIN/PAN/UPI) tap to copy — a frequent merchant need —
+/// with a subtle copy glyph as the affordance. Blank fields fall back to
+/// a muted "Not added" so the layout stays stable and gaps stay legible.
+class _DetailRow extends StatelessWidget {
+  const _DetailRow({
     required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
+    required this.label,
+    required this.value,
+    required this.accent,
+    required this.accentSoft,
+    this.copyable = false,
   });
 
   final IconData icon;
-  final String title;
-  final String subtitle;
+  final String label;
+  final String? value;
+  final Color accent;
+  final Color accentSoft;
+  final bool copyable;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
+    final text = value?.trim() ?? '';
+    final hasValue = text.isNotEmpty;
+    final canCopy = copyable && hasValue;
+
+    final content = Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.md,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: _kDetailIconSize,
+            height: _kDetailIconSize,
+            decoration: ShapeDecoration(
+              color: hasValue ? accentSoft : AppColors.surfaceTint,
+              shape: AppShapes.squircle(AppSizes.radiusSm),
+            ),
+            alignment: Alignment.center,
+            child: Icon(
+              icon,
+              size: AppSizes.iconMd,
+              color: hasValue ? accent : AppColors.subtle,
+            ),
+          ),
+          const SizedBox(width: AppSizes.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: AppColors.muted,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  hasValue ? text : l10n.profileNotAdded,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: hasValue ? AppColors.black : AppColors.subtle,
+                    fontWeight: hasValue ? FontWeight.w600 : FontWeight.w400,
+                    fontStyle: hasValue ? FontStyle.normal : FontStyle.italic,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (canCopy) ...[
+            const SizedBox(width: AppSizes.sm),
+            Icon(
+              Icons.copy_rounded,
+              size: AppSizes.iconSm,
+              color: AppColors.subtle,
+            ),
+          ],
+        ],
+      ),
+    );
+
+    if (!canCopy) return content;
+    return InkWell(
+      onTap: () {
+        Clipboard.setData(ClipboardData(text: text));
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              content: Text(l10n.profileCopied),
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+      },
+      child: content,
+    );
+  }
+}
+
+/// The destructive "Log out" action at the foot of the screen — a full-width
+/// card with a centred red label. Tapping opens a confirmation bottom sheet
+/// (see [ProfilePage._confirmAndLogout]) rather than logging out instantly.
+class _LogoutTile extends StatelessWidget {
+  const _LogoutTile({required this.onTap});
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.lg,
-          vertical: AppSizes.md,
-        ),
-        child: Row(
-          children: [
-            // Uniform, neutral icon — one calm treatment for every row (the
-            // same heroPanel square + ink icon used across Settings) instead
-            // of a different accent colour per tile.
-            Container(
-              width: AppSizes.xxxl,
-              height: AppSizes.xxxl,
-              decoration: ShapeDecoration(
-                color: AppColors.heroPanel,
-                shape: AppShapes.squircle(AppSizes.radiusSm),
-              ),
-              alignment: Alignment.center,
-              child: Icon(icon, size: AppSizes.iconMd, color: AppColors.black),
-            ),
-            const SizedBox(width: AppSizes.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: AppColors.black,
-                      fontWeight: FontWeight.w600,
-                    ),
+    final l10n = AppLocalizations.of(context);
+    final shape = AppShapes.squircle(
+      AppSizes.radiusLg,
+      side: BorderSide(color: AppColors.hairline),
+    );
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+      child: Material(
+        color: AppColors.surface,
+        shape: shape,
+        child: InkWell(
+          onTap: onTap,
+          customBorder: shape,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSizes.md + 2),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.logout_rounded,
+                  color: AppColors.error,
+                  size: AppSizes.iconMd,
+                ),
+                const SizedBox(width: AppSizes.sm),
+                Text(
+                  l10n.profileLogout,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: AppColors.error,
+                    fontWeight: FontWeight.w700,
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: AppColors.muted,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-            Icon(Icons.chevron_right_rounded, color: AppColors.subtle),
-          ],
+          ),
         ),
       ),
     );

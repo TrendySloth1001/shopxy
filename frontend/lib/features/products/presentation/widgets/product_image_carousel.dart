@@ -8,6 +8,7 @@ import 'package:shopxy/shared/constants/app_durations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 
 /// Image carousel for the product detail hero.
 ///
@@ -331,12 +332,10 @@ class _ProductLightboxState extends State<_ProductLightbox> {
     // controls in every theme (like any gallery lightbox), so it uses fixed
     // Material black/white rather than theme-flipping tokens.
     return Scaffold(
+      extendBodyBehindAppBar: true,
       backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        title: Text(
+      appBar: FloatingAppBar(
+        titleWidget: Text(
           '${_index + 1} / ${widget.urls.length}',
           style: Theme.of(context)
               .textTheme

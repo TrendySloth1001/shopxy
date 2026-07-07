@@ -30,6 +30,8 @@
   "productsTitle": "उत्पाद",
   "productsSwitchToCardView": "कार्ड व्यू पर जाएँ",
   "productsSwitchToCompactView": "कॉम्पैक्ट व्यू पर जाएँ",
+  "productsGridView": "ग्रिड व्यू",
+  "productsListView": "सूची व्यू",
   "productsAddProduct": "उत्पाद जोड़ें",
   "productsHidden": "उत्पाद छिपे हैं",
   "productsSearchHint": "उत्पाद खोजें...",
@@ -529,6 +531,7 @@
   "invoicesCess": "सेस",
   "invoicesReceived": "प्राप्त",
   "invoicesOutstanding": "बकाया",
+  "invoicesPaymentsReceivedTitle": "प्राप्त भुगतान",
   "invoicesSendViaWhatsApp": "WhatsApp से भेजें",
   "invoicesOpensChatWith": "{phone} के साथ चैट खोलता है",
   "invoicesPickChatToSend": "भेजने के लिए एक चैट चुनें",
@@ -539,6 +542,49 @@
   "invoicesRecordPaymentSubtitle": "इस बिल के लिए भुगतान दर्ज करें",
   "invoicesPaymentRecorded": "भुगतान दर्ज किया गया",
   "invoicesConfirmInvoice": "चालान की पुष्टि करें",
+  "invoicesIssueNoteAction": "क्रेडिट / डेबिट नोट जारी करें",
+  "invoicesIssueNoteActionSubtitle": "इस पुष्ट बिक्री को क्रेडिट या डेबिट नोट से समायोजित करें",
+  "invoicesIssueNoteTitle": "नोट जारी करें",
+  "invoicesCreditNoteExplainer": "ग्राहक की देय राशि घटाता है। लौटाया गया माल वापस स्टॉक में जोड़ा जा सकता है।",
+  "invoicesDebitNoteExplainer": "ग्राहक से अतिरिक्त राशि वसूलता है — जैसे कम शुल्क का सुधार।",
+  "invoicesNoteReturnToStock": "माल वापस स्टॉक में करें",
+  "invoicesNoteReason": "कारण (वैकल्पिक)",
+  "invoicesNoteExtraPerUnit": "प्रति इकाई अतिरिक्त",
+  "invoicesIssueCreditNote": "क्रेडिट नोट जारी करें",
+  "invoicesIssueDebitNote": "डेबिट नोट जारी करें",
+  "invoicesNoteSelectLines": "नोट में कम से कम एक पंक्ति जोड़ें",
+  "invoicesNoteSoldQty": "बेचा गया {qty}",
+  "@invoicesNoteSoldQty": {
+    "placeholders": {
+      "qty": {
+        "type": "Object"
+      }
+    }
+  },
+  "invoicesNoteIssued": "{noteNo} जारी किया गया",
+  "@invoicesNoteIssued": {
+    "placeholders": {
+      "noteNo": {
+        "type": "Object"
+      }
+    }
+  },
+  "invoicesNoteAgainst": "{invoiceNo} के विरुद्ध",
+  "@invoicesNoteAgainst": {
+    "placeholders": {
+      "invoiceNo": {
+        "type": "Object"
+      }
+    }
+  },
+  "invoicesNoteApproxTotal": "अनुमानित कुल {amount}",
+  "@invoicesNoteApproxTotal": {
+    "placeholders": {
+      "amount": {
+        "type": "Object"
+      }
+    }
+  },
   "partiesTitle": "पार्टियाँ",
   "partiesAddParty": "पार्टी जोड़ें",
   "partiesEditParty": "पार्टी संपादित करें",
@@ -681,6 +727,9 @@
   "profileReportsSubtitle": "बिक्री, खरीद, GST और लाभ-हानि",
   "profileFinishShopSetup": "अपनी दुकान का सेटअप पूरा करें",
   "profileFinishShopSetupBody": "इनवॉइस सही छपें इसके लिए अपनी दुकान का नाम, GSTIN और राज्य जोड़ें।",
+  "profilePersonalDetails": "व्यक्तिगत विवरण",
+  "profileNotAdded": "नहीं जोड़ा गया",
+  "profileCopied": "क्लिपबोर्ड पर कॉपी किया गया",
   "profileFieldName": "नाम",
   "profileFieldPhoto": "फ़ोटो",
   "profileFieldPhone": "फ़ोन",

@@ -17,6 +17,7 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 
 class OrdersInboxPage extends StatefulWidget {
   const OrdersInboxPage({super.key});
@@ -103,14 +104,16 @@ class _OrdersInboxPageState extends State<OrdersInboxPage> {
     final canView = context.select<AuthProvider, bool>(
         (a) => a.user?.canView('orders') ?? false);
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.ordersTitle),
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(
+        title: l10n.ordersTitle,
         actions: [AccessReloadButton(onReload: () => p.load())],
       ),
       body: !canView
           ? NoAccessView(title: l10n.ordersNoAccessTitle)
           : Column(
         children: [
+          SizedBox(height: FloatingAppBar.contentTopInset(context)),
           // ── Status pills ───────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(
@@ -206,9 +209,15 @@ class _OrdersInboxPageState extends State<OrdersInboxPage> {
                                   p.to != null,
                             )
                           : ListView.separated(
+                              // Header already clears the bar; stop the list
+                              // from auto-applying the MediaQuery top inset
+                              // (extendBodyBehindAppBar) a second time.
+                              padding: const EdgeInsets.fromLTRB(
+                                  AppSizes.lg, 0, AppSizes.lg, 0),
                               physics: const AlwaysScrollableScrollPhysics(),
                               itemCount: p.orders.length,
-                              separatorBuilder: (_, _) => const AppDivider(),
+                              separatorBuilder: (_, _) =>
+                                  const SizedBox(height: AppSizes.sm),
                               itemBuilder: (_, i) =>
                                   _OrderRow(order: p.orders[i]),
                             ),
@@ -364,6 +373,9 @@ class _OrderRow extends StatelessWidget {
     final preview = _itemPreviewText(order);
     return Material(
       color: AppColors.surface,
+      shape: AppShapes.squircle(AppSizes.radiusLg,
+          side: BorderSide(color: AppColors.hairline)),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () => Navigator.push(
           context,
@@ -544,9 +556,10 @@ class _OrdersInboxSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(AppSizes.lg, 0, AppSizes.lg, 0),
       physics: const NeverScrollableScrollPhysics(),
       itemCount: 4,
-      separatorBuilder: (_, _) => const AppDivider(),
+      separatorBuilder: (_, _) => const SizedBox(height: AppSizes.sm),
       itemBuilder: (_, _) => const _OrderRowSkeleton(),
     );
   }
@@ -561,7 +574,12 @@ class _OrderRowSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return Container(
+      decoration: ShapeDecoration(
+        color: AppColors.surface,
+        shape: AppShapes.squircle(AppSizes.radiusLg,
+            side: BorderSide(color: AppColors.hairline)),
+      ),
       padding: const EdgeInsets.symmetric(
         horizontal: AppSizes.lg,
         vertical: AppSizes.md,

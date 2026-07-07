@@ -20,12 +20,19 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
 import 'package:shopxy/shared/widgets/app_card.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
+import 'package:shopxy/shared/widgets/app_filter_pill.dart';
 import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
 import 'package:shopxy/shared/widgets/app_section_header.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/glass_widgets.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/shared/constants/app_durations.dart';
+
+/// Height of the sticky Save-as-draft / Save-&-confirm action buttons. Taller
+/// than a stock button so the two labels stay on one line and the bar reads as
+/// a deliberate footer.
+const double _actionBarButtonHeight = 54;
 
 class CreateInvoicePage extends StatefulWidget {
   /// [existing] turns this page into an edit form. Pre-fills every
@@ -530,8 +537,9 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
         if (discard && context.mounted) Navigator.pop(context);
       },
       child: Scaffold(
-      appBar: AppBar(
-        title: Text(_isEditing ? l10n.invoicesEditDraftTitle : l10n.invoicesCreateTitle),
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(
+        title: _isEditing ? l10n.invoicesEditDraftTitle : l10n.invoicesCreateTitle,
       ),
       bottomNavigationBar: SafeArea(
         child: Container(
@@ -542,20 +550,32 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
           ),
           child: Row(
             children: [
+              // Draft = secondary. No icon so the label always sits on one
+              // line; the taller height keeps a comfortable tap target.
               Expanded(
-                child: OutlinedButton.icon(
+                flex: 2,
+                child: OutlinedButton(
                   onPressed: _isSaving ? null : () => _save(confirm: false),
-                  icon: const Icon(Icons.save_outlined),
-                  label: Text(_isEditing ? l10n.invoicesUpdateDraft : l10n.invoicesSaveAsDraft),
                   style: OutlinedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(AppSizes.huge),
+                    minimumSize: const Size.fromHeight(_actionBarButtonHeight),
                     side: BorderSide(color: AppColors.hairline),
+                    textStyle: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  child: Text(
+                    _isEditing
+                        ? l10n.invoicesUpdateDraft
+                        : l10n.invoicesSaveAsDraft,
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.fade,
                   ),
                 ),
               ),
               const SizedBox(width: AppSizes.md),
               Expanded(
-                flex: 2,
+                flex: 3,
                 child: FilledButton.icon(
                   onPressed: _isSaving ? null : () => _save(confirm: true),
                   icon: _isSaving
@@ -570,10 +590,16 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                       : const Icon(Icons.check_rounded),
                   label: Text(
                     _isEditing ? l10n.invoicesUpdateAndConfirm : l10n.invoicesSaveAndConfirm,
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.fade,
                   ),
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.brand,
-                    minimumSize: const Size.fromHeight(AppSizes.huge),
+                    minimumSize: const Size.fromHeight(_actionBarButtonHeight),
+                    textStyle: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
@@ -586,18 +612,30 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
       body: AbsorbPointer(
         absorbing: _isSaving,
         child: Form(
-        key: _formKey,
-        child: Column(
-          children: [
-            GlassHero.line(
-              kind: LineArt.receipt,
-              height: AppSizes.heroHeightSm,
-              illustrationSize: AppSizes.productImageSize,
-            ),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.all(AppSizes.lg),
-                children: [
+          key: _formKey,
+          // Single scroll surface: the hero illustration scrolls away with the
+          // form (it used to be pinned above a nested ListView). Content passes
+          // behind the frosted app bar via extendBodyBehindAppBar.
+          child: ListView(
+            padding: EdgeInsets.zero,
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            children: [
+              SizedBox(height: FloatingAppBar.contentTopInset(context)),
+              GlassHero.line(
+                kind: LineArt.receipt,
+                height: AppSizes.heroHeightSm,
+                illustrationSize: AppSizes.productImageSize,
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSizes.lg,
+                  AppSizes.lg,
+                  AppSizes.lg,
+                  AppSizes.md,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
             AppSectionHeader(
               title: l10n.invoicesInvoiceType.toUpperCase(),
               padding: const EdgeInsets.only(bottom: AppSizes.sm),
@@ -825,97 +863,117 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
               ),
               if (_type == 'SALE') ...[
                 // Document-type toggle. Tax Invoice is the default; Bill of
-                // Supply is for composition / nil-rated dealers; Estimate
-                // creates an EST-prefixed quotation the user can later
-                // convert via the detail page.
-                SegmentedButton<String>(
-                  segments: [
-                    ButtonSegment(
-                      value: 'TAX_INVOICE',
-                      label: Text(l10n.invoicesDocTaxInvoice),
-                    ),
-                    ButtonSegment(
-                      value: 'BILL_OF_SUPPLY',
-                      label: Text(l10n.invoicesDocBillOfSupply),
-                    ),
-                    ButtonSegment(
-                      value: 'ESTIMATE',
-                      label: Text(l10n.invoicesDocEstimate),
-                    ),
+                // Supply is for composition / nil-rated dealers; Estimate and
+                // Proforma are pre-supply offers (both take the EST- series and
+                // convert into a real tax invoice via the detail page). Credit
+                // and debit notes are NOT here — they are Sec 34 adjustments
+                // raised against an existing invoice from its detail screen.
+                Wrap(
+                  spacing: AppSizes.sm,
+                  runSpacing: AppSizes.sm,
+                  children: [
+                    for (final (value, label) in <(String, String)>[
+                      ('TAX_INVOICE', l10n.invoicesDocTaxInvoice),
+                      ('BILL_OF_SUPPLY', l10n.invoicesDocBillOfSupply),
+                      ('ESTIMATE', l10n.invoicesDocEstimate),
+                      ('PROFORMA', l10n.invoicesDocProforma),
+                    ])
+                      AppFilterPill(
+                        label: label,
+                        selected: _documentType == value,
+                        onTap: () =>
+                            setState(() => _documentType = value),
+                      ),
                   ],
-                  selected: {_documentType},
-                  onSelectionChanged: (v) =>
-                      setState(() => _documentType = v.first),
                 ),
                 const SizedBox(height: AppSizes.md),
               ],
-              // GST-5 — tax convention toggle. OFF (default) = unit prices are
-              // pre-tax and GST is added on top (existing behaviour). ON = the
-              // entered unit prices already include GST and the engine backs it
-              // out, matching the marketplace "inclusive of all taxes" path.
-              SwitchListTile.adaptive(
-                contentPadding: EdgeInsets.zero,
-                dense: true,
-                value: _isPriceInclusive,
-                onChanged: (v) => setState(() => _isPriceInclusive = v),
-                title: Text(
-                  l10n.invoicesPricesIncludeGst,
-                  style: theme.textTheme.bodyMedium,
+              // Money summary grouped on its own surface so the running total
+              // reads as a distinct panel, not more canvas rows. The tax-
+              // convention toggle lives here too — it directly drives the
+              // numbers below it.
+              AppCard(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSizes.lg,
+                  vertical: AppSizes.sm,
                 ),
-                subtitle: Text(
-                  _isPriceInclusive
-                      ? l10n.invoicesPricesInclusiveHint
-                      : l10n.invoicesPricesExclusiveHint,
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: AppColors.muted),
+                child: Column(
+                  children: [
+                    // GST-5 — tax convention toggle. OFF (default) = unit
+                    // prices are pre-tax and GST is added on top. ON = entered
+                    // prices already include GST and the engine backs it out.
+                    SwitchListTile.adaptive(
+                      contentPadding: EdgeInsets.zero,
+                      dense: true,
+                      value: _isPriceInclusive,
+                      onChanged: (v) =>
+                          setState(() => _isPriceInclusive = v),
+                      title: Text(
+                        l10n.invoicesPricesIncludeGst,
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                      subtitle: Text(
+                        _isPriceInclusive
+                            ? l10n.invoicesPricesInclusiveHint
+                            : l10n.invoicesPricesExclusiveHint,
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(color: AppColors.muted),
+                      ),
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: AppSizes.sm),
+                      child: AppDivider.flush(),
+                    ),
+                    _TotalRow(label: l10n.invoicesSubtotal, value: _subtotal),
+                    // GST split: same formula as the backend — line.taxableValue
+                    // = qty*price − discount, line tax = taxableValue*rate/100.
+                    // Sum across lines: one IGST row (interstate) or a 50/50
+                    // CGST/SGST split (intrastate).
+                    if (_isInterstate)
+                      _TotalRow(label: 'IGST', value: _totalTax)
+                    else ...[
+                      _TotalRow(label: 'CGST', value: _totalTax / 2),
+                      _TotalRow(label: 'SGST', value: _totalTax / 2),
+                    ],
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            l10n.invoicesDiscount,
+                            style: theme.textTheme.bodyMedium,
+                          ),
+                        ),
+                        SizedBox(
+                          width: 120,
+                          child: TextFormField(
+                            controller: _discount,
+                            textAlign: TextAlign.end,
+                            decoration: InputDecoration(
+                              prefixText: '${AppStrings.currencySymbol} ',
+                              isDense: true,
+                              hintText: '0',
+                            ),
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            onChanged: (_) => setState(() {}),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (_roundOff != 0)
+                      _TotalRow(label: l10n.invoicesRoundOff, value: _roundOff),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: AppSizes.sm),
+                      child: AppDivider.flush(),
+                    ),
+                    _TotalRow(
+                      label: l10n.invoicesGrandTotal,
+                      value: _total,
+                      isHighlight: true,
+                    ),
+                  ],
                 ),
-              ),
-              _TotalRow(label: l10n.invoicesSubtotal, value: _subtotal),
-              // GST split: same formula as the backend — line.taxableValue =
-              // qty*price − discount, line tax = taxableValue * rate / 100.
-              // We sum across lines and either show one IGST row (interstate)
-              // or split CGST/SGST 50/50 (intrastate).
-              if (_isInterstate)
-                _TotalRow(label: 'IGST', value: _totalTax)
-              else ...[
-                _TotalRow(label: 'CGST', value: _totalTax / 2),
-                _TotalRow(label: 'SGST', value: _totalTax / 2),
-              ],
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      l10n.invoicesDiscount,
-                      style: theme.textTheme.bodyMedium,
-                    ),
-                  ),
-                  SizedBox(
-                    width: 100,
-                    child: TextFormField(
-                      controller: _discount,
-                      textAlign: TextAlign.end,
-                      decoration: InputDecoration(
-                        prefixText: '${AppStrings.currencySymbol} ',
-                        isDense: true,
-                      ),
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      onChanged: (_) => setState(() {}),
-                    ),
-                  ),
-                ],
-              ),
-              if (_roundOff != 0)
-                _TotalRow(label: l10n.invoicesRoundOff, value: _roundOff),
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: AppSizes.sm),
-                child: AppDivider.flush(),
-              ),
-              _TotalRow(
-                label: l10n.invoicesGrandTotal,
-                value: _total,
-                isHighlight: true,
               ),
               const SizedBox(height: AppSizes.xxl),
             ],
@@ -927,12 +985,11 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
               maxLines: 2,
               textCapitalization: TextCapitalization.sentences,
             ),
-            const SizedBox(height: AppSizes.huge),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
         ),
       ),
       ),
