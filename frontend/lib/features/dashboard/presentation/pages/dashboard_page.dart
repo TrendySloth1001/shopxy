@@ -339,7 +339,7 @@ class _DashboardBody extends StatelessWidget {
     }
 
     final money = <Widget>[
-      if (stats.kpis != null) KpiRow(kpis: stats.kpis!),
+      if (stats.kpis != null) KpiRow(kpis: stats.kpis!, period: provider.period),
       if (stats.trend != null) TrendCard(trend: stats.trend!),
       if (stats.insights != null) Analytics(insights: stats.insights!),
     ];
