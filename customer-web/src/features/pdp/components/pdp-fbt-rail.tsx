@@ -55,7 +55,7 @@ export function PdpFbtRail({ productId }: Props) {
                 </div>
                 {item.ratingAvg != null ? (
                   <div className="mt-xs flex items-center gap-[2px]">
-                    <Star size={11} className="fill-[#E05A2A] text-[#E05A2A]" aria-hidden />
+                    <Star size={11} className="fill-flash-accent text-flash-accent" aria-hidden />
                     <span className="text-caption font-semibold text-muted">
                       {item.ratingAvg.toFixed(1)} ({item.ratingCount})
                     </span>

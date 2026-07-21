@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { CATEGORY_TINTS } from "@/shared/ui/category-tints";
 import Link from "next/link";
 import { Grid3X3 } from "@/shared/icons";
 import { fetchCategoryTree } from "@/features/catalog/api";
@@ -81,11 +82,7 @@ export function CategoriesGrid() {
 }
 
 // Rotating soft tints for the letter-monogram fallback — mirrors the home puck tints.
-const TILE_TINTS = [
-  "#E3E8F4", "#F3E4D6", "#F9E1EA", "#E6F2EC",
-  "#EFE9DD", "#E0E1E6", "#E7DFD4", "#E4DECF",
-  "#E6F2DA", "#DEEAF1",
-];
+const TILE_TINTS = CATEGORY_TINTS;
 
 // ── Category tile ─────────────────────────────────────────────────────────────
 

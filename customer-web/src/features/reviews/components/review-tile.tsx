@@ -35,7 +35,7 @@ export function ReviewTile({ review, dense = false }: Props) {
             key={s}
             size={13}
             aria-hidden
-            className={s <= review.rating ? "fill-[#E05A2A] text-[#E05A2A]" : "fill-disabled text-disabled"}
+            className={s <= review.rating ? "fill-flash-accent text-flash-accent" : "fill-disabled text-disabled"}
           />
         ))}
       </div>

@@ -135,7 +135,7 @@ class _CouponPill extends StatelessWidget {
         vertical: AppSizes.sm,
       ),
       decoration: BoxDecoration(
-        color: const Color(0xFFE05A2A),
+        color: AppColors.flashAccent,
         borderRadius: BorderRadius.circular(AppSizes.radiusFull),
         boxShadow: AppShadows.floating,
       ),

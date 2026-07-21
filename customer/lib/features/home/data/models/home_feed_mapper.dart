@@ -100,14 +100,15 @@ class HomeFeedMapper {
   /// through `_productCardFromProduct`.
   static List<ProductCard> fromEndlessPage(List<dynamic> rows) {
     return rows
-        .map((r) => r is Map<String, dynamic> ? _productCardFromProduct(r) : null)
+        .map(
+          (r) => r is Map<String, dynamic> ? _productCardFromProduct(r) : null,
+        )
         .whereType<ProductCard>()
         .toList();
   }
 
-  static ({List<ProductCard> recommended, List<ProductCard> recentlyViewed}) fromPersonalized(
-    Map<String, dynamic> json,
-  ) {
+  static ({List<ProductCard> recommended, List<ProductCard> recentlyViewed})
+  fromPersonalized(Map<String, dynamic> json) {
     final recommended = _list(json['recommended'])
         .map((p) => _productCardFromProduct(p as Map<String, dynamic>))
         .whereType<ProductCard>()
@@ -190,8 +191,7 @@ class HomeFeedMapper {
 
   // ── Helpers ───────────────────────────────────────────────────────
 
-  static List<dynamic> _list(dynamic v) =>
-      v is List ? v : const <dynamic>[];
+  static List<dynamic> _list(dynamic v) => v is List ? v : const <dynamic>[];
 
   /// Prisma `Decimal` fields serialise as **strings** in JSON (e.g.
   /// `"199.00"`), not numbers. Anywhere we read a price / rating /
@@ -225,17 +225,7 @@ class HomeFeedMapper {
   static String _money(double v) => AppFormat.rupees(v);
 
   /// Soft palette for the puck strip — cycles by index so adjacent
-  /// categories never share a tint.
-  static const List<Color> _puckTints = [
-    Color(0xFFE3E8F4),
-    Color(0xFFF3E4D6),
-    Color(0xFFF9E1EA),
-    Color(0xFFE6F2EC),
-    Color(0xFFEFE9DD),
-    Color(0xFFE0E1E6),
-    Color(0xFFE7DFD4),
-    Color(0xFFE4DECF),
-    Color(0xFFE6F2DA),
-    Color(0xFFDEEAF1),
-  ];
+  /// categories never share a tint. Sourced from the single [AppColors]
+  /// token so it stays in sync with tiles/headers.
+  static const List<Color> _puckTints = AppColors.categoryTints;
 }

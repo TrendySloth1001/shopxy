@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { CATEGORY_TINTS } from "@/shared/ui/category-tints";
 import Link from "next/link";
 import { ArrowLeft, LayoutGrid } from "@/shared/icons";
 import { fetchCategoryProducts, type CategoryDetail } from "@/features/catalog/api";
@@ -203,11 +204,7 @@ export function CategoryProductsView({ slug }: { slug: string }) {
 // ── Category header ──────────────────────────────────────────────────────────
 
 // Rotating tints — matches home puck palette
-const HEADER_TINTS = [
-  "#E3E8F4", "#F3E4D6", "#F9E1EA", "#E6F2EC",
-  "#EFE9DD", "#E0E1E6", "#E7DFD4", "#E4DECF",
-  "#E6F2DA", "#DEEAF1",
-];
+const HEADER_TINTS = CATEGORY_TINTS;
 
 function catTint(name: string): string {
   let h = 0;

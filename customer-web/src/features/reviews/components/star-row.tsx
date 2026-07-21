@@ -20,7 +20,7 @@ export function StarRow({ rating, size = 16 }: Props) {
                 className="absolute inset-0 overflow-hidden"
                 style={{ width: half ? "50%" : "100%" }}
               >
-                <Star size={size} className="fill-[#E05A2A] text-[#E05A2A]" aria-hidden />
+                <Star size={size} className="fill-flash-accent text-flash-accent" aria-hidden />
               </span>
             ) : null}
           </span>

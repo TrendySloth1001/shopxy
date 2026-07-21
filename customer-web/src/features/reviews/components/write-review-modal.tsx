@@ -123,8 +123,8 @@ export function WriteReviewModal({
                       className={
                         active
                           ? isHovered
-                            ? "fill-[#E05A2A] text-[#E05A2A] drop-shadow-sm"
-                            : "fill-[#E05A2A] text-[#E05A2A]"
+                            ? "fill-flash-accent text-flash-accent drop-shadow-sm"
+                            : "fill-flash-accent text-flash-accent"
                           : "fill-disabled text-disabled"
                       }
                     />

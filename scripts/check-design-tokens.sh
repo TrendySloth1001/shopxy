@@ -38,6 +38,24 @@ for app in merchant-web customer-web; do
     | report "$app: arbitrary text size with a token — use text-nano/micro/caption/body-*"
 done
 
+# ── Phase 2: Color ───────────────────────────────────────────────────────────
+# The rating/flash accent (#E05A2A) must use the token, not a raw literal.
+grep -rniE 'E05A2A' customer/lib --include='*.dart' 2>/dev/null \
+  | grep -v 'app_colors\.dart' \
+  | report "customer(Flutter): #E05A2A — use AppColors.flashAccent"
+grep -rniE '\[#e05a2a\]|#e05a2a' customer-web/src 2>/dev/null \
+  | grep -viE 'tokens\.ts|globals\.css' \
+  | report "customer-web: #E05A2A — use the flash-accent utility"
+
+# The category-tint palette lives in ONE source per platform (first colour of
+# the set is the canary): AppColors.categoryTints / CATEGORY_TINTS.
+grep -rniE 'E3E8F4' customer/lib --include='*.dart' 2>/dev/null \
+  | grep -v 'app_colors\.dart' \
+  | report "customer(Flutter): category tint hex — use AppColors.categoryTints"
+grep -rniE 'E3E8F4' customer-web/src 2>/dev/null \
+  | grep -v 'category-tints\.ts' \
+  | report "customer-web: category tint hex — import CATEGORY_TINTS"
+
 if [ "$fail" -eq 0 ]; then
   echo "✓ design tokens: no leaks"
 fi
