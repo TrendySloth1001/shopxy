@@ -3,6 +3,7 @@ import 'package:shopxy/shared/constants/app_durations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/constants/app_curves.dart';
 
 /// Skeleton-loader primitive. Rule from DESIGN.md #4: loading uses
 /// skeletons (mirroring final layout) instead of spinners.
@@ -70,11 +71,7 @@ class _AppShimmerBoxState extends State<AppShimmerBox>
           width: widget.width,
           height: widget.height,
           decoration: ShapeDecoration(
-            color: Color.lerp(
-              AppColors.surfaceTint,
-              AppColors.hairline,
-              t,
-            ),
+            color: Color.lerp(AppColors.surfaceTint, AppColors.hairline, t),
             shape: AppShapes.squircle(widget.radius),
           ),
         );
@@ -86,7 +83,11 @@ class _AppShimmerBoxState extends State<AppShimmerBox>
 /// One line of skeleton text. `widthFactor` controls how wide the line
 /// is relative to its parent (0.6 means 60% — useful for headings).
 class AppShimmerLine extends StatelessWidget {
-  const AppShimmerLine({super.key, this.widthFactor = 1.0, this.height = AppSizes.md});
+  const AppShimmerLine({
+    super.key,
+    this.widthFactor = 1.0,
+    this.height = AppSizes.md,
+  });
   final double widthFactor;
   final double height;
 
@@ -131,7 +132,7 @@ class AppFadeIn extends StatelessWidget {
     return AnimatedOpacity(
       opacity: 1,
       duration: reduceMotion ? Duration.zero : duration,
-      curve: Curves.easeOut,
+      curve: AppCurves.decelerate,
       child: child,
     );
   }

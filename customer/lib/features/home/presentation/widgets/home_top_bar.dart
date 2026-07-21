@@ -23,6 +23,7 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
+import 'package:shopxy_customer/shared/constants/app_curves.dart';
 
 class HomeTopBar extends StatelessWidget {
   const HomeTopBar({super.key, this.shrink = 0.0});
@@ -37,7 +38,7 @@ class HomeTopBar extends StatelessWidget {
     // Ease the visibility so the compact substitutes finish fading in
     // before the user has scrolled too far — linear `t` would feel
     // sluggish at the top of the curve.
-    final t = Curves.easeOut.transform(shrink.clamp(0.0, 1.0));
+    final t = AppCurves.decelerate.transform(shrink.clamp(0.0, 1.0));
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(

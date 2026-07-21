@@ -10,6 +10,7 @@ import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_pill_button.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
+import 'package:shopxy_customer/shared/constants/app_curves.dart';
 
 /// One onboarding slide's content.
 class _Slide {
@@ -92,7 +93,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
     } else {
       _controller.nextPage(
         duration: AppDurations.long,
-        curve: Curves.easeOutCubic,
+        curve: AppCurves.decelerateEmphasized,
       );
     }
   }
@@ -280,7 +281,7 @@ class _Dots extends StatelessWidget {
         final active = i == index;
         return AnimatedContainer(
           duration: AppDurations.medium,
-          curve: Curves.easeOut,
+          curve: AppCurves.decelerate,
           margin: const EdgeInsets.symmetric(horizontal: AppSizes.xs),
           width: active ? AppSizes.xxl : AppSizes.sm,
           height: AppSizes.sm,

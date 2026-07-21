@@ -12,6 +12,7 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/constants/app_curves.dart';
 
 /// Platform-admin editor for the marketplace taxonomy tree. Each node
 /// is rendered as an expandable tile; tapping it opens an inline editor
@@ -454,7 +455,7 @@ class _CategoryTreeTile extends StatelessWidget {
           ),
           AnimatedSize(
             duration: AppDurations.short,
-            curve: Curves.easeInOut,
+            curve: AppCurves.standard,
             alignment: Alignment.topCenter,
             child: isExpanded
                 ? Padding(

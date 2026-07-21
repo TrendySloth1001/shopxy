@@ -52,6 +52,17 @@ check "web: 2px spacing nudge — use the -xxs token" \
   "$(grep -rnE '(^|[" `({>-])(m[trblxy]?|p[trblxy]?|gap(-[xy])?|space-[xy]|inset(-[xy])?|translate-[xy]|top|bottom|left|right)-\[2px\]' \
      customer-web/src merchant-web/src 2>/dev/null)"
 
+# ── Phase 4: Motion ──────────────────────────────────────────────────────────
+# Flutter: easing must use AppCurves, and scale-value durations AppDurations.
+# (Web motion — house duration-* utilities + snapping default duration-N — is a
+# documented follow-up, so it is intentionally not enforced here yet.)
+for app in frontend customer; do
+  check "$app: raw Curves.* — use AppCurves" \
+    "$(grep -rnE 'Curves\.(easeInOut|easeInOutCubic|easeOut|easeOutCubic)\b' "$app/lib" --include='*.dart' 2>/dev/null | grep -v 'app_curves\.dart')"
+  check "$app: Duration(ms) with a scale value — use AppDurations" \
+    "$(grep -rnE 'Duration\(milliseconds: (100|180|240|320)\)' "$app/lib" --include='*.dart' 2>/dev/null | grep -v 'app_durations\.dart')"
+done
+
 if [ "$fail" -eq 0 ]; then
   echo "✓ design tokens: no leaks"
 fi

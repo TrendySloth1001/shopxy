@@ -12,6 +12,7 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
+import 'package:shopxy/shared/constants/app_curves.dart';
 
 /// Image carousel for the product detail hero.
 ///
@@ -58,7 +59,7 @@ class _ProductImageCarouselState extends State<ProductImageCarousel> {
     _pageController.animateToPage(
       i,
       duration: AppDurations.medium,
-      curve: Curves.easeOutCubic,
+      curve: AppCurves.decelerateEmphasized,
     );
   }
 

@@ -33,6 +33,7 @@ import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
+import 'package:shopxy_customer/shared/constants/app_curves.dart';
 
 /// Customer-facing order detail. One parent CustomerOrder = one
 /// checkout submission; per-vendor slices live as sections inside.
@@ -701,7 +702,7 @@ class _DeliverySnapshotCardState extends State<_DeliverySnapshotCard> {
                   ),
                   AnimatedSize(
                     duration: AppDurations.short,
-                    curve: Curves.easeOut,
+                    curve: AppCurves.decelerate,
                     alignment: Alignment.topLeft,
                     child: _expanded
                         ? Padding(
